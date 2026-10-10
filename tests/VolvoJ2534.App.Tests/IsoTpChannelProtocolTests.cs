@@ -1423,8 +1423,6 @@ public sealed class IsoTpChannelProtocolTests
         public void Unload() { }
     }
 
-}
-
 
     [Fact]
     public void Request_SendsReceiveFlowControlAfterEachConfiguredBlock()
@@ -1522,3 +1520,5 @@ public sealed class IsoTpChannelProtocolTests
 
         public void Unload() { }
     }
+
+}
