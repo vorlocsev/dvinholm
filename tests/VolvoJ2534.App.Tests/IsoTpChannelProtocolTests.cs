@@ -846,6 +846,10 @@ public sealed class IsoTpChannelProtocolTests
             channel.Request(new byte[] { 0x22, 0xF1, 0x90 }));
 
         Assert.Contains("sequence mismatch", error.Message, StringComparison.OrdinalIgnoreCase);
+
+        var nextResponse = channel.Request(new byte[] { 0x22, 0xF1, 0x91 });
+        Assert.Equal(new byte[] { 0x62, 0xF1, 0x91 }, nextResponse);
+        Assert.Equal(2, adapter.RequestCount);
     }
 
     private sealed class InvalidConsecutiveSequenceAdapter : VolvoJ2534.App.IJ2534Adapter
@@ -853,6 +857,9 @@ public sealed class IsoTpChannelProtocolTests
         private readonly ConcurrentQueue<VolvoJ2534.App.J2534Native.PassthruMsg> _incoming = new();
         private readonly AutoResetEvent _incomingReady = new(false);
         private readonly bool _duplicate;
+        private int _requestCount;
+
+        internal int RequestCount => Volatile.Read(ref _requestCount);
 
         internal InvalidConsecutiveSequenceAdapter(bool duplicate) => _duplicate = duplicate;
 
@@ -891,8 +898,16 @@ public sealed class IsoTpChannelProtocolTests
             }
             else if ((frame.Data[0] >> 4) == 0)
             {
-                // Declared length 20 requires more than one consecutive frame.
-                Enqueue(new byte[] { 0x10, 0x14, 0x62, 0xF1, 0x90, 0x01, 0x02, 0x03 });
+                if (Interlocked.Increment(ref _requestCount) == 1)
+                {
+                    // Declared length 20 requires more than one consecutive frame.
+                    Enqueue(new byte[] { 0x10, 0x14, 0x62, 0xF1, 0x90, 0x01, 0x02, 0x03 });
+                }
+                else
+                {
+                    // The next transaction must recover after the bad CF sequence.
+                    Enqueue(new byte[] { 0x03, 0x62, 0xF1, 0x91 });
+                }
             }
 
             return true;
