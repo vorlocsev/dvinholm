@@ -61,7 +61,7 @@ public sealed class UdsUnrelatedDidResponseTests
                 return true;
 
             Interlocked.Increment(ref _requestCount);
-            Enqueue(new byte[] { 0x04, 0x62, 0xF1, 0x90 });
+            Enqueue(new byte[] { 0x04, 0x62, 0xF1, 0x90, 0x00 });
             Enqueue(new byte[] { 0x05, 0x62, 0xF1, 0x91, 0x42, 0x43 });
             return true;
         }
