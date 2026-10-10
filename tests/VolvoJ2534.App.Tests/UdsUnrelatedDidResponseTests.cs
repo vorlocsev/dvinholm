@@ -7,7 +7,9 @@ public sealed class UdsUnrelatedDidResponseTests
     [Fact]
     public void ReadDataByIdentifier_IgnoresResponseForDifferentDid()
     {
-        var adapter = new UnrelatedDidAdapter();
+        var adapter = new UnrelatedDidAdapter(
+            new byte[] { 0x04, 0x62, 0xF1, 0x90, 0x00 },
+            new byte[] { 0x05, 0x62, 0xF1, 0x91, 0x42, 0x43 });
         using var bus = new VolvoJ2534.App.CanBus(adapter);
         bus.Start();
 
@@ -26,7 +28,31 @@ public sealed class UdsUnrelatedDidResponseTests
         Assert.Equal(1, adapter.RequestCount);
     }
 
-    private sealed class UnrelatedDidAdapter : VolvoJ2534.App.IJ2534Adapter
+    [Fact]
+    public void ReadDataByIdentifier_IgnoresNegativeResponseForDifferentService()
+    {
+        var adapter = new UnrelatedDidAdapter(
+            new byte[] { 0x03, 0x7F, 0x19, 0x31 },
+            new byte[] { 0x05, 0x62, 0xF1, 0x91, 0x42, 0x43 });
+        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        bus.Start();
+
+        using var channel = new VolvoJ2534.App.IsoTpChannel(
+            bus,
+            new VolvoJ2534.App.IsoTpChannel.Options(
+                0x7E0,
+                0x7E8,
+                FrameTimeout: TimeSpan.FromSeconds(1),
+                RequestTimeout: TimeSpan.FromSeconds(3)));
+        using var client = new VolvoJ2534.App.UdsClient(channel);
+
+        var data = client.ReadDataByIdentifier(0xF191);
+
+        Assert.Equal(new byte[] { 0xF1, 0x91, 0x42, 0x43 }, data);
+        Assert.Equal(1, adapter.RequestCount);
+    }
+
+    private sealed class UnrelatedDidAdapter(params byte[][] responses) : VolvoJ2534.App.IJ2534Adapter
     {
         private readonly ConcurrentQueue<VolvoJ2534.App.J2534Native.PassthruMsg> _incoming = new();
         private readonly AutoResetEvent _incomingReady = new(false);
@@ -61,8 +87,8 @@ public sealed class UdsUnrelatedDidResponseTests
                 return true;
 
             Interlocked.Increment(ref _requestCount);
-            Enqueue(new byte[] { 0x04, 0x62, 0xF1, 0x90, 0x00 });
-            Enqueue(new byte[] { 0x05, 0x62, 0xF1, 0x91, 0x42, 0x43 });
+            foreach (var response in responses)
+                Enqueue(response);
             return true;
         }
 
