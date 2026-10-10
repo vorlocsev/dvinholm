@@ -63,7 +63,7 @@ public sealed class UdsRepeatedResponsePendingTests
             Interlocked.Increment(ref _requestCount);
             Enqueue(new byte[] { 0x03, 0x7F, 0x22, 0x78 });
             Enqueue(new byte[] { 0x03, 0x7F, 0x22, 0x78 });
-            Enqueue(new byte[] { 0x04, 0x62, 0xF1, 0x91, 0x42 });
+            Enqueue(new byte[] { 0x05, 0x62, 0xF1, 0x91, 0x42, 0x43 });
             return true;
         }
 
