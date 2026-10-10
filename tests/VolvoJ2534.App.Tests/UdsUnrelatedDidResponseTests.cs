@@ -52,6 +52,30 @@ public sealed class UdsUnrelatedDidResponseTests
         Assert.Equal(1, adapter.RequestCount);
     }
 
+    [Fact]
+    public void ReadDataByIdentifier_ThrowsForNegativeResponseToRequestedService()
+    {
+        var adapter = new UnrelatedDidAdapter(new byte[] { 0x03, 0x7F, 0x22, 0x31 });
+        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        bus.Start();
+
+        using var channel = new VolvoJ2534.App.IsoTpChannel(
+            bus,
+            new VolvoJ2534.App.IsoTpChannel.Options(
+                0x7E0,
+                0x7E8,
+                FrameTimeout: TimeSpan.FromSeconds(1),
+                RequestTimeout: TimeSpan.FromSeconds(3)));
+        using var client = new VolvoJ2534.App.UdsClient(channel);
+
+        var exception = Assert.Throws<VolvoJ2534.App.UdsNegativeResponseException>(
+            () => client.ReadDataByIdentifier(0xF191));
+
+        Assert.Equal((byte)0x22, exception.RequestedService);
+        Assert.Equal((byte)0x31, exception.NegativeResponseCode);
+        Assert.Equal(1, adapter.RequestCount);
+    }
+
     private sealed class UnrelatedDidAdapter(params byte[][] responses) : VolvoJ2534.App.IJ2534Adapter
     {
         private readonly ConcurrentQueue<VolvoJ2534.App.J2534Native.PassthruMsg> _incoming = new();
