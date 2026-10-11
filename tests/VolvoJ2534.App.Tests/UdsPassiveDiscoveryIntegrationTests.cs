@@ -33,4 +33,24 @@ public sealed class UdsPassiveDiscoveryIntegrationTests
         Assert.Equal(4, candidate.MaxDataLength);
         Assert.Equal(0, adapter.TransmittedFrames);
     }
+    [Fact]
+    public async Task ScanAsync_CancellationStopsPassiveScanPromptly()
+    {
+        using var adapter = new VirtualJ2534Adapter(
+            _ => Array.Empty<VolvoJ2534.App.CanFrame>());
+        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        bus.Start();
+
+        var discovery = new VolvoJ2534.App.UdsEcuDiscovery(bus);
+        using var cancellation = new CancellationTokenSource();
+        var scan = discovery.ScanAsync(TimeSpan.FromSeconds(5), cancellation.Token);
+
+        await Task.Delay(50);
+        cancellation.Cancel();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            async () => await scan.WaitAsync(TimeSpan.FromSeconds(1)));
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
 }
