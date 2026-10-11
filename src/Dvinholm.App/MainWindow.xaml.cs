@@ -369,8 +369,9 @@ public sealed partial class MainWindow : Window
 
     private void ApplyEcuSelection(EcuRow row, int index)
     {
-        if (row.Candidate.RequestId is uint requestId)
-            UdsRequestId.Text = requestId.ToString(row.Candidate.IsExtended ? "X8" : "X3");
+        // A candidate without a supported inferred request ID must not leave
+        // the previous ECU's request ID in the input field.
+        UdsRequestId.Text = row.Candidate.RequestIdText;
         UdsResponseId.Text = row.Candidate.ResponseId.ToString(row.Candidate.IsExtended ? "X8" : "X3");
         CanIdFormat.SelectedIndex = row.Candidate.IsExtended ? 1 : 0;
 
