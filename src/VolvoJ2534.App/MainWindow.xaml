@@ -14,13 +14,15 @@
         </StackPanel>
 
         <Grid Grid.Row="1" ColumnSpacing="10">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="120"/><ColumnDefinition Width="130"/><ColumnDefinition Width="130"/></Grid.ColumnDefinitions>
+            <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="240"/><ColumnDefinition Width="86"/><ColumnDefinition Width="130"/><ColumnDefinition Width="110"/><ColumnDefinition Width="130"/></Grid.ColumnDefinitions>
             <TextBox x:Name="DllPath" PlaceholderText="Path to 32-bit J2534 DLL" Header="J2534 DLL"/>
-            <ComboBox x:Name="BaudRate" Grid.Column="1" Header="CAN speed" SelectedIndex="0">
+            <ComboBox x:Name="J2534Devices" Grid.Column="1" Header="Registered adapters" DisplayMemberPath="Label" PlaceholderText="Select adapter" SelectionChanged="J2534Device_SelectionChanged"/>
+            <Button Grid.Column="2" Content="Refresh" Click="RefreshJ2534Devices_Click" VerticalAlignment="Bottom"/>
+            <ComboBox x:Name="BaudRate" Grid.Column="3" Header="CAN speed" SelectedIndex="0">
                 <ComboBoxItem Content="500 kbit/s" Tag="500000"/><ComboBoxItem Content="250 kbit/s" Tag="250000"/><ComboBoxItem Content="125 kbit/s" Tag="125000"/>
             </ComboBox>
-            <Button x:Name="ConnectButton" Grid.Column="2" Content="Connect" Click="Connect_Click" VerticalAlignment="Bottom"/>
-            <Button x:Name="StartButton" Grid.Column="3" Content="Start monitor" Click="Start_Click" VerticalAlignment="Bottom" IsEnabled="False"/>
+            <Button x:Name="ConnectButton" Grid.Column="4" Content="Connect" Click="Connect_Click" VerticalAlignment="Bottom"/>
+            <Button x:Name="StartButton" Grid.Column="5" Content="Start monitor" Click="Start_Click" VerticalAlignment="Bottom" IsEnabled="False"/>
         </Grid>
 
         <Grid Grid.Row="2" ColumnSpacing="10">
