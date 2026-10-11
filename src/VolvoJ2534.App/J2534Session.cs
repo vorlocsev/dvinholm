@@ -10,6 +10,9 @@ internal sealed class J2534Session : IDisposable
 
     internal bool IsConnected => _bus is not null;
 
+    internal J2534Native.AdapterVersionInfo? AdapterVersion { get; private set; }
+    internal string AdapterVersionStatus { get; private set; } = string.Empty;
+
     internal CanBus Bus =>
         _bus ?? throw new InvalidOperationException("J2534 CAN session is not connected.");
 
@@ -44,9 +47,19 @@ internal sealed class J2534Session : IDisposable
                 return false;
             }
 
+            AdapterVersion = null;
+            AdapterVersionStatus = string.Empty;
             if (!_j2534.Load(dllPath.Trim(), out error) ||
-                !_j2534.Open(out error) ||
-                !_j2534.Connect(baudRate, out error))
+                !_j2534.Open(out error))
+            {
+                _j2534.Unload();
+                return false;
+            }
+
+            AdapterVersion = _j2534.ReadVersion(out var versionError);
+            AdapterVersionStatus = AdapterVersion is null ? versionError : string.Empty;
+
+            if (!_j2534.Connect(baudRate, out error))
             {
                 _j2534.Unload();
                 return false;
@@ -87,6 +100,8 @@ internal sealed class J2534Session : IDisposable
                 _bus = null;
             }
             _j2534.Unload();
+            AdapterVersion = null;
+            AdapterVersionStatus = string.Empty;
         }
     }
 
