@@ -52,9 +52,9 @@ public sealed class IsoTpChannelProtocolTests
         public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
-            // Queue enough unrelated traffic to overflow the subscription before
-            // the matching response. The dispatcher then drains this backlog.
-            for (var i = 0; i < 5_000; i++)
+            // Queue a sustained burst of unrelated traffic so the bounded subscription
+            // deterministically overflows before the matching response can be consumed.
+            for (var i = 0; i < 100_000; i++)
                 _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(0x123, new byte[] { 0x00 }));
             _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(0x7E8, new byte[] { 0x04, 0x62, 0xF1, 0x90, 0x42 }));
             _releaseReads.Set();
