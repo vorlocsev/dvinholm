@@ -28,7 +28,8 @@ public sealed class IsoTpFlowControlDeadlineTests
         Assert.Equal("ISO-TP receive timeout expired.", error.Message);
         Assert.True(elapsed.Elapsed < TimeSpan.FromMilliseconds(300),
             $"Flow Control timeout was extended by unrelated frames: {elapsed.Elapsed}.");
-        Assert.Equal(1, adapter.ConsecutiveFrameWrites);
+        // No Consecutive Frame may be sent until the receiver grants Flow Control.
+        Assert.Equal(0, adapter.ConsecutiveFrameWrites);
     }
 
     private sealed class NoisyFlowControlAdapter : Dvinholm.App.IJ2534Adapter
