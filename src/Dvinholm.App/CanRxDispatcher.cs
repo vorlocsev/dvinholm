@@ -130,6 +130,11 @@ internal sealed class CanRxDispatcher : IDisposable
 
     internal event Action<Exception>? ReadError;
 
+    // Lifecycle operations that may unload the vendor DLL must not run inline
+    // on the thread currently executing the adapter's native Read call.
+    internal bool IsOnReadWorker =>
+        Volatile.Read(ref _workerThreadId) == Environment.CurrentManagedThreadId;
+
     internal CanRxDispatcher(IJ2534Adapter j2534)
         => _j2534 = j2534 ?? throw new ArgumentNullException(nameof(j2534));
 
