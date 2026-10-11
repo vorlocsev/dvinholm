@@ -2,7 +2,10 @@ namespace Dvinholm.App;
 
 internal sealed class J2534Session : IDisposable
 {
-    private readonly J2534Native _j2534 = new();
+    private readonly IJ2534SessionAdapter _j2534;
+
+    internal J2534Session(IJ2534SessionAdapter? adapter = null) =>
+        _j2534 = adapter ?? new J2534Native();
     private readonly object _lifecycleGate = new();
     private CanBus? _bus;
     private bool _disposed;
