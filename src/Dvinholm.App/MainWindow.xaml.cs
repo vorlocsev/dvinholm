@@ -595,7 +595,19 @@ public sealed partial class MainWindow : Window
             }
             catch (Exception ex)
             {
-                SetStatus("Disconnect failed: " + ex.Message);
+                // Disconnect may have partially torn down the native session
+                // before a vendor API throws. Do not leave controls enabled
+                // against a bus that may already be disposed; the next Connect
+                // attempt will first retry session cleanup.
+                _connected = false;
+                _activeHardwareFilterId = null;
+                HardwareFilterButton.Content = "Apply HW filter";
+                HardwareFilterButton.IsEnabled = false;
+                StartButton.IsEnabled = false;
+                SetUdsEnabled(false);
+                DiscoverButton.IsEnabled = false;
+                ConnectButton.Content = "Connect";
+                SetStatus("Disconnect failed; session state reset. Retry Connect to reinitialize the adapter. " + ex.Message);
             }
             finally
             {
