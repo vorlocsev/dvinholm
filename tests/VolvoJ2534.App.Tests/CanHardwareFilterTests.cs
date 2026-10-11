@@ -47,11 +47,9 @@ public sealed unsafe class CanHardwareFilterTests
     private static byte[] ReadId(VolvoJ2534.App.J2534Native.PassthruMsg message)
     {
         var bytes = new byte[4];
-        fixed (byte* source = message.Data)
-        {
-            for (var i = 0; i < bytes.Length; i++)
-                bytes[i] = source[i];
-        }
+        byte* source = message.Data;
+        for (var i = 0; i < bytes.Length; i++)
+            bytes[i] = source[i];
         return bytes;
     }
 }
