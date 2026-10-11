@@ -15,6 +15,8 @@ internal sealed class VirtualJ2534Adapter : Dvinholm.App.IJ2534Adapter, IDisposa
     private int _transmittedFrames;
     private int _nextFilterId;
     private readonly ConcurrentDictionary<uint, (uint Id, bool Extended)> _filters = new();
+    internal ManualResetEventSlim? FilterCallEntered { get; init; }
+    internal ManualResetEventSlim? AllowFilterCallToFinish { get; init; }
 
     internal VirtualJ2534Adapter(
         Func<Dvinholm.App.CanFrame, IEnumerable<Dvinholm.App.CanFrame>> onTransmit)
@@ -77,6 +79,8 @@ internal sealed class VirtualJ2534Adapter : Dvinholm.App.IJ2534Adapter, IDisposa
 
     public bool StartCanIdFilter(uint arbitrationId, bool extended, out uint filterId, out string error)
     {
+        FilterCallEntered?.Set();
+        AllowFilterCallToFinish?.Wait();
         filterId = 0;
         error = string.Empty;
         if ((!extended && arbitrationId > 0x7FF) || (extended && arbitrationId > 0x1FFFFFFF))
