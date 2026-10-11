@@ -286,6 +286,7 @@ public sealed class CanRxDispatcherTests
         Assert.True(adapter.ReadCount >= 2);
     }
 
+    [Fact]
     public async Task DispatcherBacksOffWhenAdapterContinuouslyReturnsReadErrors()
     {
         var adapter = new FakeJ2534Adapter { FailReadsContinuously = true };
