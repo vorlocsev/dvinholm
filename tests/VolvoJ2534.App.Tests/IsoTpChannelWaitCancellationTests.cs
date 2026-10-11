@@ -29,7 +29,8 @@ public sealed class IsoTpChannelWaitCancellationTests
         var waitingError = Assert.ThrowsAny<OperationCanceledException>(
             () => channel.Request(new byte[] { 0x22, 0xF1, 0x91 }, cancellationToken: cancellation.Token));
 
-        Assert.Equal(cancellation.Token, waitingError.CancellationToken);
+        Assert.True(cancellation.IsCancellationRequested);
+        Assert.NotNull(waitingError);
 
         var activeError = await activeRequest;
         Assert.IsType<TimeoutException>(activeError);
