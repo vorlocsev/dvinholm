@@ -23,10 +23,10 @@ internal sealed class CanBus : IDisposable
         remove => _rx.ReadError -= value;
     }
 
-    internal CanRxDispatcher.Subscription Subscribe()
+    internal CanRxDispatcher.Subscription Subscribe(int capacity = 4096)
     {
         ThrowIfDisposed();
-        return _rx.Subscribe();
+        return _rx.Subscribe(capacity);
     }
 
     internal void Start()

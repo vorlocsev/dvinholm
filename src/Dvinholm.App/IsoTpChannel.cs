@@ -62,8 +62,9 @@ internal sealed class IsoTpChannel : IDisposable
     private readonly Options _options;
     private readonly CancellationTokenSource _disposeCts = new();
     private int _disposed;
+    private long _requestDroppedFrameBaseline;
 
-    internal IsoTpChannel(CanBus bus, Options options)
+    internal IsoTpChannel(CanBus bus, Options options, int receiveQueueCapacity = 4096)
     {
         _bus = bus ?? throw new ArgumentNullException(nameof(bus));
         _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -71,7 +72,7 @@ internal sealed class IsoTpChannel : IDisposable
         // Validate before creating a subscription so invalid options cannot
         // leave a registered receiver behind.
         _options.Validate();
-        _rx = _bus.Subscribe();
+        _rx = _bus.Subscribe(receiveQueueCapacity);
 
         // CAN Extended ID (29-bit) is independent from ISO-TP extended
         // addressing (an additional address byte in the CAN data field).
@@ -144,6 +145,7 @@ internal sealed class IsoTpChannel : IDisposable
         // already-queued frames from a timed-out request being consumed as the
         // next response. Frames arriving after the drain still need UDS correlation.
         _rx.DrainPendingFrames();
+        _requestDroppedFrameBaseline = _rx.DroppedFrameCount;
 
         var frames = IsoTp.Segment(payload);
         if (frames.Count == 1)
@@ -334,12 +336,20 @@ internal sealed class IsoTpChannel : IDisposable
         while (true)
         {
             cancellationToken.ThrowIfCancellationRequested();
+            ThrowIfReceiveFramesWereDropped();
             var remaining = Remaining(deadline);
             if (remaining <= TimeSpan.Zero)
                 throw new TimeoutException("ISO-TP receive timeout expired.");
 
             if (!_rx.TryRead(remaining, cancellationToken, out var frame))
+            {
+                // A dropped frame can otherwise be mistaken for an ordinary
+                // response timeout. Recheck after the wait before reporting it.
+                ThrowIfReceiveFramesWereDropped();
                 throw new TimeoutException("ISO-TP receive timeout expired.");
+            }
+
+            ThrowIfReceiveFramesWereDropped();
 
             if (frame.ArbitrationId != expectedId ||
                 frame.IsExtended != _options.CanExtendedId ||
@@ -347,6 +357,16 @@ internal sealed class IsoTpChannel : IDisposable
                 continue;
 
             return frame;
+        }
+    }
+
+    private void ThrowIfReceiveFramesWereDropped()
+    {
+        var dropped = _rx.DroppedFrameCount - _requestDroppedFrameBaseline;
+        if (dropped > 0)
+        {
+            throw new InvalidOperationException(
+                $"ISO-TP receive is unreliable: the CAN receive queue dropped {dropped} frame(s) during this request.");
         }
     }
 
