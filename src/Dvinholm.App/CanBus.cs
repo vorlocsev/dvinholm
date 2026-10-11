@@ -15,6 +15,8 @@ internal sealed class CanBus : IDisposable
         _rx = new CanRxDispatcher(_j2534);
     }
 
+    internal bool IsOnReadWorker => _rx.IsOnReadWorker;
+
     internal event Action<Exception>? ReadError
     {
         add => _rx.ReadError += value;

@@ -20,6 +20,12 @@ internal sealed class J2534Session : IDisposable
 
     internal bool Connect(string dllPath, uint baudRate, out string error)
     {
+        // Connect's failure cleanup can unload the DLL. Never allow that path
+        // to run from a callback raised by the active native Read call.
+        if (_bus?.IsOnReadWorker == true)
+            throw new InvalidOperationException(
+                "Connect cannot be called from a J2534 read callback. Queue it on another thread.");
+
         // Serialize all transitions around the native adapter. In particular,
         // a concurrent Disconnect must not unload the DLL while Connect is
         // still opening the device or starting the receive worker.
@@ -104,6 +110,15 @@ internal sealed class J2534Session : IDisposable
 
     internal void Disconnect()
     {
+        // A callback runs on the receive worker. Queue teardown rather than
+        // waiting for the lifecycle lock: another thread may already hold it
+        // while waiting for that same worker to exit.
+        if (_bus?.IsOnReadWorker == true)
+        {
+            _ = Task.Run(Disconnect);
+            return;
+        }
+
         lock (_lifecycleGate)
         {
             if (_disposed)
@@ -150,6 +165,14 @@ internal sealed class J2534Session : IDisposable
 
     public void Dispose()
     {
+        // Do not unload the vendor DLL from inside one of its own Read calls,
+        // and do not block the worker on the lifecycle lock during shutdown.
+        if (_bus?.IsOnReadWorker == true)
+        {
+            _ = Task.Run(Dispose);
+            return;
+        }
+
         lock (_lifecycleGate)
         {
             if (_disposed)

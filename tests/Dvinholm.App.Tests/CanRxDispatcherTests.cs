@@ -347,6 +347,31 @@ public sealed class CanRxDispatcherTests
     }
 
     [Fact]
+    public void DispatcherIdentifiesReadWorkerInsideErrorCallback()
+    {
+        var adapter = new FakeJ2534Adapter();
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
+        using var callbackReturned = new ManualResetEventSlim();
+        var observedWorkerContext = false;
+
+        dispatcher.ReadError += _ =>
+        {
+            observedWorkerContext = dispatcher.IsOnReadWorker;
+            callbackReturned.Set();
+        };
+
+        adapter.FailNextRead();
+        dispatcher.Start();
+
+        Assert.True(callbackReturned.Wait(TimeSpan.FromSeconds(2)),
+            "The read-error callback was not invoked.");
+        Assert.True(observedWorkerContext,
+            "The callback must be identified as running on the native read worker.");
+        Assert.False(dispatcher.IsOnReadWorker,
+            "The caller thread must not be identified as the read worker.");
+    }
+
+    [Fact]
     public void DispatcherIsolatesThrowingReadErrorSubscriber()
     {
         var adapter = new FakeJ2534Adapter();
