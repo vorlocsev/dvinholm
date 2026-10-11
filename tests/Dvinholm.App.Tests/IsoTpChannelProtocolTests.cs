@@ -55,6 +55,7 @@ public sealed class IsoTpChannelProtocolTests
         private readonly uint _noiseId;
         private readonly int _noiseFrames;
         private int _started;
+        private int _readCount;
 
         public OverflowingResponseAdapter(uint noiseId = 0x7E8, int noiseFrames = 100_000)
         {
@@ -73,7 +74,10 @@ public sealed class IsoTpChannelProtocolTests
                 _releaseReads.Wait(TimeSpan.FromSeconds(2));
 
             if (_incoming.TryDequeue(out msg))
+            {
+                Interlocked.Increment(ref _readCount);
                 return true;
+            }
 
             msg = default;
             return false;
@@ -88,6 +92,14 @@ public sealed class IsoTpChannelProtocolTests
                 _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(_noiseId, new byte[] { 0x00 }));
             _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(0x7E8, new byte[] { 0x04, 0x62, 0xF1, 0x90, 0x42 }));
             _releaseReads.Set();
+
+            // Keep the request thread inside Write until the dispatcher has
+            // consumed the burst, so the bounded subscription overflows before
+            // the ISO-TP reader can consume any of its frames.
+            SpinWait.SpinUntil(
+                () => Volatile.Read(ref _readCount) >= _noiseFrames + 1,
+                TimeSpan.FromSeconds(2));
+            Thread.Sleep(20);
             return true;
         }
 
