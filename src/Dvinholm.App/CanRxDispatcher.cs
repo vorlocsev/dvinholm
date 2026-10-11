@@ -181,6 +181,7 @@ internal sealed class CanRxDispatcher : IDisposable
     private int _running;
     private int _disposed;
     private int _workerThreadId;
+    private readonly TaskCompletionSource<bool> _disposeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     internal event Action<Exception>? ReadError;
 
@@ -403,47 +404,68 @@ internal sealed class CanRxDispatcher : IDisposable
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
-            return;
-
-        Stop();
-
-        // Dispose is the final lifetime barrier for the native J2534 reader.
-        // Stop() has a bounded wait for normal UI responsiveness, but unloading
-        // the adapter while ReadLoop is still inside a native call is unsafe.
-        // Keep the native session alive until that worker has actually exited.
-        Task? worker;
-        lock (_lifecycleGate)
-            worker = _worker;
-
-        // A ReadError handler runs on the receive worker. Waiting for that
-        // same task from inside its callback would deadlock. Defer final
-        // subscription cleanup until the worker has returned instead.
-        if (Volatile.Read(ref _workerThreadId) == Environment.CurrentManagedThreadId)
         {
-            if (worker is not null)
-                _ = worker.ContinueWith(
-                    _ => DisposeSubscriptions(),
-                    CancellationToken.None,
-                    TaskContinuationOptions.ExecuteSynchronously,
-                    TaskScheduler.Default);
-            else
-                DisposeSubscriptions();
+            // A second caller must not mistake disposal-started for disposal-completed.
+            // If the first call came from a ReadError callback, cleanup is deferred
+            // until the worker exits; external callers must wait for that lifetime barrier.
+            if (Volatile.Read(ref _workerThreadId) != Environment.CurrentManagedThreadId)
+                _disposeCompletion.Task.GetAwaiter().GetResult();
             return;
         }
 
         try
         {
-            worker?.GetAwaiter().GetResult();
+            Stop();
+
+            // Do not unload the native adapter while ReadLoop is inside a native call.
+            Task? worker;
+            lock (_lifecycleGate)
+                worker = _worker;
+
+            // Waiting for the worker from its own callback would deadlock. Defer
+            // cleanup until the worker exits, while other callers wait on completion.
+            if (Volatile.Read(ref _workerThreadId) == Environment.CurrentManagedThreadId)
+            {
+                if (worker is not null)
+                    _ = worker.ContinueWith(
+                        _ => CompleteDispose(),
+                        CancellationToken.None,
+                        TaskContinuationOptions.ExecuteSynchronously,
+                        TaskScheduler.Default);
+                else
+                    CompleteDispose();
+                return;
+            }
+
+            try
+            {
+                worker?.GetAwaiter().GetResult();
+            }
+            catch
+            {
+                // Read errors are reported through ReadError; cleanup still proceeds.
+            }
+
+            CompleteDispose();
         }
         catch
         {
-            // The worker's read errors are reported through ReadError; cleanup
-            // must still proceed after the task has definitively completed.
+            _disposeCompletion.TrySetResult(true);
+            throw;
         }
-
-        DisposeSubscriptions();
     }
 
+    private void CompleteDispose()
+    {
+        try
+        {
+            DisposeSubscriptions();
+        }
+        finally
+        {
+            _disposeCompletion.TrySetResult(true);
+        }
+    }
     private void DisposeSubscriptions()
     {
         Subscription[] subscribers;
