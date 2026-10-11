@@ -21,7 +21,7 @@ public sealed class UdsReadVinIntegrationTests
                     {
                         new VolvoJ2534.App.CanFrame(
                             0x7E8, false, false,
-                            new byte[] { 0x10, 0x13, 0x62, 0xF1, 0x90, 0x59, 0x56, 0x31 },
+                            new byte[] { 0x10, 0x14, 0x62, 0xF1, 0x90, 0x59, 0x56, 0x31 },
                             0, 0)
                     };
                 }
