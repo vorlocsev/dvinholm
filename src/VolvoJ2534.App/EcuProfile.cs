@@ -1,3 +1,6 @@
+using System.Text.Json;
+using System.Text.Json.Serialization;
+
 namespace VolvoJ2534.App;
 
 /// <summary>
@@ -58,6 +61,13 @@ internal sealed class EcuProfile
 /// </summary>
 internal sealed class EcuProfileCatalog
 {
+    private static readonly JsonSerializerOptions JsonOptions = new()
+    {
+        PropertyNamingPolicy = JsonNamingPolicy.CamelCase,
+        WriteIndented = true,
+        Converters = { new JsonStringEnumConverter() }
+    };
+
     private readonly Dictionary<string, EcuProfile> _profiles =
         new(StringComparer.OrdinalIgnoreCase);
 
@@ -93,5 +103,109 @@ internal sealed class EcuProfileCatalog
         ArgumentNullException.ThrowIfNull(profile);
         if (!_profiles.TryAdd(profile.Id, profile))
             throw new ArgumentException($"An ECU profile with ID '{profile.Id}' already exists.", nameof(profile));
+    }
+
+    /// <summary>Exports profiles as editable JSON with CAN IDs in hexadecimal.</summary>
+    internal string ToJson()
+    {
+        var documents = All.Select(profile => new ProfileDocument
+        {
+            Id = profile.Id,
+            Name = profile.Name,
+            RequestId = profile.RequestId.ToString(profile.IsExtended ? "X8" : "X3"),
+            ResponseId = profile.ResponseId.ToString(profile.IsExtended ? "X8" : "X3"),
+            IsExtended = profile.IsExtended,
+            ReadableDataIdentifiers = profile.ReadableDataIdentifiers.Order().Select(did => did.ToString("X4")).ToArray(),
+            Source = profile.Source,
+            IsVerified = profile.IsVerified
+        }).ToArray();
+
+        return JsonSerializer.Serialize(documents, JsonOptions);
+    }
+
+    /// <summary>
+    /// Imports a complete catalog. Invalid entries fail the import instead of
+    /// silently dropping data or accepting invalid CAN addressing.
+    /// </summary>
+    internal static EcuProfileCatalog FromJson(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            throw new ArgumentException("Profile JSON cannot be empty.", nameof(json));
+
+        ProfileDocument?[] documents;
+        try
+        {
+            documents = JsonSerializer.Deserialize<ProfileDocument?[]>(json, JsonOptions)
+                ?? throw new InvalidDataException("Profile JSON must be an array.");
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidDataException("Profile JSON is malformed.", ex);
+        }
+
+        var profiles = new List<EcuProfile>(documents.Length);
+        for (var index = 0; index < documents.Length; index++)
+        {
+            var document = documents[index]
+                ?? throw new InvalidDataException($"Profile entry at index {index} is null.");
+
+            if (!TryParseCanId(document.RequestId, out var requestId))
+                throw new InvalidDataException($"Profile '{document.Id}' has an invalid hexadecimal requestId.");
+            if (!TryParseCanId(document.ResponseId, out var responseId))
+                throw new InvalidDataException($"Profile '{document.Id}' has an invalid hexadecimal responseId.");
+
+            var dids = new List<ushort>();
+            foreach (var value in document.ReadableDataIdentifiers ?? Array.Empty<string>())
+            {
+                if (!ushort.TryParse(value, System.Globalization.NumberStyles.HexNumber,
+                        System.Globalization.CultureInfo.InvariantCulture, out var did))
+                    throw new InvalidDataException($"Profile '{document.Id}' has an invalid hexadecimal DID '{value}'.");
+                dids.Add(did);
+            }
+
+            try
+            {
+                profiles.Add(new EcuProfile(
+                    document.Id ?? string.Empty,
+                    document.Name ?? string.Empty,
+                    requestId,
+                    responseId,
+                    document.IsExtended,
+                    dids,
+                    document.Source ?? string.Empty,
+                    document.IsVerified));
+            }
+            catch (ArgumentException ex)
+            {
+                throw new InvalidDataException($"Profile at index {index} is invalid: {ex.Message}", ex);
+            }
+        }
+
+        try
+        {
+            return new EcuProfileCatalog(profiles);
+        }
+        catch (ArgumentException ex)
+        {
+            throw new InvalidDataException("Profile catalog contains duplicate or invalid IDs.", ex);
+        }
+    }
+
+    private static bool TryParseCanId(string? text, out uint id) =>
+        uint.TryParse(text, System.Globalization.NumberStyles.HexNumber,
+            System.Globalization.CultureInfo.InvariantCulture, out id);
+
+    private sealed class ProfileDocument
+    {
+        public ProfileDocument() { }
+
+        public string? Id { get; set; }
+        public string? Name { get; set; }
+        public string? RequestId { get; set; }
+        public string? ResponseId { get; set; }
+        public bool IsExtended { get; set; }
+        public string[]? ReadableDataIdentifiers { get; set; }
+        public string? Source { get; set; }
+        public bool IsVerified { get; set; }
     }
 }

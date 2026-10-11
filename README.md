@@ -66,7 +66,7 @@ The process is x86, so it can load 32-bit J2534 DLLs but not 64-bit-only DLLs.
 
 ### ECU profile foundation
 
-`EcuProfile` stores request/response CAN IDs, 11-bit vs 29-bit addressing, a list of candidate readable DIDs, source notes, and an explicit verification flag. `EcuProfileCatalog` provides case-insensitive lookup and separates verified entries from drafts. The catalog intentionally starts empty: no vehicle-specific IDs or DID support are guessed. A listed DID is a candidate for read-only diagnostics, not a guarantee that an ECU implements it.
+`EcuProfile` stores request/response CAN IDs, 11-bit vs 29-bit addressing, a list of candidate readable DIDs, source notes, and an explicit verification flag. `EcuProfileCatalog` provides case-insensitive lookup, separates verified entries from drafts, and imports/exports editable JSON with hexadecimal CAN IDs and DIDs. Imports validate addressing, DIDs, required fields, and duplicate IDs before accepting the catalog. The catalog intentionally starts empty: no vehicle-specific IDs or DID support are guessed. A listed DID is a candidate for read-only diagnostics, not a guarantee that an ECU implements it.
 
 
 ### ISO-TP

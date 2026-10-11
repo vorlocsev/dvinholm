@@ -90,4 +90,70 @@ public sealed class EcuProfileTests
         Assert.Empty(catalog.All);
         Assert.Empty(catalog.Verified);
     }
+
+    [Fact]
+    public void JsonRoundTrip_PreservesProfilesAndUsesHexadecimalIds()
+    {
+        var original = new VolvoJ2534.App.EcuProfileCatalog([
+            CreateProfile(id: "volvo.ecm", dids: [0xF190, 0xF187], verified: true),
+            CreateProfile(id: "volvo.extended", requestId: 0x18DA10F1,
+                responseId: 0x18DAF110, isExtended: true)
+        ]);
+
+        var json = original.ToJson();
+        Assert.Contains("\"requestId\": \"7E0\"", json);
+        using (var document = System.Text.Json.JsonDocument.Parse(json))
+        {
+            var dids = document.RootElement[0].GetProperty("readableDataIdentifiers")
+                .EnumerateArray()
+                .Select(value => value.GetString())
+                .ToArray();
+            Assert.Equal(new string?[] { "F187", "F190" }, dids);
+        }
+
+        var imported = VolvoJ2534.App.EcuProfileCatalog.FromJson(json);
+
+        Assert.Equal(2, imported.All.Count);
+        Assert.True(imported.TryGet("VOLVO.ECM", out var ecm));
+        Assert.True(ecm!.IsVerified);
+        Assert.Contains((ushort)0xF190, ecm.ReadableDataIdentifiers);
+        Assert.True(imported.TryGet("volvo.extended", out var extended));
+        Assert.True(extended!.IsExtended);
+        Assert.Equal((uint)0x18DAF110, extended.ResponseId);
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("{not json}")]
+    [InlineData("{}")]
+    public void FromJson_RejectsEmptyMalformedOrNonArrayDocuments(string json)
+    {
+        if (string.IsNullOrWhiteSpace(json))
+            Assert.Throws<ArgumentException>(() => VolvoJ2534.App.EcuProfileCatalog.FromJson(json));
+        else
+            Assert.Throws<InvalidDataException>(() => VolvoJ2534.App.EcuProfileCatalog.FromJson(json));
+    }
+
+    [Fact]
+    public void FromJson_RejectsInvalidCanIdAndDid()
+    {
+        const string invalidCanId = """[{"id":"x","name":"X","requestId":"800","responseId":"7E8","isExtended":false,"source":"test"}]""";
+        const string invalidDid = """[{"id":"x","name":"X","requestId":"7E0","responseId":"7E8","isExtended":false,"readableDataIdentifiers":["XYZ"],"source":"test"}]""";
+
+        Assert.Throws<InvalidDataException>(() => VolvoJ2534.App.EcuProfileCatalog.FromJson(invalidCanId));
+        Assert.Throws<InvalidDataException>(() => VolvoJ2534.App.EcuProfileCatalog.FromJson(invalidDid));
+    }
+
+    [Fact]
+    public void FromJson_RejectsDuplicateProfileIdsIgnoringCase()
+    {
+        const string json = """
+        [
+          {"id":"volvo.ecm","name":"A","requestId":"7E0","responseId":"7E8","isExtended":false,"source":"test"},
+          {"id":"VOLVO.ECM","name":"B","requestId":"7E1","responseId":"7E9","isExtended":false,"source":"test"}
+        ]
+        """;
+
+        Assert.Throws<InvalidDataException>(() => VolvoJ2534.App.EcuProfileCatalog.FromJson(json));
+    }
 }
