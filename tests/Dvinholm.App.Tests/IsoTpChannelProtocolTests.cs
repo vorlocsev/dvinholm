@@ -17,7 +17,8 @@ public sealed class IsoTpChannelProtocolTests
                 0x7E0,
                 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
-                RequestTimeout: TimeSpan.FromSeconds(2)));
+                RequestTimeout: TimeSpan.FromSeconds(2)),
+            receiveQueueCapacity: 1);
 
         var error = Assert.Throws<InvalidOperationException>(() =>
             channel.Request(new byte[] { 0x22, 0xF1, 0x90 }));
