@@ -102,7 +102,14 @@ public sealed class EcuProfileTests
 
         var json = original.ToJson();
         Assert.Contains("\"requestId\": \"7E0\"", json);
-        Assert.Contains("\"readableDataIdentifiers\": [\n      \"F187\",\n      \"F190\"", json);
+        using (var document = System.Text.Json.JsonDocument.Parse(json))
+        {
+            var dids = document.RootElement[0].GetProperty("readableDataIdentifiers")
+                .EnumerateArray()
+                .Select(value => value.GetString())
+                .ToArray();
+            Assert.Equal(new string?[] { "F187", "F190" }, dids);
+        }
 
         var imported = VolvoJ2534.App.EcuProfileCatalog.FromJson(json);
 
