@@ -153,6 +153,15 @@ internal sealed class CanBus : IDisposable
 
     public void Dispose()
     {
+        // Defer disposal when called from a ReadError callback. The dispatcher
+        // cannot synchronously join its own worker, and native teardown must
+        // not finish until that worker has left the adapter read call.
+        if (_rx.IsOnReadWorker)
+        {
+            _ = Task.Run(Dispose);
+            return;
+        }
+
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
         {
             // Concurrent callers must wait until the first disposer has
