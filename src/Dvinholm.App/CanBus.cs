@@ -8,6 +8,7 @@ internal sealed class CanBus : IDisposable
     private readonly CanRxDispatcher _rx;
     private readonly SemaphoreSlim _txLock = new(1, 1);
     private int _disposed;
+    private readonly TaskCompletionSource<bool> _disposeCompletion = new(TaskCreationOptions.RunContinuationsAsynchronously);
 
     internal CanBus(IJ2534Adapter j2534)
     {
@@ -153,19 +154,32 @@ internal sealed class CanBus : IDisposable
     public void Dispose()
     {
         if (Interlocked.Exchange(ref _disposed, 1) != 0)
+        {
+            // Concurrent callers must wait until the first disposer has
+            // stopped RX and passed the native TX lifetime barrier.
+            if (!_rx.IsOnReadWorker)
+                _disposeCompletion.Task.GetAwaiter().GetResult();
             return;
+        }
 
-        _rx.Dispose();
+        try
+        {
+            _rx.Dispose();
 
-        // J2534Session unloads the native DLL immediately after CanBus.Dispose.
-        // Wait for any in-flight native write to leave the adapter before
-        // returning, otherwise Dispose could unload code still executing.
-        // A Send that was queued before disposal rechecks _disposed after
-        // acquiring this lock and therefore cannot start a new native write.
-        _txLock.Wait();
-        _txLock.Release();
+            // J2534Session unloads the native DLL immediately after CanBus.Dispose.
+            // Wait for any in-flight native write to leave the adapter before
+            // returning, otherwise Dispose could unload code still executing.
+            // A Send that was queued before disposal rechecks _disposed after
+            // acquiring this lock and therefore cannot start a new native write.
+            _txLock.Wait();
+            _txLock.Release();
 
-        // Do not dispose the semaphore: concurrent Send calls may still be
-        // unwinding after observing _disposed, and must be able to Release it.
+            // Do not dispose the semaphore: concurrent Send calls may still be
+            // unwinding after observing _disposed, and must be able to Release it.
+        }
+        finally
+        {
+            _disposeCompletion.TrySetResult(true);
+        }
     }
 }
