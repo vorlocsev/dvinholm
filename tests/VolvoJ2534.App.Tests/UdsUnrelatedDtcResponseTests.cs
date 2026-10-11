@@ -61,9 +61,9 @@ public sealed class UdsUnrelatedDtcResponseTests
             Interlocked.Increment(ref _requestCount);
 
             // 0x59 0x01 belongs to another ReadDTCInformation subfunction.
-            Enqueue(new byte[] { 0x04, 0x59, 0x01, 0x00, 0x00 });
+            Enqueue(new byte[] { 0x03, 0x59, 0x01, 0x00 });
             // 0x59 0x02 is the requested reportDTCByStatusMask response.
-            Enqueue(new byte[] { 0x04, 0x59, 0x02, 0xFF, 0x00 });
+            Enqueue(new byte[] { 0x03, 0x59, 0x02, 0xFF });
             return true;
         }
 
