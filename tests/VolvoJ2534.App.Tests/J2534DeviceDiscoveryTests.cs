@@ -16,7 +16,7 @@ public sealed class J2534DeviceDiscoveryTests
         Assert.True(created);
         Assert.Equal("VirtualAdapter", device.Name);
         Assert.Equal(string.Empty, device.Vendor);
-        Assert.Equal(@"C:\\Drivers\\j2534.dll", device.DllPath);
+        Assert.Equal(@"C:\Drivers\j2534.dll", device.DllPath);
         Assert.Equal(@"SOFTWARE\PassThruSupport.04.04\VirtualAdapter", device.RegistryKey);
         Assert.Equal("VirtualAdapter", device.Label);
     }
