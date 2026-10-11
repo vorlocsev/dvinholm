@@ -70,7 +70,12 @@ internal sealed class CanRxDispatcher : IDisposable
 
                     using var waitCancellation =
                         CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
-                    waitCancellation.CancelAfter(remaining);
+                    // CancellationTokenSource timers have a finite maximum
+                    // delay (roughly 49 days). Long caller timeouts are valid,
+                    // so wait in bounded timer windows and re-check the original
+                    // elapsed-time budget after each window expires.
+                    var timerWindow = TimeSpan.FromMilliseconds(uint.MaxValue - 1d);
+                    waitCancellation.CancelAfter(remaining > timerWindow ? timerWindow : remaining);
 
                     try
                     {
@@ -80,8 +85,11 @@ internal sealed class CanRxDispatcher : IDisposable
                     }
                     catch (OperationCanceledException) when (!cancellationToken.IsCancellationRequested)
                     {
-                        // The local timeout expired. Caller cancellation is
-                        // handled by the outer catch and remains observable.
+                        // The local timer window expired. If the caller's total
+                        // timeout has not elapsed, start another bounded wait.
+                        if (stopwatch.Elapsed < timeout)
+                            continue;
+
                         return false;
                     }
                 }
