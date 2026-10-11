@@ -41,6 +41,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        LoadSavedProfileCatalog();
         FramesView.ItemsSource = _frames;
         EcusView.ItemsSource = _ecus;
         J2534Devices.ItemsSource = _j2534Devices;
@@ -85,6 +86,59 @@ public sealed partial class MainWindow : Window
 
     private void SetStatus(string text) => StatusText.Text = text;
 
+    private static string ProfileCatalogPath => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "VolvoJ2534CanMonitor",
+        "ecu-profiles.json");
+
+    private void SetProfileCatalog(EcuProfileCatalog catalog)
+    {
+        _profileCatalog = catalog;
+        _loadingProfiles = true;
+        try
+        {
+            ProfileSelector.ItemsSource = _profileCatalog.All;
+            ProfileSelector.DisplayMemberPath = nameof(EcuProfile.Name);
+            ProfileSelector.SelectedIndex = -1;
+        }
+        finally
+        {
+            _loadingProfiles = false;
+        }
+    }
+
+    private void LoadSavedProfileCatalog()
+    {
+        var path = ProfileCatalogPath;
+        if (!File.Exists(path))
+            return;
+
+        try
+        {
+            var catalog = EcuProfileCatalog.FromJson(File.ReadAllText(path));
+            SetProfileCatalog(catalog);
+            SetStatus($"Loaded {catalog.All.Count} saved ECU profile(s).");
+        }
+        catch (Exception ex)
+        {
+            SetStatus("Saved ECU profiles could not be loaded: " + ex.Message);
+        }
+    }
+
+    private static void SaveProfileCatalog(EcuProfileCatalog catalog)
+    {
+        var path = ProfileCatalogPath;
+        var directory = Path.GetDirectoryName(path)
+            ?? throw new InvalidOperationException("Could not determine the profile catalog directory.");
+        Directory.CreateDirectory(directory);
+
+        // Write a temporary file and then replace the catalog so an interrupted
+        // write cannot leave a partially serialized JSON file behind.
+        var temporaryPath = path + ".tmp";
+        File.WriteAllText(temporaryPath, catalog.ToJson());
+        File.Move(temporaryPath, path, overwrite: true);
+    }
+
     private async void ImportProfiles_Click(object sender, RoutedEventArgs e)
     {
         var picker = new FileOpenPicker();
@@ -97,15 +151,17 @@ public sealed partial class MainWindow : Window
         {
             var json = await File.ReadAllTextAsync(file.Path);
             var imported = EcuProfileCatalog.FromJson(json);
-            _profileCatalog = imported;
+            SetProfileCatalog(imported);
 
-            _loadingProfiles = true;
-            ProfileSelector.ItemsSource = _profileCatalog.All;
-            ProfileSelector.DisplayMemberPath = nameof(EcuProfile.Name);
-            ProfileSelector.SelectedIndex = -1;
-            _loadingProfiles = false;
-
-            SetStatus($"Imported {_profileCatalog.All.Count} ECU profile(s) from {file.Name}. Select a profile to apply its CAN IDs.");
+            try
+            {
+                SaveProfileCatalog(imported);
+                SetStatus($"Imported and saved {imported.All.Count} ECU profile(s) from {file.Name}. Select a profile to apply its CAN IDs.");
+            }
+            catch (Exception saveException)
+            {
+                SetStatus($"Imported {imported.All.Count} profile(s), but could not save the local copy: {saveException.Message}");
+            }
         }
         catch (Exception ex)
         {
