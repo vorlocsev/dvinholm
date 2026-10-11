@@ -27,7 +27,7 @@ No immobilizer/PIN extraction, brute forcing, security bypass, or automated secu
 
 ## Architecture
 
-The product is **Dvinholm**, a Windows diagnostic application built with C# and WinUI 3. The current implementation remains in the legacy `Dvinholm.App` source/project paths; these technical identifiers are intentionally retained in this branding pass to avoid a risky namespace-wide rename. There is one J2534 backend; the old C++/Win32 backend was removed to avoid duplicate implementations.
+The product is **Dvinholm**, a Windows diagnostic application built with C# and WinUI 3. The application and test namespaces now use `Dvinholm.App` and `Dvinholm.App.Tests`; the source and project paths are aligned with the product name. There is one J2534 backend; the old C++/Win32 backend was removed to avoid duplicate implementations.
 
 ```text
 WinUI 3 / MainWindow
