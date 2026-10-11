@@ -60,7 +60,16 @@
                 <StackPanel Spacing="4">
                     <TextBlock Text="Selected ECU" FontWeight="SemiBold"/>
                     <TextBlock x:Name="EcuInfoText" Text="No ECU selected" TextWrapping="Wrap"/>
-                </StackPanel>
+                    <Grid ColumnSpacing="8" Margin="0,8,0,0">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <ComboBox x:Name="ProfileSelector" Header="ECU profiles" PlaceholderText="Import a profile catalog" SelectionChanged="ProfileSelector_SelectionChanged"/>
+                        <Button Grid.Column="1" Content="Import JSON" Click="ImportProfiles_Click" VerticalAlignment="Bottom"/>
+                        <Button Grid.Column="2" Content="Export JSON" Click="ExportProfiles_Click" VerticalAlignment="Bottom"/>
+                    </Grid>
             </Border>
             <Grid Grid.Row="3">
             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
