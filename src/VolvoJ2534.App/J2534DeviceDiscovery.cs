@@ -4,7 +4,7 @@ namespace VolvoJ2534.App;
 
 internal sealed record J2534Device(string Name, string Vendor, string DllPath, string RegistryKey)
 {
-    internal string Label => string.IsNullOrWhiteSpace(Vendor) || string.Equals(Name, Vendor, StringComparison.OrdinalIgnoreCase)
+    public string Label => string.IsNullOrWhiteSpace(Vendor) || string.Equals(Name, Vendor, StringComparison.OrdinalIgnoreCase)
         ? Name
         : $"{Name} — {Vendor}";
 }
@@ -13,8 +13,8 @@ internal static class J2534DeviceDiscovery
 {
     private static readonly string[] RegistryKeys =
     [
-        @"SOFTWARE\\PassThruSupport.04.04",
-        @"SOFTWARE\\PassThruSupport.02.02"
+        @"SOFTWARE\PassThruSupport.04.04",
+        @"SOFTWARE\PassThruSupport.02.02"
     ];
 
     internal static IReadOnlyList<J2534Device> FindRegisteredDevices()
@@ -96,7 +96,7 @@ internal static class J2534DeviceDiscovery
         var displayName = string.IsNullOrWhiteSpace(name) ? registryName : name.Trim();
         var displayVendor = vendor?.Trim() ?? string.Empty;
 
-        device = new J2534Device(displayName, displayVendor, normalizedPath, registryPath + @"\\" + registryName);
+        device = new J2534Device(displayName, displayVendor, normalizedPath, registryPath + @"\" + registryName);
         return true;
     }
 
