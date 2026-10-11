@@ -18,6 +18,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\..\src\VolvoJ2534.App\VolvoJ2534.App.csproj" />
+    <ProjectReference Include="..\..\src\Dvinholm.App\Dvinholm.App.csproj" />
   </ItemGroup>
 </Project>
