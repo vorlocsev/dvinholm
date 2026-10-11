@@ -19,6 +19,7 @@ public sealed partial class MainWindow : Window
     }
 
     private readonly ObservableCollection<Frame> _frames = new();
+    private readonly ObservableCollection<J2534Device> _j2534Devices = new();
     private readonly J2534Session _session = new();
     private CancellationTokenSource? _cts;
     private Task? _monitorTask;
@@ -39,6 +40,8 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         FramesView.ItemsSource = _frames;
         EcusView.ItemsSource = _ecus;
+        J2534Devices.ItemsSource = _j2534Devices;
+        RefreshJ2534Devices(updateStatus: false);
         _session.ReadError += ex => DispatcherQueue.TryEnqueue(() => SetStatus("Read error: " + ex.Message));
         Closed += (_, _) =>
         {
@@ -78,6 +81,41 @@ public sealed partial class MainWindow : Window
     }
 
     private void SetStatus(string text) => StatusText.Text = text;
+
+    private void RefreshJ2534Devices_Click(object sender, RoutedEventArgs e) =>
+        RefreshJ2534Devices(updateStatus: true);
+
+    private void RefreshJ2534Devices(bool updateStatus)
+    {
+        var selectedPath = (J2534Devices.SelectedItem as J2534Device)?.DllPath;
+        var devices = J2534DeviceDiscovery.FindRegisteredDevices();
+
+        _j2534Devices.Clear();
+        foreach (var device in devices)
+            _j2534Devices.Add(device);
+
+        var selectedIndex = selectedPath is null
+            ? -1
+            : _j2534Devices.ToList().FindIndex(device =>
+                string.Equals(device.DllPath, selectedPath, StringComparison.OrdinalIgnoreCase));
+
+        J2534Devices.SelectedIndex = selectedIndex;
+        if (selectedIndex < 0 && devices.Count == 1)
+            J2534Devices.SelectedIndex = 0;
+
+        if (updateStatus)
+        {
+            SetStatus(devices.Count == 0
+                ? "No registered J2534 DLL found. You can still enter the DLL path manually."
+                : $"Found {devices.Count} registered J2534 adapter(s). Select one or enter a DLL path manually.");
+        }
+    }
+
+    private void J2534Device_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (J2534Devices.SelectedItem is J2534Device device)
+            DllPath.Text = device.DllPath;
+    }
 
 
     private sealed class EcuRow

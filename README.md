@@ -11,7 +11,7 @@ Drivers and proprietary J2534 DLLs are installed separately.
 
 ## Current scope
 
-- J2534 DLL loading
+- J2534 DLL loading, including automatic discovery of registered 32-bit adapters
 - device open/close
 - CAN 500 / 250 / 125 kbit/s
 - live CAN capture
@@ -60,9 +60,8 @@ The process is x86, so it can load 32-bit J2534 DLLs but not 64-bit-only DLLs.
 ## Next architecture steps
 
 1. J2534 hardware filters.
-2. Automatic J2534 device discovery.
-3. A UDS diagnostic layer for supported, non-security-sensitive services.
-4. Volvo ECU profiles for supported diagnostics.
+2. Complete adapter metadata/capability reporting where supported by vendor drivers.
+3. Volvo ECU profiles for supported diagnostics.
 
 
 ### ISO-TP
