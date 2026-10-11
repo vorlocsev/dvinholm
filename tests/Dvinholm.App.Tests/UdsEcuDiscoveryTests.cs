@@ -132,4 +132,17 @@ public sealed class UdsEcuDiscoveryTests
         Assert.False(Dvinholm.App.UdsEcuDiscovery.IsLikelyUdsResponse(frame, out var sid));
         Assert.Null(sid);
     }
+
+    [Fact]
+    public void IsLikelyUdsResponse_RejectsPositiveResponseWithoutServiceData()
+    {
+        // Every UDS positive response includes service-specific response data
+        // after the positive SID. A one-byte payload is not enough evidence
+        // to identify a UDS responder during passive discovery.
+        var frame = new Dvinholm.App.CanFrame(
+            0x7E8, false, false, new byte[] { 0x01, 0x62 }, 0, 0);
+
+        Assert.False(Dvinholm.App.UdsEcuDiscovery.IsLikelyUdsResponse(frame, out var sid));
+        Assert.Null(sid);
+    }
 }
