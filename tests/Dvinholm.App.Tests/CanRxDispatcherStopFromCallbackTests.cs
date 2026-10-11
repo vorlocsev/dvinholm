@@ -5,8 +5,7 @@ public sealed class CanRxDispatcherStopFromCallbackTests
     [Fact]
     public async Task StopFromReadErrorHandlerStopsCurrentWorkerAndAllowsRestart()
     {
-        var adapter = new FakeJ2534Adapter();
-        adapter.ThrowNextRead();
+        var adapter = new ThrowOnceReadAdapter();
         using var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
         using var stopReturned = new ManualResetEventSlim();
 
@@ -53,5 +52,37 @@ public sealed class CanRxDispatcherStopFromCallbackTests
 
         Assert.True(adapter.ReadCount >= 2, "The restarted worker did not read from the adapter.");
         dispatcher.Stop();
+    }
+
+    private sealed class ThrowOnceReadAdapter : Dvinholm.App.IJ2534Adapter
+    {
+        private int _readCount;
+        private int _throwNextRead = 1;
+
+        internal int ReadCount => Volatile.Read(ref _readCount);
+
+        public bool Load(string path, out string error) { error = string.Empty; return true; }
+        public bool Open(out string error) { error = string.Empty; return true; }
+        public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
+
+        public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        {
+            msg = default;
+            Interlocked.Increment(ref _readCount);
+            if (Interlocked.Exchange(ref _throwNextRead, 0) == 1)
+                throw new InvalidOperationException("simulated adapter disconnect");
+
+            error = string.Empty;
+            Thread.Sleep((int)Math.Min(timeout, 5));
+            return false;
+        }
+
+        public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        {
+            error = string.Empty;
+            return true;
+        }
+
+        public void Unload() { }
     }
 }
