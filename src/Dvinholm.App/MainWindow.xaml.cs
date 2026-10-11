@@ -88,7 +88,7 @@ public sealed partial class MainWindow : Window
 
     private static string ProfileCatalogPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "VolvoJ2534CanMonitor",
+        "Dvinholm",
         "ecu-profiles.json");
 
     private void SetProfileCatalog(EcuProfileCatalog catalog)
