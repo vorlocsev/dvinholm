@@ -25,7 +25,7 @@ public sealed class UdsEcuCandidateRequestIdTests
         var candidate = new Dvinholm.App.UdsEcuCandidate(
             extended ? 0x18DAF111u : 0x700u,
             RequestId: null,
-            extended,
+            IsExtended: extended,
             ResponseCount: 1,
             MaxDataLength: 8);
 
