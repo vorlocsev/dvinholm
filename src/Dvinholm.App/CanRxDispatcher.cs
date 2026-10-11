@@ -11,6 +11,7 @@ internal sealed class CanRxDispatcher : IDisposable
         private readonly CanRxDispatcher _owner;
         private readonly Channel<CanFrame> _channel;
         private readonly int _capacity;
+        private long _droppedFrameCount;
         private int _disposed;
 
         internal Subscription(CanRxDispatcher owner, int capacity = DefaultQueueCapacity)
@@ -25,8 +26,13 @@ internal sealed class CanRxDispatcher : IDisposable
                 SingleReader = false,
                 SingleWriter = false,
                 AllowSynchronousContinuations = false
-            });
+            }, _ => Interlocked.Increment(ref _droppedFrameCount));
         }
+
+        // Counts frames evicted by the bounded queue's DropOldest policy.
+        // The channel invokes the callback atomically with its drop operation,
+        // so this remains accurate even when publishers and readers race.
+        internal long DroppedFrameCount => Interlocked.Read(ref _droppedFrameCount);
 
         internal bool TryRead(TimeSpan timeout, CancellationToken cancellationToken, out CanFrame frame)
         {
@@ -102,9 +108,9 @@ internal sealed class CanRxDispatcher : IDisposable
             if (Dvinholm.App.CanRxDispatcher.IsDisposed(_disposed))
                 return;
 
-            // BoundedChannelFullMode.DropOldest atomically evicts the
-            // oldest item and publishes the new one. No separate semaphore
-            // count can drift from the number of queued frames.
+            // DropOldest preserves non-blocking publication for the native
+            // read worker. The channel's item-dropped callback records evictions;
+            // TryWrite alone cannot report them in this full mode.
             _channel.Writer.TryWrite(frame);
         }
 
