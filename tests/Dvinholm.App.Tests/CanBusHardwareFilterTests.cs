@@ -83,4 +83,41 @@ public sealed class CanBusHardwareFilterTests
         Assert.Throws<ObjectDisposedException>(() =>
             bus.StartCanIdFilter(0x7E8, false, out _, out _));
     }
+
+    [Fact]
+    public async Task DisposeWaitsForInFlightHardwareFilterRemoval()
+    {
+        using var stopFilterEntered = new ManualResetEventSlim();
+        using var allowStopFilterToFinish = new ManualResetEventSlim();
+        using var adapter = new VirtualJ2534Adapter(_ =>
+            Array.Empty<Dvinholm.App.CanFrame>())
+        {
+            StopFilterCallEntered = stopFilterEntered,
+            AllowStopFilterCallToFinish = allowStopFilterToFinish
+        };
+        var bus = new Dvinholm.App.CanBus(adapter);
+        Assert.True(bus.StartCanIdFilter(0x7E8, extended: false, out var filterId, out var error), error);
+
+        var stopTask = Task.Run(() => bus.StopCanFilter(filterId, out _));
+        Task? disposeTask = null;
+
+        try
+        {
+            Assert.True(stopFilterEntered.Wait(TimeSpan.FromSeconds(1)),
+                "The hardware filter removal call did not start.");
+            disposeTask = Task.Run(bus.Dispose);
+
+            await Task.Delay(100);
+            Assert.False(disposeTask.IsCompleted,
+                "CanBus.Dispose returned while a native filter removal call was active.");
+        }
+        finally
+        {
+            allowStopFilterToFinish.Set();
+        }
+
+        Assert.True(await stopTask);
+        await (disposeTask ?? Task.Run(bus.Dispose)).WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Throws<ObjectDisposedException>(() => bus.StopCanFilter(filterId, out _));
+    }
 }
