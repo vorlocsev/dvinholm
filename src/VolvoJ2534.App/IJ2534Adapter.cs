@@ -23,5 +23,11 @@ internal interface IJ2534Adapter
         return false;
     }
 
+    J2534Native.AdapterVersionInfo? ReadVersion(out string error)
+    {
+        error = "PassThruReadVersion is not implemented by this adapter.";
+        return null;
+    }
+
     void Unload();
 }
