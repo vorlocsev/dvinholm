@@ -33,6 +33,25 @@ internal sealed class CanBus : IDisposable
         _rx.Start();
     }
 
+    internal bool StartCanIdFilter(uint arbitrationId, bool extended, out uint filterId, out string error)
+    {
+        ThrowIfDisposed();
+        if ((!extended && arbitrationId > 0x7FF) || (extended && arbitrationId > 0x1FFFFFFF))
+        {
+            filterId = 0;
+            error = extended ? "29-bit CAN ID is out of range." : "11-bit CAN ID is out of range.";
+            return false;
+        }
+
+        return _j2534.StartCanIdFilter(arbitrationId, extended, out filterId, out error);
+    }
+
+    internal bool StopCanFilter(uint filterId, out string error)
+    {
+        ThrowIfDisposed();
+        return _j2534.StopCanFilter(filterId, out error);
+    }
+
     internal void Stop()
     {
         if (Volatile.Read(ref _disposed) != 0)

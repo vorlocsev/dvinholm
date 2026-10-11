@@ -15,7 +15,7 @@ Drivers and proprietary J2534 DLLs are installed separately.
 - device open/close
 - CAN 500 / 250 / 125 kbit/s
 - live CAN capture
-- basic filtering
+- software CAN ID filtering and optional J2534 hardware ID filters
 - frame-rate/count statistics
 - CSV export
 
@@ -59,9 +59,8 @@ The process is x86, so it can load 32-bit J2534 DLLs but not 64-bit-only DLLs.
 
 ## Next architecture steps
 
-1. J2534 hardware filters.
-2. Complete adapter metadata/capability reporting where supported by vendor drivers.
-3. Volvo ECU profiles for supported diagnostics.
+1. Complete adapter metadata/capability reporting where supported by vendor drivers.
+2. Volvo ECU profiles for supported diagnostics.
 
 
 ### ISO-TP

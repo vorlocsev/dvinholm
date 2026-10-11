@@ -13,12 +13,15 @@ internal sealed class VirtualJ2534Adapter : VolvoJ2534.App.IJ2534Adapter, IDispo
     private readonly Func<VolvoJ2534.App.CanFrame, IEnumerable<VolvoJ2534.App.CanFrame>> _onTransmit;
     private int _disposed;
     private int _transmittedFrames;
+    private int _nextFilterId;
+    private readonly ConcurrentDictionary<uint, (uint Id, bool Extended)> _filters = new();
 
     internal VirtualJ2534Adapter(
         Func<VolvoJ2534.App.CanFrame, IEnumerable<VolvoJ2534.App.CanFrame>> onTransmit)
         => _onTransmit = onTransmit ?? throw new ArgumentNullException(nameof(onTransmit));
 
     internal int TransmittedFrames => Volatile.Read(ref _transmittedFrames);
+    internal int ActiveFilterCount => _filters.Count;
 
     internal void InjectReceiveFrame(VolvoJ2534.App.CanFrame frame)
     {
@@ -62,7 +65,34 @@ internal sealed class VirtualJ2534Adapter : VolvoJ2534.App.IJ2534Adapter, IDispo
         return true;
     }
 
-    public void Unload() { }
+    public bool StartCanIdFilter(uint arbitrationId, bool extended, out uint filterId, out string error)
+    {
+        filterId = 0;
+        error = string.Empty;
+        if ((!extended && arbitrationId > 0x7FF) || (extended && arbitrationId > 0x1FFFFFFF))
+        {
+            error = "CAN ID is out of range.";
+            return false;
+        }
+
+        filterId = (uint)Interlocked.Increment(ref _nextFilterId);
+        _filters[filterId] = (arbitrationId, extended);
+        return true;
+    }
+
+    public bool StopCanFilter(uint filterId, out string error)
+    {
+        if (_filters.TryRemove(filterId, out _))
+        {
+            error = string.Empty;
+            return true;
+        }
+
+        error = "J2534 filter is not active.";
+        return false;
+    }
+
+    public void Unload() { _filters.Clear(); }
 
     public void Dispose()
     {

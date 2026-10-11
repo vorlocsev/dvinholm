@@ -34,6 +34,7 @@ public sealed partial class MainWindow : Window
     private CancellationTokenSource? _udsCts;
     private readonly ObservableCollection<EcuRow> _ecus = new();
     private int _rateFrames;
+    private uint? _activeHardwareFilterId;
 
     public MainWindow()
     {
@@ -438,6 +439,7 @@ public sealed partial class MainWindow : Window
             _udsGate.Release();
             StopMonitor();
             ConnectButton.IsEnabled = false;
+            HardwareFilterButton.IsEnabled = false;
             StartButton.IsEnabled = false;
             SetUdsEnabled(false);
             DiscoverButton.IsEnabled = false;
@@ -448,6 +450,9 @@ public sealed partial class MainWindow : Window
             {
                 await disconnectTask;
                 _connected = false;
+                _activeHardwareFilterId = null;
+                HardwareFilterButton.Content = "Apply HW filter";
+                HardwareFilterButton.IsEnabled = false;
                 ConnectButton.Content = "Connect";
                 SetStatus("Disconnected");
             }
@@ -458,6 +463,7 @@ public sealed partial class MainWindow : Window
             finally
             {
                 _disconnectTask = null;
+                HardwareFilterButton.IsEnabled = _connected;
                 ConnectButton.IsEnabled = true;
             }
             return;
@@ -502,6 +508,7 @@ public sealed partial class MainWindow : Window
             }
 
             _connected = true;
+            HardwareFilterButton.IsEnabled = true;
             ConnectButton.Content = "Disconnect";
             StartButton.IsEnabled = true;
             SetUdsEnabled(true);
@@ -644,6 +651,53 @@ public sealed partial class MainWindow : Window
                uint.TryParse(frameId, System.Globalization.NumberStyles.HexNumber,
                    System.Globalization.CultureInfo.InvariantCulture, out var actual) &&
                wanted == actual;
+    }
+
+    private void HardwareFilter_Click(object sender, RoutedEventArgs e)
+    {
+        if (!_connected)
+        {
+            SetStatus("Connect to J2534 before applying a hardware filter.");
+            return;
+        }
+
+        var bus = _session.Bus;
+        if (_activeHardwareFilterId is uint activeFilterId)
+        {
+            if (!bus.StopCanFilter(activeFilterId, out var stopError))
+            {
+                SetStatus("Could not remove hardware filter: " + stopError);
+                return;
+            }
+
+            _activeHardwareFilterId = null;
+            HardwareFilterButton.Content = "Apply HW filter";
+            SetStatus("J2534 hardware filter removed.");
+            return;
+        }
+
+        if (CanIdFormat.SelectedIndex is not (0 or 1))
+        {
+            SetStatus("Select 11-bit or 29-bit CAN ID format before applying a hardware filter.");
+            return;
+        }
+
+        var extended = CanIdFormat.SelectedIndex == 1;
+        if (!TryParseCanId(IdFilter.Text, extended, out var id, out var parseError))
+        {
+            SetStatus(parseError);
+            return;
+        }
+
+        if (!bus.StartCanIdFilter(id, extended, out var filterId, out var startError))
+        {
+            SetStatus("J2534 hardware filter could not be applied: " + startError);
+            return;
+        }
+
+        _activeHardwareFilterId = filterId;
+        HardwareFilterButton.Content = "Remove HW filter";
+        SetStatus($"J2534 hardware filter active for 0x{id:X} ({(extended ? "29-bit" : "11-bit")}).");
     }
 
     private void Filter_Changed(object sender, TextChangedEventArgs e) { }

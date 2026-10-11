@@ -6,6 +6,7 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
 {
     private const uint StatusNoError = 0;
     private const uint ErrTimeout = 0x00000009;
+    private const uint FilterPass = 0x00000001;
     internal const uint ProtocolCan = 5;
     internal const int MaxDataSize = 4128;
 
@@ -28,6 +29,8 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
     [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate uint PassThruReadMsgs(uint channelId, PassthruMsg* msg, ref uint numMsgs, uint timeout);
     [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate uint PassThruWriteMsgs(uint channelId, PassthruMsg* msg, ref uint numMsgs, uint timeout);
     [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate uint PassThruGetLastError([Out] byte[] text);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate uint PassThruStartMsgFilter(uint channelId, uint filterType, PassthruMsg* maskMsg, PassthruMsg* patternMsg, PassthruMsg* flowControlMsg, out uint filterId);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate uint PassThruStopMsgFilter(uint channelId, uint filterId);
 
     private IntPtr _dll;
     private uint _device;
@@ -39,12 +42,17 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
     private PassThruReadMsgs? _read;
     private PassThruWriteMsgs? _write;
     private PassThruGetLastError? _lastError;
+    private PassThruStartMsgFilter? _startMsgFilter;
+    private PassThruStopMsgFilter? _stopMsgFilter;
+    private readonly HashSet<uint> _activeFilters = new();
 
     bool IJ2534Adapter.Load(string path, out string error) => Load(path, out error);
     bool IJ2534Adapter.Open(out string error) => Open(out error);
     bool IJ2534Adapter.Connect(uint baudRate, out string error) => Connect(baudRate, out error);
     bool IJ2534Adapter.Read(out PassthruMsg msg, uint timeout, out string error) => Read(out msg, timeout, out error);
     bool IJ2534Adapter.Write(in PassthruMsg msg, uint timeout, out string error) => Write(in msg, timeout, out error);
+    bool IJ2534Adapter.StartCanIdFilter(uint arbitrationId, bool extended, out uint filterId, out string error) => StartCanIdFilter(arbitrationId, extended, out filterId, out error);
+    bool IJ2534Adapter.StopCanFilter(uint filterId, out string error) => StopCanFilter(filterId, out error);
     void IJ2534Adapter.Unload() => Unload();
 
     internal bool Load(string path, out string error)
@@ -66,6 +74,8 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
             _read = Get<PassThruReadMsgs>("PassThruReadMsgs");
             _write = Get<PassThruWriteMsgs>("PassThruWriteMsgs");
             _lastError = Get<PassThruGetLastError>("PassThruGetLastError");
+            _startMsgFilter = Get<PassThruStartMsgFilter>("PassThruStartMsgFilter");
+            _stopMsgFilter = Get<PassThruStopMsgFilter>("PassThruStopMsgFilter");
 
             if (_open is null || _close is null || _connect is null ||
                 _disconnect is null || _read is null || _write is null)
@@ -140,6 +150,67 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
         return true;
     }
 
+    internal bool StartCanIdFilter(uint arbitrationId, bool extended, out uint filterId, out string error)
+    {
+        filterId = 0;
+        error = string.Empty;
+        if (_channel == 0 || _startMsgFilter is null || _stopMsgFilter is null)
+        {
+            error = "J2534 message filtering is unavailable or the CAN channel is not connected.";
+            return false;
+        }
+
+        if ((!extended && arbitrationId > 0x7FF) || (extended && arbitrationId > 0x1FFFFFFF))
+        {
+            error = extended ? "29-bit CAN ID is out of range." : "11-bit CAN ID is out of range.";
+            return false;
+        }
+
+        var mask = CanHardwareFilter.CreateMask(extended);
+        var pattern = CanHardwareFilter.CreatePattern(arbitrationId, extended);
+        var result = _startMsgFilter(_channel, FilterPass, &mask, &pattern, null, out filterId);
+        if (result != StatusNoError)
+        {
+            filterId = 0;
+            error = FormatFailure("PassThruStartMsgFilter", result);
+            return false;
+        }
+
+        if (filterId == 0)
+        {
+            error = "PassThruStartMsgFilter succeeded but returned an invalid filter ID (0).";
+            return false;
+        }
+
+        _activeFilters.Add(filterId);
+        return true;
+    }
+
+    internal bool StopCanFilter(uint filterId, out string error)
+    {
+        error = string.Empty;
+        if (!_activeFilters.Contains(filterId))
+        {
+            error = "J2534 filter is not active.";
+            return false;
+        }
+        if (_channel == 0 || _stopMsgFilter is null)
+        {
+            error = "J2534 CAN channel is not connected.";
+            return false;
+        }
+
+        var result = _stopMsgFilter(_channel, filterId);
+        if (result != StatusNoError)
+        {
+            error = FormatFailure("PassThruStopMsgFilter", result);
+            return false;
+        }
+
+        _activeFilters.Remove(filterId);
+        return true;
+    }
+
     internal bool Read(out PassthruMsg msg, uint timeout, out string error)
     {
         msg = default;
@@ -193,7 +264,27 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
 
     internal void Disconnect()
     {
-        if (_disconnect is not null && _channel != 0)
+        if (_channel == 0)
+        {
+            _activeFilters.Clear();
+            return;
+        }
+
+        foreach (var filterId in _activeFilters.ToArray())
+        {
+            try
+            {
+                if (_stopMsgFilter is not null)
+                    _stopMsgFilter(_channel, filterId);
+            }
+            catch
+            {
+                // Continue cleanup; disconnecting the channel releases driver filters.
+            }
+        }
+        _activeFilters.Clear();
+
+        if (_disconnect is not null)
         {
             _disconnect(_channel);
             _channel = 0;
@@ -226,6 +317,9 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
         _read = null;
         _write = null;
         _lastError = null;
+        _startMsgFilter = null;
+        _stopMsgFilter = null;
+        _activeFilters.Clear();
 
         var dll = _dll;
         _dll = IntPtr.Zero;
