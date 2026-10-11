@@ -26,8 +26,12 @@ internal sealed class VirtualJ2534Adapter : VolvoJ2534.App.IJ2534Adapter, IDispo
     internal void InjectReceiveFrame(VolvoJ2534.App.CanFrame frame)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-        _rx.Enqueue(VolvoJ2534.App.CanDecoder.Encode(
-            frame.ArbitrationId, frame.Data, frame.IsExtended));
+        var message = VolvoJ2534.App.CanDecoder.Encode(
+            frame.ArbitrationId, frame.Data, frame.IsExtended);
+        // Encode creates a transmit message, while the dispatcher decodes
+        // received frames using RxStatus. Simulate the adapter's RX flag.
+        message.RxStatus = message.TxFlags;
+        _rx.Enqueue(message);
         _rxReady.Release();
     }
 
