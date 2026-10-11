@@ -65,6 +65,9 @@ internal sealed class J2534Session : IDisposable
             if (!_j2534.Connect(baudRate, out error))
             {
                 _j2534.Unload();
+                AdapterVersion = null;
+                AdapterVersionStatus = string.Empty;
+                AdapterCapabilities = null;
                 return false;
             }
 
@@ -87,6 +90,9 @@ internal sealed class J2534Session : IDisposable
             }
 
             _j2534.Unload();
+            AdapterVersion = null;
+            AdapterVersionStatus = string.Empty;
+            AdapterCapabilities = null;
             error = ex.Message;
             return false;
         }
