@@ -64,7 +64,7 @@ internal sealed class IsoTpChannel : IDisposable
     private int _disposed;
     private long _requestDroppedFrameBaseline;
 
-    internal IsoTpChannel(CanBus bus, Options options)
+    internal IsoTpChannel(CanBus bus, Options options, int receiveQueueCapacity = 4096)
     {
         _bus = bus ?? throw new ArgumentNullException(nameof(bus));
         _options = options ?? throw new ArgumentNullException(nameof(options));
@@ -72,7 +72,7 @@ internal sealed class IsoTpChannel : IDisposable
         // Validate before creating a subscription so invalid options cannot
         // leave a registered receiver behind.
         _options.Validate();
-        _rx = _bus.Subscribe();
+        _rx = _bus.Subscribe(receiveQueueCapacity);
 
         // CAN Extended ID (29-bit) is independent from ISO-TP extended
         // addressing (an additional address byte in the CAN data field).
