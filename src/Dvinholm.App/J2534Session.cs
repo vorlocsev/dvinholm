@@ -5,6 +5,7 @@ internal sealed class J2534Session : IDisposable
     private readonly J2534Native _j2534 = new();
     private readonly object _lifecycleGate = new();
     private CanBus? _bus;
+    private bool _disposed;
 
     internal event Action<Exception>? ReadError;
 
@@ -23,7 +24,10 @@ internal sealed class J2534Session : IDisposable
         // a concurrent Disconnect must not unload the DLL while Connect is
         // still opening the device or starting the receive worker.
         lock (_lifecycleGate)
+        {
+            ObjectDisposedException.ThrowIf(_disposed, this);
             return ConnectLocked(dllPath, baudRate, out error);
+        }
     }
 
     private bool ConnectLocked(string dllPath, uint baudRate, out string error)
@@ -102,17 +106,26 @@ internal sealed class J2534Session : IDisposable
     {
         lock (_lifecycleGate)
         {
-            if (_bus is not null)
-            {
-                _bus.ReadError -= HandleReadError;
-                _bus.Dispose();
-                _bus = null;
-            }
-            _j2534.Unload();
-            AdapterVersion = null;
-            AdapterVersionStatus = string.Empty;
-            AdapterCapabilities = null;
+            if (_disposed)
+                return;
+
+            DisconnectLocked();
         }
+    }
+
+    private void DisconnectLocked()
+    {
+        if (_bus is not null)
+        {
+            _bus.ReadError -= HandleReadError;
+            _bus.Dispose();
+            _bus = null;
+        }
+
+        _j2534.Unload();
+        AdapterVersion = null;
+        AdapterVersionStatus = string.Empty;
+        AdapterCapabilities = null;
     }
 
     private void HandleReadError(Exception error)
@@ -137,7 +150,18 @@ internal sealed class J2534Session : IDisposable
 
     public void Dispose()
     {
-        Disconnect();
+        lock (_lifecycleGate)
+        {
+            if (_disposed)
+                return;
+
+            // Mark the session disposed only after native teardown succeeds.
+            // If a vendor driver throws during teardown, callers can retry
+            // disposal rather than leaving a permanently half-disposed object.
+            DisconnectLocked();
+            _disposed = true;
+        }
+
         GC.SuppressFinalize(this);
     }
 }
