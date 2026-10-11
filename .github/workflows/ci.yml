@@ -31,10 +31,22 @@ jobs:
       - name: Build
         run: dotnet build Dvinholm.sln --configuration Release --no-restore -p:Platform=x86
 
-      # Unit tests do not need the x86 J2534 deployment target. Build and run
-      # the test host as x64 so its architecture matches the installed .NET host.
+      # The app and its referenced assembly are x86. Install the matching x86
+      # .NET SDK so tests run with an x86 test host instead of mixing architectures.
+      - name: Setup .NET x86 test host
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.401'
+          architecture: x86
+
       - name: Test
-        run: dotnet test tests/VolvoJ2534.App.Tests/VolvoJ2534.App.Tests.csproj --configuration Release -p:Platform=x64 --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test tests/VolvoJ2534.App.Tests/VolvoJ2534.App.Tests.csproj --configuration Release -p:Platform=x86 --logger "trx;LogFileName=test-results.trx"
+
+      - name: Setup .NET x64 for publish
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          architecture: x64
 
       - name: Publish
         run: dotnet publish src/VolvoJ2534.App/VolvoJ2534.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 --output artifacts/app
