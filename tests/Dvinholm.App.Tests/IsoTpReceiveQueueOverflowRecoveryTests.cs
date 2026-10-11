@@ -27,7 +27,7 @@ public sealed class IsoTpReceiveQueueOverflowRecoveryTests
 
         var response = channel.Request(new byte[] { 0x22, 0xF1, 0x91 });
 
-        Assert.Equal(new byte[] { 0x62, 0xF1, 0x91 }, response);
+        Assert.Equal(new byte[] { 0x62, 0xF1, 0x91, 0x42 }, response);
         Assert.Equal(2, adapter.RequestCount);
     }
 
