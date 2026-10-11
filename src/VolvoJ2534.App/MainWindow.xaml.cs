@@ -439,6 +439,7 @@ public sealed partial class MainWindow : Window
             _udsGate.Release();
             StopMonitor();
             ConnectButton.IsEnabled = false;
+            HardwareFilterButton.IsEnabled = false;
             StartButton.IsEnabled = false;
             SetUdsEnabled(false);
             DiscoverButton.IsEnabled = false;
@@ -462,6 +463,7 @@ public sealed partial class MainWindow : Window
             finally
             {
                 _disconnectTask = null;
+                HardwareFilterButton.IsEnabled = _connected;
                 ConnectButton.IsEnabled = true;
             }
             return;
