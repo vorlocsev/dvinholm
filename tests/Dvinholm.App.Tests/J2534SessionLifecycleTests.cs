@@ -41,6 +41,75 @@ public sealed class J2534SessionLifecycleTests
         Assert.Equal(3, adapter.UnloadCount);
     }
 
+    [Fact]
+    public async Task ConcurrentDisconnectWaitsForConnectBeforeUnloadingAdapter()
+    {
+        using var openEntered = new ManualResetEventSlim();
+        using var allowOpenToFinish = new ManualResetEventSlim();
+        var adapter = new FakeSessionAdapter
+        {
+            OpenEntered = openEntered,
+            AllowOpenToFinish = allowOpenToFinish
+        };
+        using var session = new Dvinholm.App.J2534Session(adapter);
+
+        var connectTask = Task.Run(() =>
+            session.Connect("virtual-adapter.dll", 500_000, out var error)
+                ? string.Empty
+                : error);
+
+        Assert.True(openEntered.Wait(TimeSpan.FromSeconds(5)), "Connect did not reach Open.");
+        var disconnectTask = Task.Run(session.Disconnect);
+
+        // Connect holds the lifecycle gate while Open is in flight. Disconnect
+        // must not unload the DLL until Connect has finished using the adapter.
+        await Task.Delay(100);
+        Assert.Equal(1, adapter.UnloadCount);
+
+        allowOpenToFinish.Set();
+        var connectError = await connectTask.WaitAsync(TimeSpan.FromSeconds(5));
+        await disconnectTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(string.Empty, connectError);
+        Assert.False(session.IsConnected);
+        Assert.Equal(2, adapter.UnloadCount);
+    }
+
+    [Fact]
+    public async Task ConcurrentDisposeWaitsForConnectAndPermanentlyClosesSession()
+    {
+        using var openEntered = new ManualResetEventSlim();
+        using var allowOpenToFinish = new ManualResetEventSlim();
+        var adapter = new FakeSessionAdapter
+        {
+            OpenEntered = openEntered,
+            AllowOpenToFinish = allowOpenToFinish
+        };
+        var session = new Dvinholm.App.J2534Session(adapter);
+
+        var connectTask = Task.Run(() =>
+            session.Connect("virtual-adapter.dll", 500_000, out var error)
+                ? string.Empty
+                : error);
+
+        Assert.True(openEntered.Wait(TimeSpan.FromSeconds(5)), "Connect did not reach Open.");
+        var disposeTask = Task.Run(session.Dispose);
+
+        await Task.Delay(100);
+        Assert.Equal(1, adapter.UnloadCount);
+
+        allowOpenToFinish.Set();
+        var connectError = await connectTask.WaitAsync(TimeSpan.FromSeconds(5));
+        await disposeTask.WaitAsync(TimeSpan.FromSeconds(5));
+
+        Assert.Equal(string.Empty, connectError);
+        Assert.False(session.IsConnected);
+        Assert.Equal(2, adapter.UnloadCount);
+        Assert.Throws<ObjectDisposedException>(() =>
+            session.Connect("again.dll", 500_000, out _));
+        session.Dispose();
+    }
+
     public enum FailurePoint { None, Open, Connect }
 
     private sealed class FakeSessionAdapter : Dvinholm.App.IJ2534SessionAdapter
@@ -48,6 +117,8 @@ public sealed class J2534SessionLifecycleTests
         private int _unloadCount;
         private int _readCount;
         internal FailurePoint Failure { get; init; }
+        internal ManualResetEventSlim? OpenEntered { get; init; }
+        internal ManualResetEventSlim? AllowOpenToFinish { get; init; }
         internal int LoadCount { get; private set; }
         internal int ConnectCount { get; private set; }
         internal int UnloadCount => Volatile.Read(ref _unloadCount);
@@ -63,6 +134,8 @@ public sealed class J2534SessionLifecycleTests
         }
         public bool Open(out string error)
         {
+            OpenEntered?.Set();
+            AllowOpenToFinish?.Wait(TimeSpan.FromSeconds(5));
             error = Failure == FailurePoint.Open ? "simulated open failure" : string.Empty;
             return Failure != FailurePoint.Open;
         }
