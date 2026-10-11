@@ -45,7 +45,12 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
     private PassThruGetLastError? _lastError;
     private PassThruReadVersion? _readVersion;
     internal sealed record AdapterVersionInfo(string Firmware, string Dll, string Api);
+    internal sealed record AdapterCapabilities(bool HardwareCanFilters, bool VersionQuery, bool LastErrorDetails);
     internal AdapterVersionInfo? VersionInfo { get; private set; }
+    internal AdapterCapabilities Capabilities => new(
+        HardwareCanFilters: _startMsgFilter is not null && _stopMsgFilter is not null,
+        VersionQuery: _readVersion is not null,
+        LastErrorDetails: _lastError is not null);
     private PassThruStartMsgFilter? _startMsgFilter;
     private PassThruStopMsgFilter? _stopMsgFilter;
     private readonly HashSet<uint> _activeFilters = new();

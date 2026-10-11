@@ -13,6 +13,7 @@ Drivers and proprietary J2534 DLLs are installed separately.
 
 - J2534 DLL loading, including automatic discovery of registered 32-bit adapters
 - Optional firmware / vendor DLL / J2534 API version reporting through `PassThruReadVersion` when the driver exports it
+- Reports optional driver exports for hardware CAN filters, version queries, and extended error details; this is export-based capability detection, not a hardware conformance test
 - device open/close
 - CAN 500 / 250 / 125 kbit/s
 - live CAN capture
