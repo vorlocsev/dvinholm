@@ -38,6 +38,35 @@ public sealed class UdsEcuDiscoveryScanTests
     }
 
     [Fact]
+    public void IsLikelyUdsResponse_RejectsTruncatedNegativeResponse()
+    {
+        var truncated = new Dvinholm.App.CanFrame(
+            0x7E8, false, false, new byte[] { 0x02, 0x7F, 0x22 }, 0, 0);
+
+        Assert.False(Dvinholm.App.UdsEcuDiscovery.IsLikelyUdsResponse(truncated, out _));
+    }
+
+    [Fact]
+    public void IsLikelyUdsResponse_AcceptsNegativeResponseWithNrc()
+    {
+        var negative = new Dvinholm.App.CanFrame(
+            0x7E8, false, false, new byte[] { 0x03, 0x7F, 0x22, 0x31 }, 0, 0);
+
+        Assert.True(Dvinholm.App.UdsEcuDiscovery.IsLikelyUdsResponse(negative, out var service));
+        Assert.Equal((byte)0x7F, service);
+    }
+
+    [Fact]
+    public void GuessRequestId_InfersOnlySupportedStandardAddressing()
+    {
+        Assert.Equal((uint?)0x7E0, Dvinholm.App.UdsEcuDiscovery.GuessRequestId(0x7E8, false));
+        Assert.Equal((uint?)0x18DA01F1,
+            Dvinholm.App.UdsEcuDiscovery.GuessRequestId(0x18DAF101, true));
+        Assert.Null(Dvinholm.App.UdsEcuDiscovery.GuessRequestId(0x18DAF101, false));
+        Assert.Null(Dvinholm.App.UdsEcuDiscovery.GuessRequestId(0x18DA1201, true));
+    }
+
+    [Fact]
     public async Task ScanAsync_ThrowsWhenCancelled()
     {
         using var adapter = new VirtualJ2534Adapter(_ =>
