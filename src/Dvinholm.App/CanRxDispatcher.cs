@@ -241,8 +241,10 @@ internal sealed class CanRxDispatcher : IDisposable
         // without flooding the UI/log with one error per bad frame.
         long lastDecodeErrorTimestamp = 0;
 
-        while (!token.IsCancellationRequested)
+        try
         {
+            while (!token.IsCancellationRequested)
+            {
             try
             {
                 if (!_j2534.Read(out var message, 250, out var error))
@@ -307,6 +309,13 @@ internal sealed class CanRxDispatcher : IDisposable
                 if (token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(100)))
                     break;
             }
+            }
+        }
+        finally
+        {
+            // Avoid stale thread IDs being mistaken for the worker if the
+            // runtime later reuses this managed thread for unrelated work.
+            Volatile.Write(ref _workerThreadId, 0);
         }
     }
 
