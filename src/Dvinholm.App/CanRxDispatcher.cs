@@ -111,9 +111,22 @@ internal sealed class CanRxDispatcher : IDisposable
                 return;
 
             // Filter before enqueueing so unrelated bus traffic cannot evict
-            // diagnostic frames from a bounded ISO-TP subscription.
-            if (_filter is not null && !_filter(frame))
-                return;
+            // diagnostic frames from a bounded ISO-TP subscription. A faulty
+            // subscriber predicate must not abort publication to other subscribers.
+            if (_filter is not null)
+            {
+                try
+                {
+                    if (!_filter(frame))
+                        return;
+                }
+                catch (Exception ex)
+                {
+                    _owner.ReportReadError(new InvalidOperationException(
+                        "CAN subscription filter failed; the frame was skipped for that subscription.", ex));
+                    return;
+                }
+            }
 
             // DropOldest preserves non-blocking publication for the native
             // read worker. The channel's item-dropped callback records evictions;

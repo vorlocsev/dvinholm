@@ -224,6 +224,32 @@ public sealed class CanRxDispatcherTests
 
 
     [Fact]
+    public void DispatcherFilterExceptionDoesNotPreventDeliveryToOtherSubscribers()
+    {
+        var adapter = new FakeJ2534Adapter();
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
+        using var faulty = dispatcher.Subscribe(filter: _ => throw new InvalidOperationException("simulated filter failure"));
+        using var monitor = dispatcher.Subscribe();
+        using var filterErrorSeen = new ManualResetEventSlim();
+
+        dispatcher.ReadError += error =>
+        {
+            if (error.Message.Contains("CAN subscription filter failed", StringComparison.Ordinal))
+                filterErrorSeen.Set();
+        };
+
+        dispatcher.Start();
+        adapter.Enqueue(Dvinholm.App.CanDecoder.Encode(0x7E8, new byte[] { 0x03, 0x7F, 0x22, 0x31 }));
+
+        Assert.True(filterErrorSeen.Wait(TimeSpan.FromSeconds(2)),
+            "The filter exception was not reported.");
+        Assert.True(monitor.TryRead(TimeSpan.FromSeconds(2), CancellationToken.None, out var frame),
+            "A faulty subscriber filter prevented delivery to the monitor.");
+        Assert.Equal((uint)0x7E8, frame.ArbitrationId);
+        Assert.Equal(new byte[] { 0x03, 0x7F, 0x22, 0x31 }, frame.Data);
+    }
+
+    [Fact]
     public void DispatcherPublishesFramesFromFakeAdapter()
     {
         var adapter = new FakeJ2534Adapter();
