@@ -1,4 +1,4 @@
-# Volvo J2534 CAN Monitor — WinUI 3 x86
+# Dvinholm — J2534 CAN Diagnostics
 
 Windows CAN monitor and read-only UDS diagnostic client for Volvo interfaces that expose the SAE J2534 API.
 
@@ -27,7 +27,7 @@ No immobilizer/PIN extraction, brute forcing, security bypass, or automated secu
 
 ## Architecture
 
-The supported application is the C# WinUI 3 project under `src/VolvoJ2534.App`. There is one J2534 backend; the old C++/Win32 backend was removed to avoid duplicate implementations.
+The product is **Dvinholm**, a Windows diagnostic application built with C# and WinUI 3. The current implementation remains in the legacy `VolvoJ2534.App` source/project paths; these technical identifiers are intentionally retained in this branding pass to avoid a risky namespace-wide rename. There is one J2534 backend; the old C++/Win32 backend was removed to avoid duplicate implementations.
 
 ```text
 WinUI 3 / MainWindow
@@ -104,20 +104,24 @@ The client handles negative responses, ignores clearly unrelated responses, and 
 
 `EcuProfile` stores request/response CAN IDs, 11-bit vs 29-bit addressing, candidate readable DIDs, source notes, and a verification flag. `EcuProfileCatalog` supports case-insensitive lookup and JSON import/export. Imports validate required fields, addressing, DIDs, and duplicate IDs before accepting the catalog. The catalog intentionally starts empty: no vehicle-specific identifiers or ECU capabilities are inferred without a reliable source.
 
+## Dependencies
+
+Dependencies are version-pinned for reproducible CI builds. The application currently references `Microsoft.WindowsAppSDK` 2.5.1. Tests use `Microsoft.NET.Test.Sdk` 18.10.1, `xunit` 2.9.3, and `xunit.runner.visualstudio` 3.1.5 (xUnit v2-compatible adapter). The Windows App SDK package was checked against Microsoft's current stable release listing; avoid broad automatic upgrades without running the full Windows CI suite. The test SDK and Visual Studio adapter have been updated to current stable xUnit v2-compatible releases. CI must pass before merging.
+
 ## Build
 
 Requirements:
 
-- Windows 11
-- Visual Studio 2022
+- Windows 10 version 1809 or later / Windows 11 (x86 application; actual J2534 driver compatibility still applies)
+- Visual Studio 2022 with the Windows App SDK / Windows SDK workloads
 - .NET SDK 10.0.401 (pinned in `global.json`)
-- Windows App SDK 1.8
+- Windows App SDK NuGet package 2.5.1 (pinned in the application project)
 
 Build from PowerShell:
 
 ```powershell
-dotnet restore .\src\VolvoJ2534.App\VolvoJ2534.App.csproj
-dotnet build .\src\VolvoJ2534.App\VolvoJ2534.App.csproj -c Release -p:Platform=x86
+dotnet restore .\Dvinholm.sln
+dotnet build .\Dvinholm.sln -c Release --no-restore -p:Platform=x86
 dotnet publish .\src\VolvoJ2534.App\VolvoJ2534.App.csproj -c Release -r win-x86 --self-contained true
 ```
 
@@ -125,7 +129,7 @@ The process is x86, so it can load 32-bit J2534 DLLs but not 64-bit-only DLLs.
 
 ## Tests and CI
 
-The test project is `tests/VolvoJ2534.App.Tests`. It includes hardware-independent tests using `VirtualJ2534Adapter` for CAN transport, ISO-TP flow control/reassembly/recovery, and UDS read operations. GitHub Actions restores, builds, runs tests, publishes the application, and uploads the build artifact on Windows.
+The test project is `tests/VolvoJ2534.App.Tests` (legacy technical name). It includes hardware-independent tests using `VirtualJ2534Adapter` for CAN transport, ISO-TP flow control/reassembly/recovery, and UDS read operations. GitHub Actions restores, builds, runs tests, publishes the application, and uploads the build artifact on Windows.
 
 Tests against the virtual adapter do not replace validation with the actual J2534 hardware and its vendor driver.
 
