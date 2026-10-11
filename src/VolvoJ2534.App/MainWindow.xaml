@@ -70,6 +70,7 @@
                         <Button Grid.Column="1" Content="Import JSON" Click="ImportProfiles_Click" VerticalAlignment="Bottom"/>
                         <Button Grid.Column="2" Content="Export JSON" Click="ExportProfiles_Click" VerticalAlignment="Bottom"/>
                     </Grid>
+                </StackPanel>
             </Border>
             <Grid Grid.Row="3">
             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
