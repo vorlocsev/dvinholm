@@ -514,9 +514,14 @@ public sealed partial class MainWindow : Window
             SetUdsEnabled(true);
             DiscoverButton.IsEnabled = true;
             var version = _session.AdapterVersion;
-            SetStatus(version is null
-                ? "Connected · J2534 · CAN" + (string.IsNullOrWhiteSpace(_session.AdapterVersionStatus) ? " · driver version unavailable" : " · " + _session.AdapterVersionStatus)
-                : $"Connected · J2534 · CAN · API {version.Api} · DLL {version.Dll} · FW {version.Firmware}");
+            var capabilities = _session.AdapterCapabilities;
+            var versionText = version is null
+                ? (string.IsNullOrWhiteSpace(_session.AdapterVersionStatus) ? "version unavailable" : _session.AdapterVersionStatus)
+                : $"API {version.Api} · DLL {version.Dll} · FW {version.Firmware}";
+            var capabilityText = capabilities is null
+                ? string.Empty
+                : $" · HW filters {(capabilities.HardwareCanFilters ? "available" : "unavailable")} · version query {(capabilities.VersionQuery ? "available" : "unavailable")}";
+            SetStatus("Connected · J2534 · CAN · " + versionText + capabilityText);
         }
         catch (Exception ex)
         {
