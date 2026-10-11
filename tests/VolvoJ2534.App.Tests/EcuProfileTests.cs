@@ -140,10 +140,12 @@ public sealed class EcuProfileTests
     [Fact]
     public void FromJson_RejectsDuplicateProfileIdsIgnoringCase()
     {
-        const string json = """[
+        const string json = """
+        [
           {"id":"volvo.ecm","name":"A","requestId":"7E0","responseId":"7E8","isExtended":false,"source":"test"},
           {"id":"VOLVO.ECM","name":"B","requestId":"7E1","responseId":"7E9","isExtended":false,"source":"test"}
-        ]""";
+        ]
+        """;
 
         Assert.Throws<InvalidDataException>(() => VolvoJ2534.App.EcuProfileCatalog.FromJson(json));
     }
