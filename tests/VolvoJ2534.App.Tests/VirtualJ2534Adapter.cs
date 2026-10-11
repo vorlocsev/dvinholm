@@ -26,8 +26,12 @@ internal sealed class VirtualJ2534Adapter : VolvoJ2534.App.IJ2534Adapter, IDispo
     internal void InjectReceiveFrame(VolvoJ2534.App.CanFrame frame)
     {
         ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
-        _rx.Enqueue(VolvoJ2534.App.CanDecoder.Encode(
-            frame.ArbitrationId, frame.Data, frame.IsExtended));
+        var message = VolvoJ2534.App.CanDecoder.Encode(
+            frame.ArbitrationId, frame.Data, frame.IsExtended);
+        // Encode creates a transmit message, while the dispatcher decodes
+        // received frames using RxStatus. Simulate the adapter's RX flag.
+        message.RxStatus = message.TxFlags;
+        _rx.Enqueue(message);
         _rxReady.Release();
     }
 
@@ -55,7 +59,13 @@ internal sealed class VirtualJ2534Adapter : VolvoJ2534.App.IJ2534Adapter, IDispo
     public bool Write(in VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
     {
         error = string.Empty;
-        if (!VolvoJ2534.App.CanDecoder.TryDecode(msg, out var frame, out error))
+        // CanDecoder.TryDecode models receive-side J2534 messages and therefore
+        // reads RxStatus. This fake is handling a transmit call, where the
+        // CAN_29BIT_ID flag is carried in TxFlags; mirror it into RxStatus so
+        // the same CAN payload decoder can validate and decode the frame.
+        var receiveView = msg;
+        receiveView.RxStatus = msg.TxFlags;
+        if (!VolvoJ2534.App.CanDecoder.TryDecode(receiveView, out var frame, out error))
             return false;
 
         Interlocked.Increment(ref _transmittedFrames);
