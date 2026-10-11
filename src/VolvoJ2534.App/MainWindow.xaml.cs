@@ -33,6 +33,8 @@ public sealed partial class MainWindow : Window
     private Task<IReadOnlyList<UdsEcuCandidate>>? _discoveryTask;
     private CancellationTokenSource? _udsCts;
     private readonly ObservableCollection<EcuRow> _ecus = new();
+    private EcuProfileCatalog _profileCatalog = new();
+    private bool _loadingProfiles;
     private int _rateFrames;
     private uint? _activeHardwareFilterId;
 
@@ -82,6 +84,79 @@ public sealed partial class MainWindow : Window
     }
 
     private void SetStatus(string text) => StatusText.Text = text;
+
+    private async void ImportProfiles_Click(object sender, RoutedEventArgs e)
+    {
+        var picker = new FileOpenPicker();
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
+        picker.FileTypeFilter.Add(".json");
+        var file = await picker.PickSingleFileAsync();
+        if (file is null) return;
+
+        try
+        {
+            var json = await File.ReadAllTextAsync(file.Path);
+            var imported = EcuProfileCatalog.FromJson(json);
+            _profileCatalog = imported;
+
+            _loadingProfiles = true;
+            ProfileSelector.ItemsSource = _profileCatalog.All;
+            ProfileSelector.DisplayMemberPath = nameof(EcuProfile.Name);
+            ProfileSelector.SelectedIndex = -1;
+            _loadingProfiles = false;
+
+            SetStatus($"Imported {_profileCatalog.All.Count} ECU profile(s) from {file.Name}. Select a profile to apply its CAN IDs.");
+        }
+        catch (Exception ex)
+        {
+            _loadingProfiles = false;
+            SetStatus("Profile import failed: " + ex.Message);
+        }
+    }
+
+    private async void ExportProfiles_Click(object sender, RoutedEventArgs e)
+    {
+        if (_profileCatalog.All.Count == 0)
+        {
+            SetStatus("There are no ECU profiles to export. Import a JSON catalog first.");
+            return;
+        }
+
+        var picker = new FileSavePicker();
+        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
+        picker.SuggestedFileName = "ecu-profiles";
+        picker.FileTypeChoices.Add("JSON", new List<string> { ".json" });
+        var file = await picker.PickSaveFileAsync();
+        if (file is null) return;
+
+        try
+        {
+            await File.WriteAllTextAsync(file.Path, _profileCatalog.ToJson());
+            SetStatus($"Exported {_profileCatalog.All.Count} ECU profile(s) to {file.Path}");
+        }
+        catch (Exception ex)
+        {
+            SetStatus("Profile export failed: " + ex.Message);
+        }
+    }
+
+    private void ProfileSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_loadingProfiles || ProfileSelector.SelectedItem is not EcuProfile profile)
+            return;
+
+        UdsRequestId.Text = profile.RequestId.ToString(profile.IsExtended ? "X8" : "X3");
+        UdsResponseId.Text = profile.ResponseId.ToString(profile.IsExtended ? "X8" : "X3");
+        CanIdFormat.SelectedIndex = profile.IsExtended ? 1 : 0;
+        if (profile.ReadableDataIdentifiers.Count > 0)
+            UdsDid.Text = profile.ReadableDataIdentifiers.Order().First().ToString("X4");
+
+        EcuInfoText.Text = $"Profile: {profile.Name} ({profile.Id}) · {(profile.IsVerified ? "verified" : "unverified draft")}" +
+            Environment.NewLine + $"Source: {profile.Source}" +
+            Environment.NewLine + $"Candidate readable DIDs: {(profile.ReadableDataIdentifiers.Count == 0 ? "none listed" : string.Join(", ", profile.ReadableDataIdentifiers.Order().Select(did => did.ToString("X4"))))}" +
+            Environment.NewLine + "Profile metadata does not guarantee that the ECU supports a listed DID.";
+        SetStatus($"Applied profile '{profile.Name}'. No diagnostic request was sent.");
+    }
 
     private void RefreshJ2534Devices_Click(object sender, RoutedEventArgs e) =>
         RefreshJ2534Devices(updateStatus: true);
