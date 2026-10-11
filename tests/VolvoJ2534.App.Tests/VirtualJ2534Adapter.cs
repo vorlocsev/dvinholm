@@ -21,6 +21,7 @@ internal sealed class VirtualJ2534Adapter : VolvoJ2534.App.IJ2534Adapter, IDispo
         => _onTransmit = onTransmit ?? throw new ArgumentNullException(nameof(onTransmit));
 
     internal int TransmittedFrames => Volatile.Read(ref _transmittedFrames);
+    internal int ActiveFilterCount => _filters.Count;
 
     internal void InjectReceiveFrame(VolvoJ2534.App.CanFrame frame)
     {
