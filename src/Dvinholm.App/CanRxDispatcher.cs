@@ -13,6 +13,7 @@ internal sealed class CanRxDispatcher : IDisposable
         private readonly int _capacity;
         private readonly Func<CanFrame, bool>? _filter;
         private long _droppedFrameCount;
+        private long _lastFilterErrorTimestamp;
         private int _disposed;
 
         internal Subscription(CanRxDispatcher owner, int capacity = DefaultQueueCapacity, Func<CanFrame, bool>? filter = null)
@@ -122,8 +123,7 @@ internal sealed class CanRxDispatcher : IDisposable
                 }
                 catch (Exception ex)
                 {
-                    _owner.ReportReadError(new InvalidOperationException(
-                        "CAN subscription filter failed; the frame was skipped for that subscription.", ex));
+                    ReportFilterError(ex);
                     return;
                 }
             }
@@ -132,6 +132,26 @@ internal sealed class CanRxDispatcher : IDisposable
             // read worker. The channel's item-dropped callback records evictions;
             // TryWrite alone cannot report them in this full mode.
             _channel.Writer.TryWrite(frame);
+        }
+
+        private void ReportFilterError(Exception error)
+        {
+            // A broken predicate can fail for every frame at bus speed. Report
+            // at most once per second per subscription to keep diagnostics useful
+            // without flooding the UI/log; always report the first failure.
+            var now = System.Diagnostics.Stopwatch.GetTimestamp();
+            while (true)
+            {
+                var last = Interlocked.Read(ref _lastFilterErrorTimestamp);
+                if (last != 0 && now - last < System.Diagnostics.Stopwatch.Frequency)
+                    return;
+
+                if (Interlocked.CompareExchange(ref _lastFilterErrorTimestamp, now, last) == last)
+                    break;
+            }
+
+            _owner.ReportReadError(new InvalidOperationException(
+                "CAN subscription filter failed; the frame was skipped for that subscription. Repeated failures are rate-limited.", error));
         }
 
         public void Dispose()
