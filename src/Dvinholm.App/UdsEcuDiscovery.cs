@@ -127,6 +127,12 @@ internal sealed class UdsEcuDiscovery
         // service range, whose positive SIDs are in 0x50..0x7E.
         if (sid is >= 0x50 and <= 0x7E)
         {
+            // A positive UDS response must contain service-specific data after
+            // the response SID. A one-byte payload is too short to identify a
+            // responder and is often just unrelated traffic.
+            if (iso.Data.Length < 2)
+                return false;
+
             responseService = sid;
             return true;
         }
