@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Dvinholm.App;
 
-internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
+internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
 {
     private const uint StatusNoError = 0;
     private const uint ErrTimeout = 0x00000009;
@@ -51,6 +51,7 @@ internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
         HardwareCanFilters: _startMsgFilter is not null && _stopMsgFilter is not null,
         VersionQuery: _readVersion is not null,
         LastErrorDetails: _lastError is not null);
+    AdapterCapabilities IJ2534SessionAdapter.Capabilities => Capabilities;
     private PassThruStartMsgFilter? _startMsgFilter;
     private PassThruStopMsgFilter? _stopMsgFilter;
     private readonly HashSet<uint> _activeFilters = new();
