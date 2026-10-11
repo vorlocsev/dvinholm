@@ -7,7 +7,7 @@ internal static unsafe class CanHardwareFilter
         var message = new J2534Native.PassthruMsg
         {
             ProtocolID = J2534Native.ProtocolCan,
-            TxFlags = CanDecoder.Can29BitId,
+            TxFlags = extended ? CanDecoder.Can29BitId : 0,
             DataSize = 4
         };
 
