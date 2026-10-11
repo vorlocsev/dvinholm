@@ -68,8 +68,8 @@ public sealed class UdsReadVinMultiFrameResponseTests
             else if (pciType == 0)
             {
                 Interlocked.Increment(ref _requestCount);
-                // Positive response is 19 bytes: SID + DID + the 17-character VIN.
-                Enqueue(new byte[] { 0x10, 0x13, 0x62, 0xF1, 0x90, (byte)'Y', (byte)'V', (byte)'1' });
+                // Positive response is 20 bytes: SID + DID + the 17-character VIN.
+                Enqueue(new byte[] { 0x10, 0x14, 0x62, 0xF1, 0x90, (byte)'Y', (byte)'V', (byte)'1' });
             }
 
             return true;
