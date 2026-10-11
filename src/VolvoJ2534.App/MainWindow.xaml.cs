@@ -228,13 +228,6 @@ public sealed partial class MainWindow : Window
             return false;
         }
 
-        if (!TryParseCanId(UdsRequestId.Text, out var requestId, out var requestError) ||
-            !TryParseCanId(UdsResponseId.Text, out var responseId, out requestError))
-        {
-            error = requestError;
-            return false;
-        }
-
         if (CanIdFormat.SelectedIndex is not (0 or 1))
         {
             error = "Select 11-bit or 29-bit CAN ID format.";
@@ -242,6 +235,12 @@ public sealed partial class MainWindow : Window
         }
 
         var canExtendedId = CanIdFormat.SelectedIndex == 1;
+        if (!TryParseCanId(UdsRequestId.Text, canExtendedId, out var requestId, out var requestError) ||
+            !TryParseCanId(UdsResponseId.Text, canExtendedId, out var responseId, out requestError))
+        {
+            error = requestError;
+            return false;
+        }
 
         try
         {
@@ -259,18 +258,22 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private static bool TryParseCanId(string text, out uint id, out string error)
+    internal static bool TryParseCanId(string text, bool extended, out uint id, out string error)
     {
         error = string.Empty;
         id = 0;
 
         var value = text.Trim().Replace("0x", "", StringComparison.OrdinalIgnoreCase);
+        var maxId = extended ? 0x1FFFFFFFu : 0x7FFu;
         if (string.IsNullOrWhiteSpace(value) ||
             !uint.TryParse(value, System.Globalization.NumberStyles.HexNumber,
                 System.Globalization.CultureInfo.InvariantCulture, out id) ||
-            id > 0x1FFFFFFF)
+            id > maxId)
         {
-            error = "CAN ID must be a valid 11-bit or 29-bit hexadecimal value (000-1FFFFFFF).";
+            error = extended
+                ? "29-bit CAN ID must be a hexadecimal value between 00000000 and 1FFFFFFF."
+                : "11-bit CAN ID must be a hexadecimal value between 000 and 7FF.";
+            id = 0;
             return false;
         }
 
