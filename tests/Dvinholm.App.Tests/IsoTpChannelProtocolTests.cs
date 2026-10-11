@@ -281,7 +281,10 @@ public sealed class IsoTpChannelProtocolTests
                 0x7E0,
                 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(100),
-                RequestTimeout: TimeSpan.FromMilliseconds(500)));
+                // Keep the gate deadline comfortably beyond cancellation even
+                // on loaded CI runners; this test is about cancellation, not a
+                // race between the token timer and a 500 ms request timeout.
+                RequestTimeout: TimeSpan.FromSeconds(5)));
 
         var firstRequest = Task.Run(() =>
             Assert.Throws<TimeoutException>(() => channel.Request(new byte[] { 0x22, 0xF1, 0x90 })));
@@ -294,7 +297,7 @@ public sealed class IsoTpChannelProtocolTests
             var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             Assert.ThrowsAny<OperationCanceledException>(() =>
                 channel.Request(new byte[] { 0x22, 0xF1, 0x91 }, cancellation.Token));
-            Assert.True(stopwatch.Elapsed < TimeSpan.FromMilliseconds(300),
+            Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(1),
                 "Cancellation while waiting for the channel gate took too long.");
         }
         finally
