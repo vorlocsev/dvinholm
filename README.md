@@ -104,14 +104,18 @@ The client handles negative responses, ignores clearly unrelated responses, and 
 
 `EcuProfile` stores request/response CAN IDs, 11-bit vs 29-bit addressing, candidate readable DIDs, source notes, and a verification flag. `EcuProfileCatalog` supports case-insensitive lookup and JSON import/export. Imports validate required fields, addressing, DIDs, and duplicate IDs before accepting the catalog. The catalog intentionally starts empty: no vehicle-specific identifiers or ECU capabilities are inferred without a reliable source.
 
+## Dependencies
+
+Dependencies are version-pinned for reproducible CI builds. The application currently references `Microsoft.WindowsAppSDK` 2.5.1. Tests use `Microsoft.NET.Test.Sdk` 17.12.0, `xunit` 2.9.3, and `xunit.runner.visualstudio` 2.8.2. The Windows App SDK package was checked against Microsoft's current stable release listing; avoid broad automatic upgrades without running the full Windows CI suite. The test SDK is behind current NuGet releases and should be upgraded in a separate dependency-only change with CI verification.
+
 ## Build
 
 Requirements:
 
-- Windows 11
-- Visual Studio 2022
+- Windows 10 version 1809 or later / Windows 11 (x86 application; actual J2534 driver compatibility still applies)
+- Visual Studio 2022 with the Windows App SDK / Windows SDK workloads
 - .NET SDK 10.0.401 (pinned in `global.json`)
-- Windows App SDK 1.8
+- Windows App SDK NuGet package 2.5.1 (pinned in the application project)
 
 Build from PowerShell:
 
