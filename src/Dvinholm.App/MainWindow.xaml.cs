@@ -78,9 +78,15 @@ public sealed partial class MainWindow : Window
             var disconnectStopped = disconnectTask is null || disconnectTask.IsCompleted;
             var connectStopped = connectTask is null || connectTask.IsCompleted;
             if (discoveryStopped && monitorStopped && udsStopped && disconnectStopped && connectStopped)
-                _session.Dispose();
-            // If a native adapter call is still blocked, avoid racing Dispose
-            // against that call. The process is closing and will reclaim handles.
+            {
+                // Session disposal may wait for a vendor J2534 read that ignores
+                // its timeout. Keep the window-close path non-blocking; Dispose
+                // still waits for the native worker before unloading the DLL.
+                // If the driver never returns, process shutdown reclaims its handles.
+                _ = Task.Run(_session.Dispose);
+            }
+            // If an application operation is still active, leave native teardown
+            // to process shutdown rather than racing it against that operation.
         };
     }
 
