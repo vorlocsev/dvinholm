@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class UdsPassiveDiscoveryIntegrationTests
 {
@@ -6,16 +6,16 @@ public sealed class UdsPassiveDiscoveryIntegrationTests
     public async Task ScanAsync_CollectsUdsResponsesWithoutTransmitting()
     {
         using var adapter = new VirtualJ2534Adapter(
-            _ => Array.Empty<VolvoJ2534.App.CanFrame>());
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+            _ => Array.Empty<Dvinholm.App.CanFrame>());
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        var discovery = new VolvoJ2534.App.UdsEcuDiscovery(bus);
+        var discovery = new Dvinholm.App.UdsEcuDiscovery(bus);
         var scan = discovery.ScanAsync(TimeSpan.FromMilliseconds(250));
 
         // Allow the asynchronous scan to register its receive subscription.
         await Task.Delay(50);
-        adapter.InjectReceiveFrame(new VolvoJ2534.App.CanFrame(
+        adapter.InjectReceiveFrame(new Dvinholm.App.CanFrame(
             0x7E8,
             false,
             false,

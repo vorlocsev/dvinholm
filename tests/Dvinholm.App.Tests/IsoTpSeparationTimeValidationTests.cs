@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class IsoTpSeparationTimeValidationTests
 {
@@ -9,7 +9,7 @@ public sealed class IsoTpSeparationTimeValidationTests
     [InlineData(0xF9)]
     public void ValidateSeparationTime_AcceptsDefinedValues(int value)
     {
-        VolvoJ2534.App.IsoTpChannel.ValidateSeparationTime((byte)value);
+        Dvinholm.App.IsoTpChannel.ValidateSeparationTime((byte)value);
     }
 
     [Theory]
@@ -20,7 +20,7 @@ public sealed class IsoTpSeparationTimeValidationTests
     public void ValidateSeparationTime_RejectsReservedValues(int value)
     {
         var error = Assert.Throws<InvalidOperationException>(
-            () => VolvoJ2534.App.IsoTpChannel.ValidateSeparationTime((byte)value));
+            () => Dvinholm.App.IsoTpChannel.ValidateSeparationTime((byte)value));
 
         Assert.Contains($"0x{value:X2}", error.Message, StringComparison.OrdinalIgnoreCase);
     }

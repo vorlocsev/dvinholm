@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class IsoTpExtendedCanIdTests
 {
@@ -12,12 +12,12 @@ public sealed class IsoTpExtendedCanIdTests
                 request.Data.Length == 0 ||
                 (request.Data[0] >> 4) != 0)
             {
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
             }
 
             return new[]
             {
-                new VolvoJ2534.App.CanFrame(
+                new Dvinholm.App.CanFrame(
                     0x18DAF110,
                     true,
                     false,
@@ -27,12 +27,12 @@ public sealed class IsoTpExtendedCanIdTests
             };
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x18DA10F1,
                 0x18DAF110,
                 CanExtendedId: true,

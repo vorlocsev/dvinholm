@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class UdsDtcRecordResponseTests
 {
@@ -8,17 +8,17 @@ public sealed class UdsDtcRecordResponseTests
     public void ReadDtcByStatusMask_ParsesReturnedDtcRecord()
     {
         var adapter = new DtcRecordAdapter();
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0,
                 0x7E8,
                 FrameTimeout: TimeSpan.FromSeconds(1),
                 RequestTimeout: TimeSpan.FromSeconds(3)));
-        using var client = new VolvoJ2534.App.UdsClient(channel);
+        using var client = new Dvinholm.App.UdsClient(channel);
 
         var records = client.ReadDtcByStatusMask();
 
@@ -28,9 +28,9 @@ public sealed class UdsDtcRecordResponseTests
         Assert.Equal(1, adapter.RequestCount);
     }
 
-    private sealed class DtcRecordAdapter : VolvoJ2534.App.IJ2534Adapter
+    private sealed class DtcRecordAdapter : Dvinholm.App.IJ2534Adapter
     {
-        private readonly ConcurrentQueue<VolvoJ2534.App.J2534Native.PassthruMsg> _incoming = new();
+        private readonly ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _incoming = new();
         private readonly AutoResetEvent _incomingReady = new(false);
         private int _requestCount;
 
@@ -40,7 +40,7 @@ public sealed class UdsDtcRecordResponseTests
         public bool Open(out string error) { error = string.Empty; return true; }
         public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
 
-        public bool Read(out VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
             if (_incoming.TryDequeue(out msg))
@@ -50,10 +50,10 @@ public sealed class UdsDtcRecordResponseTests
             return _incoming.TryDequeue(out msg);
         }
 
-        public bool Write(in VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
-            if (!VolvoJ2534.App.CanDecoder.TryDecode(msg, out var frame, out error))
+            if (!Dvinholm.App.CanDecoder.TryDecode(msg, out var frame, out error))
                 return false;
 
             // Flow Control frames are transport acknowledgements, not UDS requests.
@@ -68,7 +68,7 @@ public sealed class UdsDtcRecordResponseTests
 
         private void Enqueue(byte[] data)
         {
-            _incoming.Enqueue(VolvoJ2534.App.CanDecoder.Encode(0x7E8, data));
+            _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(0x7E8, data));
             _incomingReady.Set();
         }
 

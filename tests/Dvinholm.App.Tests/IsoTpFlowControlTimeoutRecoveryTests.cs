@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class IsoTpFlowControlTimeoutRecoveryTests
 {
@@ -8,12 +8,12 @@ public sealed class IsoTpFlowControlTimeoutRecoveryTests
     public void Request_FlowControlTimeoutLeavesChannelReusable()
     {
         var adapter = new FlowControlTimeoutAdapter();
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0,
                 0x7E8,
                 FlowControlTimeout: TimeSpan.FromMilliseconds(120),
@@ -30,9 +30,9 @@ public sealed class IsoTpFlowControlTimeoutRecoveryTests
         Assert.Equal(2, adapter.WriteCount);
     }
 
-    private sealed class FlowControlTimeoutAdapter : VolvoJ2534.App.IJ2534Adapter
+    private sealed class FlowControlTimeoutAdapter : Dvinholm.App.IJ2534Adapter
     {
-        private readonly ConcurrentQueue<VolvoJ2534.App.J2534Native.PassthruMsg> _incoming = new();
+        private readonly ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _incoming = new();
         private readonly AutoResetEvent _incomingReady = new(false);
         private int _writeCount;
 
@@ -42,7 +42,7 @@ public sealed class IsoTpFlowControlTimeoutRecoveryTests
         public bool Open(out string error) { error = string.Empty; return true; }
         public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
 
-        public bool Read(out VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
             if (_incoming.TryDequeue(out msg))
@@ -52,16 +52,16 @@ public sealed class IsoTpFlowControlTimeoutRecoveryTests
             return _incoming.TryDequeue(out msg);
         }
 
-        public bool Write(in VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
-            if (!VolvoJ2534.App.CanDecoder.TryDecode(msg, out var frame, out error))
+            if (!Dvinholm.App.CanDecoder.TryDecode(msg, out var frame, out error))
                 return false;
 
             Interlocked.Increment(ref _writeCount);
             if ((frame.Data[0] >> 4) == 0)
             {
-                _incoming.Enqueue(VolvoJ2534.App.CanDecoder.Encode(
+                _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(
                     0x7E8,
                     new byte[] { 0x03, 0x62, 0xF1, 0x91 }));
                 _incomingReady.Set();

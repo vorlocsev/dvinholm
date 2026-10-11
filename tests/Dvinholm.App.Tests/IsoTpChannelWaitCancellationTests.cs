@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class IsoTpChannelWaitCancellationTests
 {
@@ -6,13 +6,13 @@ public sealed class IsoTpChannelWaitCancellationTests
     public async Task Request_CancellationWhileWaitingForBusyChannel_DoesNotWaitForActiveRequest()
     {
         using var adapter = new VirtualJ2534Adapter(
-            _ => Array.Empty<VolvoJ2534.App.CanFrame>());
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+            _ => Array.Empty<Dvinholm.App.CanFrame>());
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0,
                 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(700),

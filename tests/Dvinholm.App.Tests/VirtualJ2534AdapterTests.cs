@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class VirtualJ2534AdapterTests
 {
@@ -16,21 +16,21 @@ public sealed class VirtualJ2534AdapterTests
             {
                 return new[]
                 {
-                    new VolvoJ2534.App.CanFrame(
+                    new Dvinholm.App.CanFrame(
                         0x7E8, false, false,
                         new byte[] { 0x03, 0x62, 0xF1, 0x90 },
                         0, 0)
                 };
             }
 
-            return Array.Empty<VolvoJ2534.App.CanFrame>();
+            return Array.Empty<Dvinholm.App.CanFrame>();
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
                 RequestTimeout: TimeSpan.FromSeconds(2)));
@@ -51,27 +51,27 @@ public sealed class VirtualJ2534AdapterTests
                 request.Data[1] != 0x22 ||
                 request.Data[2] != 0xF1 ||
                 request.Data[3] != 0x90)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             // Another ECU responds first; only the configured response ID is valid.
             return new[]
             {
-                new VolvoJ2534.App.CanFrame(
+                new Dvinholm.App.CanFrame(
                     0x7E9, false, false,
                     new byte[] { 0x03, 0x62, 0xF1, 0x90 },
                     0, 0),
-                new VolvoJ2534.App.CanFrame(
+                new Dvinholm.App.CanFrame(
                     0x7E8, false, false,
                     new byte[] { 0x03, 0x62, 0xF1, 0x90 },
                     0, 0)
             };
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
                 RequestTimeout: TimeSpan.FromSeconds(2)));
@@ -89,7 +89,7 @@ public sealed class VirtualJ2534AdapterTests
         using var adapter = new VirtualJ2534Adapter(request =>
         {
             if (request.ArbitrationId != 0x7E0 || request.Data.Length == 0)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             // ECU starts a 10-byte ISO-TP response. The tester must acknowledge
             // the First Frame with Flow Control before the ECU sends its CF.
@@ -101,7 +101,7 @@ public sealed class VirtualJ2534AdapterTests
             {
                 return new[]
                 {
-                    new VolvoJ2534.App.CanFrame(
+                    new Dvinholm.App.CanFrame(
                         0x7E8, false, false,
                         new byte[] { 0x10, 0x0A, 0x62, 0xF1, 0x90, 0x01, 0x02, 0x03 },
                         0, 0)
@@ -113,21 +113,21 @@ public sealed class VirtualJ2534AdapterTests
                 Interlocked.Increment(ref flowControlFrames);
                 return new[]
                 {
-                    new VolvoJ2534.App.CanFrame(
+                    new Dvinholm.App.CanFrame(
                         0x7E8, false, false,
                         new byte[] { 0x21, 0x04, 0x05, 0x06, 0x07, 0x00, 0x00, 0x00 },
                         0, 0)
                 };
             }
 
-            return Array.Empty<VolvoJ2534.App.CanFrame>();
+            return Array.Empty<Dvinholm.App.CanFrame>();
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
                 ConsecutiveFrameTimeout: TimeSpan.FromMilliseconds(500),
@@ -146,14 +146,14 @@ public sealed class VirtualJ2534AdapterTests
         using var adapter = new VirtualJ2534Adapter(request =>
         {
             if (request.ArbitrationId != 0x7E0 || request.Data.Length == 0)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             if (request.Data[0] == 0x03 && request.Data.Length >= 4 &&
                 request.Data[1] == 0x22 && request.Data[2] == 0xF1 && request.Data[3] == 0x90)
             {
                 return new[]
                 {
-                    new VolvoJ2534.App.CanFrame(
+                    new Dvinholm.App.CanFrame(
                         0x7E8, false, false,
                         new byte[] { 0x10, 0x0A, 0x62, 0xF1, 0x90, 0x01, 0x02, 0x03 },
                         0, 0)
@@ -165,21 +165,21 @@ public sealed class VirtualJ2534AdapterTests
                 // The expected CF sequence number is 1; 2 must be rejected.
                 return new[]
                 {
-                    new VolvoJ2534.App.CanFrame(
+                    new Dvinholm.App.CanFrame(
                         0x7E8, false, false,
                         new byte[] { 0x22, 0x04, 0x05, 0x06, 0x07, 0x00, 0x00, 0x00 },
                         0, 0)
                 };
             }
 
-            return Array.Empty<VolvoJ2534.App.CanFrame>();
+            return Array.Empty<Dvinholm.App.CanFrame>();
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
                 ConsecutiveFrameTimeout: TimeSpan.FromMilliseconds(500),
@@ -203,26 +203,26 @@ public sealed class VirtualJ2534AdapterTests
                 request.Data[1] != 0x22 ||
                 request.Data[2] != 0xF1 ||
                 request.Data[3] != 0x90)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             // Leave the first request unanswered, then answer the next one.
             if (Interlocked.Increment(ref requestsSeen) == 1)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             return new[]
             {
-                new VolvoJ2534.App.CanFrame(
+                new Dvinholm.App.CanFrame(
                     0x7E8, false, false,
                     new byte[] { 0x03, 0x62, 0xF1, 0x90 },
                     0, 0)
             };
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
                 RequestTimeout: TimeSpan.FromSeconds(2)));
@@ -249,12 +249,12 @@ public sealed class VirtualJ2534AdapterTests
     [Fact]
     public void VirtualAdapter_ReportsTimeoutWhenEcuDoesNotRespond()
     {
-        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<VolvoJ2534.App.CanFrame>());
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<Dvinholm.App.CanFrame>());
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(80),
                 RequestTimeout: TimeSpan.FromMilliseconds(250)));
@@ -273,23 +273,23 @@ public sealed class VirtualJ2534AdapterTests
                 request.Data.Length < 4 ||
                 request.Data[1] != 0x22 ||
                 request.Data[2] != 0xF1)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             var didLowByte = request.Data[3];
             return new[]
             {
-                new VolvoJ2534.App.CanFrame(
+                new Dvinholm.App.CanFrame(
                     0x7E8, false, false,
                     new byte[] { 0x04, 0x62, 0xF1, didLowByte, (byte)(didLowByte ^ 0xFF) },
                     0, 0)
             };
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
                 RequestTimeout: TimeSpan.FromSeconds(2)));
@@ -313,32 +313,32 @@ public sealed class VirtualJ2534AdapterTests
                 request.Data[1] != 0x22 ||
                 request.Data[2] != 0xF1 ||
                 request.Data[3] != 0x90)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             // UDS NRC 0x78 tells the client that the response is pending;
             // it must continue waiting for the final positive response.
             return new[]
             {
-                new VolvoJ2534.App.CanFrame(
+                new Dvinholm.App.CanFrame(
                     0x7E8, false, false,
                     new byte[] { 0x03, 0x7F, 0x22, 0x78 },
                     0, 0),
-                new VolvoJ2534.App.CanFrame(
+                new Dvinholm.App.CanFrame(
                     0x7E8, false, false,
                     new byte[] { 0x04, 0x62, 0xF1, 0x90, 0x42 },
                     0, 0)
             };
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
-        var channel = new VolvoJ2534.App.IsoTpChannel(
+        var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
                 RequestTimeout: TimeSpan.FromSeconds(2)));
-        using var client = new VolvoJ2534.App.UdsClient(channel);
+        using var client = new Dvinholm.App.UdsClient(channel);
 
         var response = client.ReadDataByIdentifier(0xF190);
 
@@ -357,41 +357,41 @@ public sealed class VirtualJ2534AdapterTests
                 request.Data.Length < 4 ||
                 request.Data[1] != 0x22 ||
                 request.Data[2] != 0xF1)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             var didLowByte = request.Data[3];
             if (didLowByte == 0x90 && Interlocked.CompareExchange(ref firstRequestSeen, 1, 0) == 0)
             {
                 // The first transaction times out; its ECU response arrives
                 // only after the next request has been sent.
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
             }
 
             if (didLowByte != 0x91)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             return new[]
             {
-                new VolvoJ2534.App.CanFrame(
+                new Dvinholm.App.CanFrame(
                     0x7E8, false, false,
                     new byte[] { 0x04, 0x62, 0xF1, 0x90, 0x42 },
                     0, 0),
-                new VolvoJ2534.App.CanFrame(
+                new Dvinholm.App.CanFrame(
                     0x7E8, false, false,
                     new byte[] { 0x04, 0x62, 0xF1, 0x91, 0x43 },
                     0, 0)
             };
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(100),
                 RequestTimeout: TimeSpan.FromMilliseconds(350)));
-        using var client = new VolvoJ2534.App.UdsClient(channel);
+        using var client = new Dvinholm.App.UdsClient(channel);
 
         Assert.Throws<TimeoutException>(() => client.ReadDataByIdentifier(0xF190));
 
@@ -411,7 +411,7 @@ public sealed class VirtualJ2534AdapterTests
         using var adapter = new VirtualJ2534Adapter(request =>
         {
             if (request.ArbitrationId != 0x7E0 || request.Data.Length == 0)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             var frameType = request.Data[0] >> 4;
             if (frameType == 1)
@@ -420,7 +420,7 @@ public sealed class VirtualJ2534AdapterTests
                 Interlocked.Increment(ref flowControlFrames);
                 return new[]
                 {
-                    new VolvoJ2534.App.CanFrame(
+                    new Dvinholm.App.CanFrame(
                         0x7E8, false, false,
                         new byte[] { 0x30, 0x02, 0x00, 0, 0, 0, 0, 0 },
                         0, 0)
@@ -437,7 +437,7 @@ public sealed class VirtualJ2534AdapterTests
                     Interlocked.Increment(ref flowControlFrames);
                     return new[]
                     {
-                        new VolvoJ2534.App.CanFrame(
+                        new Dvinholm.App.CanFrame(
                             0x7E8, false, false,
                             new byte[] { 0x30, 0x02, 0x00, 0, 0, 0, 0, 0 },
                             0, 0)
@@ -448,7 +448,7 @@ public sealed class VirtualJ2534AdapterTests
                 {
                     return new[]
                     {
-                        new VolvoJ2534.App.CanFrame(
+                        new Dvinholm.App.CanFrame(
                             0x7E8, false, false,
                             new byte[] { 0x03, 0x62, 0xF1, 0x90 },
                             0, 0)
@@ -456,14 +456,14 @@ public sealed class VirtualJ2534AdapterTests
                 }
             }
 
-            return Array.Empty<VolvoJ2534.App.CanFrame>();
+            return Array.Empty<Dvinholm.App.CanFrame>();
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
                 FlowControlTimeout: TimeSpan.FromMilliseconds(500),

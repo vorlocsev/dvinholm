@@ -1,6 +1,6 @@
 using Microsoft.Win32;
 
-namespace VolvoJ2534.App;
+namespace Dvinholm.App;
 
 internal sealed record J2534Device(string Name, string Vendor, string DllPath, string RegistryKey)
 {

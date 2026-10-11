@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class UdsClientTests
 {
@@ -12,7 +12,7 @@ public sealed class UdsClientTests
         data[1] = 0x90;
         System.Text.Encoding.ASCII.GetBytes(vin).CopyTo(data, 2);
 
-        Assert.Equal(vin, VolvoJ2534.App.UdsClient.ParseVinData(data));
+        Assert.Equal(vin, Dvinholm.App.UdsClient.ParseVinData(data));
     }
 
     [Theory]
@@ -22,7 +22,7 @@ public sealed class UdsClientTests
     public void ParseVinData_RejectsMissingDidOrWrongLength(byte[] data)
     {
         Assert.Throws<InvalidOperationException>(
-            () => VolvoJ2534.App.UdsClient.ParseVinData(data));
+            () => Dvinholm.App.UdsClient.ParseVinData(data));
     }
 
     [Fact]
@@ -35,7 +35,7 @@ public sealed class UdsClientTests
         data[8] = 0x20;
 
         Assert.Throws<InvalidOperationException>(
-            () => VolvoJ2534.App.UdsClient.ParseVinData(data));
+            () => Dvinholm.App.UdsClient.ParseVinData(data));
     }
 
     [Theory]
@@ -51,7 +51,7 @@ public sealed class UdsClientTests
         data[7] = (byte)forbidden;
 
         Assert.Throws<InvalidOperationException>(
-            () => VolvoJ2534.App.UdsClient.ParseVinData(data));
+            () => Dvinholm.App.UdsClient.ParseVinData(data));
     }
 
     [Theory]
@@ -68,13 +68,13 @@ public sealed class UdsClientTests
         data[7] = (byte)lowercase;
 
         Assert.Throws<InvalidOperationException>(
-            () => VolvoJ2534.App.UdsClient.ParseVinData(data));
+            () => Dvinholm.App.UdsClient.ParseVinData(data));
     }
 
     [Fact]
     public void IsResponsePending_RecognizesPendingForRequestedService()
     {
-        Assert.True(VolvoJ2534.App.UdsClient.IsResponsePending(
+        Assert.True(Dvinholm.App.UdsClient.IsResponsePending(
             0x22, new byte[] { 0x7F, 0x22, 0x78 }));
     }
 
@@ -85,13 +85,13 @@ public sealed class UdsClientTests
     [InlineData(0x22, new byte[] { 0x62, 0xF1, 0x90 })]
     public void IsResponsePending_RejectsOtherResponses(byte service, byte[] response)
     {
-        Assert.False(VolvoJ2534.App.UdsClient.IsResponsePending(service, response));
+        Assert.False(Dvinholm.App.UdsClient.IsResponsePending(service, response));
     }
 
     [Fact]
     public void ParsePositiveResponse_ReturnsPayload()
     {
-        var payload = VolvoJ2534.App.UdsClient.ParsePositiveResponse(
+        var payload = Dvinholm.App.UdsClient.ParsePositiveResponse(
             0x22,
             new byte[] { 0x62, 0xF1, 0x90, 0x31, 0x32, 0x33 });
 
@@ -101,8 +101,8 @@ public sealed class UdsClientTests
     [Fact]
     public void ParsePositiveResponse_ThrowsNrc()
     {
-        var ex = Assert.Throws<VolvoJ2534.App.UdsNegativeResponseException>(() =>
-            VolvoJ2534.App.UdsClient.ParsePositiveResponse(
+        var ex = Assert.Throws<Dvinholm.App.UdsNegativeResponseException>(() =>
+            Dvinholm.App.UdsClient.ParsePositiveResponse(
                 0x22,
                 new byte[] { 0x7F, 0x22, 0x31 }));
 
@@ -118,8 +118,8 @@ public sealed class UdsClientTests
     [InlineData(0xE1, "manufacturer-specific")]
     public void ParsePositiveResponse_DescribesNegativeResponseCode(byte nrc, string expectedDescription)
     {
-        var ex = Assert.Throws<VolvoJ2534.App.UdsNegativeResponseException>(() =>
-            VolvoJ2534.App.UdsClient.ParsePositiveResponse(
+        var ex = Assert.Throws<Dvinholm.App.UdsNegativeResponseException>(() =>
+            Dvinholm.App.UdsClient.ParsePositiveResponse(
                 0x22,
                 new byte[] { 0x7F, 0x22, nrc }));
 
@@ -131,7 +131,7 @@ public sealed class UdsClientTests
     public void ParsePositiveResponse_RejectsWrongPositiveSid()
     {
         var ex = Assert.Throws<InvalidOperationException>(() =>
-            VolvoJ2534.App.UdsClient.ParsePositiveResponse(
+            Dvinholm.App.UdsClient.ParsePositiveResponse(
                 0x22,
                 new byte[] { 0x59, 0x02 }));
 
@@ -141,7 +141,7 @@ public sealed class UdsClientTests
     [Fact]
     public void ParseDtcResponse_ParsesRecords()
     {
-        var records = VolvoJ2534.App.UdsClient.ParseDtcResponse(
+        var records = Dvinholm.App.UdsClient.ParseDtcResponse(
             new byte[]
             {
                 0x02, 0xFF,
@@ -160,7 +160,7 @@ public sealed class UdsClientTests
     public void ParseDtcResponse_RejectsMalformedRecordLength()
     {
         Assert.Throws<InvalidOperationException>(() =>
-            VolvoJ2534.App.UdsClient.ParseDtcResponse(
+            Dvinholm.App.UdsClient.ParseDtcResponse(
                 new byte[] { 0x02, 0xFF, 0x12, 0x34 }));
     }
 
@@ -168,7 +168,7 @@ public sealed class UdsClientTests
     public void ParsePositiveResponse_RejectsEmptyResponse()
     {
         var ex = Assert.Throws<InvalidOperationException>(() =>
-            VolvoJ2534.App.UdsClient.ParsePositiveResponse(0x22, Array.Empty<byte>()));
+            Dvinholm.App.UdsClient.ParsePositiveResponse(0x22, Array.Empty<byte>()));
 
         Assert.Contains("empty response", ex.Message, StringComparison.OrdinalIgnoreCase);
     }
@@ -177,7 +177,7 @@ public sealed class UdsClientTests
     public void ParsePositiveResponse_RejectsNegativeResponseForDifferentService()
     {
         var ex = Assert.Throws<InvalidOperationException>(() =>
-            VolvoJ2534.App.UdsClient.ParsePositiveResponse(
+            Dvinholm.App.UdsClient.ParsePositiveResponse(
                 0x22,
                 new byte[] { 0x7F, 0x19, 0x31 }));
 
@@ -190,13 +190,13 @@ public sealed class UdsClientTests
     public void ParsePositiveResponse_RejectsTruncatedNegativeResponse(byte[] response)
     {
         Assert.Throws<InvalidOperationException>(() =>
-            VolvoJ2534.App.UdsClient.ParsePositiveResponse(0x22, response));
+            Dvinholm.App.UdsClient.ParsePositiveResponse(0x22, response));
     }
 
     [Fact]
     public void ParseDtcResponse_AcceptsNoDtcRecords()
     {
-        var records = VolvoJ2534.App.UdsClient.ParseDtcResponse(
+        var records = Dvinholm.App.UdsClient.ParseDtcResponse(
             new byte[] { 0x02, 0xFF });
 
         Assert.Empty(records);
@@ -206,7 +206,7 @@ public sealed class UdsClientTests
     public void ParseDtcResponse_RejectsUnexpectedSubfunction()
     {
         var ex = Assert.Throws<InvalidOperationException>(() =>
-            VolvoJ2534.App.UdsClient.ParseDtcResponse(
+            Dvinholm.App.UdsClient.ParseDtcResponse(
                 new byte[] { 0x01, 0xFF }));
 
         Assert.Contains("expected 0x02", ex.Message);
@@ -216,13 +216,13 @@ public sealed class UdsClientTests
     public void ParseDtcResponse_RejectsResponseMissingStatusAvailabilityMask()
     {
         Assert.Throws<InvalidOperationException>(() =>
-            VolvoJ2534.App.UdsClient.ParseDtcResponse(new byte[] { 0x02 }));
+            Dvinholm.App.UdsClient.ParseDtcResponse(new byte[] { 0x02 }));
     }
 
     [Fact]
     public void IsUnrelatedResponse_RejectsPositiveResponseForDifferentDid()
     {
-        Assert.True(VolvoJ2534.App.UdsClient.IsUnrelatedResponse(
+        Assert.True(Dvinholm.App.UdsClient.IsUnrelatedResponse(
             0x22,
             new byte[] { 0xF1, 0x90 },
             new byte[] { 0x62, 0xF1, 0x91, 0x01 }));
@@ -231,7 +231,7 @@ public sealed class UdsClientTests
     [Fact]
     public void IsUnrelatedResponse_AcceptsPositiveResponseForRequestedDid()
     {
-        Assert.False(VolvoJ2534.App.UdsClient.IsUnrelatedResponse(
+        Assert.False(Dvinholm.App.UdsClient.IsUnrelatedResponse(
             0x22,
             new byte[] { 0xF1, 0x90 },
             new byte[] { 0x62, 0xF1, 0x90, 0x01 }));
@@ -240,7 +240,7 @@ public sealed class UdsClientTests
     [Fact]
     public void IsUnrelatedResponse_IgnoresNegativeResponseForDifferentService()
     {
-        Assert.True(VolvoJ2534.App.UdsClient.IsUnrelatedResponse(
+        Assert.True(Dvinholm.App.UdsClient.IsUnrelatedResponse(
             0x22,
             new byte[] { 0xF1, 0x90 },
             new byte[] { 0x7F, 0x19, 0x31 }));
@@ -249,7 +249,7 @@ public sealed class UdsClientTests
     [Fact]
     public void IsUnrelatedResponse_IgnoresPositiveDtcResponseForDifferentSubfunction()
     {
-        Assert.True(VolvoJ2534.App.UdsClient.IsUnrelatedResponse(
+        Assert.True(Dvinholm.App.UdsClient.IsUnrelatedResponse(
             0x19,
             new byte[] { 0x02, 0xFF },
             new byte[] { 0x59, 0x01, 0xFF, 0x00 }));
@@ -258,7 +258,7 @@ public sealed class UdsClientTests
     [Fact]
     public void IsUnrelatedResponse_AcceptsPositiveDtcResponseForRequestedSubfunction()
     {
-        Assert.False(VolvoJ2534.App.UdsClient.IsUnrelatedResponse(
+        Assert.False(Dvinholm.App.UdsClient.IsUnrelatedResponse(
             0x19,
             new byte[] { 0x02, 0xFF },
             new byte[] { 0x59, 0x02, 0xFF, 0x00 }));
@@ -267,7 +267,7 @@ public sealed class UdsClientTests
     [Fact]
     public void IsUnrelatedResponse_DoesNotIgnoreNegativeResponseForRequestedService()
     {
-        Assert.False(VolvoJ2534.App.UdsClient.IsUnrelatedResponse(
+        Assert.False(Dvinholm.App.UdsClient.IsUnrelatedResponse(
             0x22,
             new byte[] { 0xF1, 0x90 },
             new byte[] { 0x7F, 0x22, 0x31 }));

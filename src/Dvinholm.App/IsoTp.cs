@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App;
+namespace Dvinholm.App;
 
 internal enum IsoTpFrameType : byte
 {

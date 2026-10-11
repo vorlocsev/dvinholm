@@ -1,6 +1,6 @@
 using System.Globalization;
 
-namespace VolvoJ2534.App;
+namespace Dvinholm.App;
 
 internal readonly record struct CanFrame(
     uint ArbitrationId,

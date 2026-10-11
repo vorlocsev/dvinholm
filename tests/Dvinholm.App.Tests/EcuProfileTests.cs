@@ -1,8 +1,8 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class EcuProfileTests
 {
-    private static VolvoJ2534.App.EcuProfile CreateProfile(
+    private static Dvinholm.App.EcuProfile CreateProfile(
         string id = "volvo.example.ecm",
         uint requestId = 0x7E0,
         uint responseId = 0x7E8,
@@ -55,7 +55,7 @@ public sealed class EcuProfileTests
     public void Constructor_RequiresSourceNote()
     {
         Assert.Throws<ArgumentException>(() =>
-            new VolvoJ2534.App.EcuProfile("id", "name", 0x7E0, 0x7E8, false, null, " "));
+            new Dvinholm.App.EcuProfile("id", "name", 0x7E0, 0x7E8, false, null, " "));
     }
 
     [Fact]
@@ -63,7 +63,7 @@ public sealed class EcuProfileTests
     {
         var known = CreateProfile(id: "volvo.ecm", verified: true);
         var draft = CreateProfile(id: "volvo.tcm", verified: false);
-        var catalog = new VolvoJ2534.App.EcuProfileCatalog([draft, known]);
+        var catalog = new Dvinholm.App.EcuProfileCatalog([draft, known]);
 
         Assert.True(catalog.TryGet("VOLVO.ECM", out var found));
         Assert.Same(known, found);
@@ -79,13 +79,13 @@ public sealed class EcuProfileTests
         var first = CreateProfile(id: "volvo.ecm");
         var duplicate = CreateProfile(id: "VOLVO.ECM");
 
-        Assert.Throws<ArgumentException>(() => new VolvoJ2534.App.EcuProfileCatalog([first, duplicate]));
+        Assert.Throws<ArgumentException>(() => new Dvinholm.App.EcuProfileCatalog([first, duplicate]));
     }
 
     [Fact]
     public void Catalog_StartsEmptyWithoutInventedVehicleSpecificProfiles()
     {
-        var catalog = new VolvoJ2534.App.EcuProfileCatalog();
+        var catalog = new Dvinholm.App.EcuProfileCatalog();
 
         Assert.Empty(catalog.All);
         Assert.Empty(catalog.Verified);
@@ -94,7 +94,7 @@ public sealed class EcuProfileTests
     [Fact]
     public void JsonRoundTrip_PreservesProfilesAndUsesHexadecimalIds()
     {
-        var original = new VolvoJ2534.App.EcuProfileCatalog([
+        var original = new Dvinholm.App.EcuProfileCatalog([
             CreateProfile(id: "volvo.ecm", dids: [0xF190, 0xF187], verified: true),
             CreateProfile(id: "volvo.extended", requestId: 0x18DA10F1,
                 responseId: 0x18DAF110, isExtended: true)
@@ -111,7 +111,7 @@ public sealed class EcuProfileTests
             Assert.Equal(new string?[] { "F187", "F190" }, dids);
         }
 
-        var imported = VolvoJ2534.App.EcuProfileCatalog.FromJson(json);
+        var imported = Dvinholm.App.EcuProfileCatalog.FromJson(json);
 
         Assert.Equal(2, imported.All.Count);
         Assert.True(imported.TryGet("VOLVO.ECM", out var ecm));
@@ -129,9 +129,9 @@ public sealed class EcuProfileTests
     public void FromJson_RejectsEmptyMalformedOrNonArrayDocuments(string json)
     {
         if (string.IsNullOrWhiteSpace(json))
-            Assert.Throws<ArgumentException>(() => VolvoJ2534.App.EcuProfileCatalog.FromJson(json));
+            Assert.Throws<ArgumentException>(() => Dvinholm.App.EcuProfileCatalog.FromJson(json));
         else
-            Assert.Throws<InvalidDataException>(() => VolvoJ2534.App.EcuProfileCatalog.FromJson(json));
+            Assert.Throws<InvalidDataException>(() => Dvinholm.App.EcuProfileCatalog.FromJson(json));
     }
 
     [Fact]
@@ -140,8 +140,8 @@ public sealed class EcuProfileTests
         const string invalidCanId = """[{"id":"x","name":"X","requestId":"800","responseId":"7E8","isExtended":false,"source":"test"}]""";
         const string invalidDid = """[{"id":"x","name":"X","requestId":"7E0","responseId":"7E8","isExtended":false,"readableDataIdentifiers":["XYZ"],"source":"test"}]""";
 
-        Assert.Throws<InvalidDataException>(() => VolvoJ2534.App.EcuProfileCatalog.FromJson(invalidCanId));
-        Assert.Throws<InvalidDataException>(() => VolvoJ2534.App.EcuProfileCatalog.FromJson(invalidDid));
+        Assert.Throws<InvalidDataException>(() => Dvinholm.App.EcuProfileCatalog.FromJson(invalidCanId));
+        Assert.Throws<InvalidDataException>(() => Dvinholm.App.EcuProfileCatalog.FromJson(invalidDid));
     }
 
     [Fact]
@@ -154,6 +154,6 @@ public sealed class EcuProfileTests
         ]
         """;
 
-        Assert.Throws<InvalidDataException>(() => VolvoJ2534.App.EcuProfileCatalog.FromJson(json));
+        Assert.Throws<InvalidDataException>(() => Dvinholm.App.EcuProfileCatalog.FromJson(json));
     }
 }
