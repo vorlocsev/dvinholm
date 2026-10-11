@@ -18,8 +18,11 @@ public sealed class UdsConcurrentRequestIsolationTests
             {
                 new Dvinholm.App.CanFrame(
                     0x7E8,
+                    false,
+                    false,
                     new byte[] { 0x04, 0x62, didHigh, didLow, (byte)(didLow ^ 0x5A) },
-                    false)
+                    0,
+                    0)
             };
         });
         using var bus = new Dvinholm.App.CanBus(adapter);
