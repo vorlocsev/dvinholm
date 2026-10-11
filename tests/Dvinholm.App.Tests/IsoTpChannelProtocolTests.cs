@@ -1031,10 +1031,22 @@ public sealed class IsoTpChannelProtocolTests
         Assert.Equal(1, adapter.ConsecutiveFramesSent);
     }
 
-    [Fact]
-    public void Request_HonorsSubMillisecondSeparationTime()
+    [Theory]
+    [InlineData(0xF1, 100)]
+    [InlineData(0xF2, 200)]
+    [InlineData(0xF3, 300)]
+    [InlineData(0xF4, 400)]
+    [InlineData(0xF5, 500)]
+    [InlineData(0xF6, 600)]
+    [InlineData(0xF7, 700)]
+    [InlineData(0xF8, 800)]
+    [InlineData(0xF9, 900)]
+    public void Request_HonorsSubMillisecondSeparationTime(byte separationTime, int expectedMicroseconds)
     {
-        var adapter = new OutboundFlowControlAdapter(waitBeforeContinue: false, overflow: false, separationTime: 0xF1);
+        var adapter = new OutboundFlowControlAdapter(
+            waitBeforeContinue: false,
+            overflow: false,
+            separationTime: separationTime);
         using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
@@ -1051,11 +1063,14 @@ public sealed class IsoTpChannelProtocolTests
         var timestamps = adapter.ConsecutiveFrameTimestamps.ToArray();
         Assert.Equal(3, timestamps.Length);
 
+        // Allow 20% tolerance for timestamp granularity, while still detecting
+        // a regression that skips the required sub-millisecond wait entirely.
+        var minimumTicks = (long)(expectedMicroseconds * 10 * 0.8);
         for (var i = 1; i < timestamps.Length; i++)
         {
             var elapsed = System.Diagnostics.Stopwatch.GetElapsedTime(timestamps[i - 1], timestamps[i]);
-            Assert.True(elapsed >= TimeSpan.FromTicks(500),
-                $"ISO-TP STmin 0xF1 was not honored between consecutive frames (elapsed {elapsed.TotalMicroseconds:F0} us).");
+            Assert.True(elapsed.Ticks >= minimumTicks,
+                $"ISO-TP STmin 0x{separationTime:X2} requires {expectedMicroseconds} us; elapsed {elapsed.TotalMicroseconds:F0} us.");
         }
     }
 
