@@ -9,7 +9,7 @@
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
         <StackPanel Spacing="4">
-            <TextBlock Text="Volvo J2534 CAN Monitor" FontSize="28" FontWeight="SemiBold"/>
+            <TextBlock Text="Dvinholm — J2534 CAN Diagnostics" FontSize="28" FontWeight="SemiBold"/>
             <TextBlock Text="Windows 11 · WinUI 3 · x86 only · read-only diagnostics" Opacity="0.65"/>
         </StackPanel>
 
