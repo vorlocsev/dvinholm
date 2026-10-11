@@ -113,7 +113,14 @@ internal sealed class IsoTpChannel : IDisposable
                     throw new TimeoutException("ISO-TP request timeout expired while waiting for the channel.");
 
                 var waitMilliseconds = Math.Max(1, (int)Math.Min(10, Math.Ceiling(remaining.TotalMilliseconds)));
-                entered = Monitor.TryEnter(_requestGate, waitMilliseconds);
+
+                // Do not use Monitor.TryEnter(timeout) for the entire wait: on
+                // some runtimes the timed monitor wait can outlive a cancellation
+                // token's deadline. Probe the gate immediately, then wait on the
+                // token's handle so cancellation wakes this loop promptly.
+                entered = Monitor.TryEnter(_requestGate);
+                if (!entered)
+                    cancellationToken.WaitHandle.WaitOne(waitMilliseconds);
             }
 
             ThrowIfDisposed();
