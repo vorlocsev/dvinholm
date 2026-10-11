@@ -11,6 +11,8 @@ internal sealed record UdsEcuCandidate(
 {
     // The scan observes response IDs only; a matching request ID is inferred
     // from common addressing conventions and has not been confirmed on the bus.
+    internal string RequestIdText => RequestId?.ToString(IsExtended ? "X8" : "X3") ?? string.Empty;
+
     internal string RequestIdNote => RequestId is null
         ? "Request ID unknown — enter and verify it manually."
         : "Request ID inferred from standard addressing — verify before sending.";
