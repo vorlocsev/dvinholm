@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class UdsReadVinIntegrationTests
 {
@@ -9,7 +9,7 @@ public sealed class UdsReadVinIntegrationTests
         using var adapter = new VirtualJ2534Adapter(request =>
         {
             if (request.ArbitrationId != 0x7E0 || request.Data.Length == 0)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             if ((request.Data[0] >> 4) == 0)
             {
@@ -19,7 +19,7 @@ public sealed class UdsReadVinIntegrationTests
                 {
                     return new[]
                     {
-                        new VolvoJ2534.App.CanFrame(
+                        new Dvinholm.App.CanFrame(
                             0x7E8, false, false,
                             new byte[] { 0x10, 0x14, 0x62, 0xF1, 0x90, 0x59, 0x56, 0x31 },
                             0, 0)
@@ -31,33 +31,33 @@ public sealed class UdsReadVinIntegrationTests
             {
                 return new[]
                 {
-                    new VolvoJ2534.App.CanFrame(
+                    new Dvinholm.App.CanFrame(
                         0x7E8, false, false,
                         new byte[] { 0x21, 0x41, 0x42, 0x43, 0x44, 0x45, 0x46, 0x31 },
                         0, 0),
-                    new VolvoJ2534.App.CanFrame(
+                    new Dvinholm.App.CanFrame(
                         0x7E8, false, false,
                         new byte[] { 0x22, 0x32, 0x33, 0x34, 0x35, 0x36, 0x37, 0x38 },
                         0, 0)
                 };
             }
 
-            return Array.Empty<VolvoJ2534.App.CanFrame>();
+            return Array.Empty<Dvinholm.App.CanFrame>();
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0,
                 0x7E8,
                 RxBlockSize: 0,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
                 ConsecutiveFrameTimeout: TimeSpan.FromMilliseconds(500),
                 RequestTimeout: TimeSpan.FromSeconds(2)));
-        using var client = new VolvoJ2534.App.UdsClient(channel);
+        using var client = new Dvinholm.App.UdsClient(channel);
 
         var vin = client.ReadVin();
 

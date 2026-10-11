@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class IsoTpMalformedFlowControlRecoveryTests
 {
@@ -8,7 +8,7 @@ public sealed class IsoTpMalformedFlowControlRecoveryTests
         using var adapter = new VirtualJ2534Adapter(request =>
         {
             if (request.ArbitrationId != 0x7E0 || request.Data.Length == 0)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             var frameType = request.Data[0] >> 4;
             if (frameType == 1)
@@ -16,7 +16,7 @@ public sealed class IsoTpMalformedFlowControlRecoveryTests
                 // Flow Control requires Flow Status, Block Size, and STmin.
                 return new[]
                 {
-                    new VolvoJ2534.App.CanFrame(
+                    new Dvinholm.App.CanFrame(
                         0x7E8, false, false,
                         new byte[] { 0x30, 0x00 },
                         0, 0)
@@ -27,22 +27,22 @@ public sealed class IsoTpMalformedFlowControlRecoveryTests
             {
                 return new[]
                 {
-                    new VolvoJ2534.App.CanFrame(
+                    new Dvinholm.App.CanFrame(
                         0x7E8, false, false,
                         new byte[] { 0x03, 0x62, 0xF1, 0x91 },
                         0, 0)
                 };
             }
 
-            return Array.Empty<VolvoJ2534.App.CanFrame>();
+            return Array.Empty<Dvinholm.App.CanFrame>();
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0,
                 0x7E8,
                 FlowControlTimeout: TimeSpan.FromMilliseconds(300),

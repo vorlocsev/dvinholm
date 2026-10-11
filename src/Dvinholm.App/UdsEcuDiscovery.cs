@@ -1,6 +1,6 @@
 using System.Diagnostics;
 
-namespace VolvoJ2534.App;
+namespace Dvinholm.App;
 
 internal sealed record UdsEcuCandidate(
     uint ResponseId,

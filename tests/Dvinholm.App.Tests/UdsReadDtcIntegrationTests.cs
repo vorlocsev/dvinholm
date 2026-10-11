@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class UdsReadDtcIntegrationTests
 {
@@ -9,7 +9,7 @@ public sealed class UdsReadDtcIntegrationTests
         using var adapter = new VirtualJ2534Adapter(request =>
         {
             if (request.ArbitrationId != 0x7E0 || request.Data.Length == 0)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             if ((request.Data[0] >> 4) == 0)
             {
@@ -18,7 +18,7 @@ public sealed class UdsReadDtcIntegrationTests
                 {
                     return new[]
                     {
-                        new VolvoJ2534.App.CanFrame(
+                        new Dvinholm.App.CanFrame(
                             0x7E8, false, false,
                             new byte[] { 0x07, 0x59, 0x02, 0xFF, 0x12, 0x34, 0x56, 0x2A },
                             0, 0)
@@ -26,20 +26,20 @@ public sealed class UdsReadDtcIntegrationTests
                 }
             }
 
-            return Array.Empty<VolvoJ2534.App.CanFrame>();
+            return Array.Empty<Dvinholm.App.CanFrame>();
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0,
                 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
                 RequestTimeout: TimeSpan.FromSeconds(2)));
-        using var client = new VolvoJ2534.App.UdsClient(channel);
+        using var client = new Dvinholm.App.UdsClient(channel);
 
         var records = client.ReadDtcByStatusMask(0xFF);
 

@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class UdsExtendedCanIdIntegrationTests
 {
@@ -12,7 +12,7 @@ public sealed class UdsExtendedCanIdIntegrationTests
         using var adapter = new VirtualJ2534Adapter(request =>
         {
             if (request.ArbitrationId != requestId || !request.IsExtended || request.Data.Length == 0)
-                return Array.Empty<VolvoJ2534.App.CanFrame>();
+                return Array.Empty<Dvinholm.App.CanFrame>();
 
             if ((request.Data[0] >> 4) == 0 &&
                 request.Data.Length >= 4 &&
@@ -23,28 +23,28 @@ public sealed class UdsExtendedCanIdIntegrationTests
                 Volatile.Write(ref transmittedRequest, request.Data.ToArray());
                 return new[]
                 {
-                    new VolvoJ2534.App.CanFrame(
+                    new Dvinholm.App.CanFrame(
                         responseId, true, false,
                         new byte[] { 0x05, 0x62, 0xF1, 0x90, 0x01, 0x02, 0x00, 0x00 },
                         0, 0)
                 };
             }
 
-            return Array.Empty<VolvoJ2534.App.CanFrame>();
+            return Array.Empty<Dvinholm.App.CanFrame>();
         });
 
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 requestId,
                 responseId,
                 CanExtendedId: true,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
                 RequestTimeout: TimeSpan.FromSeconds(2)));
-        using var client = new VolvoJ2534.App.UdsClient(channel);
+        using var client = new Dvinholm.App.UdsClient(channel);
 
         var data = client.ReadDataByIdentifier(0xF190);
 

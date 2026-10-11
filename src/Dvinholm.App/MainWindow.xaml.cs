@@ -5,7 +5,7 @@ using WinRT.Interop;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
 
-namespace VolvoJ2534.App;
+namespace Dvinholm.App;
 
 public sealed partial class MainWindow : Window
 {

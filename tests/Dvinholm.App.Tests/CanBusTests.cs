@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class CanBusTests
 {
@@ -6,7 +6,7 @@ public sealed class CanBusTests
     public unsafe void SendEncodesStandardCanFrameAndWritesThroughAdapter()
     {
         var adapter = new FakeJ2534Adapter();
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         var payload = new byte[] { 0x22, 0xF1, 0x90 };
 
         Assert.True(bus.Send(
@@ -19,7 +19,7 @@ public sealed class CanBusTests
 
         Assert.Equal(string.Empty, error);
         Assert.Equal(1, adapter.WriteCount);
-        Assert.Equal(VolvoJ2534.App.J2534Native.ProtocolCan, adapter.LastMessage.ProtocolID);
+        Assert.Equal(Dvinholm.App.J2534Native.ProtocolCan, adapter.LastMessage.ProtocolID);
         Assert.Equal(0u, adapter.LastMessage.TxFlags);
         Assert.Equal(7u, adapter.LastMessage.DataSize);
 
@@ -33,7 +33,7 @@ public sealed class CanBusTests
     public void SendRejectsClassicCanPayloadLongerThanEightBytes()
     {
         var adapter = new FakeJ2534Adapter();
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
 
         Assert.Throws<ArgumentOutOfRangeException>(() => bus.Send(
             0x7E0,
@@ -51,7 +51,7 @@ public sealed class CanBusTests
     public void SendRejectsOutOfRangeCanIdentifierWithoutWriting(uint arbitrationId, bool extended)
     {
         var adapter = new FakeJ2534Adapter();
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
 
         Assert.Throws<ArgumentOutOfRangeException>(() => bus.Send(
             arbitrationId,
@@ -70,21 +70,21 @@ public sealed class CanBusTests
     public void SendAcceptsMaximumCanIdentifier(uint arbitrationId, bool extended)
     {
         var adapter = new FakeJ2534Adapter();
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
 
         Assert.True(bus.Send(arbitrationId, new byte[] { 0x01 }, extended,
             TimeSpan.FromMilliseconds(100), CancellationToken.None, out var error));
 
         Assert.Equal(string.Empty, error);
         Assert.Equal(1, adapter.WriteCount);
-        Assert.Equal(extended ? VolvoJ2534.App.CanDecoder.Can29BitId : 0u, adapter.LastMessage.TxFlags);
+        Assert.Equal(extended ? Dvinholm.App.CanDecoder.Can29BitId : 0u, adapter.LastMessage.TxFlags);
     }
 
     [Fact]
     public void SendPropagatesAdapterFailureAndError()
     {
         var adapter = new FakeJ2534Adapter { WriteResult = false, WriteError = "adapter write failed" };
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
 
         Assert.False(bus.Send(0x7E0, new byte[] { 0x3E, 0x00 }, false,
             TimeSpan.FromMilliseconds(100), CancellationToken.None, out var error));
@@ -97,7 +97,7 @@ public sealed class CanBusTests
     public void SendHonorsCancellationBeforeWriting()
     {
         var adapter = new FakeJ2534Adapter();
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
 
@@ -116,7 +116,7 @@ public sealed class CanBusTests
             WriteEntered = writeEntered,
             AllowWriteToFinish = allowWriteToFinish
         };
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
 
         var firstSend = Task.Run(() => bus.Send(0x7E0, new byte[] { 0x3E, 0x00 }, false,
             TimeSpan.FromSeconds(2), CancellationToken.None, out _));
@@ -148,7 +148,7 @@ public sealed class CanBusTests
             WriteEntered = writeEntered,
             AllowWriteToFinish = allowWriteToFinish
         };
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         using var cancellation = new CancellationTokenSource();
 
         var firstSend = Task.Run(() => bus.Send(0x7E0, new byte[] { 0x3E, 0x00 }, false,
@@ -185,7 +185,7 @@ public sealed class CanBusTests
             WriteEntered = writeEntered,
             AllowWriteToFinish = allowWriteToFinish
         };
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
 
         var firstSend = Task.Run(() => bus.Send(0x7E0, new byte[] { 0x3E, 0x00 }, false,
             TimeSpan.FromSeconds(3), CancellationToken.None, out _));
@@ -225,7 +225,7 @@ public sealed class CanBusTests
     public void DisposeIsIdempotentAndSendAfterDisposeThrows()
     {
         var adapter = new FakeJ2534Adapter();
-        var bus = new VolvoJ2534.App.CanBus(adapter);
+        var bus = new Dvinholm.App.CanBus(adapter);
 
         bus.Dispose();
         bus.Dispose();
@@ -245,7 +245,7 @@ public sealed class CanBusTests
             WriteEntered = writeEntered,
             AllowWriteToFinish = allowWriteToFinish
         };
-        var bus = new VolvoJ2534.App.CanBus(adapter);
+        var bus = new Dvinholm.App.CanBus(adapter);
 
         var sendTask = Task.Run(() => bus.Send(0x7E0, new byte[] { 0x3E, 0x00 }, false,
             TimeSpan.FromSeconds(2), CancellationToken.None, out _));
@@ -274,9 +274,9 @@ public sealed class CanBusTests
             false, TimeSpan.FromMilliseconds(100), CancellationToken.None, out _));
     }
 
-    private sealed class FakeJ2534Adapter : VolvoJ2534.App.IJ2534Adapter
+    private sealed class FakeJ2534Adapter : Dvinholm.App.IJ2534Adapter
     {
-        internal VolvoJ2534.App.J2534Native.PassthruMsg LastMessage { get; private set; }
+        internal Dvinholm.App.J2534Native.PassthruMsg LastMessage { get; private set; }
         internal bool WriteResult { get; init; } = true;
         internal string WriteError { get; init; } = string.Empty;
         internal ManualResetEventSlim? WriteEntered { get; init; }
@@ -287,7 +287,7 @@ public sealed class CanBusTests
         public bool Load(string path, out string error) { error = string.Empty; return true; }
         public bool Open(out string error) { error = string.Empty; return true; }
         public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
-        public bool Read(out VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             msg = default;
             error = string.Empty;
@@ -295,7 +295,7 @@ public sealed class CanBusTests
             return false;
         }
 
-        public bool Write(in VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             LastMessage = msg;
             _writeTimeouts.Enqueue(timeout);

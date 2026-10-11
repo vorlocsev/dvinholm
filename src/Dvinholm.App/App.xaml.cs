@@ -1,6 +1,6 @@
 using Microsoft.UI.Xaml;
 
-namespace VolvoJ2534.App;
+namespace Dvinholm.App;
 
 public partial class App : Application
 {

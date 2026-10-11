@@ -1,7 +1,7 @@
 using System.Text.Json;
 using System.Text.Json.Serialization;
 
-namespace VolvoJ2534.App;
+namespace Dvinholm.App;
 
 /// <summary>
 /// Data-only definition of a UDS ECU endpoint. Profiles must be based on a

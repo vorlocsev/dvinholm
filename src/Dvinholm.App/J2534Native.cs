@@ -1,6 +1,6 @@
 using System.Runtime.InteropServices;
 
-namespace VolvoJ2534.App;
+namespace Dvinholm.App;
 
 internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
 {

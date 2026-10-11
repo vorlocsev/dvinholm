@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class CanBusHardwareFilterTests
 {
@@ -6,8 +6,8 @@ public sealed class CanBusHardwareFilterTests
     public void StartAndStopCanIdFilter_TracksFilterLifecycle()
     {
         using var adapter = new VirtualJ2534Adapter(_ =>
-            Array.Empty<VolvoJ2534.App.CanFrame>());
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+            Array.Empty<Dvinholm.App.CanFrame>());
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
         Assert.True(bus.StartCanIdFilter(0x7E8, extended: false, out var filterId, out var error), error);
@@ -24,8 +24,8 @@ public sealed class CanBusHardwareFilterTests
     public void StartCanIdFilter_RejectsOutOfRangeIdWithoutDriverCall(uint id, bool extended)
     {
         using var adapter = new VirtualJ2534Adapter(_ =>
-            Array.Empty<VolvoJ2534.App.CanFrame>());
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+            Array.Empty<Dvinholm.App.CanFrame>());
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
         Assert.False(bus.StartCanIdFilter(id, extended, out var filterId, out var error));
@@ -38,8 +38,8 @@ public sealed class CanBusHardwareFilterTests
     public void StopCanFilter_RejectsUnknownFilterId()
     {
         using var adapter = new VirtualJ2534Adapter(_ =>
-            Array.Empty<VolvoJ2534.App.CanFrame>());
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+            Array.Empty<Dvinholm.App.CanFrame>());
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
         Assert.False(bus.StopCanFilter(999, out var error));

@@ -1,6 +1,6 @@
 using System.Collections.Concurrent;
 
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class UdsTimeoutRecoveryTests
 {
@@ -8,17 +8,17 @@ public sealed class UdsTimeoutRecoveryTests
     public void ReadDataByIdentifier_LateResponseFromTimedOutRequestIsIgnored()
     {
         var adapter = new LateUdsResponseAdapter();
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0,
                 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(500),
                 RequestTimeout: TimeSpan.FromMilliseconds(120)));
-        using var client = new VolvoJ2534.App.UdsClient(channel);
+        using var client = new Dvinholm.App.UdsClient(channel);
 
         Assert.Throws<TimeoutException>(() => client.ReadDataByIdentifier(0xF190));
 
@@ -28,9 +28,9 @@ public sealed class UdsTimeoutRecoveryTests
         Assert.Equal(2, adapter.RequestCount);
     }
 
-    private sealed class LateUdsResponseAdapter : VolvoJ2534.App.IJ2534Adapter
+    private sealed class LateUdsResponseAdapter : Dvinholm.App.IJ2534Adapter
     {
-        private readonly ConcurrentQueue<VolvoJ2534.App.J2534Native.PassthruMsg> _incoming = new();
+        private readonly ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _incoming = new();
         private readonly AutoResetEvent _incomingReady = new(false);
         private int _requestCount;
 
@@ -40,7 +40,7 @@ public sealed class UdsTimeoutRecoveryTests
         public bool Open(out string error) { error = string.Empty; return true; }
         public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
 
-        public bool Read(out VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
             if (_incoming.TryDequeue(out msg))
@@ -50,10 +50,10 @@ public sealed class UdsTimeoutRecoveryTests
             return _incoming.TryDequeue(out msg);
         }
 
-        public bool Write(in VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
-            if (!VolvoJ2534.App.CanDecoder.TryDecode(msg, out var frame, out error))
+            if (!Dvinholm.App.CanDecoder.TryDecode(msg, out var frame, out error))
                 return false;
 
             // Flow Control is a transport acknowledgement, not a new UDS request.
@@ -84,7 +84,7 @@ public sealed class UdsTimeoutRecoveryTests
         private async Task EnqueueAfterDelay(TimeSpan delay, byte[] data)
         {
             await Task.Delay(delay).ConfigureAwait(false);
-            _incoming.Enqueue(VolvoJ2534.App.CanDecoder.Encode(0x7E8, data));
+            _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(0x7E8, data));
             _incomingReady.Set();
         }
 

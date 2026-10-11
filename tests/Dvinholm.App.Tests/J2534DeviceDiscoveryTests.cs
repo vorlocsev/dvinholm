@@ -1,11 +1,11 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class J2534DeviceDiscoveryTests
 {
     [Fact]
     public void TryCreateDevice_UsesRegistryNameWhenDisplayNameIsMissing()
     {
-        var created = VolvoJ2534.App.J2534DeviceDiscovery.TryCreateDevice(
+        var created = Dvinholm.App.J2534DeviceDiscovery.TryCreateDevice(
             registryName: "VirtualAdapter",
             name: null,
             vendor: null,
@@ -30,7 +30,7 @@ public sealed class J2534DeviceDiscoveryTests
         try
         {
             Environment.SetEnvironmentVariable(variable, expectedPath);
-            var created = VolvoJ2534.App.J2534DeviceDiscovery.TryCreateDevice(
+            var created = Dvinholm.App.J2534DeviceDiscovery.TryCreateDevice(
                 "AdapterKey", "Mongoose", "Drew Technologies",
                 $"%{variable}%", @"SOFTWARE\PassThruSupport.04.04", out var device);
 
@@ -50,7 +50,7 @@ public sealed class J2534DeviceDiscoveryTests
     [InlineData("   ")]
     public void TryCreateDevice_RejectsMissingDllPath(string? path)
     {
-        Assert.False(VolvoJ2534.App.J2534DeviceDiscovery.TryCreateDevice(
+        Assert.False(Dvinholm.App.J2534DeviceDiscovery.TryCreateDevice(
             "AdapterKey", "Adapter", "Vendor", path,
             @"SOFTWARE\PassThruSupport.04.04", out var device));
         Assert.Equal(string.Empty, device.DllPath);

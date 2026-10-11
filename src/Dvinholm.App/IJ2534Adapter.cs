@@ -1,4 +1,4 @@
-namespace VolvoJ2534.App;
+namespace Dvinholm.App;
 
 internal interface IJ2534Adapter
 {

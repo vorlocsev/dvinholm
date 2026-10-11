@@ -1,6 +1,6 @@
 [assembly: Xunit.CollectionBehavior(DisableTestParallelization = true)]
 
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class IsoTpTests
 {
@@ -9,14 +9,14 @@ public sealed class IsoTpTests
     {
         var payload = new byte[] { 0x22, 0xF1, 0x90 };
 
-        var frames = VolvoJ2534.App.IsoTp.Segment(payload);
+        var frames = Dvinholm.App.IsoTp.Segment(payload);
 
         Assert.Single(frames);
         Assert.Equal(new byte[] { 0x03, 0x22, 0xF1, 0x90, 0, 0, 0, 0 }, frames[0]);
 
-        var can = new VolvoJ2534.App.CanFrame(0x7E0, false, false, frames[0], 0, 0);
-        Assert.True(VolvoJ2534.App.IsoTp.TryDecode(can, out var decoded, out var error), error);
-        Assert.Equal(VolvoJ2534.App.IsoTpFrameType.SingleFrame, decoded.Type);
+        var can = new Dvinholm.App.CanFrame(0x7E0, false, false, frames[0], 0, 0);
+        Assert.True(Dvinholm.App.IsoTp.TryDecode(can, out var decoded, out var error), error);
+        Assert.Equal(Dvinholm.App.IsoTpFrameType.SingleFrame, decoded.Type);
         Assert.Equal(payload, decoded.Data);
     }
 
@@ -25,18 +25,18 @@ public sealed class IsoTpTests
     {
         var payload = Enumerable.Range(0, 20).Select(i => (byte)i).ToArray();
 
-        var frames = VolvoJ2534.App.IsoTp.Segment(payload);
+        var frames = Dvinholm.App.IsoTp.Segment(payload);
         Assert.Equal(3, frames.Count);
         Assert.Equal(0x10, frames[0][0] & 0xF0);
         Assert.Equal(0x21, frames[1][0]);
         Assert.Equal(0x22, frames[2][0]);
 
-        var reassembler = new VolvoJ2534.App.IsoTpReassembler();
+        var reassembler = new Dvinholm.App.IsoTpReassembler();
         byte[]? result = null;
 
         foreach (var bytes in frames)
         {
-            var can = new VolvoJ2534.App.CanFrame(0x7E8, false, false, bytes, 0, 0);
+            var can = new Dvinholm.App.CanFrame(0x7E8, false, false, bytes, 0, 0);
             Assert.True(reassembler.Push(can, out var completed, out var error), error);
             if (completed is not null)
                 result = completed;
@@ -49,11 +49,11 @@ public sealed class IsoTpTests
     [Fact]
     public void Segment_MaximumPayload_UsesValidFirstFrameLength()
     {
-        var payload = Enumerable.Range(0, VolvoJ2534.App.IsoTp.MaxPayloadLength)
+        var payload = Enumerable.Range(0, Dvinholm.App.IsoTp.MaxPayloadLength)
             .Select(i => (byte)(i & 0xFF))
             .ToArray();
 
-        var frames = VolvoJ2534.App.IsoTp.Segment(payload);
+        var frames = Dvinholm.App.IsoTp.Segment(payload);
 
         Assert.Equal(0x1F, frames[0][0]);
         Assert.Equal(0xFF, frames[0][1]);
@@ -63,10 +63,10 @@ public sealed class IsoTpTests
     [Fact]
     public void Segment_RejectsPayloadAboveMaximum()
     {
-        var payload = new byte[VolvoJ2534.App.IsoTp.MaxPayloadLength + 1];
+        var payload = new byte[Dvinholm.App.IsoTp.MaxPayloadLength + 1];
 
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => VolvoJ2534.App.IsoTp.Segment(payload));
+            () => Dvinholm.App.IsoTp.Segment(payload));
     }
 
     [Theory]
@@ -79,13 +79,13 @@ public sealed class IsoTpTests
     public void Reassembler_TrimsPaddingFromFinalConsecutiveFrame(int payloadLength)
     {
         var payload = Enumerable.Range(0, payloadLength).Select(i => (byte)(i + 1)).ToArray();
-        var frames = VolvoJ2534.App.IsoTp.Segment(payload);
-        var reassembler = new VolvoJ2534.App.IsoTpReassembler();
+        var frames = Dvinholm.App.IsoTp.Segment(payload);
+        var reassembler = new Dvinholm.App.IsoTpReassembler();
         byte[]? result = null;
 
         foreach (var bytes in frames)
         {
-            var can = new VolvoJ2534.App.CanFrame(0x7E8, false, false, bytes, 0, 0);
+            var can = new Dvinholm.App.CanFrame(0x7E8, false, false, bytes, 0, 0);
             Assert.True(reassembler.Push(can, out var completed, out var error), error);
             if (completed is not null)
                 result = completed;
@@ -103,12 +103,12 @@ public sealed class IsoTpTests
         byte[] shortFrame)
     {
         var payload = Enumerable.Range(0, payloadLength).Select(i => (byte)i).ToArray();
-        var firstFrameBytes = VolvoJ2534.App.IsoTp.Segment(payload)[0];
-        var reassembler = new VolvoJ2534.App.IsoTpReassembler();
-        var first = new VolvoJ2534.App.CanFrame(0x7E8, false, false, firstFrameBytes, 0, 0);
+        var firstFrameBytes = Dvinholm.App.IsoTp.Segment(payload)[0];
+        var reassembler = new Dvinholm.App.IsoTpReassembler();
+        var first = new Dvinholm.App.CanFrame(0x7E8, false, false, firstFrameBytes, 0, 0);
 
         Assert.True(reassembler.Push(first, out _, out var firstError), firstError);
-        var shortFrameCan = new VolvoJ2534.App.CanFrame(0x7E8, false, false, shortFrame, 0, 0);
+        var shortFrameCan = new Dvinholm.App.CanFrame(0x7E8, false, false, shortFrame, 0, 0);
 
         Assert.False(reassembler.Push(shortFrameCan, out _, out var error));
         Assert.Contains("too short", error, StringComparison.OrdinalIgnoreCase);
@@ -119,15 +119,15 @@ public sealed class IsoTpTests
     public void Reassembler_RejectsSequenceMismatch()
     {
         var payload = Enumerable.Range(0, 12).Select(i => (byte)i).ToArray();
-        var frames = VolvoJ2534.App.IsoTp.Segment(payload);
+        var frames = Dvinholm.App.IsoTp.Segment(payload);
 
-        var reassembler = new VolvoJ2534.App.IsoTpReassembler();
-        var first = new VolvoJ2534.App.CanFrame(0x7E8, false, false, frames[0], 0, 0);
+        var reassembler = new Dvinholm.App.IsoTpReassembler();
+        var first = new Dvinholm.App.CanFrame(0x7E8, false, false, frames[0], 0, 0);
         Assert.True(reassembler.Push(first, out _, out var firstError), firstError);
 
         var wrong = (byte[])frames[1].Clone();
         wrong[0] = 0x22;
-        var second = new VolvoJ2534.App.CanFrame(0x7E8, false, false, wrong, 0, 0);
+        var second = new Dvinholm.App.CanFrame(0x7E8, false, false, wrong, 0, 0);
 
         Assert.False(reassembler.Push(second, out _, out var error));
         Assert.Contains("sequence mismatch", error, StringComparison.OrdinalIgnoreCase);
@@ -138,13 +138,13 @@ public sealed class IsoTpTests
     public void Reassembler_SequenceNumberWrapsAfterFifteen()
     {
         var payload = Enumerable.Range(0, 120).Select(i => (byte)i).ToArray();
-        var frames = VolvoJ2534.App.IsoTp.Segment(payload);
-        var reassembler = new VolvoJ2534.App.IsoTpReassembler();
+        var frames = Dvinholm.App.IsoTp.Segment(payload);
+        var reassembler = new Dvinholm.App.IsoTpReassembler();
         byte[]? result = null;
 
         foreach (var bytes in frames)
         {
-            var can = new VolvoJ2534.App.CanFrame(0x7E8, false, false, bytes, 0, 0);
+            var can = new Dvinholm.App.CanFrame(0x7E8, false, false, bytes, 0, 0);
             Assert.True(reassembler.Push(can, out var completed, out var error), error);
             if (completed is not null)
                 result = completed;
@@ -161,18 +161,18 @@ public sealed class IsoTpTests
     {
         var firstPayload = Enumerable.Range(0, 20).Select(i => (byte)i).ToArray();
         var secondPayload = Enumerable.Range(50, 12).Select(i => (byte)i).ToArray();
-        var firstFrames = VolvoJ2534.App.IsoTp.Segment(firstPayload);
-        var secondFrames = VolvoJ2534.App.IsoTp.Segment(secondPayload);
-        var reassembler = new VolvoJ2534.App.IsoTpReassembler();
+        var firstFrames = Dvinholm.App.IsoTp.Segment(firstPayload);
+        var secondFrames = Dvinholm.App.IsoTp.Segment(secondPayload);
+        var reassembler = new Dvinholm.App.IsoTpReassembler();
 
-        var first = new VolvoJ2534.App.CanFrame(0x7E8, false, false, firstFrames[0], 0, 0);
+        var first = new Dvinholm.App.CanFrame(0x7E8, false, false, firstFrames[0], 0, 0);
         Assert.True(reassembler.Push(first, out _, out var firstError), firstError);
         Assert.True(reassembler.InProgress);
 
         byte[]? result = null;
         foreach (var bytes in secondFrames)
         {
-            var can = new VolvoJ2534.App.CanFrame(0x7E8, false, false, bytes, 0, 0);
+            var can = new Dvinholm.App.CanFrame(0x7E8, false, false, bytes, 0, 0);
             Assert.True(reassembler.Push(can, out var completed, out var error), error);
             if (completed is not null)
                 result = completed;
@@ -185,7 +185,7 @@ public sealed class IsoTpTests
     [Fact]
     public void ChannelOptions_RejectInvalidStandardCanId()
     {
-        var options = new VolvoJ2534.App.IsoTpChannel.Options(0x800, 0x7E8);
+        var options = new Dvinholm.App.IsoTpChannel.Options(0x800, 0x7E8);
 
         Assert.Throws<ArgumentOutOfRangeException>(() => options.Validate());
     }
@@ -193,7 +193,7 @@ public sealed class IsoTpTests
     [Fact]
     public void ChannelOptions_RejectNegativeTimeout()
     {
-        var options = new VolvoJ2534.App.IsoTpChannel.Options(
+        var options = new Dvinholm.App.IsoTpChannel.Options(
             0x7E0, 0x7E8, RequestTimeout: TimeSpan.FromMilliseconds(-1));
 
         Assert.Throws<ArgumentOutOfRangeException>(() => options.Validate());
@@ -202,7 +202,7 @@ public sealed class IsoTpTests
     [Fact]
     public void ChannelOptions_RejectTimeoutTooLargeForStopwatchDeadline()
     {
-        var options = new VolvoJ2534.App.IsoTpChannel.Options(
+        var options = new Dvinholm.App.IsoTpChannel.Options(
             0x7E0, 0x7E8, RequestTimeout: TimeSpan.MaxValue);
 
         var error = Assert.Throws<ArgumentOutOfRangeException>(() => options.Validate());
@@ -216,7 +216,7 @@ public sealed class IsoTpTests
     [InlineData(0xFF)]
     public void ChannelOptions_RejectReservedRxSeparationTime(int stmin)
     {
-        var options = new VolvoJ2534.App.IsoTpChannel.Options(
+        var options = new Dvinholm.App.IsoTpChannel.Options(
             0x7E0, 0x7E8, RxSeparationTime: (byte)stmin);
 
         Assert.Throws<InvalidOperationException>(() => options.Validate());
@@ -225,7 +225,7 @@ public sealed class IsoTpTests
     [Fact]
     public void ChannelOptions_AcceptsValid29BitCanIds()
     {
-        var options = new VolvoJ2534.App.IsoTpChannel.Options(
+        var options = new Dvinholm.App.IsoTpChannel.Options(
             0x18DA10F1, 0x18DAF110, CanExtendedId: true);
 
         options.Validate();
@@ -238,7 +238,7 @@ public sealed class IsoTpTests
     [InlineData(0xF9)]
     public void ChannelOptions_AcceptsValidRxSeparationTime(int stmin)
     {
-        var options = new VolvoJ2534.App.IsoTpChannel.Options(
+        var options = new Dvinholm.App.IsoTpChannel.Options(
             0x7E0, 0x7E8, RxSeparationTime: (byte)stmin);
 
         options.Validate();
@@ -254,16 +254,16 @@ public sealed class IsoTpTests
     public void ValidateSeparationTime_RejectsReservedValues(int stmin)
     {
         Assert.Throws<InvalidOperationException>(
-            () => VolvoJ2534.App.IsoTpChannel.ValidateSeparationTime((byte)stmin));
+            () => Dvinholm.App.IsoTpChannel.ValidateSeparationTime((byte)stmin));
     }
 
     [Fact]
     public void TryDecode_RejectsClassicCanPayloadLongerThanEightBytes()
     {
-        var can = new VolvoJ2534.App.CanFrame(
+        var can = new Dvinholm.App.CanFrame(
             0x7E8, false, false, new byte[9], 0, 0);
 
-        Assert.False(VolvoJ2534.App.IsoTp.TryDecode(can, out _, out var error));
+        Assert.False(Dvinholm.App.IsoTp.TryDecode(can, out _, out var error));
         Assert.Contains("exceeds 8 bytes", error, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -273,9 +273,9 @@ public sealed class IsoTpTests
     [InlineData(new byte[] { 0x05, 0x11, 0x22 })]
     public void TryDecode_RejectsInvalidSingleFrameLength(byte[] data)
     {
-        var can = new VolvoJ2534.App.CanFrame(0x7E8, false, false, data, 0, 0);
+        var can = new Dvinholm.App.CanFrame(0x7E8, false, false, data, 0, 0);
 
-        Assert.False(VolvoJ2534.App.IsoTp.TryDecode(can, out _, out var error));
+        Assert.False(Dvinholm.App.IsoTp.TryDecode(can, out _, out var error));
         Assert.Contains("Single Frame length", error, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -286,29 +286,29 @@ public sealed class IsoTpTests
     [InlineData(new byte[] { 0x10, 0x14, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE })]
     public void TryDecode_RejectsFirstFrameWithoutPayload(byte[] data)
     {
-        var can = new VolvoJ2534.App.CanFrame(0x7E8, false, false, data, 0, 0);
+        var can = new Dvinholm.App.CanFrame(0x7E8, false, false, data, 0, 0);
 
-        Assert.False(VolvoJ2534.App.IsoTp.TryDecode(can, out _, out var error));
+        Assert.False(Dvinholm.App.IsoTp.TryDecode(can, out _, out var error));
         Assert.Contains("First Frame", error, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void TryDecode_RejectsConsecutiveFrameWithoutPayload()
     {
-        var can = new VolvoJ2534.App.CanFrame(
+        var can = new Dvinholm.App.CanFrame(
             0x7E8, false, false, new byte[] { 0x21 }, 0, 0);
 
-        Assert.False(VolvoJ2534.App.IsoTp.TryDecode(can, out _, out var error));
+        Assert.False(Dvinholm.App.IsoTp.TryDecode(can, out _, out var error));
         Assert.Contains("Consecutive Frame", error, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void TryDecode_RejectsFlowControlWithoutAllFields()
     {
-        var can = new VolvoJ2534.App.CanFrame(
+        var can = new Dvinholm.App.CanFrame(
             0x7E8, false, false, new byte[] { 0x30, 0x00 }, 0, 0);
 
-        Assert.False(VolvoJ2534.App.IsoTp.TryDecode(can, out _, out var error));
+        Assert.False(Dvinholm.App.IsoTp.TryDecode(can, out _, out var error));
         Assert.Contains("Flow Control", error, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -318,10 +318,10 @@ public sealed class IsoTpTests
     [InlineData(0x3F)]
     public void TryDecode_RejectsReservedFlowControlStatus(int pci)
     {
-        var can = new VolvoJ2534.App.CanFrame(
+        var can = new Dvinholm.App.CanFrame(
             0x7E8, false, false, new byte[] { (byte)pci, 0x00, 0x00 }, 0, 0);
 
-        Assert.False(VolvoJ2534.App.IsoTp.TryDecode(can, out _, out var error));
+        Assert.False(Dvinholm.App.IsoTp.TryDecode(can, out _, out var error));
         Assert.Contains("Flow Status", error, StringComparison.OrdinalIgnoreCase);
     }
 
@@ -329,20 +329,20 @@ public sealed class IsoTpTests
     public void Reassembler_MalformedFrameResetsIncompletePayload()
     {
         var payload = Enumerable.Range(0, 20).Select(i => (byte)i).ToArray();
-        var frames = VolvoJ2534.App.IsoTp.Segment(payload);
-        var reassembler = new VolvoJ2534.App.IsoTpReassembler();
+        var frames = Dvinholm.App.IsoTp.Segment(payload);
+        var reassembler = new Dvinholm.App.IsoTpReassembler();
 
-        var first = new VolvoJ2534.App.CanFrame(0x7E8, false, false, frames[0], 0, 0);
+        var first = new Dvinholm.App.CanFrame(0x7E8, false, false, frames[0], 0, 0);
         Assert.True(reassembler.Push(first, out _, out var firstError), firstError);
         Assert.True(reassembler.InProgress);
 
-        var malformed = new VolvoJ2534.App.CanFrame(
+        var malformed = new Dvinholm.App.CanFrame(
             0x7E8, false, false, new byte[] { 0x21 }, 0, 0);
         Assert.False(reassembler.Push(malformed, out _, out var error));
         Assert.Contains("Consecutive Frame", error, StringComparison.OrdinalIgnoreCase);
         Assert.False(reassembler.InProgress);
 
-        var continuation = new VolvoJ2534.App.CanFrame(0x7E8, false, false, frames[1], 0, 0);
+        var continuation = new Dvinholm.App.CanFrame(0x7E8, false, false, frames[1], 0, 0);
         Assert.False(reassembler.Push(continuation, out _, out var continuationError));
         Assert.Contains("without First Frame", continuationError, StringComparison.OrdinalIgnoreCase);
     }
@@ -351,20 +351,20 @@ public sealed class IsoTpTests
     public void Reassembler_UnexpectedFlowControlResetsIncompletePayload()
     {
         var payload = Enumerable.Range(0, 20).Select(i => (byte)i).ToArray();
-        var frames = VolvoJ2534.App.IsoTp.Segment(payload);
-        var reassembler = new VolvoJ2534.App.IsoTpReassembler();
+        var frames = Dvinholm.App.IsoTp.Segment(payload);
+        var reassembler = new Dvinholm.App.IsoTpReassembler();
 
-        var first = new VolvoJ2534.App.CanFrame(0x7E8, false, false, frames[0], 0, 0);
+        var first = new Dvinholm.App.CanFrame(0x7E8, false, false, frames[0], 0, 0);
         Assert.True(reassembler.Push(first, out _, out var firstError), firstError);
         Assert.True(reassembler.InProgress);
 
-        var unexpectedFlowControl = new VolvoJ2534.App.CanFrame(
+        var unexpectedFlowControl = new Dvinholm.App.CanFrame(
             0x7E8, false, false, new byte[] { 0x30, 0x00, 0x00 }, 0, 0);
         Assert.False(reassembler.Push(unexpectedFlowControl, out _, out var error));
         Assert.Contains("Flow Control", error, StringComparison.OrdinalIgnoreCase);
         Assert.False(reassembler.InProgress);
 
-        var continuation = new VolvoJ2534.App.CanFrame(0x7E8, false, false, frames[1], 0, 0);
+        var continuation = new Dvinholm.App.CanFrame(0x7E8, false, false, frames[1], 0, 0);
         Assert.False(reassembler.Push(continuation, out _, out var continuationError));
         Assert.Contains("without First Frame", continuationError, StringComparison.OrdinalIgnoreCase);
     }
@@ -376,13 +376,13 @@ public sealed class IsoTpTests
     public void CreateFlowControl_RejectsReservedStatus(byte status)
     {
         Assert.Throws<ArgumentOutOfRangeException>(
-            () => VolvoJ2534.App.IsoTp.CreateFlowControl(status));
+            () => Dvinholm.App.IsoTp.CreateFlowControl(status));
     }
 
     [Fact]
     public void CreateFlowControl_EncodesFields()
     {
-        var frame = VolvoJ2534.App.IsoTp.CreateFlowControl(0, 8, 0x0A);
+        var frame = Dvinholm.App.IsoTp.CreateFlowControl(0, 8, 0x0A);
 
         Assert.Equal(new byte[] { 0x30, 0x08, 0x0A, 0, 0, 0, 0, 0 }, frame);
     }
@@ -391,12 +391,12 @@ public sealed class IsoTpTests
     public void IsoTpChannel_CompletesSingleFrameRequestResponse()
     {
         var adapter = new ScenarioJ2534Adapter();
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(300),
                 RequestTimeout: TimeSpan.FromSeconds(1)));
@@ -411,12 +411,12 @@ public sealed class IsoTpTests
     public void IsoTpChannel_TimesOutWhenNoResponseArrives()
     {
         var adapter = new ScenarioJ2534Adapter { RespondToWrites = false };
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromMilliseconds(50),
                 RequestTimeout: TimeSpan.FromMilliseconds(200)));
@@ -430,12 +430,12 @@ public sealed class IsoTpTests
     public async Task IsoTpChannel_CancellationInterruptsWaitingForResponse()
     {
         var adapter = new ScenarioJ2534Adapter { RespondToWrites = false };
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FrameTimeout: TimeSpan.FromSeconds(2),
                 RequestTimeout: TimeSpan.FromSeconds(5)));
@@ -466,12 +466,12 @@ public sealed class IsoTpTests
     public void IsoTpChannel_SendsFlowControlForEachReceivedBlock()
     {
         var adapter = new MultiFrameResponseScenarioAdapter();
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 RxBlockSize: 1,
                 FrameTimeout: TimeSpan.FromMilliseconds(300),
@@ -493,12 +493,12 @@ public sealed class IsoTpTests
     public void IsoTpChannel_StopsAfterConfiguredFlowControlWaitLimit()
     {
         var adapter = new MultiFrameScenarioAdapter { WaitFlowControlFrames = 3 };
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FlowControlTimeout: TimeSpan.FromMilliseconds(300),
                 RequestTimeout: TimeSpan.FromSeconds(2),
@@ -515,12 +515,12 @@ public sealed class IsoTpTests
     public void IsoTpChannel_RespectsFlowControlSeparationTime()
     {
         var adapter = new MultiFrameScenarioAdapter { SeparationTime = 0x0A };
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FlowControlTimeout: TimeSpan.FromMilliseconds(300),
                 RequestTimeout: TimeSpan.FromSeconds(2)));
@@ -538,12 +538,12 @@ public sealed class IsoTpTests
     public void IsoTpChannel_SendsMultiFrameRequestAfterFlowControl()
     {
         var adapter = new MultiFrameScenarioAdapter();
-        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        using var bus = new Dvinholm.App.CanBus(adapter);
         bus.Start();
 
-        using var channel = new VolvoJ2534.App.IsoTpChannel(
+        using var channel = new Dvinholm.App.IsoTpChannel(
             bus,
-            new VolvoJ2534.App.IsoTpChannel.Options(
+            new Dvinholm.App.IsoTpChannel.Options(
                 0x7E0, 0x7E8,
                 FlowControlTimeout: TimeSpan.FromMilliseconds(300),
                 FrameTimeout: TimeSpan.FromMilliseconds(300),
@@ -562,20 +562,20 @@ public sealed class IsoTpTests
         Assert.Equal(0x23, adapter.SentFrames[3].Data[0]);
     }
 
-    private sealed class MultiFrameResponseScenarioAdapter : VolvoJ2534.App.IJ2534Adapter
+    private sealed class MultiFrameResponseScenarioAdapter : Dvinholm.App.IJ2534Adapter
     {
-        private readonly System.Collections.Concurrent.ConcurrentQueue<VolvoJ2534.App.J2534Native.PassthruMsg> _incoming = new();
+        private readonly System.Collections.Concurrent.ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _incoming = new();
         private readonly AutoResetEvent _incomingReady = new(false);
-        private readonly System.Collections.Concurrent.ConcurrentQueue<VolvoJ2534.App.CanFrame> _flowControlWrites = new();
+        private readonly System.Collections.Concurrent.ConcurrentQueue<Dvinholm.App.CanFrame> _flowControlWrites = new();
         private int _flowControlIndex;
 
-        internal VolvoJ2534.App.CanFrame[] FlowControlWrites => _flowControlWrites.ToArray();
+        internal Dvinholm.App.CanFrame[] FlowControlWrites => _flowControlWrites.ToArray();
 
         public bool Load(string path, out string error) { error = string.Empty; return true; }
         public bool Open(out string error) { error = string.Empty; return true; }
         public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
 
-        public bool Read(out VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
             if (_incoming.TryDequeue(out msg))
@@ -585,9 +585,9 @@ public sealed class IsoTpTests
             return _incoming.TryDequeue(out msg);
         }
 
-        public bool Write(in VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
-            if (!VolvoJ2534.App.CanDecoder.TryDecode(msg, out var frame, out error))
+            if (!Dvinholm.App.CanDecoder.TryDecode(msg, out var frame, out error))
                 return false;
 
             if ((frame.Data[0] >> 4) == 3)
@@ -610,21 +610,21 @@ public sealed class IsoTpTests
 
         private void Enqueue(uint id, byte[] data)
         {
-            _incoming.Enqueue(VolvoJ2534.App.CanDecoder.Encode(id, data));
+            _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(id, data));
             _incomingReady.Set();
         }
 
         public void Unload() { }
     }
 
-    private sealed class MultiFrameScenarioAdapter : VolvoJ2534.App.IJ2534Adapter
+    private sealed class MultiFrameScenarioAdapter : Dvinholm.App.IJ2534Adapter
     {
-        private readonly System.Collections.Concurrent.ConcurrentQueue<VolvoJ2534.App.J2534Native.PassthruMsg> _incoming = new();
-        private readonly System.Collections.Concurrent.ConcurrentQueue<VolvoJ2534.App.CanFrame> _sentFrames = new();
+        private readonly System.Collections.Concurrent.ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _incoming = new();
+        private readonly System.Collections.Concurrent.ConcurrentQueue<Dvinholm.App.CanFrame> _sentFrames = new();
         private readonly AutoResetEvent _incomingReady = new(false);
         private int _expectedRequestFrames;
 
-        internal VolvoJ2534.App.CanFrame[] SentFrames => _sentFrames.ToArray();
+        internal Dvinholm.App.CanFrame[] SentFrames => _sentFrames.ToArray();
         internal int WaitFlowControlFrames { get; init; }
         internal byte SeparationTime { get; init; }
 
@@ -632,7 +632,7 @@ public sealed class IsoTpTests
         public bool Open(out string error) { error = string.Empty; return true; }
         public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
 
-        public bool Read(out VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
             if (_incoming.TryDequeue(out msg))
@@ -642,10 +642,10 @@ public sealed class IsoTpTests
             return _incoming.TryDequeue(out msg);
         }
 
-        public bool Write(in VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
-            if (VolvoJ2534.App.CanDecoder.TryDecode(msg, out var frame, out error))
+            if (Dvinholm.App.CanDecoder.TryDecode(msg, out var frame, out error))
             {
                 _sentFrames.Enqueue(frame);
 
@@ -677,16 +677,16 @@ public sealed class IsoTpTests
 
         private void Enqueue(uint id, byte[] data)
         {
-            _incoming.Enqueue(VolvoJ2534.App.CanDecoder.Encode(id, data));
+            _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(id, data));
             _incomingReady.Set();
         }
 
         public void Unload() { }
     }
 
-    private sealed class ScenarioJ2534Adapter : VolvoJ2534.App.IJ2534Adapter
+    private sealed class ScenarioJ2534Adapter : Dvinholm.App.IJ2534Adapter
     {
-        private readonly System.Collections.Concurrent.ConcurrentQueue<VolvoJ2534.App.J2534Native.PassthruMsg> _incoming = new();
+        private readonly System.Collections.Concurrent.ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _incoming = new();
         private readonly AutoResetEvent _incomingReady = new(false);
         private int _writeCount;
 
@@ -697,7 +697,7 @@ public sealed class IsoTpTests
         public bool Open(out string error) { error = string.Empty; return true; }
         public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
 
-        public bool Read(out VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
             if (_incoming.TryDequeue(out msg))
@@ -707,13 +707,13 @@ public sealed class IsoTpTests
             return _incoming.TryDequeue(out msg);
         }
 
-        public bool Write(in VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
             Interlocked.Increment(ref _writeCount);
             if (RespondToWrites)
             {
-                var response = VolvoJ2534.App.CanDecoder.Encode(
+                var response = Dvinholm.App.CanDecoder.Encode(
                     0x7E8, new byte[] { 0x04, 0x62, 0xF1, 0x90, 0x12 });
                 _incoming.Enqueue(response);
                 _incomingReady.Set();
@@ -731,24 +731,24 @@ public sealed class IsoTpTests
     [InlineData(new byte[] { 0x10, 0x07, 0xAA, 0xBB, 0xCC, 0xDD, 0xEE, 0xFF })]
     public void TryDecode_RejectsFirstFrameWithDeclaredLengthBelowMinimum(byte[] data)
     {
-        var can = new VolvoJ2534.App.CanFrame(0x7E8, false, false, data, 0, 0);
+        var can = new Dvinholm.App.CanFrame(0x7E8, false, false, data, 0, 0);
 
-        Assert.False(VolvoJ2534.App.IsoTp.TryDecode(can, out _, out var error));
+        Assert.False(Dvinholm.App.IsoTp.TryDecode(can, out _, out var error));
         Assert.Contains("payload length", error, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
     public void Reassembler_InvalidFirstFrameResetsPreviouslyIncompleteMessage()
     {
-        var reassembler = new VolvoJ2534.App.IsoTpReassembler();
-        var validFirst = new VolvoJ2534.App.CanFrame(
+        var reassembler = new Dvinholm.App.IsoTpReassembler();
+        var validFirst = new Dvinholm.App.CanFrame(
             0x7E8, false, false,
             new byte[] { 0x10, 0x14, 0x62, 0xF1, 0x90, 0x01, 0x02, 0x03 }, 0, 0);
 
         Assert.True(reassembler.Push(validFirst, out _, out var validError), validError);
         Assert.True(reassembler.InProgress);
 
-        var malformedFirst = new VolvoJ2534.App.CanFrame(
+        var malformedFirst = new Dvinholm.App.CanFrame(
             0x7E8, false, false, new byte[] { 0x10, 0x07, 0x62, 0xF1, 0x90, 0x01, 0x02, 0x03 }, 0, 0);
         Assert.False(reassembler.Push(malformedFirst, out _, out var error));
         Assert.Contains("payload length", error, StringComparison.OrdinalIgnoreCase);

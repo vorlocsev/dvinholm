@@ -1,6 +1,6 @@
 using System.Threading.Channels;
 
-namespace VolvoJ2534.App;
+namespace Dvinholm.App;
 
 internal sealed class CanRxDispatcher : IDisposable
 {
@@ -31,7 +31,7 @@ internal sealed class CanRxDispatcher : IDisposable
         internal bool TryRead(TimeSpan timeout, CancellationToken cancellationToken, out CanFrame frame)
         {
             frame = default;
-            if (VolvoJ2534.App.CanRxDispatcher.IsDisposed(_disposed))
+            if (Dvinholm.App.CanRxDispatcher.IsDisposed(_disposed))
                 return false;
 
             if (timeout < TimeSpan.Zero)
@@ -99,7 +99,7 @@ internal sealed class CanRxDispatcher : IDisposable
 
         internal void Publish(in CanFrame frame)
         {
-            if (VolvoJ2534.App.CanRxDispatcher.IsDisposed(_disposed))
+            if (Dvinholm.App.CanRxDispatcher.IsDisposed(_disposed))
                 return;
 
             // BoundedChannelFullMode.DropOldest atomically evicts the
@@ -135,14 +135,14 @@ internal sealed class CanRxDispatcher : IDisposable
 
     internal Subscription Subscribe(int capacity = 4096)
     {
-        ObjectDisposedException.ThrowIf(VolvoJ2534.App.CanRxDispatcher.IsDisposed(_disposed), this);
+        ObjectDisposedException.ThrowIf(Dvinholm.App.CanRxDispatcher.IsDisposed(_disposed), this);
         if (capacity < 1)
             throw new ArgumentOutOfRangeException(nameof(capacity));
 
         var subscription = new Subscription(this, capacity);
         lock (_gate)
         {
-            ObjectDisposedException.ThrowIf(VolvoJ2534.App.CanRxDispatcher.IsDisposed(_disposed), this);
+            ObjectDisposedException.ThrowIf(Dvinholm.App.CanRxDispatcher.IsDisposed(_disposed), this);
             _subscriptions.Add(subscription);
         }
         return subscription;
@@ -152,7 +152,7 @@ internal sealed class CanRxDispatcher : IDisposable
     {
         lock (_lifecycleGate)
         {
-            ObjectDisposedException.ThrowIf(VolvoJ2534.App.CanRxDispatcher.IsDisposed(_disposed), this);
+            ObjectDisposedException.ThrowIf(Dvinholm.App.CanRxDispatcher.IsDisposed(_disposed), this);
             if (_running != 0)
                 return;
 

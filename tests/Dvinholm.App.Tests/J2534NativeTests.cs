@@ -1,11 +1,11 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class J2534NativeTests
 {
     [Fact]
     public void Load_RejectsEmptyPathAndLeavesWrapperUnloaded()
     {
-        using var native = new VolvoJ2534.App.J2534Native();
+        using var native = new Dvinholm.App.J2534Native();
 
         Assert.False(native.Load("  ", out var loadError));
         Assert.Contains("path is empty", loadError, StringComparison.OrdinalIgnoreCase);
@@ -17,7 +17,7 @@ public sealed class J2534NativeTests
     [Fact]
     public void Load_RejectsMissingLibraryAndCanBeRetried()
     {
-        using var native = new VolvoJ2534.App.J2534Native();
+        using var native = new Dvinholm.App.J2534Native();
         var missingPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing-j2534.dll");
 
         Assert.False(native.Load(missingPath, out var error));
@@ -33,7 +33,7 @@ public sealed class J2534NativeTests
     [Fact]
     public void ConnectWithoutLoadedDeviceReturnsDiagnosticInsteadOfThrowing()
     {
-        using var native = new VolvoJ2534.App.J2534Native();
+        using var native = new Dvinholm.App.J2534Native();
 
         Assert.False(native.Connect(500000, out var error));
         Assert.Contains("not open", error, StringComparison.OrdinalIgnoreCase);
@@ -42,12 +42,12 @@ public sealed class J2534NativeTests
     [Fact]
     public void ReadAndWriteWithoutConnectedChannelReturnDiagnostic()
     {
-        using var native = new VolvoJ2534.App.J2534Native();
+        using var native = new Dvinholm.App.J2534Native();
 
         Assert.False(native.Read(out _, 100, out var readError));
         Assert.Contains("not connected", readError, StringComparison.OrdinalIgnoreCase);
 
-        var message = default(VolvoJ2534.App.J2534Native.PassthruMsg);
+        var message = default(Dvinholm.App.J2534Native.PassthruMsg);
         Assert.False(native.Write(in message, 100, out var writeError));
         Assert.Contains("not connected", writeError, StringComparison.OrdinalIgnoreCase);
     }
@@ -58,7 +58,7 @@ public sealed class J2534SessionFailureTests
     [Fact]
     public void ConnectWithEmptyPathLeavesSessionDisconnected()
     {
-        using var session = new VolvoJ2534.App.J2534Session();
+        using var session = new Dvinholm.App.J2534Session();
 
         Assert.False(session.Connect(" ", 500000, out var error));
         Assert.Contains("path is empty", error, StringComparison.OrdinalIgnoreCase);
@@ -70,7 +70,7 @@ public sealed class J2534SessionFailureTests
     [Fact]
     public void ConnectRejectsZeroBaudRateBeforeLoadingDriver()
     {
-        using var session = new VolvoJ2534.App.J2534Session();
+        using var session = new Dvinholm.App.J2534Session();
         var missingPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing-j2534.dll");
 
         Assert.False(session.Connect(missingPath, 0, out var error));
@@ -81,7 +81,7 @@ public sealed class J2534SessionFailureTests
     [Fact]
     public void FailedConnectionCanBeRetriedAndRemainsDisconnected()
     {
-        using var session = new VolvoJ2534.App.J2534Session();
+        using var session = new Dvinholm.App.J2534Session();
         var missingPath = Path.Combine(Path.GetTempPath(), Guid.NewGuid().ToString("N"), "missing-j2534.dll");
 
         Assert.False(session.Connect(missingPath, 500000, out var firstError));

@@ -1,12 +1,12 @@
-namespace VolvoJ2534.App.Tests;
+namespace Dvinholm.App.Tests;
 
 public sealed class CanRxDispatcherTests
 {
     [Fact]
     public void Subscription_DrainPendingFramesRemovesQueuedFramesAndReturnsCount()
     {
-        using var j2534 = new VolvoJ2534.App.J2534Native();
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(j2534);
+        using var j2534 = new Dvinholm.App.J2534Native();
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(j2534);
         using var subscription = dispatcher.Subscribe(4);
 
         subscription.Publish(Frame(0x100));
@@ -21,8 +21,8 @@ public sealed class CanRxDispatcherTests
     [Fact]
     public void Subscription_DropsOldestFrameWhenCapacityIsReached()
     {
-        using var j2534 = new VolvoJ2534.App.J2534Native();
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(j2534);
+        using var j2534 = new Dvinholm.App.J2534Native();
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(j2534);
         using var subscription = dispatcher.Subscribe(2);
 
         subscription.Publish(Frame(0x100));
@@ -41,8 +41,8 @@ public sealed class CanRxDispatcherTests
     [Fact]
     public async Task Subscription_ConcurrentPublishAndRead_RemainsConsistentAfterOverflow()
     {
-        using var j2534 = new VolvoJ2534.App.J2534Native();
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(j2534);
+        using var j2534 = new Dvinholm.App.J2534Native();
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(j2534);
         using var subscription = dispatcher.Subscribe(8);
         var consumed = new System.Collections.Concurrent.ConcurrentBag<uint>();
         var finished = 0;
@@ -83,8 +83,8 @@ public sealed class CanRxDispatcherTests
     [Fact]
     public async Task Subscription_ConcurrentReadersDoNotLoseAvailableFrames()
     {
-        using var j2534 = new VolvoJ2534.App.J2534Native();
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(j2534);
+        using var j2534 = new Dvinholm.App.J2534Native();
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(j2534);
         using var subscription = dispatcher.Subscribe(1_000);
 
         for (uint id = 0; id < 1_000; id++)
@@ -110,8 +110,8 @@ public sealed class CanRxDispatcherTests
     [Fact]
     public void Subscription_TryReadHonorsCancellation()
     {
-        using var j2534 = new VolvoJ2534.App.J2534Native();
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(j2534);
+        using var j2534 = new Dvinholm.App.J2534Native();
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(j2534);
         using var subscription = dispatcher.Subscribe();
         using var cancellation = new CancellationTokenSource();
         cancellation.Cancel();
@@ -123,8 +123,8 @@ public sealed class CanRxDispatcherTests
     [Fact]
     public void Subscription_ReturnsFalseAfterDisposal()
     {
-        using var j2534 = new VolvoJ2534.App.J2534Native();
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(j2534);
+        using var j2534 = new Dvinholm.App.J2534Native();
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(j2534);
         var subscription = dispatcher.Subscribe();
         subscription.Dispose();
 
@@ -135,8 +135,8 @@ public sealed class CanRxDispatcherTests
     [Fact]
     public void Dispatcher_CanStopRestartAndDisposeRepeatedly()
     {
-        using var j2534 = new VolvoJ2534.App.J2534Native();
-        var dispatcher = new VolvoJ2534.App.CanRxDispatcher(j2534);
+        using var j2534 = new Dvinholm.App.J2534Native();
+        var dispatcher = new Dvinholm.App.CanRxDispatcher(j2534);
 
         dispatcher.Start();
         dispatcher.Stop();
@@ -150,8 +150,8 @@ public sealed class CanRxDispatcherTests
     [Fact]
     public void Dispatcher_RejectsStartAndSubscribeAfterDisposal()
     {
-        using var j2534 = new VolvoJ2534.App.J2534Native();
-        var dispatcher = new VolvoJ2534.App.CanRxDispatcher(j2534);
+        using var j2534 = new Dvinholm.App.J2534Native();
+        var dispatcher = new Dvinholm.App.CanRxDispatcher(j2534);
         dispatcher.Dispose();
 
         Assert.Throws<ObjectDisposedException>(() => dispatcher.Start());
@@ -169,7 +169,7 @@ public sealed class CanRxDispatcherTests
             ReadEntered = readEntered,
             AllowReadToFinish = allowReadToFinish
         };
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(adapter);
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
 
         dispatcher.Start();
         Assert.True(readEntered.Wait(TimeSpan.FromSeconds(2)), "Native read did not start.");
@@ -204,11 +204,11 @@ public sealed class CanRxDispatcherTests
     public void DispatcherPublishesFramesFromFakeAdapter()
     {
         var adapter = new FakeJ2534Adapter();
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(adapter);
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
         using var subscription = dispatcher.Subscribe();
 
         dispatcher.Start();
-        adapter.Enqueue(VolvoJ2534.App.CanDecoder.Encode(0x7E8, new byte[] { 0x03, 0x7F, 0x22, 0x31 }));
+        adapter.Enqueue(Dvinholm.App.CanDecoder.Encode(0x7E8, new byte[] { 0x03, 0x7F, 0x22, 0x31 }));
 
         Assert.True(subscription.TryRead(TimeSpan.FromSeconds(2), CancellationToken.None, out var frame));
         Assert.Equal((uint)0x7E8, frame.ArbitrationId);
@@ -219,7 +219,7 @@ public sealed class CanRxDispatcherTests
     public void DispatcherReportsReadErrorAndContinuesReceiving()
     {
         var adapter = new FakeJ2534Adapter();
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(adapter);
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
         using var subscription = dispatcher.Subscribe();
         using var errorSeen = new ManualResetEventSlim();
 
@@ -228,7 +228,7 @@ public sealed class CanRxDispatcherTests
         dispatcher.Start();
 
         Assert.True(errorSeen.Wait(TimeSpan.FromSeconds(2)));
-        adapter.Enqueue(VolvoJ2534.App.CanDecoder.Encode(0x7E8, new byte[] { 0x01, 0x00 }));
+        adapter.Enqueue(Dvinholm.App.CanDecoder.Encode(0x7E8, new byte[] { 0x01, 0x00 }));
 
         Assert.True(subscription.TryRead(TimeSpan.FromSeconds(2), CancellationToken.None, out var frame));
         Assert.Equal((uint)0x7E8, frame.ArbitrationId);
@@ -239,7 +239,7 @@ public sealed class CanRxDispatcherTests
     public void DispatcherReportsThrownReadErrorAndContinuesReceivingAfterRecovery()
     {
         var adapter = new FakeJ2534Adapter();
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(adapter);
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
         using var subscription = dispatcher.Subscribe();
         using var errorSeen = new ManualResetEventSlim();
 
@@ -255,7 +255,7 @@ public sealed class CanRxDispatcherTests
         Assert.True(errorSeen.Wait(TimeSpan.FromSeconds(2)),
             "The dispatcher did not report an exception thrown by the adapter.");
 
-        adapter.Enqueue(VolvoJ2534.App.CanDecoder.Encode(0x7E8, new byte[] { 0x01, 0x00 }));
+        adapter.Enqueue(Dvinholm.App.CanDecoder.Encode(0x7E8, new byte[] { 0x01, 0x00 }));
         Assert.True(subscription.TryRead(TimeSpan.FromSeconds(2), CancellationToken.None, out var frame));
         Assert.Equal((uint)0x7E8, frame.ArbitrationId);
     }
@@ -264,7 +264,7 @@ public sealed class CanRxDispatcherTests
     public void DispatcherReportsUnexpectedOperationCanceledExceptionAndContinuesReceiving()
     {
         var adapter = new FakeJ2534Adapter();
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(adapter);
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
         using var errorSeen = new ManualResetEventSlim();
         using var subscription = dispatcher.Subscribe();
 
@@ -280,7 +280,7 @@ public sealed class CanRxDispatcherTests
         Assert.True(errorSeen.Wait(TimeSpan.FromSeconds(2)),
             "An unexpected OperationCanceledException from the adapter was not reported.");
 
-        adapter.Enqueue(VolvoJ2534.App.CanDecoder.Encode(0x7E8, new byte[] { 0x01, 0x00 }));
+        adapter.Enqueue(Dvinholm.App.CanDecoder.Encode(0x7E8, new byte[] { 0x01, 0x00 }));
         Assert.True(subscription.TryRead(TimeSpan.FromSeconds(2), CancellationToken.None, out var frame));
         Assert.Equal((uint)0x7E8, frame.ArbitrationId);
         Assert.True(adapter.ReadCount >= 2);
@@ -290,7 +290,7 @@ public sealed class CanRxDispatcherTests
     public async Task DispatcherBacksOffWhenAdapterContinuouslyReturnsReadErrors()
     {
         var adapter = new FakeJ2534Adapter { FailReadsContinuously = true };
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(adapter);
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
         using var firstErrorSeen = new ManualResetEventSlim();
         var errorCount = 0;
 
@@ -314,7 +314,7 @@ public sealed class CanRxDispatcherTests
     public async Task DispatcherBacksOffWhenAdapterReturnsEmptyReadsImmediately()
     {
         var adapter = new FakeJ2534Adapter { ReturnEmptyReadsContinuously = true };
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(adapter);
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
 
         dispatcher.Start();
         await Task.Delay(100);
@@ -329,7 +329,7 @@ public sealed class CanRxDispatcherTests
     public void DispatcherCanBeDisposedFromReadErrorCallback()
     {
         var adapter = new FakeJ2534Adapter();
-        var dispatcher = new VolvoJ2534.App.CanRxDispatcher(adapter);
+        var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
         using var callbackReturned = new ManualResetEventSlim();
 
         dispatcher.ReadError += _ =>
@@ -350,7 +350,7 @@ public sealed class CanRxDispatcherTests
     public void DispatcherIsolatesThrowingReadErrorSubscriber()
     {
         var adapter = new FakeJ2534Adapter();
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(adapter);
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
         using var errorSeen = new ManualResetEventSlim();
 
         dispatcher.ReadError += _ => throw new InvalidOperationException("simulated UI subscriber failure");
@@ -365,7 +365,7 @@ public sealed class CanRxDispatcherTests
     public void DispatcherThrottlesRepeatedDecodeErrors()
     {
         var adapter = new FakeJ2534Adapter();
-        using var dispatcher = new VolvoJ2534.App.CanRxDispatcher(adapter);
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
         using var firstErrorSeen = new ManualResetEventSlim();
         using var secondErrorSeen = new ManualResetEventSlim();
         var errorCount = 0;
@@ -380,7 +380,7 @@ public sealed class CanRxDispatcherTests
             if (count == 2) secondErrorSeen.Set();
         };
 
-        var malformed = VolvoJ2534.App.CanDecoder.Encode(0x7E8, new byte[] { 0x01 });
+        var malformed = Dvinholm.App.CanDecoder.Encode(0x7E8, new byte[] { 0x01 });
         malformed.ProtocolID = 0xFFFFFFFF;
         dispatcher.Start();
 
@@ -404,7 +404,7 @@ public sealed class CanRxDispatcherTests
         using var readEntered = new ManualResetEventSlim();
         using var allowReadToFinish = new ManualResetEventSlim();
         var adapter = new BlockingReadAdapter(readEntered, allowReadToFinish);
-        var dispatcher = new VolvoJ2534.App.CanRxDispatcher(adapter);
+        var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
 
         dispatcher.Start();
         Assert.True(readEntered.Wait(TimeSpan.FromSeconds(2)), "Adapter read did not start.");
@@ -425,9 +425,9 @@ public sealed class CanRxDispatcherTests
         Assert.Equal(1, adapter.ReadCount);
     }
 
-    private sealed class FakeJ2534Adapter : VolvoJ2534.App.IJ2534Adapter
+    private sealed class FakeJ2534Adapter : Dvinholm.App.IJ2534Adapter
     {
-        private readonly System.Collections.Concurrent.ConcurrentQueue<VolvoJ2534.App.J2534Native.PassthruMsg> _frames = new();
+        private readonly System.Collections.Concurrent.ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _frames = new();
         private int _failNextRead;
         private int _throwNextRead;
         private int _cancelNextRead;
@@ -442,7 +442,7 @@ public sealed class CanRxDispatcherTests
         internal bool ReturnEmptyReadsContinuously { get; init; }
         internal int MaxConcurrentReads => Volatile.Read(ref _maxConcurrentReads);
 
-        internal void Enqueue(VolvoJ2534.App.J2534Native.PassthruMsg frame) => _frames.Enqueue(frame);
+        internal void Enqueue(Dvinholm.App.J2534Native.PassthruMsg frame) => _frames.Enqueue(frame);
         internal void FailNextRead() => Interlocked.Exchange(ref _failNextRead, 1);
         internal void ThrowNextRead() => Interlocked.Exchange(ref _throwNextRead, 1);
         internal void CancelNextRead() => Interlocked.Exchange(ref _cancelNextRead, 1);
@@ -450,14 +450,14 @@ public sealed class CanRxDispatcherTests
         public bool Load(string path, out string error) { error = string.Empty; return true; }
         public bool Open(out string error) { error = string.Empty; return true; }
         public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
-        public bool Write(in VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
             return true;
         }
         public void Unload() { }
 
-        public bool Read(out VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             Interlocked.Increment(ref _readCount);
             var active = Interlocked.Increment(ref _activeReads);
@@ -525,7 +525,7 @@ public sealed class CanRxDispatcherTests
 
     private sealed class BlockingReadAdapter(
         ManualResetEventSlim readEntered,
-        ManualResetEventSlim allowReadToFinish) : VolvoJ2534.App.IJ2534Adapter
+        ManualResetEventSlim allowReadToFinish) : Dvinholm.App.IJ2534Adapter
     {
         private int _readCount;
         internal int ReadCount => Volatile.Read(ref _readCount);
@@ -533,14 +533,14 @@ public sealed class CanRxDispatcherTests
         public bool Load(string path, out string error) { error = string.Empty; return true; }
         public bool Open(out string error) { error = string.Empty; return true; }
         public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
-        public bool Write(in VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
             return true;
         }
         public void Unload() { }
 
-        public bool Read(out VolvoJ2534.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             Interlocked.Increment(ref _readCount);
             readEntered.Set();
@@ -551,6 +551,6 @@ public sealed class CanRxDispatcherTests
         }
     }
 
-    private static VolvoJ2534.App.CanFrame Frame(uint id) =>
+    private static Dvinholm.App.CanFrame Frame(uint id) =>
         new(id, false, false, new byte[] { 0x00 }, 0, 0);
 }
