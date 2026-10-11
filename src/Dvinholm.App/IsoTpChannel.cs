@@ -392,8 +392,23 @@ internal sealed class IsoTpChannel : IDisposable
         if (delay > remaining)
             throw new TimeoutException("ISO-TP STmin exceeds remaining request timeout.");
 
-        if (delay.TotalMilliseconds >= 1)
+        if (delay >= TimeSpan.FromMilliseconds(1))
+        {
             Task.Delay(delay, cancellationToken).GetAwaiter().GetResult();
+            return;
+        }
+
+        // ISO-TP defines STmin values 0xF1..0xF9 as 100..900 microseconds.
+        // Task.Delay has millisecond-scale granularity on Windows and would
+        // return immediately for these values, violating the ECU's requested
+        // minimum inter-frame separation. Busy-wait only for this sub-ms range.
+        var start = Stopwatch.GetTimestamp();
+        var requiredTicks = ToTimestampTicks(delay);
+        while (Stopwatch.GetTimestamp() - start < requiredTicks)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Thread.SpinWait(8);
+        }
         else
             SpinWaitUntil(delay, cancellationToken);
     }
