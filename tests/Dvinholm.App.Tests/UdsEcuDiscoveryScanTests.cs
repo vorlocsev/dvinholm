@@ -84,4 +84,38 @@ public sealed class UdsEcuDiscoveryScanTests
             await scan.WaitAsync(TimeSpan.FromSeconds(2)));
         Assert.Equal(0, adapter.TransmittedFrames);
     }
+
+    [Fact]
+    public async Task ScanAsync_TracksMultipleEcusIndependently()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ =>
+            Array.Empty<Dvinholm.App.CanFrame>());
+        using var bus = new Dvinholm.App.CanBus(adapter);
+        bus.Start();
+        var discovery = new Dvinholm.App.UdsEcuDiscovery(bus);
+
+        var scan = discovery.ScanAsync(TimeSpan.FromMilliseconds(400));
+        // Let the passive scan subscribe before injecting both ECU responses.
+        await Task.Delay(50);
+
+        adapter.InjectReceiveFrame(new Dvinholm.App.CanFrame(
+            0x7E8, false, false, new byte[] { 0x03, 0x62, 0xF1, 0x90 }, 0, 0));
+        adapter.InjectReceiveFrame(new Dvinholm.App.CanFrame(
+            0x7E9, false, false, new byte[] { 0x03, 0x62, 0xF1, 0x91 }, 0, 0));
+        adapter.InjectReceiveFrame(new Dvinholm.App.CanFrame(
+            0x7E9, false, false, new byte[] { 0x03, 0x7F, 0x22, 0x31 }, 0, 0));
+
+        var candidates = await scan.WaitAsync(TimeSpan.FromSeconds(2));
+
+        Assert.Equal(2, candidates.Count);
+        var first = Assert.Single(candidates, x => x.ResponseId == 0x7E8);
+        Assert.Equal((uint?)0x7E0, first.RequestId);
+        Assert.Equal(1, first.ResponseCount);
+
+        var second = Assert.Single(candidates, x => x.ResponseId == 0x7E9);
+        Assert.Equal((uint?)0x7E1, second.RequestId);
+        Assert.Equal(2, second.ResponseCount);
+        Assert.Equal(4, second.MaxDataLength);
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
 }
