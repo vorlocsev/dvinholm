@@ -197,6 +197,8 @@ internal sealed class EcuProfileCatalog
 
     private sealed class ProfileDocument
     {
+        public ProfileDocument() { }
+
         public string? Id { get; set; }
         public string? Name { get; set; }
         public string? RequestId { get; set; }
