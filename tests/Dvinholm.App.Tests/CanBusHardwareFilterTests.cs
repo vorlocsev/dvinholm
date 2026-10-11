@@ -45,4 +45,42 @@ public sealed class CanBusHardwareFilterTests
         Assert.False(bus.StopCanFilter(999, out var error));
         Assert.Contains("not active", error, StringComparison.OrdinalIgnoreCase);
     }
+
+    [Fact]
+    public async Task DisposeWaitsForInFlightHardwareFilterCall()
+    {
+        using var filterEntered = new ManualResetEventSlim();
+        using var allowFilterToFinish = new ManualResetEventSlim();
+        using var adapter = new VirtualJ2534Adapter(_ =>
+            Array.Empty<Dvinholm.App.CanFrame>())
+        {
+            FilterCallEntered = filterEntered,
+            AllowFilterCallToFinish = allowFilterToFinish
+        };
+        var bus = new Dvinholm.App.CanBus(adapter);
+
+        var filterTask = Task.Run(() =>
+            bus.StartCanIdFilter(0x7E8, extended: false, out _, out _));
+        Task? disposeTask = null;
+
+        try
+        {
+            Assert.True(filterEntered.Wait(TimeSpan.FromSeconds(1)),
+                "The hardware filter call did not start.");
+            disposeTask = Task.Run(bus.Dispose);
+
+            await Task.Delay(100);
+            Assert.False(disposeTask.IsCompleted,
+                "CanBus.Dispose returned while a native filter call was active.");
+        }
+        finally
+        {
+            allowFilterToFinish.Set();
+        }
+
+        Assert.True(await filterTask);
+        await (disposeTask ?? Task.Run(bus.Dispose)).WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Throws<ObjectDisposedException>(() =>
+            bus.StartCanIdFilter(0x7E8, false, out _, out _));
+    }
 }
