@@ -9,7 +9,7 @@ public sealed class J2534DeviceDiscoveryTests
             registryName: "VirtualAdapter",
             name: null,
             vendor: null,
-            dllPath: @"C:\\Drivers\\j2534.dll",
+            dllPath: @"C:\Drivers\j2534.dll",
             registryPath: @"SOFTWARE\PassThruSupport.04.04",
             out var device);
 
