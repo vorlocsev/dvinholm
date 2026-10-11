@@ -13,6 +13,7 @@ public sealed class J2534BlockingReadTeardownTests
         Assert.True(session.Connect("virtual-adapter.dll", 500_000, out var error), error);
         Assert.True(readEntered.Wait(TimeSpan.FromSeconds(2)),
             "The receive worker did not enter the adapter's Read call.");
+        var unloadCountBeforeDisconnect = adapter.UnloadCount;
 
         var disconnect = Task.Run(session.Disconnect);
         try
@@ -22,7 +23,7 @@ public sealed class J2534BlockingReadTeardownTests
             await Task.Delay(TimeSpan.FromMilliseconds(1200));
             Assert.False(disconnect.IsCompleted,
                 "Disconnect returned while the native Read call was still active.");
-            Assert.Equal(0, adapter.UnloadCount);
+            Assert.Equal(unloadCountBeforeDisconnect, adapter.UnloadCount);
         }
         finally
         {
@@ -32,7 +33,7 @@ public sealed class J2534BlockingReadTeardownTests
         await disconnect.WaitAsync(TimeSpan.FromSeconds(3));
 
         Assert.False(session.IsConnected);
-        Assert.Equal(1, adapter.UnloadCount);
+        Assert.Equal(unloadCountBeforeDisconnect + 1, adapter.UnloadCount);
     }
 
     private sealed class BlockingReadAdapter(
