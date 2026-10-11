@@ -5,6 +5,66 @@ namespace Dvinholm.App.Tests;
 public sealed class IsoTpChannelProtocolTests
 {
     [Fact]
+    public void Request_ReportsReceiveQueueOverflowInsteadOfReturningAResponseOrTimeout()
+    {
+        var adapter = new OverflowingResponseAdapter();
+        using var bus = new Dvinholm.App.CanBus(adapter);
+        bus.Start();
+
+        using var channel = new Dvinholm.App.IsoTpChannel(
+            bus,
+            new Dvinholm.App.IsoTpChannel.Options(
+                0x7E0,
+                0x7E8,
+                FrameTimeout: TimeSpan.FromMilliseconds(500),
+                RequestTimeout: TimeSpan.FromSeconds(2)));
+
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            channel.Request(new byte[] { 0x22, 0xF1, 0x90 }));
+
+        Assert.Contains("receive queue dropped", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("frame(s)", error.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
+    private sealed class OverflowingResponseAdapter : Dvinholm.App.IJ2534Adapter
+    {
+        private readonly ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _incoming = new();
+        private readonly ManualResetEventSlim _releaseReads = new(false);
+        private int _started;
+
+        public bool Load(string path, out string error) { error = string.Empty; return true; }
+        public bool Open(out string error) { error = string.Empty; return true; }
+        public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
+
+        public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        {
+            error = string.Empty;
+            if (Interlocked.Exchange(ref _started, 1) == 0)
+                _releaseReads.Wait(TimeSpan.FromSeconds(2));
+
+            if (_incoming.TryDequeue(out msg))
+                return true;
+
+            msg = default;
+            return false;
+        }
+
+        public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
+        {
+            error = string.Empty;
+            // Queue enough unrelated traffic to overflow the subscription before
+            // the matching response. The dispatcher then drains this backlog.
+            for (var i = 0; i < 5_000; i++)
+                _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(0x123, new byte[] { 0x00 }));
+            _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(0x7E8, new byte[] { 0x04, 0x62, 0xF1, 0x90, 0x42 }));
+            _releaseReads.Set();
+            return true;
+        }
+
+        public void Unload() => _releaseReads.Dispose();
+    }
+
+    [Fact]
     public void Request_AfterDisposeThrowsWithoutSendingCanFrame()
     {
         var adapter = new LateConsecutiveFrameAdapter();
