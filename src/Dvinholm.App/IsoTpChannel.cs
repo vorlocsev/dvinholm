@@ -72,7 +72,9 @@ internal sealed class IsoTpChannel : IDisposable
         // Validate before creating a subscription so invalid options cannot
         // leave a registered receiver behind.
         _options.Validate();
-        _rx = _bus.Subscribe(receiveQueueCapacity);
+        _rx = _bus.Subscribe(
+            receiveQueueCapacity,
+            frame => frame.ArbitrationId == _options.ResponseId && frame.IsExtended == _options.CanExtendedId);
 
         // CAN Extended ID (29-bit) is independent from ISO-TP extended
         // addressing (an additional address byte in the CAN data field).

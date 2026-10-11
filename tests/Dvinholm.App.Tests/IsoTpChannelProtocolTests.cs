@@ -27,11 +27,41 @@ public sealed class IsoTpChannelProtocolTests
         Assert.Contains("frame(s)", error.Message, StringComparison.OrdinalIgnoreCase);
     }
 
+    [Fact]
+    public void Request_IgnoresUnrelatedTrafficWithoutOverflowingItsResponseQueue()
+    {
+        var adapter = new OverflowingResponseAdapter(noiseId: 0x123, noiseFrames: 5_000);
+        using var bus = new Dvinholm.App.CanBus(adapter);
+        bus.Start();
+
+        using var channel = new Dvinholm.App.IsoTpChannel(
+            bus,
+            new Dvinholm.App.IsoTpChannel.Options(
+                0x7E0,
+                0x7E8,
+                FrameTimeout: TimeSpan.FromMilliseconds(500),
+                RequestTimeout: TimeSpan.FromSeconds(2)),
+            receiveQueueCapacity: 1);
+
+        var response = channel.Request(new byte[] { 0x22, 0xF1, 0x90 });
+
+        Assert.Equal(new byte[] { 0x62, 0xF1, 0x90, 0x42 }, response);
+    }
+
     private sealed class OverflowingResponseAdapter : Dvinholm.App.IJ2534Adapter
     {
         private readonly ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _incoming = new();
         private readonly ManualResetEventSlim _releaseReads = new(false);
+        private readonly uint _noiseId;
+        private readonly int _noiseFrames;
         private int _started;
+        private int _readCount;
+
+        public OverflowingResponseAdapter(uint noiseId = 0x7E8, int noiseFrames = 100_000)
+        {
+            _noiseId = noiseId;
+            _noiseFrames = noiseFrames;
+        }
 
         public bool Load(string path, out string error) { error = string.Empty; return true; }
         public bool Open(out string error) { error = string.Empty; return true; }
@@ -44,7 +74,10 @@ public sealed class IsoTpChannelProtocolTests
                 _releaseReads.Wait(TimeSpan.FromSeconds(2));
 
             if (_incoming.TryDequeue(out msg))
+            {
+                Interlocked.Increment(ref _readCount);
                 return true;
+            }
 
             msg = default;
             return false;
@@ -55,10 +88,18 @@ public sealed class IsoTpChannelProtocolTests
             error = string.Empty;
             // Queue a sustained burst of unrelated traffic so the bounded subscription
             // deterministically overflows before the matching response can be consumed.
-            for (var i = 0; i < 100_000; i++)
-                _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(0x123, new byte[] { 0x00 }));
+            for (var i = 0; i < _noiseFrames; i++)
+                _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(_noiseId, new byte[] { 0x00 }));
             _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(0x7E8, new byte[] { 0x04, 0x62, 0xF1, 0x90, 0x42 }));
             _releaseReads.Set();
+
+            // Keep the request thread inside Write until the dispatcher has
+            // consumed the burst, so the bounded subscription overflows before
+            // the ISO-TP reader can consume any of its frames.
+            SpinWait.SpinUntil(
+                () => Volatile.Read(ref _readCount) >= _noiseFrames + 1,
+                TimeSpan.FromSeconds(2));
+            Thread.Sleep(20);
             return true;
         }
 
