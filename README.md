@@ -62,7 +62,11 @@ The process is x86, so it can load 32-bit J2534 DLLs but not 64-bit-only DLLs.
 ## Next architecture steps
 
 1. Expand adapter capability reporting where supported by vendor drivers.
-2. Volvo ECU profiles for supported diagnostics.
+2. Add data-driven Volvo ECU profiles only when CAN addressing and diagnostic support have a reliable source.
+
+### ECU profile foundation
+
+`EcuProfile` stores request/response CAN IDs, 11-bit vs 29-bit addressing, a list of candidate readable DIDs, source notes, and an explicit verification flag. `EcuProfileCatalog` provides case-insensitive lookup and separates verified entries from drafts. The catalog intentionally starts empty: no vehicle-specific IDs or DID support are guessed. A listed DID is a candidate for read-only diagnostics, not a guarantee that an ECU implements it.
 
 
 ### ISO-TP
