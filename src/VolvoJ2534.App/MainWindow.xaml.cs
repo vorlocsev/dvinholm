@@ -513,7 +513,10 @@ public sealed partial class MainWindow : Window
             StartButton.IsEnabled = true;
             SetUdsEnabled(true);
             DiscoverButton.IsEnabled = true;
-            SetStatus("Connected · J2534 · CAN");
+            var version = _session.AdapterVersion;
+            SetStatus(version is null
+                ? "Connected · J2534 · CAN" + (string.IsNullOrWhiteSpace(_session.AdapterVersionStatus) ? " · driver version unavailable" : " · " + _session.AdapterVersionStatus)
+                : $"Connected · J2534 · CAN · API {version.Api} · DLL {version.Dll} · FW {version.Firmware}");
         }
         catch (Exception ex)
         {
