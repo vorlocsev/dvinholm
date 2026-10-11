@@ -35,8 +35,8 @@ public sealed class IsoTpReceiveQueueOverflowRecoveryTests
     {
         private readonly ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _incoming = new();
         private readonly AutoResetEvent _incomingReady = new(false);
-        private readonly ManualResetEventSlim _allowFirstReadToProceed = new(false);
-        private int _firstRead = 1;
+        private readonly ManualResetEventSlim _burstReadComplete = new(false);
+        private int _burstFramesRemaining;
         private int _requestCount;
 
         internal int RequestCount => Volatile.Read(ref _requestCount);
@@ -48,14 +48,22 @@ public sealed class IsoTpReceiveQueueOverflowRecoveryTests
         public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
             error = string.Empty;
-            if (Interlocked.Exchange(ref _firstRead, 0) == 1)
-                _allowFirstReadToProceed.Wait(TimeSpan.FromSeconds(2));
-
             if (_incoming.TryDequeue(out msg))
+            {
+                if (Interlocked.Decrement(ref _burstFramesRemaining) == 0)
+                    _burstReadComplete.Set();
                 return true;
+            }
 
             _incomingReady.WaitOne(TimeSpan.FromMilliseconds(timeout));
-            return _incoming.TryDequeue(out msg);
+            if (_incoming.TryDequeue(out msg))
+            {
+                if (Interlocked.Decrement(ref _burstFramesRemaining) == 0)
+                    _burstReadComplete.Set();
+                return true;
+            }
+
+            return false;
         }
 
         public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
@@ -70,12 +78,19 @@ public sealed class IsoTpReceiveQueueOverflowRecoveryTests
             var requestNumber = Interlocked.Increment(ref _requestCount);
             if (requestNumber == 1)
             {
-                // Hold the native reader until the burst is fully queued. This
-                // deterministically overflows the one-frame ISO-TP subscription.
-                for (var i = 0; i < 128; i++)
-                    Enqueue(new byte[] { 0x03, 0x62, 0xF1, (byte)i });
+                // Flow Control frames are ignored while awaiting a UDS payload.
+                // Wait until the dispatcher has drained the burst from the adapter,
+                // so the one-frame subscription has overflowed before Request reads.
+                const int burstSize = 128;
+                _burstFramesRemaining = burstSize;
+                for (var i = 0; i < burstSize; i++)
+                    Enqueue(new byte[] { 0x30, 0x00, 0x00 });
 
-                _allowFirstReadToProceed.Set();
+                if (!_burstReadComplete.Wait(TimeSpan.FromSeconds(1)))
+                {
+                    error = "Timed out waiting for the virtual CAN reader to drain the burst.";
+                    return false;
+                }
             }
             else
             {
@@ -95,8 +110,8 @@ public sealed class IsoTpReceiveQueueOverflowRecoveryTests
 
         public void Dispose()
         {
-            _allowFirstReadToProceed.Set();
-            _allowFirstReadToProceed.Dispose();
+            _burstReadComplete.Set();
+            _burstReadComplete.Dispose();
             _incomingReady.Dispose();
         }
     }
