@@ -401,4 +401,83 @@ public sealed class VirtualJ2534AdapterTests
         Assert.Equal(2, adapter.TransmittedFrames);
     }
 
+    [Fact]
+    public void VirtualAdapter_OutboundMultiFrameHonorsBlockSizeAndWaitsForNextFlowControl()
+    {
+        var consecutiveFrames = 0;
+        var flowControlFrames = 0;
+        var sequenceNumbers = new List<byte>();
+
+        using var adapter = new VirtualJ2534Adapter(request =>
+        {
+            if (request.ArbitrationId != 0x7E0 || request.Data.Length == 0)
+                return Array.Empty<VolvoJ2534.App.CanFrame>();
+
+            var frameType = request.Data[0] >> 4;
+            if (frameType == 1)
+            {
+                // Permit exactly two consecutive frames before requiring another FC.
+                Interlocked.Increment(ref flowControlFrames);
+                return new[]
+                {
+                    new VolvoJ2534.App.CanFrame(
+                        0x7E8, false, false,
+                        new byte[] { 0x30, 0x02, 0x00, 0, 0, 0, 0, 0 },
+                        0, 0)
+                };
+            }
+
+            if (frameType == 2)
+            {
+                sequenceNumbers.Add((byte)(request.Data[0] & 0x0F));
+                var sent = Interlocked.Increment(ref consecutiveFrames);
+
+                if (sent == 2)
+                {
+                    Interlocked.Increment(ref flowControlFrames);
+                    return new[]
+                    {
+                        new VolvoJ2534.App.CanFrame(
+                            0x7E8, false, false,
+                            new byte[] { 0x30, 0x02, 0x00, 0, 0, 0, 0, 0 },
+                            0, 0)
+                    };
+                }
+
+                if (sent == 3)
+                {
+                    return new[]
+                    {
+                        new VolvoJ2534.App.CanFrame(
+                            0x7E8, false, false,
+                            new byte[] { 0x03, 0x62, 0xF1, 0x90 },
+                            0, 0)
+                    };
+                }
+            }
+
+            return Array.Empty<VolvoJ2534.App.CanFrame>();
+        });
+
+        using var bus = new VolvoJ2534.App.CanBus(adapter);
+        bus.Start();
+        using var channel = new VolvoJ2534.App.IsoTpChannel(
+            bus,
+            new VolvoJ2534.App.IsoTpChannel.Options(
+                0x7E0, 0x7E8,
+                FrameTimeout: TimeSpan.FromMilliseconds(500),
+                FlowControlTimeout: TimeSpan.FromMilliseconds(500),
+                RequestTimeout: TimeSpan.FromSeconds(2)));
+
+        // 27 bytes require one FF and three CFs (6 + 7 + 7 + 7).
+        var request = Enumerable.Range(0, 27).Select(i => (byte)i).ToArray();
+        var response = channel.Request(request);
+
+        Assert.Equal(new byte[] { 0x62, 0xF1, 0x90 }, response);
+        Assert.Equal(3, Volatile.Read(ref consecutiveFrames));
+        Assert.Equal(2, Volatile.Read(ref flowControlFrames));
+        Assert.Equal(new byte[] { 1, 2, 3 }, sequenceNumbers);
+        Assert.Equal(4, adapter.TransmittedFrames); // FF + 3 CFs; FCs are received from the ECU.
+    }
+
 }
