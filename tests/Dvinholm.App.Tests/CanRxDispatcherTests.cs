@@ -39,6 +39,29 @@ public sealed class CanRxDispatcherTests
     }
 
     [Fact]
+    public void Subscription_DroppedFrameCountTracksEveryOverflowWithoutBlockingPublisher()
+    {
+        using var j2534 = new Dvinholm.App.J2534Native();
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(j2534);
+        using var subscription = dispatcher.Subscribe(2);
+
+        Assert.Equal(0, subscription.DroppedFrameCount);
+        subscription.Publish(Frame(0x100));
+        subscription.Publish(Frame(0x101));
+        Assert.Equal(0, subscription.DroppedFrameCount);
+
+        subscription.Publish(Frame(0x102));
+        Assert.Equal(1, subscription.DroppedFrameCount);
+        subscription.Publish(Frame(0x103));
+        subscription.Publish(Frame(0x104));
+        Assert.Equal(3, subscription.DroppedFrameCount);
+
+        // Reading frames does not change the cumulative drop metric.
+        Assert.True(subscription.TryRead(TimeSpan.Zero, CancellationToken.None, out _));
+        Assert.Equal(3, subscription.DroppedFrameCount);
+    }
+
+    [Fact]
     public async Task Subscription_ConcurrentPublishAndRead_RemainsConsistentAfterOverflow()
     {
         using var j2534 = new Dvinholm.App.J2534Native();
