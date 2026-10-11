@@ -20,6 +20,14 @@ internal sealed class VirtualJ2534Adapter : VolvoJ2534.App.IJ2534Adapter, IDispo
 
     internal int TransmittedFrames => Volatile.Read(ref _transmittedFrames);
 
+    internal void InjectReceiveFrame(VolvoJ2534.App.CanFrame frame)
+    {
+        ObjectDisposedException.ThrowIf(Volatile.Read(ref _disposed) != 0, this);
+        _rx.Enqueue(VolvoJ2534.App.CanDecoder.Encode(
+            frame.ArbitrationId, frame.Data, frame.IsExtended));
+        _rxReady.Release();
+    }
+
     public bool Load(string path, out string error) { error = string.Empty; return true; }
     public bool Open(out string error) { error = string.Empty; return true; }
     public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
@@ -49,11 +57,7 @@ internal sealed class VirtualJ2534Adapter : VolvoJ2534.App.IJ2534Adapter, IDispo
 
         Interlocked.Increment(ref _transmittedFrames);
         foreach (var response in _onTransmit(frame))
-        {
-            _rx.Enqueue(VolvoJ2534.App.CanDecoder.Encode(
-                response.ArbitrationId, response.Data, response.IsExtended));
-            _rxReady.Release();
-        }
+            InjectReceiveFrame(response);
 
         return true;
     }
