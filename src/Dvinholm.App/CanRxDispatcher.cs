@@ -11,12 +11,14 @@ internal sealed class CanRxDispatcher : IDisposable
         private readonly CanRxDispatcher _owner;
         private readonly Channel<CanFrame> _channel;
         private readonly int _capacity;
+        private readonly Func<CanFrame, bool>? _filter;
         private long _droppedFrameCount;
         private int _disposed;
 
-        internal Subscription(CanRxDispatcher owner, int capacity = DefaultQueueCapacity)
+        internal Subscription(CanRxDispatcher owner, int capacity = DefaultQueueCapacity, Func<CanFrame, bool>? filter = null)
         {
             _owner = owner;
+            _filter = filter;
             if (capacity < 1)
                 throw new ArgumentOutOfRangeException(nameof(capacity));
             _capacity = capacity;
@@ -108,6 +110,11 @@ internal sealed class CanRxDispatcher : IDisposable
             if (Dvinholm.App.CanRxDispatcher.IsDisposed(_disposed))
                 return;
 
+            // Filter before enqueueing so unrelated bus traffic cannot evict
+            // diagnostic frames from a bounded ISO-TP subscription.
+            if (_filter is not null && !_filter(frame))
+                return;
+
             // DropOldest preserves non-blocking publication for the native
             // read worker. The channel's item-dropped callback records evictions;
             // TryWrite alone cannot report them in this full mode.
@@ -144,13 +151,13 @@ internal sealed class CanRxDispatcher : IDisposable
     internal CanRxDispatcher(IJ2534Adapter j2534)
         => _j2534 = j2534 ?? throw new ArgumentNullException(nameof(j2534));
 
-    internal Subscription Subscribe(int capacity = 4096)
+    internal Subscription Subscribe(int capacity = 4096, Func<CanFrame, bool>? filter = null)
     {
         ObjectDisposedException.ThrowIf(Dvinholm.App.CanRxDispatcher.IsDisposed(_disposed), this);
         if (capacity < 1)
             throw new ArgumentOutOfRangeException(nameof(capacity));
 
-        var subscription = new Subscription(this, capacity);
+        var subscription = new Subscription(this, capacity, filter);
         lock (_gate)
         {
             ObjectDisposedException.ThrowIf(Dvinholm.App.CanRxDispatcher.IsDisposed(_disposed), this);
