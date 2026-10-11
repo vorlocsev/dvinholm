@@ -7,5 +7,7 @@ internal interface IJ2534Adapter
     bool Connect(uint baudRate, out string error);
     bool Read(out J2534Native.PassthruMsg msg, uint timeout, out string error);
     bool Write(in J2534Native.PassthruMsg msg, uint timeout, out string error);
+    bool StartCanIdFilter(uint arbitrationId, bool extended, out uint filterId, out string error);
+    bool StopCanFilter(uint filterId, out string error);
     void Unload();
 }
