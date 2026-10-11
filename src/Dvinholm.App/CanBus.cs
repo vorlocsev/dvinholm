@@ -43,13 +43,33 @@ internal sealed class CanBus : IDisposable
             return false;
         }
 
-        return _j2534.StartCanIdFilter(arbitrationId, extended, out filterId, out error);
+        // Filter operations also enter the native J2534 DLL. Share the TX lock
+        // so Dispose cannot unload the module while a filter call is in flight.
+        _txLock.Wait();
+        try
+        {
+            ThrowIfDisposed();
+            return _j2534.StartCanIdFilter(arbitrationId, extended, out filterId, out error);
+        }
+        finally
+        {
+            _txLock.Release();
+        }
     }
 
     internal bool StopCanFilter(uint filterId, out string error)
     {
         ThrowIfDisposed();
-        return _j2534.StopCanFilter(filterId, out error);
+        _txLock.Wait();
+        try
+        {
+            ThrowIfDisposed();
+            return _j2534.StopCanFilter(filterId, out error);
+        }
+        finally
+        {
+            _txLock.Release();
+        }
     }
 
     internal void Stop()
