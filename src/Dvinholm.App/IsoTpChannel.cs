@@ -287,10 +287,13 @@ internal sealed class IsoTpChannel : IDisposable
     private IsoTpFrame WaitForFlowControl(long deadline, CancellationToken cancellationToken)
     {
         var waits = 0;
+        var flowControlDeadline = MinDeadline(deadline, _options.EffectiveFlowControlTimeout);
 
         while (true)
         {
-            var frame = ReadMatchingCanFrame(_options.ResponseId, MinDeadline(deadline, _options.EffectiveFlowControlTimeout), cancellationToken);
+            // Unrelated frames must not extend the Flow Control timeout. Only a
+            // valid FC WAIT grants another Flow Control response interval.
+            var frame = ReadMatchingCanFrame(_options.ResponseId, flowControlDeadline, cancellationToken);
 
             if (!IsoTp.TryDecode(frame, out var iso, out var error))
                 throw new InvalidOperationException(error);
@@ -307,6 +310,7 @@ internal sealed class IsoTpChannel : IDisposable
                 case IsoTpFlowStatus.Wait:
                     if (++waits > _options.MaxWaitFlowControls)
                         throw new TimeoutException("ISO-TP Flow Control WAIT limit exceeded.");
+                    flowControlDeadline = MinDeadline(deadline, _options.EffectiveFlowControlTimeout);
                     continue;
 
                 case IsoTpFlowStatus.Overflow:
