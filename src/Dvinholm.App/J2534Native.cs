@@ -2,7 +2,7 @@ using System.Runtime.InteropServices;
 
 namespace Dvinholm.App;
 
-internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
+internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
 {
     private const uint StatusNoError = 0;
     private const uint ErrTimeout = 0x00000009;
