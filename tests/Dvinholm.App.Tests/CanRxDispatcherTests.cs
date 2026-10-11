@@ -250,6 +250,26 @@ public sealed class CanRxDispatcherTests
     }
 
     [Fact]
+    public void Subscription_RateLimitsRepeatedFilterExceptions()
+    {
+        using var j2534 = new Dvinholm.App.J2534Native();
+        using var dispatcher = new Dvinholm.App.CanRxDispatcher(j2534);
+        using var faulty = dispatcher.Subscribe(filter: _ =>
+            throw new InvalidOperationException("simulated repeated filter failure"));
+        var reported = 0;
+        dispatcher.ReadError += error =>
+        {
+            if (error.Message.Contains("CAN subscription filter failed", StringComparison.Ordinal))
+                Interlocked.Increment(ref reported);
+        };
+
+        for (var i = 0; i < 100; i++)
+            faulty.Publish(Frame((uint)(0x100 + i)));
+
+        Assert.Equal(1, reported);
+    }
+
+    [Fact]
     public void DispatcherPublishesFramesFromFakeAdapter()
     {
         var adapter = new FakeJ2534Adapter();
