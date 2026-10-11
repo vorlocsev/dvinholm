@@ -48,19 +48,43 @@ public sealed class IsoTpChannelProtocolTests
         Assert.Equal(new byte[] { 0x62, 0xF1, 0x90, 0x42 }, response);
     }
 
+    [Fact]
+    public void Request_IgnoresSameCanIdWithDifferentStandardExtendedFormat()
+    {
+        var adapter = new OverflowingResponseAdapter(noiseId: 0x7E8, noiseFrames: 5_000, noiseExtended: true);
+        using var bus = new Dvinholm.App.CanBus(adapter);
+        bus.Start();
+
+        using var channel = new Dvinholm.App.IsoTpChannel(
+            bus,
+            new Dvinholm.App.IsoTpChannel.Options(
+                0x7E0,
+                0x7E8,
+                CanExtendedId: false,
+                FrameTimeout: TimeSpan.FromMilliseconds(500),
+                RequestTimeout: TimeSpan.FromSeconds(2)),
+            receiveQueueCapacity: 1);
+
+        var response = channel.Request(new byte[] { 0x22, 0xF1, 0x90 });
+
+        Assert.Equal(new byte[] { 0x62, 0xF1, 0x90, 0x42 }, response);
+    }
+
     private sealed class OverflowingResponseAdapter : Dvinholm.App.IJ2534Adapter
     {
         private readonly ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _incoming = new();
         private readonly ManualResetEventSlim _releaseReads = new(false);
         private readonly uint _noiseId;
         private readonly int _noiseFrames;
+        private readonly bool _noiseExtended;
         private int _started;
         private int _readCount;
 
-        public OverflowingResponseAdapter(uint noiseId = 0x7E8, int noiseFrames = 100_000)
+        public OverflowingResponseAdapter(uint noiseId = 0x7E8, int noiseFrames = 100_000, bool noiseExtended = false)
         {
             _noiseId = noiseId;
             _noiseFrames = noiseFrames;
+            _noiseExtended = noiseExtended;
         }
 
         public bool Load(string path, out string error) { error = string.Empty; return true; }
@@ -75,6 +99,8 @@ public sealed class IsoTpChannelProtocolTests
 
             if (_incoming.TryDequeue(out msg))
             {
+                if (_noiseExtended && (msg.TxFlags & Dvinholm.App.CanDecoder.Can29BitId) != 0)
+                    msg.RxStatus |= Dvinholm.App.CanDecoder.Can29BitId;
                 Interlocked.Increment(ref _readCount);
                 return true;
             }
@@ -89,7 +115,7 @@ public sealed class IsoTpChannelProtocolTests
             // Queue a sustained burst of unrelated traffic so the bounded subscription
             // deterministically overflows before the matching response can be consumed.
             for (var i = 0; i < _noiseFrames; i++)
-                _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(_noiseId, new byte[] { 0x00 }));
+                _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(_noiseId, new byte[] { 0x00 }, _noiseExtended));
             _incoming.Enqueue(Dvinholm.App.CanDecoder.Encode(0x7E8, new byte[] { 0x04, 0x62, 0xF1, 0x90, 0x42 }));
             _releaseReads.Set();
 
