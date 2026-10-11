@@ -9,7 +9,7 @@ public sealed unsafe class CanHardwareFilterTests
 
         Assert.Equal(Dvinholm.App.J2534Native.ProtocolCan, mask.ProtocolID);
         Assert.Equal(4u, mask.DataSize);
-        Assert.Equal(Dvinholm.App.CanDecoder.Can29BitId, mask.TxFlags);
+        Assert.Equal(0u, mask.TxFlags);
         Assert.Equal(new byte[] { 0, 0, 7, 255 }, ReadId(mask));
     }
 
@@ -18,6 +18,7 @@ public sealed unsafe class CanHardwareFilterTests
     {
         var mask = Dvinholm.App.CanHardwareFilter.CreateMask(extended: true);
 
+        Assert.Equal(Dvinholm.App.CanDecoder.Can29BitId, mask.TxFlags);
         Assert.Equal(new byte[] { 31, 255, 255, 255 }, ReadId(mask));
     }
 
