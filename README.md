@@ -27,7 +27,7 @@ No immobilizer/PIN extraction, brute forcing, security bypass, or automated secu
 
 ## Architecture
 
-The product is **Dvinholm**, a Windows diagnostic application built with C# and WinUI 3. The current implementation remains in the legacy `VolvoJ2534.App` source/project paths; these technical identifiers are intentionally retained in this branding pass to avoid a risky namespace-wide rename. There is one J2534 backend; the old C++/Win32 backend was removed to avoid duplicate implementations.
+The product is **Dvinholm**, a Windows diagnostic application built with C# and WinUI 3. The current implementation remains in the legacy `Dvinholm.App` source/project paths; these technical identifiers are intentionally retained in this branding pass to avoid a risky namespace-wide rename. There is one J2534 backend; the old C++/Win32 backend was removed to avoid duplicate implementations.
 
 ```text
 WinUI 3 / MainWindow
@@ -122,14 +122,14 @@ Build from PowerShell:
 ```powershell
 dotnet restore .\Dvinholm.sln
 dotnet build .\Dvinholm.sln -c Release --no-restore -p:Platform=x86
-dotnet publish .\src\VolvoJ2534.App\VolvoJ2534.App.csproj -c Release -r win-x86 --self-contained true
+dotnet publish .\src\Dvinholm.App\Dvinholm.App.csproj -c Release -r win-x86 --self-contained true
 ```
 
 The process is x86, so it can load 32-bit J2534 DLLs but not 64-bit-only DLLs.
 
 ## Tests and CI
 
-The test project is `tests/VolvoJ2534.App.Tests` (legacy technical name). It includes hardware-independent tests using `VirtualJ2534Adapter` for CAN transport, ISO-TP flow control/reassembly/recovery, and UDS read operations. GitHub Actions restores, builds, runs tests, publishes the application, and uploads the build artifact on Windows.
+The test project is `tests/Dvinholm.App.Tests` (legacy technical name). It includes hardware-independent tests using `VirtualJ2534Adapter` for CAN transport, ISO-TP flow control/reassembly/recovery, and UDS read operations. GitHub Actions restores, builds, runs tests, publishes the application, and uploads the build artifact on Windows.
 
 Tests against the virtual adapter do not replace validation with the actual J2534 hardware and its vendor driver.
 

@@ -40,7 +40,7 @@ jobs:
           architecture: x86
 
       - name: Test
-        run: dotnet test tests/VolvoJ2534.App.Tests/VolvoJ2534.App.Tests.csproj --configuration Release -p:Platform=x86 --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release -p:Platform=x86 --logger "trx;LogFileName=test-results.trx"
 
       - name: Setup .NET x64 for publish
         uses: actions/setup-dotnet@v6
@@ -49,7 +49,7 @@ jobs:
           architecture: x64
 
       - name: Publish
-        run: dotnet publish src/VolvoJ2534.App/VolvoJ2534.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 --output artifacts/app
+        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 --output artifacts/app
 
       - name: Upload artifact
         uses: actions/upload-artifact@v7
