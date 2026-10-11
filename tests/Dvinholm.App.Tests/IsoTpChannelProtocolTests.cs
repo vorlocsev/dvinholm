@@ -1032,6 +1032,34 @@ public sealed class IsoTpChannelProtocolTests
     }
 
     [Fact]
+    public void Request_HonorsSubMillisecondSeparationTime()
+    {
+        var adapter = new OutboundFlowControlAdapter(waitBeforeContinue: false, overflow: false, separationTime: 0xF1);
+        using var bus = new Dvinholm.App.CanBus(adapter);
+        bus.Start();
+
+        using var channel = new Dvinholm.App.IsoTpChannel(
+            bus,
+            new Dvinholm.App.IsoTpChannel.Options(
+                0x7E0,
+                0x7E8,
+                RequestTimeout: TimeSpan.FromSeconds(1)));
+
+        var response = channel.Request(Enumerable.Range(0, 22).Select(i => (byte)i).ToArray());
+
+        Assert.Equal(new byte[] { 0x62, 0xF1, 0x90 }, response);
+        var timestamps = adapter.ConsecutiveFrameTimestamps.ToArray();
+        Assert.Equal(3, timestamps.Length);
+
+        for (var i = 1; i < timestamps.Length; i++)
+        {
+            var elapsed = System.Diagnostics.Stopwatch.GetElapsedTime(timestamps[i - 1], timestamps[i]);
+            Assert.True(elapsed >= TimeSpan.FromTicks(500),
+                $"ISO-TP STmin 0xF1 was not honored between consecutive frames (elapsed {elapsed.TotalMicroseconds:F0} us).");
+        }
+    }
+
+    [Fact]
     public void Request_RetriesFlowControlAfterWaitStatus()
     {
         var adapter = new OutboundFlowControlAdapter(waitBeforeContinue: true, overflow: false);
@@ -1081,17 +1109,21 @@ public sealed class IsoTpChannelProtocolTests
         private readonly AutoResetEvent _incomingReady = new(false);
         private readonly bool _waitBeforeContinue;
         private readonly bool _overflow;
+        private readonly byte _separationTime;
+        private readonly ConcurrentQueue<long> _consecutiveFrameTimestamps = new();
         private int _flowControlFramesSent;
         private int _consecutiveFramesSent;
 
-        internal OutboundFlowControlAdapter(bool waitBeforeContinue, bool overflow)
+        internal OutboundFlowControlAdapter(bool waitBeforeContinue, bool overflow, byte separationTime = 0)
         {
             _waitBeforeContinue = waitBeforeContinue;
             _overflow = overflow;
+            _separationTime = separationTime;
         }
 
         internal int FlowControlFramesSent => Volatile.Read(ref _flowControlFramesSent);
         internal int ConsecutiveFramesSent => Volatile.Read(ref _consecutiveFramesSent);
+        internal IEnumerable<long> ConsecutiveFrameTimestamps => _consecutiveFrameTimestamps.ToArray();
 
         public bool Load(string path, out string error) { error = string.Empty; return true; }
         public bool Open(out string error) { error = string.Empty; return true; }
@@ -1129,12 +1161,13 @@ public sealed class IsoTpChannelProtocolTests
                         Interlocked.Increment(ref _flowControlFramesSent);
                     }
 
-                    Enqueue(new byte[] { 0x30, 0x00, 0x00 });
+                    Enqueue(new byte[] { 0x30, 0x00, _separationTime });
                     Interlocked.Increment(ref _flowControlFramesSent);
                 }
             }
             else if (pciType == 2)
             {
+                _consecutiveFrameTimestamps.Enqueue(System.Diagnostics.Stopwatch.GetTimestamp());
                 Interlocked.Increment(ref _consecutiveFramesSent);
                 Enqueue(new byte[] { 0x03, 0x62, 0xF1, 0x90 });
             }

@@ -392,10 +392,13 @@ internal sealed class IsoTpChannel : IDisposable
         if (delay > remaining)
             throw new TimeoutException("ISO-TP STmin exceeds remaining request timeout.");
 
-        if (delay.TotalMilliseconds >= 1)
+        if (delay >= TimeSpan.FromMilliseconds(1))
+        {
             Task.Delay(delay, cancellationToken).GetAwaiter().GetResult();
-        else
-            SpinWaitUntil(delay, cancellationToken);
+            return;
+        }
+
+        SpinWaitUntil(delay, cancellationToken);
     }
 
     private static void SpinWaitUntil(TimeSpan delay, CancellationToken cancellationToken)
