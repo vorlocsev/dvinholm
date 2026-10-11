@@ -29,6 +29,7 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
     [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate uint PassThruReadMsgs(uint channelId, PassthruMsg* msg, ref uint numMsgs, uint timeout);
     [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate uint PassThruWriteMsgs(uint channelId, PassthruMsg* msg, ref uint numMsgs, uint timeout);
     [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate uint PassThruGetLastError([Out] byte[] text);
+    [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate uint PassThruReadVersion(uint deviceId, [Out] byte[] firmwareVersion, [Out] byte[] dllVersion, [Out] byte[] apiVersion);
     [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate uint PassThruStartMsgFilter(uint channelId, uint filterType, PassthruMsg* maskMsg, PassthruMsg* patternMsg, PassthruMsg* flowControlMsg, out uint filterId);
     [UnmanagedFunctionPointer(CallingConvention.StdCall)] private delegate uint PassThruStopMsgFilter(uint channelId, uint filterId);
 
@@ -42,6 +43,9 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
     private PassThruReadMsgs? _read;
     private PassThruWriteMsgs? _write;
     private PassThruGetLastError? _lastError;
+    private PassThruReadVersion? _readVersion;
+    internal sealed record AdapterVersionInfo(string Firmware, string Dll, string Api);
+    internal AdapterVersionInfo? VersionInfo { get; private set; }
     private PassThruStartMsgFilter? _startMsgFilter;
     private PassThruStopMsgFilter? _stopMsgFilter;
     private readonly HashSet<uint> _activeFilters = new();
@@ -53,6 +57,7 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
     bool IJ2534Adapter.Write(in PassthruMsg msg, uint timeout, out string error) => Write(in msg, timeout, out error);
     bool IJ2534Adapter.StartCanIdFilter(uint arbitrationId, bool extended, out uint filterId, out string error) => StartCanIdFilter(arbitrationId, extended, out filterId, out error);
     bool IJ2534Adapter.StopCanFilter(uint filterId, out string error) => StopCanFilter(filterId, out error);
+    AdapterVersionInfo? IJ2534Adapter.ReadVersion(out string error) => ReadVersion(out error);
     void IJ2534Adapter.Unload() => Unload();
 
     internal bool Load(string path, out string error)
@@ -74,6 +79,7 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
             _read = Get<PassThruReadMsgs>("PassThruReadMsgs");
             _write = Get<PassThruWriteMsgs>("PassThruWriteMsgs");
             _lastError = Get<PassThruGetLastError>("PassThruGetLastError");
+            _readVersion = Get<PassThruReadVersion>("PassThruReadVersion");
             _startMsgFilter = Get<PassThruStartMsgFilter>("PassThruStartMsgFilter");
             _stopMsgFilter = Get<PassThruStopMsgFilter>("PassThruStopMsgFilter");
 
@@ -119,6 +125,52 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
             return false;
         }
         return true;
+    }
+
+    internal AdapterVersionInfo? ReadVersion(out string error)
+    {
+        error = string.Empty;
+        VersionInfo = null;
+        if (_device == 0)
+        {
+            error = "J2534 device is not open.";
+            return null;
+        }
+        if (_readVersion is null)
+        {
+            error = "Driver does not export optional PassThruReadVersion.";
+            return null;
+        }
+
+        // SAE J2534 specifies three null-terminated version strings. Use
+        // fixed-size buffers and treat this diagnostic call as optional.
+        var firmware = new byte[80];
+        var dll = new byte[80];
+        var api = new byte[80];
+        try
+        {
+            var result = _readVersion(_device, firmware, dll, api);
+            if (result != StatusNoError)
+            {
+                error = FormatFailure("PassThruReadVersion", result);
+                return null;
+            }
+
+            VersionInfo = new AdapterVersionInfo(DecodeVersion(firmware), DecodeVersion(dll), DecodeVersion(api));
+            return VersionInfo;
+        }
+        catch (Exception ex)
+        {
+            error = "PassThruReadVersion failed: " + ex.Message;
+            return null;
+        }
+    }
+
+    private static string DecodeVersion(byte[] buffer)
+    {
+        var length = Array.IndexOf(buffer, (byte)0);
+        if (length < 0) length = buffer.Length;
+        return System.Text.Encoding.ASCII.GetString(buffer, 0, length).Trim();
     }
 
     internal bool Connect(uint baudRate, out string error)
@@ -317,6 +369,8 @@ internal sealed unsafe class J2534Native : IJ2534Adapter, IDisposable
         _read = null;
         _write = null;
         _lastError = null;
+        _readVersion = null;
+        VersionInfo = null;
         _startMsgFilter = null;
         _stopMsgFilter = null;
         _activeFilters.Clear();
