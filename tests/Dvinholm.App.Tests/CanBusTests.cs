@@ -274,6 +274,70 @@ public sealed class CanBusTests
             false, TimeSpan.FromMilliseconds(100), CancellationToken.None, out _));
     }
 
+    [Fact]
+    public async Task ConcurrentDisposeCallersWaitForActiveSendAndCompleteTogether()
+    {
+        using var writeEntered = new ManualResetEventSlim();
+        using var allowWriteToFinish = new ManualResetEventSlim();
+        var adapter = new FakeJ2534Adapter
+        {
+            WriteEntered = writeEntered,
+            AllowWriteToFinish = allowWriteToFinish
+        };
+        var bus = new Dvinholm.App.CanBus(adapter);
+
+        var sendTask = Task.Run(() => bus.Send(0x7E0, new byte[] { 0x3E, 0x00 }, false,
+            TimeSpan.FromSeconds(3), CancellationToken.None, out _));
+        Task? firstDispose = null;
+        Task? secondDispose = null;
+
+        try
+        {
+            Assert.True(writeEntered.Wait(TimeSpan.FromSeconds(1)), "CAN write did not start.");
+            firstDispose = Task.Run(bus.Dispose);
+
+            // Wait until the first disposer has marked the bus as disposed.
+            var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(1);
+            while (DateTime.UtcNow < deadline)
+            {
+                try
+                {
+                    bus.Send(0x7E0, new byte[] { 0x3E, 0x00 }, false,
+                        TimeSpan.FromMilliseconds(50), CancellationToken.None, out _);
+                }
+                catch (ObjectDisposedException)
+                {
+                    break;
+                }
+
+                await Task.Delay(10);
+            }
+
+            Assert.Throws<ObjectDisposedException>(() => bus.Send(0x7E0,
+                new byte[] { 0x3E, 0x00 }, false, TimeSpan.FromMilliseconds(50),
+                CancellationToken.None, out _));
+
+            secondDispose = Task.Run(bus.Dispose);
+            await Task.Delay(100);
+
+            Assert.False(firstDispose.IsCompleted,
+                "The first Dispose returned while the native write was active.");
+            Assert.False(secondDispose.IsCompleted,
+                "The concurrent Dispose caller returned before disposal completed.");
+            Assert.Equal(1, adapter.WriteCount);
+        }
+        finally
+        {
+            allowWriteToFinish.Set();
+        }
+
+        Assert.True(await sendTask.WaitAsync(TimeSpan.FromSeconds(2)));
+        await (firstDispose ?? Task.Run(bus.Dispose)).WaitAsync(TimeSpan.FromSeconds(2));
+        await (secondDispose ?? Task.Run(bus.Dispose)).WaitAsync(TimeSpan.FromSeconds(2));
+        Assert.Equal(1, adapter.WriteCount);
+        bus.Dispose();
+    }
+
     private sealed class FakeJ2534Adapter : Dvinholm.App.IJ2534Adapter
     {
         internal Dvinholm.App.J2534Native.PassthruMsg LastMessage { get; private set; }
