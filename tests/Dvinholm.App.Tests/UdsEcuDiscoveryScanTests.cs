@@ -117,11 +117,13 @@ public sealed class UdsEcuDiscoveryScanTests
         for (var i = 0; i < 20_000; i++)
             adapter.InjectReceiveFrame(response);
 
-        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+        var error = await Assert.ThrowsAsync<Dvinholm.App.UdsEcuDiscoveryIncompleteException>(
             async () => await scan.WaitAsync(TimeSpan.FromSeconds(3)));
 
         Assert.Contains("scan is incomplete", error.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("dropped", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.True(error.DroppedFrameCount > 0);
+        Assert.Contains(error.Candidates, candidate => candidate.ResponseId == 0x7E8);
         Assert.Equal(0, adapter.TransmittedFrames);
     }
 
