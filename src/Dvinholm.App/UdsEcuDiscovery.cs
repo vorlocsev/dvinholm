@@ -27,22 +27,27 @@ internal sealed class UdsEcuDiscovery
 
     internal Task<IReadOnlyList<UdsEcuCandidate>> ScanAsync(
         TimeSpan duration,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        int receiveQueueCapacity = 4096)
     {
         if (duration <= TimeSpan.Zero)
             throw new ArgumentOutOfRangeException(nameof(duration));
+        if (receiveQueueCapacity < 1)
+            throw new ArgumentOutOfRangeException(nameof(receiveQueueCapacity));
 
         // The receive loop waits synchronously on the CAN subscription. Run it
         // off the UI thread so an 8-second passive scan does not freeze WinUI.
         return Task.Run<IReadOnlyList<UdsEcuCandidate>>(
-            () => Scan(duration, cancellationToken), cancellationToken);
+            () => Scan(duration, cancellationToken, receiveQueueCapacity), cancellationToken);
     }
 
     private IReadOnlyList<UdsEcuCandidate> Scan(
         TimeSpan duration,
-        CancellationToken cancellationToken)
+        CancellationToken cancellationToken,
+        int receiveQueueCapacity)
     {
-        using var subscription = _bus.Subscribe();
+        using var subscription = _bus.Subscribe(receiveQueueCapacity);
+        var initialDroppedFrameCount = subscription.DroppedFrameCount;
         var observations = new Dictionary<(uint Id, bool Extended), Observation>();
         // A monotonic clock keeps the scan duration stable if wall-clock time
         // is adjusted while the diagnostic tool is running.
@@ -75,6 +80,13 @@ internal sealed class UdsEcuDiscovery
 
             observation.Count++;
             observation.MaxLength = Math.Max(observation.MaxLength, frame.Data.Length);
+        }
+
+        var droppedFrameCount = subscription.DroppedFrameCount - initialDroppedFrameCount;
+        if (droppedFrameCount > 0)
+        {
+            throw new InvalidOperationException(
+                $"Passive ECU scan is incomplete: {droppedFrameCount} CAN frame(s) were dropped from the receive queue. Repeat the scan with a larger queue or shorter duration.");
         }
 
         return observations.Values
