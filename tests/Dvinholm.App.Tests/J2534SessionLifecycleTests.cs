@@ -112,6 +112,44 @@ public sealed class J2534SessionLifecycleTests
     }
 
     [Fact]
+    public async Task DisconnectFromReadErrorCallbackDefersAdapterUnloadUntilCallbackReturns()
+    {
+        using var callbackEntered = new ManualResetEventSlim();
+        using var allowCallbackToFinish = new ManualResetEventSlim();
+        var adapter = new FakeSessionAdapter { FailFirstRead = true };
+        using var session = new Dvinholm.App.J2534Session(adapter);
+
+        session.ReadError += _ =>
+        {
+            session.Disconnect();
+            callbackEntered.Set();
+            allowCallbackToFinish.Wait();
+        };
+
+        Assert.True(session.Connect("virtual-adapter.dll", 500_000, out var connectError), connectError);
+        try
+        {
+            Assert.True(callbackEntered.Wait(TimeSpan.FromSeconds(2)),
+                "The session did not report the simulated adapter read error.");
+
+            // Disconnect is deferred off the native read worker and must not
+            // unload the adapter while the callback still owns that worker.
+            Assert.Equal(1, adapter.UnloadCount);
+            Assert.True(session.IsConnected);
+        }
+        finally
+        {
+            allowCallbackToFinish.Set();
+        }
+
+        Assert.True(SpinWait.SpinUntil(
+                () => !session.IsConnected && adapter.UnloadCount == 2,
+                TimeSpan.FromSeconds(3)),
+            "Deferred disconnect did not finish after the read-error callback returned.");
+        Assert.False(session.IsConnected);
+    }
+
+    [Fact]
     public async Task ConcurrentDisconnectWaitsForConnectBeforeUnloadingAdapter()
     {
         using var openEntered = new ManualResetEventSlim();
@@ -186,7 +224,9 @@ public sealed class J2534SessionLifecycleTests
     {
         private int _unloadCount;
         private int _readCount;
+        private int _readErrorIssued;
         internal FailurePoint Failure { get; init; }
+        internal bool FailFirstRead { get; init; }
         internal int ThrowOnUnloadCall { get; init; }
         internal ManualResetEventSlim? OpenEntered { get; init; }
         internal ManualResetEventSlim? AllowOpenToFinish { get; init; }
@@ -227,6 +267,12 @@ public sealed class J2534SessionLifecycleTests
         {
             Interlocked.Increment(ref _readCount);
             msg = default;
+            if (FailFirstRead && Interlocked.Exchange(ref _readErrorIssued, 1) == 0)
+            {
+                error = "simulated adapter read failure";
+                return false;
+            }
+
             error = string.Empty;
             Thread.Sleep((int)Math.Min(timeout, 5));
             return false;
