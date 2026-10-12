@@ -10,13 +10,13 @@ public sealed class CanRxDispatcherSubscriptionDisposeTests
         var subscription = dispatcher.Subscribe();
         using var readersStarted = new CountdownEvent(3);
 
-        var readers = Enumerable.Range(0, 3).Select(_ => Task.Run(() =>
+        var readers = Enumerable.Range(0, 3).Select(index => Task.Run(() =>
         {
             readersStarted.Signal();
             return subscription.TryRead(
                 TimeSpan.FromSeconds(10),
                 CancellationToken.None,
-                out _);
+                out var frame);
         })).ToArray();
 
         Assert.True(readersStarted.Wait(TimeSpan.FromSeconds(2)),
