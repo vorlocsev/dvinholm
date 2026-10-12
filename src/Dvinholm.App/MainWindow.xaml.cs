@@ -23,6 +23,7 @@ public sealed partial class MainWindow : Window
     private readonly J2534Session _session = new();
     private CancellationTokenSource? _cts;
     private Task? _monitorTask;
+    private CanRxDispatcher.Subscription? _monitorSubscription;
     private bool _connected;
     private Task? _disconnectTask;
     private Task<bool>? _connectTask;
@@ -703,6 +704,8 @@ public sealed partial class MainWindow : Window
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
         var subscription = _session.Bus.Subscribe();
+        _monitorSubscription = subscription;
+        DroppedFrameText.Text = "0 dropped";
 
         StartButton.Content = "Stop monitor";
         SetStatus("Monitoring CAN...");
@@ -712,7 +715,18 @@ public sealed partial class MainWindow : Window
         _monitorTask = Task.Run(() =>
         {
             try { ReadLoop(subscription, token); }
-            finally { subscription.Dispose(); }
+            finally
+            {
+                subscription.Dispose();
+                DispatcherQueue.TryEnqueue(() =>
+                {
+                    if (ReferenceEquals(_monitorSubscription, subscription))
+                    {
+                        DroppedFrameText.Text = $"{subscription.DroppedFrameCount:N0} dropped";
+                        _monitorSubscription = null;
+                    }
+                });
+            }
         });
     }
 
@@ -780,6 +794,7 @@ public sealed partial class MainWindow : Window
 
     private void AddFrame(Frame frame)
     {
+        DroppedFrameText.Text = $"{(_monitorSubscription?.DroppedFrameCount ?? 0):N0} dropped";
         if (!Matches(frame)) return;
         _frames.Add(frame); _total++; _rateFrames++;
         if (_frames.Count > 5000) _frames.RemoveAt(0);
