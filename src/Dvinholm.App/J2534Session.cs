@@ -61,13 +61,13 @@ internal sealed class J2534Session : IDisposable
                 return false;
             }
 
-            AdapterVersion = null;
-            AdapterVersionStatus = string.Empty;
-            AdapterCapabilities = null;
+            ClearAdapterMetadata();
             if (!_j2534.Load(dllPath.Trim(), out error) ||
                 !_j2534.Open(out error))
             {
-                _j2534.Unload();
+                var operationError = error;
+                error = CombineErrors(operationError, TryUnloadAdapter());
+                ClearAdapterMetadata();
                 return false;
             }
 
@@ -77,10 +77,9 @@ internal sealed class J2534Session : IDisposable
 
             if (!_j2534.Connect(baudRate, out error))
             {
-                _j2534.Unload();
-                AdapterVersion = null;
-                AdapterVersionStatus = string.Empty;
-                AdapterCapabilities = null;
+                var operationError = error;
+                error = CombineErrors(operationError, TryUnloadAdapter());
+                ClearAdapterMetadata();
                 return false;
             }
 
@@ -91,24 +90,61 @@ internal sealed class J2534Session : IDisposable
         }
         catch (Exception ex)
         {
-            // Vendor DLL entry points can throw despite their native ABI.
-            // Cleanup must run for failures during Open/Connect as well as
-            // failures while starting the receive worker.
+            // Vendor DLL entry points and teardown can throw despite the
+            // adapter contract. Cleanup failures must not escape this method
+            // or leave stale connection metadata behind.
+            var cleanupErrors = new List<string>();
             if (_bus is not null)
             {
                 _bus.ReadError -= HandleReadError;
                 try { _bus.Dispose(); }
-                catch { /* Continue releasing the native session. */ }
-                _bus = null;
+                catch (Exception cleanupException)
+                {
+                    cleanupErrors.Add("CAN bus cleanup failed: " + cleanupException.Message);
+                }
+                finally
+                {
+                    _bus = null;
+                }
             }
 
-            _j2534.Unload();
-            AdapterVersion = null;
-            AdapterVersionStatus = string.Empty;
-            AdapterCapabilities = null;
-            error = ex.Message;
+            var unloadError = TryUnloadAdapter();
+            if (!string.IsNullOrWhiteSpace(unloadError))
+                cleanupErrors.Add(unloadError);
+
+            ClearAdapterMetadata();
+            error = CombineErrors(ex.Message, string.Join("; ", cleanupErrors));
             return false;
         }
+    }
+
+    private string TryUnloadAdapter()
+    {
+        try
+        {
+            _j2534.Unload();
+            return string.Empty;
+        }
+        catch (Exception ex)
+        {
+            return "J2534 adapter cleanup failed: " + ex.Message;
+        }
+    }
+
+    private void ClearAdapterMetadata()
+    {
+        AdapterVersion = null;
+        AdapterVersionStatus = string.Empty;
+        AdapterCapabilities = null;
+    }
+
+    private static string CombineErrors(string operationError, string cleanupError)
+    {
+        if (string.IsNullOrWhiteSpace(operationError))
+            return cleanupError;
+        if (string.IsNullOrWhiteSpace(cleanupError))
+            return operationError;
+        return operationError + " " + cleanupError;
     }
 
     internal void Disconnect()
