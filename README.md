@@ -151,8 +151,55 @@ Run this checklist on a stationary vehicle with a supported, correctly installed
 
 Record the vehicle/ECU identification, adapter and DLL versions, bus rate, request/response IDs, operation, and result. Redact VINs and other identifying data before sharing logs. A virtual-adapter CI pass validates software behavior only; it cannot certify electrical compatibility, vehicle-specific IDs, timing, or vendor-driver behavior.
 
-## Next steps
+## Roadmap
 
-- Add ECU profiles only when CAN addressing and diagnostic support have a reliable source.
-- Expand read-only UDS coverage with documented, ECU-appropriate behavior and tests.
-- Validate J2534 behavior against real adapters where available, especially vendor-specific filters and timing.
+Roadmap status is based on the current `main` branch and the automated test suite. Last checked: 2026-10-12, commit `ea4eca69200565ce3cd224a95a6c6cad34e196fd`.
+
+### Completed: core transport and recovery
+
+- [x] Shared CAN receive dispatcher for the monitor and ISO-TP/UDS consumers.
+- [x] Serialize CAN transmit operations and cover concurrent requests.
+- [x] Exercise J2534 session connect/disconnect, teardown, read errors, failure cleanup, and reconnect behavior with the virtual adapter.
+- [x] Cover ISO-TP single- and multi-frame transfers, Flow Control, Block Size, STmin, sequence handling, deadlines, cancellation, and recovery after malformed or late frames.
+- [x] Cover read-only UDS DID/VIN/DTC flows, negative responses, `ResponsePending (0x78)`, cancellation, concurrent requests, and unrelated or late responses.
+- [x] Make passive ECU discovery report receive-queue frame loss rather than silently presenting an incomplete scan.
+- [x] Filter unrelated CAN traffic before it reaches the bounded ECU-discovery queue.
+- [x] Verify the current Windows CI pipeline: restore, build, tests, publish, and artifact upload.
+
+Current CI result: **383 passed, 0 failed, 0 skipped**. See [the latest CI run](https://github.com/vorlocsev/dvinholm/actions/runs/38275392327). These automated tests use a virtual J2534 adapter and do not establish compatibility with a physical interface or a particular vehicle.
+
+### Current priority — complete the software MVP
+
+- [ ] Improve user-visible reporting for connection state, transport errors, ECU discovery completeness, and negative UDS responses.
+- [ ] Validate ECU profile import/export and profile selection through realistic user workflows.
+- [ ] Add read-only UDS operations only where behavior is documented and testable.
+- [ ] Keep vehicle-specific CAN IDs and DIDs out of the built-in catalog until supported by reliable sources or measured evidence.
+- [ ] Add repeatable software smoke tests for first launch, adapter discovery failure, connect/disconnect, and diagnostic cancellation using the virtual adapter where applicable.
+- [ ] Review diagnostic logging and error messages so failures are actionable without exposing sensitive vehicle data.
+
+**Exit criterion:** users can understand which ECU was queried, which addressing was used, and whether the result is positive, negative, timed out, cancelled, or incomplete; the main software workflows are covered by repeatable tests.
+
+### Next — packaging and release readiness
+
+- [ ] Verify clean installation and first launch on supported Windows versions.
+- [ ] Document artifact installation, x86/J2534 driver constraints, known limitations, and troubleshooting.
+- [ ] Run the full CI pipeline on the release candidate and publish a versioned release with release notes.
+- [ ] Clearly document that current CI uses a virtual adapter and that real-hardware compatibility is not yet verified.
+
+**Exit criterion:** reproducible CI, clear installation instructions, release notes, and transparent statements about verified versus unverified compatibility.
+
+### Future releases — physical adapter validation
+
+Physical-hardware testing is deliberately deferred until a future release cycle; it is not a blocker for the current software-MVP roadmap.
+
+- [ ] Validate with a real 32-bit J2534 adapter, starting with passive CAN capture.
+- [ ] Verify repeated connect/disconnect and recovery on DiCE and/or Mongoose JLR Pro hardware.
+- [ ] Check vendor DLL loading, actual baud-rate behavior, native read errors, and supported hardware filters.
+- [ ] Validate read-only VIN/DTC requests only against ECUs with confirmed support.
+- [ ] Record results by adapter model, driver/DLL version, vehicle/ECU, and bus rate; redact VINs and identifying data before sharing logs.
+
+**Exit criterion:** repeatable, recorded results on at least one physical adapter. Until this work is completed, hardware compatibility remains unverified.
+
+### Out of scope
+
+The project remains focused on monitoring and read-only diagnostics. Immobilizer/PIN extraction, brute force, security bypass, automated security-key calculation, ECU writes, and actuation are not roadmap items.
