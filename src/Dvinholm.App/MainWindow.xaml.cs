@@ -301,21 +301,7 @@ public sealed partial class MainWindow : Window
             _discoveryTask = discovery.ScanAsync(TimeSpan.FromSeconds(8), cts.Token);
             var found = await _discoveryTask;
 
-            foreach (var candidate in found)
-            {
-                var row = new EcuRow(candidate);
-                _ecus.Add(row);
-                EcuSelector.Items.Add(row.Candidate.RequestId is null
-                    ? $"{row.Request} → {row.Response} (request ID unknown)"
-                    : $"{row.Request} → {row.Response} (inferred)");
-            }
-
-            if (found.Count > 0)
-            {
-                EcusView.SelectedIndex = 0;
-                EcuSelector.SelectedIndex = 0;
-            }
-
+            ShowDiscoveredEcus(found);
             DiscoveryStatus.Text = found.Count == 0
                 ? "No UDS responses observed"
                 : $"{found.Count} ECU(s) found";
@@ -325,6 +311,12 @@ public sealed partial class MainWindow : Window
         catch (OperationCanceledException)
         {
             DiscoveryStatus.Text = "Cancelled";
+        }
+        catch (UdsEcuDiscoveryIncompleteException ex)
+        {
+            ShowDiscoveredEcus(ex.Candidates);
+            DiscoveryStatus.Text = $"Incomplete · {ex.Candidates.Count} ECU(s) observed · {ex.DroppedFrameCount} frame(s) dropped";
+            SetStatus(ex.Message);
         }
         catch (Exception ex)
         {
@@ -341,6 +333,27 @@ public sealed partial class MainWindow : Window
             SetUdsEnabled(_connected);
             ConnectButton.IsEnabled = true;
             _udsGate.Release();
+        }
+    }
+
+    private void ShowDiscoveredEcus(IReadOnlyList<UdsEcuCandidate> found)
+    {
+        _ecus.Clear();
+        EcuSelector.Items.Clear();
+
+        foreach (var candidate in found)
+        {
+            var row = new EcuRow(candidate);
+            _ecus.Add(row);
+            EcuSelector.Items.Add(row.Candidate.RequestId is null
+                ? $"{row.Request} → {row.Response} (request ID unknown)"
+                : $"{row.Request} → {row.Response} (inferred)");
+        }
+
+        if (found.Count > 0)
+        {
+            EcusView.SelectedIndex = 0;
+            EcuSelector.SelectedIndex = 0;
         }
     }
 

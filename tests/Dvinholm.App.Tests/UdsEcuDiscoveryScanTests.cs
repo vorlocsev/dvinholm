@@ -114,14 +114,20 @@ public sealed class UdsEcuDiscoveryScanTests
 
         var response = new Dvinholm.App.CanFrame(
             0x7E8, false, false, new byte[] { 0x03, 0x62, 0xF1, 0x90 }, 0, 0);
+        // Ensure at least one candidate is observed before deliberately
+        // overflowing the queue, so this test proves partial-result retention.
+        adapter.InjectReceiveFrame(response);
+        await Task.Delay(50);
         for (var i = 0; i < 20_000; i++)
             adapter.InjectReceiveFrame(response);
 
-        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+        var error = await Assert.ThrowsAsync<Dvinholm.App.UdsEcuDiscoveryIncompleteException>(
             async () => await scan.WaitAsync(TimeSpan.FromSeconds(3)));
 
         Assert.Contains("scan is incomplete", error.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("dropped", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.True(error.DroppedFrameCount > 0);
+        Assert.Contains(error.Candidates, candidate => candidate.ResponseId == 0x7E8);
         Assert.Equal(0, adapter.TransmittedFrames);
     }
 

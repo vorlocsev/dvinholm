@@ -18,6 +18,21 @@ internal sealed record UdsEcuCandidate(
         : "Request ID inferred from standard addressing — verify before sending.";
 }
 
+internal sealed class UdsEcuDiscoveryIncompleteException : InvalidOperationException
+{
+    internal IReadOnlyList<UdsEcuCandidate> Candidates { get; }
+    internal long DroppedFrameCount { get; }
+
+    internal UdsEcuDiscoveryIncompleteException(
+        IReadOnlyList<UdsEcuCandidate> candidates,
+        long droppedFrameCount)
+        : base($"Passive ECU scan is incomplete: {droppedFrameCount} CAN frame(s) were dropped from the receive queue. Observed candidates are shown but may be missing; repeat the scan with a larger queue or shorter duration.")
+    {
+        Candidates = candidates;
+        DroppedFrameCount = droppedFrameCount;
+    }
+}
+
 internal sealed class UdsEcuDiscovery
 {
     private readonly CanBus _bus;
@@ -87,13 +102,16 @@ internal sealed class UdsEcuDiscovery
         }
 
         var droppedFrameCount = subscription.DroppedFrameCount - initialDroppedFrameCount;
+        var candidates = BuildCandidates(observations);
         if (droppedFrameCount > 0)
-        {
-            throw new InvalidOperationException(
-                $"Passive ECU scan is incomplete: {droppedFrameCount} CAN frame(s) were dropped from the receive queue. Repeat the scan with a larger queue or shorter duration.");
-        }
+            throw new UdsEcuDiscoveryIncompleteException(candidates, droppedFrameCount);
 
-        return observations.Values
+        return candidates;
+    }
+
+    private static IReadOnlyList<UdsEcuCandidate> BuildCandidates(
+        Dictionary<(uint Id, bool Extended), Observation> observations) =>
+        observations.Values
             .OrderByDescending(x => x.Count)
             .Select(x => new UdsEcuCandidate(
                 x.Id,
@@ -102,7 +120,6 @@ internal sealed class UdsEcuDiscovery
                 x.Count,
                 x.MaxLength))
             .ToArray();
-    }
 
     internal static bool IsLikelyUdsResponse(CanFrame frame, out byte? responseService)
     {
