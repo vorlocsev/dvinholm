@@ -127,6 +127,28 @@ dotnet publish .\src\Dvinholm.App\Dvinholm.App.csproj -c Release -r win-x86 --se
 
 The process is x86, so it can load 32-bit J2534 DLLs but not 64-bit-only DLLs.
 
+## Download and run on Windows
+
+The CI pipeline publishes a self-contained x86 application artifact. It is a portable build output, **not an installer**.
+
+1. Open the repository's [GitHub Actions](https://github.com/vorlocsev/dvinholm/actions) page and select a successful run on `main`.
+2. In **Artifacts**, download `Dvinholm-Windows-x86`.
+3. Extract the entire archive to a normal local folder. Do not run the executable from inside the ZIP.
+4. Launch `Dvinholm.App.exe` from the extracted folder.
+5. Install the adapter manufacturer's 32-bit J2534 driver separately. Connect the interface only after following the manufacturer's instructions.
+
+The application is self-contained, so a separate .NET runtime installation is not normally required. Windows and driver requirements still apply. The artifact is intended for evaluation; CI success does not mean the application has been verified with a physical adapter or a specific vehicle.
+
+### Troubleshooting
+
+- **No J2534 provider appears:** install or repair the adapter manufacturer's driver, confirm it provides a 32-bit J2534 DLL, then restart Dvinholm. You can enter the DLL path manually if discovery does not list it.
+- **DLL load or connection error:** check that the selected DLL is the vendor's 32-bit build and that its driver dependencies are installed. A 64-bit-only DLL cannot be loaded by this x86 application.
+- **The app does not start:** extract the complete artifact again, keep the published files together, and confirm that Windows meets the minimum supported version.
+- **Connection succeeds but no useful CAN/UDS data appears:** verify the documented bus rate and ECU request/response IDs. The built-in ECU profile catalog is intentionally empty; do not guess IDs or assume every ECU supports VIN/DTC requests.
+- **A read times out or is rejected:** record the operation and reported error, stop capture if the driver is unstable, disconnect, and reconnect only after the adapter is ready. Begin physical testing with passive CAN monitoring.
+
+Dvinholm currently supports read-only diagnostic operations. Do not use it to write to or actuate an ECU. Physical-adapter compatibility remains unverified until the future hardware-validation checklist has been completed.
+
 ## Tests and CI
 
 The test project is `tests/Dvinholm.App.Tests` (legacy technical name). It includes hardware-independent tests using `VirtualJ2534Adapter` for CAN transport, ISO-TP flow control/reassembly/recovery, and UDS read operations. GitHub Actions restores, builds, runs tests, publishes the application, and uploads the build artifact on Windows.
@@ -187,7 +209,7 @@ Current CI result: **394 passed, 0 failed, 0 skipped**. The full restore, build,
 ### Next — packaging and release readiness
 
 - [ ] Verify clean installation and first launch on supported Windows versions.
-- [ ] Document artifact installation, x86/J2534 driver constraints, known limitations, and troubleshooting.
+- [x] Document CI artifact installation, x86/J2534 driver constraints, known limitations, and troubleshooting.
 - [ ] Run the full CI pipeline on the release candidate and publish a versioned release with release notes.
 - [ ] Clearly document that current CI uses a virtual adapter and that real-hardware compatibility is not yet verified.
 
