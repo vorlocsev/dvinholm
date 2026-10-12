@@ -83,7 +83,7 @@ public sealed class IsoTpRequestGateCancellationTests
                 _firstRequestObserved.TrySetResult();
                 _ = EnqueueAfterDelay(
                     TimeSpan.FromMilliseconds(250),
-                    new byte[] { 0x04, 0x62, 0xF1, 0x90, 0x41, 0x42 });
+                    new byte[] { 0x05, 0x62, 0xF1, 0x90, 0x41, 0x42 });
             }
             else
             {
