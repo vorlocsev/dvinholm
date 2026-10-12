@@ -67,6 +67,37 @@ public sealed class UdsEcuDiscoveryScanTests
     }
 
     [Fact]
+    public async Task ScanAsync_UnrelatedTrafficDoesNotCrowdOutUdsResponses()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ =>
+            Array.Empty<Dvinholm.App.CanFrame>());
+        using var bus = new Dvinholm.App.CanBus(adapter);
+        bus.Start();
+        var discovery = new Dvinholm.App.UdsEcuDiscovery(bus);
+
+        var scan = discovery.ScanAsync(
+            TimeSpan.FromSeconds(2),
+            receiveQueueCapacity: 1);
+        await Task.Delay(50);
+
+        // High-rate unrelated frames must be filtered before the bounded
+        // subscription queue so they cannot evict a valid UDS response.
+        var unrelated = new Dvinholm.App.CanFrame(
+            0x123, false, false, new byte[] { 0x01, 0x02, 0x03 }, 0, 0);
+        for (var i = 0; i < 1_000; i++)
+            adapter.InjectReceiveFrame(unrelated);
+        adapter.InjectReceiveFrame(new Dvinholm.App.CanFrame(
+            0x7E8, false, false, new byte[] { 0x03, 0x62, 0xF1, 0x90 }, 0, 0));
+
+        var candidates = await scan.WaitAsync(TimeSpan.FromSeconds(4));
+
+        var candidate = Assert.Single(candidates);
+        Assert.Equal((uint)0x7E8, candidate.ResponseId);
+        Assert.Equal(1, candidate.ResponseCount);
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
+    [Fact]
     public async Task ScanAsync_ReportsIncompleteResultWhenReceiveQueueDropsFrames()
     {
         using var adapter = new VirtualJ2534Adapter(_ =>
