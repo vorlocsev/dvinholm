@@ -176,6 +176,7 @@ Current CI result: **383 passed, 0 failed, 0 skipped**. See [the latest CI run](
 - [ ] Keep vehicle-specific CAN IDs and DIDs out of the built-in catalog until supported by reliable sources or measured evidence.
 - [ ] Add repeatable software smoke tests for first launch, adapter discovery failure, connect/disconnect, and diagnostic cancellation using the virtual adapter where applicable.
 - [ ] Review diagnostic logging and error messages so failures are actionable without exposing sensitive vehicle data.
+- [ ] Verify retryable `J2534Session.Dispose()` behavior after a vendor adapter unload failure (regression test in [PR #137](https://github.com/vorlocsev/dvinholm/pull/137); mark complete only after CI passes).
 
 **Exit criterion:** users can understand which ECU was queried, which addressing was used, and whether the result is positive, negative, timed out, cancelled, or incomplete; the main software workflows are covered by repeatable tests.
 
