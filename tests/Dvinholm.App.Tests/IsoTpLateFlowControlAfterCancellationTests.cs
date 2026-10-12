@@ -74,14 +74,12 @@ public sealed class IsoTpLateFlowControlAfterCancellationTests
             var frameType = frame.Data[0] >> 4;
             if (frameType == 1)
             {
+                Interlocked.Increment(ref _requestCount);
                 // Intentionally withhold Flow Control for the first request.
                 FirstFrameSent.Set();
             }
-            else if (frameType == 0)
+            else if (frameType == 0 && Interlocked.Increment(ref _requestCount) == 2)
             {
-                if (Interlocked.Increment(ref _requestCount) == 1)
-                    return true;
-
                 // A stale Flow Control from the cancelled transaction arrives
                 // after the second request is sent but before its real response.
                 Enqueue(new byte[] { 0x30, 0x00, 0x00 });
