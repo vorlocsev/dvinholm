@@ -21,11 +21,11 @@ internal sealed record UdsEcuCandidate(
 internal sealed class UdsEcuDiscoveryIncompleteException : InvalidOperationException
 {
     internal IReadOnlyList<UdsEcuCandidate> Candidates { get; }
-    internal int DroppedFrameCount { get; }
+    internal long DroppedFrameCount { get; }
 
     internal UdsEcuDiscoveryIncompleteException(
         IReadOnlyList<UdsEcuCandidate> candidates,
-        int droppedFrameCount)
+        long droppedFrameCount)
         : base($"Passive ECU scan is incomplete: {droppedFrameCount} CAN frame(s) were dropped from the receive queue. Observed candidates are shown but may be missing; repeat the scan with a larger queue or shorter duration.")
     {
         Candidates = candidates;
