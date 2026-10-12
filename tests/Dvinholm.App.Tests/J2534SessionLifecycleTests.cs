@@ -150,6 +150,59 @@ public sealed class J2534SessionLifecycleTests
     }
 
     [Fact]
+    public async Task DeferredDisconnectFromOldReadWorkerDoesNotDisconnectReconnectedSession()
+    {
+        using var callbackEntered = new ManualResetEventSlim();
+        using var allowCallbackToFinish = new ManualResetEventSlim();
+        var adapter = new FakeSessionAdapter { FailFirstRead = true };
+        using var session = new Dvinholm.App.J2534Session(adapter);
+        session.ReadError += _ =>
+        {
+            session.Disconnect();
+            callbackEntered.Set();
+            allowCallbackToFinish.Wait();
+        };
+
+        Assert.True(session.Connect("first.dll", 500_000, out var firstError), firstError);
+        try
+        {
+            Assert.True(callbackEntered.Wait(TimeSpan.FromSeconds(3)),
+                "The initial read-error callback did not run.");
+
+            // The old read worker has already queued a deferred disconnect.
+            // Reconnect while the callback is still active, then release the
+            // worker so the lifecycle operations can finish in either order.
+            var reconnectTask = Task.Run(() =>
+                session.Connect("second.dll", 250_000, out var error)
+                    ? string.Empty
+                    : error);
+
+            await Task.Delay(100);
+            allowCallbackToFinish.Set();
+
+            var reconnectError = await reconnectTask.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(string.Empty, reconnectError);
+        }
+        finally
+        {
+            allowCallbackToFinish.Set();
+        }
+
+        Assert.True(SpinWait.SpinUntil(
+                () => session.IsConnected && adapter.ConnectCount == 2,
+                TimeSpan.FromSeconds(3)),
+            "Reconnect did not establish the replacement session.");
+        var reconnectedBus = session.Bus;
+
+        // Any deferred teardown associated with the old bus must not affect
+        // the replacement session after reconnect has completed.
+        await Task.Delay(200);
+        Assert.True(session.IsConnected);
+        Assert.Same(reconnectedBus, session.Bus);
+        Assert.Equal(2, adapter.ConnectCount);
+    }
+
+    [Fact]
     public async Task ConcurrentDisconnectWaitsForConnectBeforeUnloadingAdapter()
     {
         using var openEntered = new ManualResetEventSlim();
@@ -227,6 +280,8 @@ public sealed class J2534SessionLifecycleTests
         private int _readErrorIssued;
         internal FailurePoint Failure { get; init; }
         internal bool FailFirstRead { get; init; }
+        internal ManualResetEventSlim? ReadEntered { get; init; }
+        internal ManualResetEventSlim? AllowReadToFinish { get; init; }
         internal int ThrowOnUnloadCall { get; init; }
         internal ManualResetEventSlim? OpenEntered { get; init; }
         internal ManualResetEventSlim? AllowOpenToFinish { get; init; }
@@ -269,6 +324,8 @@ public sealed class J2534SessionLifecycleTests
             msg = default;
             if (FailFirstRead && Interlocked.Exchange(ref _readErrorIssued, 1) == 0)
             {
+                ReadEntered?.Set();
+                AllowReadToFinish?.Wait(TimeSpan.FromSeconds(5));
                 error = "simulated adapter read failure";
                 return false;
             }

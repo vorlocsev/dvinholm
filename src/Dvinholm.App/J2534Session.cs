@@ -152,15 +152,30 @@ internal sealed class J2534Session : IDisposable
         // A callback runs on the receive worker. Queue teardown rather than
         // waiting for the lifecycle lock: another thread may already hold it
         // while waiting for that same worker to exit.
-        if (_bus?.IsOnReadWorker == true)
+        var requestedBus = _bus;
+        if (requestedBus?.IsOnReadWorker == true)
         {
-            _ = Task.Run(Disconnect);
+            // Bind deferred teardown to the session that requested it. A
+            // reconnect can complete before this task acquires the lifecycle
+            // gate; it must not disconnect that newer session.
+            _ = Task.Run(() => DisconnectDeferred(requestedBus));
             return;
         }
 
         lock (_lifecycleGate)
         {
             if (_disposed)
+                return;
+
+            DisconnectLocked();
+        }
+    }
+
+    private void DisconnectDeferred(CanBus requestedBus)
+    {
+        lock (_lifecycleGate)
+        {
+            if (_disposed || !ReferenceEquals(_bus, requestedBus))
                 return;
 
             DisconnectLocked();
