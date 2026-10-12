@@ -421,6 +421,50 @@ public sealed class CanRxDispatcherTests
     }
 
     [Fact]
+    public async Task ExternalDisposeWaitsForDeferredCleanupAfterReadErrorCallback()
+    {
+        var adapter = new FakeJ2534Adapter();
+        var dispatcher = new Dvinholm.App.CanRxDispatcher(adapter);
+        using var callbackReturnedFromDispose = new ManualResetEventSlim();
+        using var allowCallbackToFinish = new ManualResetEventSlim();
+        using var externalDisposeStarted = new ManualResetEventSlim();
+
+        dispatcher.ReadError += _ =>
+        {
+            dispatcher.Dispose();
+            callbackReturnedFromDispose.Set();
+            allowCallbackToFinish.Wait();
+        };
+
+        adapter.FailNextRead();
+        dispatcher.Start();
+        Assert.True(callbackReturnedFromDispose.Wait(TimeSpan.FromSeconds(2)),
+            "Dispose from the read-error callback did not return.");
+
+        var externalDispose = Task.Run(() =>
+        {
+            externalDisposeStarted.Set();
+            dispatcher.Dispose();
+        });
+
+        try
+        {
+            Assert.True(externalDisposeStarted.Wait(TimeSpan.FromSeconds(2)),
+                "The external Dispose caller did not start.");
+            await Task.Delay(100);
+            Assert.False(externalDispose.IsCompleted,
+                "An external Dispose caller returned before the read worker and deferred cleanup completed.");
+        }
+        finally
+        {
+            allowCallbackToFinish.Set();
+        }
+
+        await externalDispose.WaitAsync(TimeSpan.FromSeconds(2));
+        dispatcher.Dispose();
+    }
+
+    [Fact]
     public void DispatcherCanBeDisposedFromReadErrorCallback()
     {
         var adapter = new FakeJ2534Adapter();
