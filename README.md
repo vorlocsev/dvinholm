@@ -153,7 +153,7 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 
 ## Roadmap
 
-Roadmap status is based on the current `main` branch and the automated test suite. Last updated: 2026-10-12, after roadmap PR #131 was merged at commit `be0befd5cbd4aaf38196327695424d7cca492ae9`. The post-merge CI run is tracked separately; hardware compatibility remains unverified.
+Roadmap status is based on the current branch and the automated test suite. Last updated: 2026-10-12, including the J2534 session disposal regression test validated in PR #137; hardware compatibility remains unverified.
 
 ### Completed: core transport and recovery
 
@@ -176,7 +176,7 @@ Current CI result: **383 passed, 0 failed, 0 skipped**. See [the latest CI run](
 - [ ] Keep vehicle-specific CAN IDs and DIDs out of the built-in catalog until supported by reliable sources or measured evidence.
 - [ ] Add repeatable software smoke tests for first launch, adapter discovery failure, connect/disconnect, and diagnostic cancellation using the virtual adapter where applicable.
 - [ ] Review diagnostic logging and error messages so failures are actionable without exposing sensitive vehicle data.
-- [ ] Verify retryable `J2534Session.Dispose()` behavior after a vendor adapter unload failure (regression test in [PR #137](https://github.com/vorlocsev/dvinholm/pull/137); mark complete only after CI passes).
+- [x] Verify retryable `J2534Session.Dispose()` behavior after a vendor adapter unload failure with the virtual adapter; regression test passed in [CI run #38302862250](https://github.com/vorlocsev/dvinholm/actions/runs/38302862250).
 
 **Exit criterion:** users can understand which ECU was queried, which addressing was used, and whether the result is positive, negative, timed out, cancelled, or incomplete; the main software workflows are covered by repeatable tests.
 
