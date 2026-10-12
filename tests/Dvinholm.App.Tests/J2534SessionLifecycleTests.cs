@@ -86,6 +86,32 @@ public sealed class J2534SessionLifecycleTests
     }
 
     [Fact]
+    public void DisposeCanRetryAfterAdapterUnloadFailure()
+    {
+        var adapter = new FakeSessionAdapter { ThrowOnUnloadCall = 2 };
+        var session = new Dvinholm.App.J2534Session(adapter);
+
+        Assert.True(session.Connect("virtual-adapter.dll", 500_000, out var connectError), connectError);
+        Assert.NotNull(session.AdapterVersion);
+        Assert.NotNull(session.AdapterCapabilities);
+
+        var error = Assert.Throws<InvalidOperationException>(() => session.Dispose());
+
+        Assert.Contains("simulated unload failure", error.Message);
+        Assert.False(session.IsConnected);
+        Assert.Null(session.AdapterVersion);
+        Assert.Null(session.AdapterCapabilities);
+
+        // Dispose must not mark the session permanently disposed until native
+        // teardown succeeds; a second call should retry the unload.
+        session.Dispose();
+        Assert.Equal(3, adapter.UnloadCount);
+        Assert.Throws<ObjectDisposedException>(() =>
+            session.Connect("again.dll", 500_000, out _));
+        session.Dispose();
+    }
+
+    [Fact]
     public async Task ConcurrentDisconnectWaitsForConnectBeforeUnloadingAdapter()
     {
         using var openEntered = new ManualResetEventSlim();
