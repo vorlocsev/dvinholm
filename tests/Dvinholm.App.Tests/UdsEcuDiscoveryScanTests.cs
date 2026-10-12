@@ -114,6 +114,10 @@ public sealed class UdsEcuDiscoveryScanTests
 
         var response = new Dvinholm.App.CanFrame(
             0x7E8, false, false, new byte[] { 0x03, 0x62, 0xF1, 0x90 }, 0, 0);
+        // Ensure at least one candidate is observed before deliberately
+        // overflowing the queue, so this test proves partial-result retention.
+        adapter.InjectReceiveFrame(response);
+        await Task.Delay(50);
         for (var i = 0; i < 20_000; i++)
             adapter.InjectReceiveFrame(response);
 
