@@ -166,34 +166,39 @@ Roadmap status is based on the current `main` branch and the automated test suit
 - [x] Filter unrelated CAN traffic before it reaches the bounded ECU-discovery queue.
 - [x] Verify the current Windows CI pipeline: restore, build, tests, publish, and artifact upload.
 
-Current CI result: **383 passed, 0 failed, 0 skipped**. See [the latest CI run](https://github.com/vorlocsev/dvinholm/actions/runs/38275392327). These are automated tests using a virtual J2534 adapter; they do not establish compatibility with a physical interface or a particular vehicle.
+Current CI result: **383 passed, 0 failed, 0 skipped**. See [the latest CI run](https://github.com/vorlocsev/dvinholm/actions/runs/38275392327). These automated tests use a virtual J2534 adapter and do not establish compatibility with a physical interface or a particular vehicle.
 
-### Priority 1 — validate real adapters
-
-- [ ] Run the documented checklist with a physical 32-bit J2534 interface, beginning with passive CAN capture.
-- [ ] Verify repeated connect/disconnect and recovery on real DiCE and/or Mongoose JLR Pro hardware.
-- [ ] Check vendor DLL loading, actual baud-rate behavior, native read errors, and supported hardware filters.
-- [ ] Record results by adapter model, driver/DLL version, vehicle/ECU, and bus rate; redact VINs and identifying data before sharing logs.
-
-**Exit criterion:** repeatable, recorded results on at least one physical adapter. Until then, hardware compatibility remains unverified.
-
-### Priority 2 — make diagnostics easier to verify
+### Current priority — complete the software MVP
 
 - [ ] Improve user-visible reporting for connection state, transport errors, ECU discovery completeness, and negative UDS responses.
 - [ ] Validate ECU profile import/export and profile selection through realistic user workflows.
-- [ ] Add only read-only UDS operations that have documented behavior and a clear test strategy.
+- [ ] Add read-only UDS operations only where behavior is documented and testable.
 - [ ] Keep vehicle-specific CAN IDs and DIDs out of the built-in catalog until supported by reliable sources or measured evidence.
+- [ ] Add repeatable software smoke tests for first launch, adapter discovery failure, connect/disconnect, and diagnostic cancellation using the virtual adapter where applicable.
+- [ ] Review diagnostic logging and error messages so failures are actionable without exposing sensitive vehicle data.
 
-**Exit criterion:** a user can tell which ECU was queried, which addressing was used, and whether the result is positive, negative, timed out, cancelled, or incomplete.
+**Exit criterion:** users can understand which ECU was queried, which addressing was used, and whether the result is positive, negative, timed out, cancelled, or incomplete; the main software workflows are covered by repeatable tests.
 
-### Priority 3 — release readiness
+### Next — packaging and release readiness
 
-- [ ] Add a repeatable smoke-test checklist for a clean install and first launch on supported Windows versions.
-- [ ] Review error messages and diagnostic logging so driver failures can be investigated without exposing sensitive vehicle data.
-- [ ] Document artifact installation, supported adapter/driver constraints, and known limitations.
-- [ ] Run the full CI pipeline on the release candidate and publish a versioned release only after hardware-validation status is clearly stated.
+- [ ] Verify clean installation and first launch on supported Windows versions.
+- [ ] Document artifact installation, x86/J2534 driver constraints, known limitations, and troubleshooting.
+- [ ] Run the full CI pipeline on the release candidate and publish a versioned release with release notes.
+- [ ] Clearly document that current CI uses a virtual adapter and that real-hardware compatibility is not yet verified.
 
-**Exit criterion:** reproducible CI, installation instructions, release notes, and an explicit distinction between virtual-adapter test coverage and real-hardware validation.
+**Exit criterion:** reproducible CI, clear installation instructions, release notes, and transparent statements about verified versus unverified compatibility.
+
+### Future releases — physical adapter validation
+
+Physical-hardware testing is deliberately deferred until a future release cycle; it is not a blocker for the current software-MVP roadmap.
+
+- [ ] Validate with a real 32-bit J2534 adapter, starting with passive CAN capture.
+- [ ] Verify repeated connect/disconnect and recovery on DiCE and/or Mongoose JLR Pro hardware.
+- [ ] Check vendor DLL loading, actual baud-rate behavior, native read errors, and supported hardware filters.
+- [ ] Validate read-only VIN/DTC requests only against ECUs with confirmed support.
+- [ ] Record results by adapter model, driver/DLL version, vehicle/ECU, and bus rate; redact VINs and identifying data before sharing logs.
+
+**Exit criterion:** repeatable, recorded results on at least one physical adapter. Until this work is completed, hardware compatibility remains unverified.
 
 ### Out of scope
 
