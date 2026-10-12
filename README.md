@@ -153,7 +153,7 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 
 ## Roadmap
 
-Roadmap status is based on the current `main` branch and the automated test suite. Last checked: 2026-10-12, commit `ea4eca69200565ce3cd224a95a6c6cad34e196fd`.
+Roadmap status is based on the current `main` branch and the automated test suite. Last updated: 2026-10-12, after roadmap PR #131 was merged at commit `be0befd5cbd4aaf38196327695424d7cca492ae9`. The post-merge CI run is tracked separately; hardware compatibility remains unverified.
 
 ### Completed: core transport and recovery
 
