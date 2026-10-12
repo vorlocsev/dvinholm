@@ -67,6 +67,34 @@ public sealed class UdsEcuDiscoveryScanTests
     }
 
     [Fact]
+    public async Task ScanAsync_ReportsIncompleteResultWhenReceiveQueueDropsFrames()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ =>
+            Array.Empty<Dvinholm.App.CanFrame>());
+        using var bus = new Dvinholm.App.CanBus(adapter);
+        bus.Start();
+        var discovery = new Dvinholm.App.UdsEcuDiscovery(bus);
+
+        // A deliberately tiny queue makes overflow reproducible under a burst.
+        var scan = discovery.ScanAsync(
+            TimeSpan.FromMilliseconds(500),
+            receiveQueueCapacity: 1);
+        await Task.Delay(50);
+
+        var response = new Dvinholm.App.CanFrame(
+            0x7E8, false, false, new byte[] { 0x03, 0x62, 0xF1, 0x90 }, 0, 0);
+        for (var i = 0; i < 20_000; i++)
+            adapter.InjectReceiveFrame(response);
+
+        var error = await Assert.ThrowsAsync<InvalidOperationException>(
+            async () => await scan.WaitAsync(TimeSpan.FromSeconds(3)));
+
+        Assert.Contains("scan is incomplete", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("dropped", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
+    [Fact]
     public async Task ScanAsync_ThrowsWhenCancelled()
     {
         using var adapter = new VirtualJ2534Adapter(_ =>
