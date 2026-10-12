@@ -153,7 +153,7 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 
 ## Roadmap
 
-Roadmap status is based on the current branch and the automated test suite. Last updated: 2026-10-12, including disposal lifecycle coverage in PRs #137–#141; hardware compatibility remains unverified.
+Roadmap status is based on the current branch and the automated test suite. Last updated: 2026-10-13, including deferred-disconnect/reconnect race coverage in PR #143; hardware compatibility remains unverified.
 
 ### Completed: core transport and recovery
 
@@ -166,7 +166,7 @@ Roadmap status is based on the current branch and the automated test suite. Last
 - [x] Filter unrelated CAN traffic before it reaches the bounded ECU-discovery queue.
 - [x] Verify the current Windows CI pipeline: restore, build, tests, publish, and artifact upload.
 
-Current CI result: **393 passed, 0 failed, 0 skipped**. The full restore, build, test, publish, and artifact-upload pipeline passed for session read-error callback coverage in [CI run #38306233969](https://github.com/vorlocsev/dvinholm/actions/runs/38306233969) on commit `91cce790357674060aa0d366d0985a64abf18ff8`. These automated tests use a virtual J2534 adapter and do not establish compatibility with a physical interface or a particular vehicle.
+Current CI result: **394 passed, 0 failed, 0 skipped**. The full restore, build, test, publish, and artifact-upload pipeline passed for deferred disconnect/reconnect race coverage in [CI run #38308753118](https://github.com/vorlocsev/dvinholm/actions/runs/38308753118) on commit `d45bbadba9e941f99bef8fc5866d846f5373d639`. These automated tests use a virtual J2534 adapter and do not establish compatibility with a physical interface or a particular vehicle.
 
 ### Current priority — complete the software MVP
 
@@ -180,6 +180,7 @@ Current CI result: **393 passed, 0 failed, 0 skipped**. The full restore, build,
 - [x] Verify concurrent `CanBus.Dispose()` callers wait for an active native send to finish with the virtual adapter; regression test passed in [CI run #38304154982](https://github.com/vorlocsev/dvinholm/actions/runs/38304154982).
 - [x] Verify an external `CanRxDispatcher.Dispose()` caller waits for deferred cleanup when disposal starts inside a read-error callback with the virtual adapter; regression test passed in [CI run #38305672017](https://github.com/vorlocsev/dvinholm/actions/runs/38305672017).
 - [x] Verify `J2534Session.Disconnect()` invoked from a read-error callback defers adapter unload until the callback returns with the virtual adapter; regression test passed in [CI run #38306233969](https://github.com/vorlocsev/dvinholm/actions/runs/38306233969).
+- [x] Verify a deferred disconnect from an old receive worker cannot tear down a reconnected J2534 session; regression test passed in [CI run #38308753118](https://github.com/vorlocsev/dvinholm/actions/runs/38308753118).
 
 **Exit criterion:** users can understand which ECU was queried, which addressing was used, and whether the result is positive, negative, timed out, cancelled, or incomplete; the main software workflows are covered by repeatable tests.
 
