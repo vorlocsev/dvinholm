@@ -176,10 +176,18 @@ internal sealed class J2534Session : IDisposable
             _bus = null;
         }
 
-        _j2534.Unload();
-        AdapterVersion = null;
-        AdapterVersionStatus = string.Empty;
-        AdapterCapabilities = null;
+        try
+        {
+            _j2534.Unload();
+        }
+        finally
+        {
+            // The CAN bus has already been disposed and detached. Even if a
+            // vendor Unload call fails, do not report stale adapter metadata
+            // as though the session were still connected. A later Disconnect
+            // or Dispose may retry unloading the adapter.
+            ClearAdapterMetadata();
+        }
     }
 
     private void HandleReadError(Exception error)
