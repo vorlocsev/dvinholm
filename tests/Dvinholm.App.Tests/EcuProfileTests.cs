@@ -156,4 +156,42 @@ public sealed class EcuProfileTests
 
         Assert.Throws<InvalidDataException>(() => Dvinholm.App.EcuProfileCatalog.FromJson(json));
     }
+    [Fact]
+    public void FromJson_RejectsNullEntriesInsteadOfSilentlySkippingThem()
+    {
+        const string json = """
+        [
+          {"id":"volvo.ecm","name":"ECM","requestId":"7E0","responseId":"7E8","isExtended":false,"source":"documented fixture"},
+          null
+        ]
+        """;
+
+        var exception = Assert.Throws<InvalidDataException>(() =>
+            Dvinholm.App.EcuProfileCatalog.FromJson(json));
+
+        Assert.Contains("index 1", exception.Message);
+    }
+
+    [Fact]
+    public void FromJson_RejectsRequestAndResponseIdsThatAreTheSame()
+    {
+        const string json = """[{"id":"volvo.ecm","name":"ECM","requestId":"7E0","responseId":"7E0","isExtended":false,"source":"documented fixture"}]""";
+
+        var exception = Assert.Throws<InvalidDataException>(() =>
+            Dvinholm.App.EcuProfileCatalog.FromJson(json));
+
+        Assert.Contains("Request and response CAN IDs must be different", exception.Message);
+    }
+
+    [Fact]
+    public void JsonRoundTrip_PreservesAnEmptyCatalog()
+    {
+        var original = new Dvinholm.App.EcuProfileCatalog();
+
+        var imported = Dvinholm.App.EcuProfileCatalog.FromJson(original.ToJson());
+
+        Assert.Empty(imported.All);
+        Assert.Empty(imported.Verified);
+    }
+
 }
