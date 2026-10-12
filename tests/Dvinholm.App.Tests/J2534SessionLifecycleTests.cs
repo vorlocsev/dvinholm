@@ -5,6 +5,7 @@ public sealed class J2534SessionLifecycleTests
     [Theory]
     [InlineData(FailurePoint.Open)]
     [InlineData(FailurePoint.Connect)]
+    [InlineData(FailurePoint.ReadVersion)]
     public void FailedConnectionReleasesAdapterAndClearsMetadata(FailurePoint failure)
     {
         var adapter = new FakeSessionAdapter { Failure = failure };
@@ -17,6 +18,26 @@ public sealed class J2534SessionLifecycleTests
         Assert.Null(session.AdapterCapabilities);
         Assert.Equal(2, adapter.UnloadCount);
         Assert.Equal(0, adapter.ReadCount);
+    }
+
+    [Fact]
+    public void FailedConnectionReportsCleanupFailureWithoutThrowing()
+    {
+        var adapter = new FakeSessionAdapter
+        {
+            Failure = FailurePoint.Open,
+            ThrowOnUnloadCall = 2
+        };
+        using var session = new Dvinholm.App.J2534Session(adapter);
+
+        var connected = session.Connect("virtual-adapter.dll", 500_000, out var error);
+
+        Assert.False(connected);
+        Assert.Contains("simulated open failure", error);
+        Assert.Contains("simulated unload failure", error);
+        Assert.False(session.IsConnected);
+        Assert.Null(session.AdapterVersion);
+        Assert.Null(session.AdapterCapabilities);
     }
 
     [Fact]
@@ -110,13 +131,14 @@ public sealed class J2534SessionLifecycleTests
         session.Dispose();
     }
 
-    public enum FailurePoint { None, Open, Connect }
+    public enum FailurePoint { None, Open, Connect, ReadVersion }
 
     private sealed class FakeSessionAdapter : Dvinholm.App.IJ2534SessionAdapter
     {
         private int _unloadCount;
         private int _readCount;
         internal FailurePoint Failure { get; init; }
+        internal int ThrowOnUnloadCall { get; init; }
         internal ManualResetEventSlim? OpenEntered { get; init; }
         internal ManualResetEventSlim? AllowOpenToFinish { get; init; }
         internal int LoadCount { get; private set; }
@@ -148,6 +170,8 @@ public sealed class J2534SessionLifecycleTests
         public Dvinholm.App.J2534Native.AdapterVersionInfo? ReadVersion(out string error)
         {
             error = string.Empty;
+            if (Failure == FailurePoint.ReadVersion)
+                throw new InvalidOperationException("simulated version query failure");
             return new("firmware", "dll", "api");
         }
         public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
@@ -163,6 +187,11 @@ public sealed class J2534SessionLifecycleTests
             error = string.Empty;
             return true;
         }
-        public void Unload() => Interlocked.Increment(ref _unloadCount);
+        public void Unload()
+        {
+            var count = Interlocked.Increment(ref _unloadCount);
+            if (count == ThrowOnUnloadCall)
+                throw new InvalidOperationException("simulated unload failure");
+        }
     }
 }
