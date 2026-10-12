@@ -46,7 +46,11 @@ internal sealed class UdsEcuDiscovery
         CancellationToken cancellationToken,
         int receiveQueueCapacity)
     {
-        using var subscription = _bus.Subscribe(receiveQueueCapacity);
+        // Reject unrelated CAN traffic before it enters the bounded queue.
+        // Otherwise high-rate non-UDS frames can evict useful ECU responses.
+        using var subscription = _bus.Subscribe(
+            receiveQueueCapacity,
+            frame => IsLikelyUdsResponse(frame, out _));
         var initialDroppedFrameCount = subscription.DroppedFrameCount;
         var observations = new Dictionary<(uint Id, bool Extended), Observation>();
         // A monotonic clock keeps the scan duration stable if wall-clock time
