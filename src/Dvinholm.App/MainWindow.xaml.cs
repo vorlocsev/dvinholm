@@ -211,8 +211,9 @@ public sealed partial class MainWindow : Window
         UdsRequestId.Text = profile.RequestId.ToString(profile.IsExtended ? "X8" : "X3");
         UdsResponseId.Text = profile.ResponseId.ToString(profile.IsExtended ? "X8" : "X3");
         CanIdFormat.SelectedIndex = profile.IsExtended ? 1 : 0;
-        if (profile.ReadableDataIdentifiers.Count > 0)
-            UdsDid.Text = profile.ReadableDataIdentifiers.Order().First().ToString("X4");
+        UdsDid.Text = profile.ReadableDataIdentifiers.Count > 0
+            ? profile.ReadableDataIdentifiers.Order().First().ToString("X4")
+            : string.Empty;
 
         EcuInfoText.Text = $"Profile: {profile.Name} ({profile.Id}) · {(profile.IsVerified ? "verified" : "unverified draft")}" +
             Environment.NewLine + $"Source: {profile.Source}" +
