@@ -63,6 +63,29 @@ public sealed class J2534SessionLifecycleTests
     }
 
     [Fact]
+    public void DisconnectClearsMetadataWhenAdapterUnloadThrowsAndCanRetry()
+    {
+        var adapter = new FakeSessionAdapter { ThrowOnUnloadCall = 2 };
+        using var session = new Dvinholm.App.J2534Session(adapter);
+
+        Assert.True(session.Connect("virtual-adapter.dll", 500_000, out var connectError), connectError);
+        Assert.NotNull(session.AdapterVersion);
+        Assert.NotNull(session.AdapterCapabilities);
+
+        var error = Assert.Throws<InvalidOperationException>(() => session.Disconnect());
+
+        Assert.Contains("simulated unload failure", error.Message);
+        Assert.False(session.IsConnected);
+        Assert.Null(session.AdapterVersion);
+        Assert.Null(session.AdapterCapabilities);
+
+        // A failed native unload can be retried without reconnecting or
+        // retaining stale connection metadata.
+        session.Disconnect();
+        Assert.Equal(3, adapter.UnloadCount);
+    }
+
+    [Fact]
     public async Task ConcurrentDisconnectWaitsForConnectBeforeUnloadingAdapter()
     {
         using var openEntered = new ManualResetEventSlim();
