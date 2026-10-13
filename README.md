@@ -197,7 +197,8 @@ Current CI result: **394 passed, 0 failed, 0 skipped**. The full restore, build,
 - [x] Add only documented/testable read-only UDS operations currently supported (DID/VIN/DTC); DTC status flags are displayed in readable form by PR #158. Additional operations remain gated on documented behavior and tests.
 - [ ] Keep vehicle-specific CAN IDs and DIDs out of the built-in catalog until supported by reliable sources or measured evidence.
 - [ ] Add repeatable software smoke tests for first launch, adapter discovery failure, connect/disconnect, and diagnostic cancellation using the virtual adapter where applicable.
-- [x] Review user-visible UDS negative-response messages and retain raw NRC plus readable explanation; continue reviewing logs for accidental sensitive-data exposure before release.
+- [x] Review user-visible UDS negative-response messages and retain the raw NRC plus a readable explanation.
+- [ ] Complete a broader diagnostic-log review for actionable errors and accidental sensitive-data exposure before release.
 - [x] Verify retryable `J2534Session.Dispose()` behavior after a vendor adapter unload failure with the virtual adapter; regression test passed in [CI run #38302862250](https://github.com/vorlocsev/dvinholm/actions/runs/38302862250).
 - [x] Verify concurrent `CanBus.Dispose()` callers wait for an active native send to finish with the virtual adapter; regression test passed in [CI run #38304154982](https://github.com/vorlocsev/dvinholm/actions/runs/38304154982).
 - [x] Verify an external `CanRxDispatcher.Dispose()` caller waits for deferred cleanup when disposal starts inside a read-error callback with the virtual adapter; regression test passed in [CI run #38305672017](https://github.com/vorlocsev/dvinholm/actions/runs/38305672017).
