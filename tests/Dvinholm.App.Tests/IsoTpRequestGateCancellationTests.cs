@@ -20,12 +20,21 @@ public sealed class IsoTpRequestGateCancellationTests
                 RequestTimeout: TimeSpan.FromSeconds(2)));
         using var client = new Dvinholm.App.UdsClient(channel);
 
-        var firstRequest = Task.Run(() => client.ReadDataByIdentifier(0xF190));
+        // These synchronous requests intentionally block while waiting for CAN responses.
+        // Dedicated workers avoid thread-pool starvation making the cancellation test flaky.
+        var firstRequest = Task.Factory.StartNew(
+            () => client.ReadDataByIdentifier(0xF190),
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
         await adapter.FirstRequestObserved.WaitAsync(TimeSpan.FromSeconds(1));
 
         using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(80));
-        var canceledRequest = Task.Run(() =>
-            client.ReadDataByIdentifier(0xF192, cancellation.Token));
+        var canceledRequest = Task.Factory.StartNew(
+            () => client.ReadDataByIdentifier(0xF192, cancellation.Token),
+            CancellationToken.None,
+            TaskCreationOptions.LongRunning,
+            TaskScheduler.Default);
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
             await canceledRequest.WaitAsync(TimeSpan.FromSeconds(1)));
