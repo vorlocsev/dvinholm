@@ -1,3 +1,19 @@
+# Latest handoff update — 2026-10-13 (PR #175 merged)
+
+## Verified repository state
+- PR #175 — sanitize unexpected J2534 session/driver exception details and preserve cleanup/retry semantics — merged as `b25e0c9b3ac72361a2a552db1973d837cbfdb237`: [PR #175](https://github.com/vorlocsev/dvinholm/pull/175).
+- Exact-head CI passed on PR SHA `0e1322c7f70f5fd656ecae3257e522e4eea9c608`: [run #38433299787](https://github.com/vorlocsev/dvinholm/actions/runs/38433299787) and [run #38433291816](https://github.com/vorlocsev/dvinholm/actions/runs/38433291816).
+- The first attempt exposed a missed assertion and an unsanitized exception path in `DisconnectLocked`; both were fixed before merge. Older failed runs are historical and superseded by the successful exact-head runs.
+- Post-merge main CI for merge SHA `b25e0c9b3ac72361a2a552db1973d837cbfdb237` is queued: [run #38434100347](https://github.com/vorlocsev/dvinholm/actions/runs/38434100347). Do not mark main fully verified until it completes successfully.
+
+## Next priorities
+1. Verify post-merge main CI [#38434100347](https://github.com/vorlocsev/dvinholm/actions/runs/38434100347).
+2. Continue case-by-case review of error strings returned by adapter methods. Preserve useful J2534 status/function diagnostics while avoiding local path or machine-specific exception details.
+3. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, ECU profile import/export. These remain unverified by remote CI.
+4. Keep physical DiCE/Mongoose adapter checks deferred to a future release; virtual-adapter CI does not prove hardware compatibility.
+
+---
+
 # Latest handoff update — 2026-10-13 (PR #175 CI failure fixed; rerun pending)
 
 ## Verified state
