@@ -18,6 +18,17 @@ internal sealed record UdsEcuCandidate(
         : "Request ID inferred from standard addressing — verify before sending.";
 }
 
+internal sealed class UdsEcuDiscoveryCancelledException : OperationCanceledException
+{
+    internal IReadOnlyList<UdsEcuCandidate> Candidates { get; }
+
+    internal UdsEcuDiscoveryCancelledException(IReadOnlyList<UdsEcuCandidate> candidates)
+        : base("Passive ECU scan was cancelled. Observed candidates are preserved but the scan is incomplete.")
+    {
+        Candidates = candidates;
+    }
+}
+
 internal sealed class UdsEcuDiscoveryIncompleteException : InvalidOperationException
 {
     internal IReadOnlyList<UdsEcuCandidate> Candidates { get; }
@@ -72,33 +83,42 @@ internal sealed class UdsEcuDiscovery
         // is adjusted while the diagnostic tool is running.
         var elapsed = Stopwatch.StartNew();
 
-        while (elapsed.Elapsed < duration)
+        try
         {
-            cancellationToken.ThrowIfCancellationRequested();
-
-            var remaining = duration - elapsed.Elapsed;
-            if (remaining <= TimeSpan.Zero)
-                break;
-
-            if (!subscription.TryRead(
-                    TimeSpan.FromMilliseconds(Math.Min(250, Math.Max(1, remaining.TotalMilliseconds))),
-                    cancellationToken,
-                    out var frame))
-                continue;
-
-            // Passive only: no probe or diagnostic request is transmitted.
-            if (!IsLikelyUdsResponse(frame, out _))
-                continue;
-
-            var key = (frame.ArbitrationId, frame.IsExtended);
-            if (!observations.TryGetValue(key, out var observation))
+            while (elapsed.Elapsed < duration)
             {
-                observation = new Observation(frame.ArbitrationId, frame.IsExtended);
-                observations.Add(key, observation);
-            }
+                cancellationToken.ThrowIfCancellationRequested();
 
-            observation.Count++;
-            observation.MaxLength = Math.Max(observation.MaxLength, frame.Data.Length);
+                var remaining = duration - elapsed.Elapsed;
+                if (remaining <= TimeSpan.Zero)
+                    break;
+
+                if (!subscription.TryRead(
+                        TimeSpan.FromMilliseconds(Math.Min(250, Math.Max(1, remaining.TotalMilliseconds))),
+                        cancellationToken,
+                        out var frame))
+                    continue;
+
+                // Passive only: no probe or diagnostic request is transmitted.
+                if (!IsLikelyUdsResponse(frame, out _))
+                    continue;
+
+                var key = (frame.ArbitrationId, frame.IsExtended);
+                if (!observations.TryGetValue(key, out var observation))
+                {
+                    observation = new Observation(frame.ArbitrationId, frame.IsExtended);
+                    observations.Add(key, observation);
+                }
+
+                observation.Count++;
+                observation.MaxLength = Math.Max(observation.MaxLength, frame.Data.Length);
+            }
+        }
+        catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
+        {
+            // Preserve useful observations so the UI can report a cancelled
+            // scan without throwing away responders already seen.
+            throw new UdsEcuDiscoveryCancelledException(BuildCandidates(observations));
         }
 
         var droppedFrameCount = subscription.DroppedFrameCount - initialDroppedFrameCount;
