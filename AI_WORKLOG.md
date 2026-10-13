@@ -1,22 +1,24 @@
-# Latest handoff update — 2026-10-13 (profile export status privacy)
+# Latest handoff update — 2026-10-13 (CSV export status privacy)
 
 ## Verified state
-- Main commit at review start: `1b13c95808f4ccd7484beec611ca41221704105a`; post-merge CI passed in [run #38423619961](https://github.com/vorlocsev/dvinholm/actions/runs/38423619961).
-- PR #168 updates this handoff after PR #167; its CI status must be checked independently.
+- PR #167 merged as `1b13c95808f4ccd7484beec611ca41221704105a`; post-merge CI passed: [run #38423619961](https://github.com/vorlocsev/dvinholm/actions/runs/38423619961).
+- PR #169 merged as `88fd22a1b449ce96410e85a2d082cdbba0818401`; its exact-head CI passed: [run #38425845117](https://github.com/vorlocsev/dvinholm/actions/runs/38425845117).
+- PR #168's handoff text was based on the pre-PR-169 state and must not be merged unchanged.
 - Real DiCE/Mongoose adapter testing remains deferred to a future release. Interactive Windows UI smoke tests remain open.
 
-## Privacy review finding and fix under review
-- The ECU profile export success status previously displayed `file.Path`, which can include a Windows account name and private directory structure. The export itself is user-initiated and remains unchanged; only the status message now displays `file.Name`.
-- This is a narrow data-minimization improvement. It does not establish that all logs/messages have been audited; the broader diagnostic logging review remains open.
-- PR: [avoid exposing full profile export path in status](https://github.com/vorlocsev/dvinholm/pull/169) (pending CI/review).
+## Privacy review findings
+- PR #169 changed the ECU profile export success status from the full `file.Path` to `file.Name`; the export operation itself is unchanged.
+- A follow-up audit found the same unnecessary full-path exposure in the CSV export success status. This branch changes that status to the selected filename only; CSV content and save behavior are unchanged.
+- Other error handlers still surface exception messages in some cases. Those require case-by-case review to preserve useful troubleshooting without exposing sensitive local details; this change does not claim the entire diagnostics/logging audit is complete.
 
 ## Next priorities
-1. Verify PR #169 CI before considering merge.
-2. Continue the diagnostic message review for unnecessary paths, VINs, and other identifying data.
+1. Verify CI on the exact head of the CSV status change before merge.
+2. Continue reviewing user-visible error messages for path/identifier exposure, only changing cases where the privacy issue is concrete.
 3. Keep manual Windows first-launch, connect/disconnect, cancellation, and profile UI smoke tests marked open until actually performed.
 4. Keep physical-adapter validation deferred to a future release.
 
 ---
+
 
 # Latest handoff update — 2026-10-13 (after PR #164)
 
