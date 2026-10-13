@@ -247,6 +247,47 @@ public sealed class J2534SessionLifecycleTests
     }
 
     [Fact]
+    public async Task DisposeFromReadErrorCallbackDefersTeardownAndPermanentlyClosesSession()
+    {
+        using var callbackEntered = new ManualResetEventSlim();
+        using var allowCallbackToFinish = new ManualResetEventSlim();
+        var adapter = new FakeSessionAdapter { FailFirstRead = true };
+        var session = new Dvinholm.App.J2534Session(adapter);
+        session.ReadError += _ =>
+        {
+            session.Dispose();
+            callbackEntered.Set();
+            allowCallbackToFinish.Wait();
+        };
+
+        Assert.True(session.Connect("virtual-adapter.dll", 500_000, out var connectError), connectError);
+        try
+        {
+            Assert.True(callbackEntered.Wait(TimeSpan.FromSeconds(3)),
+                "The session did not report the simulated adapter read error.");
+
+            // Dispose must be deferred while the native Read callback owns the
+            // worker; unloading the driver here could tear down an active call.
+            Assert.Equal(1, adapter.UnloadCount);
+            Assert.True(session.IsConnected);
+        }
+        finally
+        {
+            allowCallbackToFinish.Set();
+        }
+
+        Assert.True(SpinWait.SpinUntil(
+                () => !session.IsConnected && adapter.UnloadCount == 2,
+                TimeSpan.FromSeconds(3)),
+            "Deferred disposal did not finish after the read-error callback returned.");
+        Assert.Null(session.AdapterVersion);
+        Assert.Null(session.AdapterCapabilities);
+        Assert.Throws<ObjectDisposedException>(() =>
+            session.Connect("again.dll", 500_000, out _));
+        session.Dispose();
+    }
+
+    [Fact]
     public async Task DeferredDisconnectFromOldReadWorkerDoesNotDisconnectReconnectedSession()
     {
         using var callbackEntered = new ManualResetEventSlim();
