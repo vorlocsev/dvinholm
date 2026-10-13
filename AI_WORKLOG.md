@@ -1,23 +1,26 @@
-# Latest handoff update — 2026-10-13 (CSV export status privacy)
+# Latest handoff update — 2026-10-13 (file-operation error privacy)
 
 ## Verified state
-- PR #167 merged as `1b13c95808f4ccd7484beec611ca41221704105a`; post-merge CI passed: [run #38423619961](https://github.com/vorlocsev/dvinholm/actions/runs/38423619961).
 - PR #169 merged as `88fd22a1b449ce96410e85a2d082cdbba0818401`; its exact-head CI passed: [run #38425845117](https://github.com/vorlocsev/dvinholm/actions/runs/38425845117).
-- PR #168's handoff text was based on the pre-PR-169 state and must not be merged unchanged.
+- PR #170 merged as `930caf243e00756bc355dde124e49376891e9564`; both exact-head workflows passed: [pull request CI #38427177793](https://github.com/vorlocsev/dvinholm/actions/runs/38427177793) and [push CI #38427159625](https://github.com/vorlocsev/dvinholm/actions/runs/38427159625).
+- Post-merge CI for main SHA `930caf243e00756bc355dde124e49376891e9564` was still running at handoff refresh: [run #38428017878](https://github.com/vorlocsev/dvinholm/actions/runs/38428017878). Verify its final conclusion before marking main fully validated.
 - Real DiCE/Mongoose adapter testing remains deferred to a future release. Interactive Windows UI smoke tests remain open.
 
-## Privacy review findings
-- PR #169 changed the ECU profile export success status from the full `file.Path` to `file.Name`; the export operation itself is unchanged.
-- A follow-up audit found the same unnecessary full-path exposure in the CSV export success status. This branch changes that status to the selected filename only; CSV content and save behavior are unchanged.
-- Other error handlers still surface exception messages in some cases. Those require case-by-case review to preserve useful troubleshooting without exposing sensitive local details; this change does not claim the entire diagnostics/logging audit is complete.
+## Latest privacy review
+- PR #169 changed ECU profile export status from full `file.Path` to `file.Name`.
+- PR #170 changed CSV export success status to display only the selected filename.
+- A follow-up source review found file-operation exception messages can also include local paths. The current follow-up replaces exception details in ECU profile load/import/export and CSV export status messages with task-specific guidance. This intentionally avoids displaying raw exception text in the UI; it does not add a diagnostic log, and full exception logging remains a separate design decision.
+- Current follow-up branch: `fix/redact-file-operation-exception-details`; validate its exact-head CI before merge.
 
 ## Next priorities
-1. Verify CI on the exact head of the CSV status change before merge.
-2. Continue reviewing user-visible error messages for path/identifier exposure, only changing cases where the privacy issue is concrete.
-3. Keep manual Windows first-launch, connect/disconnect, cancellation, and profile UI smoke tests marked open until actually performed.
-4. Keep physical-adapter validation deferred to a future release.
+1. Verify post-merge CI for PR #170.
+2. Verify CI on the exact head of the file-operation error privacy follow-up before merge.
+3. Continue reviewing connection/transport errors case by case; do not remove useful adapter troubleshooting details without evidence they expose sensitive data.
+4. Keep manual Windows first-launch, connect/disconnect, cancellation, and profile UI smoke tests open until performed.
+5. Keep physical-adapter validation deferred to a future release.
 
 ---
+
 
 
 # Latest handoff update — 2026-10-13 (after PR #164)

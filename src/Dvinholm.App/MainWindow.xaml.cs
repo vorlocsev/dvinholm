@@ -130,7 +130,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            SetStatus("Saved ECU profiles could not be loaded: " + ex.Message);
+            SetStatus("Saved ECU profiles could not be loaded. Check the local file and its permissions.");
         }
     }
 
@@ -158,13 +158,13 @@ public sealed partial class MainWindow : Window
             }
             catch (Exception saveException)
             {
-                SetStatus($"Imported {imported.All.Count} profile(s), but could not save the local copy: {saveException.Message}");
+                SetStatus($"Imported {imported.All.Count} profile(s), but could not save the local copy. Check folder permissions and available disk space.");
             }
         }
         catch (Exception ex)
         {
             _loadingProfiles = false;
-            SetStatus("Profile import failed: " + ex.Message);
+            SetStatus("Profile import failed. Check that the selected file is valid JSON and can be read.");
         }
     }
 
@@ -190,7 +190,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            SetStatus("Profile export failed: " + ex.Message);
+            SetStatus("Profile export failed. Check destination permissions and available disk space.");
         }
     }
 
@@ -937,7 +937,7 @@ public sealed partial class MainWindow : Window
         {
             // Picker and filesystem failures are expected user-environment errors.
             // Surface them in the status bar instead of escaping an async-void UI handler.
-            SetStatus("CSV export failed: " + ex.Message);
+            SetStatus("CSV export failed. Check destination permissions and available disk space.");
         }
     }
 }
