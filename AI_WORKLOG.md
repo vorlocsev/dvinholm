@@ -6,11 +6,16 @@
 - The first attempt exposed a missed assertion and an unsanitized exception path in `DisconnectLocked`; both were fixed before merge. Older failed runs are historical and superseded by the successful exact-head runs.
 - Post-merge main CI for merge SHA `b25e0c9b3ac72361a2a552db1973d837cbfdb237` is queued: [run #38434100347](https://github.com/vorlocsev/dvinholm/actions/runs/38434100347). Do not mark main fully verified until it completes successfully.
 
+## Current follow-up PR #177
+- [PR #177](https://github.com/vorlocsev/dvinholm/pull/177) replaces raw `PassThruReadVersion` exception text with a stable generic driver-error message, because vendor interop exceptions can include machine-specific details.
+- Exact-head CI is pending: [run #38434287389](https://github.com/vorlocsev/dvinholm/actions/runs/38434287389). Do not merge until all required checks pass on the latest PR head.
+
 ## Next priorities
 1. Verify post-merge main CI [#38434100347](https://github.com/vorlocsev/dvinholm/actions/runs/38434100347).
-2. Continue case-by-case review of error strings returned by adapter methods. Preserve useful J2534 status/function diagnostics while avoiding local path or machine-specific exception details.
-3. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, ECU profile import/export. These remain unverified by remote CI.
-4. Keep physical DiCE/Mongoose adapter checks deferred to a future release; virtual-adapter CI does not prove hardware compatibility.
+2. Verify PR #177 CI and merge only if the exact latest head is green; then confirm post-merge main CI.
+3. Continue case-by-case review of error strings returned by adapter methods. Preserve useful J2534 status/function diagnostics while avoiding local path or machine-specific exception details.
+4. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, ECU profile import/export. These remain unverified by remote CI.
+5. Keep physical DiCE/Mongoose adapter checks deferred to a future release; virtual-adapter CI does not prove hardware compatibility.
 
 ---
 
