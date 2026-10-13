@@ -1,3 +1,24 @@
+# Latest handoff update — 2026-10-13 (main CI verified; sanitizer boundary tests in progress)
+
+## Current verified state
+- Current main commit: `27353c478c8908eb5645feab5df0c4c09f953bb5`.
+- Post-merge CI for this main commit passed: [run #38444850871](https://github.com/vorlocsev/dvinholm/actions/runs/38444850871).
+- Post-merge CI for PR #184 merge commit `689997227b787cb38c5ffed86459c3b2f8bfc66d` passed: [run #38444768532](https://github.com/vorlocsev/dvinholm/actions/runs/38444768532).
+- PR #182 is merged as `27353c478c8908eb5645feab5df0c4c09f953bb5`; its branch checks also passed: [run #38444817089](https://github.com/vorlocsev/dvinholm/actions/runs/38444817089) and [run #38444805983](https://github.com/vorlocsev/dvinholm/actions/runs/38444805983).
+- PR #183 and #184 are merged; exact-head and post-merge checks recorded below in the historical handoff sections.
+
+## Current task
+- Existing `J2534NativeTests` cover Windows/UNC/Unix path redaction, preservation of useful text, and output length.
+- This follow-up adds boundary tests for control-character removal and blank/null diagnostics; validate the exact PR head with CI before merging.
+- The sanitizer covers common path formats only; do not describe it as universal secret redaction.
+
+## Remaining release-readiness items
+1. Continue targeted review of connection recovery and CAN-filter/cancellation edge cases where a concrete coverage gap exists.
+2. Run manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, and ECU profile import/export.
+3. Physical DiCE/Mongoose testing remains deferred to a future release. Virtual-adapter CI does not establish real-hardware compatibility.
+
+---
+
 # Latest handoff update — 2026-10-13 (PR #184 merged; post-merge CI pending)
 
 ## Verified current state
