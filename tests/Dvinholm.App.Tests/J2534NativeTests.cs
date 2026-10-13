@@ -29,6 +29,25 @@ public sealed class J2534NativeTests
     }
 
     [Fact]
+    public void SanitizeDriverDiagnostic_RemovesControlCharacters()
+    {
+        var sanitized = Dvinholm.App.J2534Native.SanitizeDriverDiagnostic(
+            "adapter\0 failed\r\nretry\tlater");
+
+        Assert.Equal("adapter failedretrylater", sanitized);
+        Assert.DoesNotContain(sanitized, c => char.IsControl(c));
+    }
+
+    [Theory]
+    [InlineData("")]
+    [InlineData("   ")]
+    [InlineData(null)]
+    public void SanitizeDriverDiagnostic_ReturnsEmptyForBlankInput(string? detail)
+    {
+        Assert.Equal(string.Empty, Dvinholm.App.J2534Native.SanitizeDriverDiagnostic(detail));
+    }
+
+    [Fact]
     public void Load_RejectsEmptyPathAndLeavesWrapperUnloaded()
     {
         using var native = new Dvinholm.App.J2534Native();
