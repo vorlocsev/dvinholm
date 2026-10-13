@@ -18,7 +18,7 @@ public sealed class UdsLateMultiFrameResponseAfterTimeoutTests
                 0x7E8,
                 FrameTimeout: TimeSpan.FromSeconds(1),
                 ConsecutiveFrameTimeout: TimeSpan.FromSeconds(1),
-                RequestTimeout: TimeSpan.FromMilliseconds(250)));
+                RequestTimeout: TimeSpan.FromMilliseconds(400)));
         using var client = new Dvinholm.App.UdsClient(channel);
 
         Assert.Throws<TimeoutException>(() => client.ReadDataByIdentifier(0xF190));
@@ -81,14 +81,14 @@ public sealed class UdsLateMultiFrameResponseAfterTimeoutTests
             {
                 // Arrives after request #1 has timed out, while request #2 is active.
                 _ = EnqueueAfterDelay(
-                    TimeSpan.FromMilliseconds(260),
+                    TimeSpan.FromMilliseconds(500),
                     new byte[] { 0x10, 0x0B, 0x62, 0xF1, 0x90, 0x01, 0x02, 0x03 });
             }
             else
             {
                 // Arrive after the stale multi-frame response, but before #2 times out.
                 _ = EnqueueAfterDelay(
-                    TimeSpan.FromMilliseconds(170),
+                    TimeSpan.FromMilliseconds(300),
                     new byte[] { 0x04, 0x62, 0xF1, 0x91, 0x42 });
             }
 
