@@ -27,6 +27,7 @@ public sealed class J2534SessionLifecycleTests
     }
 
     [Theory]
+    [InlineData(FailurePoint.Load)]
     [InlineData(FailurePoint.Open)]
     [InlineData(FailurePoint.Connect)]
     [InlineData(FailurePoint.ReadVersion)]
@@ -367,7 +368,7 @@ public sealed class J2534SessionLifecycleTests
         session.Dispose();
     }
 
-    public enum FailurePoint { None, Open, Connect, ReadVersion }
+    public enum FailurePoint { None, Load, Open, Connect, ReadVersion }
 
     private sealed class FakeSessionAdapter : Dvinholm.App.IJ2534SessionAdapter
     {
@@ -393,8 +394,8 @@ public sealed class J2534SessionLifecycleTests
         public bool Load(string path, out string error)
         {
             LoadCount++;
-            error = string.Empty;
-            return true;
+            error = Failure == FailurePoint.Load ? "simulated load failure" : string.Empty;
+            return Failure != FailurePoint.Load;
         }
         public bool Open(out string error)
         {
