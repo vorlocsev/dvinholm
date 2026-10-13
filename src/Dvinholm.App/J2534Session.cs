@@ -100,7 +100,7 @@ internal sealed class J2534Session : IDisposable
                 try { _bus.Dispose(); }
                 catch (Exception cleanupException)
                 {
-                    cleanupErrors.Add("CAN bus cleanup failed: " + cleanupException.Message);
+                    cleanupErrors.Add("CAN bus cleanup failed due to an unexpected adapter error.");
                 }
                 finally
                 {
