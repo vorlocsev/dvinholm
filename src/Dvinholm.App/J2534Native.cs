@@ -95,9 +95,17 @@ internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
 
             return true;
         }
-        catch (Exception ex)
+        catch (ArgumentException ex) when (string.IsNullOrWhiteSpace(path))
         {
             error = ex.Message;
+            Unload();
+            return false;
+        }
+        catch (Exception)
+        {
+            // NativeLibrary.Load exceptions often include the full selected
+            // DLL path. Keep the UI actionable without echoing local paths.
+            error = "Unable to load the selected J2534 DLL. Check that the file exists, required exports and dependencies are present, and the DLL matches the application's x86 architecture.";
             Unload();
             return false;
         }
