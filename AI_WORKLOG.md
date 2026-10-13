@@ -1,3 +1,23 @@
+# Latest handoff update — 2026-10-14 (PR #191 merged; next read-error isolation test)
+
+## Verified state
+- PR [#191](https://github.com/vorlocsev/dvinholm/pull/191) merged as `ac03fb58587513e8e544dcfb50cb3b1fa15efee1`.
+- Exact-head CI for PR #191 succeeded: [run #38478544199](https://github.com/vorlocsev/dvinholm/actions/runs/38478544199).
+- Post-merge CI for PR #190 succeeded: [run #38478370417](https://github.com/vorlocsev/dvinholm/actions/runs/38478370417).
+- Post-merge CI for PR #191 is queued/running: [run #38479178610](https://github.com/vorlocsev/dvinholm/actions/runs/38479178610). Confirm success before treating the latest main head as validated.
+
+## Current candidate
+- Branch: `test/j2534-read-error-subscriber-isolation`.
+- Adds a test proving one throwing `J2534Session.ReadError` subscriber does not prevent subsequent subscribers from receiving the same read failure.
+- Await exact-head CI and open/merge only after confirming it passes.
+
+## Remaining validation
+- User confirmed startup and missing-device recovery on Windows 11 IoT LTSC 26100.9550.
+- Physical adapter testing remains deferred to a future release; virtual-adapter CI does not establish DiCE/Mongoose hardware compatibility.
+- Continue targeted lifecycle and UDS/ISO-TP test audit; do not duplicate already covered scenarios.
+
+---
+
 # Latest handoff update — 2026-10-14 (PR #190 merged; callback-disposal test in PR #191)
 
 ## Verified current state
