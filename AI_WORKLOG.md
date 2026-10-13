@@ -1,19 +1,19 @@
-# Latest handoff update — 2026-10-13 (main CI timing-sensitive test failure; PR #178 open)
+# Latest handoff update — 2026-10-13 (PR #178 merged; main CI pending)
 
 ## Verified repository state
-- PR #175 and PR #177 are merged. PR #177 merge commit is `55775c3f3191038712f875da07b389d2193269a5`: [PR #177](https://github.com/vorlocsev/dvinholm/pull/177).
-- Exact-head CI for PR #177 passed on `b3ac6d01d56e51e7097524b3e2e7b18e016eb45b`: [run #38434326325](https://github.com/vorlocsev/dvinholm/actions/runs/38434326325) and [run #38434287389](https://github.com/vorlocsev/dvinholm/actions/runs/38434287389).
-- Post-merge main CI [run #38435044050](https://github.com/vorlocsev/dvinholm/actions/runs/38435044050) failed in `UdsLateMultiFrameResponseAfterTimeoutTests.ReadDataByIdentifier_LateMultiFrameResponseAfterTimeoutIsCorrelated`: expected one stale-response Flow Control frame but observed zero. Build succeeded; 418 tests passed and one timing-sensitive test failed.
-- PR #178 is open to widen the regression test's timing margins without changing production behavior: [PR #178](https://github.com/vorlocsev/dvinholm/pull/178). Current head `7031a626f1050e160e9fdb26bc59fee5dc8e9956`; exact-head CI is running: [run #38435912923](https://github.com/vorlocsev/dvinholm/actions/runs/38435912923) and [run #38435885261](https://github.com/vorlocsev/dvinholm/actions/runs/38435885261).
-- This handoff refresh PR (#176) had green CI at its previous head `01b695a9e028518eddb6b0adbff03fb98334e9b4`, but must be updated and revalidated before merge.
+- PR #175 and PR #177 are merged. PR #177 merge commit: `55775c3f3191038712f875da07b389d2193269a5`: [PR #177](https://github.com/vorlocsev/dvinholm/pull/177).
+- Main CI at `55775c3f3191038712f875da07b389d2193269a5` failed in `UdsLateMultiFrameResponseAfterTimeoutTests.ReadDataByIdentifier_LateMultiFrameResponseAfterTimeoutIsCorrelated`: build succeeded, 418 tests passed and one timing-sensitive test failed. [Failed run #38435044050](https://github.com/vorlocsev/dvinholm/actions/runs/38435044050).
+- PR #178 widened timing margins in that regression test without changing production code. Both exact-head CI workflows passed on `7031a626f1050e160e9fdb26bc59fee5dc8e9956`: [run #38435912923](https://github.com/vorlocsev/dvinholm/actions/runs/38435912923) and [run #38435885261](https://github.com/vorlocsev/dvinholm/actions/runs/38435885261).
+- PR #178 was merged as `eb0a5562b95c28cd0ce68d31d0a3d1569481770b`: [PR #178](https://github.com/vorlocsev/dvinholm/pull/178).
+- Post-merge main CI for `eb0a5562b95c28cd0ce68d31d0a3d1569481770b` is currently running: [run #38436775032](https://github.com/vorlocsev/dvinholm/actions/runs/38436775032). Do not mark the merged main commit fully verified until it succeeds.
+- This handoff refresh PR (#176) had green exact-head CI on `5c12401294954d5be9e54ae3c44825eba47b352c`: [run #38435975135](https://github.com/vorlocsev/dvinholm/actions/runs/38435975135) and [run #38435982594](https://github.com/vorlocsev/dvinholm/actions/runs/38435982594). Since it predates the PR #178 merge, refresh and revalidate before merging.
 
 ## Next priorities
-1. Confirm PR #178's exact-head Windows x86 CI; if green, merge and verify the new post-merge main CI.
-2. Refresh this handoff after PR #178's final outcome, then merge the docs-only PR only with green exact-head CI and an appropriate base.
-3. Continue the case-by-case review of J2534 adapter-returned error strings, preserving useful status/function diagnostics while avoiding local paths or machine-specific exception details.
+1. Verify post-merge main CI [run #38436775032](https://github.com/vorlocsev/dvinholm/actions/runs/38436775032).
+2. Refresh this handoff PR with the final main CI result, then merge the docs-only PR only after exact-head CI passes and its base is current/mergeable.
+3. Continue a case-by-case audit of J2534 adapter-returned error strings, preserving useful diagnostics while avoiding local paths or machine-specific exception details.
 4. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, and ECU profile import/export.
-5. Keep physical DiCE/Mongoose checks deferred to a future release; virtual-adapter CI does not prove hardware compatibility.
-
+5. Keep physical DiCE/Mongoose adapter checks deferred to a future release; virtual-adapter CI does not prove hardware compatibility.
 
 ---
 
