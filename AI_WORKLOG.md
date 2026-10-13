@@ -1,27 +1,31 @@
-# Latest handoff update — 2026-10-13 (after PR #162)
+# Latest handoff update — 2026-10-13 (after PR #164)
 
 ## Verified repository state
 
-- PR #162 — CSV export error handling — was merged into `main` as `dfee67bfbb3f74c514a552598fc60be25c7b0145`: [PR #162](https://github.com/vorlocsev/dvinholm/pull/162).
-- The change catches exceptions from the CSV save picker/file write in the async UI handler and reports `CSV export failed: <message>` in the status bar. Cancelling the picker remains a no-op.
-- Both CI workflows passed for the exact PR head `3509068017051864a9a2e454c65bb9c2b61cae94`: [run #38415831108](https://github.com/vorlocsev/dvinholm/actions/runs/38415831108) and [run #38415879575](https://github.com/vorlocsev/dvinholm/actions/runs/38415879575).
-- Post-merge CI for `main` at `dbf84458931ec0973fddecf73e367971e070833a` passed: [run #38415536515](https://github.com/vorlocsev/dvinholm/actions/runs/38415536515).
-- Post-merge CI for the new merge commit `dfee67bfbb3f74c514a552598fc60be25c7b0145` is in progress: [run #38416605055](https://github.com/vorlocsev/dvinholm/actions/runs/38416605055). Confirm success before calling the merge fully verified.
-- No open pull requests were reported at the time of this update.
-- Real DiCE/Mongoose and in-vehicle validation remain deferred to a future release cycle. Virtual J2534 tests do not prove physical-hardware compatibility.
+- PR #162 — CSV export error handling — merged as `dfee67bfbb3f74c514a552598fc60be25c7b0145`: [PR #162](https://github.com/vorlocsev/dvinholm/pull/162). Both pre-merge CI workflows passed and post-merge CI passed: [run #38416605055](https://github.com/vorlocsev/dvinholm/actions/runs/38416605055).
+- PR #163 — AI handoff refresh — merged as `a1c5cc76f5f5a48b9c1ddbbff9313de695221c64`: [PR #163](https://github.com/vorlocsev/dvinholm/pull/163). Both workflows passed on exact head `8a968c2848c35dbce1210db55b80c583b03ceafc): [run #38416772137](https://github.com/vorlocsev/dvinholm/actions/runs/38416772137) and [run #38416811071](https://github.com/vorlocsev/dvinholm/actions/runs/38416811071).
+- PR #164 — ECU profile file-picker error handling — merged as `49a14ab35f878d79b3ecad390504dadfc4baf9e6`: [PR #164](https://github.com/vorlocsev/dvinholm/pull/164). Both workflows passed on exact head `23a86b383a2cad7c5d750810e3f3269f4fb6edaa`: [run #38416982961](https://github.com/vorlocsev/dvinholm/actions/runs/38416982961) and [run #38417015897](https://github.com/vorlocsev/dvinholm/actions/runs/38417015897).
+- Post-merge CI for the current main commit `49a14ab35f878d79b3ecad390504dadfc4baf9e6` is in progress: [run #38418202970](https://github.com/vorlocsev/dvinholm/actions/runs/38418202970). Verify it before marking this merge fully validated.
+- No open PRs were reported after merging #164.
+- Physical DiCE/Mongoose and in-vehicle validation remain deferred to a future release cycle. Virtual J2534 CI does not establish physical-hardware compatibility.
 
 ## Recently completed
 
-### PR #162 — CSV export error handling
-- Prevented save-picker and file-write exceptions from escaping the async-void click handler.
-- Shows an actionable export failure in the status bar; cancellation is unchanged.
-- Both PR CI workflows passed on the exact head SHA before merge.
-- Merge commit: `dfee67bfbb3f74c514a552598fc60be25c7b0145`.
-- Post-merge CI: pending at [run #38416605055](https://github.com/vorlocsev/dvinholm/actions/runs/38416605055).
+### PR #164 — ECU profile file-picker error handling
+- Wrapped picker initialization and asynchronous picker operations for ECU profile import/export in the existing exception-handling path.
+- Failures now appear in the status bar instead of escaping the async-void UI handlers.
+- Cancellation remains a normal no-op; file read/write error reporting is retained.
+- Both CI workflows passed for the exact PR head before merge.
+- Merge commit: `49a14ab35f878d79b3ecad390504dadfc4baf9e6`.
+- Post-merge CI pending: [run #38418202970](https://github.com/vorlocsev/dvinholm/actions/runs/38418202970).
+
+### PR #163 — AI handoff refresh
+- Updated `AI_WORKLOG.md` with PR #162's implementation and verification state.
+- Merge commit: `a1c5cc76f5f5a48b9c1ddbbff9313de695221c64`.
 
 ## Next steps
 
-1. Verify post-merge CI run [#38416605055](https://github.com/vorlocsev/dvinholm/actions/runs/38416605055).
+1. Verify post-merge CI run [#38418202970](https://github.com/vorlocsev/dvinholm/actions/runs/38418202970).
 2. Continue the software-MVP workflow audit: adapter discovery failure, connect/disconnect, diagnostic cancellation, negative UDS responses, and incomplete ECU discovery.
 3. Exercise ECU profile import/export and profile selection through realistic repeatable user workflows; unit tests do not replace interactive UI smoke tests.
 4. Keep README roadmap status honest; do not mark manual smoke tests complete without evidence.
