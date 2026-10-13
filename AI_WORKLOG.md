@@ -4,7 +4,7 @@
 >
 > **Last updated:** 2026-10-13  
 > **Repository:** https://github.com/vorlocsev/dvinholm  
-> **Main branch at last verification:** `648bb26d7785a1da387f07a651890eb275e987b3`  
+> **Main branch at last verification:** `d7f2ee4d78e566bd3581859962a0da3803677278`  
 > **Current state:** Software MVP in progress; latest main CI succeeded. Real adapter validation is intentionally deferred.
 
 ## 1. Project purpose and guardrails
@@ -75,10 +75,19 @@ Key source and test locations:
 - Merge commit / current main SHA: `648bb26d7785a1da387f07a651890eb275e987b3`.
 - Latest main CI run [#38314520952](https://github.com/vorlocsev/dvinholm/actions/runs/38314520952) completed successfully.
 
+### PR #149 — strict hexadecimal prefix parsing
+- Fixed CAN ID and DID parsing so an optional `0x` prefix is removed only when it appears at the beginning of the input.
+- Previously, `Replace("0x", ...)` removed every occurrence and could silently normalize malformed inputs such as `0x0x7E0` or `7E0x`.
+- Added regression cases for repeated, trailing, and misplaced prefixes.
+- PR: https://github.com/vorlocsev/dvinholm/pull/149
+- Merge commit / main SHA: `d7f2ee4d78e566bd3581859962a0da3803677278`.
+- PR CI run [#38334827794](https://github.com/vorlocsev/dvinholm/actions/runs/38334827794) completed successfully on head `815fe3d651a4613e0d311df5d327d80d30ad8f50`.
+- Post-merge main CI run [#38335347983](https://github.com/vorlocsev/dvinholm/actions/runs/38335347983) was queued when this entry was prepared; verify its final result before treating the main pipeline as green.
+
 ## 4. Current CI and verification state
 
-- Latest verified `main` commit: `648bb26d7785a1da387f07a651890eb275e987b3`.
-- Latest main workflow run: [#38314520952](https://github.com/vorlocsev/dvinholm/actions/runs/38314520952), conclusion **success**.
+- Latest verified `main` commit: `d7f2ee4d78e566bd3581859962a0da3803677278` (PR #149 merged; post-merge CI run #38335347983 must be checked).
+- Latest completed main workflow before PR #149: [#38314520952](https://github.com/vorlocsev/dvinholm/actions/runs/38314520952), conclusion **success**. Post-merge run #38335347983 is the current verification target.
 - Pipeline covers .NET restore, build, tests, publish, and artifact upload.
 - A previously reported suite result was **394 passed, 0 failed, 0 skipped** in run #38308753118. Do not assume the exact count is unchanged without inspecting the latest run's test logs.
 - CI uses a virtual J2534 adapter. It does not prove real driver, electrical, adapter, vehicle, or ECU compatibility.
