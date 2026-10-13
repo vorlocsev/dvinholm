@@ -188,7 +188,7 @@ Roadmap status is based on the current branch and the automated test suite. Last
 - [x] Filter unrelated CAN traffic before it reaches the bounded ECU-discovery queue.
 - [x] Verify the current Windows CI pipeline: restore, build, tests, publish, and artifact upload.
 
-Current CI result: **394 passed, 0 failed, 0 skipped**. The full restore, build, test, publish, and artifact-upload pipeline passed for deferred disconnect/reconnect race coverage in [CI run #38308753118](https://github.com/vorlocsev/dvinholm/actions/runs/38308753118) on commit `d45bbadba9e941f99bef8fc5866d846f5373d639`. These automated tests use a virtual J2534 adapter and do not establish compatibility with a physical interface or a particular vehicle.
+For the current test count and full restore/build/test/publish/artifact-upload result, use the [GitHub Actions history](https://github.com/vorlocsev/dvinholm/actions) and select the latest successful run on `main`; the count changes as regression tests are added. The pipeline uses a virtual J2534 adapter and does not establish compatibility with a physical interface or a particular vehicle.
 
 ### Current priority — complete the software MVP
 
