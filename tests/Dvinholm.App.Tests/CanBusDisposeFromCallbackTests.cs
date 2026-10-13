@@ -13,7 +13,7 @@ public sealed class CanBusDisposeFromCallbackTests
 
         bus.ReadError += error =>
         {
-            if (!error.Message.Contains("simulated read failure", StringComparison.Ordinal))
+            if (!error.Message.Contains("J2534 read failed due to an unexpected adapter error.", StringComparison.Ordinal))
                 return;
 
             // This callback runs synchronously on the receive worker. The
