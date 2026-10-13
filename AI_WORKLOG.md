@@ -1,3 +1,26 @@
+# Latest handoff update — 2026-10-13 (PR #183 merged; post-merge CI pending)
+
+## Verified current state
+- PR #181 is merged; its exact-head CI passed, and post-merge main CI for `f16180e39bcc85f1971d8eafe1ae95cc446b1b84` passed: [run #38441234579](https://github.com/vorlocsev/dvinholm/actions/runs/38441234579).
+- PR #183, **sanitize unexpected UI exception details**, is merged: https://github.com/vorlocsev/dvinholm/pull/183
+- PR #183 exact-head CI passed on `0c61cfd7bb350975c9d6be607a4e557697ce1d2e`: [run #38441464431](https://github.com/vorlocsev/dvinholm/actions/runs/38441464431) and [run #38441487671](https://github.com/vorlocsev/dvinholm/actions/runs/38441487671).
+- PR #183 merge commit is `94d2749487a48cf04dea85cdf6f98f9e151b06bb`. Post-merge main CI is running: [run #38442172350](https://github.com/vorlocsev/dvinholm/actions/runs/38442172350). Do not mark the merged commit fully validated until this run succeeds.
+- PR #182 updates this handoff file after PR #181. Its prior exact-head CI passed on `230f67f657c5c58aa13c0cb4bc8fb169ef9d203a`: [run #38441323773](https://github.com/vorlocsev/dvinholm/actions/runs/38441323773) and [run #38441342943](https://github.com/vorlocsev/dvinholm/actions/runs/38441342943). This documentation branch is now behind main due to PR #183; refresh/revalidate before merging.
+
+## PR #183 implementation
+- Unexpected errors shown for ECU discovery, connection/disconnection, and generic UDS failures now pass through the existing diagnostic sanitizer.
+- Specific UDS negative-response and timeout messages remain unchanged so useful protocol diagnostics are preserved.
+- The change does not prove every vendor-specific diagnostic string is safe; continue the audit case by case.
+
+## Next priorities
+1. Verify post-merge main CI [run #38442172350](https://github.com/vorlocsev/dvinholm/actions/runs/38442172350).
+2. Refresh PR #182 against current main and rerun exact-head CI before merging the documentation update.
+3. Continue the audit of exception paths and recovery behavior without exposing raw vendor exception details or suppressing useful UDS errors.
+4. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, and ECU profile import/export.
+5. Physical DiCE/Mongoose adapter checks remain deferred to a future release; virtual-adapter CI does not establish hardware compatibility.
+
+---
+
 # Latest handoff update — 2026-10-13 (PR #181 merged; post-merge CI pending)
 
 ## Verified current state
