@@ -340,7 +340,7 @@ public sealed class CanRxDispatcherTests
 
         dispatcher.ReadError += error =>
         {
-            if (error.Message.Contains("simulated adapter disconnect", StringComparison.Ordinal))
+            if (error.Message.Contains("J2534 read failed due to an unexpected adapter error.", StringComparison.Ordinal))
                 errorSeen.Set();
         };
 
@@ -365,7 +365,7 @@ public sealed class CanRxDispatcherTests
 
         dispatcher.ReadError += error =>
         {
-            if (error.Message.Contains("simulated adapter cancellation", StringComparison.Ordinal))
+            if (error.Message.Contains("J2534 read failed due to an unexpected adapter error.", StringComparison.Ordinal))
                 errorSeen.Set();
         };
 
