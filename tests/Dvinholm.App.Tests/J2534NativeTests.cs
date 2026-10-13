@@ -22,12 +22,15 @@ public sealed class J2534NativeTests
 
         Assert.False(native.Load(missingPath, out var error));
         Assert.False(string.IsNullOrWhiteSpace(error));
+        Assert.DoesNotContain(missingPath, error, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("selected J2534 DLL", error, StringComparison.OrdinalIgnoreCase);
         Assert.False(native.Open(out var openError));
         Assert.Contains("not loaded", openError, StringComparison.OrdinalIgnoreCase);
 
         // A failed load must not poison the wrapper's state.
         Assert.False(native.Load(missingPath, out var retryError));
         Assert.False(string.IsNullOrWhiteSpace(retryError));
+        Assert.DoesNotContain(missingPath, retryError, StringComparison.OrdinalIgnoreCase);
     }
 
     [Fact]
