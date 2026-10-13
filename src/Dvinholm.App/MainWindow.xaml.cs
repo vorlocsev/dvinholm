@@ -499,7 +499,7 @@ public sealed partial class MainWindow : Window
     var dtcs = client.ReadDtcByStatusMask(0xFF, token);
     return dtcs.Count == 0
         ? "No DTCs"
-        : string.Join(", ", dtcs.Select(d => $"0x{d.Code:X6}/status=0x{d.Status:X2}"));
+        : string.Join(", ", dtcs.Select(d => $"0x{d.Code:X6}/status=0x{d.Status:X2} [{UdsDtcStatusFormatter.Format(d.Status)}]"));
 });
     }
 
