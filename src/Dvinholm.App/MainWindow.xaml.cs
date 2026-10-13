@@ -107,6 +107,7 @@ public sealed partial class MainWindow : Window
             ProfileSelector.ItemsSource = _profileCatalog.All;
             ProfileSelector.DisplayMemberPath = nameof(EcuProfile.Name);
             ProfileSelector.SelectedIndex = -1;
+            EcuInfoText.Text = "No ECU profile selected. Choose a profile to view its metadata.";
         }
         finally
         {
@@ -205,8 +206,14 @@ public sealed partial class MainWindow : Window
 
     private void ProfileSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (_loadingProfiles || ProfileSelector.SelectedItem is not EcuProfile profile)
+        if (_loadingProfiles)
             return;
+
+        if (ProfileSelector.SelectedItem is not EcuProfile profile)
+        {
+            EcuInfoText.Text = "No ECU profile selected.";
+            return;
+        }
 
         UdsRequestId.Text = profile.RequestId.ToString(profile.IsExtended ? "X8" : "X3");
         UdsResponseId.Text = profile.ResponseId.ToString(profile.IsExtended ? "X8" : "X3");
