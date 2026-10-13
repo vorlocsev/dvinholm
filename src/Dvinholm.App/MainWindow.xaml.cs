@@ -123,7 +123,7 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            var catalog = EcuProfileCatalog.FromJson(File.ReadAllText(path));
+            var catalog = new EcuProfileCatalogStore(path).Load();
             SetProfileCatalog(catalog);
             SetStatus($"Loaded {catalog.All.Count} saved ECU profile(s).");
         }
@@ -133,19 +133,8 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private static void SaveProfileCatalog(EcuProfileCatalog catalog)
-    {
-        var path = ProfileCatalogPath;
-        var directory = Path.GetDirectoryName(path)
-            ?? throw new InvalidOperationException("Could not determine the profile catalog directory.");
-        Directory.CreateDirectory(directory);
-
-        // Write a temporary file and then replace the catalog so an interrupted
-        // write cannot leave a partially serialized JSON file behind.
-        var temporaryPath = path + ".tmp";
-        File.WriteAllText(temporaryPath, catalog.ToJson());
-        File.Move(temporaryPath, path, overwrite: true);
-    }
+    private static void SaveProfileCatalog(EcuProfileCatalog catalog) =>
+        new EcuProfileCatalogStore(ProfileCatalogPath).Save(catalog);
 
     private async void ImportProfiles_Click(object sender, RoutedEventArgs e)
     {
