@@ -47,7 +47,13 @@ public sealed partial class MainWindow : Window
         EcusView.ItemsSource = _ecus;
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
-        _session.ReadError += ex => DispatcherQueue.TryEnqueue(() => SetStatus("Read error: " + ex.Message));
+        _session.ReadError += ex => DispatcherQueue.TryEnqueue(() =>
+        {
+            var detail = J2534Native.SanitizeDriverDiagnostic(ex.Message);
+            SetStatus(string.IsNullOrWhiteSpace(detail)
+                ? "Read error: unexpected adapter error."
+                : "Read error: " + detail);
+        });
         Closed += (_, _) =>
         {
             // Ask background operations to stop before touching the native J2534
