@@ -64,6 +64,31 @@ public sealed class J2534SessionLifecycleTests
     }
 
     [Fact]
+    public async Task UnexpectedReadExceptionDoesNotExposeLocalPath()
+    {
+        const string localPath = @"C:\Users\DiagnosticUser\AppData\Local\Temp\vendor-driver.dll";
+        using var readErrorReported = new ManualResetEventSlim();
+        var adapter = new FakeSessionAdapter
+        {
+            ReadExceptionMessage = "Native read failed at " + localPath
+        };
+        using var session = new Dvinholm.App.J2534Session(adapter);
+        string? reportedError = null;
+        session.ReadError += error =>
+        {
+            reportedError = error.Message;
+            readErrorReported.Set();
+        };
+
+        Assert.True(session.Connect("virtual-adapter.dll", 500_000, out var connectError), connectError);
+        Assert.True(readErrorReported.Wait(TimeSpan.FromSeconds(3)),
+            "The unexpected read exception was not reported.");
+
+        Assert.Equal("J2534 read failed due to an unexpected adapter error.", reportedError);
+        Assert.DoesNotContain(localPath, reportedError, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
     public void FailedConnectionReportsCleanupFailureWithoutThrowing()
     {
         var adapter = new FakeSessionAdapter
@@ -323,6 +348,7 @@ public sealed class J2534SessionLifecycleTests
         private int _readErrorIssued;
         internal FailurePoint Failure { get; init; }
         internal string? ReadVersionExceptionMessage { get; init; }
+        internal string? ReadExceptionMessage { get; init; }
         internal bool FailFirstRead { get; init; }
         internal ManualResetEventSlim? ReadEntered { get; init; }
         internal ManualResetEventSlim? AllowReadToFinish { get; init; }
@@ -366,6 +392,8 @@ public sealed class J2534SessionLifecycleTests
         {
             Interlocked.Increment(ref _readCount);
             msg = default;
+            if (ReadExceptionMessage is not null)
+                throw new InvalidOperationException(ReadExceptionMessage);
             if (FailFirstRead && Interlocked.Exchange(ref _readErrorIssued, 1) == 0)
             {
                 ReadEntered?.Set();
