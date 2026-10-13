@@ -1,3 +1,28 @@
+# Latest handoff update — 2026-10-13 (PR #181 merged; post-merge CI pending)
+
+## Verified current state
+- PR #181, **redact CAN bus cleanup exception details**, is merged: https://github.com/vorlocsev/dvinholm/pull/181
+- Merge commit / current main at this update: `f16180e39bcc85f1971d8eafe1ae95cc446b1b84`.
+- PR #181 branch head before merge: `43d8b6243ae1b63751ae1abbfa675457808ddf76`.
+- Both exact-head CI workflows passed on that PR head: [run #38440546383](https://github.com/vorlocsev/dvinholm/actions/runs/38440546383) and [run #38440538829](https://github.com/vorlocsev/dvinholm/actions/runs/38440538829).
+- Post-merge main CI is queued for merge commit `f16180e39bcc85f1971d8eafe1ae95cc446b1b84`: [run #38441234579](https://github.com/vorlocsev/dvinholm/actions/runs/38441234579). Do not mark the merge fully validated until this run succeeds.
+- The first test run on an earlier head failed because existing dispatcher lifecycle tests expected raw exception text. Updated those tests to assert the stable, redacted message; both final exact-head workflows are green.
+
+## PR #181 implementation
+- `J2534Session` no longer includes raw CAN bus cleanup exception details in a user-facing error.
+- `CanRxDispatcher` converts unexpected adapter read exceptions—including unexpected `OperationCanceledException` thrown by a vendor adapter—to a stable generic message, while preserving receive-loop recovery behavior.
+- Existing lifecycle tests were updated to expect the redacted read error.
+- `MainWindow.xaml.cs` now passes receive-error text through `J2534Native.SanitizeDriverDiagnostic` before displaying it in the status bar, preventing common local paths/control characters from leaking through that UI path while retaining sanitized diagnostic text.
+- Removed unused exception variables introduced by generic error handling.
+
+## Next priorities
+1. Verify post-merge main CI [run #38441234579](https://github.com/vorlocsev/dvinholm/actions/runs/38441234579).
+2. Continue a case-by-case audit of error paths that display adapter-provided text. The sanitizer covers common path forms, not every possible vendor-specific secret or diagnostic format; preserve useful technical details where safe.
+3. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, and ECU profile import/export.
+4. Physical DiCE/Mongoose adapter checks remain deferred to a future release; virtual-adapter CI does not establish hardware compatibility.
+
+---
+
 # Latest handoff update — 2026-10-13 (PR #179 merged; main CI pending)
 
 ## Verified current state
