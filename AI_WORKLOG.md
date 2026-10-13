@@ -1,3 +1,25 @@
+# Latest handoff update — 2026-10-13 (J2534 DLL load error privacy)
+
+## Verified repository state
+- PR #171 — file-operation error messages avoid exposing raw exceptions that may contain local paths — merged as `d3048e336cad5bdb235170aaa717e85d1b60c96d`: [PR #171](https://github.com/vorlocsev/dvinholm/pull/171). Exact-head CI passed: [#38428150610](https://github.com/vorlocsev/dvinholm/actions/runs/38428150610) and [#38428132719](https://github.com/vorlocsev/dvinholm/actions/runs/38428132719). Post-merge main CI passed: [#38428848113](https://github.com/vorlocsev/dvinholm/actions/runs/38428848113).
+- PR #172 — refreshed this AI handoff with the verified #170/#171 state and remaining checks — merged as `6d576a8c9438f1fe143f83b263e5673d54e423d0`: [PR #172](https://github.com/vorlocsev/dvinholm/pull/172). Exact-head CI passed: [PR run #38429003644](https://github.com/vorlocsev/dvinholm/actions/runs/38429003644) and [push run #38428986801](https://github.com/vorlocsev/dvinholm/actions/runs/38428986801).
+- Current main at start of this follow-up: `6d576a8c9438f1fe143f83b263e5673d54e423d0`.
+- Current follow-up branch: `fix/redact-j2534-dll-load-path`. It changes the native DLL load failure message and adds a regression assertion that a missing-library path is not echoed in the error. Exact-head CI is required before merge.
+- Physical DiCE/Mongoose adapter tests remain deferred to a future release. Interactive Windows UI smoke tests remain open.
+
+## Latest source audit
+- The native J2534 DLL loader used to return `Exception.Message` verbatim when loading a selected DLL failed. Platform loader messages commonly include the absolute path, which can expose a user's local directory in the UI.
+- The change replaces generic load failures with targeted troubleshooting guidance and keeps the special empty-path validation message intact. It does not change loading, cleanup, adapter API error codes, or J2534 driver diagnostics after the DLL loads.
+- Remaining adapter/transport errors continue to be reviewed case by case; avoid blanket suppression of useful vendor-driver details.
+
+## Next priorities
+1. Run both CI workflows on the exact head of `fix/redact-j2534-dll-load-path`; fix failures before merge.
+2. Continue the software-MVP workflow audit for connection lifecycle, receive-loop recovery, UDS cancellation, and incomplete ECU discovery. Add regression tests for concrete gaps only.
+3. Keep manual Windows first-launch, adapter-discovery failure, connect/disconnect, cancellation, and profile import/export UI smoke tests open until performed.
+4. Run full CI on a release candidate when software-MVP criteria are met. Physical adapter validation remains a future-release item.
+
+---
+
 # Latest handoff update — 2026-10-13 (after PR #171)
 
 ## Verified repository state
