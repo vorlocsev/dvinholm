@@ -1,3 +1,25 @@
+# Latest handoff update — 2026-10-14 (PR #192 merged; lifecycle/protocol audit resumed)
+
+## Verified current state
+- PR [#192 — Test isolation between J2534 read-error subscribers](https://github.com/vorlocsev/dvinholm/pull/192) is merged into `main`.
+- Exact-head CI passed: [run #38479265252](https://github.com/vorlocsev/dvinholm/actions/runs/38479265252).
+- Post-merge `main` CI passed on merge commit `a7d53215309be8cd1e5da350f5cb1c8bfdc60231`: [run #38479905456](https://github.com/vorlocsev/dvinholm/actions/runs/38479905456).
+- The test confirms that a throwing `ReadError` subscriber does not prevent later subscribers from receiving the notification.
+- PR #191 post-merge CI also passed: [run #38479178610](https://github.com/vorlocsev/dvinholm/actions/runs/38479178610).
+
+## Audit checkpoint
+- Rechecked the test inventory for CAN dispatcher/bus disposal, ISO-TP flow control, timeout/cancellation/recovery, and UDS response-pending behavior. The repository already has focused regression tests across these cases; avoid creating duplicates without a specific uncovered branch or failure.
+- ECU profile catalog persistence has tests for missing files, nested-directory creation, round-trip, replacement, malformed JSON, and invalid paths.
+- User confirmed Windows 11 IoT LTSC startup and missing-device recovery. This does not validate physical J2534 hardware behavior.
+
+## Next actions
+1. Continue from the current `main` and inspect concrete untested edge cases in the implementation, not just add more tests by count.
+2. For each identified gap, add a deterministic virtual-adapter regression test, update this handoff, and require exact-head CI before merging.
+3. Keep manual UI checks (including profile import/export and UDS cancellation) as pending when not personally observed.
+4. Physical DiCE/Mongoose validation remains deferred to a future release and is not a blocker for the current software MVP.
+
+---
+
 # Latest handoff update — 2026-10-14 (PR #191 merged; next read-error isolation test)
 
 ## Verified state
