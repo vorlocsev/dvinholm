@@ -1,3 +1,22 @@
+# Latest handoff update — 2026-10-13 (PR #179 merged; main CI pending)
+
+## Verified current state
+- Current main commit: `ea0f8f1c465faa35415d43025669da729000756f` — [PR #179](https://github.com/vorlocsev/dvinholm/pull/179) merged.
+- PR #179 sanitizes driver-provided diagnostic text before presenting it to the user. Common Windows drive paths, UNC paths, and Unix local paths are replaced with `[local path redacted]`; control characters are removed and output is capped at 240 characters.
+- Regression tests cover Windows, UNC, and Unix path redaction, preservation of ordinary error text, and output length.
+- Both exact-head CI workflows passed on `dca44b9b5eea1c8847153c808243d2f13480ca3f`: [run #38437869422](https://github.com/vorlocsev/dvinholm/actions/runs/38437869422) and [run #38437896457](https://github.com/vorlocsev/dvinholm/actions/runs/38437896457).
+- Post-merge main CI is queued for `ea0f8f1c465faa35415d43025669da729000756f`: [run #38438524015](https://github.com/vorlocsev/dvinholm/actions/runs/38438524015). Do not mark the merge fully validated until this run succeeds.
+- The previous main CI for `8c65866f6a8d9689fcd00bdbc3e2c06d62f31736` passed: [run #38437660901](https://github.com/vorlocsev/dvinholm/actions/runs/38437660901).
+
+## Next priorities
+1. Verify post-merge main CI [#38438524015](https://github.com/vorlocsev/dvinholm/actions/runs/38438524015).
+2. Refresh this handoff with the result, and merge the documentation-only update only after exact-head CI passes and its base is current.
+3. Continue a case-by-case audit of adapter-returned diagnostic strings. The new sanitizer covers common path forms but is not a proof that every vendor error format is safe; preserve useful technical diagnostics.
+4. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, and ECU profile import/export.
+5. Physical DiCE/Mongoose adapter checks remain deferred to a future release; virtual-adapter CI does not establish hardware compatibility.
+
+---
+
 # Latest handoff update — 2026-10-13 (PR #178 merged; main CI pending)
 
 ## Verified repository state
