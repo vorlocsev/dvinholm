@@ -1,21 +1,18 @@
-# Latest handoff update — 2026-10-13 (PR #175 merged)
+# Latest handoff update — 2026-10-13 (PR #177 merged; PR #176 handoff refresh)
 
 ## Verified repository state
-- PR #175 — sanitize unexpected J2534 session/driver exception details and preserve cleanup/retry semantics — merged as `b25e0c9b3ac72361a2a552db1973d837cbfdb237`: [PR #175](https://github.com/vorlocsev/dvinholm/pull/175).
-- Exact-head CI passed on PR SHA `0e1322c7f70f5fd656ecae3257e522e4eea9c608`: [run #38433299787](https://github.com/vorlocsev/dvinholm/actions/runs/38433299787) and [run #38433291816](https://github.com/vorlocsev/dvinholm/actions/runs/38433291816).
-- The first attempt exposed a missed assertion and an unsanitized exception path in `DisconnectLocked`; both were fixed before merge. Older failed runs are historical and superseded by the successful exact-head runs.
-- Post-merge main CI for merge SHA `b25e0c9b3ac72361a2a552db1973d837cbfdb237` is queued: [run #38434100347](https://github.com/vorlocsev/dvinholm/actions/runs/38434100347). Do not mark main fully verified until it completes successfully.
+- PR #175 — sanitized unexpected J2534 session/driver exception details and preserved cleanup/retry semantics — merged as `b25e0c9b3ac72361a2a552db1973d837cbfdb237`: [PR #175](https://github.com/vorlocsev/dvinholm/pull/175). Exact-head CI passed: [run #38433299787](https://github.com/vorlocsev/dvinholm/actions/runs/38433299787) and [run #38433291816](https://github.com/vorlocsev/dvinholm/actions/runs/38433291816).
+- PR #177 — sanitized unexpected `PassThruReadVersion` exception details — merged as `55775c3f3191038712f875da07b389d2193269a5`: [PR #177](https://github.com/vorlocsev/dvinholm/pull/177). Both exact-head CI workflows passed on `b3ac6d01d56e51e7097524b3e2e7b18e016eb45b`: [run #38434326325](https://github.com/vorlocsev/dvinholm/actions/runs/38434326325) and [run #38434287389](https://github.com/vorlocsev/dvinholm/actions/runs/38434287389).
+- Post-merge main CI for `55775c3f3191038712f875da07b389d2193269a5` has started and is queued: [run #38435044050](https://github.com/vorlocsev/dvinholm/actions/runs/38435044050). Do not mark this main commit fully validated until the run completes successfully.
+- PR #176 updates this persistent handoff. Its exact-head CI passed on `51ed21e6e8a7dc164c900353b21795d0ee6fe09d`: [run #38434386138](https://github.com/vorlocsev/dvinholm/actions/runs/38434386138) and [run #38434380863](https://github.com/vorlocsev/dvinholm/actions/runs/38434380863). Because PR #177 has now advanced `main`, refresh the PR #176 handoff and rerun its CI before merging.
 
-## Current follow-up PR #177
-- [PR #177](https://github.com/vorlocsev/dvinholm/pull/177) replaces raw `PassThruReadVersion` exception text with a stable generic driver-error message, because vendor interop exceptions can include machine-specific details.
-- Exact-head CI is pending: [run #38434287389](https://github.com/vorlocsev/dvinholm/actions/runs/38434287389). Do not merge until all required checks pass on the latest PR head.
-
-## Next priorities
-1. Verify post-merge main CI [#38434100347](https://github.com/vorlocsev/dvinholm/actions/runs/38434100347).
-2. Verify PR #177 CI and merge only if the exact latest head is green; then confirm post-merge main CI.
-3. Continue case-by-case review of error strings returned by adapter methods. Preserve useful J2534 status/function diagnostics while avoiding local path or machine-specific exception details.
-4. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, ECU profile import/export. These remain unverified by remote CI.
+## Current priorities
+1. Verify post-merge main CI [#38435044050](https://github.com/vorlocsev/dvinholm/actions/runs/38435044050).
+2. Refresh PR #176 with the latest verified state, confirm exact-head CI, then merge and verify post-merge main CI.
+3. Continue case-by-case review of adapter-returned error strings. Preserve useful J2534 status/function diagnostics while avoiding local paths or machine-specific exception details.
+4. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, and ECU profile import/export. These remain unverified by remote CI.
 5. Keep physical DiCE/Mongoose adapter checks deferred to a future release; virtual-adapter CI does not prove hardware compatibility.
+
 
 ---
 
