@@ -1,3 +1,24 @@
+# Latest handoff update — 2026-10-14 (PR #190 merged; callback-disposal test in PR #191)
+
+## Verified current state
+- PR [#190](https://github.com/vorlocsev/dvinholm/pull/190) is merged to `main` as `f8835013b8004334e49e7c99da897aed0b075d2b`.
+- Exact-head CI for PR #190 passed: [run #38476343163](https://github.com/vorlocsev/dvinholm/actions/runs/38476343163).
+- Post-merge CI for PR #190 is running: [run #38478370417](https://github.com/vorlocsev/dvinholm/actions/runs/38478370417). Do not treat the merged commit as fully validated until this run succeeds.
+- The user confirmed app startup and no-device recovery on Windows 11 IoT LTSC 26100.9550; no physical adapter was connected.
+
+## Current change — PR #191
+- [PR #191](https://github.com/vorlocsev/dvinholm/pull/191) adds a regression test for calling `J2534Session.Dispose()` from the native read-error callback.
+- The test checks that unload is deferred until the callback returns, metadata is cleared, and the disposed session rejects reconnect.
+- Exact-head CI must pass before merge.
+
+## Next priorities
+1. Verify exact-head CI for PR #191 and post-merge CI for PR #190.
+2. Merge PR #191 only after its exact-head CI succeeds.
+3. Continue targeted audit for concrete lifecycle/protocol gaps; avoid duplicating existing tests.
+4. Keep manual UI checks and physical DiCE/Mongoose validation as outstanding future-release tasks; virtual-adapter CI does not prove physical hardware compatibility.
+
+---
+
 # Latest handoff update — 2026-10-13 (PR #189 merged; J2534 DLL-load failure coverage)
 
 ## Verified current state
