@@ -1,3 +1,75 @@
+# Latest handoff update — 2026-10-13 (PR #184 merged; post-merge CI pending)
+
+## Verified current state
+- PR #183, sanitizing unexpected UI exception details, is merged as `94d2749487a48cf04dea85cdf6f98f9e151b06bb`: https://github.com/vorlocsev/dvinholm/pull/183
+- Main CI for PR #183 merge commit passed: [run #38442172350](https://github.com/vorlocsev/dvinholm/actions/runs/38442172350).
+- PR #184, **sanitize UDS client initialization errors**, is merged: https://github.com/vorlocsev/dvinholm/pull/184
+- Both exact-head CI workflows passed on `944e2e82c0c2e15fb2f536634020aea90d60603d`: [run #38442322027](https://github.com/vorlocsev/dvinholm/actions/runs/38442322027) and [run #38442343261](https://github.com/vorlocsev/dvinholm/actions/runs/38442343261).
+- PR #184 merge commit is `689997227b787cb38c5ffed86459c3b2f8bfc66d`. Post-merge main CI must still be checked before calling this commit fully validated.
+- PR #182 documents the prior PR #181 work and now contains this handoff refresh. Its latest exact-head CI passed on `83772c9761d3fb377d7f267f006e18908ac0d500`: [run #38442229306](https://github.com/vorlocsev/dvinholm/actions/runs/38442229306) and [run #38442236240](https://github.com/vorlocsev/dvinholm/actions/runs/38442236240). Its base is behind main after PR #184; refresh/revalidate before merging.
+
+## PR #184 implementation
+- `TryGetUdsClient` no longer passes raw exception messages from ISO-TP/UDS client initialization into the UI.
+- It uses the existing safe exception formatter and a stable fallback message.
+- This is one more targeted hardening step, not a guarantee that every possible diagnostic string is safe.
+
+## Next priorities
+1. Verify post-merge main CI for PR #184.
+2. Refresh PR #182 against current main and rerun exact-head CI before merging the handoff update.
+3. Continue auditing exception paths, CAN filter errors, adapter cleanup, and connection recovery.
+4. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, and ECU profile import/export.
+5. Physical DiCE/Mongoose adapter checks remain deferred to a future release; virtual-adapter CI does not establish hardware compatibility.
+
+---
+
+# Latest handoff update — 2026-10-13 (PR #183 merged; post-merge CI pending)
+
+## Verified current state
+- PR #181 is merged; its exact-head CI passed, and post-merge main CI for `f16180e39bcc85f1971d8eafe1ae95cc446b1b84` passed: [run #38441234579](https://github.com/vorlocsev/dvinholm/actions/runs/38441234579).
+- PR #183, **sanitize unexpected UI exception details**, is merged: https://github.com/vorlocsev/dvinholm/pull/183
+- PR #183 exact-head CI passed on `0c61cfd7bb350975c9d6be607a4e557697ce1d2e`: [run #38441464431](https://github.com/vorlocsev/dvinholm/actions/runs/38441464431) and [run #38441487671](https://github.com/vorlocsev/dvinholm/actions/runs/38441487671).
+- PR #183 merge commit is `94d2749487a48cf04dea85cdf6f98f9e151b06bb`. Post-merge main CI is running: [run #38442172350](https://github.com/vorlocsev/dvinholm/actions/runs/38442172350). Do not mark the merged commit fully validated until this run succeeds.
+- PR #182 updates this handoff file after PR #181. Its prior exact-head CI passed on `230f67f657c5c58aa13c0cb4bc8fb169ef9d203a`: [run #38441323773](https://github.com/vorlocsev/dvinholm/actions/runs/38441323773) and [run #38441342943](https://github.com/vorlocsev/dvinholm/actions/runs/38441342943). This documentation branch is now behind main due to PR #183; refresh/revalidate before merging.
+
+## PR #183 implementation
+- Unexpected errors shown for ECU discovery, connection/disconnection, and generic UDS failures now pass through the existing diagnostic sanitizer.
+- Specific UDS negative-response and timeout messages remain unchanged so useful protocol diagnostics are preserved.
+- The change does not prove every vendor-specific diagnostic string is safe; continue the audit case by case.
+
+## Next priorities
+1. Verify post-merge main CI [run #38442172350](https://github.com/vorlocsev/dvinholm/actions/runs/38442172350).
+2. Refresh PR #182 against current main and rerun exact-head CI before merging the documentation update.
+3. Continue the audit of exception paths and recovery behavior without exposing raw vendor exception details or suppressing useful UDS errors.
+4. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, and ECU profile import/export.
+5. Physical DiCE/Mongoose adapter checks remain deferred to a future release; virtual-adapter CI does not establish hardware compatibility.
+
+---
+
+# Latest handoff update — 2026-10-13 (PR #181 merged; post-merge CI pending)
+
+## Verified current state
+- PR #181, **redact CAN bus cleanup exception details**, is merged: https://github.com/vorlocsev/dvinholm/pull/181
+- Merge commit / current main at this update: `f16180e39bcc85f1971d8eafe1ae95cc446b1b84`.
+- PR #181 branch head before merge: `43d8b6243ae1b63751ae1abbfa675457808ddf76`.
+- Both exact-head CI workflows passed on that PR head: [run #38440546383](https://github.com/vorlocsev/dvinholm/actions/runs/38440546383) and [run #38440538829](https://github.com/vorlocsev/dvinholm/actions/runs/38440538829).
+- Post-merge main CI is queued for merge commit `f16180e39bcc85f1971d8eafe1ae95cc446b1b84`: [run #38441234579](https://github.com/vorlocsev/dvinholm/actions/runs/38441234579). Do not mark the merge fully validated until this run succeeds.
+- The first test run on an earlier head failed because existing dispatcher lifecycle tests expected raw exception text. Updated those tests to assert the stable, redacted message; both final exact-head workflows are green.
+
+## PR #181 implementation
+- `J2534Session` no longer includes raw CAN bus cleanup exception details in a user-facing error.
+- `CanRxDispatcher` converts unexpected adapter read exceptions—including unexpected `OperationCanceledException` thrown by a vendor adapter—to a stable generic message, while preserving receive-loop recovery behavior.
+- Existing lifecycle tests were updated to expect the redacted read error.
+- `MainWindow.xaml.cs` now passes receive-error text through `J2534Native.SanitizeDriverDiagnostic` before displaying it in the status bar, preventing common local paths/control characters from leaking through that UI path while retaining sanitized diagnostic text.
+- Removed unused exception variables introduced by generic error handling.
+
+## Next priorities
+1. Verify post-merge main CI [run #38441234579](https://github.com/vorlocsev/dvinholm/actions/runs/38441234579).
+2. Continue a case-by-case audit of error paths that display adapter-provided text. The sanitizer covers common path forms, not every possible vendor-specific secret or diagnostic format; preserve useful technical details where safe.
+3. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, and ECU profile import/export.
+4. Physical DiCE/Mongoose adapter checks remain deferred to a future release; virtual-adapter CI does not establish hardware compatibility.
+
+---
+
 # Latest handoff update — 2026-10-13 (PR #179 merged; main CI pending)
 
 ## Verified current state
