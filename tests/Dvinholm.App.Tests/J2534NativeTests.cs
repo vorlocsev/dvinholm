@@ -11,7 +11,7 @@ public sealed class J2534NativeTests
         var sanitized = Dvinholm.App.J2534Native.SanitizeDriverDiagnostic(detail);
 
         Assert.Contains(expected, sanitized, StringComparison.Ordinal);
-        Assert.DoesNotContain("C:\Users\Example", sanitized, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(@"C:\Users\Example", sanitized, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("/home/example", sanitized, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("workstation", sanitized, StringComparison.OrdinalIgnoreCase);
     }
