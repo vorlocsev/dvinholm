@@ -405,10 +405,34 @@ internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
 
     private string FormatFailure(string operation, uint status)
     {
-        var detail = LastError();
+        var detail = SanitizeDriverDiagnostic(LastError());
         return string.IsNullOrWhiteSpace(detail)
             ? operation + " failed with J2534 status 0x" + status.ToString("X8") + "."
             : operation + " failed (J2534 status 0x" + status.ToString("X8") + "): " + detail;
+    }
+
+    // Driver-supplied diagnostic text is useful, but it is not trusted: some
+    // vendors include selected DLL paths or other machine-specific locations.
+    // Preserve ordinary status text while redacting common local path forms.
+    internal static string SanitizeDriverDiagnostic(string? detail)
+    {
+        if (string.IsNullOrWhiteSpace(detail))
+            return string.Empty;
+
+        var sanitized = detail;
+        sanitized = System.Text.RegularExpressions.Regex.Replace(
+            sanitized, @"(?i)[A-Z]:\\[^\r\n\t""<>|]*", "[local path redacted]");
+        sanitized = System.Text.RegularExpressions.Regex.Replace(
+            sanitized, @"\\\\[^\\\s]+\\[^\\\s]+(?:\\[^\r\n\t""<>|]*)?", "[local path redacted]");
+        sanitized = System.Text.RegularExpressions.Regex.Replace(
+            sanitized, @"(?i)/(?:home|Users|tmp|var|mnt|opt|etc|root)/[^\r\n\t""<>|]*", "[local path redacted]");
+        sanitized = new string(sanitized.Where(c => !char.IsControl(c) || c == ' ').ToArray()).Trim();
+
+        const int maxLength = 240;
+        if (sanitized.Length > maxLength)
+            sanitized = sanitized[..maxLength] + "…";
+
+        return sanitized;
     }
 
     private string LastError()
