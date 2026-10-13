@@ -3,6 +3,30 @@ namespace Dvinholm.App.Tests;
 public sealed class J2534SessionLifecycleTests
 {
     [Theory]
+    [InlineData("", 500_000u, "J2534 DLL path is empty.")]
+    [InlineData("   ", 500_000u, "J2534 DLL path is empty.")]
+    [InlineData("virtual-adapter.dll", 0u, "CAN baud rate must be greater than zero.")]
+    public void InvalidConnectionInputsFailBeforeLoadingAdapter(
+        string dllPath,
+        uint baudRate,
+        string expectedError)
+    {
+        var adapter = new FakeSessionAdapter();
+        using var session = new Dvinholm.App.J2534Session(adapter);
+
+        var connected = session.Connect(dllPath, baudRate, out var error);
+
+        Assert.False(connected);
+        Assert.Equal(expectedError, error);
+        Assert.False(session.IsConnected);
+        Assert.Null(session.AdapterVersion);
+        Assert.Null(session.AdapterCapabilities);
+        Assert.Equal(0, adapter.LoadCount);
+        Assert.Equal(0, adapter.ConnectCount);
+        Assert.Equal(0, adapter.ReadCount);
+    }
+
+    [Theory]
     [InlineData(FailurePoint.Open)]
     [InlineData(FailurePoint.Connect)]
     [InlineData(FailurePoint.ReadVersion)]
