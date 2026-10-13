@@ -138,14 +138,14 @@ public sealed partial class MainWindow : Window
 
     private async void ImportProfiles_Click(object sender, RoutedEventArgs e)
     {
-        var picker = new FileOpenPicker();
-        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
-        picker.FileTypeFilter.Add(".json");
-        var file = await picker.PickSingleFileAsync();
-        if (file is null) return;
-
         try
         {
+            var picker = new FileOpenPicker();
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
+            picker.FileTypeFilter.Add(".json");
+            var file = await picker.PickSingleFileAsync();
+            if (file is null) return;
+
             var json = await File.ReadAllTextAsync(file.Path);
             var imported = EcuProfileCatalog.FromJson(json);
             SetProfileCatalog(imported);
@@ -175,15 +175,15 @@ public sealed partial class MainWindow : Window
             return;
         }
 
-        var picker = new FileSavePicker();
-        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
-        picker.SuggestedFileName = "ecu-profiles";
-        picker.FileTypeChoices.Add("JSON", new List<string> { ".json" });
-        var file = await picker.PickSaveFileAsync();
-        if (file is null) return;
-
         try
         {
+            var picker = new FileSavePicker();
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
+            picker.SuggestedFileName = "ecu-profiles";
+            picker.FileTypeChoices.Add("JSON", new List<string> { ".json" });
+            var file = await picker.PickSaveFileAsync();
+            if (file is null) return;
+
             await File.WriteAllTextAsync(file.Path, _profileCatalog.ToJson());
             SetStatus($"Exported {_profileCatalog.All.Count} ECU profile(s) to {file.Path}");
         }
