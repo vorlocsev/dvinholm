@@ -1,3 +1,24 @@
+# Latest handoff update — 2026-10-13 (after PR #171)
+
+## Verified repository state
+- PR #170 — CSV export success status now shows only the filename — merged as `930caf243e00756bc355dde124e49376891e9564`. Both exact-head workflows passed: [PR CI #38427177793](https://github.com/vorlocsev/dvinholm/actions/runs/38427177793) and [push CI #38427159625](https://github.com/vorlocsev/dvinholm/actions/runs/38427159625). Post-merge CI for that commit passed: [run #38428017878](https://github.com/vorlocsev/dvinholm/actions/runs/38428017878).
+- PR #171 — file-operation error messages no longer surface raw exception details that may contain local paths — merged as `d3048e336cad5bdb235170aaa717e85d1b60c96d`: [PR #171](https://github.com/vorlocsev/dvinholm/pull/171). Both exact-head workflows passed: [PR CI #38428150610](https://github.com/vorlocsev/dvinholm/actions/runs/38428150610) and [push CI #38428132719](https://github.com/vorlocsev/dvinholm/actions/runs/38428132719).
+- Post-merge CI for current main SHA `d3048e336cad5bdb235170aaa717e85d1b60c96d` is running: [run #38428848113](https://github.com/vorlocsev/dvinholm/actions/runs/38428848113). Do not mark this main commit fully validated until the run completes successfully.
+- Physical DiCE/Mongoose adapter tests remain deferred to a future release. Interactive Windows UI smoke tests have not been performed in this environment and remain open.
+
+## Follow-up audit
+- Reviewed remaining status messages in `MainWindow.xaml.cs` and error construction in `J2534Session.cs`.
+- Raw adapter/transport exception details are still shown for connect, disconnect, and receive errors because they may be necessary to diagnose vendor-driver failures. No blanket redaction was applied; review these messages only if a concrete sensitive-data leak is identified.
+- ECU discovery and UDS operation failures likewise retain diagnostic detail; distinguish actionable protocol/driver errors from filesystem paths before changing behavior.
+
+## Next priorities
+1. Verify post-merge CI run [#38428848113](https://github.com/vorlocsev/dvinholm/actions/runs/38428848113).
+2. Continue the software-MVP workflow audit with emphasis on connection lifecycle, receive-loop error recovery, UDS cancellation, and incomplete ECU discovery; add regression tests only for concrete gaps not already covered.
+3. Keep manual Windows first-launch, adapter-discovery failure, connect/disconnect, diagnostic cancellation, and profile import/export UI smoke tests open until performed.
+4. Run the full CI pipeline on a release candidate when software-MVP criteria are met. Physical adapter validation remains a future-release item.
+
+---
+
 # Latest handoff update — 2026-10-13 (file-operation error privacy)
 
 ## Verified state
