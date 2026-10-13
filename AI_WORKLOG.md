@@ -4,8 +4,8 @@
 >
 > **Last updated:** 2026-10-13  
 > **Repository:** https://github.com/vorlocsev/dvinholm  
-> **Main branch at last verification:** `79222621b6553444fa003756fcb110e4087eff0a`  
-> **Current state:** Software MVP in progress; PR #153 is merged. Main CI for `79222621b6553444fa003756fcb110e4087eff0a` is queued (run [#38337294839](https://github.com/vorlocsev/dvinholm/actions/runs/38337294839)); the latest fully verified main commit is `fd4ae52f138e9cc1b650b05cf184b3b765feba4b`, whose main CI [#38336803668](https://github.com/vorlocsev/dvinholm/actions/runs/38336803668) passed. Real adapter validation is intentionally deferred.
+> **Main branch at last verification:** `885bd063ffdc0ab11a2d7be93ccc6cecca586b8b`  
+> **Current state:** PR #155 and PR #156 are merged. Post-merge CI for #155 passed ([run #38344517556](https://github.com/vorlocsev/dvinholm/actions/runs/38344517556)); post-merge CI for #156 is running ([run #38344935929](https://github.com/vorlocsev/dvinholm/actions/runs/38344935929)). PR #156 CI passed on exact head `008dd6bc850e97cfbb08ad38ab136845d8ab0588`. Real adapter validation remains deferred.
 
 ## 1. Project purpose and guardrails
 
@@ -105,6 +105,20 @@ Key source and test locations:
 - Squash merge / current main SHA: `79222621b6553444fa003756fcb110e4087eff0a`.
 - Post-merge main CI [#38337294839](https://github.com/vorlocsev/dvinholm/actions/runs/38337294839) was queued at the time of this update.
 
+### PR #155 — ECU profile catalog persistence
+- Extracted JSON persistence into `EcuProfileCatalogStore`, including temporary-file write and replacement.
+- Added tests for missing files, round-trip persistence, nested directories, replacement, malformed JSON, and blank paths.
+- Merged commit: `6aa7a93fb76b3c25beae82c055105db3814003bb`.
+- Post-merge main CI [#38344517556](https://github.com/vorlocsev/dvinholm/actions/runs/38344517556) passed.
+
+### PR #156 — preserve partial ECU discovery results on cancellation
+- Passive discovery now throws `UdsEcuDiscoveryCancelledException` carrying observed candidates when cancellation happens after the worker starts.
+- UI retains partial candidates and explicitly labels the scan as cancelled/incomplete.
+- Regression test uses the virtual J2534 adapter and verifies an observed responder is preserved without transmitting probe requests.
+- PR CI passed on exact head `008dd6bc850e97cfbb08ad38ab136845d8ab0588`: [run #38344580641](https://github.com/vorlocsev/dvinholm/actions/runs/38344580641).
+- Squash merge / current main SHA: `885bd063ffdc0ab11a2d7be93ccc6cecca586b8b`.
+- Post-merge main CI [#38344935929](https://github.com/vorlocsev/dvinholm/actions/runs/38344935929) was still running at this update; verify its final conclusion.
+
 ### PR #81 — isolate CAN dispatcher from faulty subscription filters
 - A subscription predicate exception is reported and skipped only for that subscription; other subscribers still receive the frame.
 - Merged main commit: `d6865872846218317507394a27436c8c88207615`; post-merge main CI [#38159874429](https://github.com/vorlocsev/dvinholm/actions/runs/38159874429) passed.
@@ -117,10 +131,11 @@ Key source and test locations:
 
 ## 4. Current CI and verification state
 
-- Latest fully verified `main` commit: `fd4ae52f138e9cc1b650b05cf184b3b765feba4b`; post-merge main CI [#38336803668](https://github.com/vorlocsev/dvinholm/actions/runs/38336803668) passed.
-- Current `main` commit: `79222621b6553444fa003756fcb110e4087eff0a` (PR #153); post-merge CI [#38337294839](https://github.com/vorlocsev/dvinholm/actions/runs/38337294839) was queued when this file was updated.
+- Current `main` SHA: `885bd063ffdc0ab11a2d7be93ccc6cecca586b8b` (PR #156).
+- Post-merge main CI [#38344935929](https://github.com/vorlocsev/dvinholm/actions/runs/38344935929) is in progress as of this update. Do not mark main fully verified until this run completes successfully.
+- PR #156's full Windows x86 CI passed on its exact head [#38344580641](https://github.com/vorlocsev/dvinholm/actions/runs/38344580641).
+- PR #155's post-merge main CI passed [#38344517556](https://github.com/vorlocsev/dvinholm/actions/runs/38344517556).
 - Pipeline covers .NET restore, build, tests, publish, and artifact upload.
-- A previously reported suite result was **394 passed, 0 failed, 0 skipped** in run #38308753118. Do not assume the exact count is unchanged without inspecting the latest run's test logs.
 - CI uses a virtual J2534 adapter. It does not prove real driver, electrical, adapter, vehicle, or ECU compatibility.
 
 ## 5. Remaining work — prioritized roadmap
@@ -154,15 +169,16 @@ Key source and test locations:
 
 ## 6. Recommended next action
 
-Continue with a focused audit of profile-selection state and smoke-test seams. Current profile JSON parsing/validation and catalog round-trip tests are present; persistence and UI-level selection behavior still need stronger deterministic coverage. Inspect current code/tests before editing and identify a concrete user-visible gap. Then:
-1. Run the relevant tests and full Windows CI.
-2. Inspect logs if anything fails; fix the cause rather than weakening the test.
-3. Confirm the PR head SHA matches the successful CI run.
-4. Merge only after the relevant checks succeed.
-5. Verify the post-merge `main` workflow.
-6. Update this handoff file with the change, PR/commit, CI URL and result, and the new next action.
+A focused audit of connection state, diagnostic cancellation, and recovery paths has been performed against current source and existing tests. The repository already has broad virtual-adapter coverage for connect/disconnect races, disposal during active UDS requests, cancellation after ResponsePending, timeout recovery, late responses, and reconnect isolation. Avoid duplicating these tests without a demonstrated gap.
 
-Do not create a long chain of tiny speculative changes. Batch closely related fixes where safe and keep the roadmap aligned with the actual code and test evidence.
+Next:
+1. Verify post-merge main CI [#38344935929](https://github.com/vorlocsev/dvinholm/actions/runs/38344935929) for SHA `885bd063ffdc0ab11a2d7be93ccc6cecca586b8b`.
+2. Continue with a concrete user-visible gap in ECU profile workflows or connection/read-error recovery; inspect current code/tests before editing.
+3. Add a targeted regression test for any confirmed defect and run the full Windows x86 CI.
+4. Confirm the PR head SHA matches successful CI, merge, and verify post-merge main CI.
+5. Keep this file updated with verified SHAs and links.
+
+Physical DiCE/Mongoose tests remain deferred to a future release and are not a blocker for the current software MVP.
 
 ## 7. Rules for future AI assistants maintaining this file
 
