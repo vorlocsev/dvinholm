@@ -173,9 +173,11 @@ internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
             VersionInfo = new AdapterVersionInfo(DecodeVersion(firmware), DecodeVersion(dll), DecodeVersion(api));
             return VersionInfo;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            error = "PassThruReadVersion failed: " + ex.Message;
+            // Vendor interop exceptions can include machine-specific details.
+            // Keep the operation identifiable without echoing raw exception text.
+            error = "PassThruReadVersion failed due to an unexpected driver error.";
             return null;
         }
     }
