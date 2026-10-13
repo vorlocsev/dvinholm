@@ -2,6 +2,32 @@ namespace Dvinholm.App.Tests;
 
 public sealed class J2534NativeTests
 {
+    [Theory]
+    [InlineData(@"Vendor failure at C:\Users\Example\adapter.dll", "[local path redacted]")]
+    [InlineData(@"Vendor failure at \\workstation\share\adapter.dll", "[local path redacted]")]
+    [InlineData("Vendor failure at /home/example/adapter.so", "[local path redacted]")]
+    public void SanitizeDriverDiagnostic_RedactsLocalPaths(string detail, string expected)
+    {
+        var sanitized = Dvinholm.App.J2534Native.SanitizeDriverDiagnostic(detail);
+
+        Assert.Contains(expected, sanitized, StringComparison.Ordinal);
+        Assert.DoesNotContain("C:\Users\Example", sanitized, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("/home/example", sanitized, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("workstation", sanitized, StringComparison.OrdinalIgnoreCase);
+    }
+
+    [Fact]
+    public void SanitizeDriverDiagnostic_PreservesUsefulTextAndBoundsLength()
+    {
+        Assert.Equal("Device is busy; retry later",
+            Dvinholm.App.J2534Native.SanitizeDriverDiagnostic("Device is busy; retry later"));
+
+        var longDetail = new string('x', 300);
+        var sanitized = Dvinholm.App.J2534Native.SanitizeDriverDiagnostic(longDetail);
+        Assert.Equal(241, sanitized.Length);
+        Assert.EndsWith("…", sanitized, StringComparison.Ordinal);
+    }
+
     [Fact]
     public void Load_RejectsEmptyPathAndLeavesWrapperUnloaded()
     {
