@@ -186,7 +186,7 @@ public sealed partial class MainWindow : Window
             if (file is null) return;
 
             await File.WriteAllTextAsync(file.Path, _profileCatalog.ToJson());
-            SetStatus($"Exported {_profileCatalog.All.Count} ECU profile(s) to {file.Path}");
+            SetStatus($"Exported {_profileCatalog.All.Count} ECU profile(s) to {file.Name}.");
         }
         catch (Exception ex)
         {

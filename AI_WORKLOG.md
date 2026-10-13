@@ -1,14 +1,20 @@
-# Latest handoff update — 2026-10-13 (after PR #166)
+# Latest handoff update — 2026-10-13 (profile export status privacy)
 
 ## Verified state
-- PR #166 merged to `main` as `ebb9a2d9fb1925a0bd05c4f8cdc89f14da88c775`: [PR #166](https://github.com/vorlocsev/dvinholm/pull/166).
-- Post-merge CI for that exact main commit passed: [run #38422162031](https://github.com/vorlocsev/dvinholm/actions/runs/38422162031).
-- Current follow-up branch `test/ecu-profile-import-addressing-bounds` adds import-path tests for standard and extended CAN IDs outside the selected addressing range. CI and merge status are pending until verified.
-- Real DiCE/Mongoose adapter testing remains deferred to a future release; virtual-adapter CI does not establish physical hardware compatibility.
+- Main commit at review start: `1b13c95808f4ccd7484beec611ca41221704105a`; post-merge CI passed in [run #38423619961](https://github.com/vorlocsev/dvinholm/actions/runs/38423619961).
+- PR #168 updates this handoff after PR #167; its CI status must be checked independently.
+- Real DiCE/Mongoose adapter testing remains deferred to a future release. Interactive Windows UI smoke tests remain open.
 
-## Follow-up change
-- Added explicit `EcuProfileCatalog.FromJson` regression coverage for an out-of-range standard response ID and an out-of-range extended request ID. Existing direct-constructor tests did not independently verify both invalid values through the JSON import path.
-- Next: verify CI on the exact PR head; merge only after required checks pass. Continue with realistic UI import/export and profile-selection smoke tests when a Windows interactive environment is available. Do not claim those manual UI checks are complete based on unit tests.
+## Privacy review finding and fix under review
+- The ECU profile export success status previously displayed `file.Path`, which can include a Windows account name and private directory structure. The export itself is user-initiated and remains unchanged; only the status message now displays `file.Name`.
+- This is a narrow data-minimization improvement. It does not establish that all logs/messages have been audited; the broader diagnostic logging review remains open.
+- PR: [avoid exposing full profile export path in status](https://github.com/vorlocsev/dvinholm/pull/169) (pending CI/review).
+
+## Next priorities
+1. Verify PR #169 CI before considering merge.
+2. Continue the diagnostic message review for unnecessary paths, VINs, and other identifying data.
+3. Keep manual Windows first-launch, connect/disconnect, cancellation, and profile UI smoke tests marked open until actually performed.
+4. Keep physical-adapter validation deferred to a future release.
 
 ---
 
