@@ -195,12 +195,19 @@ internal sealed class J2534Session : IDisposable
         {
             _j2534.Unload();
         }
+        catch
+        {
+            // Do not expose vendor exception text: it may contain local paths
+            // or other machine-specific details. A later Disconnect or
+            // Dispose may retry unloading the adapter.
+            throw new InvalidOperationException(
+                "J2534 adapter cleanup failed due to an unexpected driver error.");
+        }
         finally
         {
             // The CAN bus has already been disposed and detached. Even if a
             // vendor Unload call fails, do not report stale adapter metadata
-            // as though the session were still connected. A later Disconnect
-            // or Dispose may retry unloading the adapter.
+            // as though the session were still connected.
             ClearAdapterMetadata();
         }
     }
