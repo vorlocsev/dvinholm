@@ -140,7 +140,7 @@ public sealed class J2534SessionLifecycleTests
 
         var error = Assert.Throws<InvalidOperationException>(() => session.Dispose());
 
-        Assert.Contains("simulated unload failure", error.Message);
+        Assert.Contains("J2534 adapter cleanup failed due to an unexpected driver error.", error.Message);
         Assert.False(session.IsConnected);
         Assert.Null(session.AdapterVersion);
         Assert.Null(session.AdapterCapabilities);
