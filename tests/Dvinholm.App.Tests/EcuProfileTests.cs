@@ -194,4 +194,18 @@ public sealed class EcuProfileTests
         Assert.Empty(imported.Verified);
     }
 
+    [Theory]
+    [InlineData("7E0", "800", false)]
+    [InlineData("20000000", "18DAF110", true)]
+    public void FromJson_RejectsCanIdsOutsideSelectedAddressingRange(
+        string requestId, string responseId, bool isExtended)
+    {
+        var json = $$"""[{"id":"volvo.ecm","name":"ECM","requestId":"{{requestId}}","responseId":"{{responseId}}","isExtended":{{isExtended.ToString().ToLowerInvariant()}},"source":"documented fixture"}]""";
+
+        var exception = Assert.Throws<InvalidDataException>(() =>
+            Dvinholm.App.EcuProfileCatalog.FromJson(json));
+
+        Assert.Contains("invalid", exception.Message, StringComparison.OrdinalIgnoreCase);
+    }
+
 }

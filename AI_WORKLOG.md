@@ -1,3 +1,17 @@
+# Latest handoff update — 2026-10-13 (after PR #166)
+
+## Verified state
+- PR #166 merged to `main` as `ebb9a2d9fb1925a0bd05c4f8cdc89f14da88c775`: [PR #166](https://github.com/vorlocsev/dvinholm/pull/166).
+- Post-merge CI for that exact main commit passed: [run #38422162031](https://github.com/vorlocsev/dvinholm/actions/runs/38422162031).
+- Current follow-up branch `test/ecu-profile-import-addressing-bounds` adds import-path tests for standard and extended CAN IDs outside the selected addressing range. CI and merge status are pending until verified.
+- Real DiCE/Mongoose adapter testing remains deferred to a future release; virtual-adapter CI does not establish physical hardware compatibility.
+
+## Follow-up change
+- Added explicit `EcuProfileCatalog.FromJson` regression coverage for an out-of-range standard response ID and an out-of-range extended request ID. Existing direct-constructor tests did not independently verify both invalid values through the JSON import path.
+- Next: verify CI on the exact PR head; merge only after required checks pass. Continue with realistic UI import/export and profile-selection smoke tests when a Windows interactive environment is available. Do not claim those manual UI checks are complete based on unit tests.
+
+---
+
 # Latest handoff update — 2026-10-13 (after PR #164)
 
 ## Verified repository state
