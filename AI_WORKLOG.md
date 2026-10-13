@@ -1,14 +1,22 @@
-# Latest handoff update — 2026-10-13 (after PR #166)
+# Latest handoff update — 2026-10-13 (after PR #167)
 
 ## Verified state
-- PR #166 merged to `main` as `ebb9a2d9fb1925a0bd05c4f8cdc89f14da88c775`: [PR #166](https://github.com/vorlocsev/dvinholm/pull/166).
-- Post-merge CI for that exact main commit passed: [run #38422162031](https://github.com/vorlocsev/dvinholm/actions/runs/38422162031).
-- Current follow-up branch `test/ecu-profile-import-addressing-bounds` adds import-path tests for standard and extended CAN IDs outside the selected addressing range. CI and merge status are pending until verified.
+- PR #167 merged to `main` as `1b13c95808f4ccd7484beec611ca41221704105a`: [PR #167](https://github.com/vorlocsev/dvinholm/pull/167).
+- Post-merge CI for that exact main commit passed: [run #38423619961](https://github.com/vorlocsev/dvinholm/actions/runs/38423619961).
+- No open pull requests were returned by the repository PR search at this handoff refresh.
+- Current software work remains focused on read-only diagnostics, repeatable virtual-adapter tests, and release readiness.
 - Real DiCE/Mongoose adapter testing remains deferred to a future release; virtual-adapter CI does not establish physical hardware compatibility.
 
-## Follow-up change
-- Added explicit `EcuProfileCatalog.FromJson` regression coverage for an out-of-range standard response ID and an out-of-range extended request ID. Existing direct-constructor tests did not independently verify both invalid values through the JSON import path.
-- Next: verify CI on the exact PR head; merge only after required checks pass. Continue with realistic UI import/export and profile-selection smoke tests when a Windows interactive environment is available. Do not claim those manual UI checks are complete based on unit tests.
+## Latest completed follow-up
+- PR #167 added JSON-import regression tests for out-of-range standard and extended CAN IDs. This complements direct constructor validation by checking invalid identifiers through the user-facing profile import path.
+- Reviewed `UdsClient.cs`, its tests, and the ISO-TP interim-response path. The current implementation recognizes UDS `ResponsePending` (NRC `0x78`) as an interim response, continues waiting within the ISO-TP overall deadline, and ignores clearly unrelated services/DIDs/subfunctions. Existing tests already cover these behaviors; no duplicate test-only PR was opened.
+- The roadmap still has interactive Windows smoke tests for profile import/export/selection, first launch, adapter discovery failure, connect/disconnect, and diagnostic cancellation marked open. These must not be marked complete based on unit tests alone.
+
+## Next priorities
+1. Continue the diagnostic error/logging review, focusing on actionable messages and avoiding unnecessary exposure of VINs or other identifying data.
+2. Add targeted regression coverage only where a real gap is found; avoid duplicating existing virtual-adapter tests.
+3. Keep the README roadmap and this handoff aligned with verified CI and the actual remaining release tasks.
+4. Keep physical adapter validation deferred to a future release.
 
 ---
 
