@@ -4,8 +4,8 @@
 >
 > **Last updated:** 2026-10-13  
 > **Repository:** https://github.com/vorlocsev/dvinholm  
-> **Main branch at last verification:** `d7f2ee4d78e566bd3581859962a0da3803677278`  
-> **Current state:** Software MVP in progress; PR #150 is merged. Main CI for `ae3e88dbf5fd21297d924724e52ca368f78f3248` is running; the latest fully verified main commit remains `d7f2ee4d78e566bd3581859962a0da3803677278`. Real adapter validation is intentionally deferred.
+> **Main branch at last verification:** `79222621b6553444fa003756fcb110e4087eff0a`  
+> **Current state:** Software MVP in progress; PR #153 is merged. Main CI for `79222621b6553444fa003756fcb110e4087eff0a` is queued (run [#38337294839](https://github.com/vorlocsev/dvinholm/actions/runs/38337294839)); the latest fully verified main commit is `fd4ae52f138e9cc1b650b05cf184b3b765feba4b`, whose main CI [#38336803668](https://github.com/vorlocsev/dvinholm/actions/runs/38336803668) passed. Real adapter validation is intentionally deferred.
 
 ## 1. Project purpose and guardrails
 
@@ -91,10 +91,34 @@ Key source and test locations:
 - Squash merge commit: `ae3e88dbf5fd21297d924724e52ca368f78f3248`.
 - Post-merge main CI run [#38335912173](https://github.com/vorlocsev/dvinholm/actions/runs/38335912173) was running at the time of this update; verify its final result.
 
+### PR #151 — handoff refresh after PR #150
+- Updated the project handoff to reflect strict hexadecimal-prefix parsing.
+- Merged main commit: `fc8f5723cb5b3cbc3335472d8bfbc115b2c6c582`; main CI [#38336331712](https://github.com/vorlocsev/dvinholm/actions/runs/38336331712) passed.
+
+### PR #152 — invalid J2534 connection input tests
+- Added regression coverage for invalid J2534 connection inputs.
+- Merged main commit: `fd4ae52f138e9cc1b650b05cf184b3b765feba4b`; main CI [#38336803668](https://github.com/vorlocsev/dvinholm/actions/runs/38336803668) passed.
+
+### PR #153 — clear stale ECU profile details
+- Clears profile metadata when the profile catalog is replaced or no profile is selected, while preserving editable CAN IDs.
+- PR CI runs [#38336837568](https://github.com/vorlocsev/dvinholm/actions/runs/38336837568) and [#38336845017](https://github.com/vorlocsev/dvinholm/actions/runs/38336845017) passed on head `657e3b106e8f740476ac0ee69999ab090521915a`.
+- Squash merge / current main SHA: `79222621b6553444fa003756fcb110e4087eff0a`.
+- Post-merge main CI [#38337294839](https://github.com/vorlocsev/dvinholm/actions/runs/38337294839) was queued at the time of this update.
+
+### PR #81 — isolate CAN dispatcher from faulty subscription filters
+- A subscription predicate exception is reported and skipped only for that subscription; other subscribers still receive the frame.
+- Merged main commit: `d6865872846218317507394a27436c8c88207615`; post-merge main CI [#38159874429](https://github.com/vorlocsev/dvinholm/actions/runs/38159874429) passed.
+
+### PR #82 — rate-limit repeated CAN filter errors
+- Reports the first faulty-filter exception immediately, then limits repeated reports to one per second per subscription.
+- Added a regression test publishing 100 frames through a throwing filter.
+- Merged main commit: `cc67a32372430420da93394595b36d7edb61b872`.
+- The latest main CI history confirms subsequent main commits passed; verify a dedicated PR #82 run if needing the exact head-level check. Tests use an in-memory adapter, not physical hardware.
+
 ## 4. Current CI and verification state
 
-- Latest fully verified `main` commit: `d7f2ee4d78e566bd3581859962a0da3803677278`; its post-merge main CI [#38335347983](https://github.com/vorlocsev/dvinholm/actions/runs/38335347983) completed successfully.
-- Current `main` commit: `ae3e88dbf5fd21297d924724e52ca368f78f3248` (PR #150); post-merge CI [#38335912173](https://github.com/vorlocsev/dvinholm/actions/runs/38335912173) was still in progress when this file was updated.
+- Latest fully verified `main` commit: `fd4ae52f138e9cc1b650b05cf184b3b765feba4b`; post-merge main CI [#38336803668](https://github.com/vorlocsev/dvinholm/actions/runs/38336803668) passed.
+- Current `main` commit: `79222621b6553444fa003756fcb110e4087eff0a` (PR #153); post-merge CI [#38337294839](https://github.com/vorlocsev/dvinholm/actions/runs/38337294839) was queued when this file was updated.
 - Pipeline covers .NET restore, build, tests, publish, and artifact upload.
 - A previously reported suite result was **394 passed, 0 failed, 0 skipped** in run #38308753118. Do not assume the exact count is unchanged without inspecting the latest run's test logs.
 - CI uses a virtual J2534 adapter. It does not prove real driver, electrical, adapter, vehicle, or ECU compatibility.
