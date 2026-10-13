@@ -3,6 +3,28 @@ namespace Dvinholm.App.Tests;
 public sealed class J2534SessionReadErrorLifecycleTests
 {
     [Fact]
+    public async Task ThrowingReadErrorSubscriberDoesNotPreventLaterSubscribers()
+    {
+        using var laterSubscriberCalled = new ManualResetEventSlim();
+        var adapter = new ReadErrorSessionAdapter();
+        using var session = new Dvinholm.App.J2534Session(adapter);
+        session.ReadError += _ => throw new InvalidOperationException("simulated UI subscriber failure");
+        session.ReadError += _ => laterSubscriberCalled.Set();
+
+        Assert.True(session.Connect("virtual-adapter.dll", 500_000, out var error), error);
+        try
+        {
+            Assert.True(laterSubscriberCalled.Wait(TimeSpan.FromSeconds(3)),
+                "A throwing read-error subscriber prevented a later subscriber from receiving the diagnostic.");
+            Assert.True(session.IsConnected);
+        }
+        finally
+        {
+            session.Disconnect();
+        }
+    }
+
+    [Fact]
     public async Task DisconnectFromReadErrorCallbackDefersTeardownAndUnloadsAdapter()
     {
         var adapter = new ReadErrorSessionAdapter();
