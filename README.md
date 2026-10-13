@@ -175,7 +175,7 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 
 ## Roadmap
 
-Roadmap status is based on the current branch and the automated test suite. Last updated: 2026-10-13, including deferred-disconnect/reconnect race coverage in PR #143; hardware compatibility remains unverified.
+Roadmap status is based on the current branch and the automated test suite. Last updated: 2026-10-13, including ECU profile catalog persistence (#155), cancellation-preserved discovery results (#156), and readable DTC status flags (#158). Hardware compatibility remains unverified.
 
 ### Completed: core transport and recovery
 
@@ -192,12 +192,12 @@ Current CI result: **394 passed, 0 failed, 0 skipped**. The full restore, build,
 
 ### Current priority — complete the software MVP
 
-- [ ] Improve user-visible reporting for connection state, transport errors, ECU discovery completeness, and negative UDS responses.
-- [ ] Validate ECU profile import/export and profile selection through realistic user workflows.
-- [ ] Add read-only UDS operations only where behavior is documented and testable.
+- [x] Improve user-visible reporting for connection state, transport errors, ECU discovery completeness, and negative UDS responses; partial discovery results are retained on cancellation/queue overflow, and negative UDS responses include NRC explanations. See PRs #147, #156, and the existing UDS client/UI handling.
+- [ ] Validate ECU profile import/export and profile selection through realistic user workflows. Unit coverage exists for JSON validation, round-trip, persistence, replacement, and invalid input; interactive UI smoke testing remains open.
+- [x] Add only documented/testable read-only UDS operations currently supported (DID/VIN/DTC); DTC status flags are displayed in readable form by PR #158. Additional operations remain gated on documented behavior and tests.
 - [ ] Keep vehicle-specific CAN IDs and DIDs out of the built-in catalog until supported by reliable sources or measured evidence.
 - [ ] Add repeatable software smoke tests for first launch, adapter discovery failure, connect/disconnect, and diagnostic cancellation using the virtual adapter where applicable.
-- [ ] Review diagnostic logging and error messages so failures are actionable without exposing sensitive vehicle data.
+- [x] Review user-visible UDS negative-response messages and retain raw NRC plus readable explanation; continue reviewing logs for accidental sensitive-data exposure before release.
 - [x] Verify retryable `J2534Session.Dispose()` behavior after a vendor adapter unload failure with the virtual adapter; regression test passed in [CI run #38302862250](https://github.com/vorlocsev/dvinholm/actions/runs/38302862250).
 - [x] Verify concurrent `CanBus.Dispose()` callers wait for an active native send to finish with the virtual adapter; regression test passed in [CI run #38304154982](https://github.com/vorlocsev/dvinholm/actions/runs/38304154982).
 - [x] Verify an external `CanRxDispatcher.Dispose()` caller waits for deferred cleanup when disposal starts inside a read-error callback with the virtual adapter; regression test passed in [CI run #38305672017](https://github.com/vorlocsev/dvinholm/actions/runs/38305672017).
