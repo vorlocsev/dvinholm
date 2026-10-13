@@ -132,7 +132,7 @@ public sealed class UdsEcuDiscoveryScanTests
     }
 
     [Fact]
-    public async Task ScanAsync_ThrowsWhenCancelled()
+    public async Task ScanAsync_PreservesObservedCandidatesWhenCancelled()
     {
         using var adapter = new VirtualJ2534Adapter(_ =>
             Array.Empty<Dvinholm.App.CanFrame>());
@@ -143,10 +143,20 @@ public sealed class UdsEcuDiscoveryScanTests
 
         var scan = discovery.ScanAsync(TimeSpan.FromSeconds(5), cancellation.Token);
         await Task.Delay(50);
+        adapter.InjectReceiveFrame(new Dvinholm.App.CanFrame(
+            0x7E8, false, false, new byte[] { 0x03, 0x62, 0xF1, 0x90 }, 0, 0));
+        // Ensure the receive worker has time to dispatch and the scan to observe
+        // the response before cancellation is requested.
+        await Task.Delay(100);
         cancellation.Cancel();
 
-        await Assert.ThrowsAnyAsync<OperationCanceledException>(async () =>
-            await scan.WaitAsync(TimeSpan.FromSeconds(2)));
+        var error = await Assert.ThrowsAsync<Dvinholm.App.UdsEcuDiscoveryCancelledException>(
+            async () => await scan.WaitAsync(TimeSpan.FromSeconds(2)));
+
+        var candidate = Assert.Single(error.Candidates);
+        Assert.Equal((uint)0x7E8, candidate.ResponseId);
+        Assert.Equal((uint?)0x7E0, candidate.RequestId);
+        Assert.Contains("cancelled", error.Message, StringComparison.OrdinalIgnoreCase);
         Assert.Equal(0, adapter.TransmittedFrames);
     }
 

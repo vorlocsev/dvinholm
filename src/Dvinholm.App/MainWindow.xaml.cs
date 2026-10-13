@@ -304,15 +304,25 @@ public sealed partial class MainWindow : Window
 
             SetStatus("ECU discovery complete.");
         }
-        catch (OperationCanceledException)
+        catch (UdsEcuDiscoveryCancelledException ex)
         {
-            DiscoveryStatus.Text = "Cancelled";
+            ShowDiscoveredEcus(ex.Candidates);
+            DiscoveryStatus.Text = ex.Candidates.Count == 0
+                ? "Cancelled · no ECUs observed"
+                : $"Cancelled · {ex.Candidates.Count} ECU(s) observed; scan incomplete";
+            SetStatus(ex.Message);
         }
         catch (UdsEcuDiscoveryIncompleteException ex)
         {
             ShowDiscoveredEcus(ex.Candidates);
             DiscoveryStatus.Text = $"Incomplete · {ex.Candidates.Count} ECU(s) observed · {ex.DroppedFrameCount} frame(s) dropped";
             SetStatus(ex.Message);
+        }
+        catch (OperationCanceledException)
+        {
+            // Cancellation before the scan worker starts has no observations
+            // to preserve.
+            DiscoveryStatus.Text = "Cancelled · no scan results available";
         }
         catch (Exception ex)
         {
