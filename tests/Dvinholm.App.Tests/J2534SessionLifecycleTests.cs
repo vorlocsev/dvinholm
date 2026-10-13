@@ -45,6 +45,34 @@ public sealed class J2534SessionLifecycleTests
     }
 
     [Fact]
+    public void FailedConnectionCanBeRetriedSuccessfully()
+    {
+        var adapter = new FakeSessionAdapter { Failure = FailurePoint.Open };
+        using var session = new Dvinholm.App.J2534Session(adapter);
+
+        Assert.False(session.Connect("virtual-adapter.dll", 500_000, out var firstError));
+        Assert.Contains("simulated open failure", firstError);
+        Assert.False(session.IsConnected);
+        Assert.Null(session.AdapterVersion);
+        Assert.Null(session.AdapterCapabilities);
+
+        // Model the device becoming available after the initial failed attempt.
+        adapter.Failure = FailurePoint.None;
+
+        Assert.True(session.Connect("virtual-adapter.dll", 500_000, out var retryError), retryError);
+        Assert.True(session.IsConnected);
+        Assert.NotNull(session.AdapterVersion);
+        Assert.NotNull(session.AdapterCapabilities);
+        Assert.Equal(2, adapter.LoadCount);
+        Assert.Equal(1, adapter.ConnectCount);
+
+        session.Disconnect();
+        Assert.False(session.IsConnected);
+        Assert.Null(session.AdapterVersion);
+        Assert.Null(session.AdapterCapabilities);
+    }
+
+    [Fact]
     public void UnexpectedAdapterExceptionDoesNotExposeLocalPath()
     {
         const string localPath = @"C:\Users\DiagnosticUser\AppData\Local\Temp\vendor-driver.dll";
@@ -346,7 +374,7 @@ public sealed class J2534SessionLifecycleTests
         private int _unloadCount;
         private int _readCount;
         private int _readErrorIssued;
-        internal FailurePoint Failure { get; init; }
+        internal FailurePoint Failure { get; set; }
         internal string? ReadVersionExceptionMessage { get; init; }
         internal string? ReadExceptionMessage { get; init; }
         internal bool FailFirstRead { get; init; }
