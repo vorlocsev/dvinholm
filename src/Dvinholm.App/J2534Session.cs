@@ -113,7 +113,7 @@ internal sealed class J2534Session : IDisposable
                 cleanupErrors.Add(unloadError);
 
             ClearAdapterMetadata();
-            error = CombineErrors(ex.Message, string.Join("; ", cleanupErrors));
+            error = CombineErrors("J2534 connection failed due to an unexpected adapter error.", string.Join("; ", cleanupErrors));
             return false;
         }
     }
@@ -127,7 +127,7 @@ internal sealed class J2534Session : IDisposable
         }
         catch (Exception ex)
         {
-            return "J2534 adapter cleanup failed: " + ex.Message;
+            return "J2534 adapter cleanup failed due to an unexpected driver error.";
         }
     }
 
