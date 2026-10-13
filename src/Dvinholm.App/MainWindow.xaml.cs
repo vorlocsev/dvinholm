@@ -931,7 +931,7 @@ public sealed partial class MainWindow : Window
                 $"{frame.Timestamp},{frame.Id},{frame.Type},{frame.Dlc},\"{frame.Data}\""));
 
             await File.WriteAllLinesAsync(file.Path, lines);
-            SetStatus("CSV saved: " + file.Path);
+            SetStatus($"CSV saved: {file.Name}.");
         }
         catch (Exception ex)
         {
