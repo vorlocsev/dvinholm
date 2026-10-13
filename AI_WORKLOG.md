@@ -9,10 +9,10 @@
 ## Current change — PR #189
 - [PR #189](https://github.com/vorlocsev/dvinholm/pull/189) adds a regression test for a failed J2534 Open followed by a successful retry.
 - The test checks that a failed attempt clears connection state and adapter metadata, and that a later successful attempt can connect and disconnect cleanly.
-- The PR's exact-head Windows CI must pass before merge. Do not infer success from a queued or in-progress run.
+- Exact-head Windows CI run [#38474567407](https://github.com/vorlocsev/dvinholm/actions/runs/38474567407) failed after build succeeded: 428 tests passed and `IsoTpRequestGateCancellationTests.ConcurrentRequest_CancellationWhileWaitingForChannelDoesNotSendRequest` timed out waiting for cancellation. This is an unrelated timing-sensitive test using `Task.Run` for synchronous blocking requests. Updated it to use dedicated long-running workers to avoid thread-pool starvation; the updated exact-head CI must pass before merge. Do not infer success from a queued or in-progress run.
 
 ## Next priorities
-1. Verify exact-head CI for PR #189 and merge only after it passes.
+1. Verify exact-head CI after the cancellation-test reliability fix; merge PR #189 only after all required checks pass.
 2. Continue targeted coverage review for a concrete connection/recovery gap; avoid adding redundant tests for lifecycle paths already covered by the virtual adapter.
 3. Complete remaining manual UI checks where practical: invalid DLL path, CAN monitor start/stop, UDS cancellation, and ECU profile import/export.
 4. Publish a versioned release after software tests and packaging checks are green.
