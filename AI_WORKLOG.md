@@ -1,3 +1,26 @@
+# Latest handoff update — 2026-10-13 (PR #185 merged; post-merge CI pending)
+
+## Verified current state
+- Current main commit: `4add9dccbdba70d581245f18708411ac96d1322d`, merged from [PR #185](https://github.com/vorlocsev/dvinholm/pull/185).
+- PR #185 adds regression tests for removal of control characters and empty/whitespace/null driver diagnostic input.
+- Both exact-head CI workflows passed on `b93d2be1699228eced1f73a098dc1e7ad6edafb4`: [run #38445747278](https://github.com/vorlocsev/dvinholm/actions/runs/38445747278) and [run #38445753609](https://github.com/vorlocsev/dvinholm/actions/runs/38445753609).
+- Post-merge main CI for `4add9dccbdba70d581245f18708411ac96d1322d` is running: [run #38447304696](https://github.com/vorlocsev/dvinholm/actions/runs/38447304696). Verify its conclusion before marking the merge fully validated.
+- PR #184's post-merge main CI passed: [run #38444768532](https://github.com/vorlocsev/dvinholm/actions/runs/38444768532); main CI before PR #185 passed on `27353c478c8908eb5645feab5df0c4c09f953bb5`: [run #38444850871](https://github.com/vorlocsev/dvinholm/actions/runs/38444850871).
+
+## PR #185 implementation
+- Added tests confirming control characters are removed from driver diagnostics.
+- Added tests for empty, whitespace-only, and null input.
+- Existing tests continue to cover common Windows, UNC, and Unix path redaction, useful text preservation, and bounded output.
+- This sanitizer only covers common path patterns and control characters; do not claim universal redaction of arbitrary vendor-specific secrets.
+
+## Next priorities
+1. Verify post-merge main CI [run #38447304696](https://github.com/vorlocsev/dvinholm/actions/runs/38447304696).
+2. Continue targeted review of connection recovery, CAN-filter lifecycle, and UDS cancellation only where a concrete coverage gap exists; existing virtual-adapter tests already cover many lifecycle and cancellation cases.
+3. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, and ECU profile import/export.
+4. Physical DiCE/Mongoose testing remains deferred to a future release; virtual-adapter CI does not establish hardware compatibility.
+
+---
+
 # Latest handoff update — 2026-10-13 (main CI verified; sanitizer boundary tests in progress)
 
 ## Current verified state
