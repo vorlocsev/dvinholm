@@ -1,16 +1,22 @@
-# Latest handoff update — 2026-10-13 (after PR #159)
+# Latest handoff update — 2026-10-13 (after PR #160)
 
 ## Verified repository state
 
-- Current `main` commit: `33476e722797d83407a702c4661eaf20010e4061` — [PR #159 merge](https://github.com/vorlocsev/dvinholm/pull/159).
+- Current `main` commit at this handoff refresh: `925c9629e7932fc418d5525593495ca8ce036e81` — [PR #160 merge](https://github.com/vorlocsev/dvinholm/pull/160).
 - PR #158 added readable labels for the eight UDS DTC status bits and was merged as `6fa62b67b2262845b74f57442dad9493dba7ee89`: [PR #158](https://github.com/vorlocsev/dvinholm/pull/158).
 - PR #159 refreshed this handoff with the #158 implementation and validation details. Its exact head `e1e1a2c354dda3a82615f3a9ed9540cb9d610ac7` passed CI: [run #38347041731](https://github.com/vorlocsev/dvinholm/actions/runs/38347041731).
 - Post-merge CI for `main` at `6fa62b67b2262845b74f57442dad9493dba7ee89` passed: [run #38346990382](https://github.com/vorlocsev/dvinholm/actions/runs/38346990382).
-- Post-merge CI for current `main` SHA `33476e722797d83407a702c4661eaf20010e4061` is running: [run #38347486844](https://github.com/vorlocsev/dvinholm/actions/runs/38347486844). Confirm its conclusion before marking this merge fully verified.
+- Post-merge CI for current `main` SHA `925c9629e7932fc418d5525593495ca8ce036e81` is running: [run #38348052286](https://github.com/vorlocsev/dvinholm/actions/runs/38348052286). Confirm its conclusion before marking this merge fully verified.
 - No GitHub release is published yet. The repository's open issue list was empty at this check.
 - Real DiCE/Mongoose and in-vehicle validation remain deferred to a future release cycle. CI with `VirtualJ2534Adapter` does not establish physical-hardware compatibility.
 
 ## Recently completed
+
+### PR #160 — roadmap and AI handoff refresh
+- Updated README roadmap checkboxes and this handoff after PRs #158/#159.
+- PR head `2390a6693b382d6d20fed5beb33f568135c1a8ca` passed both CI workflows: [run #38347582507](https://github.com/vorlocsev/dvinholm/actions/runs/38347582507) and [run #38347578664](https://github.com/vorlocsev/dvinholm/actions/runs/38347578664).
+- Squash merge commit: `925c9629e7932fc418d5525593495ca8ce036e81`.
+- Post-merge main CI is running: [run #38348052286](https://github.com/vorlocsev/dvinholm/actions/runs/38348052286).
 
 ### PR #158 — readable UDS DTC status flags
 - DTC results retain the raw `status=0xXX` byte and append readable labels for the eight standard ISO 14229 status bits.
@@ -23,7 +29,7 @@
 
 ## Next steps
 
-1. Verify post-merge CI run [#38347486844](https://github.com/vorlocsev/dvinholm/actions/runs/38347486844).
+1. Verify post-merge CI run [#38348052286](https://github.com/vorlocsev/dvinholm/actions/runs/38348052286).
 2. Complete software-MVP user-workflow review: adapter discovery failure, connect/disconnect, diagnostic cancellation, negative UDS responses, and incomplete ECU discovery.
 3. Exercise ECU profile import/export and profile selection through repeatable user workflows; unit coverage exists for validation and persistence, but that alone is not an end-to-end UI test.
 4. Refresh README roadmap status to reflect implemented diagnostics/reporting and profile catalog work; do not mark manual UI smoke tests complete without evidence.
@@ -37,8 +43,8 @@
 >
 > **Last updated:** 2026-10-13  
 > **Repository:** https://github.com/vorlocsev/dvinholm  
-> **Main branch at last verification:** `33476e722797d83407a702c4661eaf20010e4061`  
-> **Current state:** PRs #155, #156, #158, and #159 are merged. Post-merge CI for #158 passed ([run #38346990382](https://github.com/vorlocsev/dvinholm/actions/runs/38346990382)); post-merge CI for current main commit #159 (`33476e722797d83407a702c4661eaf20010e4061`) was in progress at the last check ([run #38347486844](https://github.com/vorlocsev/dvinholm/actions/runs/38347486844)). Real adapter validation remains deferred.
+> **Main branch at last verification:** `925c9629e7932fc418d5525593495ca8ce036e81`  
+> **Current state:** PRs #155, #156, #158, #159, and #160 are merged. PR #160 head CI passed both workflows; post-merge CI for main commit `925c9629e7932fc418d5525593495ca8ce036e81` is pending/in progress ([run #38348052286](https://github.com/vorlocsev/dvinholm/actions/runs/38348052286)). Real adapter validation remains deferred.
 
 ## 1. Project purpose and guardrails
 
