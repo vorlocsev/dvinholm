@@ -455,7 +455,9 @@ public sealed partial class MainWindow : Window
         error = string.Empty;
         id = 0;
 
-        var value = text.Trim().Replace("0x", "", StringComparison.OrdinalIgnoreCase);
+        var value = text.Trim();
+        if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            value = value[2..];
         var maxId = extended ? 0x1FFFFFFFu : 0x7FFu;
         if (string.IsNullOrWhiteSpace(value) ||
             !uint.TryParse(value, System.Globalization.NumberStyles.HexNumber,
@@ -500,7 +502,9 @@ public sealed partial class MainWindow : Window
     private bool TryParseDid(out ushort did)
     {
         did = 0;
-        var value = UdsDid.Text.Trim().Replace("0x", "", StringComparison.OrdinalIgnoreCase);
+        var value = UdsDid.Text.Trim();
+        if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+            value = value[2..];
 
         if (!ushort.TryParse(value, System.Globalization.NumberStyles.HexNumber,
                 System.Globalization.CultureInfo.InvariantCulture, out did))
