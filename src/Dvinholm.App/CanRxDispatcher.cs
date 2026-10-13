@@ -353,12 +353,12 @@ internal sealed class CanRxDispatcher : IDisposable
                 // dispatcher itself requested it.
                 break;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
-                // A vendor adapter can itself throw OperationCanceledException.
-                // Unless our token was cancelled, treat that like any other
-                // driver failure so the receive worker remains alive.
-                ReportReadError(ex);
+                // Vendor interop exceptions may include machine-specific paths.
+                // Keep the read failure visible without exposing raw driver details.
+                ReportReadError(new InvalidOperationException(
+                    "J2534 read failed due to an unexpected adapter error."));
 
                 // Avoid a hot loop if the adapter keeps throwing immediately.
                 if (token.WaitHandle.WaitOne(TimeSpan.FromMilliseconds(100)))

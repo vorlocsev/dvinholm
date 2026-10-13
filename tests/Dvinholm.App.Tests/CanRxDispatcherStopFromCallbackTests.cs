@@ -11,7 +11,7 @@ public sealed class CanRxDispatcherStopFromCallbackTests
 
         dispatcher.ReadError += error =>
         {
-            if (!error.Message.Contains("simulated adapter disconnect", StringComparison.Ordinal))
+            if (!error.Message.Contains("J2534 read failed due to an unexpected adapter error.", StringComparison.Ordinal))
                 return;
 
             // Stop is invoked on the receive worker itself. It must request

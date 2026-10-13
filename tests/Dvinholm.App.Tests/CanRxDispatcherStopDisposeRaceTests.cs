@@ -13,7 +13,7 @@ public sealed class CanRxDispatcherStopDisposeRaceTests
 
         dispatcher.ReadError += error =>
         {
-            if (!error.Message.Contains("simulated adapter disconnect", StringComparison.Ordinal))
+            if (!error.Message.Contains("J2534 read failed due to an unexpected adapter error.", StringComparison.Ordinal))
                 return;
 
             dispatcher.Stop();
@@ -67,7 +67,7 @@ public sealed class CanRxDispatcherStopDisposeRaceTests
 
         dispatcher.ReadError += error =>
         {
-            if (!error.Message.Contains("simulated adapter disconnect", StringComparison.Ordinal))
+            if (!error.Message.Contains("J2534 read failed due to an unexpected adapter error.", StringComparison.Ordinal))
                 return;
 
             dispatcher.Dispose();

@@ -98,9 +98,9 @@ internal sealed class J2534Session : IDisposable
             {
                 _bus.ReadError -= HandleReadError;
                 try { _bus.Dispose(); }
-                catch (Exception cleanupException)
+                catch (Exception)
                 {
-                    cleanupErrors.Add("CAN bus cleanup failed: " + cleanupException.Message);
+                    cleanupErrors.Add("CAN bus cleanup failed due to an unexpected adapter error.");
                 }
                 finally
                 {

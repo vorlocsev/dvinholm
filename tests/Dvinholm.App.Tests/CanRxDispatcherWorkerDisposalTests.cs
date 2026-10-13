@@ -11,7 +11,7 @@ public sealed class CanRxDispatcherWorkerDisposalTests
 
         dispatcher.ReadError += error =>
         {
-            if (!error.Message.Contains("simulated read failure", StringComparison.Ordinal))
+            if (!error.Message.Contains("J2534 read failed due to an unexpected adapter error.", StringComparison.Ordinal))
                 return;
 
             // ReadError is raised synchronously on the RX worker. Disposing
