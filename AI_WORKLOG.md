@@ -1,3 +1,25 @@
+# Latest handoff update — 2026-10-13 (PR #189 merged; J2534 DLL-load failure coverage)
+
+## Verified current state
+- PR [#189](https://github.com/vorlocsev/dvinholm/pull/189) is merged to `main` as `d1801015759279e679f31bf2ff02d20b14b953ce`.
+- Exact-head CI passed after making the synchronous cancellation test use dedicated long-running workers: [run #38475455802](https://github.com/vorlocsev/dvinholm/actions/runs/38475455802).
+- Post-merge CI for the new main commit is running: [run #38476182155](https://github.com/vorlocsev/dvinholm/actions/runs/38476182155). Do not call the merge fully validated until it succeeds.
+- User confirmed the app starts and remains responsive on Windows 11 IoT LTSC 26100.9550 without a physical adapter. This verifies startup/no-device recovery only; physical DiCE/Mongoose validation remains deferred.
+
+## Current change — J2534 DLL load failure cleanup
+- Added `FailurePoint.Load` to the lifecycle fake adapter and included load failure in `FailedConnectionReleasesAdapterAndClearsMetadata`.
+- This closes a specific test gap: the session's failure branch when the vendor DLL cannot be loaded was not represented by the lifecycle fake, although Open/Connect/version-read failures were.
+- The test checks that the connection attempt fails, metadata stays clear, receive never starts, and cleanup is attempted. Exact-head CI is required before merge.
+
+## Next priorities
+1. Validate the exact head of the DLL-load cleanup test PR and merge only after required checks pass.
+2. Verify post-merge main CI for PR #189.
+3. Continue targeted audit only for concrete untested lifecycle/protocol gaps; avoid redundant tests.
+4. Complete manual UI checks when practical: invalid adapter DLL, CAN monitor start/stop, UDS cancellation, and ECU profile import/export.
+5. Physical DiCE/Mongoose testing remains deferred to a future release; virtual-adapter CI does not establish hardware compatibility.
+
+---
+
 # Latest handoff update — 2026-10-13 (LTSC smoke test confirmed; PR #189 in CI)
 
 ## Verified current state
