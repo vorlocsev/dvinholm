@@ -1,3 +1,29 @@
+# Latest handoff update — 2026-10-13 (after PR #158)
+
+## Verified repository state
+
+- Current `main` commit: `6fa62b67b2262845b74f57442dad9493dba7ee89` — [PR #158 merge commit](https://github.com/vorlocsev/dvinholm/commit/6fa62b67b2262845b74f57442dad9493dba7ee89).
+- PR #158, [feat: show readable UDS DTC status flags](https://github.com/vorlocsev/dvinholm/pull/158), was merged after its exact head `196b4334e3c4ec8cc20931cdf07531173b2a6e60` passed CI: [run #38346396057](https://github.com/vorlocsev/dvinholm/actions/runs/38346396057).
+- Both earlier post-PR-#157 main runs passed: [#38346376044](https://github.com/vorlocsev/dvinholm/actions/runs/38346376044) and [#38346327683](https://github.com/vorlocsev/dvinholm/actions/runs/38346327683).
+- Post-merge CI for current `main` SHA `6fa62b67b2262845b74f57442dad9493dba7ee89` is **in progress**: [run #38346990382](https://github.com/vorlocsev/dvinholm/actions/runs/38346990382). Do not mark post-merge verification complete until this run concludes successfully.
+
+## Completed in PR #158
+
+- DTC results retain the raw status byte (`status=0xXX`) and add readable labels for the eight standard ISO 14229 status bits.
+- Added tests for zero status, every individual bit, combinations, and all bits set.
+- This is display-only interpretation of ECU-returned data; it does not infer a fault cause or severity and sends no extra diagnostic requests.
+- Validation used the virtual-adapter CI only; no real vehicle or physical J2534 adapter was used.
+
+## Current next steps
+
+1. Verify post-merge main CI run [#38346990382](https://github.com/vorlocsev/dvinholm/actions/runs/38346990382).
+2. Continue a focused review of user-visible UDS negative-response messages (service, NRC, and readable explanation); add regression coverage only for a demonstrated gap.
+3. Recheck ECU-profile import, validation, persistence, selection, and empty-catalog behavior. Existing coverage includes constructor/address-range validation, case-insensitive IDs, duplicate IDs, JSON round-trip, malformed/empty documents, persistence, replacement, and cleanup of temporary files; avoid duplicating this coverage without finding a missing case.
+4. For every code change, run the full Windows x86 CI, confirm the successful run matches the exact PR head, merge, and verify post-merge main CI.
+5. Keep real DiCE/Mongoose and in-vehicle validation deferred to a future release; virtual-adapter CI does not establish hardware compatibility.
+
+---
+
 # Dvinholm — AI Project Handoff / Work Log
 
 > **Purpose:** This is the persistent handoff file for an AI assistant continuing development of Dvinholm. Read it before making changes, verify its claims against the current repository and GitHub Actions, then update it whenever work is completed, a PR is merged, CI changes, or priorities change.
