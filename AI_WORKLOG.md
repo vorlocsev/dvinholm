@@ -5,7 +5,7 @@
 > **Last updated:** 2026-10-13  
 > **Repository:** https://github.com/vorlocsev/dvinholm  
 > **Main branch at last verification:** `d7f2ee4d78e566bd3581859962a0da3803677278`  
-> **Current state:** Software MVP in progress; latest main CI succeeded. Real adapter validation is intentionally deferred.
+> **Current state:** Software MVP in progress; PR #150 is merged. Main CI for `ae3e88dbf5fd21297d924724e52ca368f78f3248` is running; the latest fully verified main commit remains `d7f2ee4d78e566bd3581859962a0da3803677278`. Real adapter validation is intentionally deferred.
 
 ## 1. Project purpose and guardrails
 
@@ -82,12 +82,19 @@ Key source and test locations:
 - PR: https://github.com/vorlocsev/dvinholm/pull/149
 - Merge commit / main SHA: `d7f2ee4d78e566bd3581859962a0da3803677278`.
 - PR CI run [#38334827794](https://github.com/vorlocsev/dvinholm/actions/runs/38334827794) completed successfully on head `815fe3d651a4613e0d311df5d327d80d30ad8f50`.
-- Post-merge main CI run [#38335347983](https://github.com/vorlocsev/dvinholm/actions/runs/38335347983) was queued when this entry was prepared; verify its final result before treating the main pipeline as green.
+- Post-merge main CI run [#38335347983](https://github.com/vorlocsev/dvinholm/actions/runs/38335347983) completed successfully.
+
+### PR #150 — update AI handoff after PR #149
+- Updated the main SHA and recorded the strict hexadecimal-prefix parsing fix.
+- PR: https://github.com/vorlocsev/dvinholm/pull/150
+- PR CI run [#38335382708](https://github.com/vorlocsev/dvinholm/actions/runs/38335382708) completed successfully on head `2cb2d29966177df549196704e1f0d771c74bc2af`.
+- Squash merge commit: `ae3e88dbf5fd21297d924724e52ca368f78f3248`.
+- Post-merge main CI run [#38335912173](https://github.com/vorlocsev/dvinholm/actions/runs/38335912173) was running at the time of this update; verify its final result.
 
 ## 4. Current CI and verification state
 
-- Latest verified `main` commit: `d7f2ee4d78e566bd3581859962a0da3803677278` (PR #149 merged; post-merge CI run #38335347983 must be checked).
-- Latest completed main workflow before PR #149: [#38314520952](https://github.com/vorlocsev/dvinholm/actions/runs/38314520952), conclusion **success**. Post-merge run #38335347983 is the current verification target.
+- Latest fully verified `main` commit: `d7f2ee4d78e566bd3581859962a0da3803677278`; its post-merge main CI [#38335347983](https://github.com/vorlocsev/dvinholm/actions/runs/38335347983) completed successfully.
+- Current `main` commit: `ae3e88dbf5fd21297d924724e52ca368f78f3248` (PR #150); post-merge CI [#38335912173](https://github.com/vorlocsev/dvinholm/actions/runs/38335912173) was still in progress when this file was updated.
 - Pipeline covers .NET restore, build, tests, publish, and artifact upload.
 - A previously reported suite result was **394 passed, 0 failed, 0 skipped** in run #38308753118. Do not assume the exact count is unchanged without inspecting the latest run's test logs.
 - CI uses a virtual J2534 adapter. It does not prove real driver, electrical, adapter, vehicle, or ECU compatibility.
@@ -123,7 +130,7 @@ Key source and test locations:
 
 ## 6. Recommended next action
 
-Start with a focused audit of the profile workflow and smoke-test seams. Inspect the current code and tests before editing; identify one concrete, user-visible gap; implement it with a deterministic regression test using the virtual adapter or a pure unit test as appropriate. Then:
+Continue with a focused audit of profile-selection state and smoke-test seams. Current profile JSON parsing/validation and catalog round-trip tests are present; persistence and UI-level selection behavior still need stronger deterministic coverage. Inspect current code/tests before editing and identify a concrete user-visible gap. Then:
 1. Run the relevant tests and full Windows CI.
 2. Inspect logs if anything fails; fix the cause rather than weakening the test.
 3. Confirm the PR head SHA matches the successful CI run.
