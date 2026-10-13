@@ -1,3 +1,25 @@
+# Latest handoff update — 2026-10-13 (LTSC smoke test confirmed; PR #189 in CI)
+
+## Verified current state
+- Current main commit: `e0bf90c49984f6e885ebde22fa0d7596d755cac6`, merged from [PR #188](https://github.com/vorlocsev/dvinholm/pull/188).
+- Post-merge main CI passed: [run #38473688013](https://github.com/vorlocsev/dvinholm/actions/runs/38473688013).
+- User manually confirmed the published x86 app starts on **Windows 11 IoT LTSC 26100.9550**, discovers and allows selection of installed J2534 drivers, reports that the device is absent when connecting without physical hardware, and remains responsive after the failed connection attempt.
+- This confirms startup and the no-device error/recovery UI path only. No physical J2534 adapter was available; DiCE/Mongoose hardware validation remains deferred to a future release.
+
+## Current change — PR #189
+- [PR #189](https://github.com/vorlocsev/dvinholm/pull/189) adds a regression test for a failed J2534 Open followed by a successful retry.
+- The test checks that a failed attempt clears connection state and adapter metadata, and that a later successful attempt can connect and disconnect cleanly.
+- The PR's exact-head Windows CI must pass before merge. Do not infer success from a queued or in-progress run.
+
+## Next priorities
+1. Verify exact-head CI for PR #189 and merge only after it passes.
+2. Continue targeted coverage review for a concrete connection/recovery gap; avoid adding redundant tests for lifecycle paths already covered by the virtual adapter.
+3. Complete remaining manual UI checks where practical: invalid DLL path, CAN monitor start/stop, UDS cancellation, and ECU profile import/export.
+4. Publish a versioned release after software tests and packaging checks are green.
+5. Keep physical DiCE/Mongoose validation in a future release; virtual-adapter CI does not establish hardware compatibility.
+
+---
+
 # Latest handoff update — 2026-10-13 (PR #186 merged; main CI verified)
 
 ## Verified current state
