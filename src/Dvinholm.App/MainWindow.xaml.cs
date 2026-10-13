@@ -107,6 +107,7 @@ public sealed partial class MainWindow : Window
             ProfileSelector.ItemsSource = _profileCatalog.All;
             ProfileSelector.DisplayMemberPath = nameof(EcuProfile.Name);
             ProfileSelector.SelectedIndex = -1;
+            ClearProfileInputs();
             EcuInfoText.Text = "No ECU profile selected. Choose a profile to view its metadata.";
         }
         finally
@@ -193,6 +194,16 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private void ClearProfileInputs()
+    {
+        // A cleared catalog/selection must not leave CAN IDs or a DID from a
+        // previously selected profile looking like they belong to no profile.
+        UdsRequestId.Text = string.Empty;
+        UdsResponseId.Text = string.Empty;
+        UdsDid.Text = string.Empty;
+        CanIdFormat.SelectedIndex = -1;
+    }
+
     private void ProfileSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_loadingProfiles)
@@ -200,6 +211,7 @@ public sealed partial class MainWindow : Window
 
         if (ProfileSelector.SelectedItem is not EcuProfile profile)
         {
+            ClearProfileInputs();
             EcuInfoText.Text = "No ECU profile selected.";
             return;
         }
