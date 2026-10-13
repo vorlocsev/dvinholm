@@ -1,3 +1,27 @@
+# Latest handoff update — 2026-10-13 (PR #184 merged; post-merge CI pending)
+
+## Verified current state
+- PR #183, sanitizing unexpected UI exception details, is merged as `94d2749487a48cf04dea85cdf6f98f9e151b06bb`: https://github.com/vorlocsev/dvinholm/pull/183
+- Main CI for PR #183 merge commit passed: [run #38442172350](https://github.com/vorlocsev/dvinholm/actions/runs/38442172350).
+- PR #184, **sanitize UDS client initialization errors**, is merged: https://github.com/vorlocsev/dvinholm/pull/184
+- Both exact-head CI workflows passed on `944e2e82c0c2e15fb2f536634020aea90d60603d`: [run #38442322027](https://github.com/vorlocsev/dvinholm/actions/runs/38442322027) and [run #38442343261](https://github.com/vorlocsev/dvinholm/actions/runs/38442343261).
+- PR #184 merge commit is `689997227b787cb38c5ffed86459c3b2f8bfc66d`. Post-merge main CI must still be checked before calling this commit fully validated.
+- PR #182 documents the prior PR #181 work and now contains this handoff refresh. Its latest exact-head CI passed on `83772c9761d3fb377d7f267f006e18908ac0d500`: [run #38442229306](https://github.com/vorlocsev/dvinholm/actions/runs/38442229306) and [run #38442236240](https://github.com/vorlocsev/dvinholm/actions/runs/38442236240). Its base is behind main after PR #184; refresh/revalidate before merging.
+
+## PR #184 implementation
+- `TryGetUdsClient` no longer passes raw exception messages from ISO-TP/UDS client initialization into the UI.
+- It uses the existing safe exception formatter and a stable fallback message.
+- This is one more targeted hardening step, not a guarantee that every possible diagnostic string is safe.
+
+## Next priorities
+1. Verify post-merge main CI for PR #184.
+2. Refresh PR #182 against current main and rerun exact-head CI before merging the handoff update.
+3. Continue auditing exception paths, CAN filter errors, adapter cleanup, and connection recovery.
+4. Perform manual Windows UI smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, and ECU profile import/export.
+5. Physical DiCE/Mongoose adapter checks remain deferred to a future release; virtual-adapter CI does not establish hardware compatibility.
+
+---
+
 # Latest handoff update — 2026-10-13 (PR #183 merged; post-merge CI pending)
 
 ## Verified current state
