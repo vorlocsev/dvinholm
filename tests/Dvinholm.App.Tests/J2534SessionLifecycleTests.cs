@@ -64,7 +64,7 @@ public sealed class J2534SessionLifecycleTests
     }
 
     [Fact]
-    public async Task UnexpectedReadExceptionDoesNotExposeLocalPath()
+    public void UnexpectedReadExceptionDoesNotExposeLocalPath()
     {
         const string localPath = @"C:\Users\DiagnosticUser\AppData\Local\Temp\vendor-driver.dll";
         using var readErrorReported = new ManualResetEventSlim();
