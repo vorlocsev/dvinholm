@@ -1,22 +1,45 @@
-# Latest handoff update — 2026-10-13 (after PR #173)
+# Latest handoff update — 2026-10-13 (PR #175 CI failure fixed; rerun pending)
+
+## Verified state
+- Main CI for merge commit `c29b71f11f95b8cde7498bbed59ca66384a47db0` passed: [run #38432161527](https://github.com/vorlocsev/dvinholm/actions/runs/38432161527).
+- PR #175 exact-head CI failed at SHA `27f2648c0f980ebb8e92f563f77d7c603625483d`: 418 passed, 1 failed. Root cause: `DisconnectClearsMetadataWhenAdapterUnloadThrowsAndCanRetry` expected the sanitized text, but `DisconnectLocked` still propagated the raw exception from `Unload()`; `DisposeCanRetryAfterAdapterUnloadFailure` also retained the old assertion.
+- Fixed `DisconnectLocked` to replace vendor unload exceptions with a stable generic message while always clearing adapter metadata, preserving retry behavior. Updated the second lifecycle assertion to match.
+- Fix commits: `2ad3868ee14a0ac9d7013b0e8c3a2d9a868135cd` (source), `f7f65edaa320fb7e541caf8d7f6868598811b72c` (test).
+- Exact-head CI reruns are pending: [run #38433235172](https://github.com/vorlocsev/dvinholm/actions/runs/38433235172) and [run #38433240602](https://github.com/vorlocsev/dvinholm/actions/runs/38433240602). Do not merge until the current head has green CI and the PR head SHA is confirmed.
+
+## Next
+1. Wait for both current-head CI runs and inspect any failures.
+2. If green, verify PR #175 remains open/mergeable at its latest SHA, merge, and confirm post-merge main CI.
+3. Continue a narrow review of adapter-returned error strings; avoid blanket suppression of useful diagnostic messages.
+4. Keep Windows UI smoke tests and physical DiCE/Mongoose adapter checks outstanding; physical tests are deferred to a future release.
+
+---
+
+# Latest handoff update — 2026-10-13 (J2534 session exception privacy)
 
 ## Verified repository state
-- PR #171 — file-operation error messages avoid exposing raw local paths — merged as `d3048e336cad5bdb235170aaa717e85d1b60c96d`; exact-head CI and post-merge main CI passed.
-- PR #172 — refreshed the AI handoff — merged as `6d576a8c9438f1fe143f83b263e5673d54e423d0`; exact-head CI and post-merge main CI passed.
-- PR #173 — generic J2534 DLL load failures no longer surface the native loader exception message, which can contain an absolute local path; regression assertions cover the missing-DLL path — merged as `9dfff7c14d15362fb82ba5932abb5beff18e1f73`: [PR #173](https://github.com/vorlocsev/dvinholm/pull/173). Exact-head CI passed: [run #38430200958](https://github.com/vorlocsev/dvinholm/actions/runs/38430200958). Post-merge main CI is queued/running: [run #38431140577](https://github.com/vorlocsev/dvinholm/actions/runs/38431140577); verify its final conclusion before treating the merge commit as fully validated.
-- Current main at this handoff refresh: `9dfff7c14d15362fb82ba5932abb5beff18e1f73`.
-- Physical DiCE/Mongoose adapter validation remains deferred to a future release. Interactive Windows UI smoke tests remain open.
+- PR #173 — redact the native DLL loader exception path — merged as `9dfff7c14d15362fb82ba5932abb5beff18e1f73`; exact-head CI passed: [run #38430200958](https://github.com/vorlocsev/dvinholm/actions/runs/38430200958).
+- PR #174 — AI handoff refresh — merged as `c29b71f11f95b8cde7498bbed59ca66384a47db0); both PR CI runs passed: [run #38431325729](https://github.com/vorlocsev/dvinholm/actions/runs/38431325729), [run #38431344776](https://github.com/vorlocsev/dvinholm/actions/runs/38431344776).
+- Post-merge main CI for PR #173 passed: [run #38431140577](https://github.com/vorlocsev/dvinholm/actions/runs/38431140577). Post-merge main CI for PR #174 was still running at last check: [run #38432161527](https://github.com/vorlocsev/dvinholm/actions/runs/38432161527).
+- Current main at this handoff update: `c29b71f11f95b8cde7498bbed59ca66384a47db0`.
 
-## Follow-up source audit
-- Rechecked the passive ECU discovery workflow: scan is receive-only, uses a monotonic timeout, honors cancellation, preserves observed candidates on cancellation, and reports queue drops as an incomplete scan. Existing tests cover response classification, cancellation/partial results, and receive-queue overflow; no new code change was justified by this pass.
-- Rechecked the UDS UI gate and connect/disconnect guards: active UDS work and passive discovery are serialized, and disconnect is refused while a diagnostic operation is active. No overlapping-operation regression was identified in this pass.
-- Continue reviewing error reporting case by case. Do not blanket-suppress adapter/driver details without a concrete privacy issue, and do not claim real hardware compatibility based on virtual tests.
+## Current change under review
+- New branch: `fix/redact-j2534-session-exception-details`.
+- `J2534Session.ConnectLocked` previously returned `Exception.Message` for unexpected adapter exceptions; vendor/loader exceptions can include local paths. It now returns a stable, actionable generic message and still reports cleanup failures separately.
+- `TryUnloadAdapter` no longer copies arbitrary vendor exception text into user-facing cleanup errors.
+- Added regression coverage that injects a path-bearing adapter exception and asserts the local path is not exposed. Updated cleanup lifecycle assertions for the sanitized cleanup message.
+- CI must pass on the exact PR head before merging. Do not claim local-path privacy coverage is exhaustive: adapter methods that return their own error strings still need case-by-case review.
+
+## Follow-up audit
+- Passive ECU discovery is receive-only and has tests for response classification, cancellation/partial observations, and queue overflow; no new defect was found in this pass.
+- UDS requests and passive discovery are serialized by the UI gate. Manual Windows UI smoke tests remain outstanding.
+- Physical DiCE/Mongoose adapter validation is explicitly deferred to a future release; virtual tests do not establish hardware compatibility.
 
 ## Next priorities
-1. Verify post-merge main CI [run #38431140577](https://github.com/vorlocsev/dvinholm/actions/runs/38431140577).
-2. Continue targeted software-MVP review for connection lifecycle and receive-loop recovery; add regression tests only for concrete uncovered gaps.
-3. Perform manual Windows smoke tests: first launch, no adapter registered, invalid DLL, connect/disconnect, UDS cancellation, and ECU profile import/export.
-4. Run the full CI pipeline on a release candidate when software-MVP criteria are met. Physical DiCE/Mongoose tests remain explicitly deferred to a future release.
+1. Finish CI review and merge the J2534 session exception-redaction change only if the exact-head checks pass.
+2. Continue case-by-case review of adapter-returned error strings without indiscriminately removing useful diagnostics.
+3. Perform manual Windows smoke tests: first launch, missing/invalid adapter DLL, connect/disconnect, UDS cancellation, ECU profile import/export.
+4. Keep physical DiCE/Mongoose tests deferred to a future release and track them as such.
 
 ---
 

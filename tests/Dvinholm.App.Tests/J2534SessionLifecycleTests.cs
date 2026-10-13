@@ -45,6 +45,25 @@ public sealed class J2534SessionLifecycleTests
     }
 
     [Fact]
+    public void UnexpectedAdapterExceptionDoesNotExposeLocalPath()
+    {
+        const string localPath = @"C:\Users\DiagnosticUser\AppData\Local\Temp\vendor-driver.dll";
+        var adapter = new FakeSessionAdapter
+        {
+            Failure = FailurePoint.ReadVersion,
+            ReadVersionExceptionMessage = "Failed to inspect " + localPath
+        };
+        using var session = new Dvinholm.App.J2534Session(adapter);
+
+        var connected = session.Connect("virtual-adapter.dll", 500_000, out var error);
+
+        Assert.False(connected);
+        Assert.Contains("unexpected adapter error", error, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain(localPath, error, StringComparison.OrdinalIgnoreCase);
+        Assert.False(session.IsConnected);
+    }
+
+    [Fact]
     public void FailedConnectionReportsCleanupFailureWithoutThrowing()
     {
         var adapter = new FakeSessionAdapter
@@ -58,7 +77,7 @@ public sealed class J2534SessionLifecycleTests
 
         Assert.False(connected);
         Assert.Contains("simulated open failure", error);
-        Assert.Contains("simulated unload failure", error);
+        Assert.Contains("J2534 adapter cleanup failed due to an unexpected driver error.", error);
         Assert.False(session.IsConnected);
         Assert.Null(session.AdapterVersion);
         Assert.Null(session.AdapterCapabilities);
@@ -98,7 +117,7 @@ public sealed class J2534SessionLifecycleTests
 
         var error = Assert.Throws<InvalidOperationException>(() => session.Disconnect());
 
-        Assert.Contains("simulated unload failure", error.Message);
+        Assert.Contains("J2534 adapter cleanup failed due to an unexpected driver error.", error.Message);
         Assert.False(session.IsConnected);
         Assert.Null(session.AdapterVersion);
         Assert.Null(session.AdapterCapabilities);
@@ -121,7 +140,7 @@ public sealed class J2534SessionLifecycleTests
 
         var error = Assert.Throws<InvalidOperationException>(() => session.Dispose());
 
-        Assert.Contains("simulated unload failure", error.Message);
+        Assert.Contains("J2534 adapter cleanup failed due to an unexpected driver error.", error.Message);
         Assert.False(session.IsConnected);
         Assert.Null(session.AdapterVersion);
         Assert.Null(session.AdapterCapabilities);
@@ -303,6 +322,7 @@ public sealed class J2534SessionLifecycleTests
         private int _readCount;
         private int _readErrorIssued;
         internal FailurePoint Failure { get; init; }
+        internal string? ReadVersionExceptionMessage { get; init; }
         internal bool FailFirstRead { get; init; }
         internal ManualResetEventSlim? ReadEntered { get; init; }
         internal ManualResetEventSlim? AllowReadToFinish { get; init; }
@@ -339,7 +359,7 @@ public sealed class J2534SessionLifecycleTests
         {
             error = string.Empty;
             if (Failure == FailurePoint.ReadVersion)
-                throw new InvalidOperationException("simulated version query failure");
+                throw new InvalidOperationException(ReadVersionExceptionMessage ?? "simulated version query failure");
             return new("firmware", "dll", "api");
         }
         public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
