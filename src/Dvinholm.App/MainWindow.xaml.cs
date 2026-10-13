@@ -97,6 +97,12 @@ public sealed partial class MainWindow : Window
         };
     }
 
+    private static string FormatSafeException(Exception exception, string fallback)
+    {
+        var detail = J2534Native.SanitizeDriverDiagnostic(exception.Message);
+        return string.IsNullOrWhiteSpace(detail) ? fallback : detail;
+    }
+
     private void SetStatus(string text) => StatusText.Text = text;
 
     private static string ProfileCatalogPath => Path.Combine(
@@ -345,7 +351,7 @@ public sealed partial class MainWindow : Window
         catch (Exception ex)
         {
             DiscoveryStatus.Text = "Failed";
-            SetStatus("ECU discovery failed: " + ex.Message);
+            SetStatus("ECU discovery failed: " + FormatSafeException(ex, "unexpected diagnostic error."));
         }
         finally
         {
@@ -587,7 +593,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            SetStatus(operation + " failed: " + ex.Message);
+            SetStatus(operation + " failed: " + FormatSafeException(ex, "unexpected diagnostic error."));
         }
         finally
         {
@@ -651,7 +657,7 @@ public sealed partial class MainWindow : Window
                 SetUdsEnabled(false);
                 DiscoverButton.IsEnabled = false;
                 ConnectButton.Content = "Connect";
-                SetStatus("Disconnect failed; session state reset. Retry Connect to reinitialize the adapter. " + ex.Message);
+                SetStatus("Disconnect failed; session state reset. Retry Connect to reinitialize the adapter. " + FormatSafeException(ex, "unexpected adapter error."));
             }
             finally
             {
@@ -718,7 +724,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            SetStatus("Connection failed: " + ex.Message);
+            SetStatus("Connection failed: " + FormatSafeException(ex, "unexpected adapter error."));
         }
         finally
         {
