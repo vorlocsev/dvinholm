@@ -353,7 +353,7 @@ internal sealed class CanRxDispatcher : IDisposable
                 // dispatcher itself requested it.
                 break;
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Vendor interop exceptions may include machine-specific paths.
                 // Keep the read failure visible without exposing raw driver details.
