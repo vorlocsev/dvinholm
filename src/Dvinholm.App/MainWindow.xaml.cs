@@ -904,19 +904,28 @@ public sealed partial class MainWindow : Window
 
     private async void Csv_Click(object sender, RoutedEventArgs e)
     {
-        var picker = new FileSavePicker();
-        InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
-        picker.SuggestedFileName = "can-log";
-        picker.FileTypeChoices.Add("CSV", new List<string> { ".csv" });
+        try
+        {
+            var picker = new FileSavePicker();
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
+            picker.SuggestedFileName = "can-log";
+            picker.FileTypeChoices.Add("CSV", new List<string> { ".csv" });
 
-        var file = await picker.PickSaveFileAsync();
-        if (file is null) return;
+            var file = await picker.PickSaveFileAsync();
+            if (file is null) return;
 
-        var lines = new List<string> { "timestamp,id,type,dlc,data" };
-        lines.AddRange(_frames.Select(frame =>
-            $"{frame.Timestamp},{frame.Id},{frame.Type},{frame.Dlc},\"{frame.Data}\""));
+            var lines = new List<string> { "timestamp,id,type,dlc,data" };
+            lines.AddRange(_frames.Select(frame =>
+                $"{frame.Timestamp},{frame.Id},{frame.Type},{frame.Dlc},\"{frame.Data}\""));
 
-        await File.WriteAllLinesAsync(file.Path, lines);
-        SetStatus("CSV saved: " + file.Path);
+            await File.WriteAllLinesAsync(file.Path, lines);
+            SetStatus("CSV saved: " + file.Path);
+        }
+        catch (Exception ex)
+        {
+            // Picker and filesystem failures are expected user-environment errors.
+            // Surface them in the status bar instead of escaping an async-void UI handler.
+            SetStatus("CSV export failed: " + ex.Message);
+        }
     }
 }
