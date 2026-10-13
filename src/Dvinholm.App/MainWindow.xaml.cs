@@ -475,7 +475,7 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            error = ex.Message;
+            error = FormatSafeException(ex, "Unable to initialize the UDS channel.");
             return false;
         }
     }
