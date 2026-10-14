@@ -117,7 +117,6 @@ public sealed partial class MainWindow : Window
         try
         {
             ProfileSelector.ItemsSource = _profileCatalog.All;
-            ProfileSelector.DisplayMemberPath = nameof(EcuProfile.Name);
             ProfileSelector.SelectedIndex = -1;
             ClearProfileInputs();
             EcuInfoText.Text = "No ECU profile selected. Choose a profile to view its metadata.";
