@@ -1,3 +1,22 @@
+# Latest handoff update — 2026-10-15 (exact current main artifact manually launched)
+
+## Verified checkpoint
+- Current main checkpoint/artifact under manual test: commit `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`, workflow [#38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679), artifact `Dvinholm-Windows-x86` (ID `11930375485`).
+- User confirmed the exact artifact launched successfully on Windows 11 IoT LTSC 26100.9550.
+- User confirmed the window caption is `Dvinholm — J2534 CAN Diagnostics` and, with no physical adapter connected, the app correctly reports that no device is present.
+- This closes the fresh manual launch/title/no-device smoke check for the exact artifact whose ZIP integrity, SHA-256, and x86 executable architecture were independently verified.
+- Full CI for this exact main commit passed Restore, Build, Test, Publish, and Upload artifact. The artifact is portable/self-contained, not an installer.
+- No release tag or public GitHub Release has been created. This remains a verified main build, not yet a frozen/versioned release candidate.
+- Physical DiCE/Mongoose validation remains deferred to a future release cycle and is not a first software-MVP blocker.
+
+## Next actions
+1. Freeze the software-only MVP scope and choose a version number.
+2. Keep the remaining unverified UI paths (no registered provider and UI-only read-error/cancellation recovery) explicitly documented; do not disable/uninstall drivers just to force the no-provider state.
+3. Run full CI on the exact frozen release-candidate SHA and verify the uploaded artifact and hash against that candidate.
+4. Align release notes, tag, commit, and artifact; publish only after explicit user approval.
+
+---
+
 # Latest handoff update — 2026-10-15 (current main CI and artifact independently verified)
 
 ## Verified current checkpoint
