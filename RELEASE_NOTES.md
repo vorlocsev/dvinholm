@@ -18,16 +18,16 @@ Dvinholm is a Windows x86 J2534 CAN monitor and read-only UDS diagnostic client.
 
 ## Download and run
 
-The CI artifact is a **portable build output, not an installer**. Obtain Dvinholm-Windows-x86 from the [successful main CI run](https://github.com/vorlocsev/dvinholm/actions/runs/38611124491), extract the full archive to a normal folder, and launch Dvinholm.App.exe.
+The CI artifact is a **portable build output, not an installer**. Obtain Dvinholm-Windows-x86 from the [successful main CI run](https://github.com/vorlocsev/dvinholm/actions/runs/38612886605), extract the full archive to a normal folder, and launch Dvinholm.App.exe.
 
 Install the adapter manufacturer's driver separately. The app is x86 and requires a compatible 32-bit J2534 DLL; it cannot load a 64-bit-only DLL. See the README for detailed build, driver, and troubleshooting instructions.
 
 ## Validation recorded for this draft
 
-- Main commit: 65ea0af8447bd746a16261199eba4952b1753c6c.
-- Full CI run: [#38611124491](https://github.com/vorlocsev/dvinholm/actions/runs/38611124491) — Restore, Build, Test, Publish, and Upload artifact succeeded.
-- Artifact name: Dvinholm-Windows-x86; size: 66,752,774 bytes.
-- GitHub-reported artifact digest: sha256:d836c8f4c965d6fbbfe47b76b18c39a1f3c5874cb63f00466a44a9998392ed98. This is the service-reported digest; it has not been independently recalculated from a locally downloaded ZIP in this checkpoint.
+- Main commit: 1c9f1977ce54b3d03388c1675cc43af709d6a12d.
+- Full CI run: [#38612886605](https://github.com/vorlocsev/dvinholm/actions/runs/38612886605) — Restore, Build, Test, Publish, and Upload artifact succeeded.
+- Artifact name: Dvinholm-Windows-x86; size: 66,752,947 bytes.
+- GitHub-reported artifact digest: sha256:70b48e99371fc6b7f7cfb46635ccd0016123a14cf5c52e5b103e1bb2962acd3d. This is the service-reported digest; it has not been independently recalculated from a locally downloaded ZIP in this checkpoint.
 - User-confirmed manual smoke tests on Windows 11 IoT LTSC 26100.9550 include app startup, driver discovery, absent-device reporting, profile import/validation/export/re-import and persistence checks. Some UI-only recovery paths remain unverified; the manual checks were not all performed on the exact artifact from this latest run.
 
 ## Known limitations
