@@ -45,6 +45,7 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        Title = LatestBuildUpdater.CurrentWindowTitle;
         LoadSavedProfileCatalog();
         FramesView.ItemsSource = _frames;
         EcusView.ItemsSource = _ecus;
