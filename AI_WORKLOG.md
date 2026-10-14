@@ -12,13 +12,13 @@
 - Updated metadata parsing to extract the full SHA and CI run number separately, preserving exact-commit comparisons.
 
 ## Validation status
-- Changes are committed on the feature branch; CI and manual Windows UI validation are pending.
+- Pull-request CI passed on commit `cbc5ef8c6ae47f35820923770d954e2aec54d0e6` (run #1522); build, tests, publish, and artifact upload all succeeded. Manual Windows UI validation is still pending.
 - Do not claim the title or current-build label verified on Windows until the new artifact is launched.
 - Physical J2534/vehicle testing remains deferred; this UI change does not alter that scope.
 
 ## Next actions
-1. Run full Windows x86 CI on the PR head and fix any failures.
-2. If CI passes, ask the user to launch the artifact on Windows and confirm the caption is `Dvinholm CI #<number>`, the app header no longer contains the removed heading/description, and the current build SHA is shown as 7 characters.
+1. Update this work log to reflect the successful CI run; this documentation-only commit triggers another CI run.
+2. Once that CI run passes, ask the user to launch the artifact on Windows and confirm the caption is `Dvinholm CI #<number>`, the app header no longer contains the removed heading/description, and the current build SHA is shown as 7 characters.
 3. Keep the updater targeting latest successful `main` CI until the later explicit switch to published Releases.
 
 ---
