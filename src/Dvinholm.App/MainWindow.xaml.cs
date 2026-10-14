@@ -176,7 +176,7 @@ public sealed partial class MainWindow : Window
         {
             var stagingDirectory = await LatestBuildUpdater.DownloadAndPrepareAsync(build, progress);
             SetStatus($"Replacing application files with {build.DisplayVersion}…");
-            LatestBuildUpdater.StartReplacement(stagingDirectory, Environment.ProcessId);
+            LatestBuildUpdater.StartReplacement(stagingDirectory, AppContext.BaseDirectory, Environment.ProcessId);
             Close();
         }
         catch (Exception ex)
