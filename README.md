@@ -249,7 +249,7 @@ Status is based on repository code, automated tests, and explicitly recorded man
 - [ ] Freeze the release-candidate scope; defer nonessential features and vehicle-specific assumptions.
 - [ ] Run the complete CI workflow on the exact release-candidate commit and verify restore, build, all tests, x86 publish, and artifact upload.
 - [ ] Review the release artifact and installation instructions one final time; ensure the source tag/commit matches the validated candidate.
-- [x] User confirmed that the latest available Windows build launches on Windows 11 IoT LTSC 26100.9550; still match the exact local ZIP to a frozen candidate before publishing.
+- [x] User manually launched the exact latest `Dvinholm-Windows-x86` artifact from [run #38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679), built from `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`, on Windows 11 IoT LTSC 26100.9550. The app opened successfully, showed `Dvinholm — J2534 CAN Diagnostics`, and correctly reported that no physical device was present (user-confirmed 2026-10-15). The release-candidate commit/version must still be frozen and aligned with its artifact before publishing.
 - [ ] Create a versioned Git tag and GitHub Release with concise release notes: supported read-only features, install/driver requirements, known limitations, and tested environments.
 - [ ] Include the virtual-adapter test limitation and the explicit statement that real-hardware compatibility has not yet been verified.
 - [ ] After publishing, verify that the release page and artifact are accessible and that the documented installation steps match the published files.
