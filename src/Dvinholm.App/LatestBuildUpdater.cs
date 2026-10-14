@@ -96,7 +96,9 @@ internal static class LatestBuildUpdater
 
     public static async Task<LatestBuildInfo> GetLatestSuccessfulBuildAsync(CancellationToken cancellationToken = default)
     {
-        var runsUrl = $"https://api.github.com/repos/{Repository}/actions/workflows/{WorkflowId}/runs?branch=main&status=success&per_page=20";
+        // Deliberately do not filter by branch: the user wants the newest successful
+        // CI build from any branch, including a feature branch or pull request.
+        var runsUrl = $"https://api.github.com/repos/{Repository}/actions/workflows/{WorkflowId}/runs?per_page=100";
         using var runsResponse = await Http.GetAsync(runsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         runsResponse.EnsureSuccessStatusCode();
         await using var runsStream = await runsResponse.Content.ReadAsStreamAsync(cancellationToken);
@@ -105,59 +107,50 @@ internal static class LatestBuildUpdater
         if (!runsJson.RootElement.TryGetProperty("workflow_runs", out var runs) || runs.ValueKind != JsonValueKind.Array)
             throw new InvalidDataException("GitHub did not return the CI workflow run list.");
 
-        JsonElement latestRun = default;
         foreach (var run in runs.EnumerateArray())
         {
-            if (ReadString(run, "head_branch") == "main" &&
-                ReadString(run, "status") == "completed" &&
-                ReadString(run, "conclusion") == "success")
+            if (ReadString(run, "status") != "completed" ||
+                ReadString(run, "conclusion") != "success")
+                continue;
+
+            var sha = ReadString(run, "head_sha");
+            if (sha.Length != 40 || !sha.All(Uri.IsHexDigit))
+                continue;
+
+            var runId = ReadInt64(run, "id");
+            var runNumber = checked((int)ReadInt64(run, "run_number"));
+            var createdAt = ReadString(run, "created_at");
+            var artifactsUrl = $"https://api.github.com/repos/{Repository}/actions/runs/{runId}/artifacts";
+            using var artifactsResponse = await Http.GetAsync(artifactsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            artifactsResponse.EnsureSuccessStatusCode();
+            await using var artifactsStream = await artifactsResponse.Content.ReadAsStreamAsync(cancellationToken);
+            using var artifactsJson = await JsonDocument.ParseAsync(artifactsStream, cancellationToken: cancellationToken);
+
+            if (!artifactsJson.RootElement.TryGetProperty("artifacts", out var artifacts) || artifacts.ValueKind != JsonValueKind.Array)
+                continue;
+
+            foreach (var artifact in artifacts.EnumerateArray())
             {
-                latestRun = run;
-                break;
+                if (ReadString(artifact, "name") != ArtifactName || ReadBoolean(artifact, "expired"))
+                    continue;
+
+                var size = ReadInt64(artifact, "size_in_bytes");
+                if (size <= 0 || size > MaximumDownloadBytes)
+                    continue;
+
+                var digest = ReadString(artifact, "digest");
+                return new LatestBuildInfo(
+                    sha.ToLowerInvariant(),
+                    runNumber,
+                    runId,
+                    ReadInt64(artifact, "id"),
+                    size,
+                    digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ? digest.ToLowerInvariant() : null,
+                    createdAt);
             }
         }
 
-        if (latestRun.ValueKind == JsonValueKind.Undefined)
-            throw new InvalidOperationException("No successful Windows x86 CI run was found on main.");
-
-        var sha = ReadString(latestRun, "head_sha");
-        if (sha.Length != 40 || !sha.All(Uri.IsHexDigit))
-            throw new InvalidDataException("The latest successful CI run has an invalid commit SHA.");
-
-        var runId = ReadInt64(latestRun, "id");
-        var runNumber = checked((int)ReadInt64(latestRun, "run_number"));
-        var createdAt = ReadString(latestRun, "created_at");
-        var artifactsUrl = $"https://api.github.com/repos/{Repository}/actions/runs/{runId}/artifacts";
-        using var artifactsResponse = await Http.GetAsync(artifactsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        artifactsResponse.EnsureSuccessStatusCode();
-        await using var artifactsStream = await artifactsResponse.Content.ReadAsStreamAsync(cancellationToken);
-        using var artifactsJson = await JsonDocument.ParseAsync(artifactsStream, cancellationToken: cancellationToken);
-
-        if (!artifactsJson.RootElement.TryGetProperty("artifacts", out var artifacts) || artifacts.ValueKind != JsonValueKind.Array)
-            throw new InvalidDataException("GitHub did not return the latest CI artifact list.");
-
-        foreach (var artifact in artifacts.EnumerateArray())
-        {
-            if (ReadString(artifact, "name") != ArtifactName)
-                continue;
-            if (ReadBoolean(artifact, "expired"))
-                throw new InvalidOperationException("The latest CI artifact has expired. A new successful main build is required.");
-            var size = ReadInt64(artifact, "size_in_bytes");
-            if (size <= 0 || size > MaximumDownloadBytes)
-                throw new InvalidDataException("The latest CI artifact has an invalid or excessive size.");
-
-            var digest = ReadString(artifact, "digest");
-            return new LatestBuildInfo(
-                sha.ToLowerInvariant(),
-                runNumber,
-                runId,
-                ReadInt64(artifact, "id"),
-                size,
-                digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ? digest.ToLowerInvariant() : null,
-                createdAt);
-        }
-
-        throw new InvalidOperationException("The latest successful main CI run has no Windows x86 artifact.");
+        throw new InvalidOperationException("No successful CI run with a non-expired Windows x86 artifact was found across the repository branches.");
     }
 
     public static async Task<string> DownloadAndPrepareAsync(
