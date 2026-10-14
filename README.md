@@ -191,7 +191,8 @@ Status is based on repository code, automated tests, and explicitly recorded man
 
 - [x] Manually import a valid JSON profile catalog and confirm the profile name appears in the selection list after resolving the initial display issue (user-confirmed 2026-10-14). Full request/response ID, addressing-format, and candidate-DID reflection still needs verification.
 - [x] Manually import a malformed JSON file and confirm the UI shows an import error and the previously imported profile remains present/selectable afterward (user-confirmed 2026-10-14).
-- [ ] Exercise invalid fields, duplicate IDs, and an empty catalog; confirm invalid data is rejected and the UI remains in a valid state.
+- [x] Manually import syntactically valid JSON with an invalid CAN request ID (`requestId: "ZZZZ"`); the UI reported an import error (user-confirmed 2026-10-14). Whether the prior profile remains present/selectable after this specific validation failure is not yet confirmed.
+- [ ] Exercise other invalid fields, duplicate IDs, and an empty catalog; confirm invalid data is rejected and the UI remains in a valid state.
 - [ ] Save a catalog, restart the app, and verify persistence; export it and verify that the exported JSON can be imported again.
 - [ ] Verify profile replacement/clearing does not leave stale CAN IDs, DID values, or an obsolete selection in the UI.
 - [ ] Fix only demonstrated UX or state defects and add focused regression tests for each confirmed defect.
