@@ -823,3 +823,10 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 - The README Phase 1 checklist now marks empty-catalog import/display complete. Other invalid fields and profile replacement/clearing behavior remain open.
 - Next manual check: import the one-profile test catalog again, select it, then import `[]` and verify the selection and dependent CAN ID/DID UI fields are cleared rather than left stale. If possible, restart after importing `[]` and confirm the empty catalog persists. Then test replacing the empty catalog with the test profile.
 - Physical-adapter validation remains deferred to a future release and is not a blocker for the first software MVP.
+
+
+## Follow-up manual result — empty catalog persists across restart (2026-10-14)
+- After importing the empty catalog `[]`, the user restarted Dvinholm and confirmed the profile list remained empty.
+- Confirmed: empty-catalog import/display and persistence across restart. This does not by itself verify whether stale profile selection, CAN IDs, or DID values are cleared from every dependent UI field.
+- README Phase 1 now records the persistence result. Next targeted UI check: import/select the synthetic `Example ECM (test only)` profile, then import `[]` and inspect all profile-dependent selection/CAN ID/DID fields for stale values. Then import the synthetic profile again to verify recovery from empty state.
+- Physical-adapter validation remains deferred to a future release and is not a blocker for the first software MVP.
