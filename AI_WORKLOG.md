@@ -786,3 +786,9 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 ## Follow-up manual result — malformed JSON import
 - User confirmed the previously imported valid ECU profile remained present after the malformed JSON import error.
 - This verifies error presentation plus preservation of the visible prior profile/selection in this manual scenario. It does not cover invalid-but-well-formed fields, duplicate IDs, empty catalogs, restart persistence, or export/re-import.
+
+
+## Follow-up manual result — invalid CAN request ID import (2026-10-14)
+- The user imported syntactically valid JSON with `requestId: "ZZZZ"` and reported that the UI displayed an import error.
+- This confirms that this invalid CAN ID input was rejected in the manual UI scenario. It does not yet confirm whether the previously imported valid profile remains present/selectable after this specific failure.
+- Other invalid fields, duplicate IDs, empty catalog, restart persistence, and export/re-import remain unverified.
