@@ -847,3 +847,11 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 - The remaining manual check is limited to the single synthetic `Example ECM (test only)` profile: confirm request ID `7E0`, response ID `7E8`, 11-bit addressing, and a candidate DID such as `F187` or `F190` appear in the corresponding fields after selecting it. No physical adapter or diagnostic request is needed.
 - The README Phase 1 checklist now explicitly separates single-profile field mapping from the optional multi-profile switching check. Existing user-confirmed empty-catalog clearing/recovery result remains recorded as complete.
 - Once field mapping is confirmed, proceed to Phase 2 by auditing existing virtual-adapter smoke/recovery coverage and CI gaps; do not duplicate tests already present. Physical J2534 hardware validation remains deferred to a future release.
+
+
+## Follow-up manual result — selected profile field mapping (2026-10-14)
+
+- User confirmed the displayed fields match the synthetic `Example ECM (test only)` profile: request CAN ID `7E0`, response CAN ID `7E8`, 11-bit addressing, and one of the profile's candidate DIDs (`F187`/`F190`).
+- Phase 1 single-profile import/selection/field mapping is now manually checked alongside validation failures, persistence, export/re-import, and empty-catalog replacement/clearing.
+- Switching between two profiles remains unverified because only one profile is currently available; do not block the MVP on that optional check.
+- Next: audit the existing virtual-adapter and recovery tests for actual gaps before changing code. Do not duplicate coverage already present. Physical J2534 adapter testing remains deferred to a future release.
