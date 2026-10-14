@@ -48,6 +48,23 @@ internal static class LatestBuildUpdater
         }
     }
 
+    public static string CurrentDisplayVersion
+    {
+        get
+        {
+            var value = CurrentVersion;
+            var plus = value.LastIndexOf('+');
+            if (plus >= 0)
+            {
+                var suffix = value[(plus + 1)..];
+                if (suffix.Length == 40 && suffix.All(Uri.IsHexDigit))
+                    return $"{value[..plus]} · {suffix[..7]}";
+            }
+
+            return value;
+        }
+    }
+
     public static string? CurrentCommitSha
     {
         get
