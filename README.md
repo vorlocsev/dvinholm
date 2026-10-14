@@ -181,7 +181,8 @@ Status is based on repository code, automated tests, and explicitly recorded man
 
 - [x] Complete the source-level diagnostic-data exposure review: no persistent diagnostic logger or automatic telemetry was found in the reviewed paths; explicit VIN reads and user-initiated CAN CSV export may contain identifying data.
 - [x] PR #202 merged as `a8ddf1c735865566af0c5be222be1e9b956b3528`; exact-head CI passed: [run #38508715796](https://github.com/vorlocsev/dvinholm/actions/runs/38508715796).
-- [x] Post-merge `main` CI passed on the merge commit: [run #38509199082](https://github.com/vorlocsev/dvinholm/actions/runs/38509199082).
+- [x] Post-merge `main` CI passed on PR #202 merge commit: [run #38509199082](https://github.com/vorlocsev/dvinholm/actions/runs/38509199082).
+- [x] PR #203 merged as `8a886fb36f66b6c14f3befefea22294667bfc28d`; post-merge `main` CI passed: [run #38510453531](https://github.com/vorlocsev/dvinholm/actions/runs/38510453531).
 - [x] Rechecked current `main`, README roadmap, and AI handoff before continuing.
 
 **Exit gate:** PR #202 is merged, its exact head passed CI, and post-merge `main` CI is green.
@@ -209,8 +210,8 @@ Status is based on repository code, automated tests, and explicitly recorded man
 
 ### Phase 3 — packaging and clean-install verification
 
-- [x] Confirm the successful `main` CI run uploaded a non-expired artifact named `Dvinholm-Windows-x86` (66,752,802 bytes; run #38509199082). This confirms artifact publication only; its internal file list/architecture and launch entry point still need direct inspection.
-- [ ] Inspect the CI-published artifact contents: architecture, required files, launch entry point, and suitability for the documented installation procedure.
+- [x] Confirm the successful `main` CI run uploaded a non-expired artifact named `Dvinholm-Windows-x86` (66,752,802 bytes; run #38509199082).
+- [x] Inspect the artifact ZIP directly: archive integrity passed (`testzip` returned no errors), 476 entries found, and `Dvinholm.App.exe` plus `RestartAgent.exe` are present. Both PE headers identify machine `0x014c` (x86). SHA-256: `4ee5d67302d31c38f83d07884673d28674b2fbed8088cfdf6cc1bf0b752fdc27`.
 - [ ] Verify clean installation/first launch on the supported Windows baseline. The existing Windows 11 IoT LTSC 26100.9550 check is a startup/no-device smoke test, not a clean-install matrix.
 - [ ] Verify launch behavior when no physical adapter is present and when no provider is registered; document how to select a vendor 32-bit J2534 DLL manually.
 - [ ] Check README instructions against the actual published artifact and ensure troubleshooting covers DLL architecture/dependencies, missing adapter, connection failures, and absent ECU responses.
