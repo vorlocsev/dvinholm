@@ -55,7 +55,11 @@ internal static class LatestBuildUpdater
             var value = CurrentVersion;
             var plus = value.LastIndexOf('+');
             var sha = GetEmbeddedCommitSha(value, plus);
-            return plus >= 0 && sha is not null
+            var runNumber = CurrentCiRunNumber;
+            if (sha is not null && runNumber is int ciRun)
+                return $"CI #{ciRun} · {sha[..7]}";
+
+            return sha is not null
                 ? $"{value[..plus]} · {sha[..7]}"
                 : value;
         }
