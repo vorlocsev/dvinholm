@@ -193,7 +193,8 @@ Status is based on repository code, automated tests, and explicitly recorded man
 - [x] Manually import a malformed JSON file and confirm the UI shows an import error and the previously imported profile remains present/selectable afterward (user-confirmed 2026-10-14).
 - [x] Manually import syntactically valid JSON with an invalid CAN request ID (`requestId: "ZZZZ"`); the UI reported an import error and the previously imported valid profile remained present (user-confirmed 2026-10-14).
 - [ ] Exercise other invalid fields, duplicate IDs, and an empty catalog; confirm invalid data is rejected and the UI remains in a valid state.
-- [ ] Save a catalog, restart the app, and verify persistence; export it and verify that the exported JSON can be imported again.
+- [x] Restart the app and confirm the imported profile remains present (user-confirmed 2026-10-14). This verifies persistence for the tested profile; broader catalog/multiple-profile persistence is not yet covered.
+- [ ] Export the catalog and verify that the exported JSON can be imported again.
 - [ ] Verify profile replacement/clearing does not leave stale CAN IDs, DID values, or an obsolete selection in the UI.
 - [ ] Fix only demonstrated UX or state defects and add focused regression tests for each confirmed defect.
 - [ ] Keep the built-in catalog empty of unverified vehicle-specific CAN IDs/DIDs; user-supplied candidate profiles must not be presented as proof that an ECU supports an operation.
