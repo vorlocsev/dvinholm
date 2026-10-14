@@ -10,7 +10,7 @@ Windows CAN monitor and read-only UDS diagnostic client for Volvo interfaces tha
 - Artifact: `Dvinholm-Windows-x86`, 66,753,007 bytes; [artifact details](https://api.github.com/repos/vorlocsev/dvinholm/actions/artifacts/11930375485).
 - GitHub-reported digest and independently calculated local ZIP SHA-256 match: `sha256:793bb88455ca67f1517a7fc101447ba972a00d79bc49daf9556cd9a220c8c384`.
 - Downloaded ZIP passed integrity checking (476 entries). Both `Dvinholm.App.exe` and `RestartAgent.exe` are PE x86 (`0x014c`).
-- This is a portable self-contained x86 build, not an installer. The exact artifact has not yet received a fresh manual launch test; earlier manual checks were on previous artifacts.
+- This is a portable self-contained x86 build, not an installer. The exact artifact from run #38640011679 was manually launched successfully by the user on Windows 11 IoT LTSC 26100.9550; the window title and no-physical-device status were confirmed (2026-10-15).
 - This CI checkpoint is not a published/versioned release. No tag or public GitHub Release has been created.
 
 ## Supported interfaces
@@ -186,7 +186,7 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 
 ## Roadmap to first software MVP release
 
-Status is based on repository code, automated tests, and explicitly recorded manual checks. Updated 2026-10-14. Core CAN/ISO-TP/UDS transport and J2534 lifecycle/recovery have broad virtual-adapter regression coverage. The Windows 11 IoT LTSC 26100.9550 startup/no-device smoke check is confirmed. Physical-adapter compatibility remains unverified and is intentionally not a blocker for this first software MVP.
+Status is based on repository code, automated tests, and explicitly recorded manual checks. Updated 2026-10-15. Core CAN/ISO-TP/UDS transport and J2534 lifecycle/recovery have broad virtual-adapter regression coverage. The Windows 11 IoT LTSC 26100.9550 startup/no-device smoke check is confirmed. Physical-adapter compatibility remains unverified and is intentionally not a blocker for this first software MVP.
 
 ### Phase 0 — close current audit and stabilize main
 - [x] Latest main checkpoint after PR #212: commit `65ea0af8447bd746a16261199eba4952b1753c6c`; full post-merge Windows CI passed: [run #38611124491](https://github.com/vorlocsev/dvinholm/actions/runs/38611124491).
