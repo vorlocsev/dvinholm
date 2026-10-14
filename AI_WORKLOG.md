@@ -1,3 +1,25 @@
+# Latest handoff update — 2026-10-14 (PR #197 and #198 merged; post-merge CI pending)
+
+## Verified current state
+- PR [#198 — Handle registry security exceptions during J2534 discovery](https://github.com/vorlocsev/dvinholm/pull/198) merged into `main` as `b821dd5b927dce918e5d140d14be40a54325bbf7`.
+  - Exact-head CI passed: [run #38505982457](https://github.com/vorlocsev/dvinholm/actions/runs/38505982457) and [run #38505973732](https://github.com/vorlocsev/dvinholm/actions/runs/38505973732).
+  - Registry discovery now tolerates `SecurityException` alongside unauthorized-access and I/O failures, including failure to open the registry root and failure on an individual vendor entry.
+  - Regression coverage exercises all three root-read failure types and verifies that discovery can continue with another root.
+- PR [#197 — Update roadmap and AI handoff for J2534 discovery fixes](https://github.com/vorlocsev/dvinholm/pull/197) merged as `e5041c74cf107b886f0bdc3fe3afe0d9e136191d`.
+  - Exact-head CI passed: [run #38505934699](https://github.com/vorlocsev/dvinholm/actions/runs/38505934699) and [run #38505925624](https://github.com/vorlocsev/dvinholm/actions/runs/38505925624).
+- Post-merge CI for current `main` is not yet confirmed:
+  - [run #38506492221](https://github.com/vorlocsev/dvinholm/actions/runs/38506492221) for `b821dd5b927dce918e5d140d14be40a54325bbf7`.
+  - [run #38506505103](https://github.com/vorlocsev/dvinholm/actions/runs/38506505103) for `e5041c74cf107b886f0bdc3fe3afe0d9e136191d`.
+- Physical DiCE/Mongoose adapter tests remain deferred to a future release cycle and are not a current software-MVP blocker. User confirmed Windows 11 IoT LTSC 26100.9550 startup, adapter-driver discovery/selection, and graceful missing-device reporting, but has not tested with a physical adapter.
+
+## Next steps
+1. Confirm both post-merge `main` CI runs above finish successfully.
+2. Inspect PR #194 (Windows 11 IoT LTSC manual smoke-test documentation) and decide whether its status/content should be updated based on the user's observed results.
+3. Continue the targeted audit on a concrete user-facing gap in ECU profile import/export/selection or actionable connection/read-error reporting; inspect source and existing tests before changing code.
+4. Keep the roadmap honest: virtual-adapter CI and successful startup do not establish physical DiCE/Mongoose hardware compatibility.
+
+---
+
 # Latest handoff update — 2026-10-14 (PR #195 and #196 merged)
 
 ## Verified current state
