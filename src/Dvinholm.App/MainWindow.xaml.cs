@@ -144,9 +144,6 @@ public sealed partial class MainWindow : Window
 
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentVersion} · Available: {latest.DisplayVersion}";
             UpdateButton.Content = _updateAvailable ? "Download and launch update" : "Check again";
-            SetStatus(_updateAvailable
-                ? $"New CI build available: {latest.DisplayVersion} (commit {latest.CommitSha})."
-                : $"Already running the latest successful main build ({latest.DisplayVersion}).");
         }
         catch (Exception ex)
         {
@@ -154,7 +151,6 @@ public sealed partial class MainWindow : Window
             _updateAvailable = false;
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentVersion} · Latest CI build: unavailable";
             UpdateButton.Content = "Retry update check";
-            SetStatus("Could not check for updates. Check your internet connection and try again.");
         }
         finally
         {
