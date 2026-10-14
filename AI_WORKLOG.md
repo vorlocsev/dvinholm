@@ -640,3 +640,85 @@ Physical DiCE/Mongoose tests remain deferred to a future release and are not a b
 - Preserve links to PRs and workflow runs. Record failures and their fixes honestly.
 - Do not mark an item complete merely because code was written; require tests/CI evidence appropriate to the item.
 - Keep physical adapter validation under the future-release section until explicitly rescheduled.
+
+
+---
+
+# Latest handoff update — 2026-10-14 (diagnostic-data exposure audit)
+
+## Verified current state
+- Main at the start of this audit: `b760e05d1b080b3128595566a960db1dc1a9dddf` (PR #201 merged).
+- Main CI for that SHA passed: [run #38507992192](https://github.com/vorlocsev/dvinholm/actions/runs/38507992192).
+- Audited current `MainWindow.xaml.cs`, `J2534Native.cs`, `CanBus.cs`, `UdsClient.cs`, `UdsEcuDiscovery.cs`, and `IsoTpChannel.cs` for diagnostic logging, exception presentation, and persisted data.
+
+## Findings
+- No persistent diagnostic logger or automatic telemetry path was found in the reviewed application code.
+- Driver diagnostics pass through `SanitizeDriverDiagnostic`, which redacts common Windows, UNC, and Unix-style local paths, strips control characters, and bounds output length. This is targeted path sanitization, not a universal secret-redaction guarantee.
+- Unexpected UDS initialization/discovery errors use the existing safe formatter. Negative UDS responses show a structured service/NRC description.
+- VIN is displayed as the result of the user's explicit Read VIN action; CAN frames can be persisted only through the user's explicit CSV export action. These are intentional diagnostic outputs, but exports may contain identifying data and should be redacted before sharing.
+- No concrete defect was identified in this source-level audit. The README roadmap records the audit as complete with the above scope and limitation; repeat it if persistent logging or telemetry is introduced.
+
+## Remaining priorities
+1. Realistic interactive ECU profile import/export/selection checks remain pending; unit tests do not replace a manual UI workflow.
+2. Repeatable application-level smoke tests for first launch, no registered adapter, connect/disconnect, and diagnostic cancellation remain release-readiness work where test seams permit.
+3. Run release-candidate CI and publish versioned release notes when the software MVP checklist is ready.
+4. Physical DiCE/Mongoose validation remains deferred to a future release cycle; virtual-adapter CI does not establish physical hardware compatibility.
+
+
+---
+
+# Roadmap to first software MVP release — 2026-10-14
+
+This sequence is also reflected in the README roadmap. Do not repeat completed transport/lifecycle work unless a concrete regression or defect appears.
+
+## Phase 0 — close audit and stabilize main
+- [x] Source-level diagnostic-data exposure review completed; no persistent logger or automatic telemetry found in the reviewed code.
+- [ ] Merge PR #202 only after exact-head CI passes.
+- [ ] Verify post-merge main CI and record the resulting SHA.
+
+## Phase 1 — ECU profile workflows
+- [ ] Manually exercise valid import, profile selection, invalid JSON/fields/duplicate IDs, empty catalog, persistence across restart, export/re-import, and catalog replacement/clearing.
+- [ ] Verify changing or clearing a profile cannot leave stale CAN IDs/DIDs selected in the UI.
+- [ ] Add regression coverage only for confirmed defects. Keep vehicle-specific built-in CAN IDs/DIDs unpopulated without reliable sources or measured evidence.
+
+**Gate:** end-to-end profile workflows work or any UI-only gaps are clearly documented.
+
+## Phase 2 — repeatable software smoke/recovery checks
+- [ ] Cover first-run and no-registered-J2534-provider behavior where test seams permit.
+- [ ] Exercise connect/disconnect, failed-connect cleanup, read-error recovery, and diagnostic cancellation with the virtual adapter.
+- [ ] Verify the UI/session returns to a truthful recoverable state after cancellation/failure.
+- [ ] Avoid duplicate lifecycle/timeout/late-response/reconnect tests already in the suite.
+- [ ] Require successful restore, build, test, x86 publish, and artifact upload on the exact candidate SHA.
+
+**Gate:** no known blocking software defects and repeatable coverage for core software paths.
+
+## Phase 3 — packaging and installation
+- [ ] Inspect published artifact architecture and contents; verify the README install path matches it.
+- [ ] Run clean-install/first-launch checks on the supported Windows baseline. Existing Windows 11 IoT LTSC 26100.9550 evidence is startup/no-device only, not a clean-install matrix.
+- [ ] Verify no-adapter/no-provider behavior and manual selection of a vendor 32-bit J2534 DLL.
+- [ ] Document dependencies, troubleshooting, read-only scope, and limitations of virtual-adapter CI.
+
+**Gate:** a new user can install/launch the published artifact and understand missing-adapter and no-ECU-response states.
+
+## Phase 4 — release candidate and public release
+- [ ] Freeze release scope; defer nonessential features and vehicle-specific assumptions.
+- [ ] Run full Windows x86 CI on the exact release-candidate commit.
+- [ ] Confirm tag/commit matches the validated artifact.
+- [ ] Publish a versioned GitHub Release with supported features, installation requirements, known limitations, and tested environments.
+- [ ] Explicitly state that real J2534 hardware, specific vehicles/ECUs, electrical compatibility, and vendor-driver behavior remain unverified.
+- [ ] Verify the public release page and artifact are accessible and instructions match the published files.
+
+**Release acceptance:** no known blocking defects; exact candidate CI is green; profile and no-adapter workflows are checked/documented; release artifact/tag/docs align; read-only scope and hardware-validation status are clear.
+
+## Future cycle — physical hardware (not a first-release blocker)
+- [ ] Passive CAN capture with a real 32-bit J2534 adapter.
+- [ ] Repeated connect/disconnect/recovery on DiCE and/or Mongoose JLR Pro.
+- [ ] Verify baud rate, native read errors, vendor DLL behavior, and hardware filters.
+- [ ] Read VIN/DTC only on ECUs with confirmed support and documented addressing.
+- [ ] Record adapter/driver/ECU details and redact identifying data.
+
+## Execution rules
+1. Re-check actual GitHub main/PR/Actions state before each step; this handoff may be stale.
+2. Do not mark a phase complete based on code changes alone; require appropriate tests or recorded manual evidence.
+3. For code fixes, add targeted regression tests, wait for exact-head CI success, merge, and verify post-merge main CI.
+4. Physical-adapter validation remains a future-release task unless the release scope is explicitly changed.
