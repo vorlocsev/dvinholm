@@ -248,7 +248,7 @@ internal static class LatestBuildUpdater
         var localRoot = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Dvinholm");
-        var destination = Path.GetFullPath(destinationDirectory);
+        var destination = Path.GetFullPath(destinationDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
         Directory.CreateDirectory(localRoot);
 
         var scriptPath = Path.Combine(Path.GetTempPath(), $"dvinholm-update-{Guid.NewGuid():N}.ps1");
