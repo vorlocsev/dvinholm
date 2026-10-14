@@ -53,6 +53,9 @@ internal sealed class EcuProfile
     internal string Source { get; }
     internal bool IsVerified { get; }
     internal IReadOnlySet<ushort> ReadableDataIdentifiers { get; }
+
+    // WinUI ComboBox falls back to ToString() when no public display property is bound.
+    public override string ToString() => Name;
 }
 
 /// <summary>
