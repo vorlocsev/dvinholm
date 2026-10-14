@@ -183,6 +183,7 @@ Status is based on repository code, automated tests, and explicitly recorded man
 - [x] PR #202 merged as `a8ddf1c735865566af0c5be222be1e9b956b3528`; exact-head CI passed: [run #38508715796](https://github.com/vorlocsev/dvinholm/actions/runs/38508715796).
 - [x] Post-merge `main` CI passed on PR #202 merge commit: [run #38509199082](https://github.com/vorlocsev/dvinholm/actions/runs/38509199082).
 - [x] PR #203 merged as `8a886fb36f66b6c14f3befefea22294667bfc28d`; post-merge `main` CI passed: [run #38510453531](https://github.com/vorlocsev/dvinholm/actions/runs/38510453531).
+- [x] PR #206 merged as `0b3ca883511e4a4f3db3c465777bf670265ff38b`; exact PR-head CI passed: [run #38600469100](https://github.com/vorlocsev/dvinholm/actions/runs/38600469100). This documentation-only change records profile and failed-connect manual checks.
 - [x] Rechecked current `main`, README roadmap, and AI handoff before continuing.
 
 **Exit gate:** PR #202 is merged, its exact head passed CI, and post-merge `main` CI is green.
@@ -209,7 +210,7 @@ Status is based on repository code, automated tests, and explicitly recorded man
 - [x] Audit existing backend coverage before adding tests: `J2534SessionLifecycleTests` already cover invalid inputs, staged connect failures, cleanup/metadata reset, retry after failed connection, read-error sanitization, reconnect, and cleanup failure. `CanRxDispatcherStopDisposeRaceTests` and `CanBusDisposeFromCallbackTests` cover deferred disposal/read-error callback races; `UdsClientDisposeLifecycleTests` and related ISO-TP tests cover active-request cancellation/disposal.
 - [x] Manually tested failed connection recovery using a deliberately nonexistent DLL path (no adapter hardware required): the user confirmed the Connect button becomes available again after the failed attempt. The error-recovery button state is verified; monitor/UDS disabled state and retry after correcting the path were not separately confirmed. Read-error and active-diagnostic cancellation UI recovery still need a suitable simulated UI seam or a documented limitation.
 - [ ] Avoid duplicating existing lifecycle, timeout, cancellation, late-response, and reconnect-race tests; fill only verified gaps.
-- [ ] Run the full Windows x86 CI pipeline and confirm the test, publish, and artifact-upload jobs all succeed on the exact candidate SHA.
+- [x] Run the full Windows x86 CI pipeline on exact checkpoint SHA `5e787c121dff7d7dce348a77d0233fd3d65608a0`; restore, build, tests, x86 publish, and artifact upload passed: [run #38600469100](https://github.com/vorlocsev/dvinholm/actions/runs/38600469100). A release candidate still requires its own exact-SHA CI run.
 
 **Exit gate:** the core software paths have repeatable regression coverage, no known blocking defect remains, and the complete CI pipeline is green.
 
