@@ -3,15 +3,13 @@
 Windows CAN monitor and read-only UDS diagnostic client for Volvo interfaces that expose the SAE J2534 API.
 
 
-## Latest verified CI build (2026-10-15)
+## Latest verified CI build and release (2026-10-15)
 
-- Main commit: `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`.
-- [Post-merge GitHub Actions run #38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679) passed Restore, Build, Test, Publish, and Upload artifact on this exact commit.
-- Artifact: `Dvinholm-Windows-x86`, 66,753,007 bytes; [artifact details](https://api.github.com/repos/vorlocsev/dvinholm/actions/artifacts/11930375485).
-- GitHub-reported digest and independently calculated local ZIP SHA-256 match: `sha256:793bb88455ca67f1517a7fc101447ba972a00d79bc49daf9556cd9a220c8c384`.
-- Downloaded ZIP passed integrity checking (476 entries). Both `Dvinholm.App.exe` and `RestartAgent.exe` are PE x86 (`0x014c`).
-- This is a portable self-contained x86 build, not an installer. The exact artifact from run #38640011679 was manually launched successfully by the user on Windows 11 IoT LTSC 26100.9550; the window title and no-physical-device status were confirmed (2026-10-15).
-- This CI checkpoint is not a published/versioned release. No tag or public GitHub Release has been created.
+- Published release: [Dvinholm v0.1.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.0), tag `v0.1.0`, exact release commit `b3a9a82e8bb26527b34551c4b93b3e3381a6f94d`.
+- The exact release commit passed Restore, Build, Test, Publish, and Upload artifact in [GitHub Actions run #38644431705](https://github.com/vorlocsev/dvinholm/actions/runs/38644431705).
+- Release asset: [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.1.0/Dvinholm-Windows-x86.zip), 66,752,893 bytes; SHA-256: `990bb1e762b46bc0dff2883558c0b7398924f1e16b6b59434cd51d40047017bb`.
+- This is a portable self-contained x86 build, not an installer. The user-confirmed manual launch/title/no-device check was performed on the preceding CI artifact from [run #38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679), built from `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`; it was not a manual launch of the exact release asset.
+- Physical DiCE/Mongoose adapter and vehicle compatibility remain unverified and are deferred to a future hardware-validation cycle.
 
 ## Supported interfaces
 
