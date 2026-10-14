@@ -1,3 +1,21 @@
+# Latest handoff update — 2026-10-15 (v0.1.0 published)
+
+## Verified release checkpoint
+- User requested the first public release, version 0.1.0. Verified via GitHub API that tag `v0.1.0` exists and points directly to `b3a9a82e8bb26527b34551c4b93b3e3381a6f94d`.
+- GitHub Release [Dvinholm 0.1.0 — Software MVP](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.0) is published (not draft/prerelease).
+- Release asset `Dvinholm-Windows-x86.zip`: 66,752,893 bytes; GitHub digest `sha256:990bb1e762b46bc0dff2883558c0b7398924f1e16b6b59434cd51d40047017bb`.
+- Exact release commit CI [run #38644431705](https://github.com/vorlocsev/dvinholm/actions/runs/38644431705) passed Restore, Build, Test, Publish, and Upload artifact.
+- The user manually launched the immediately preceding app artifact from run #38640011679 on Windows 11 IoT LTSC 26100.9550 and confirmed the intended title and no-device status. The release commit after that test was documentation-only; do not claim the exact release ZIP was separately manually launched.
+- Release notes and artifact are available at the published release URL above. The portable ZIP is not an installer.
+- Physical DiCE/Mongoose adapter validation remains deferred to a future release. Remaining UI-only unverified paths are the no-registered-provider branch and UI recovery after read error/diagnostic cancellation; do not uninstall/disable drivers merely to test provider absence.
+
+## Next actions
+1. Align repository release notes and this handoff log with the published tag, exact commit, CI run, attached asset, and digest.
+2. Run CI for that documentation-only follow-up PR and merge it if green.
+3. After docs are synchronized, continue only with a concrete, non-duplicative software/UI regression gap or plan the next release scope; preserve virtual-adapter testing and defer real-hardware verification.
+
+---
+
 # Latest handoff update — 2026-10-15 (exact current main artifact manually launched)
 
 ## Verified checkpoint

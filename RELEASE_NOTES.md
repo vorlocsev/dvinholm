@@ -1,6 +1,6 @@
-# Dvinholm — first software MVP release notes (draft)
+# Dvinholm 0.1.0 — Software MVP release notes
 
-> **Status: draft only. Not a published release.** Version number, release tag, and publication date have not been set. Do not treat this document or a CI artifact as a signed/versioned release.
+> **Status: published.** GitHub Release [v0.1.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.0) was published on 2026-10-14 and points to commit `b3a9a82e8bb26527b34551c4b93b3e3381a6f94d`.
 
 ## Scope
 
@@ -18,18 +18,18 @@ Dvinholm is a Windows x86 J2534 CAN monitor and read-only UDS diagnostic client.
 
 ## Download and run
 
-The CI artifact is a **portable build output, not an installer**. Obtain Dvinholm-Windows-x86 from the [successful main CI run](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679), extract the full archive to a normal folder, and launch Dvinholm.App.exe.
+The release asset is a **portable build output, not an installer**. Download [Dvinholm-Windows-x86.zip from GitHub Release v0.1.0](https://github.com/vorlocsev/dvinholm/releases/download/v0.1.0/Dvinholm-Windows-x86.zip), extract the full archive to a normal folder, and launch `Dvinholm.App.exe`.
 
 Install the adapter manufacturer's driver separately. The app is x86 and requires a compatible 32-bit J2534 DLL; it cannot load a 64-bit-only DLL. See the README for detailed build, driver, and troubleshooting instructions.
 
-## Validation recorded for this draft
+## Release validation evidence
 
-- Main commit: `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`.
-- Full post-merge CI run: [#38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679) — Restore, Build, Test, Publish, and Upload artifact succeeded on this exact SHA.
-- Artifact name: `Dvinholm-Windows-x86`; artifact ID: `11930375485`; size: 66,753,007 bytes.
-- GitHub-reported digest and independently calculated local ZIP SHA-256 match: `sha256:793bb88455ca67f1517a7fc101447ba972a00d79bc49daf9556cd9a220c8c384`. ZIP integrity passed (476 entries); both `Dvinholm.App.exe` and `RestartAgent.exe` have PE machine `0x014c` (x86).
-- The user manually launched the exact `Dvinholm-Windows-x86` artifact from run #38640011679 (main SHA `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`) on Windows 11 IoT LTSC 26100.9550 and confirmed successful startup, the intended `Dvinholm — J2534 CAN Diagnostics` window title, and the no-physical-device status (2026-10-15). Before publishing, freeze the release-candidate commit/version and ensure the tag, notes, and artifact all match it.
-- Earlier user-confirmed manual smoke tests include driver discovery, absent-device reporting, and ECU profile import/validation/export/re-import and persistence checks. Some UI-only recovery paths remain unverified.
+- Published tag: `v0.1.0`; release: [Dvinholm 0.1.0 — Software MVP](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.0).
+- Release target/main commit: `b3a9a82e8bb26527b34551c4b93b3e3381a6f94d`.
+- Exact release-commit CI: [run #38644431705](https://github.com/vorlocsev/dvinholm/actions/runs/38644431705) — Restore, Build, Test, Publish, and Upload artifact succeeded on this SHA.
+- Attached release asset: `Dvinholm-Windows-x86.zip`, 66,752,893 bytes; GitHub SHA-256 digest `990bb1e762b46bc0dff2883558c0b7398924f1e16b6b59434cd51d40047017bb`. This matches the CI artifact metadata for the release commit.
+- User manually launched the preceding CI artifact from run [#38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679) on Windows 11 IoT LTSC 26100.9550 and confirmed the window title `Dvinholm — J2534 CAN Diagnostics` and correct no-device status. The release commit after that smoke test contains documentation-only changes; do not describe the later release ZIP itself as separately manually launched.
+- Earlier user-confirmed UI checks cover J2534 driver discovery/selection, missing-device status, failed-connect button recovery, and ECU profile import, validation, export/re-import, persistence, empty-catalog handling, and recovery. Some UI-only read-error/cancellation recovery paths remain unverified.
 
 ## Known limitations
 
@@ -39,11 +39,11 @@ Install the adapter manufacturer's driver separately. The app is x86 and require
 - UDS functionality is read-only. ECU writes, actuation, immobilizer/PIN extraction, brute force, and security bypass are not included.
 - This is not an installer and does not bundle third-party adapter drivers.
 
-## Before publishing
+## Post-release follow-up
 
-- [ ] Choose and record the version number and release scope.
-- [ ] Run full CI on the exact candidate commit and verify its uploaded artifact.
-- [ ] Independently download and inspect the final artifact; compare its hash with the recorded release evidence.
-- [ ] Confirm release notes, README, tag, commit, and artifact all identify the same candidate.
-- [ ] Only after explicit release approval, create the version tag and publish the GitHub Release.
+- [x] Freeze software-only MVP scope as version 0.1.0.
+- [x] Run full CI on the exact release commit and verify the uploaded artifact metadata.
+- [x] Publish tag `v0.1.0` and GitHub Release with the Windows x86 ZIP asset.
+- [ ] Optionally download the published release asset independently and compare its local SHA-256 with the recorded digest.
+- [ ] Continue only focused software/UI regression work for remaining unverified recovery paths; avoid duplicating existing virtual-adapter tests.
 - [ ] Keep physical-adapter validation deferred to a future release cycle unless scope is explicitly changed.
