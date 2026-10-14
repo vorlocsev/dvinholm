@@ -184,14 +184,16 @@ Run this checklist on a stationary vehicle with a supported, correctly installed
 
 Record the vehicle/ECU identification, adapter and DLL versions, bus rate, request/response IDs, operation, and result. Redact VINs and other identifying data before sharing logs. A virtual-adapter CI pass validates software behavior only; it cannot certify electrical compatibility, vehicle-specific IDs, timing, or vendor-driver behavior.
 
-## Roadmap to first software MVP release
+## First software MVP release — v0.1.0
 
-Status is based on repository code, automated tests, and explicitly recorded manual checks. Updated 2026-10-15. Core CAN/ISO-TP/UDS transport and J2534 lifecycle/recovery have broad virtual-adapter regression coverage. The Windows 11 IoT LTSC 26100.9550 startup/no-device smoke check is confirmed. Physical-adapter compatibility remains unverified and is intentionally not a blocker for this first software MVP.
+The first software MVP is published as [Dvinholm 0.1.0 — Software MVP](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.0). The release tag `v0.1.0` targets commit `b3a9a82e8bb26527b34551c4b93b3e3381a6f94d`, whose full Windows x86 CI passed in [run #38644431705](https://github.com/vorlocsev/dvinholm/actions/runs/38644431705). The attached ZIP is a portable build, not an installer. Physical-adapter compatibility remains unverified and is deferred to a future release cycle.
+
+The checklist below is retained as the historical record of the path to v0.1.0; its pre-release actions should not be read as still blocking publication.
 
 ### Phase 0 — close current audit and stabilize main
 - [x] Latest main checkpoint after PR #212: commit `65ea0af8447bd746a16261199eba4952b1753c6c`; full post-merge Windows CI passed: [run #38611124491](https://github.com/vorlocsev/dvinholm/actions/runs/38611124491).
 - [x] Current run uploaded non-expired `Dvinholm-Windows-x86` (66,752,774 bytes). GitHub artifact metadata digest: `sha256:d836c8f4c965d6fbbfe47b76b18c39a1f3c5874cb63f00466a44a9998392ed98`. This is the service-reported digest, not an independently recalculated local ZIP hash.
-- [x] Drafted `RELEASE_NOTES.md` with MVP scope, known limitations, current CI evidence, and a pre-publication checklist. It is a draft, not a published release announcement; no version tag or public release exists.
+- [x] Published release notes and GitHub Release `v0.1.0`; follow-up PR #220 aligns the release notes and AI handoff with the published tag, exact commit, CI evidence, and artifact digest.
 
 - [x] Complete the source-level diagnostic-data exposure review: no persistent diagnostic logger or automatic telemetry was found in the reviewed paths; explicit VIN reads and user-initiated CAN CSV export may contain identifying data.
 - [x] PR #202 merged as `a8ddf1c735865566af0c5be222be1e9b956b3528`; exact-head CI passed: [run #38508715796](https://github.com/vorlocsev/dvinholm/actions/runs/38508715796).
@@ -244,15 +246,15 @@ Status is based on repository code, automated tests, and explicitly recorded man
 
 **Exit gate:** a new user can obtain the artifact, follow the instructions, launch the app, understand the no-adapter state, and identify the limits of what has been validated.
 
-### Phase 4 — release candidate and public release
+### Phase 4 — release candidate and public release (completed for v0.1.0)
 
-- [ ] Freeze the release-candidate scope; defer nonessential features and vehicle-specific assumptions.
-- [ ] Run the complete CI workflow on the exact release-candidate commit and verify restore, build, all tests, x86 publish, and artifact upload.
-- [ ] Review the release artifact and installation instructions one final time; ensure the source tag/commit matches the validated candidate.
+- [x] Freeze the software-only MVP scope; defer nonessential features and vehicle-specific assumptions.
+- [x] Run the complete CI workflow on the exact release commit and verify restore, build, all tests, x86 publish, and artifact upload: [run #38644431705](https://github.com/vorlocsev/dvinholm/actions/runs/38644431705).
+- [x] Verify the release asset metadata matches the exact release commit; see `RELEASE_NOTES.md` for the SHA-256 digest and artifact details.
 - [x] User manually launched the exact latest `Dvinholm-Windows-x86` artifact from [run #38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679), built from `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`, on Windows 11 IoT LTSC 26100.9550. The app opened successfully, showed `Dvinholm — J2534 CAN Diagnostics`, and correctly reported that no physical device was present (user-confirmed 2026-10-15). The release-candidate commit/version must still be frozen and aligned with its artifact before publishing.
-- [ ] Create a versioned Git tag and GitHub Release with concise release notes: supported read-only features, install/driver requirements, known limitations, and tested environments.
-- [ ] Include the virtual-adapter test limitation and the explicit statement that real-hardware compatibility has not yet been verified.
-- [ ] After publishing, verify that the release page and artifact are accessible and that the documented installation steps match the published files.
+- [x] Create the versioned Git tag and GitHub Release with supported read-only features, installation/driver requirements, and known limitations.
+- [x] State that virtual-adapter tests do not certify real hardware and that physical compatibility has not yet been verified.
+- [x] Verify the public release page, tag target, asset, CI result, and SHA-256 metadata.
 
 **Release acceptance criteria**
 1. No known release-blocking software defects.
@@ -272,6 +274,40 @@ Status is based on repository code, automated tests, and explicitly recorded man
 - [ ] Record adapter model, driver/DLL version, vehicle/ECU, bus rate, IDs, operation, and outcome; redact VINs and identifying information before sharing.
 
 **Exit criterion:** repeatable, recorded results on at least one physical adapter. Until then, hardware compatibility remains unverified.
+
+## Roadmap for versions after v0.1.0
+
+Priorities are provisional until each version's scope is frozen. Prefer small, testable changes; don't add duplicate tests where the virtual-adapter suite already covers the behavior.
+
+### v0.2.0 — Reliability and recovery
+- [ ] Review the app's UI state transitions after a CAN read error and after cancelling an active diagnostic request; identify a reproducible gap before changing code.
+- [ ] Add focused UI/state regression tests where a stable test seam exists; otherwise document the limitation and add lower-level coverage only if it closes a demonstrated gap.
+- [ ] Verify that errors/cancellation restore controls, release session resources, and allow safe follow-up operations or reconnect.
+- [ ] Review user-facing error messages and troubleshooting/log guidance.
+- [ ] Update the roadmap and AI handoff with each verified result; require full Windows x86 CI on the final commit.
+**Exit gate:** no known blocking recovery defect; errors and cancellation do not leave stale UI state or stuck resources; full CI passes.
+
+### v0.3.0 — ECU profile usability and diagnostic clarity
+- [ ] Improve profile/catalog management only where a concrete user workflow is missing (e.g. clearer profile metadata and validation feedback).
+- [ ] Confirm whether re-importing an existing profile duplicates it; add deterministic behavior and tests if needed.
+- [ ] Improve display of UDS negative responses, timeouts, unsupported services/DIDs, and malformed replies without implying ECU support.
+- [ ] Keep the built-in profile catalog empty unless entries can be supported by reliable documentation and reviewed evidence.
+- [ ] Keep all diagnostic operations read-only; run full virtual-adapter regression and Windows x86 CI.
+**Exit gate:** profile import/export and error reporting are predictable, documented, and covered without asserting vehicle-specific compatibility.
+
+### v0.4.0 — Diagnostics workflow and supportability
+- [ ] Review the end-to-end workflow from adapter selection to passive CAN capture and a user-initiated read-only UDS request.
+- [ ] Improve session/adapter status and actionable troubleshooting messages where tests or user feedback demonstrate a need.
+- [ ] Review CSV export and any diagnostic output for safe handling of identifying data; document that VINs may be sensitive.
+- [ ] Add only focused tests for uncovered paths; verify cancellation, timeouts, and reconnect behavior through the virtual adapter.
+- [ ] Run full CI and publish release notes with explicit limitations.
+**Exit gate:** a reproducible software-only diagnostic workflow, clear status/errors, and no known regression in CAN/ISO-TP/UDS behavior.
+
+### Future hardware-validation release — timing to be decided
+- [ ] Test with at least one physical 32-bit J2534 adapter; consider DiCE and/or Mongoose when hardware is available.
+- [ ] Record adapter model, driver/DLL version, baud rate, observed read/filter behavior, and results.
+- [ ] Only then document any adapter-specific compatibility; never infer support from virtual-adapter CI alone.
+**Exit gate:** repeatable, recorded hardware results. This remains deliberately outside the current software-only release cycle.
 
 ### Out of scope
 
