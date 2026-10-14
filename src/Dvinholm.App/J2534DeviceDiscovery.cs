@@ -92,7 +92,12 @@ internal static class J2534DeviceDiscovery
         if (string.IsNullOrWhiteSpace(dllPath))
             return false;
 
-        var normalizedPath = Environment.ExpandEnvironmentVariables(dllPath.Trim().Trim('"'));
+        // Registry values are sometimes quoted. Normalize the outside quotes
+        // and any whitespace inside them, then reject values that become empty.
+        var normalizedPath = Environment.ExpandEnvironmentVariables(dllPath.Trim().Trim('"')).Trim();
+        if (string.IsNullOrWhiteSpace(normalizedPath))
+            return false;
+
         var displayName = string.IsNullOrWhiteSpace(name) ? registryName : name.Trim();
         var displayVendor = vendor?.Trim() ?? string.Empty;
 
