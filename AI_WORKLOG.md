@@ -815,3 +815,11 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 - Duplicate-ID validation is confirmed in this manual UI scenario. Preservation of the prior catalog after this particular rejection was not explicitly reported, so do not claim it was verified.
 - Still open: other invalid fields, empty catalog, replacement/clearing and stale CAN ID/DID state. Basic single-profile import, malformed JSON rejection, invalid request-ID rejection, restart persistence, and export/re-import have been user-confirmed.
 - Next manual check: import an empty catalog (or a valid catalog with an empty profile list, according to the supported JSON schema) and observe whether the UI handles the empty state cleanly. Then test profile replacement/clearing. Physical-adapter validation remains deferred to a future release.
+
+
+## Follow-up manual result — empty ECU profile catalog (2026-10-14)
+- User imported the syntactically valid JSON empty array `[]`; the application accepted it and displayed no profiles.
+- Empty-catalog import/display is confirmed. This does not yet establish whether the app's prior catalog is intentionally replaced, persisted as empty after restart, or recoverable after an empty import; only the visible empty state was confirmed.
+- The README Phase 1 checklist now marks empty-catalog import/display complete. Other invalid fields and profile replacement/clearing behavior remain open.
+- Next manual check: import the one-profile test catalog again, select it, then import `[]` and verify the selection and dependent CAN ID/DID UI fields are cleared rather than left stale. If possible, restart after importing `[]` and confirm the empty catalog persists. Then test replacing the empty catalog with the test profile.
+- Physical-adapter validation remains deferred to a future release and is not a blocker for the first software MVP.
