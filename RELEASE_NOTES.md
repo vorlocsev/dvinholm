@@ -18,17 +18,17 @@ Dvinholm is a Windows x86 J2534 CAN monitor and read-only UDS diagnostic client.
 
 ## Download and run
 
-The CI artifact is a **portable build output, not an installer**. Obtain Dvinholm-Windows-x86 from the [successful main CI run](https://github.com/vorlocsev/dvinholm/actions/runs/38614877115), extract the full archive to a normal folder, and launch Dvinholm.App.exe.
+The CI artifact is a **portable build output, not an installer**. Obtain Dvinholm-Windows-x86 from the [successful main CI run](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679), extract the full archive to a normal folder, and launch Dvinholm.App.exe.
 
 Install the adapter manufacturer's driver separately. The app is x86 and requires a compatible 32-bit J2534 DLL; it cannot load a 64-bit-only DLL. See the README for detailed build, driver, and troubleshooting instructions.
 
 ## Validation recorded for this draft
 
-- Main commit: e85dee15d86a593c2d1fd18b6eddc0f66516fe93.
-- Full post-merge CI run: [#38614877115](https://github.com/vorlocsev/dvinholm/actions/runs/38614877115) — Restore, Build, Test, Publish, and Upload artifact succeeded on this exact SHA.
-- Artifact name: Dvinholm-Windows-x86; artifact ID: 11919756001; size: 66,752,717 bytes.
-- GitHub-reported digest and independently calculated local ZIP SHA-256 match: sha256:6df5b6f48372ff0143d54a9344ece0edf8e5f880feea1c36e1fceb0574173104. ZIP integrity passed (476 entries); both Dvinholm.App.exe and RestartAgent.exe have PE machine 0x014c (x86).
-- Earlier user-confirmed manual smoke tests on Windows 11 IoT LTSC 26100.9550 include app startup, driver discovery, absent-device reporting, and ECU profile import/validation/export/re-import and persistence checks. The exact artifact from run #38614877115 has not yet received a fresh manual launch test. Some UI-only recovery paths remain unverified.
+- Main commit: `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`.
+- Full post-merge CI run: [#38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679) — Restore, Build, Test, Publish, and Upload artifact succeeded on this exact SHA.
+- Artifact name: `Dvinholm-Windows-x86`; artifact ID: `11930375485`; size: 66,753,007 bytes.
+- GitHub-reported digest and independently calculated local ZIP SHA-256 match: `sha256:793bb88455ca67f1517a7fc101447ba972a00d79bc49daf9556cd9a220c8c384`. ZIP integrity passed (476 entries); both `Dvinholm.App.exe` and `RestartAgent.exe` have PE machine `0x014c` (x86).
+- Earlier user-confirmed manual smoke tests on Windows 11 IoT LTSC 26100.9550 include app startup, driver discovery, absent-device reporting, and ECU profile import/validation/export/re-import and persistence checks. The exact artifact from run #38640011679 has not yet received a fresh manual launch test. Some UI-only recovery paths remain unverified.
 
 ## Known limitations
 
