@@ -808,3 +808,10 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 - Mark the basic export/re-import workflow as complete for the tested profile.
 - The user did not explicitly report whether a duplicate entry appeared; duplicate handling remains unverified, as do invalid fields, duplicate IDs, empty catalog, and replacement/clearing behavior.
 - Next: check invalid fields/duplicate IDs and an empty catalog, then test profile replacement/clearing for stale CAN IDs or DIDs. Keep physical-adapter testing deferred to a future release.
+
+
+## Follow-up manual result — duplicate ECU profile IDs (2026-10-14)
+- User attempted to import a JSON catalog containing duplicate profile IDs and confirmed the import was rejected.
+- Duplicate-ID validation is confirmed in this manual UI scenario. Preservation of the prior catalog after this particular rejection was not explicitly reported, so do not claim it was verified.
+- Still open: other invalid fields, empty catalog, replacement/clearing and stale CAN ID/DID state. Basic single-profile import, malformed JSON rejection, invalid request-ID rejection, restart persistence, and export/re-import have been user-confirmed.
+- Next manual check: import an empty catalog (or a valid catalog with an empty profile list, according to the supported JSON schema) and observe whether the UI handles the empty state cleanly. Then test profile replacement/clearing. Physical-adapter validation remains deferred to a future release.
