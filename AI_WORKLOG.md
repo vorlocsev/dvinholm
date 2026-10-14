@@ -830,3 +830,12 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 - Confirmed: empty-catalog import/display and persistence across restart. This does not by itself verify whether stale profile selection, CAN IDs, or DID values are cleared from every dependent UI field.
 - README Phase 1 now records the persistence result. Next targeted UI check: import/select the synthetic `Example ECM (test only)` profile, then import `[]` and inspect all profile-dependent selection/CAN ID/DID fields for stale values. Then import the synthetic profile again to verify recovery from empty state.
 - Physical-adapter validation remains deferred to a future release and is not a blocker for the first software MVP.
+
+
+## Follow-up manual result — profile clearing and recovery from empty catalog (2026-10-14)
+
+- User confirmed the profile workflow works end-to-end: selecting the synthetic test profile, importing the empty catalog `[]`, verifying profile-dependent state is cleared, and importing the test profile again successfully.
+- Marked the Phase 1 profile replacement/clearing UI check complete in README. Together with earlier checks, manual evidence now covers valid import/display, malformed JSON rejection with prior profile preserved, invalid request ID rejection with prior profile preserved, duplicate-ID rejection, empty catalog display and persistence, restart persistence for a profile, export/re-import, and recovery from empty state.
+- No code defect was reported in this workflow, so no application-code change or new regression test is justified by this manual result alone.
+- Remaining Phase 1 work: verify imported request/response IDs, addressing mode, and candidate DIDs are reflected correctly; consider multiple-profile persistence and whether re-importing an existing profile duplicates it. Then proceed to Phase 2 software smoke/recovery gaps, avoiding duplicate existing virtual-adapter tests.
+- Keep physical J2534 adapter validation deferred to a future release and outside the first software MVP blocker list.
