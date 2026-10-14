@@ -640,3 +640,26 @@ Physical DiCE/Mongoose tests remain deferred to a future release and are not a b
 - Preserve links to PRs and workflow runs. Record failures and their fixes honestly.
 - Do not mark an item complete merely because code was written; require tests/CI evidence appropriate to the item.
 - Keep physical adapter validation under the future-release section until explicitly rescheduled.
+
+
+---
+
+# Latest handoff update — 2026-10-14 (diagnostic-data exposure audit)
+
+## Verified current state
+- Main at the start of this audit: `b760e05d1b080b3128595566a960db1dc1a9dddf` (PR #201 merged).
+- Main CI for that SHA passed: [run #38507992192](https://github.com/vorlocsev/dvinholm/actions/runs/38507992192).
+- Audited current `MainWindow.xaml.cs`, `J2534Native.cs`, `CanBus.cs`, `UdsClient.cs`, `UdsEcuDiscovery.cs`, and `IsoTpChannel.cs` for diagnostic logging, exception presentation, and persisted data.
+
+## Findings
+- No persistent diagnostic logger or automatic telemetry path was found in the reviewed application code.
+- Driver diagnostics pass through `SanitizeDriverDiagnostic`, which redacts common Windows, UNC, and Unix-style local paths, strips control characters, and bounds output length. This is targeted path sanitization, not a universal secret-redaction guarantee.
+- Unexpected UDS initialization/discovery errors use the existing safe formatter. Negative UDS responses show a structured service/NRC description.
+- VIN is displayed as the result of the user's explicit Read VIN action; CAN frames can be persisted only through the user's explicit CSV export action. These are intentional diagnostic outputs, but exports may contain identifying data and should be redacted before sharing.
+- No concrete defect was identified in this source-level audit. The README roadmap records the audit as complete with the above scope and limitation; repeat it if persistent logging or telemetry is introduced.
+
+## Remaining priorities
+1. Realistic interactive ECU profile import/export/selection checks remain pending; unit tests do not replace a manual UI workflow.
+2. Repeatable application-level smoke tests for first launch, no registered adapter, connect/disconnect, and diagnostic cancellation remain release-readiness work where test seams permit.
+3. Run release-candidate CI and publish versioned release notes when the software MVP checklist is ready.
+4. Physical DiCE/Mongoose validation remains deferred to a future release cycle; virtual-adapter CI does not establish physical hardware compatibility.
