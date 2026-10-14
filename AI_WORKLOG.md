@@ -868,3 +868,12 @@ Existing automated coverage confirmed by source inspection:
 - `VirtualJ2534AdapterTests` already exercise the virtual adapter through the real CAN/ISO-TP stack, including a normal read-only UDS response, filtering another ECU's response, and multi-frame response handling.
 
 No tests were run during this source audit; this is a coverage review, not a claim of passing CI. Avoid adding redundant backend lifecycle/cancellation tests. The remaining likely gaps are first-run/no-provider behavior and UI-level status/button recovery after failed connect, read error, and cancellation. Next inspect the relevant UI state transitions and test seams, then add only focused coverage for a concrete gap. The manual profile-field mapping check was user-confirmed complete. Physical adapter validation remains deferred to a future release.
+
+
+## Follow-up audit — adapter discovery UI and CI confirmation (2026-10-14)
+
+- CI for the current documentation PR head `cdc2aad4d2a60070e6f80e7fb11b2bf887d920aa` completed successfully: workflow run `38597362723`, build job `115967424685`. This confirms the docs branch's current build/CI, not a new app-code change.
+- Source inspection confirms `RefreshJ2534Devices` displays an explicit message when no registered adapter DLL is found and leaves the manual DLL path entry available. `J2534DeviceDiscoveryTests` already cover normalization of registry paths and resilience when one registry root throws access/I/O/security exceptions.
+- User's current Windows machine detects adapter drivers, so the no-registered-provider UI state cannot be claimed as manually verified. Do not force the user to uninstall/disable drivers just to exercise this branch.
+- Next practical manual check is failed-connection recovery with a deliberately nonexistent DLL path; this is safe without physical hardware. Expected: a clear connection failure, Connect returns to enabled state, monitor and diagnostic controls remain disabled, and correcting the path permits another attempt. Do not send diagnostic traffic.
+- UI-level read-error/cancellation recovery remains a test-seam question; backend lifecycle/cancellation coverage already exists. Avoid speculative changes and duplicate tests. Physical adapter validation remains deferred to a future release.
