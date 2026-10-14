@@ -1,24 +1,25 @@
-# Latest handoff update — 2026-10-14 (post-roadmap CI and artifact publication verified)
+# Latest handoff update — 2026-10-14 (PR #203 merged; artifact inspected)
 
 ## Verified current state
-- PR [#202 — Record diagnostic-data audit and roadmap to MVP release](https://github.com/vorlocsev/dvinholm/pull/202) is merged into `main` as `a8ddf1c735865566af0c5be222be1e9b956b3528`.
-- Exact-head PR CI passed: [run #38508715796](https://github.com/vorlocsev/dvinholm/actions/runs/38508715796).
-- Post-merge main CI passed on the merge commit: [run #38509199082](https://github.com/vorlocsev/dvinholm/actions/runs/38509199082). Restore, build, x86 tests, self-contained win-x86 publish, and artifact upload all succeeded.
-- The run uploaded non-expired artifact `Dvinholm-Windows-x86` (66,752,802 bytes). This verifies artifact existence and upload, not the contents of the ZIP; internal file inventory/architecture and launch entry point still need inspection.
-- The application project declares `PlatformTarget=x86`, `RuntimeIdentifier=win-x86`, `SelfContained=true`, `WindowsAppSDKSelfContained=true`, and `WindowsPackageType=None`. README correctly describes the output as a portable build artifact, not an installer.
-- No public GitHub Releases currently exist.
+- PR [#202 — Record diagnostic-data audit and roadmap to MVP release](https://github.com/vorlocsev/dvinholm/pull/202) is merged into `main` as `a8ddf1c735865566af0c5be222be1e9b956b3528`; exact-head CI passed: [run #38508715796](https://github.com/vorlocsev/dvinholm/actions/runs/38508715796).
+- PR [#203 — Record post-roadmap CI and artifact verification](https://github.com/vorlocsev/dvinholm/pull/203) is merged into `main` as `8a886fb36f66b6c14f3befefea22294667bfc28d). Exact-head PR CI passed: [run #38509696244](https://github.com/vorlocsev/dvinholm/actions/runs/38509696244); post-merge `main` CI passed: [run #38510453531](https://github.com/vorlocsev/dvinholm/actions/runs/38510453531).
+- Artifact `Dvinholm-Windows-x86` from run #38509199082 is non-expired and has size 66,752,802 bytes. The downloaded ZIP passed archive integrity verification, contains 476 entries, and includes `Dvinholm.App.exe` and `RestartAgent.exe`.
+- PE headers for both executables report machine `0x014c` (x86). Artifact SHA-256: `4ee5d67302d31c38f83d07884673d28674b2fbed8088cfdf6cc1bf0b752fdc27`.
+- This is a self-contained portable build artifact, not an installer. Archive integrity and x86 PE headers do not prove clean-install or physical-adapter compatibility.
+- The app project declares `PlatformTarget=x86`, `RuntimeIdentifier=win-x86`, `SelfContained=true`, `WindowsAppSDKSelfContained=true`, and `WindowsPackageType=None`.
+- No public GitHub Releases were found in the last repository review.
 
 ## Work completed in this continuation
-- Closed Phase 0 of the release roadmap with recorded PR merge and post-merge CI evidence.
-- Rechecked the current profile workflow implementation and existing unit tests. Existing tests already cover JSON round-trip, empty catalogs, invalid CAN IDs/DIDs, duplicate IDs, and catalog persistence behaviors; no source change was justified without a reproducible UI defect.
-- Confirmed existing test suite already contains many targeted UDS/ISO-TP cancellation, timeout, late-response, reconnect, and lifecycle regression tests. Avoid duplicating them without a specific uncovered behavior.
+- Confirmed post-merge CI for PR #203 completed successfully on the exact `main` merge commit.
+- Downloaded and inspected the published Windows artifact: archive integrity, file inventory, launch executable presence, and PE architecture verified.
+- Updated the README release roadmap and this handoff record with the verified evidence. Manual UI and clean-install checks remain explicitly incomplete.
 
 ## Remaining blockers / next actions
-1. Manually exercise the ECU profile workflow in the Windows UI: valid import, selection, invalid JSON/fields/duplicate IDs, empty catalog, persistence after restart, export/re-import, replacement/clearing, and stale-field prevention. This cannot be honestly marked complete from source inspection alone.
-2. Inspect the published artifact contents directly and compare its files/entry point with README installation steps.
-3. Perform clean-install/first-launch checks on the supported Windows baseline; current LTSC evidence is only startup/no-device.
-4. After the above gates, freeze release scope and create a versioned tag/release candidate with CI on that exact SHA.
-5. Keep real DiCE/Mongoose validation deferred to a future release cycle; current virtual-adapter CI does not certify hardware compatibility.
+1. Manually exercise the ECU profile workflow in Windows UI: valid import, selection, invalid JSON/fields/duplicate IDs, empty catalog, persistence after restart, export/re-import, replacement/clearing, and stale-field prevention. Do not mark complete from source inspection alone.
+2. Perform clean-install/first-launch checks on the supported Windows baseline and confirm the published artifact's launch procedure on a clean environment.
+3. Review the README install/troubleshooting instructions against the artifact and record any issues observed during clean-install testing.
+4. After the above gates, freeze release scope and create a versioned tag/release candidate with CI on that exact SHA; no public release should be claimed until it is actually published.
+5. Keep real DiCE/Mongoose validation deferred to a future release cycle; virtual-adapter CI does not certify physical hardware compatibility.
 
 ---
 
