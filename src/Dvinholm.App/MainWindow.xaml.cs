@@ -133,7 +133,7 @@ public sealed partial class MainWindow : Window
         _updaterBusy = true;
         UpdateButton.IsEnabled = false;
         UpdateButton.Content = "Checking…";
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest successful main build…";
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest successful CI build across all branches…";
 
         try
         {
@@ -144,7 +144,7 @@ public sealed partial class MainWindow : Window
                 !string.Equals(currentSha, latest.CommitSha, StringComparison.OrdinalIgnoreCase);
 
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {latest.DisplayVersion}";
-            UpdateButton.Content = _updateAvailable ? "Download and launch update" : "Check again";
+            UpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check again";
         }
         catch (Exception ex)
         {
@@ -172,16 +172,16 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            var executable = await LatestBuildUpdater.DownloadAndPrepareAsync(build, progress);
-            SetStatus($"Starting Dvinholm {build.DisplayVersion}…");
-            LatestBuildUpdater.StartBuild(executable);
+            var stagingDirectory = await LatestBuildUpdater.DownloadAndPrepareAsync(build, progress);
+            SetStatus($"Replacing application files with {build.DisplayVersion}…");
+            LatestBuildUpdater.StartReplacement(stagingDirectory, Environment.ProcessId);
             Close();
         }
         catch (Exception ex)
         {
             UpdateButton.Content = "Retry update";
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {build.DisplayVersion}";
-            SetStatus("Update failed; the current app was left running. Check your connection/disk space and retry.");
+            SetStatus("Update preparation failed; the current app was left running. Check the connection and disk space, then retry.");
             _updateAvailable = true;
         }
         finally
