@@ -910,3 +910,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - README Phase 3 now records the first-launch/no-device check as complete. The no-registered-provider UI branch remains unverified because the user's system detects adapter drivers; do not ask the user to disable/uninstall drivers solely for this check.
 - Remaining release gates: finish the software-only UI smoke/recovery review where meaningful, freeze the first MVP scope, then run the full CI pipeline on the exact release-candidate SHA and confirm the published artifact matches it. No public GitHub Release has been created by this step.
 - Real J2534 adapter, vehicle/ECU compatibility, electrical behavior, and vendor-driver validation remain deferred to a future release and are not first-MVP blockers.
+
+
+## Manual smoke result — application window title (2026-10-14)
+
+- User confirmed the fresh Windows x86 CI build launched successfully after the `MainWindow.xaml` title change.
+- The application window now uses the explicit title `Dvinholm — J2534 CAN Diagnostics` instead of the generic `WinUI Desktop` caption. The title change is merged to `main` in commit `5188e899556d6df153cb82dadb346041ba18e73a` (PR #209).
+- This confirms the title/launch smoke check only; it does not add evidence for physical J2534 adapter or vehicle compatibility.
+- Next: complete a focused final software-only regression/release-readiness review, then run and verify the full CI pipeline on the exact release-candidate commit before tagging/publishing. Physical-adapter validation remains deferred to a future release.
