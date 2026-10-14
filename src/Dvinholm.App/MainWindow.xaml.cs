@@ -140,8 +140,10 @@ public sealed partial class MainWindow : Window
             var latest = await LatestBuildUpdater.GetLatestSuccessfulBuildAsync();
             _latestBuild = latest;
             var currentSha = LatestBuildUpdater.CurrentCommitSha;
+            var currentRunNumber = LatestBuildUpdater.CurrentCiRunNumber;
             _updateAvailable = currentSha is null ||
-                !string.Equals(currentSha, latest.CommitSha, StringComparison.OrdinalIgnoreCase);
+                !string.Equals(currentSha, latest.CommitSha, StringComparison.OrdinalIgnoreCase) ||
+                currentRunNumber != latest.RunNumber;
 
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {latest.DisplayVersion}";
             UpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check again";
