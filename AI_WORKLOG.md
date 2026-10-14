@@ -839,3 +839,11 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 - No code defect was reported in this workflow, so no application-code change or new regression test is justified by this manual result alone.
 - Remaining Phase 1 work: verify imported request/response IDs, addressing mode, and candidate DIDs are reflected correctly; consider multiple-profile persistence and whether re-importing an existing profile duplicates it. Then proceed to Phase 2 software smoke/recovery gaps, avoiding duplicate existing virtual-adapter tests.
 - Keep physical J2534 adapter validation deferred to a future release and outside the first software MVP blocker list.
+
+
+## Follow-up — scope the remaining profile-field UI check (2026-10-14)
+
+- User confirmed there is no second profile available in the UI. Do not treat switching between two profiles as a blocker or ask the user to create a second profile just to continue.
+- The remaining manual check is limited to the single synthetic `Example ECM (test only)` profile: confirm request ID `7E0`, response ID `7E8`, 11-bit addressing, and a candidate DID such as `F187` or `F190` appear in the corresponding fields after selecting it. No physical adapter or diagnostic request is needed.
+- The README Phase 1 checklist now explicitly separates single-profile field mapping from the optional multi-profile switching check. Existing user-confirmed empty-catalog clearing/recovery result remains recorded as complete.
+- Once field mapping is confirmed, proceed to Phase 2 by auditing existing virtual-adapter smoke/recovery coverage and CI gaps; do not duplicate tests already present. Physical J2534 hardware validation remains deferred to a future release.
