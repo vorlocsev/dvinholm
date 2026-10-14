@@ -877,3 +877,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User's current Windows machine detects adapter drivers, so the no-registered-provider UI state cannot be claimed as manually verified. Do not force the user to uninstall/disable drivers just to exercise this branch.
 - Next practical manual check is failed-connection recovery with a deliberately nonexistent DLL path; this is safe without physical hardware. Expected: a clear connection failure, Connect returns to enabled state, monitor and diagnostic controls remain disabled, and correcting the path permits another attempt. Do not send diagnostic traffic.
 - UI-level read-error/cancellation recovery remains a test-seam question; backend lifecycle/cancellation coverage already exists. Avoid speculative changes and duplicate tests. Physical adapter validation remains deferred to a future release.
+
+
+## Manual result — failed-connect UI recovery (2026-10-14)
+
+- User tested connecting with a deliberately nonexistent J2534 DLL path and confirmed that the **Connect** button became available again after the failed attempt.
+- Marked the button-recovery portion of the Windows smoke checklist complete. Do not overstate the result: the user did not separately confirm the monitor/UDS controls remained disabled or that a corrected DLL path was retried.
+- No application code change is warranted from this result; the observed recovery matches the existing connect-task cleanup path. No physical adapter or vehicle connection was involved.
+- Next: inspect packaging/release readiness and confirm CI on the latest documentation head. Keep real-adapter verification deferred to future releases; UI read-error and diagnostic-cancellation recovery remain open until there is a reliable simulated UI test seam.
