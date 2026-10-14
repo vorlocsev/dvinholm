@@ -243,12 +243,12 @@ internal static class LatestBuildUpdater
         }
     }
 
-    public static Process StartReplacement(string stagingDirectory, int processId)
+    public static Process StartReplacement(string stagingDirectory, string destinationDirectory, int processId)
     {
         var localRoot = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Dvinholm");
-        var destination = Path.Combine(localRoot, "Current");
+        var destination = Path.GetFullPath(destinationDirectory);
         Directory.CreateDirectory(localRoot);
 
         var scriptPath = Path.Combine(Path.GetTempPath(), $"dvinholm-update-{Guid.NewGuid():N}.ps1");
@@ -276,7 +276,9 @@ try {{
     }}
     $oldBuilds = Join-Path $env:LOCALAPPDATA 'Dvinholm\Builds'
     if (Test-Path -LiteralPath $oldBuilds) {{
-        Remove-Item -LiteralPath $oldBuilds -Recurse -Force
+        Get-ChildItem -LiteralPath $oldBuilds -Directory |
+            Where-Object {{ $_.FullName -ne $destination }} |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
     }}
     $stagingRoot = Join-Path $env:LOCALAPPDATA 'Dvinholm\UpdateStaging'
     if (Test-Path -LiteralPath $stagingRoot) {{
