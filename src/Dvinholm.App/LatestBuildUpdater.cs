@@ -194,6 +194,10 @@ internal static class LatestBuildUpdater
                 }
             }
 
+            var downloadedSize = new FileInfo(archivePath).Length;
+            if (downloadedSize != build.ArtifactSize)
+                throw new InvalidDataException("The downloaded artifact size does not match GitHub's metadata.");
+
             if (build.ArtifactDigest is not null)
             {
                 progress?.Report("Verifying the downloaded artifact checksum…");
