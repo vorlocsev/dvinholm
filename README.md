@@ -175,7 +175,7 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 
 ## Roadmap
 
-Roadmap status is based on the current branch and the automated test suite. Last updated: 2026-10-13, including ECU profile catalog persistence (#155), cancellation-preserved discovery results (#156), and readable DTC status flags (#158). Hardware compatibility remains unverified.
+Roadmap status is based on the current branch and the automated test suite. Last updated: 2026-10-14, including J2534 DLL path normalization (#195) and isolated registry-root discovery failures (#196). Hardware compatibility remains unverified.
 
 ### Completed: core transport and recovery
 
