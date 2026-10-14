@@ -901,3 +901,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Verified the CI job completed Restore, Build, Test, Publish, and Upload artifact successfully; artifact `Dvinholm-Windows-x86` was uploaded and has not expired.
 - Updated the README roadmap to record PR #206 and close the exact-checkpoint-SHA CI item. This is not a final release-candidate CI run; a future candidate SHA must pass the complete pipeline independently.
 - Remaining Phase 3 release gate is clean-install/first-launch verification and confirming instructions against the artifact; no installer is produced. Do not claim physical J2534 or vehicle compatibility. Real-adapter validation remains deferred to a future release.
+
+
+## Manual packaging smoke result — clean-folder first launch (2026-10-14)
+
+- User confirmed success after downloading the current `Dvinholm-Windows-x86` CI artifact, extracting it into a fresh separate folder, launching `Dvinholm.App.exe`, closing it, and launching it again on Windows 11 IoT LTSC 26100.9550.
+- No startup/dependency error was reported during this clean-folder launch check. With no physical J2534 device connected, the app opened and reported that no device was present. This is a software packaging/first-launch smoke check, not a hardware compatibility test.
+- README Phase 3 now records the first-launch/no-device check as complete. The no-registered-provider UI branch remains unverified because the user's system detects adapter drivers; do not ask the user to disable/uninstall drivers solely for this check.
+- Remaining release gates: finish the software-only UI smoke/recovery review where meaningful, freeze the first MVP scope, then run the full CI pipeline on the exact release-candidate SHA and confirm the published artifact matches it. No public GitHub Release has been created by this step.
+- Real J2534 adapter, vehicle/ECU compatibility, electrical behavior, and vendor-driver validation remain deferred to a future release and are not first-MVP blockers.
