@@ -1,3 +1,24 @@
+# Latest handoff update — 2026-10-14 (current main CI and artifact independently verified)
+
+## Verified current checkpoint
+- Current `main` commit: `e85dee15d86a593c2d1fd18b6eddc0f66516fe93`, following merged [PR #214](https://github.com/vorlocsev/dvinholm/pull/214).
+- Post-merge workflow [run #38614877115](https://github.com/vorlocsev/dvinholm/actions/runs/38614877115) completed successfully on that exact commit. Restore, Build, Test, Publish, and Upload artifact all passed.
+- Artifact: `Dvinholm-Windows-x86`, ID `11919756001`, 66,752,717 bytes; GitHub digest: `sha256:6df5b6f48372ff0143d54a9344ece0edf8e5f880feea1c36e1fceb0574173104`.
+- Downloaded the exact artifact ZIP locally as `Dvinholm-Windows-x86-main-38614877115.zip`. Local SHA-256 matched GitHub metadata exactly: `6df5b6f48372ff0143d54a9344ece0edf8e5f880feea1c36e1fceb0574173104`.
+- ZIP integrity check passed (`testzip() = None`); archive contains 476 entries, including `Dvinholm.App.exe` and `RestartAgent.exe`. Both PE headers identify machine `0x014c` (x86).
+- This independently verifies the current artifact archive, checksum, and executable architecture. It does not count as a fresh manual launch of this exact artifact; prior user-confirmed Windows smoke tests were on earlier artifacts.
+- Artifact is a portable self-contained Windows x86 build, not an installer. No version tag or public GitHub Release has been created.
+- Physical J2534 adapter validation remains deferred to a future release cycle.
+
+## Next actions
+1. Ask for/await a fresh manual smoke test of this exact artifact only if practical; otherwise explicitly retain that as an outstanding release-evidence item.
+2. Decide MVP version and scope before calling this a release candidate.
+3. Keep no-provider UI and read-error/cancellation UI recovery paths marked unverified where noted.
+4. Align release notes, tag, commit, and artifact to one exact candidate SHA if a versioned release is approved.
+5. Do not create a version tag or public release without explicit user approval.
+
+---
+
 # Latest handoff update — 2026-10-14 (post-merge main CI verified; artifact recorded)
 
 ## Verified current checkpoint
