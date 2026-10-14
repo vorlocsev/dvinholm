@@ -27,41 +27,46 @@ internal static class J2534DeviceDiscovery
             using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
             foreach (var registryPath in RegistryKeys)
             {
-                using var root = machine.OpenSubKey(registryPath);
-                if (root is null)
-                    continue;
-
-                foreach (var subKeyName in root.GetSubKeyNames())
+                // Isolate each root: a damaged or inaccessible 04.04 branch must
+                // not prevent discovery from the legacy 02.02 branch.
+                IgnoreRegistryRootFailure(() =>
                 {
-                    try
+                    using var root = machine.OpenSubKey(registryPath);
+                    if (root is null)
+                        return;
+
+                    foreach (var subKeyName in root.GetSubKeyNames())
                     {
-                        using var subKey = root.OpenSubKey(subKeyName);
-                        if (subKey is null)
-                            continue;
+                        try
+                        {
+                            using var subKey = root.OpenSubKey(subKeyName);
+                            if (subKey is null)
+                                continue;
 
-                        var name = ReadString(subKey, "Name");
-                        var vendor = ReadString(subKey, "Vendor");
-                        var dllPath = ReadString(subKey, "FunctionLibrary");
-                        if (string.IsNullOrWhiteSpace(dllPath))
-                            dllPath = ReadString(subKey, "FunctionLibraryLocation");
+                            var name = ReadString(subKey, "Name");
+                            var vendor = ReadString(subKey, "Vendor");
+                            var dllPath = ReadString(subKey, "FunctionLibrary");
+                            if (string.IsNullOrWhiteSpace(dllPath))
+                                dllPath = ReadString(subKey, "FunctionLibraryLocation");
 
-                        if (!TryCreateDevice(subKeyName, name, vendor, dllPath, registryPath, out var device))
-                            continue;
+                            if (!TryCreateDevice(subKeyName, name, vendor, dllPath, registryPath, out var device))
+                                continue;
 
-                        if (!File.Exists(device.DllPath) || !seenPaths.Add(device.DllPath))
-                            continue;
+                            if (!File.Exists(device.DllPath) || !seenPaths.Add(device.DllPath))
+                                continue;
 
-                        devices.Add(device);
+                            devices.Add(device);
+                        }
+                        catch (UnauthorizedAccessException)
+                        {
+                            // One inaccessible vendor key should not hide other adapters.
+                        }
+                        catch (IOException)
+                        {
+                            // Registry can change while vendor software is being installed.
+                        }
                     }
-                    catch (UnauthorizedAccessException)
-                    {
-                        // One inaccessible vendor key should not hide other adapters.
-                    }
-                    catch (IOException)
-                    {
-                        // Registry can change while vendor software is being installed.
-                    }
-                }
+                });
             }
         }
         catch (UnauthorizedAccessException)
@@ -77,6 +82,22 @@ internal static class J2534DeviceDiscovery
             .OrderBy(device => device.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(device => device.Vendor, StringComparer.OrdinalIgnoreCase)
             .ToArray();
+    }
+
+    internal static void IgnoreRegistryRootFailure(Action readRoot)
+    {
+        try
+        {
+            readRoot();
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Continue with other registry roots.
+        }
+        catch (IOException)
+        {
+            // Continue with other registry roots.
+        }
     }
 
     internal static bool TryCreateDevice(
