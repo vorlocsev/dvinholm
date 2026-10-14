@@ -196,7 +196,7 @@ Status is based on repository code, automated tests, and explicitly recorded man
 - [x] Import a valid empty JSON catalog (`[]`); the UI accepted it and displayed no profiles, and the empty list remained after restarting the app (user-confirmed 2026-10-14). This confirms empty-catalog import and persistence. Clearing of the previously selected profile’s dependent CAN ID/DID fields has not yet been explicitly verified.
 - [x] Restart the app and confirm the imported profile remains present (user-confirmed 2026-10-14). This verifies persistence for the tested profile; broader catalog/multiple-profile persistence is not yet covered.
 - [x] Export the catalog and import the exported JSON again; user confirmed the profile was restored (2026-10-14). Whether re-import creates a duplicate entry was not explicitly confirmed.
-- [ ] Verify profile replacement/clearing does not leave stale CAN IDs, DID values, or an obsolete selection in the UI.
+- [x] Manually verify profile replacement/clearing: import and select the synthetic test profile, import `[]`, confirm profile-dependent UI state clears, then import the test profile again and confirm it appears/works (user-confirmed 2026-10-14).
 - [ ] Fix only demonstrated UX or state defects and add focused regression tests for each confirmed defect.
 - [ ] Keep the built-in catalog empty of unverified vehicle-specific CAN IDs/DIDs; user-supplied candidate profiles must not be presented as proof that an ECU supports an operation.
 
