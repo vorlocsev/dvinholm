@@ -1,3 +1,25 @@
+# Latest handoff update — 2026-10-14 (PR #200 merged; Windows LTSC smoke test recorded)
+
+## Verified current state
+- PR [#200 — Record verified Windows LTSC startup smoke test](https://github.com/vorlocsev/dvinholm/pull/200) merged into `main` as `60ad78d51559fdb382e8d5eae6575fe49c42ce8c`.
+- Both exact-head CI runs passed: [run #38507056036](https://github.com/vorlocsev/dvinholm/actions/runs/38507056036) and [run #38507047898](https://github.com/vorlocsev/dvinholm/actions/runs/38507047898).
+- README roadmap now records the user's manual smoke check on Windows 11 IoT LTSC 26100.9550: the app starts, detects and permits selection of installed J2534 drivers, and reports the missing physical device without hanging.
+- This confirms startup and the no-device path only. It does not establish clean-install coverage or compatibility with a physical DiCE/Mongoose adapter.
+- Previous registry-discovery fixes (#195, #196, #198) and their CI results remain recorded below. PR #197/#198/#199 updates and post-merge CI were verified in the preceding handoff.
+
+## Focused audit findings
+- `EcuProfileCatalogStore.Save` writes to a sibling temporary file and replaces the destination only after a successful write; its `finally` block performs best-effort cleanup without masking the original failure. Existing tests cover round-trip, directory creation, replacement, malformed input, blank paths, and temp-file cleanup.
+- The profile-import UI intentionally applies a validated catalog in memory before persisting it. If local persistence fails, it reports the partial result explicitly rather than claiming the catalog was saved. Avoid duplicating the existing store tests; future work should target a demonstrable uncovered UI or protocol behavior.
+- The main window catches import/export exceptions and displays actionable but non-sensitive guidance. A broader diagnostic-log review remains on the roadmap.
+
+## Next steps
+1. Continue a targeted audit of connect/disconnect, UDS cancellation, and user-visible failure paths; only add a regression test when a concrete untested behavior is identified.
+2. Keep clean-install/first-launch coverage on the roadmap for supported Windows versions.
+3. Run the release-candidate pipeline and publish a versioned release with notes when the release checklist is ready.
+4. Keep physical DiCE/Mongoose testing deferred to a future release cycle; virtual-adapter CI is not physical-hardware validation.
+
+---
+
 # Latest handoff update — 2026-10-14 (PR #197 and #198 merged; post-merge CI pending)
 
 ## Verified current state
