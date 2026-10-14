@@ -28,7 +28,8 @@ Install the adapter manufacturer's driver separately. The app is x86 and require
 - Full post-merge CI run: [#38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679) — Restore, Build, Test, Publish, and Upload artifact succeeded on this exact SHA.
 - Artifact name: `Dvinholm-Windows-x86`; artifact ID: `11930375485`; size: 66,753,007 bytes.
 - GitHub-reported digest and independently calculated local ZIP SHA-256 match: `sha256:793bb88455ca67f1517a7fc101447ba972a00d79bc49daf9556cd9a220c8c384`. ZIP integrity passed (476 entries); both `Dvinholm.App.exe` and `RestartAgent.exe` have PE machine `0x014c` (x86).
-- Earlier user-confirmed manual smoke tests on Windows 11 IoT LTSC 26100.9550 include app startup, driver discovery, absent-device reporting, and ECU profile import/validation/export/re-import and persistence checks. The exact artifact from run #38640011679 has not yet received a fresh manual launch test. Some UI-only recovery paths remain unverified.
+- The user subsequently confirmed that the latest available Windows build launches successfully on Windows 11 IoT LTSC 26100.9550. This is a manual launch confirmation; before publishing, match the exact local ZIP to the frozen release-candidate artifact and its SHA-256.
+- Earlier user-confirmed manual smoke tests include driver discovery, absent-device reporting, and ECU profile import/validation/export/re-import and persistence checks. Some UI-only recovery paths remain unverified.
 
 ## Known limitations
 
