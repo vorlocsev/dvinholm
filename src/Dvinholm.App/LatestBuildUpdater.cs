@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Net.Http.Headers;
 using System.Reflection;
+using System.Security.Cryptography;
 using System.Text.Json;
 
 namespace Dvinholm.App;
@@ -12,6 +13,7 @@ internal sealed record LatestBuildInfo(
     long RunId,
     long ArtifactId,
     long ArtifactSize,
+    string? ArtifactDigest,
     string CreatedAt)
 {
     public string ShortSha => CommitSha.Length >= 7 ? CommitSha[..7] : CommitSha;
@@ -73,51 +75,59 @@ internal static class LatestBuildUpdater
         if (!runsJson.RootElement.TryGetProperty("workflow_runs", out var runs) || runs.ValueKind != JsonValueKind.Array)
             throw new InvalidDataException("GitHub did not return the CI workflow run list.");
 
+        JsonElement latestRun = default;
         foreach (var run in runs.EnumerateArray())
         {
-            if (ReadString(run, "head_branch") != "main" ||
-                ReadString(run, "status") != "completed" ||
-                ReadString(run, "conclusion") != "success")
-                continue;
-
-            var sha = ReadString(run, "head_sha");
-            if (sha.Length != 40 || !sha.All(Uri.IsHexDigit))
-                continue;
-
-            var runId = ReadInt64(run, "id");
-            var runNumber = checked((int)ReadInt64(run, "run_number"));
-            var createdAt = ReadString(run, "created_at");
-            var artifactsUrl = $"https://api.github.com/repos/{Repository}/actions/runs/{runId}/artifacts";
-            using var artifactsResponse = await Http.GetAsync(artifactsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-            artifactsResponse.EnsureSuccessStatusCode();
-            await using var artifactsStream = await artifactsResponse.Content.ReadAsStreamAsync(cancellationToken);
-            using var artifactsJson = await JsonDocument.ParseAsync(artifactsStream, cancellationToken: cancellationToken);
-
-            if (!artifactsJson.RootElement.TryGetProperty("artifacts", out var artifacts) || artifacts.ValueKind != JsonValueKind.Array)
-                continue;
-
-            foreach (var artifact in artifacts.EnumerateArray())
+            if (ReadString(run, "head_branch") == "main" &&
+                ReadString(run, "status") == "completed" &&
+                ReadString(run, "conclusion") == "success")
             {
-                if (ReadString(artifact, "name") != ArtifactName ||
-                    ReadBoolean(artifact, "expired") ||
-                    ReadInt64(artifact, "size_in_bytes") <= 0)
-                    continue;
-
-                var size = ReadInt64(artifact, "size_in_bytes");
-                if (size > MaximumDownloadBytes)
-                    throw new InvalidDataException("The latest CI artifact exceeds the configured download size limit.");
-
-                return new LatestBuildInfo(
-                    sha.ToLowerInvariant(),
-                    runNumber,
-                    runId,
-                    ReadInt64(artifact, "id"),
-                    size,
-                    createdAt);
+                latestRun = run;
+                break;
             }
         }
 
-        throw new InvalidOperationException("No successful, non-expired Windows x86 artifact was found on main.");
+        if (latestRun.ValueKind == JsonValueKind.Undefined)
+            throw new InvalidOperationException("No successful Windows x86 CI run was found on main.");
+
+        var sha = ReadString(latestRun, "head_sha");
+        if (sha.Length != 40 || !sha.All(Uri.IsHexDigit))
+            throw new InvalidDataException("The latest successful CI run has an invalid commit SHA.");
+
+        var runId = ReadInt64(latestRun, "id");
+        var runNumber = checked((int)ReadInt64(latestRun, "run_number"));
+        var createdAt = ReadString(latestRun, "created_at");
+        var artifactsUrl = $"https://api.github.com/repos/{Repository}/actions/runs/{runId}/artifacts";
+        using var artifactsResponse = await Http.GetAsync(artifactsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        artifactsResponse.EnsureSuccessStatusCode();
+        await using var artifactsStream = await artifactsResponse.Content.ReadAsStreamAsync(cancellationToken);
+        using var artifactsJson = await JsonDocument.ParseAsync(artifactsStream, cancellationToken: cancellationToken);
+
+        if (!artifactsJson.RootElement.TryGetProperty("artifacts", out var artifacts) || artifacts.ValueKind != JsonValueKind.Array)
+            throw new InvalidDataException("GitHub did not return the latest CI artifact list.");
+
+        foreach (var artifact in artifacts.EnumerateArray())
+        {
+            if (ReadString(artifact, "name") != ArtifactName)
+                continue;
+            if (ReadBoolean(artifact, "expired"))
+                throw new InvalidOperationException("The latest CI artifact has expired. A new successful main build is required.");
+            var size = ReadInt64(artifact, "size_in_bytes");
+            if (size <= 0 || size > MaximumDownloadBytes)
+                throw new InvalidDataException("The latest CI artifact has an invalid or excessive size.");
+
+            var digest = ReadString(artifact, "digest");
+            return new LatestBuildInfo(
+                sha.ToLowerInvariant(),
+                runNumber,
+                runId,
+                ReadInt64(artifact, "id"),
+                size,
+                digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ? digest.ToLowerInvariant() : null,
+                createdAt);
+        }
+
+        throw new InvalidOperationException("The latest successful main CI run has no Windows x86 artifact.");
     }
 
     public static async Task<string> DownloadAndPrepareAsync(
@@ -165,6 +175,15 @@ internal static class LatestBuildUpdater
                         throw new InvalidDataException("The downloaded artifact exceeds the configured size limit.");
                     await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
                 }
+            }
+
+            if (build.ArtifactDigest is not null)
+            {
+                progress?.Report("Verifying the downloaded artifact checksum…");
+                await using var checksumStream = File.OpenRead(archivePath);
+                var checksum = Convert.ToHexString(await SHA256.HashDataAsync(checksumStream, cancellationToken)).ToLowerInvariant();
+                if (!string.Equals("sha256:" + checksum, build.ArtifactDigest, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidDataException("The downloaded artifact checksum does not match GitHub's digest.");
             }
 
             progress?.Report("Validating and extracting the build…");
