@@ -3,15 +3,13 @@
 Windows CAN monitor and read-only UDS diagnostic client for Volvo interfaces that expose the SAE J2534 API.
 
 
-## Latest verified CI build (2026-10-15)
+## Latest verified CI build and release (2026-10-15)
 
-- Main commit: `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`.
-- [Post-merge GitHub Actions run #38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679) passed Restore, Build, Test, Publish, and Upload artifact on this exact commit.
-- Artifact: `Dvinholm-Windows-x86`, 66,753,007 bytes; [artifact details](https://api.github.com/repos/vorlocsev/dvinholm/actions/artifacts/11930375485).
-- GitHub-reported digest and independently calculated local ZIP SHA-256 match: `sha256:793bb88455ca67f1517a7fc101447ba972a00d79bc49daf9556cd9a220c8c384`.
-- Downloaded ZIP passed integrity checking (476 entries). Both `Dvinholm.App.exe` and `RestartAgent.exe` are PE x86 (`0x014c`).
-- This is a portable self-contained x86 build, not an installer. The exact artifact from run #38640011679 was manually launched successfully by the user on Windows 11 IoT LTSC 26100.9550; the window title and no-physical-device status were confirmed (2026-10-15).
-- This CI checkpoint is not a published/versioned release. No tag or public GitHub Release has been created.
+- Published release: [Dvinholm v0.1.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.0), tag `v0.1.0`, exact release commit `b3a9a82e8bb26527b34551c4b93b3e3381a6f94d`.
+- The exact release commit passed Restore, Build, Test, Publish, and Upload artifact in [GitHub Actions run #38644431705](https://github.com/vorlocsev/dvinholm/actions/runs/38644431705).
+- Release asset: [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.1.0/Dvinholm-Windows-x86.zip), 66,752,893 bytes; SHA-256: `990bb1e762b46bc0dff2883558c0b7398924f1e16b6b59434cd51d40047017bb`.
+- This is a portable self-contained x86 build, not an installer. The user-confirmed manual launch/title/no-device check was performed on the preceding CI artifact from [run #38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679), built from `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`; it was not a manual launch of the exact release asset.
+- Physical DiCE/Mongoose adapter and vehicle compatibility remain unverified and are deferred to a future hardware-validation cycle.
 
 ## Supported interfaces
 
@@ -150,6 +148,14 @@ The CI pipeline publishes a self-contained x86 application artifact. It is a por
 
 The application is self-contained, so a separate .NET runtime installation is not normally required. Windows and driver requirements still apply. The artifact is intended for evaluation; CI success does not mean the application has been verified with a physical adapter or a specific vehicle.
 
+### Check for and install the latest CI build
+
+The application checks GitHub Actions for the newest successful Windows x86 build from `main`. The version row shows the running build's informational version and the latest available commit/CI run. If a newer build exists, choose **Download and launch update**.
+
+Updates are downloaded from the public repository's successful CI artifact, checked for size and unsafe archive paths, and extracted to a version-specific folder under `%LOCALAPPDATA%\\Dvinholm\\Builds\\<commit-sha>`. The new executable is launched from that folder; the currently running copy is not overwritten. ECU profile data remains in the shared `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json` location. Old build folders are not automatically deleted, so a previous build remains available for recovery.
+
+This initial updater targets the latest successful CI build on `main`, not the latest published release. Future versions can switch the update source to the GitHub Releases API without changing the user's profile storage.
+
 ### Troubleshooting
 
 - **No J2534 provider appears:** install or repair the adapter manufacturer's driver, confirm it provides a 32-bit J2534 DLL, then restart Dvinholm. You can enter the DLL path manually if discovery does not list it.
@@ -280,6 +286,7 @@ The checklist below is retained as the historical record of the path to v0.1.0; 
 Priorities are provisional until each version's scope is frozen. Prefer small, testable changes; don't add duplicate tests where the virtual-adapter suite already covers the behavior.
 
 ### v0.2.0 — Reliability and recovery
+- [ ] Validate the new latest-successful-CI-build check/download flow on Windows; confirm the displayed current/available build identifiers and recovery behavior if download or launch fails.
 - [ ] Review the app's UI state transitions after a CAN read error and after cancelling an active diagnostic request; identify a reproducible gap before changing code.
 - [ ] Add focused UI/state regression tests where a stable test seam exists; otherwise document the limitation and add lower-level coverage only if it closes a demonstrated gap.
 - [ ] Verify that errors/cancellation restore controls, release session resources, and allow safe follow-up operations or reconnect.

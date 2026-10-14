@@ -1,3 +1,28 @@
+# Latest handoff update — 2026-10-15 (latest CI build updater in progress)
+
+## User request
+- Add an automatic/manual check for the latest successful CI build, show the current and available build versions, and provide an update button.
+- Initial update channel must use the latest successful Windows x86 CI artifact from `main`; a later iteration should switch the source to the latest published GitHub Release.
+
+## Changes currently on branch `feature/latest-build-updater`
+- Added `LatestBuildUpdater.cs`: queries successful `main` workflow runs, locates the `Dvinholm-Windows-x86` artifact, downloads it, checks archive size/path safety, extracts it to a commit-specific directory under `%LOCALAPPDATA%\\Dvinholm\\Builds`, and launches the new executable without overwriting the running copy.
+- Added current/available version display and an update button in the main window; startup check is queued asynchronously.
+- Set project version metadata to `0.1.0` and updated CI publish to embed the source commit SHA in `AssemblyInformationalVersion`, so builds can compare exact commits.
+- Documented update behavior, profile persistence, rollback folder retention, and the future switch to the Releases API in README.
+
+## Validation status
+- Implementation is not yet validated by CI or a Windows manual test. Do not mark this feature complete until the current branch-head CI passes and the download/update flow is manually checked on Windows.
+- No release has been published for this feature. Physical J2534/vehicle testing remains deferred.
+
+## Next actions
+1. Run CI on the latest branch head; fix any build/test/workflow errors.
+2. Verify a public-repository CI artifact can be downloaded by the app without authentication, and confirm the updater correctly handles no network, no artifact, and corrupt/oversized archive cases.
+3. On Windows 11 IoT LTSC 26100.9550, verify current/available labels, same-build behavior, download/extraction, launching the new build, and preservation of ECU profiles.
+4. Update this handoff and the v0.2.0 roadmap only after results are verified.
+5. Later, switch the source from the latest successful `main` CI artifact to the latest published GitHub Release after that policy is explicitly implemented and tested.
+
+---
+
 # Latest handoff update — 2026-10-15 (v0.1.0 published)
 
 ## Verified release checkpoint

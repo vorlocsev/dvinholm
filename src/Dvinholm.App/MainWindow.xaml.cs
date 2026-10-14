@@ -38,6 +38,9 @@ public sealed partial class MainWindow : Window
     private bool _loadingProfiles;
     private int _rateFrames;
     private uint? _activeHardwareFilterId;
+    private LatestBuildInfo? _latestBuild;
+    private bool _updaterBusy;
+    private bool _updateAvailable;
 
     public MainWindow()
     {
@@ -47,6 +50,8 @@ public sealed partial class MainWindow : Window
         EcusView.ItemsSource = _ecus;
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest CI build…";
+        DispatcherQueue.TryEnqueue(() => _ = CheckLatestBuildAsync());
         _session.ReadError += ex => DispatcherQueue.TryEnqueue(() =>
         {
             var detail = J2534Native.SanitizeDriverDiagnostic(ex.Message);
@@ -104,6 +109,87 @@ public sealed partial class MainWindow : Window
     }
 
     private void SetStatus(string text) => StatusText.Text = text;
+
+    private async void UpdateButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_updaterBusy)
+            return;
+
+        if (_updateAvailable && _latestBuild is not null)
+        {
+            await DownloadAndLaunchLatestBuildAsync(_latestBuild);
+            return;
+        }
+
+        await CheckLatestBuildAsync();
+    }
+
+    private async Task CheckLatestBuildAsync()
+    {
+        if (_updaterBusy)
+            return;
+
+        _updaterBusy = true;
+        UpdateButton.IsEnabled = false;
+        UpdateButton.Content = "Checking…";
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest successful main build…";
+
+        try
+        {
+            var latest = await LatestBuildUpdater.GetLatestSuccessfulBuildAsync();
+            _latestBuild = latest;
+            var currentSha = LatestBuildUpdater.CurrentCommitSha;
+            _updateAvailable = currentSha is null ||
+                !string.Equals(currentSha, latest.CommitSha, StringComparison.OrdinalIgnoreCase);
+
+            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {latest.DisplayVersion}";
+            UpdateButton.Content = _updateAvailable ? "Download and launch update" : "Check again";
+        }
+        catch (Exception ex)
+        {
+            _latestBuild = null;
+            _updateAvailable = false;
+            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Latest CI build: unavailable";
+            UpdateButton.Content = "Retry update check";
+        }
+        finally
+        {
+            _updaterBusy = false;
+            UpdateButton.IsEnabled = true;
+        }
+    }
+
+    private async Task DownloadAndLaunchLatestBuildAsync(LatestBuildInfo build)
+    {
+        _updaterBusy = true;
+        UpdateButton.IsEnabled = false;
+        UpdateButton.Content = "Updating…";
+        var progress = new Progress<string>(message =>
+        {
+            DispatcherQueue.TryEnqueue(() => SetStatus(message));
+        });
+
+        try
+        {
+            var executable = await LatestBuildUpdater.DownloadAndPrepareAsync(build, progress);
+            SetStatus($"Starting Dvinholm {build.DisplayVersion}…");
+            LatestBuildUpdater.StartBuild(executable);
+            Close();
+        }
+        catch (Exception ex)
+        {
+            UpdateButton.Content = "Retry update";
+            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {build.DisplayVersion}";
+            SetStatus("Update failed; the current app was left running. Check your connection/disk space and retry.");
+            _updateAvailable = true;
+        }
+        finally
+        {
+            _updaterBusy = false;
+            UpdateButton.IsEnabled = true;
+        }
+    }
+
 
     private static string ProfileCatalogPath => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
