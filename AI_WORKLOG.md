@@ -1,3 +1,19 @@
+# Latest handoff update — 2026-10-14 (partial manual ECU-profile UI check)
+
+## User-confirmed result
+- The user manually imported a JSON ECU profile catalog in the Windows UI and confirmed the workflow works after resolving an initially missing profile name in the selection list.
+- This is evidence for the valid-import/profile-name display path only. It does **not** verify persistence after restart, export/re-import, malformed JSON/fields, duplicate IDs, empty catalog, or clearing/replacement behavior.
+- No source code changed in this checkpoint; no CI result is claimed for the manual UI observation.
+
+## Next actions
+1. Continue manual profile validation with malformed JSON and invalid fields; verify actionable errors and no silent acceptance.
+2. Test save/restart persistence and export/re-import.
+3. Test catalog replacement/clearing and stale CAN ID/DID prevention.
+4. Fix only demonstrated defects, add focused regression tests, and require exact-head Windows x86 CI.
+5. Keep clean-install verification outstanding. Physical adapter validation remains deferred to a future release cycle.
+
+---
+
 # Latest handoff update — 2026-10-14 (PR #203 merged; artifact inspected)
 
 ## Verified current state
