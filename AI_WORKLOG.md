@@ -781,3 +781,8 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 3. Test save/restart persistence and export/re-import.
 4. If any behavior is defective, reproduce it, add a focused regression test, run exact-head Windows x86 CI, and only then merge the fix.
 5. Continue to defer physical-adapter validation to a future release.
+
+
+## Follow-up manual result — malformed JSON import
+- User confirmed the previously imported valid ECU profile remained present after the malformed JSON import error.
+- This verifies error presentation plus preservation of the visible prior profile/selection in this manual scenario. It does not cover invalid-but-well-formed fields, duplicate IDs, empty catalogs, restart persistence, or export/re-import.
