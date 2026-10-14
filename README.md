@@ -2,6 +2,15 @@
 
 Windows CAN monitor and read-only UDS diagnostic client for Volvo interfaces that expose the SAE J2534 API.
 
+
+## Latest verified CI build (2026-10-14)
+
+- Main commit: `1c9f1977ce54b3d03388c1675cc43af709d6a12d`.
+- [Post-merge GitHub Actions run #38612886605](https://github.com/vorlocsev/dvinholm/actions/runs/38612886605) passed Restore, Build, Test, Publish, and Upload artifact.
+- Artifact: `Dvinholm-Windows-x86`, 66,752,947 bytes. GitHub-reported digest: `sha256:70b48e99371fc6b7f7cfb46635ccd0016123a14cf5c52e5b103e1bb2962acd3d`. This service-reported digest has not been independently recalculated from a locally downloaded ZIP.
+- This artifact is a portable self-contained x86 build, not an installer. It has not yet received a fresh manual smoke test on this exact run.
+- This CI result is not a published/versioned release. No tag or public GitHub Release has been created.
+
 ## Supported interfaces
 
 - Volvo DiCE

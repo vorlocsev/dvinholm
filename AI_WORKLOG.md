@@ -1,3 +1,23 @@
+# Latest handoff update — 2026-10-14 (post-merge main CI verified; artifact recorded)
+
+## Verified current checkpoint
+- PR [#213 — Draft first software MVP release notes and checklist](https://github.com/vorlocsev/dvinholm/pull/213) is merged. Current `main` head: `1c9f1977ce54b3d03388c1675cc43af709d6a12d`.
+- Post-merge workflow [run #38612886605](https://github.com/vorlocsev/dvinholm/actions/runs/38612886605) completed successfully on that exact commit. Restore, Build, Test, Publish, and Upload artifact all passed.
+- Artifact: `Dvinholm-Windows-x86`, 66,752,947 bytes, non-expired at the time checked. GitHub-reported digest: `sha256:70b48e99371fc6b7f7cfb46635ccd0016123a14cf5c52e5b103e1bb2962acd3d`. This digest is GitHub metadata; no independent local ZIP hash/integrity check has been performed on this artifact.
+- Artifact run: [download from GitHub Actions run #38612886605](https://github.com/vorlocsev/dvinholm/actions/runs/38612886605). It is a portable self-contained Windows x86 build, not an installer.
+- This is a green CI checkpoint, not a versioned release candidate. No version tag or public GitHub Release exists.
+- User's manual Windows checks were performed on earlier artifacts; they do not constitute a fresh manual smoke test of this exact artifact.
+- Physical J2534 adapter validation remains deferred to a future release cycle.
+
+## Next actions
+1. Review/choose the release version and scope; keep the read-only MVP boundary.
+2. If claiming a release candidate, independently download and inspect the exact artifact ZIP and executable architecture, and record the evidence.
+3. Ensure release notes, tag, commit, and artifact all refer to the same exact candidate SHA.
+4. Keep no-provider UI and read-error/cancellation UI recovery paths marked unverified where noted.
+5. Do not create a version tag or public release without explicit user approval.
+
+---
+
 # Latest handoff update — 2026-10-14 (main CI green; release notes drafted)
 
 ## Verified current checkpoint
