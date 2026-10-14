@@ -792,3 +792,5 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 - The user imported syntactically valid JSON with `requestId: "ZZZZ"` and reported that the UI displayed an import error.
 - This confirms that this invalid CAN ID input was rejected in the manual UI scenario. It does not yet confirm whether the previously imported valid profile remains present/selectable after this specific failure.
 - Other invalid fields, duplicate IDs, empty catalog, restart persistence, and export/re-import remain unverified.
+
+- User follow-up: confirmed the previously imported valid profile remained present after the invalid CAN ID (`ZZZZ`) import error. This is separate from, and in addition to, the malformed-JSON preservation check.
