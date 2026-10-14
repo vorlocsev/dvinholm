@@ -1,3 +1,32 @@
+# Latest handoff update — 2026-10-14 (main CI green; current artifact recorded)
+
+## Verified current checkpoint
+- PR [#211 — Document final software-only regression audit](https://github.com/vorlocsev/dvinholm/pull/211) is merged. The current `main` head is `d650eae04cc19b8925d0f51ebba1bd467aa78b7d`.
+- Post-merge `main` CI [run #38609609211](https://github.com/vorlocsev/dvinholm/actions/runs/38609609211) completed successfully on that exact SHA. Restore, Build, Test, Publish, and Upload artifact all passed.
+- The run uploaded non-expired artifact `Dvinholm-Windows-x86`, 66,753,021 bytes. GitHub's artifact metadata reports digest `sha256:785cde6193925fe7bdc58430a93557e112803e53393495f58295e2c87c0fba8b`. This is the service-reported artifact digest; this update does not claim an independent local ZIP integrity check for this newest artifact.
+- The artifact is available from the [successful main workflow run](https://github.com/vorlocsev/dvinholm/actions/runs/38609609211). It is a portable self-contained x86 build, not an installer.
+- No version tag or public GitHub Release has been created. The latest green `main` build is a verified checkpoint, but a versioned release candidate still needs an explicit scope/version decision and its own exact-SHA validation.
+
+## User-confirmed manual Windows checks (2026-10-14)
+- Valid JSON ECU profile import works and the profile name now appears in the selector.
+- Malformed JSON and syntactically valid JSON with invalid request CAN ID `ZZZZ` are rejected; the previously imported valid profile remains available.
+- Duplicate profile IDs are rejected. The user did not separately verify preservation of the previous catalog for this specific duplicate-ID case.
+- An empty catalog `[]` is accepted and persists after restart; the selected profile's dependent fields clear when the catalog is cleared.
+- Export followed by re-import restores the profile. Duplicate handling on re-import was not separately checked.
+- The synthetic `Example ECM (test only)` profile shows request ID `7E0`, response ID `7E8`, 11-bit addressing, and candidate DID `F187`/`F190`.
+- On Windows 11 IoT LTSC 26100.9550, the app starts, discovers installed J2534 drivers, and reports the absent physical device without hanging. A clean-folder artifact launch/close/relaunch and the explicit window title were also user-confirmed on the preceding artifact.
+- No physical J2534 device was available. Physical adapter and vehicle compatibility remain deferred to a future release cycle.
+
+## Next actions
+1. Treat the latest main CI as green, but do not call it a published release or a separately tagged release candidate.
+2. Keep the release scope read-only and limited to demonstrated software behavior; retain the empty built-in ECU profile catalog.
+3. For the release-candidate stage, choose a version/scope, create a versioned candidate commit/tag only when appropriate, and run the full workflow on that exact SHA.
+4. Review the latest artifact locally only if a new packaging or binary change is introduced; prior user smoke checks do not automatically validate every subsequent artifact.
+5. Keep UI-only no-provider and read-error/cancellation control-state paths marked unverified where noted in the roadmap. Do not ask the user to uninstall or disable drivers merely to force the no-provider path.
+6. Keep physical J2534 adapter validation deferred. Virtual-adapter CI does not certify vendor-driver behavior or vehicle compatibility.
+
+---
+
 # Latest handoff update — 2026-10-14 (partial manual ECU-profile UI check)
 
 ## User-confirmed result

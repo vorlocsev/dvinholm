@@ -178,6 +178,8 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 Status is based on repository code, automated tests, and explicitly recorded manual checks. Updated 2026-10-14. Core CAN/ISO-TP/UDS transport and J2534 lifecycle/recovery have broad virtual-adapter regression coverage. The Windows 11 IoT LTSC 26100.9550 startup/no-device smoke check is confirmed. Physical-adapter compatibility remains unverified and is intentionally not a blocker for this first software MVP.
 
 ### Phase 0 — close current audit and stabilize main
+- [x] Latest main checkpoint after PR #211: commit `d650eae04cc19b8925d0f51ebba1bd467aa78b7d`; full post-merge Windows CI passed: [run #38609609211](https://github.com/vorlocsev/dvinholm/actions/runs/38609609211).
+- [x] Current run uploaded non-expired `Dvinholm-Windows-x86` (66,753,021 bytes). GitHub artifact metadata digest: `sha256:785cde6193925fe7bdc58430a93557e112803e53393495f58295e2c87c0fba8b`. This metadata digest is recorded as reported by GitHub, not as a new independent local ZIP verification.
 
 - [x] Complete the source-level diagnostic-data exposure review: no persistent diagnostic logger or automatic telemetry was found in the reviewed paths; explicit VIN reads and user-initiated CAN CSV export may contain identifying data.
 - [x] PR #202 merged as `a8ddf1c735865566af0c5be222be1e9b956b3528`; exact-head CI passed: [run #38508715796](https://github.com/vorlocsev/dvinholm/actions/runs/38508715796).
@@ -217,6 +219,7 @@ Status is based on repository code, automated tests, and explicitly recorded man
 **Exit gate:** the core software paths have repeatable regression coverage, no known blocking defect remains, and the complete CI pipeline is green.
 
 ### Phase 3 — packaging and clean-install verification
+- [x] Latest main CI artifact is available from [run #38609609211](https://github.com/vorlocsev/dvinholm/actions/runs/38609609211), built from `d650eae04cc19b8925d0f51ebba1bd467aa78b7d`. User-confirmed clean-folder launch/relaunch and window-title smoke checks refer to the preceding artifact; they are not represented as a new manual test of this documentation-only checkpoint.
 
 - [x] Confirm the successful `main` CI run uploaded a non-expired artifact named `Dvinholm-Windows-x86` (66,752,802 bytes; run #38509199082).
 - [x] Inspect the artifact ZIP directly: archive integrity passed (`testzip` returned no errors), 476 entries found, and `Dvinholm.App.exe` plus `RestartAgent.exe` are present. Both PE headers identify machine `0x014c` (x86). SHA-256: `4ee5d67302d31c38f83d07884673d28674b2fbed8088cfdf6cc1bf0b752fdc27`.
