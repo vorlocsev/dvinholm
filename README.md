@@ -212,6 +212,8 @@ Status is based on repository code, automated tests, and explicitly recorded man
 - [ ] Avoid duplicating existing lifecycle, timeout, cancellation, late-response, and reconnect-race tests; fill only verified gaps.
 - [x] Run the full Windows x86 CI pipeline on exact checkpoint SHA `5e787c121dff7d7dce348a77d0233fd3d65608a0`; restore, build, tests, x86 publish, and artifact upload passed: [run #38600469100](https://github.com/vorlocsev/dvinholm/actions/runs/38600469100). A release candidate still requires its own exact-SHA CI run.
 
+- [x] Final source-level regression inventory reviewed (2026-10-14): existing tests already cover J2534 session lifecycle/retry/cleanup, CAN receive-worker disposal races, ISO-TP timeout/cancellation/flow-control/sequence recovery, UDS late/unrelated/negative/pending responses, profile JSON validation, and virtual-adapter single-/multi-frame flows. No duplicate backend test was added without evidence of a gap. The no-provider UI state and UI-only read-error/cancellation control recovery remain explicitly unverified and are not claimed as passed.
+
 **Exit gate:** the core software paths have repeatable regression coverage, no known blocking defect remains, and the complete CI pipeline is green.
 
 ### Phase 3 — packaging and clean-install verification
