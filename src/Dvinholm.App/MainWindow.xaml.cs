@@ -50,7 +50,7 @@ public sealed partial class MainWindow : Window
         EcusView.ItemsSource = _ecus;
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentVersion} · checking latest CI build…";
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest CI build…";
         DispatcherQueue.TryEnqueue(() => _ = CheckLatestBuildAsync());
         _session.ReadError += ex => DispatcherQueue.TryEnqueue(() =>
         {
@@ -132,7 +132,7 @@ public sealed partial class MainWindow : Window
         _updaterBusy = true;
         UpdateButton.IsEnabled = false;
         UpdateButton.Content = "Checking…";
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentVersion} · checking latest successful main build…";
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest successful main build…";
 
         try
         {
@@ -142,14 +142,14 @@ public sealed partial class MainWindow : Window
             _updateAvailable = currentSha is null ||
                 !string.Equals(currentSha, latest.CommitSha, StringComparison.OrdinalIgnoreCase);
 
-            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentVersion} · Available: {latest.DisplayVersion}";
+            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {latest.DisplayVersion}";
             UpdateButton.Content = _updateAvailable ? "Download and launch update" : "Check again";
         }
         catch (Exception ex)
         {
             _latestBuild = null;
             _updateAvailable = false;
-            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentVersion} · Latest CI build: unavailable";
+            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Latest CI build: unavailable";
             UpdateButton.Content = "Retry update check";
         }
         finally
@@ -179,7 +179,7 @@ public sealed partial class MainWindow : Window
         catch (Exception ex)
         {
             UpdateButton.Content = "Retry update";
-            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentVersion} · Available: {build.DisplayVersion}";
+            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {build.DisplayVersion}";
             SetStatus("Update failed; the current app was left running. Check your connection/disk space and retry.");
             _updateAvailable = true;
         }
