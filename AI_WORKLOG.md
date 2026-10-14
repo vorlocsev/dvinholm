@@ -893,3 +893,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Added a concise troubleshooting note that the Connect button should recover after a failed DLL load/connection and the user can correct the path/setup before retrying. This reflects the user-confirmed manual result without claiming unverified monitor/UDS control states.
 - Existing package evidence is from main CI run #38509199082 (ZIP integrity, x86 PE headers, expected executables); this does not constitute a clean-install matrix. A clean-install/first-launch check and exact candidate-SHA CI remain release gates.
 - Current main has no release tag/release candidate established by this audit. Next: verify CI for the updated documentation branch head, then continue software-only packaging checks. Physical adapter validation remains a future-release task.
+
+
+## PR #206 merged — CI verified (2026-10-14)
+
+- Merged documentation-only PR #206 to `main` as `0b3ca883511e4a4f3db3c465777bf670265ff38b` after confirming exact PR-head CI passed: [run #38600469100](https://github.com/vorlocsev/dvinholm/actions/runs/38600469100).
+- Verified the CI job completed Restore, Build, Test, Publish, and Upload artifact successfully; artifact `Dvinholm-Windows-x86` was uploaded and has not expired.
+- Updated the README roadmap to record PR #206 and close the exact-checkpoint-SHA CI item. This is not a final release-candidate CI run; a future candidate SHA must pass the complete pipeline independently.
+- Remaining Phase 3 release gate is clean-install/first-launch verification and confirming instructions against the artifact; no installer is produced. Do not claim physical J2534 or vehicle compatibility. Real-adapter validation remains deferred to a future release.
