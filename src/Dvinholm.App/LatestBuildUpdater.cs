@@ -109,7 +109,12 @@ internal static class LatestBuildUpdater
 
         foreach (var run in runs.EnumerateArray())
         {
-            if (ReadString(run, "status") != "completed" ||
+            // Push/workflow_dispatch artifacts are built from the exact head SHA.
+            // Pull-request workflows can build a synthetic merge ref, so their
+            // artifact SHA is not necessarily the branch's head_sha.
+            var eventName = ReadString(run, "event");
+            if (eventName is not ("push" or "workflow_dispatch") ||
+                ReadString(run, "status") != "completed" ||
                 ReadString(run, "conclusion") != "success")
                 continue;
 
