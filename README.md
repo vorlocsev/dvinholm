@@ -249,6 +249,7 @@ Status is based on repository code, automated tests, and explicitly recorded man
 - [ ] Freeze the release-candidate scope; defer nonessential features and vehicle-specific assumptions.
 - [ ] Run the complete CI workflow on the exact release-candidate commit and verify restore, build, all tests, x86 publish, and artifact upload.
 - [ ] Review the release artifact and installation instructions one final time; ensure the source tag/commit matches the validated candidate.
+- [x] User confirmed that the latest available Windows build launches on Windows 11 IoT LTSC 26100.9550; still match the exact local ZIP to a frozen candidate before publishing.
 - [ ] Create a versioned Git tag and GitHub Release with concise release notes: supported read-only features, install/driver requirements, known limitations, and tested environments.
 - [ ] Include the virtual-adapter test limitation and the explicit statement that real-hardware compatibility has not yet been verified.
 - [ ] After publishing, verify that the release page and artifact are accessible and that the documented installation steps match the published files.
