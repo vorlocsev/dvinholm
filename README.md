@@ -142,7 +142,7 @@ The application is self-contained, so a separate .NET runtime installation is no
 ### Troubleshooting
 
 - **No J2534 provider appears:** install or repair the adapter manufacturer's driver, confirm it provides a 32-bit J2534 DLL, then restart Dvinholm. You can enter the DLL path manually if discovery does not list it.
-- **DLL load or connection error:** check that the selected DLL is the vendor's 32-bit build and that its driver dependencies are installed. A 64-bit-only DLL cannot be loaded by this x86 application.
+- **DLL load or connection error:** check that the selected DLL is the vendor's 32-bit build and that its driver dependencies are installed. A 64-bit-only DLL cannot be loaded by this x86 application. After a failed connection attempt, Connect should become available again; correct the DLL path or driver setup before retrying.
 - **The app does not start:** extract the complete artifact again, keep the published files together, and confirm that Windows meets the minimum supported version.
 - **Connection succeeds but no useful CAN/UDS data appears:** verify the documented bus rate and ECU request/response IDs. The built-in ECU profile catalog is intentionally empty; do not guess IDs or assume every ECU supports VIN/DTC requests.
 - **A read times out or is rejected:** record the operation and reported error, stop capture if the driver is unstable, disconnect, and reconnect only after the adapter is ready. Begin physical testing with passive CAN monitoring.
@@ -189,20 +189,25 @@ Status is based on repository code, automated tests, and explicitly recorded man
 
 ### Phase 1 — finish ECU profile user workflows
 
-- [ ] Run a realistic UI workflow for importing a valid JSON profile catalog, reviewing/selecting a profile, and confirming the selected request/response IDs, addressing format, and candidate DIDs are reflected correctly.
-- [ ] Exercise invalid JSON, invalid fields, duplicate IDs, and an empty catalog; confirm the UI shows an actionable error and does not silently accept invalid data.
-- [ ] Save a catalog, restart the app, and verify persistence; export it and verify that the exported JSON can be imported again.
-- [ ] Verify profile replacement/clearing does not leave stale CAN IDs, DID values, or an obsolete selection in the UI.
+- [x] Manually import a valid JSON profile catalog and confirm the profile name appears in the selection list after resolving the initial display issue (user-confirmed 2026-10-14). Full request/response ID, addressing-format, and candidate-DID reflection still needs verification.
+- [x] Manually import a malformed JSON file and confirm the UI shows an import error and the previously imported profile remains present/selectable afterward (user-confirmed 2026-10-14).
+- [x] Manually import syntactically valid JSON with an invalid CAN request ID (`requestId: "ZZZZ"`); the UI reported an import error and the previously imported valid profile remained present (user-confirmed 2026-10-14).
+- [x] Import a JSON catalog containing duplicate profile IDs; user confirmed the import was rejected (2026-10-14). Preservation of the prior catalog after this specific rejection was not explicitly confirmed.
+- [x] Import a valid empty JSON catalog (`[]`); the UI accepted it and displayed no profiles, and the empty list remained after restarting the app (user-confirmed 2026-10-14). This confirms empty-catalog import and persistence. Clearing of the previously selected profile’s dependent CAN ID/DID fields was also confirmed during the replacement/clearing check.
+- [x] Restart the app and confirm the imported profile remains present (user-confirmed 2026-10-14). This verifies persistence for the tested profile; broader catalog/multiple-profile persistence is not yet covered.
+- [x] Export the catalog and import the exported JSON again; user confirmed the profile was restored (2026-10-14). Whether re-import creates a duplicate entry was not explicitly confirmed.
+- [x] Manually verify profile replacement/clearing: import and select the synthetic test profile, import `[]`, confirm profile-dependent UI state clears, then import the test profile again and confirm it appears/works (user-confirmed 2026-10-14).
 - [ ] Fix only demonstrated UX or state defects and add focused regression tests for each confirmed defect.
+- [x] Select the synthetic `Example ECM (test only)` profile and verify its request CAN ID (`7E0`), response CAN ID (`7E8`), 11-bit addressing format, and candidate DID (`F187`/`F190`) are reflected correctly in the UI (user-confirmed 2026-10-14). The user currently has only one profile, so switching between two profiles remains an optional, unverified check rather than a release blocker.
 - [ ] Keep the built-in catalog empty of unverified vehicle-specific CAN IDs/DIDs; user-supplied candidate profiles must not be presented as proof that an ECU supports an operation.
 
 **Exit gate:** import, validation failure, persistence across restart, export/re-import, selection, and empty/replacement behavior work end-to-end or any unsupported UI-only portion is explicitly documented.
 
 ### Phase 2 — repeatable software smoke and recovery checks
 
-- [ ] Add or verify repeatable hardware-independent checks for first-run state and the case where no registered J2534 DLL is found.
-- [ ] Exercise connect/disconnect, failed connection cleanup, read-error recovery, and diagnostic cancellation using `VirtualJ2534Adapter` where the current architecture exposes a reliable test seam.
-- [ ] Confirm after failure/cancellation that the UI does not remain falsely connected, buttons recover to the correct state, and a subsequent monitor or diagnostic operation can be attempted.
+- [x] Source audit confirms the no-registered-adapter UI path has an explicit status message and preserves manual DLL entry: `No registered J2534 DLL found. You can still enter the DLL path manually.` `J2534DeviceDiscoveryTests` cover device-path normalization and isolated registry-root failures. A full no-provider UI run remains unverified because the user's machine currently detects adapter drivers.
+- [x] Audit existing backend coverage before adding tests: `J2534SessionLifecycleTests` already cover invalid inputs, staged connect failures, cleanup/metadata reset, retry after failed connection, read-error sanitization, reconnect, and cleanup failure. `CanRxDispatcherStopDisposeRaceTests` and `CanBusDisposeFromCallbackTests` cover deferred disposal/read-error callback races; `UdsClientDisposeLifecycleTests` and related ISO-TP tests cover active-request cancellation/disposal.
+- [x] Manually tested failed connection recovery using a deliberately nonexistent DLL path (no adapter hardware required): the user confirmed the Connect button becomes available again after the failed attempt. The error-recovery button state is verified; monitor/UDS disabled state and retry after correcting the path were not separately confirmed. Read-error and active-diagnostic cancellation UI recovery still need a suitable simulated UI seam or a documented limitation.
 - [ ] Avoid duplicating existing lifecycle, timeout, cancellation, late-response, and reconnect-race tests; fill only verified gaps.
 - [ ] Run the full Windows x86 CI pipeline and confirm the test, publish, and artifact-upload jobs all succeed on the exact candidate SHA.
 

@@ -1,3 +1,19 @@
+# Latest handoff update — 2026-10-14 (partial manual ECU-profile UI check)
+
+## User-confirmed result
+- The user manually imported a JSON ECU profile catalog in the Windows UI and confirmed the workflow works after resolving an initially missing profile name in the selection list.
+- This is evidence for the valid-import/profile-name display path only. It does **not** verify persistence after restart, export/re-import, malformed JSON/fields, duplicate IDs, empty catalog, or clearing/replacement behavior.
+- No source code changed in this checkpoint; no CI result is claimed for the manual UI observation.
+
+## Next actions
+1. Continue manual profile validation with malformed JSON and invalid fields; verify actionable errors and no silent acceptance.
+2. Test save/restart persistence and export/re-import.
+3. Test catalog replacement/clearing and stale CAN ID/DID prevention.
+4. Fix only demonstrated defects, add focused regression tests, and require exact-head Windows x86 CI.
+5. Keep clean-install verification outstanding. Physical adapter validation remains deferred to a future release cycle.
+
+---
+
 # Latest handoff update — 2026-10-14 (PR #203 merged; artifact inspected)
 
 ## Verified current state
@@ -702,7 +718,8 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 - [x] Post-merge `main` CI passed on the merge commit: [run #38509199082](https://github.com/vorlocsev/dvinholm/actions/runs/38509199082).
 
 ## Phase 1 — ECU profile workflows
-- [ ] Manually exercise valid import, profile selection, invalid JSON/fields/duplicate IDs, empty catalog, persistence across restart, export/re-import, and catalog replacement/clearing.
+- [x] Manually exercise valid import and persistence of the imported profile across an application restart (user-confirmed 2026-10-14).
+- [ ] Exercise invalid fields/duplicate IDs, empty catalog, export/re-import, and catalog replacement/clearing.
 - [ ] Verify changing or clearing a profile cannot leave stale CAN IDs/DIDs selected in the UI.
 - [ ] Add regression coverage only for confirmed defects. Keep vehicle-specific built-in CAN IDs/DIDs unpopulated without reliable sources or measured evidence.
 
@@ -747,3 +764,132 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 2. Do not mark a phase complete based on code changes alone; require appropriate tests or recorded manual evidence.
 3. For code fixes, add targeted regression tests, wait for exact-head CI success, merge, and verify post-merge main CI.
 4. Physical-adapter validation remains a future-release task unless the release scope is explicitly changed.
+
+
+---
+
+# Latest handoff update — 2026-10-14 (malformed ECU profile JSON UI check)
+
+## User-confirmed manual result
+- The user attempted to import a deliberately truncated/malformed JSON catalog named invalid-profile.json, containing an unfinished object.
+- The UI displayed an import error. This confirms the malformed JSON is surfaced to the user as an error.
+- Not yet verified: whether the existing catalog/profile selection remains unchanged after the failed import; whether the app remains fully usable afterward; handling of invalid fields, duplicate IDs, and an empty catalog.
+- Do not claim a crash-free or data-preservation result beyond the user's confirmation that an error appeared.
+
+## Next actions
+1. Verify that the previously imported valid profile is still present and selectable after the failed import.
+2. Test a syntactically valid JSON catalog with invalid fields and duplicate IDs, plus an empty catalog.
+3. Test save/restart persistence and export/re-import.
+4. If any behavior is defective, reproduce it, add a focused regression test, run exact-head Windows x86 CI, and only then merge the fix.
+5. Continue to defer physical-adapter validation to a future release.
+
+
+## Follow-up manual result — malformed JSON import
+- User confirmed the previously imported valid ECU profile remained present after the malformed JSON import error.
+- This verifies error presentation plus preservation of the visible prior profile/selection in this manual scenario. It does not cover invalid-but-well-formed fields, duplicate IDs, empty catalogs, restart persistence, or export/re-import.
+
+
+## Follow-up manual result — invalid CAN request ID import (2026-10-14)
+- The user imported syntactically valid JSON with `requestId: "ZZZZ"` and reported that the UI displayed an import error.
+- This confirms that this invalid CAN ID input was rejected in the manual UI scenario. It does not yet confirm whether the previously imported valid profile remains present/selectable after this specific failure.
+- Other invalid fields, duplicate IDs, empty catalog, restart persistence, and export/re-import remain unverified.
+
+- User follow-up: confirmed the previously imported valid profile remained present after the invalid CAN ID (`ZZZZ`) import error. This is separate from, and in addition to, the malformed-JSON preservation check.
+
+
+## Follow-up manual result — profile persistence across restart (2026-10-14)
+- User confirmed the previously imported valid ECU profile remained present after fully closing and restarting Dvinholm.
+- The basic single-profile persistence smoke check is complete. This does not verify multiple profiles, catalog replacement/clearing, or export/re-import.
+- Next manual check: export the current profile/catalog to JSON, then import that exported file and confirm the profile name and selectable entry are restored without duplicate or stale entries.
+
+
+## Follow-up manual result — ECU profile export and re-import (2026-10-14)
+- User reported that after exporting the profile/catalog and importing the exported JSON, the profile was restored.
+- Mark the basic export/re-import workflow as complete for the tested profile.
+- The user did not explicitly report whether a duplicate entry appeared; duplicate handling remains unverified, as do invalid fields, duplicate IDs, empty catalog, and replacement/clearing behavior.
+- Next: check invalid fields/duplicate IDs and an empty catalog, then test profile replacement/clearing for stale CAN IDs or DIDs. Keep physical-adapter testing deferred to a future release.
+
+
+## Follow-up manual result — duplicate ECU profile IDs (2026-10-14)
+- User attempted to import a JSON catalog containing duplicate profile IDs and confirmed the import was rejected.
+- Duplicate-ID validation is confirmed in this manual UI scenario. Preservation of the prior catalog after this particular rejection was not explicitly reported, so do not claim it was verified.
+- Still open: other invalid fields, empty catalog, replacement/clearing and stale CAN ID/DID state. Basic single-profile import, malformed JSON rejection, invalid request-ID rejection, restart persistence, and export/re-import have been user-confirmed.
+- Next manual check: import an empty catalog (or a valid catalog with an empty profile list, according to the supported JSON schema) and observe whether the UI handles the empty state cleanly. Then test profile replacement/clearing. Physical-adapter validation remains deferred to a future release.
+
+
+## Follow-up manual result — empty ECU profile catalog (2026-10-14)
+- User imported the syntactically valid JSON empty array `[]`; the application accepted it and displayed no profiles.
+- Empty-catalog import/display is confirmed. This does not yet establish whether the app's prior catalog is intentionally replaced, persisted as empty after restart, or recoverable after an empty import; only the visible empty state was confirmed.
+- The README Phase 1 checklist now marks empty-catalog import/display complete. Other invalid fields and profile replacement/clearing behavior remain open.
+- Next manual check: import the one-profile test catalog again, select it, then import `[]` and verify the selection and dependent CAN ID/DID UI fields are cleared rather than left stale. If possible, restart after importing `[]` and confirm the empty catalog persists. Then test replacing the empty catalog with the test profile.
+- Physical-adapter validation remains deferred to a future release and is not a blocker for the first software MVP.
+
+
+## Follow-up manual result — empty catalog persists across restart (2026-10-14)
+- After importing the empty catalog `[]`, the user restarted Dvinholm and confirmed the profile list remained empty.
+- Confirmed: empty-catalog import/display and persistence across restart. This does not by itself verify whether stale profile selection, CAN IDs, or DID values are cleared from every dependent UI field.
+- README Phase 1 now records the persistence result. Next targeted UI check: import/select the synthetic `Example ECM (test only)` profile, then import `[]` and inspect all profile-dependent selection/CAN ID/DID fields for stale values. Then import the synthetic profile again to verify recovery from empty state.
+- Physical-adapter validation remains deferred to a future release and is not a blocker for the first software MVP.
+
+
+## Follow-up manual result — profile clearing and recovery from empty catalog (2026-10-14)
+
+- User confirmed the profile workflow works end-to-end: selecting the synthetic test profile, importing the empty catalog `[]`, verifying profile-dependent state is cleared, and importing the test profile again successfully.
+- Marked the Phase 1 profile replacement/clearing UI check complete in README. Together with earlier checks, manual evidence now covers valid import/display, malformed JSON rejection with prior profile preserved, invalid request ID rejection with prior profile preserved, duplicate-ID rejection, empty catalog display and persistence, restart persistence for a profile, export/re-import, and recovery from empty state.
+- No code defect was reported in this workflow, so no application-code change or new regression test is justified by this manual result alone.
+- Remaining Phase 1 work: verify imported request/response IDs, addressing mode, and candidate DIDs are reflected correctly; consider multiple-profile persistence and whether re-importing an existing profile duplicates it. Then proceed to Phase 2 software smoke/recovery gaps, avoiding duplicate existing virtual-adapter tests.
+- Keep physical J2534 adapter validation deferred to a future release and outside the first software MVP blocker list.
+
+
+## Follow-up — scope the remaining profile-field UI check (2026-10-14)
+
+- User confirmed there is no second profile available in the UI. Do not treat switching between two profiles as a blocker or ask the user to create a second profile just to continue.
+- The remaining manual check is limited to the single synthetic `Example ECM (test only)` profile: confirm request ID `7E0`, response ID `7E8`, 11-bit addressing, and a candidate DID such as `F187` or `F190` appear in the corresponding fields after selecting it. No physical adapter or diagnostic request is needed.
+- The README Phase 1 checklist now explicitly separates single-profile field mapping from the optional multi-profile switching check. Existing user-confirmed empty-catalog clearing/recovery result remains recorded as complete.
+- Once field mapping is confirmed, proceed to Phase 2 by auditing existing virtual-adapter smoke/recovery coverage and CI gaps; do not duplicate tests already present. Physical J2534 hardware validation remains deferred to a future release.
+
+
+## Follow-up manual result — selected profile field mapping (2026-10-14)
+
+- User confirmed the displayed fields match the synthetic `Example ECM (test only)` profile: request CAN ID `7E0`, response CAN ID `7E8`, 11-bit addressing, and one of the profile's candidate DIDs (`F187`/`F190`).
+- Phase 1 single-profile import/selection/field mapping is now manually checked alongside validation failures, persistence, export/re-import, and empty-catalog replacement/clearing.
+- Switching between two profiles remains unverified because only one profile is currently available; do not block the MVP on that optional check.
+- Next: audit the existing virtual-adapter and recovery tests for actual gaps before changing code. Do not duplicate coverage already present. Physical J2534 adapter testing remains deferred to a future release.
+
+
+## Phase 2 audit — existing lifecycle and recovery test coverage (2026-10-14)
+
+Reviewed the current `main` branch test/source files before proposing new tests.
+
+Existing automated coverage confirmed by source inspection:
+- `J2534SessionLifecycleTests`: invalid DLL path/baud inputs; failures at load/open/connect/version stages; cleanup and metadata clearing; retry after failed connection; unexpected exception sanitization for version/read errors; cleanup failure handling; reconnect replacement and disconnect metadata reset.
+- `CanRxDispatcherStopDisposeRaceTests` and `CanBusDisposeFromCallbackTests`: read-error callback disposal, stop/dispose races, and ensuring external disposal waits for receive-worker completion without deadlock.
+- `UdsClientDisposeLifecycleTests`, `IsoTpDisposeCancellationTests`, `IsoTpChannelWaitCancellationTests`, and related ISO-TP tests: cancellation/disposal of active requests, rejection of future requests, and cancellation while waiting for a busy channel.
+- `VirtualJ2534AdapterTests` already exercise the virtual adapter through the real CAN/ISO-TP stack, including a normal read-only UDS response, filtering another ECU's response, and multi-frame response handling.
+
+No tests were run during this source audit; this is a coverage review, not a claim of passing CI. Avoid adding redundant backend lifecycle/cancellation tests. The remaining likely gaps are first-run/no-provider behavior and UI-level status/button recovery after failed connect, read error, and cancellation. Next inspect the relevant UI state transitions and test seams, then add only focused coverage for a concrete gap. The manual profile-field mapping check was user-confirmed complete. Physical adapter validation remains deferred to a future release.
+
+
+## Follow-up audit — adapter discovery UI and CI confirmation (2026-10-14)
+
+- CI for the current documentation PR head `cdc2aad4d2a60070e6f80e7fb11b2bf887d920aa` completed successfully: workflow run `38597362723`, build job `115967424685`. This confirms the docs branch's current build/CI, not a new app-code change.
+- Source inspection confirms `RefreshJ2534Devices` displays an explicit message when no registered adapter DLL is found and leaves the manual DLL path entry available. `J2534DeviceDiscoveryTests` already cover normalization of registry paths and resilience when one registry root throws access/I/O/security exceptions.
+- User's current Windows machine detects adapter drivers, so the no-registered-provider UI state cannot be claimed as manually verified. Do not force the user to uninstall/disable drivers just to exercise this branch.
+- Next practical manual check is failed-connection recovery with a deliberately nonexistent DLL path; this is safe without physical hardware. Expected: a clear connection failure, Connect returns to enabled state, monitor and diagnostic controls remain disabled, and correcting the path permits another attempt. Do not send diagnostic traffic.
+- UI-level read-error/cancellation recovery remains a test-seam question; backend lifecycle/cancellation coverage already exists. Avoid speculative changes and duplicate tests. Physical adapter validation remains deferred to a future release.
+
+
+## Manual result — failed-connect UI recovery (2026-10-14)
+
+- User tested connecting with a deliberately nonexistent J2534 DLL path and confirmed that the **Connect** button became available again after the failed attempt.
+- Marked the button-recovery portion of the Windows smoke checklist complete. Do not overstate the result: the user did not separately confirm the monitor/UDS controls remained disabled or that a corrected DLL path was retried.
+- No application code change is warranted from this result; the observed recovery matches the existing connect-task cleanup path. No physical adapter or vehicle connection was involved.
+- Next: inspect packaging/release readiness and confirm CI on the latest documentation head. Keep real-adapter verification deferred to future releases; UI read-error and diagnostic-cancellation recovery remain open until there is a reliable simulated UI test seam.
+
+
+## Packaging/readme audit — connection-failure guidance (2026-10-14)
+
+- Reviewed the published Windows artifact instructions and troubleshooting section on `main`: README correctly identifies `Dvinholm-Windows-x86` as a portable self-contained output rather than an installer, calls out the 32-bit J2534 DLL requirement, and warns that virtual-adapter CI does not certify physical hardware or a specific vehicle.
+- Added a concise troubleshooting note that the Connect button should recover after a failed DLL load/connection and the user can correct the path/setup before retrying. This reflects the user-confirmed manual result without claiming unverified monitor/UDS control states.
+- Existing package evidence is from main CI run #38509199082 (ZIP integrity, x86 PE headers, expected executables); this does not constitute a clean-install matrix. A clean-install/first-launch check and exact candidate-SHA CI remain release gates.
+- Current main has no release tag/release candidate established by this audit. Next: verify CI for the updated documentation branch head, then continue software-only packaging checks. Physical adapter validation remains a future-release task.
