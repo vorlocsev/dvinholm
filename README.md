@@ -205,9 +205,9 @@ Status is based on repository code, automated tests, and explicitly recorded man
 
 ### Phase 2 — repeatable software smoke and recovery checks
 
-- [ ] Add or verify repeatable hardware-independent checks for first-run state and the case where no registered J2534 DLL is found.
-- [ ] Exercise connect/disconnect, failed connection cleanup, read-error recovery, and diagnostic cancellation using `VirtualJ2534Adapter` where the current architecture exposes a reliable test seam.
-- [ ] Confirm after failure/cancellation that the UI does not remain falsely connected, buttons recover to the correct state, and a subsequent monitor or diagnostic operation can be attempted.
+- [ ] Add or verify repeatable hardware-independent checks for first-run UI state and the case where no registered J2534 DLL/provider is found; distinguish provider discovery from the user's manual DLL selection path.
+- [x] Audit existing backend coverage before adding tests: `J2534SessionLifecycleTests` already cover invalid inputs, staged connect failures, cleanup/metadata reset, retry after failed connection, read-error sanitization, reconnect, and cleanup failure. `CanRxDispatcherStopDisposeRaceTests` and `CanBusDisposeFromCallbackTests` cover deferred disposal/read-error callback races; `UdsClientDisposeLifecycleTests` and related ISO-TP tests cover active-request cancellation/disposal.
+- [ ] Verify the remaining UI-level recovery behavior after connect failure, read error, and diagnostic cancellation: truthful connection status, correct button state, and ability to retry monitoring/diagnostics. Add focused tests only if a reliable UI test seam exists; otherwise document manual smoke results and the limitation.
 - [ ] Avoid duplicating existing lifecycle, timeout, cancellation, late-response, and reconnect-race tests; fill only verified gaps.
 - [ ] Run the full Windows x86 CI pipeline and confirm the test, publish, and artifact-upload jobs all succeed on the exact candidate SHA.
 
