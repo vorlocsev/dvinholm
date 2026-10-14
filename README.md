@@ -3,12 +3,12 @@
 Windows CAN monitor and read-only UDS diagnostic client for Volvo interfaces that expose the SAE J2534 API.
 
 
-## Latest verified CI build (2026-10-14)
+## Latest verified CI build (2026-10-15)
 
-- Main commit: `e85dee15d86a593c2d1fd18b6eddc0f66516fe93`.
-- [Post-merge GitHub Actions run #38614877115](https://github.com/vorlocsev/dvinholm/actions/runs/38614877115) passed Restore, Build, Test, Publish, and Upload artifact on this exact commit.
-- Artifact: `Dvinholm-Windows-x86`, 66,752,717 bytes; [artifact details](https://api.github.com/repos/vorlocsev/dvinholm/actions/artifacts/11919756001).
-- GitHub-reported digest and independently calculated local ZIP SHA-256 match: `sha256:6df5b6f48372ff0143d54a9344ece0edf8e5f880feea1c36e1fceb0574173104`.
+- Main commit: `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`.
+- [Post-merge GitHub Actions run #38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679) passed Restore, Build, Test, Publish, and Upload artifact on this exact commit.
+- Artifact: `Dvinholm-Windows-x86`, 66,753,007 bytes; [artifact details](https://api.github.com/repos/vorlocsev/dvinholm/actions/artifacts/11930375485).
+- GitHub-reported digest and independently calculated local ZIP SHA-256 match: `sha256:793bb88455ca67f1517a7fc101447ba972a00d79bc49daf9556cd9a220c8c384`.
 - Downloaded ZIP passed integrity checking (476 entries). Both `Dvinholm.App.exe` and `RestartAgent.exe` are PE x86 (`0x014c`).
 - This is a portable self-contained x86 build, not an installer. The exact artifact has not yet received a fresh manual launch test; earlier manual checks were on previous artifacts.
 - This CI checkpoint is not a published/versioned release. No tag or public GitHub Release has been created.
