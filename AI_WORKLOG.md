@@ -1,3 +1,24 @@
+# Latest handoff update — 2026-10-14 (PR #195 and #196 merged)
+
+## Verified current state
+- PR [#195 — Reject malformed normalized J2534 DLL paths](https://github.com/vorlocsev/dvinholm/pull/195) merged into `main`.
+  - Both exact-head CI runs passed: [#38504955044](https://github.com/vorlocsev/dvinholm/actions/runs/38504955044) and [#38504946299](https://github.com/vorlocsev/dvinholm/actions/runs/38504946299).
+  - Merge commit: `f705160f60f3c88fa48d849eef457da988979756`.
+  - Rejects DLL paths that normalize to empty and trims whitespace inside quoted paths.
+- PR [#196 — Isolate J2534 registry root discovery failures](https://github.com/vorlocsev/dvinholm/pull/196) merged into `main`.
+  - Both exact-head CI runs passed: [#38505408610](https://github.com/vorlocsev/dvinholm/actions/runs/38505408610) and [#38505420071](https://github.com/vorlocsev/dvinholm/actions/runs/38505420071).
+  - Merge commit: `5074ceacb852af44a102651bac666d92c2a6263d`.
+  - A read failure in the `PassThruSupport.04.04` registry root is isolated so discovery continues with `PassThruSupport.02.02`; added regression coverage for unauthorized access and I/O failures.
+- Physical DiCE/Mongoose adapter tests remain deferred to a future release cycle and are not a current software-MVP blocker.
+
+## Next steps
+1. Verify latest post-merge CI on `main` after commit `5074ceacb852af44a102651bac666d92c2a6263d`.
+2. Continue auditing a concrete user-facing gap in ECU profile import/export/selection or actionable connection/read-error reporting; inspect source and existing tests before changing code.
+3. Keep README roadmap honest and preserve the explicit distinction between virtual-adapter CI and physical hardware validation.
+4. PR #194 (Windows 11 IoT LTSC manual smoke-test documentation) remains open as last checked; inspect before deciding whether to close/merge.
+
+---
+
 # Latest handoff update — 2026-10-14 (PR #192 merged; lifecycle/protocol audit resumed)
 
 ## Verified current state
