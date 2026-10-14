@@ -65,6 +65,10 @@ internal static class J2534DeviceDiscovery
                         {
                             // Registry can change while vendor software is being installed.
                         }
+                        catch (System.Security.SecurityException)
+                        {
+                            // An ACL failure for one vendor key should not hide other adapters.
+                        }
                     }
                 });
             }
@@ -74,6 +78,10 @@ internal static class J2534DeviceDiscovery
             // Report an empty list; the UI remains usable for manual DLL selection.
         }
         catch (IOException)
+        {
+            // Report an empty list; the UI remains usable for manual DLL selection.
+        }
+        catch (System.Security.SecurityException)
         {
             // Report an empty list; the UI remains usable for manual DLL selection.
         }
@@ -95,6 +103,10 @@ internal static class J2534DeviceDiscovery
             // Continue with other registry roots.
         }
         catch (IOException)
+        {
+            // Continue with other registry roots.
+        }
+        catch (System.Security.SecurityException)
         {
             // Continue with other registry roots.
         }

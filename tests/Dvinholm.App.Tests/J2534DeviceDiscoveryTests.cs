@@ -79,17 +79,21 @@ public sealed class J2534DeviceDiscoveryTests
     }
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public void IgnoreRegistryRootFailure_AllowsSubsequentRootToBeRead(bool unauthorized)
+    [InlineData(0)]
+    [InlineData(1)]
+    [InlineData(2)]
+    public void IgnoreRegistryRootFailure_AllowsSubsequentRootToBeRead(int failureKind)
     {
         var visitedRoots = new List<string>();
 
         Dvinholm.App.J2534DeviceDiscovery.IgnoreRegistryRootFailure(() =>
         {
-            throw unauthorized
-                ? new UnauthorizedAccessException("Simulated inaccessible registry root.")
-                : new IOException("Simulated registry I/O failure.");
+            throw failureKind switch
+            {
+                0 => new UnauthorizedAccessException("Simulated inaccessible registry root."),
+                1 => new IOException("Simulated registry I/O failure."),
+                _ => new System.Security.SecurityException("Simulated registry ACL failure.")
+            };
         });
         Dvinholm.App.J2534DeviceDiscovery.IgnoreRegistryRootFailure(
             () => visitedRoots.Add("legacy-root"));
