@@ -181,9 +181,24 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            var detail = FormatSafeException(ex, "Unexpected update error.");
+            var logPath = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Dvinholm",
+                "update.log");
+            try
+            {
+                Directory.CreateDirectory(Path.GetDirectoryName(logPath)!);
+                File.WriteAllText(logPath,
+                    $"Update failed at {DateTimeOffset.Now:O}{Environment.NewLine}{ex}",
+                    new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+
             UpdateButton.Content = "Retry update";
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {build.DisplayVersion}";
-            SetStatus("Update preparation failed; the current app was left running. Check the connection and disk space, then retry.");
+            SetStatus($"Update failed: {detail} See %LOCALAPPDATA%\\Dvinholm\\update.log for details.");
             _updateAvailable = true;
         }
         finally
