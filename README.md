@@ -175,7 +175,7 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 
 ## Roadmap
 
-Roadmap status is based on the current branch and the automated test suite. Last updated: 2026-10-14, including J2534 DLL path normalization (#195) and isolated registry-root discovery failures (#196). Hardware compatibility remains unverified.
+Roadmap status is based on the current branch, automated tests, and explicitly recorded manual checks. Last updated: 2026-10-14, including J2534 DLL path normalization (#195), isolated registry-root discovery failures (#196), registry security-exception handling (#198), and the Windows 11 IoT LTSC startup/no-device smoke check. Hardware compatibility remains unverified.
 
 ### Completed: core transport and recovery
 
@@ -210,6 +210,7 @@ For the current test count and full restore/build/test/publish/artifact-upload r
 ### Next — packaging and release readiness
 
 - [ ] Verify clean installation and first launch on supported Windows versions.
+- [x] Manually verify the published x86 app starts, discovers installed J2534 drivers, and reports the missing-device state without hanging on Windows 11 IoT LTSC 26100.9550. This covers startup/recovery only—not a clean-install matrix or physical-adapter compatibility.
 - [x] Document CI artifact installation, x86/J2534 driver constraints, known limitations, and troubleshooting.
 - [ ] Run the full CI pipeline on the release candidate and publish a versioned release with release notes.
 - [ ] Clearly document that current CI uses a virtual adapter and that real-hardware compatibility is not yet verified.
