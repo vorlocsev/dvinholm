@@ -218,10 +218,11 @@ Status is based on repository code, automated tests, and explicitly recorded man
 
 - [x] Confirm the successful `main` CI run uploaded a non-expired artifact named `Dvinholm-Windows-x86` (66,752,802 bytes; run #38509199082).
 - [x] Inspect the artifact ZIP directly: archive integrity passed (`testzip` returned no errors), 476 entries found, and `Dvinholm.App.exe` plus `RestartAgent.exe` are present. Both PE headers identify machine `0x014c` (x86). SHA-256: `4ee5d67302d31c38f83d07884673d28674b2fbed8088cfdf6cc1bf0b752fdc27`.
-- [ ] Verify clean installation/first launch on the supported Windows baseline. The existing Windows 11 IoT LTSC 26100.9550 check is a startup/no-device smoke test, not a clean-install matrix.
-- [ ] Verify launch behavior when no physical adapter is present and when no provider is registered; document how to select a vendor 32-bit J2534 DLL manually.
-- [ ] Check README instructions against the actual published artifact and ensure troubleshooting covers DLL architecture/dependencies, missing adapter, connection failures, and absent ECU responses.
-- [ ] State clearly that current CI uses a virtual adapter and does not certify a physical interface, a specific vehicle, ECU addressing, electrical compatibility, or vendor-driver behavior.
+- [x] Download the current CI artifact, extract it into a fresh separate folder, launch `Dvinholm.App.exe`, close it, and launch it again successfully on Windows 11 IoT LTSC 26100.9550 (user-confirmed 2026-10-14). No missing-dependency/startup error was reported.
+- [x] Confirm first-launch behavior with no physical J2534 device connected: the app opens and reports that no device is present (user-confirmed in the Windows smoke check). This is not a physical-adapter test.
+- [ ] Verify the UI behavior when no J2534 provider is registered. The current machine detects adapter drivers, so do not disable/uninstall them just to exercise this state; source audit confirms manual DLL path entry remains available.
+- [x] Reviewed README instructions against the portable self-contained artifact and documented extraction, launch, 32-bit DLL requirements, troubleshooting for connection failure, and the limits of virtual-adapter CI. The artifact is not an installer.
+- [x] State clearly that current CI uses a virtual adapter and does not certify a physical interface, a specific vehicle, ECU addressing, electrical compatibility, or vendor-driver behavior.
 
 **Exit gate:** a new user can obtain the artifact, follow the instructions, launch the app, understand the no-adapter state, and identify the limits of what has been validated.
 
