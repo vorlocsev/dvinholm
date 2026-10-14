@@ -763,3 +763,21 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 2. Do not mark a phase complete based on code changes alone; require appropriate tests or recorded manual evidence.
 3. For code fixes, add targeted regression tests, wait for exact-head CI success, merge, and verify post-merge main CI.
 4. Physical-adapter validation remains a future-release task unless the release scope is explicitly changed.
+
+
+---
+
+# Latest handoff update — 2026-10-14 (malformed ECU profile JSON UI check)
+
+## User-confirmed manual result
+- The user attempted to import a deliberately truncated/malformed JSON catalog named invalid-profile.json, containing an unfinished object.
+- The UI displayed an import error. This confirms the malformed JSON is surfaced to the user as an error.
+- Not yet verified: whether the existing catalog/profile selection remains unchanged after the failed import; whether the app remains fully usable afterward; handling of invalid fields, duplicate IDs, and an empty catalog.
+- Do not claim a crash-free or data-preservation result beyond the user's confirmation that an error appeared.
+
+## Next actions
+1. Verify that the previously imported valid profile is still present and selectable after the failed import.
+2. Test a syntactically valid JSON catalog with invalid fields and duplicate IDs, plus an empty catalog.
+3. Test save/restart persistence and export/re-import.
+4. If any behavior is defective, reproduce it, add a focused regression test, run exact-head Windows x86 CI, and only then merge the fix.
+5. Continue to defer physical-adapter validation to a future release.
