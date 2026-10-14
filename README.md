@@ -152,9 +152,11 @@ The application is self-contained, so a separate .NET runtime installation is no
 
 The application checks GitHub Actions for the newest successful Windows x86 build from `main`. The version row shows the running build's informational version and the latest available commit/CI run. If a newer build exists, choose **Download and launch update**.
 
-Updates are downloaded from the public repository's successful CI artifact, checked for size and unsafe archive paths, and extracted to a version-specific folder under `%LOCALAPPDATA%\\Dvinholm\\Builds\\<commit-sha>`. The new executable is launched from that folder; the currently running copy is not overwritten. ECU profile data remains in the shared `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json` location. Old build folders are not automatically deleted, so a previous build remains available for recovery.
+Updates are downloaded from the newest completed successful CI run that has a non-expired `Dvinholm-Windows-x86` artifact, across **all branches** (including feature branches and pull requests), not just `main`. This means the newest build may contain unmerged work and is not necessarily a release-stable version. The updater verifies the artifact size and GitHub SHA-256 digest when available, checks archive paths, and stages the extracted files before installation.
 
-This initial updater targets the latest successful CI build on `main`, not the latest published release. Future versions can switch the update source to the GitHub Releases API without changing the user's profile storage.
+When an update is applied, a helper waits for the running app to exit, mirrors the staged files into `%LOCALAPPDATA%\\Dvinholm\\Current` using Robocopy `/MIR`, and therefore replaces changed files and removes obsolete files in that managed app directory. It then removes old `Builds` caches and stale staging folders and starts the updated copy. The first update from a portable folder installs the managed copy under `Current`; the original folder is not overwritten. ECU profile data remains separate at `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json` and is preserved. If the update helper fails, it records details in `%LOCALAPPDATA%\\Dvinholm\\update.log`.
+
+The update channel follows successful CI artifacts rather than the latest published GitHub Release. Physical J2534 adapter validation is not implied by CI success and remains deferred to a future release.
 
 ### Troubleshooting
 
