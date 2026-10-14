@@ -173,61 +173,76 @@ Run this checklist on a stationary vehicle with a supported, correctly installed
 
 Record the vehicle/ECU identification, adapter and DLL versions, bus rate, request/response IDs, operation, and result. Redact VINs and other identifying data before sharing logs. A virtual-adapter CI pass validates software behavior only; it cannot certify electrical compatibility, vehicle-specific IDs, timing, or vendor-driver behavior.
 
-## Roadmap
+## Roadmap to first software MVP release
 
-Roadmap status is based on the current branch, automated tests, and explicitly recorded manual checks. Last updated: 2026-10-14, including J2534 DLL path normalization (#195), isolated registry-root discovery failures (#196), registry security-exception handling (#198), the Windows 11 IoT LTSC startup/no-device smoke check, and a source-level diagnostic-data exposure audit. Hardware compatibility remains unverified.
+Status is based on repository code, automated tests, and explicitly recorded manual checks. Updated 2026-10-14. Core CAN/ISO-TP/UDS transport and J2534 lifecycle/recovery have broad virtual-adapter regression coverage. The Windows 11 IoT LTSC 26100.9550 startup/no-device smoke check is confirmed. Physical-adapter compatibility remains unverified and is intentionally not a blocker for this first software MVP.
 
-### Completed: core transport and recovery
+### Phase 0 — close current audit and stabilize main
 
-- [x] Shared CAN receive dispatcher for the monitor and ISO-TP/UDS consumers.
-- [x] Serialize CAN transmit operations and cover concurrent requests.
-- [x] Exercise J2534 session connect/disconnect, teardown, read errors, failure cleanup, and reconnect behavior with the virtual adapter.
-- [x] Cover ISO-TP single- and multi-frame transfers, Flow Control, Block Size, STmin, sequence handling, deadlines, cancellation, and recovery after malformed or late frames.
-- [x] Cover read-only UDS DID/VIN/DTC flows, negative responses, `ResponsePending (0x78)`, cancellation, concurrent requests, and unrelated or late responses.
-- [x] Make passive ECU discovery report receive-queue frame loss rather than silently presenting an incomplete scan.
-- [x] Filter unrelated CAN traffic before it reaches the bounded ECU-discovery queue.
-- [x] Verify the current Windows CI pipeline: restore, build, tests, publish, and artifact upload.
+- [x] Complete the source-level diagnostic-data exposure review: no persistent diagnostic logger or automatic telemetry was found in the reviewed paths; explicit VIN reads and user-initiated CAN CSV export may contain identifying data.
+- [ ] Finish PR #202 only after exact-head CI is successful; merge it and verify post-merge CI on `main`.
+- [ ] Recheck the roadmap and handoff against the merged `main` SHA before starting the next phase.
 
-For the current test count and full restore/build/test/publish/artifact-upload result, use the [GitHub Actions history](https://github.com/vorlocsev/dvinholm/actions) and select the latest successful run on `main`; the count changes as regression tests are added. The pipeline uses a virtual J2534 adapter and does not establish compatibility with a physical interface or a particular vehicle.
+**Exit gate:** PR #202 is merged, its exact head passed CI, and post-merge `main` CI is green.
 
-### Current priority — complete the software MVP
+### Phase 1 — finish ECU profile user workflows
 
-- [x] Improve user-visible reporting for connection state, transport errors, ECU discovery completeness, and negative UDS responses; partial discovery results are retained on cancellation/queue overflow, and negative UDS responses include NRC explanations. See PRs #147, #156, and the existing UDS client/UI handling.
-- [ ] Validate ECU profile import/export and profile selection through realistic user workflows. Unit coverage exists for JSON validation, round-trip, persistence, replacement, and invalid input; interactive UI smoke testing remains open.
-- [x] Add only documented/testable read-only UDS operations currently supported (DID/VIN/DTC); DTC status flags are displayed in readable form by PR #158. Additional operations remain gated on documented behavior and tests.
-- [ ] Keep vehicle-specific CAN IDs and DIDs out of the built-in catalog until supported by reliable sources or measured evidence.
-- [ ] Add repeatable software smoke tests for first launch, adapter discovery failure, connect/disconnect, and diagnostic cancellation using the virtual adapter where applicable.
-- [x] Review user-visible UDS negative-response messages and retain the raw NRC plus a readable explanation.
-- [x] Complete a source-level review of diagnostic status/error handling and data persistence for accidental sensitive-data exposure. No persistent diagnostic logger was found; VIN is shown only as the result of an explicit read request, and CAN frames are written to CSV only when the user explicitly exports them. Redact VINs and identifying payloads before sharing exports. Repeat this review if persistent logging or telemetry is added.
-- [x] Verify retryable `J2534Session.Dispose()` behavior after a vendor adapter unload failure with the virtual adapter; regression test passed in [CI run #38302862250](https://github.com/vorlocsev/dvinholm/actions/runs/38302862250).
-- [x] Verify concurrent `CanBus.Dispose()` callers wait for an active native send to finish with the virtual adapter; regression test passed in [CI run #38304154982](https://github.com/vorlocsev/dvinholm/actions/runs/38304154982).
-- [x] Verify an external `CanRxDispatcher.Dispose()` caller waits for deferred cleanup when disposal starts inside a read-error callback with the virtual adapter; regression test passed in [CI run #38305672017](https://github.com/vorlocsev/dvinholm/actions/runs/38305672017).
-- [x] Verify `J2534Session.Disconnect()` invoked from a read-error callback defers adapter unload until the callback returns with the virtual adapter; regression test passed in [CI run #38306233969](https://github.com/vorlocsev/dvinholm/actions/runs/38306233969).
-- [x] Verify a deferred disconnect from an old receive worker cannot tear down a reconnected J2534 session; regression test passed in [CI run #38308753118](https://github.com/vorlocsev/dvinholm/actions/runs/38308753118).
+- [ ] Run a realistic UI workflow for importing a valid JSON profile catalog, reviewing/selecting a profile, and confirming the selected request/response IDs, addressing format, and candidate DIDs are reflected correctly.
+- [ ] Exercise invalid JSON, invalid fields, duplicate IDs, and an empty catalog; confirm the UI shows an actionable error and does not silently accept invalid data.
+- [ ] Save a catalog, restart the app, and verify persistence; export it and verify that the exported JSON can be imported again.
+- [ ] Verify profile replacement/clearing does not leave stale CAN IDs, DID values, or an obsolete selection in the UI.
+- [ ] Fix only demonstrated UX or state defects and add focused regression tests for each confirmed defect.
+- [ ] Keep the built-in catalog empty of unverified vehicle-specific CAN IDs/DIDs; user-supplied candidate profiles must not be presented as proof that an ECU supports an operation.
 
-**Exit criterion:** users can understand which ECU was queried, which addressing was used, and whether the result is positive, negative, timed out, cancelled, or incomplete; the main software workflows are covered by repeatable tests.
+**Exit gate:** import, validation failure, persistence across restart, export/re-import, selection, and empty/replacement behavior work end-to-end or any unsupported UI-only portion is explicitly documented.
 
-### Next — packaging and release readiness
+### Phase 2 — repeatable software smoke and recovery checks
 
-- [ ] Verify clean installation and first launch on supported Windows versions.
-- [x] Manually verify the published x86 app starts, discovers installed J2534 drivers, and reports the missing-device state without hanging on Windows 11 IoT LTSC 26100.9550. This covers startup/recovery only—not a clean-install matrix or physical-adapter compatibility.
-- [x] Document CI artifact installation, x86/J2534 driver constraints, known limitations, and troubleshooting.
-- [ ] Run the full CI pipeline on the release candidate and publish a versioned release with release notes.
-- [ ] Clearly document that current CI uses a virtual adapter and that real-hardware compatibility is not yet verified.
+- [ ] Add or verify repeatable hardware-independent checks for first-run state and the case where no registered J2534 DLL is found.
+- [ ] Exercise connect/disconnect, failed connection cleanup, read-error recovery, and diagnostic cancellation using `VirtualJ2534Adapter` where the current architecture exposes a reliable test seam.
+- [ ] Confirm after failure/cancellation that the UI does not remain falsely connected, buttons recover to the correct state, and a subsequent monitor or diagnostic operation can be attempted.
+- [ ] Avoid duplicating existing lifecycle, timeout, cancellation, late-response, and reconnect-race tests; fill only verified gaps.
+- [ ] Run the full Windows x86 CI pipeline and confirm the test, publish, and artifact-upload jobs all succeed on the exact candidate SHA.
 
-**Exit criterion:** reproducible CI, clear installation instructions, release notes, and transparent statements about verified versus unverified compatibility.
+**Exit gate:** the core software paths have repeatable regression coverage, no known blocking defect remains, and the complete CI pipeline is green.
 
-### Future releases — physical adapter validation
+### Phase 3 — packaging and clean-install verification
 
-Physical-hardware testing is deliberately deferred until a future release cycle; it is not a blocker for the current software-MVP roadmap.
+- [ ] Inspect the CI-published artifact: architecture, required files, launch entry point, and whether the artifact is suitable for the documented installation procedure.
+- [ ] Verify clean installation/first launch on the supported Windows baseline. The existing Windows 11 IoT LTSC 26100.9550 check is a startup/no-device smoke test, not a clean-install matrix.
+- [ ] Verify launch behavior when no physical adapter is present and when no provider is registered; document how to select a vendor 32-bit J2534 DLL manually.
+- [ ] Check README instructions against the actual published artifact and ensure troubleshooting covers DLL architecture/dependencies, missing adapter, connection failures, and absent ECU responses.
+- [ ] State clearly that current CI uses a virtual adapter and does not certify a physical interface, a specific vehicle, ECU addressing, electrical compatibility, or vendor-driver behavior.
 
-- [ ] Validate with a real 32-bit J2534 adapter, starting with passive CAN capture.
+**Exit gate:** a new user can obtain the artifact, follow the instructions, launch the app, understand the no-adapter state, and identify the limits of what has been validated.
+
+### Phase 4 — release candidate and public release
+
+- [ ] Freeze the release-candidate scope; defer nonessential features and vehicle-specific assumptions.
+- [ ] Run the complete CI workflow on the exact release-candidate commit and verify restore, build, all tests, x86 publish, and artifact upload.
+- [ ] Review the release artifact and installation instructions one final time; ensure the source tag/commit matches the validated candidate.
+- [ ] Create a versioned Git tag and GitHub Release with concise release notes: supported read-only features, install/driver requirements, known limitations, and tested environments.
+- [ ] Include the virtual-adapter test limitation and the explicit statement that real-hardware compatibility has not yet been verified.
+- [ ] After publishing, verify that the release page and artifact are accessible and that the documented installation steps match the published files.
+
+**Release acceptance criteria**
+1. No known release-blocking software defects.
+2. Exact release-candidate SHA passes the complete Windows x86 CI pipeline.
+3. Profile workflows and startup/no-adapter behavior have been checked and documented.
+4. Release artifact, version tag, instructions, and release notes agree.
+5. Read-only scope and unverified hardware compatibility are plainly stated.
+
+**Definition of done:** first software MVP release is published and reproducible from a tagged, CI-verified commit. This does not claim physical J2534 or vehicle compatibility.
+
+### Future release cycle — physical adapter validation (not a first-release blocker)
+
+- [ ] Validate passive CAN capture with a real 32-bit J2534 adapter.
 - [ ] Verify repeated connect/disconnect and recovery on DiCE and/or Mongoose JLR Pro hardware.
 - [ ] Check vendor DLL loading, actual baud-rate behavior, native read errors, and supported hardware filters.
-- [ ] Validate read-only VIN/DTC requests only against ECUs with confirmed support.
-- [ ] Record results by adapter model, driver/DLL version, vehicle/ECU, and bus rate; redact VINs and identifying data before sharing logs.
+- [ ] Validate read-only VIN/DTC requests only against ECUs with confirmed support and documented addressing.
+- [ ] Record adapter model, driver/DLL version, vehicle/ECU, bus rate, IDs, operation, and outcome; redact VINs and identifying information before sharing.
 
-**Exit criterion:** repeatable, recorded results on at least one physical adapter. Until this work is completed, hardware compatibility remains unverified.
+**Exit criterion:** repeatable, recorded results on at least one physical adapter. Until then, hardware compatibility remains unverified.
 
 ### Out of scope
 
