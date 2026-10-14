@@ -175,7 +175,7 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 
 ## Roadmap
 
-Roadmap status is based on the current branch, automated tests, and explicitly recorded manual checks. Last updated: 2026-10-14, including J2534 DLL path normalization (#195), isolated registry-root discovery failures (#196), registry security-exception handling (#198), and the Windows 11 IoT LTSC startup/no-device smoke check. Hardware compatibility remains unverified.
+Roadmap status is based on the current branch, automated tests, and explicitly recorded manual checks. Last updated: 2026-10-14, including J2534 DLL path normalization (#195), isolated registry-root discovery failures (#196), registry security-exception handling (#198), the Windows 11 IoT LTSC startup/no-device smoke check, and a source-level diagnostic-data exposure audit. Hardware compatibility remains unverified.
 
 ### Completed: core transport and recovery
 
@@ -198,7 +198,7 @@ For the current test count and full restore/build/test/publish/artifact-upload r
 - [ ] Keep vehicle-specific CAN IDs and DIDs out of the built-in catalog until supported by reliable sources or measured evidence.
 - [ ] Add repeatable software smoke tests for first launch, adapter discovery failure, connect/disconnect, and diagnostic cancellation using the virtual adapter where applicable.
 - [x] Review user-visible UDS negative-response messages and retain the raw NRC plus a readable explanation.
-- [ ] Complete a broader diagnostic-log review for actionable errors and accidental sensitive-data exposure before release.
+- [x] Complete a source-level review of diagnostic status/error handling and data persistence for accidental sensitive-data exposure. No persistent diagnostic logger was found; VIN is shown only as the result of an explicit read request, and CAN frames are written to CSV only when the user explicitly exports them. Redact VINs and identifying payloads before sharing exports. Repeat this review if persistent logging or telemetry is added.
 - [x] Verify retryable `J2534Session.Dispose()` behavior after a vendor adapter unload failure with the virtual adapter; regression test passed in [CI run #38302862250](https://github.com/vorlocsev/dvinholm/actions/runs/38302862250).
 - [x] Verify concurrent `CanBus.Dispose()` callers wait for an active native send to finish with the virtual adapter; regression test passed in [CI run #38304154982](https://github.com/vorlocsev/dvinholm/actions/runs/38304154982).
 - [x] Verify an external `CanRxDispatcher.Dispose()` caller waits for deferred cleanup when disposal starts inside a read-error callback with the virtual adapter; regression test passed in [CI run #38305672017](https://github.com/vorlocsev/dvinholm/actions/runs/38305672017).
