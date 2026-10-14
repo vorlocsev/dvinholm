@@ -1,3 +1,22 @@
+# Latest handoff update — 2026-10-14 (main CI green; release notes drafted)
+
+## Verified current checkpoint
+- PR [#212 — Record green main CI and current artifact](https://github.com/vorlocsev/dvinholm/pull/212) is merged into main as 65ea0af8447bd746a16261199eba4952b1753c6c.
+- Post-merge main CI [run #38611124491](https://github.com/vorlocsev/dvinholm/actions/runs/38611124491) completed successfully on that exact SHA. Restore, Build, Test, Publish, and Upload artifact all passed.
+- Current run artifact: Dvinholm-Windows-x86, 66,752,774 bytes, non-expired. GitHub metadata digest: sha256:d836c8f4c965d6fbbfe47b76b18c39a1f3c5874cb63f00466a44a9998392ed98. This is the digest reported by GitHub; no independent local ZIP hash verification was performed in this checkpoint.
+- The artifact is a portable self-contained x86 build, not an installer.
+- Added RELEASE_NOTES.md as a draft, documenting the proposed software MVP scope, current evidence, known limitations, and publication checklist. No version number, tag, or public GitHub Release has been created.
+- Physical J2534 adapter validation remains deferred to a future release cycle.
+
+## Next actions
+1. Review the release-notes draft and decide the version/scope before calling anything a release candidate.
+2. Independently download and inspect the exact artifact if making a final release-candidate claim; compare local archive integrity/hash and executable architecture with the GitHub-reported metadata.
+3. Keep the exact candidate SHA and artifact linked together; rerun the full workflow if any source or packaging change is made.
+4. Resolve only genuinely blocking release issues. Do not force the no-provider UI path by uninstalling/disabling the user's installed drivers.
+5. Create a tag/public release only after explicit approval; do not infer permission to publish from “continue.”
+
+---
+
 # Latest handoff update — 2026-10-14 (main CI green; current artifact recorded)
 
 ## Verified current checkpoint

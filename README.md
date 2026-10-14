@@ -178,8 +178,9 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 Status is based on repository code, automated tests, and explicitly recorded manual checks. Updated 2026-10-14. Core CAN/ISO-TP/UDS transport and J2534 lifecycle/recovery have broad virtual-adapter regression coverage. The Windows 11 IoT LTSC 26100.9550 startup/no-device smoke check is confirmed. Physical-adapter compatibility remains unverified and is intentionally not a blocker for this first software MVP.
 
 ### Phase 0 — close current audit and stabilize main
-- [x] Latest main checkpoint after PR #211: commit `d650eae04cc19b8925d0f51ebba1bd467aa78b7d`; full post-merge Windows CI passed: [run #38609609211](https://github.com/vorlocsev/dvinholm/actions/runs/38609609211).
-- [x] Current run uploaded non-expired `Dvinholm-Windows-x86` (66,753,021 bytes). GitHub artifact metadata digest: `sha256:785cde6193925fe7bdc58430a93557e112803e53393495f58295e2c87c0fba8b`. This metadata digest is recorded as reported by GitHub, not as a new independent local ZIP verification.
+- [x] Latest main checkpoint after PR #212: commit `65ea0af8447bd746a16261199eba4952b1753c6c`; full post-merge Windows CI passed: [run #38611124491](https://github.com/vorlocsev/dvinholm/actions/runs/38611124491).
+- [x] Current run uploaded non-expired `Dvinholm-Windows-x86` (66,752,774 bytes). GitHub artifact metadata digest: `sha256:d836c8f4c965d6fbbfe47b76b18c39a1f3c5874cb63f00466a44a9998392ed98`. This is the service-reported digest, not an independently recalculated local ZIP hash.
+- [x] Drafted `RELEASE_NOTES.md` with MVP scope, known limitations, current CI evidence, and a pre-publication checklist. It is a draft, not a published release announcement; no version tag or public release exists.
 
 - [x] Complete the source-level diagnostic-data exposure review: no persistent diagnostic logger or automatic telemetry was found in the reviewed paths; explicit VIN reads and user-initiated CAN CSV export may contain identifying data.
 - [x] PR #202 merged as `a8ddf1c735865566af0c5be222be1e9b956b3528`; exact-head CI passed: [run #38508715796](https://github.com/vorlocsev/dvinholm/actions/runs/38508715796).
