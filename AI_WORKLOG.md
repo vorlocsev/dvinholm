@@ -1037,3 +1037,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Still unverified: the UI branch when no J2534 provider is registered, and UI-only control-state recovery after read errors or cancellation. The user’s Windows machine detects adapter drivers, so no drivers should be removed/disabled merely to test this state. These limitations are documented and are not being represented as passed checks.
 - Latest documentation PR #210 was merged as `f7cc6932e7aa6d413717fe03b56ec9ab7bcc0a9b`. Post-merge `main` CI run #38607858415 was still in progress when this entry was drafted; its final result must be checked before treating main as green.
 - Next: confirm post-merge CI, freeze first-MVP scope, and run the full Windows x86 CI pipeline on the exact release-candidate commit. Do not tag or publish a public release without an explicit release decision. Physical J2534 adapter validation remains deferred to a future release.
+
+
+## Latest main build — user-confirmed Windows launch — 2026-10-15
+
+- The user confirmed that the latest Dvinholm Windows build launched successfully on Windows 11 IoT LTSC 26100.9550. This closes the outstanding manual launch check for the latest ZIP available to the user; the exact artifact ID/hash should be matched to the local file if a release candidate is later frozen.
+- Physical J2534 adapter testing remains deferred to future releases; no physical adapter or vehicle compatibility is claimed.
+- Main commit under CI review at the time of this entry: `15e82064de8214ff45d6b06e61475874398d620d`; post-merge workflow run [#38641403628](https://github.com/vorlocsev/dvinholm/actions/runs/38641403628) had Restore and Build completed successfully, with test-host setup still in progress. Do not call the run fully green until Test, Publish, and Upload artifact complete successfully.
+- Next: confirm the complete post-merge CI result, then freeze the software-only MVP candidate. Public tag/release still requires explicit user approval.
