@@ -1,3 +1,24 @@
+# Latest handoff update — 2026-10-15 (current main CI and artifact independently verified)
+
+## Verified current checkpoint
+- Current `main` commit: `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`, following merged [PR #215](https://github.com/vorlocsev/dvinholm/pull/215).
+- Post-merge workflow [run #38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679) completed successfully on that exact commit. Restore, Build, Test, Publish, and Upload artifact all passed.
+- Artifact: `Dvinholm-Windows-x86`, ID `11930375485`, 66,753,007 bytes; GitHub digest: `sha256:793bb88455ca67f1517a7fc101447ba972a00d79bc49daf9556cd9a220c8c384`.
+- Downloaded the exact artifact ZIP as `Dvinholm-Windows-x86-main-6a431be.zip`. Local SHA-256 matches GitHub metadata exactly: `793bb88455ca67f1517a7fc101447ba972a00d79bc49daf9556cd9a220c8c384`.
+- ZIP integrity passed (`testzip() = None)); archive contains 476 entries, including `Dvinholm.App.exe` and `RestartAgent.exe`. Both PE headers identify machine `0x014c` (x86).
+- This independently verifies the exact archive, digest, and executable architecture. It does not count as a fresh manual launch of this exact artifact; prior user-confirmed Windows smoke tests were on earlier artifacts.
+- Artifact is a portable self-contained Windows x86 build, not an installer. No version tag or public GitHub Release has been created.
+- Physical J2534 adapter validation remains deferred to a future release cycle.
+
+## Next actions
+1. If practical, run a fresh manual launch/close/relaunch smoke test on this exact artifact; otherwise keep that evidence gap explicit.
+2. Decide MVP version and scope before calling this a release candidate.
+3. Keep no-provider UI and read-error/cancellation UI recovery paths marked unverified where noted.
+4. Align release notes, tag, commit, and artifact to one exact candidate SHA if a versioned release is approved.
+5. Do not create a version tag or public release without explicit user approval.
+
+---
+
 # Latest handoff update — 2026-10-14 (current main CI and artifact independently verified)
 
 ## Verified current checkpoint
