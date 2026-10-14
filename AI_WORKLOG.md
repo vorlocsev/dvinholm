@@ -855,3 +855,16 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 - Phase 1 single-profile import/selection/field mapping is now manually checked alongside validation failures, persistence, export/re-import, and empty-catalog replacement/clearing.
 - Switching between two profiles remains unverified because only one profile is currently available; do not block the MVP on that optional check.
 - Next: audit the existing virtual-adapter and recovery tests for actual gaps before changing code. Do not duplicate coverage already present. Physical J2534 adapter testing remains deferred to a future release.
+
+
+## Phase 2 audit — existing lifecycle and recovery test coverage (2026-10-14)
+
+Reviewed the current `main` branch test/source files before proposing new tests.
+
+Existing automated coverage confirmed by source inspection:
+- `J2534SessionLifecycleTests`: invalid DLL path/baud inputs; failures at load/open/connect/version stages; cleanup and metadata clearing; retry after failed connection; unexpected exception sanitization for version/read errors; cleanup failure handling; reconnect replacement and disconnect metadata reset.
+- `CanRxDispatcherStopDisposeRaceTests` and `CanBusDisposeFromCallbackTests`: read-error callback disposal, stop/dispose races, and ensuring external disposal waits for receive-worker completion without deadlock.
+- `UdsClientDisposeLifecycleTests`, `IsoTpDisposeCancellationTests`, `IsoTpChannelWaitCancellationTests`, and related ISO-TP tests: cancellation/disposal of active requests, rejection of future requests, and cancellation while waiting for a busy channel.
+- `VirtualJ2534AdapterTests` already exercise the virtual adapter through the real CAN/ISO-TP stack, including a normal read-only UDS response, filtering another ECU's response, and multi-frame response handling.
+
+No tests were run during this source audit; this is a coverage review, not a claim of passing CI. Avoid adding redundant backend lifecycle/cancellation tests. The remaining likely gaps are first-run/no-provider behavior and UI-level status/button recovery after failed connect, read error, and cancellation. Next inspect the relevant UI state transitions and test seams, then add only focused coverage for a concrete gap. The manual profile-field mapping check was user-confirmed complete. Physical adapter validation remains deferred to a future release.
