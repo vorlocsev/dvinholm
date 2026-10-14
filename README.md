@@ -150,6 +150,14 @@ The CI pipeline publishes a self-contained x86 application artifact. It is a por
 
 The application is self-contained, so a separate .NET runtime installation is not normally required. Windows and driver requirements still apply. The artifact is intended for evaluation; CI success does not mean the application has been verified with a physical adapter or a specific vehicle.
 
+### Check for and install the latest CI build
+
+The application checks GitHub Actions for the newest successful Windows x86 build from `main`. The version row shows the running build's informational version and the latest available commit/CI run. If a newer build exists, choose **Download and launch update**.
+
+Updates are downloaded from the public repository's successful CI artifact, checked for size and unsafe archive paths, and extracted to a version-specific folder under `%LOCALAPPDATA%\\Dvinholm\\Builds\\<commit-sha>`. The new executable is launched from that folder; the currently running copy is not overwritten. ECU profile data remains in the shared `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json` location. Old build folders are not automatically deleted, so a previous build remains available for recovery.
+
+This initial updater targets the latest successful CI build on `main`, not the latest published release. Future versions can switch the update source to the GitHub Releases API without changing the user's profile storage.
+
 ### Troubleshooting
 
 - **No J2534 provider appears:** install or repair the adapter manufacturer's driver, confirm it provides a 32-bit J2534 DLL, then restart Dvinholm. You can enter the DLL path manually if discovery does not list it.
@@ -280,6 +288,7 @@ The checklist below is retained as the historical record of the path to v0.1.0; 
 Priorities are provisional until each version's scope is frozen. Prefer small, testable changes; don't add duplicate tests where the virtual-adapter suite already covers the behavior.
 
 ### v0.2.0 — Reliability and recovery
+- [ ] Validate the new latest-successful-CI-build check/download flow on Windows; confirm the displayed current/available build identifiers and recovery behavior if download or launch fails.
 - [ ] Review the app's UI state transitions after a CAN read error and after cancelling an active diagnostic request; identify a reproducible gap before changing code.
 - [ ] Add focused UI/state regression tests where a stable test seam exists; otherwise document the limitation and add lower-level coverage only if it closes a demonstrated gap.
 - [ ] Verify that errors/cancellation restore controls, release session resources, and allow safe follow-up operations or reconnect.
