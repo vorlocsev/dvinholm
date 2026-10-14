@@ -1,3 +1,12 @@
+## Follow-up — updater failure diagnostics and current CI label (2026-10-15)
+
+- User reported the generic “Update preparation failed; the current app was left running” message and requested the Current label include the CI run number.
+- Current build label now displays `CI #<run-number> · <7-char-SHA>` when CI metadata is embedded, matching the compact build identity.
+- Update failures now write the full exception (including inner exception details) to `%LOCALAPPDATA%\\Dvinholm\\update.log` and show the sanitized error message in the app instead of hiding the cause behind a generic prompt. The current app remains running if preparation/replacement-helper startup fails.
+- Next: run CI, then ask user to retry the update and report the exact status message or log if it fails again. Confirm the app was launched from an ordinary writable folder; replacement needs permission to modify that folder. Do not merge PR #222 without explicit approval. Physical J2534 testing remains deferred.
+
+---
+
 # Latest handoff update — 2026-10-15 (compact CI title and build ID)
 
 ## User request
