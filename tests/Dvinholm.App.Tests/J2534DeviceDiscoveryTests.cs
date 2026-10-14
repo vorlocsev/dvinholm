@@ -55,4 +55,26 @@ public sealed class J2534DeviceDiscoveryTests
             @"SOFTWARE\PassThruSupport.04.04", out var device));
         Assert.Equal(string.Empty, device.DllPath);
     }
+
+    [Theory]
+    [InlineData("\"\"")]
+    [InlineData("\"   \"")]
+    public void TryCreateDevice_RejectsPathThatNormalizesToEmpty(string path)
+    {
+        Assert.False(Dvinholm.App.J2534DeviceDiscovery.TryCreateDevice(
+            "AdapterKey", "Adapter", "Vendor", path,
+            @"SOFTWARE\PassThruSupport.04.04", out var device));
+        Assert.Equal(string.Empty, device.DllPath);
+    }
+
+    [Fact]
+    public void TryCreateDevice_TrimsWhitespaceInsideQuotedPath()
+    {
+        var created = Dvinholm.App.J2534DeviceDiscovery.TryCreateDevice(
+            "AdapterKey", "Adapter", "Vendor", "\"  C:\\Drivers\\j2534.dll  \"",
+            @"SOFTWARE\PassThruSupport.04.04", out var device);
+
+        Assert.True(created);
+        Assert.Equal(@"C:\Drivers\j2534.dll", device.DllPath);
+    }
 }
