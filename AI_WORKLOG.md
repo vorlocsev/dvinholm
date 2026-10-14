@@ -801,3 +801,10 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 - User confirmed the previously imported valid ECU profile remained present after fully closing and restarting Dvinholm.
 - The basic single-profile persistence smoke check is complete. This does not verify multiple profiles, catalog replacement/clearing, or export/re-import.
 - Next manual check: export the current profile/catalog to JSON, then import that exported file and confirm the profile name and selectable entry are restored without duplicate or stale entries.
+
+
+## Follow-up manual result — ECU profile export and re-import (2026-10-14)
+- User reported that after exporting the profile/catalog and importing the exported JSON, the profile was restored.
+- Mark the basic export/re-import workflow as complete for the tested profile.
+- The user did not explicitly report whether a duplicate entry appeared; duplicate handling remains unverified, as do invalid fields, duplicate IDs, empty catalog, and replacement/clearing behavior.
+- Next: check invalid fields/duplicate IDs and an empty catalog, then test profile replacement/clearing for stale CAN IDs or DIDs. Keep physical-adapter testing deferred to a future release.
