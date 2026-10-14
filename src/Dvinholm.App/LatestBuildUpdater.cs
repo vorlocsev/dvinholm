@@ -54,18 +54,17 @@ internal static class LatestBuildUpdater
         {
             var value = CurrentVersion;
             var plus = value.LastIndexOf('+');
-            if (plus >= 0)
-            {
-                var suffix = value[(plus + 1)..];
-                if (suffix.Length == 40 && suffix.All(Uri.IsHexDigit))
-                    return $"{value[..plus]} · {suffix[..7]}";
-            }
-
-            return value;
+            var sha = GetEmbeddedCommitSha(value, plus);
+            return plus >= 0 && sha is not null
+                ? $"{value[..plus]} · {sha[..7]}"
+                : value;
         }
     }
 
-    public static string? CurrentCommitSha
+    public static string CurrentWindowTitle =>
+        CurrentCiRunNumber is int runNumber ? $"Dvinholm CI #{runNumber}" : "Dvinholm";
+
+    public static int? CurrentCiRunNumber
     {
         get
         {
@@ -75,10 +74,24 @@ internal static class LatestBuildUpdater
                 return null;
 
             var suffix = value[(plus + 1)..];
-            return suffix.Length == 40 && suffix.All(Uri.IsHexDigit)
-                ? suffix.ToLowerInvariant()
+            var marker = suffix.LastIndexOf(".ci", StringComparison.OrdinalIgnoreCase);
+            return marker >= 0 && int.TryParse(suffix[(marker + 3)..], out var runNumber) && runNumber > 0
+                ? runNumber
                 : null;
         }
+    }
+
+    public static string? CurrentCommitSha => GetEmbeddedCommitSha(CurrentVersion, CurrentVersion.LastIndexOf('+'));
+
+    private static string? GetEmbeddedCommitSha(string value, int plus)
+    {
+        if (plus < 0)
+            return null;
+
+        var suffix = value[(plus + 1)..];
+        var marker = suffix.IndexOf(".ci", StringComparison.OrdinalIgnoreCase);
+        var sha = marker >= 0 ? suffix[..marker] : suffix;
+        return sha.Length == 40 && sha.All(Uri.IsHexDigit) ? sha.ToLowerInvariant() : null;
     }
 
     public static async Task<LatestBuildInfo> GetLatestSuccessfulBuildAsync(CancellationToken cancellationToken = default)
