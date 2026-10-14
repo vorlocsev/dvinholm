@@ -1,3 +1,28 @@
+# Latest handoff update — 2026-10-15 (compact CI title and build ID)
+
+## User request
+- Show the current build's commit identifier using exactly the first 7 SHA characters.
+- Reduce the app/window title to `Dvinholm CI #<run-number>`; remove “J2534 CAN Diagnostics” and the descriptive subtitle from the visible app header.
+
+## Changes on branch `ui/compact-ci-title`
+- Window caption is set at startup from embedded build metadata: `Dvinholm CI #<GitHub Actions run_number>`.
+- Removed the in-content product heading and OS/WinUI/x86/read-only description; kept the update status row and update button.
+- CI publish metadata now embeds both the full source SHA and workflow run number (`0.1.0+<sha>.ci<run_number>`).
+- Current build display retains the semantic version and displays only the first 7 characters of the embedded commit SHA. Update availability continues comparing the full SHA.
+- Updated metadata parsing to extract the full SHA and CI run number separately, preserving exact-commit comparisons.
+
+## Validation status
+- Changes are committed on the feature branch; CI and manual Windows UI validation are pending.
+- Do not claim the title or current-build label verified on Windows until the new artifact is launched.
+- Physical J2534/vehicle testing remains deferred; this UI change does not alter that scope.
+
+## Next actions
+1. Run full Windows x86 CI on the PR head and fix any failures.
+2. If CI passes, ask the user to launch the artifact on Windows and confirm the caption is `Dvinholm CI #<number>`, the app header no longer contains the removed heading/description, and the current build SHA is shown as 7 characters.
+3. Keep the updater targeting latest successful `main` CI until the later explicit switch to published Releases.
+
+---
+
 # Latest handoff update — 2026-10-15 (latest CI build updater in progress)
 
 ## User request
