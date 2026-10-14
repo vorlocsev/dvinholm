@@ -718,7 +718,8 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 - [x] Post-merge `main` CI passed on the merge commit: [run #38509199082](https://github.com/vorlocsev/dvinholm/actions/runs/38509199082).
 
 ## Phase 1 — ECU profile workflows
-- [ ] Manually exercise valid import, profile selection, invalid JSON/fields/duplicate IDs, empty catalog, persistence across restart, export/re-import, and catalog replacement/clearing.
+- [x] Manually exercise valid import and persistence of the imported profile across an application restart (user-confirmed 2026-10-14).
+- [ ] Exercise invalid fields/duplicate IDs, empty catalog, export/re-import, and catalog replacement/clearing.
 - [ ] Verify changing or clearing a profile cannot leave stale CAN IDs/DIDs selected in the UI.
 - [ ] Add regression coverage only for confirmed defects. Keep vehicle-specific built-in CAN IDs/DIDs unpopulated without reliable sources or measured evidence.
 
@@ -794,3 +795,9 @@ This sequence is also reflected in the README roadmap. Do not repeat completed t
 - Other invalid fields, duplicate IDs, empty catalog, restart persistence, and export/re-import remain unverified.
 
 - User follow-up: confirmed the previously imported valid profile remained present after the invalid CAN ID (`ZZZZ`) import error. This is separate from, and in addition to, the malformed-JSON preservation check.
+
+
+## Follow-up manual result — profile persistence across restart (2026-10-14)
+- User confirmed the previously imported valid ECU profile remained present after fully closing and restarting Dvinholm.
+- The basic single-profile persistence smoke check is complete. This does not verify multiple profiles, catalog replacement/clearing, or export/re-import.
+- Next manual check: export the current profile/catalog to JSON, then import that exported file and confirm the profile name and selectable entry are restored without duplicate or stale entries.
