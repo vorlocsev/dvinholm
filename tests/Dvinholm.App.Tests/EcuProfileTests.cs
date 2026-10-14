@@ -25,6 +25,7 @@ public sealed class EcuProfileTests
         Assert.Contains((ushort)0xF190, profile.ReadableDataIdentifiers);
         Assert.DoesNotContain((ushort)0xF188, profile.ReadableDataIdentifiers);
         Assert.False(profile.IsVerified);
+        Assert.Equal("Example ECM", profile.ToString());
     }
 
     [Fact]
