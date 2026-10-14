@@ -156,7 +156,7 @@ Updates are downloaded from the newest completed successful CI run that has a no
 
 When an update is applied, a helper waits for the running app to exit, mirrors the staged files into the **same directory from which Dvinholm was launched** using Robocopy `/MIR`, and therefore replaces changed files and deletes obsolete application files there. It then removes old per-build cache directories (while preserving the active directory if it is inside `Builds`) and stale staging folders, then restarts Dvinholm. ECU profile data remains separate at `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json` and is preserved. If the update helper fails, it records details in `%LOCALAPPDATA%\\Dvinholm\\update.log`.
 
-The update channel follows successful CI artifacts rather than the latest published GitHub Release. Physical J2534 adapter validation is not implied by CI success and remains deferred to a future release.
+The update channel follows successful CI artifacts rather than the latest published GitHub Release. The Current label shows the CI run number and seven-character commit SHA when build metadata is available. If update preparation fails, the app stays open and reports the immediate error; full exception details are written to `%LOCALAPPDATA%\\Dvinholm\\update.log`. The application directory must be writable for in-place replacement. Physical J2534 adapter validation is not implied by CI success and remains deferred to a future release.
 
 ### Troubleshooting
 
