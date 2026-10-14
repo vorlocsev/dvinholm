@@ -885,3 +885,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Marked the button-recovery portion of the Windows smoke checklist complete. Do not overstate the result: the user did not separately confirm the monitor/UDS controls remained disabled or that a corrected DLL path was retried.
 - No application code change is warranted from this result; the observed recovery matches the existing connect-task cleanup path. No physical adapter or vehicle connection was involved.
 - Next: inspect packaging/release readiness and confirm CI on the latest documentation head. Keep real-adapter verification deferred to future releases; UI read-error and diagnostic-cancellation recovery remain open until there is a reliable simulated UI test seam.
+
+
+## Packaging/readme audit — connection-failure guidance (2026-10-14)
+
+- Reviewed the published Windows artifact instructions and troubleshooting section on `main`: README correctly identifies `Dvinholm-Windows-x86` as a portable self-contained output rather than an installer, calls out the 32-bit J2534 DLL requirement, and warns that virtual-adapter CI does not certify physical hardware or a specific vehicle.
+- Added a concise troubleshooting note that the Connect button should recover after a failed DLL load/connection and the user can correct the path/setup before retrying. This reflects the user-confirmed manual result without claiming unverified monitor/UDS control states.
+- Existing package evidence is from main CI run #38509199082 (ZIP integrity, x86 PE headers, expected executables); this does not constitute a clean-install matrix. A clean-install/first-launch check and exact candidate-SHA CI remain release gates.
+- Current main has no release tag/release candidate established by this audit. Next: verify CI for the updated documentation branch head, then continue software-only packaging checks. Physical adapter validation remains a future-release task.
