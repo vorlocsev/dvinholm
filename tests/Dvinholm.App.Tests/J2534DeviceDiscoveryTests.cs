@@ -77,4 +77,23 @@ public sealed class J2534DeviceDiscoveryTests
         Assert.True(created);
         Assert.Equal(@"C:\Drivers\j2534.dll", device.DllPath);
     }
+
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void IgnoreRegistryRootFailure_AllowsSubsequentRootToBeRead(bool unauthorized)
+    {
+        var visitedRoots = new List<string>();
+
+        Dvinholm.App.J2534DeviceDiscovery.IgnoreRegistryRootFailure(() =>
+        {
+            throw unauthorized
+                ? new UnauthorizedAccessException("Simulated inaccessible registry root.")
+                : new IOException("Simulated registry I/O failure.");
+        });
+        Dvinholm.App.J2534DeviceDiscovery.IgnoreRegistryRootFailure(
+            () => visitedRoots.Add("legacy-root"));
+
+        Assert.Equal(new[] { "legacy-root" }, visitedRoots);
+    }
 }
