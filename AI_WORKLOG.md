@@ -918,3 +918,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The application window now uses the explicit title `Dvinholm — J2534 CAN Diagnostics` instead of the generic `WinUI Desktop` caption. The title change is merged to `main` in commit `5188e899556d6df153cb82dadb346041ba18e73a` (PR #209).
 - This confirms the title/launch smoke check only; it does not add evidence for physical J2534 adapter or vehicle compatibility.
 - Next: complete a focused final software-only regression/release-readiness review, then run and verify the full CI pipeline on the exact release-candidate commit before tagging/publishing. Physical-adapter validation remains deferred to a future release.
+
+
+## Final software-only regression inventory — 2026-10-14
+
+- Reviewed the current test inventory and key test files on `main` after the title-smoke documentation PR merged. Existing coverage includes J2534 session lifecycle and failed-connect retry/cleanup, CAN receive-dispatcher and serialized-send disposal races, ISO-TP flow-control deadlines/BS/STmin/sequence validation, cancellation and late-frame recovery, UDS negative/unrelated/pending/late-response handling, DTC/VIN parsing and multi-frame responses, ECU profile JSON validation/persistence, and end-to-end virtual-adapter CAN/ISO-TP/UDS flows.
+- Decision: no additional backend test was added from this source audit because the likely candidates are already covered and no concrete uncovered backend defect was identified. This was a source-level review; it is not a substitute for the current main CI run or an exact release-candidate CI run.
+- Still unverified: the UI branch when no J2534 provider is registered, and UI-only control-state recovery after read errors or cancellation. The user’s Windows machine detects adapter drivers, so no drivers should be removed/disabled merely to test this state. These limitations are documented and are not being represented as passed checks.
+- Latest documentation PR #210 was merged as `f7cc6932e7aa6d413717fe03b56ec9ab7bcc0a9b`. Post-merge `main` CI run #38607858415 was still in progress when this entry was drafted; its final result must be checked before treating main as green.
+- Next: confirm post-merge CI, freeze first-MVP scope, and run the full Windows x86 CI pipeline on the exact release-candidate commit. Do not tag or publish a public release without an explicit release decision. Physical J2534 adapter validation remains deferred to a future release.
