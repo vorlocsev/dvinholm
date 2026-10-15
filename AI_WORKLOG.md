@@ -1315,3 +1315,13 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Extended the release URL allowlist to reject URLs containing user-info credentials, query strings, or fragments, in addition to requiring HTTPS, the default port, the exact `github.com` host, and the expected repository release-download path.
 - Added a deterministic fallback test for a credential-bearing GitHub URL. The newest invalid asset must be skipped in favor of the older trusted asset.
 - CI for this follow-up is pending. PR #225 remains open and unmerged; physical J2534 hardware testing remains deferred.
+
+
+## Updater URL validation CI checkpoint and HTTP 401 triage — PR #225 (2026-10-15)
+
+- Latest CI for commit `c519a6519ba06cfb9893d39572ec25ad75c76b59` completed successfully: **456 passed, 0 failed, 0 skipped**.
+- Inspected the updater implementation on `main`: current code discovers successful push/workflow-dispatch runs through the GitHub API, resolves a public prerelease asset by tag `ci-<run number>`, and downloads the release asset via its `browser_download_url`. The current code no longer downloads directly from the GitHub Actions artifact ZIP endpoint, which requires authentication.
+- Verified that public prerelease `ci-1639` exists and contains `Dvinholm-Windows-x86.zip`; its browser download URL uses the expected `github.com/vorlocsev/dvinholm/releases/download/...` path.
+- A reported `401 Unauthorized` thrown from `DownloadAndPrepareAsync` means the running binary received an unauthorized response from its download request. The exact request URL and installed build identity are not present in the exception excerpt, so the specific cause cannot yet be conclusively assigned. A stale installed build using the Actions artifact endpoint is a plausible explanation, not a proven diagnosis.
+- Next diagnostic step if the error recurs: capture the installed build's displayed CI run/SHA and the sanitized download host/path from `update.log`; do not log credentials or signed query strings. Confirm the failing request is from the current release-asset implementation before changing download behavior.
+- PR #225 remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred to a future release.
