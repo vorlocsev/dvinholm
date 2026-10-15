@@ -162,13 +162,24 @@ internal static class LatestBuildUpdater
                     !uri.AbsolutePath.StartsWith($"/{Repository}/releases/download/", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                var digest = ReadString(asset, "digest");
-                string? validatedDigest = null;
-                if (!string.IsNullOrEmpty(digest))
+                string? digest = null;
+                if (asset.TryGetProperty("digest", out var digestElement) &&
+                    digestElement.ValueKind != JsonValueKind.Null)
                 {
-                    // Older release metadata may omit a digest, but if one is
-                    // supplied it must be a complete SHA-256 value. Do not select
-                    // an asset whose malformed digest would silently disable verification.
+                    // GitHub may omit the digest or return null for older assets.
+                    // If the property is present with any other value, it must be
+                    // a non-empty string containing a complete SHA-256 value.
+                    if (digestElement.ValueKind != JsonValueKind.String)
+                        continue;
+
+                    digest = digestElement.GetString();
+                    if (string.IsNullOrEmpty(digest))
+                        continue;
+                }
+
+                string? validatedDigest = null;
+                if (digest is not null)
+                {
                     if (!digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ||
                         digest.Length != 71 ||
                         !digest[7..].All(Uri.IsHexDigit))
