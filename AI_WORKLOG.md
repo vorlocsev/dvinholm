@@ -1257,3 +1257,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Added two stubbed-HTTP lookup tests: a 404 for the newest CI prerelease falls back to an older published build, and a release lacking the expected `Dvinholm-Windows-x86.zip` asset also falls back instead of selecting invalid metadata.
 - These tests are committed to PR #224 and still require CI on the new head. No live GitHub requests or physical J2534 hardware are used by the tests.
 - PR #224 remains open and unmerged; wait for CI on the newest commit before marking these two tests validated.
+
+
+## CI green and HTTPS metadata validation — PR #224 (2026-10-15)
+
+- CI for `1d90ffd528154f5cffe7cd3a0ccd0f69cedd44b9` passed with **451 passed, 0 failed, 0 skipped**.
+- Added a lookup test ensuring a release asset with an insecure `http://` download URL is rejected and discovery falls back to the previous valid HTTPS asset.
+- The new test is isolated with a stub HTTP handler. CI validation is pending for the latest branch head.
+- PR #224 remains open and unmerged; physical adapter testing remains deferred.
