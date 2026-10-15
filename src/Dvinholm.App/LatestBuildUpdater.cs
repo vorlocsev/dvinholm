@@ -132,7 +132,13 @@ internal static class LatestBuildUpdater
                 continue;
 
             var runId = ReadInt64(run, "id");
-            var runNumber = checked((int)ReadInt64(run, "run_number"));
+            var rawRunNumber = ReadInt64(run, "run_number");
+            // Treat malformed numeric metadata as an ineligible run instead of
+            // letting a checked cast abort discovery before older builds are tried.
+            if (runId <= 0 || rawRunNumber <= 0 || rawRunNumber > int.MaxValue)
+                continue;
+
+            var runNumber = (int)rawRunNumber;
             var createdAt = ReadString(run, "created_at");
             // GitHub Actions artifact ZIP endpoints require authentication, even for
             // public repositories. Successful non-PR CI runs publish a public
@@ -154,17 +160,54 @@ internal static class LatestBuildUpdater
 
                 var size = ReadInt64(asset, "size");
                 var downloadUrl = ReadString(asset, "browser_download_url");
-                if (size <= 0 || size > MaximumDownloadBytes || !Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+                if (size <= 0 || size > MaximumDownloadBytes || !Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps || !string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase) ||
+                    !uri.IsDefaultPort ||
+                    !string.IsNullOrEmpty(uri.UserInfo) ||
+                    !string.IsNullOrEmpty(uri.Query) ||
+                    !string.IsNullOrEmpty(uri.Fragment) ||
+                    !uri.AbsolutePath.StartsWith($"/{Repository}/releases/download/", StringComparison.OrdinalIgnoreCase))
                     continue;
 
-                var digest = ReadString(asset, "digest");
+                string? digest = null;
+                if (asset.TryGetProperty("digest", out var digestElement) &&
+                    digestElement.ValueKind != JsonValueKind.Null)
+                {
+                    // GitHub may omit the digest or return null for older assets.
+                    // If the property is present with any other value, it must be
+                    // a non-empty string containing a complete SHA-256 value.
+                    if (digestElement.ValueKind != JsonValueKind.String)
+                        continue;
+
+                    digest = digestElement.GetString();
+                    if (string.IsNullOrEmpty(digest))
+                        continue;
+                }
+
+                string? validatedDigest = null;
+                if (digest is not null)
+                {
+                    if (!digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ||
+                        digest.Length != 71 ||
+                        !digest[7..].All(Uri.IsHexDigit))
+                        continue;
+
+                    validatedDigest = digest.ToLowerInvariant();
+                }
+
+                // Prefer GitHub's release-asset API with an explicit octet-stream
+                // request. The browser URL can redirect to a signed asset URL and
+                // may fail with 401 in clients that negotiate the API JSON media type.
+                var assetId = ReadInt64(asset, "id");
+                if (assetId > 0)
+                    downloadUrl = $"https://api.github.com/repos/{Repository}/releases/assets/{assetId}";
+
                 return new LatestBuildInfo(
                     sha.ToLowerInvariant(),
                     runNumber,
                     runId,
                     downloadUrl,
                     size,
-                    digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ? digest.ToLowerInvariant() : null,
+                    validatedDigest,
                     createdAt);
             }
         }
@@ -197,9 +240,29 @@ internal static class LatestBuildUpdater
         try
         {
             progress?.Report($"Downloading CI build #{build.RunNumber}…");
-            using (var response = await http.GetAsync(build.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+            using var downloadRequest = new HttpRequestMessage(HttpMethod.Get, build.DownloadUrl);
+            if (Uri.TryCreate(build.DownloadUrl, UriKind.Absolute, out var downloadUri) &&
+                string.Equals(downloadUri.Host, "api.github.com", StringComparison.OrdinalIgnoreCase) &&
+                downloadUri.AbsolutePath.StartsWith($"/repos/{Repository}/releases/assets/", StringComparison.OrdinalIgnoreCase))
             {
-                response.EnsureSuccessStatusCode();
+                downloadRequest.Headers.Accept.Clear();
+                downloadRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
+            }
+
+            using (var response = await http.SendAsync(downloadRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+            {
+                if (!response.IsSuccessStatusCode)
+                {
+                    // Include only the URL path in diagnostics; never log query strings,
+                    // which may contain temporary signed download tokens.
+                    var failedPath = response.RequestMessage?.RequestUri?.GetLeftPart(UriPartial.Path)
+                        ?? downloadUri?.GetLeftPart(UriPartial.Path)
+                        ?? "unknown URL";
+                    throw new HttpRequestException(
+                        $"Release asset download failed with HTTP {(int)response.StatusCode} ({response.StatusCode}) from {failedPath}.",
+                        null,
+                        response.StatusCode);
+                }
                 if (response.Content.Headers.ContentLength is long length && length > MaximumDownloadBytes)
                     throw new InvalidDataException("The downloaded artifact exceeds the configured size limit.");
 

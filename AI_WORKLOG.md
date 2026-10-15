@@ -1,3 +1,125 @@
+# Latest handoff — CAN Monitor unavailable without connected adapter (2026-10-16)
+
+## Manual Windows verification
+- User reports there is no separate CAN Monitor view visible in the UI; only a disabled `Start Monitor` button is present.
+- With no physical J2534 adapter connected, monitor start/stop cannot currently be exercised manually. Treat this as blocked by hardware/connection state, not as a confirmed UI defect.
+- Previous manual check remains verified: a nonexistent J2534 DLL path displays an error, and a subsequent connection attempt is handled correctly.
+
+## Next
+- Inspect which diagnostic actions, if any, are available without a connected adapter before attempting a cancellation test. Do not attempt to connect to a real vehicle or bypass the disabled control.
+- Continue software/virtual checks only; physical J2534 adapter and vehicle verification remains deferred to a future release.
+- PR #225 remains open and unmerged; do not merge without explicit user approval.
+
+---
+
+# Latest handoff — J2534 invalid-path recovery verified (2026-10-16)
+
+## Manual Windows verification
+- User confirmed that entering a nonexistent J2534 DLL path produces an error message rather than crashing the app.
+- User then confirmed a subsequent connection attempt is handled correctly; the invalid-path error does not prevent retrying.
+- This verifies the invalid-driver-path failure path and retry behavior on the user's Windows environment. It does not verify a successful physical adapter connection.
+
+## Next manual check
+- Check CAN Monitor start/stop behavior only if the UI permits it without a connected physical adapter. If a device is required, record that as blocked by hardware availability and do not attempt to bypass it.
+- Continue using software/virtual checks only; real J2534 adapter and vehicle tests remain deferred to a future release.
+- PR #225 remains open and unmerged; do not merge without explicit user approval.
+
+---
+
+# Latest handoff — updater HTTP 401 resolved by manual Windows verification (2026-10-15)
+
+## Verified
+- User confirmed that updating Dvinholm on Windows completed successfully after the updater release-asset download change.
+- GitHub Actions build/test workflow for PR #225 head `98ab47814272c84a275dc91a17c6c2f6e3ce9a9a` completed successfully: [run 38773749978](https://github.com/vorlocsev/dvinholm/actions/runs/38773749978).
+- The updater now selects the GitHub Releases asset API endpoint when an asset ID is available and sends `Accept: application/octet-stream`; it retains the validated browser-download URL fallback when no asset ID is present.
+- Manual success confirms the reported HTTP 401 no longer blocks the tested Windows update path. This does not establish that every possible release/download failure is impossible.
+
+## Next
+- Continue release-readiness review using CI and virtual/software tests only.
+- Keep real J2534 adapter and vehicle verification deferred to a future release; the user currently has no physical adapter available.
+- PR #225 remains open and unmerged; do not merge without explicit user approval.
+
+---
+
+# Latest handoff — updater HTTP 401 fix in progress (2026-10-15)
+
+## Change made
+- Updated release-asset lookup to prefer the GitHub Releases asset API endpoint (`/repos/vorlocsev/dvinholm/releases/assets/{asset_id}`) when GitHub supplies a valid asset ID, instead of downloading via `browser_download_url`.
+- The updater now requests `application/octet-stream` for this API endpoint, explicitly requesting the binary asset rather than API JSON.
+- Preserved the validated browser-download URL fallback for metadata without an asset ID.
+- Added regression coverage that verifies the API asset URL is selected and the download request asks for binary content.
+- The reported 401 was thrown while downloading the selected asset; the log did not include the response URL. This change addresses a plausible asset-download issue, but must not be marked fixed until CI passes and the user verifies an update on Windows.
+
+## Validation status
+- CI for the latest commits is pending.
+- PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) remains open and unmerged.
+- No physical J2534 adapter or vehicle testing is required for this updater change.
+
+---
+
+## CI verification — malformed updater metadata and run-number fallback (2026-10-15)
+
+- Latest PR #225 head `d10d08e0c72022afabd89cac968ff8267d7a32ff` passed both GitHub Actions build runs: [run 38764364523](https://github.com/vorlocsev/dvinholm/actions/runs/38764364523) and [run 38764357153](https://github.com/vorlocsev/dvinholm/actions/runs/38764357153).
+- Test log confirms **471 passed, 0 failed, 0 skipped**. Build and publish also succeeded.
+- Added regression coverage for malformed/out-of-range run metadata so one invalid newer run is skipped and discovery can fall back to an older eligible build.
+- CI still reports existing CS0168 warnings for unused exception variables in `MainWindow.xaml.cs` and `J2534Session.cs`; they do not fail the build and are a separate cleanup task.
+- PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) remains open and unmerged. No physical adapter/vehicle testing was performed; that remains deferred.
+
+---
+
+## Release digest JSON type validation — PR #225 (2026-10-15)
+
+- Verified the preceding branch head `78da5e1f4132e4bbf38937e9332f5c2ec841aad3`: both CI build jobs succeeded with **462 passed, 0 failed, 0 skipped**.
+- Hardened release metadata parsing: a missing or JSON-null `digest` remains supported for older assets, but a present digest must be a non-empty JSON string with a complete SHA-256 value. Numbers, booleans, arrays, and empty strings are rejected rather than treated as if the digest were absent.
+- Added isolated fallback tests for non-string and empty digest metadata values. CI for the latest source/test changes is pending.
+- PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) remains open and unmerged. Physical J2534 adapter and vehicle tests remain deferred to a future release.
+
+---
+
+## Digest metadata edge-case coverage — PR #225 (2026-10-15)
+
+- CI for the previous branch head `b16886affc2fd0fcdb9e1f5051fd08ad7e35f7c8` passed both build jobs: **459 passed, 0 failed, 0 skipped**.
+- Expanded `ReleaseWithMalformedDigest_FallsBackToOlderPublishedBuild` into a parameterized test covering unsupported digest algorithm, truncated SHA-256, non-hexadecimal SHA-256, and an oversized SHA-256 value.
+- Each malformed digest must be rejected during release lookup, with fallback to the older valid release asset. Tests use stub HTTP responses only.
+- CI for the latest test changes is pending; do not count the new cases as verified until both build jobs complete.
+- PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) remains open and unmerged. Physical J2534 adapter/vehicle testing remains deferred to a future release.
+
+---
+
+# Latest handoff — updater asset-source validation (2026-10-15)
+
+## Verified
+- PR [#224](https://github.com/vorlocsev/dvinholm/pull/224) was squash-merged into `main` as `94ccbc14f4dc0022d142fd2bc3668d8187b9d04e`.
+- Post-merge CI passed: 452 tests, 0 failed, 0 skipped.
+- PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) CI passed on commit `e47a84bf8721a1adcb53e225e225f7d699f2e003`: 453 tests, 0 failed, 0 skipped.
+- PR #225 validates non-empty release asset digest metadata as a complete SHA-256 value; malformed digest assets are skipped and lookup falls back to an older eligible build.
+
+## Latest changes on `tests/updater-digest-metadata`
+- Restrict the initial updater asset URL to HTTPS on the exact `github.com` host. HTTPS URLs on unrelated hosts are rejected during metadata lookup, before download begins.
+- Added `ReleaseWithExternalHttpsDownloadUrl_FallsBackToOlderPublishedBuild` to verify fallback to a trusted GitHub release URL.
+- CI for these latest changes is pending; do not mark this latest commit green until both checks finish.
+- No physical J2534 adapter or vehicle testing is included. Those checks remain deferred to a future release.
+- PR #225 remains open; do not merge without explicit user approval.
+
+---
+
+# Latest handoff — PR #224 merged; digest metadata hardening in progress (2026-10-15)
+
+## Verified
+- PR [#224](https://github.com/vorlocsev/dvinholm/pull/224) was squash-merged into `main` as `94ccbc14f4dc0022d142fd2bc3668d8187b9d04e`.
+- Post-merge CI passed: [workflow run #1578](https://github.com/vorlocsev/dvinholm/actions/runs/38744379744).
+- Test log: **452 passed, 0 failed, 0 skipped**.
+- PR #224 added isolated updater failure-path coverage, including HTTP errors, size/checksum mismatch, corrupt/unsafe ZIPs, missing executable, cancellation, and lookup fallback/security cases.
+
+## Current follow-up branch: `tests/updater-digest-metadata`
+- Hardened lookup of release assets: when GitHub supplies a non-empty `digest`, it must be a full `sha256:` value followed by 64 hexadecimal characters; malformed or unsupported digest metadata causes the updater to skip that asset and try an older eligible build.
+- Added `ReleaseWithMalformedDigest_FallsBackToOlderPublishedBuild` to verify fallback behavior.
+- CI for this follow-up has not yet been confirmed; wait for branch/PR checks before declaring it validated.
+- No physical J2534 adapter or vehicle testing is part of this stage; those checks remain deferred to a future release.
+- Do not merge the follow-up PR without explicit user approval.
+
+---
+
 # Manual regression update — 2026-10-15 (obsolete-file cleanup confirmed)
 
 - User confirmed that the in-place updater removes obsolete files from the application directory during replacement.
@@ -1265,3 +1387,106 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Added a lookup test ensuring a release asset with an insecure `http://` download URL is rejected and discovery falls back to the previous valid HTTPS asset.
 - The new test is isolated with a stub HTTP handler. CI validation is pending for the latest branch head.
 - PR #224 remains open and unmerged; physical adapter testing remains deferred.
+
+
+## Updater release URL allowlist hardening — PR #225 (2026-10-15)
+
+- CI for the preceding head `5727d79f30925af51a181af67c861f3a1809f7c1` passed both build checks; the test suite reported **454 passed, 0 failed, 0 skipped**.
+- Tightened updater metadata validation: release asset URLs must use HTTPS on the default port and match the repository's exact `/vorlocsev/dvinholm/releases/download/` path prefix, in addition to the exact `github.com` host.
+- Added a deterministic HTTP-stub test that rejects a URL hosted on `github.com` but pointing to a different repository path, and falls back to the previous valid release.
+- Validation of this latest change is pending CI. PR #225 remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred.
+
+
+## Ambiguous updater URL rejection — PR #225 (2026-10-15)
+
+- CI for commit `753aad1bd7787b8f1a84dc9b1ca1b88c141aed68` passed both build checks; test suite: **455 passed, 0 failed, 0 skipped**.
+- Extended the release URL allowlist to reject URLs containing user-info credentials, query strings, or fragments, in addition to requiring HTTPS, the default port, the exact `github.com` host, and the expected repository release-download path.
+- Added a deterministic fallback test for a credential-bearing GitHub URL. The newest invalid asset must be skipped in favor of the older trusted asset.
+- CI for this follow-up is pending. PR #225 remains open and unmerged; physical J2534 hardware testing remains deferred.
+
+
+## Updater URL validation CI checkpoint and HTTP 401 triage — PR #225 (2026-10-15)
+
+- Latest CI for commit `c519a6519ba06cfb9893d39572ec25ad75c76b59` completed successfully: **456 passed, 0 failed, 0 skipped**.
+- Inspected the updater implementation on `main`: current code discovers successful push/workflow-dispatch runs through the GitHub API, resolves a public prerelease asset by tag `ci-<run number>`, and downloads the release asset via its `browser_download_url`. The current code no longer downloads directly from the GitHub Actions artifact ZIP endpoint, which requires authentication.
+- Verified that public prerelease `ci-1639` exists and contains `Dvinholm-Windows-x86.zip`; its browser download URL uses the expected `github.com/vorlocsev/dvinholm/releases/download/...` path.
+- A reported `401 Unauthorized` thrown from `DownloadAndPrepareAsync` means the running binary received an unauthorized response from its download request. The exact request URL and installed build identity are not present in the exception excerpt, so the specific cause cannot yet be conclusively assigned. A stale installed build using the Actions artifact endpoint is a plausible explanation, not a proven diagnosis.
+- Next diagnostic step if the error recurs: capture the installed build's displayed CI run/SHA and the sanitized download host/path from `update.log`; do not log credentials or signed query strings. Confirm the failing request is from the current release-asset implementation before changing download behavior.
+- PR #225 remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred to a future release.
+
+
+## Release download URL edge-case tests — PR #225 (2026-10-15)
+
+- The documentation-only commit `2c131e8fa77fa5ed5b668d2803630ab37f1524e7` passed both CI jobs; the test suite reported **456 passed, 0 failed, 0 skipped**.
+- Added a parameterized regression test covering release asset URLs with a query string, a fragment, or a non-default HTTPS port. Each invalid newest asset must be skipped in favor of the previous valid release asset.
+- The test addition is committed on `tests/updater-digest-metadata`; CI for the new head must complete before counting these cases as verified.
+- The reported historical `401 Unauthorized` was already manually confirmed resolved on the newer public-release download path in the existing handoff notes. If it recurs, capture the installed CI run/SHA and sanitized request host/path rather than assuming the same cause.
+- PR #225 remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred to a future release.
+
+
+## Uppercase updater digest compatibility — PR #225 (2026-10-15)
+
+- CI for commit `942c5a158009f885fd53a9334c9354f67e8e5367` passed both build checks: **466 passed, 0 failed, 0 skipped** in each job.
+- Added a regression test proving a valid uppercase `SHA256:` prefix and uppercase hexadecimal digest are accepted and normalized to lowercase.
+- The test uses a stub HTTP handler; no live GitHub requests or physical J2534 adapter are required.
+- CI for the new test commit is pending. PR #225 remains open and unmerged; physical adapter testing remains deferred.
+
+
+## Missing/null release digest compatibility — PR #225 (2026-10-15)
+
+- CI for commit `8138b3d73bca11477147cf09e00e799839ac7d38` passed both build checks: **467 passed, 0 failed, 0 skipped** in each job.
+- Added a parameterized regression test ensuring a release asset remains eligible when the `digest` property is omitted or explicitly set to JSON `null`, preserving compatibility with older GitHub release metadata.
+- The test uses a stub HTTP handler. CI for the latest change is pending; PR #225 remains open and unmerged. Physical J2534 adapter testing remains deferred.
+
+
+## Fix for missing/null digest test compilation — PR #225 (2026-10-15)
+
+- CI exposed a C# raw interpolated string syntax error in the new missing/null digest regression test (`CS1056` at the JSON opening brace).
+- Corrected the literal to use a two-dollar raw interpolated string, so JSON braces remain literal while the optional digest property is interpolated.
+- This is a test-only syntax fix. CI for the corrected commit is pending; do not count the compatibility test as validated until both jobs pass.
+
+
+## Follow-up fix for digest fixture syntax — PR #225 (2026-10-15)
+
+- The first raw-string correction did not change the source as intended; CI still reported `CS1056` at the JSON object brace.
+- Replaced the interpolated raw JSON literal with straightforward string concatenation for the optional `digest: null` property, avoiding brace interpolation entirely.
+- CI for commit `01421d5a07d2470bf36c5ddd7e4324cd4c8025b7` is pending. The test remains unvalidated until both CI jobs pass.
+
+
+## Validation of missing/null digest compatibility — PR #225 (2026-10-15)
+
+- Follow-up CI completed successfully on branch head `7e3c54c726a00a7eabbc30cab184c04cf0289b42`: **469 passed, 0 failed, 0 skipped** in each build job.
+- The missing/null digest regression test now compiles and passes for both omitted `digest` and explicit JSON `null`; its fixture uses ordinary C# string concatenation.
+- The worklog entries above saying this change was pending are historical; this entry records the final successful validation.
+- PR #225 remains open and unmerged. No physical J2534 adapter was used or required.
+
+
+## Successful updater checksum verification — PR #225 (2026-10-15)
+
+- Added a positive-path regression test for a ZIP whose downloaded bytes match the declared SHA-256 digest.
+- The test verifies that the updater accepts the artifact, extracts `Dvinholm.App.exe`, and preserves the expected file contents; it removes the staging directory afterward.
+- This complements the existing mismatched-digest test, which asserts rejection and cleanup. Uses an in-memory HTTP stub; no live download or physical J2534 adapter is involved.
+- CI validation is pending for this change. PR #225 remains open and unmerged.
+
+
+## Successful checksum verification regression test — CI passed (2026-10-15)
+
+- The positive-path updater test in `LatestBuildUpdaterFailureTests.cs` passed in both CI runs for commit `2c15f97bec22f9ca1b85d6fc3d383c893afd657e`: **470 passed, 0 failed, 0 skipped** per run.
+- The test downloads a ZIP through an in-memory HTTP stub, computes the correct SHA-256, verifies that the updater extracts the executable and checks its contents, then cleans the staging directory.
+- CI is green; PR #225 remains open and unmerged. Real J2534 hardware testing remains deferred.
+
+
+## Latest updater hardening CI checkpoint — PR #225 (2026-10-15)
+
+- Confirmed both CI runs for branch head `8aca5e25fb5d2d1ecbd3cc2cacae04839d2c5ed7` completed successfully: [run 38762553136](https://github.com/vorlocsev/dvinholm/actions/runs/38762553136) and [run 38762543549](https://github.com/vorlocsev/dvinholm/actions/runs/38762543549).
+- The preceding checksum-verification source/test change passed both jobs with **470 passed, 0 failed, 0 skipped** per run.
+- Current branch hardens release URL allowlisting, digest JSON type/format validation, backward compatibility for omitted/null digests, fallback to older eligible releases, and checksum verification before extraction.
+- This checkpoint records validation only; no code behavior changed in this commit. PR #225 remains open and unmerged. Physical J2534 adapter/vehicle testing remains deferred to a future release.
+
+
+## Malformed workflow run-number fallback regression — PR #225 (2026-10-15)
+
+- Source audit found that converting GitHub's `run_number` with a checked cast could throw on malformed/out-of-range metadata and abort update discovery instead of trying older successful builds.
+- Updated lookup to skip runs with a non-positive run ID or run number, or a run number greater than `Int32.MaxValue`.
+- Added a stubbed regression test with an out-of-range newest run and a valid older release; it asserts that only the older release is requested and selected.
+- CI for this code/test change is pending. PR #225 remains open and unmerged; no physical J2534 adapter or vehicle testing is involved.
