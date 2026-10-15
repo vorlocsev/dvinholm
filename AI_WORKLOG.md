@@ -1,3 +1,20 @@
+# Latest handoff — updater asset-source validation (2026-10-15)
+
+## Verified
+- PR [#224](https://github.com/vorlocsev/dvinholm/pull/224) was squash-merged into `main` as `94ccbc14f4dc0022d142fd2bc3668d8187b9d04e`.
+- Post-merge CI passed: 452 tests, 0 failed, 0 skipped.
+- PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) CI passed on commit `e47a84bf8721a1adcb53e225e225f7d699f2e003`: 453 tests, 0 failed, 0 skipped.
+- PR #225 validates non-empty release asset digest metadata as a complete SHA-256 value; malformed digest assets are skipped and lookup falls back to an older eligible build.
+
+## Latest changes on `tests/updater-digest-metadata`
+- Restrict the initial updater asset URL to HTTPS on the exact `github.com` host. HTTPS URLs on unrelated hosts are rejected during metadata lookup, before download begins.
+- Added `ReleaseWithExternalHttpsDownloadUrl_FallsBackToOlderPublishedBuild` to verify fallback to a trusted GitHub release URL.
+- CI for these latest changes is pending; do not mark this latest commit green until both checks finish.
+- No physical J2534 adapter or vehicle testing is included. Those checks remain deferred to a future release.
+- PR #225 remains open; do not merge without explicit user approval.
+
+---
+
 # Latest handoff — PR #224 merged; digest metadata hardening in progress (2026-10-15)
 
 ## Verified
