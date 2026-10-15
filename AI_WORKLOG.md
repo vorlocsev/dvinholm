@@ -1299,3 +1299,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Added a lookup test ensuring a release asset with an insecure `http://` download URL is rejected and discovery falls back to the previous valid HTTPS asset.
 - The new test is isolated with a stub HTTP handler. CI validation is pending for the latest branch head.
 - PR #224 remains open and unmerged; physical adapter testing remains deferred.
+
+
+## Updater release URL allowlist hardening — PR #225 (2026-10-15)
+
+- CI for the preceding head `5727d79f30925af51a181af67c861f3a1809f7c1` passed both build checks; the test suite reported **454 passed, 0 failed, 0 skipped**.
+- Tightened updater metadata validation: release asset URLs must use HTTPS on the default port and match the repository's exact `/vorlocsev/dvinholm/releases/download/` path prefix, in addition to the exact `github.com` host.
+- Added a deterministic HTTP-stub test that rejects a URL hosted on `github.com` but pointing to a different repository path, and falls back to the previous valid release.
+- Validation of this latest change is pending CI. PR #225 remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred.
