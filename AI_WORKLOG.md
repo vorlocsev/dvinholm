@@ -1361,3 +1361,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Added a regression test proving a valid uppercase `SHA256:` prefix and uppercase hexadecimal digest are accepted and normalized to lowercase.
 - The test uses a stub HTTP handler; no live GitHub requests or physical J2534 adapter are required.
 - CI for the new test commit is pending. PR #225 remains open and unmerged; physical adapter testing remains deferred.
+
+
+## Missing/null release digest compatibility — PR #225 (2026-10-15)
+
+- CI for commit `8138b3d73bca11477147cf09e00e799839ac7d38` passed both build checks: **467 passed, 0 failed, 0 skipped** in each job.
+- Added a parameterized regression test ensuring a release asset remains eligible when the `digest` property is omitted or explicitly set to JSON `null`, preserving compatibility with older GitHub release metadata.
+- The test uses a stub HTTP handler. CI for the latest change is pending; PR #225 remains open and unmerged. Physical J2534 adapter testing remains deferred.
