@@ -1,3 +1,13 @@
+## Digest metadata edge-case coverage — PR #225 (2026-10-15)
+
+- CI for the previous branch head `b16886affc2fd0fcdb9e1f5051fd08ad7e35f7c8` passed both build jobs: **459 passed, 0 failed, 0 skipped**.
+- Expanded `ReleaseWithMalformedDigest_FallsBackToOlderPublishedBuild` into a parameterized test covering unsupported digest algorithm, truncated SHA-256, non-hexadecimal SHA-256, and an oversized SHA-256 value.
+- Each malformed digest must be rejected during release lookup, with fallback to the older valid release asset. Tests use stub HTTP responses only.
+- CI for the latest test changes is pending; do not count the new cases as verified until both build jobs complete.
+- PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) remains open and unmerged. Physical J2534 adapter/vehicle testing remains deferred to a future release.
+
+---
+
 # Latest handoff — updater asset-source validation (2026-10-15)
 
 ## Verified
