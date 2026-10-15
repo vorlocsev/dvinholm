@@ -1353,3 +1353,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The test addition is committed on `tests/updater-digest-metadata`; CI for the new head must complete before counting these cases as verified.
 - The reported historical `401 Unauthorized` was already manually confirmed resolved on the newer public-release download path in the existing handoff notes. If it recurs, capture the installed CI run/SHA and sanitized request host/path rather than assuming the same cause.
 - PR #225 remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred to a future release.
+
+
+## Uppercase updater digest compatibility — PR #225 (2026-10-15)
+
+- CI for commit `942c5a158009f885fd53a9334c9354f67e8e5367` passed both build checks: **466 passed, 0 failed, 0 skipped** in each job.
+- Added a regression test proving a valid uppercase `SHA256:` prefix and uppercase hexadecimal digest are accepted and normalized to lowercase.
+- The test uses a stub HTTP handler; no live GitHub requests or physical J2534 adapter are required.
+- CI for the new test commit is pending. PR #225 remains open and unmerged; physical adapter testing remains deferred.
