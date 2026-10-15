@@ -167,8 +167,15 @@ internal static class LatestBuildUpdater
         throw new InvalidOperationException("No successful CI run with a non-expired Windows x86 artifact was found across the repository branches.");
     }
 
-    public static async Task<string> DownloadAndPrepareAsync(
+    public static Task<string> DownloadAndPrepareAsync(
         LatestBuildInfo build,
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default) =>
+        DownloadAndPrepareAsync(build, Http, progress, cancellationToken);
+
+    internal static async Task<string> DownloadAndPrepareAsync(
+        LatestBuildInfo build,
+        HttpClient http,
         IProgress<string>? progress = null,
         CancellationToken cancellationToken = default)
     {
@@ -185,7 +192,7 @@ internal static class LatestBuildUpdater
         try
         {
             progress?.Report($"Downloading CI build #{build.RunNumber}…");
-            using (var response = await Http.GetAsync(build.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+            using (var response = await http.GetAsync(build.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
             {
                 response.EnsureSuccessStatusCode();
                 if (response.Content.Headers.ContentLength is long length && length > MaximumDownloadBytes)
