@@ -1,3 +1,17 @@
+# Latest handoff — J2534 invalid-path recovery verified (2026-10-16)
+
+## Manual Windows verification
+- User confirmed that entering a nonexistent J2534 DLL path produces an error message rather than crashing the app.
+- User then confirmed a subsequent connection attempt is handled correctly; the invalid-path error does not prevent retrying.
+- This verifies the invalid-driver-path failure path and retry behavior on the user's Windows environment. It does not verify a successful physical adapter connection.
+
+## Next manual check
+- Check CAN Monitor start/stop behavior only if the UI permits it without a connected physical adapter. If a device is required, record that as blocked by hardware availability and do not attempt to bypass it.
+- Continue using software/virtual checks only; real J2534 adapter and vehicle tests remain deferred to a future release.
+- PR #225 remains open and unmerged; do not merge without explicit user approval.
+
+---
+
 # Latest handoff — updater HTTP 401 resolved by manual Windows verification (2026-10-15)
 
 ## Verified
