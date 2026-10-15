@@ -1,3 +1,17 @@
+# Latest handoff — CAN Monitor unavailable without connected adapter (2026-10-16)
+
+## Manual Windows verification
+- User reports there is no separate CAN Monitor view visible in the UI; only a disabled `Start Monitor` button is present.
+- With no physical J2534 adapter connected, monitor start/stop cannot currently be exercised manually. Treat this as blocked by hardware/connection state, not as a confirmed UI defect.
+- Previous manual check remains verified: a nonexistent J2534 DLL path displays an error, and a subsequent connection attempt is handled correctly.
+
+## Next
+- Inspect which diagnostic actions, if any, are available without a connected adapter before attempting a cancellation test. Do not attempt to connect to a real vehicle or bypass the disabled control.
+- Continue software/virtual checks only; physical J2534 adapter and vehicle verification remains deferred to a future release.
+- PR #225 remains open and unmerged; do not merge without explicit user approval.
+
+---
+
 # Latest handoff — J2534 invalid-path recovery verified (2026-10-16)
 
 ## Manual Windows verification
