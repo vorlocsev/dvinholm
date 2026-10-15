@@ -1,3 +1,12 @@
+## Release digest JSON type validation — PR #225 (2026-10-15)
+
+- Verified the preceding branch head `78da5e1f4132e4bbf38937e9332f5c2ec841aad3`: both CI build jobs succeeded with **462 passed, 0 failed, 0 skipped**.
+- Hardened release metadata parsing: a missing or JSON-null `digest` remains supported for older assets, but a present digest must be a non-empty JSON string with a complete SHA-256 value. Numbers, booleans, arrays, and empty strings are rejected rather than treated as if the digest were absent.
+- Added isolated fallback tests for non-string and empty digest metadata values. CI for the latest source/test changes is pending.
+- PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) remains open and unmerged. Physical J2534 adapter and vehicle tests remain deferred to a future release.
+
+---
+
 ## Digest metadata edge-case coverage — PR #225 (2026-10-15)
 
 - CI for the previous branch head `b16886affc2fd0fcdb9e1f5051fd08ad7e35f7c8` passed both build jobs: **459 passed, 0 failed, 0 skipped**.
