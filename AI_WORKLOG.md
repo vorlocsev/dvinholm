@@ -1405,3 +1405,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The positive-path updater test in `LatestBuildUpdaterFailureTests.cs` passed in both CI runs for commit `2c15f97bec22f9ca1b85d6fc3d383c893afd657e`: **470 passed, 0 failed, 0 skipped** per run.
 - The test downloads a ZIP through an in-memory HTTP stub, computes the correct SHA-256, verifies that the updater extracts the executable and checks its contents, then cleans the staging directory.
 - CI is green; PR #225 remains open and unmerged. Real J2534 hardware testing remains deferred.
+
+
+## Latest updater hardening CI checkpoint — PR #225 (2026-10-15)
+
+- Confirmed both CI runs for branch head `8aca5e25fb5d2d1ecbd3cc2cacae04839d2c5ed7` completed successfully: [run 38762553136](https://github.com/vorlocsev/dvinholm/actions/runs/38762553136) and [run 38762543549](https://github.com/vorlocsev/dvinholm/actions/runs/38762543549).
+- The preceding checksum-verification source/test change passed both jobs with **470 passed, 0 failed, 0 skipped** per run.
+- Current branch hardens release URL allowlisting, digest JSON type/format validation, backward compatibility for omitted/null digests, fallback to older eligible releases, and checksum verification before extraction.
+- This checkpoint records validation only; no code behavior changed in this commit. PR #225 remains open and unmerged. Physical J2534 adapter/vehicle testing remains deferred to a future release.
