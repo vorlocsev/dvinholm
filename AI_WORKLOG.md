@@ -1,3 +1,12 @@
+## Cleanup of unused exception variables — follow-up PR (2026-10-15)
+
+- Created branch `cleanup/unused-exception-catches` from `main` to remove eight compiler-warning sources where catch variables were not used.
+- Changed only catch declarations in `MainWindow.xaml.cs` and `J2534Session.cs`; exception handling behavior and user-facing messages are unchanged.
+- This is a warning-only cleanup separate from updater hardening. CI must complete before marking it verified.
+- No physical J2534 adapter or vehicle testing was performed; those checks remain deferred.
+
+---
+
 # Manual regression update — 2026-10-15 (obsolete-file cleanup confirmed)
 
 - User confirmed that the in-place updater removes obsolete files from the application directory during replacement.
