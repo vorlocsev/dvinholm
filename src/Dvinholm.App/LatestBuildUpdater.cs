@@ -251,7 +251,18 @@ internal static class LatestBuildUpdater
 
             using (var response = await http.SendAsync(downloadRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
             {
-                response.EnsureSuccessStatusCode();
+                if (!response.IsSuccessStatusCode)
+                {
+                    // Include only the URL path in diagnostics; never log query strings,
+                    // which may contain temporary signed download tokens.
+                    var failedPath = response.RequestMessage?.RequestUri?.GetLeftPart(UriPartial.Path)
+                        ?? downloadUri?.GetLeftPart(UriPartial.Path)
+                        ?? "unknown URL";
+                    throw new HttpRequestException(
+                        $"Release asset download failed with HTTP {(int)response.StatusCode} ({response.StatusCode}) from {failedPath}.",
+                        null,
+                        response.StatusCode);
+                }
                 if (response.Content.Headers.ContentLength is long length && length > MaximumDownloadBytes)
                     throw new InvalidDataException("The downloaded artifact exceeds the configured size limit.");
 
