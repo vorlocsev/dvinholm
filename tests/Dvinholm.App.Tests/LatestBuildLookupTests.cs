@@ -31,6 +31,7 @@ public sealed class LatestBuildLookupTests
                 {
                   "assets": [
                     {
+                      "id": 987654,
                       "name": "Dvinholm-Windows-x86.zip",
                       "size": 1234,
                       "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-123/Dvinholm-Windows-x86.zip",
@@ -48,7 +49,7 @@ public sealed class LatestBuildLookupTests
         Assert.Equal(12345, build.RunId);
         Assert.Equal(1234, build.ArtifactSize);
         Assert.Equal("sha256:" + new string('a', 64), build.ArtifactDigest);
-        Assert.Equal("https://github.com/vorlocsev/dvinholm/releases/download/ci-123/Dvinholm-Windows-x86.zip", build.DownloadUrl);
+        Assert.Equal("https://api.github.com/repos/vorlocsev/dvinholm/releases/assets/987654", build.DownloadUrl);
         Assert.Equal(2, requests.Count);
         Assert.Contains("/actions/workflows/378992585/runs?per_page=100", requests[0]);
         Assert.EndsWith("/releases/tags/ci-123", requests[1]);
