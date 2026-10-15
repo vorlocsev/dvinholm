@@ -29,9 +29,12 @@ public sealed class CanBusDisposeQueuedSendTests
             await Task.Delay(100);
             disposeTask = Task.Run(bus.Dispose);
 
-            // Disposal must wait for the active native call to finish.
-            await Task.Delay(100);
-            Assert.False(disposeTask.IsCompleted);
+            // Wait until Dispose has atomically closed the bus before allowing
+            // the active write to finish. This removes scheduler-dependent races.
+            Assert.True(SpinWait.SpinUntil(() => bus.IsDisposed, TimeSpan.FromSeconds(2)),
+                "Dispose did not mark the bus as disposed.");
+            Assert.False(disposeTask.IsCompleted,
+                "Dispose returned while a native write was active.");
         }
         finally
         {
