@@ -194,6 +194,13 @@ internal static class LatestBuildUpdater
                     validatedDigest = digest.ToLowerInvariant();
                 }
 
+                // Prefer GitHub's release-asset API with an explicit octet-stream
+                // request. The browser URL can redirect to a signed asset URL and
+                // may fail with 401 in clients that negotiate the API JSON media type.
+                var assetId = ReadInt64(asset, "id");
+                if (assetId > 0)
+                    downloadUrl = $"https://api.github.com/repos/{Repository}/releases/assets/{assetId}";
+
                 return new LatestBuildInfo(
                     sha.ToLowerInvariant(),
                     runNumber,
@@ -233,7 +240,16 @@ internal static class LatestBuildUpdater
         try
         {
             progress?.Report($"Downloading CI build #{build.RunNumber}…");
-            using (var response = await http.GetAsync(build.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+            using var downloadRequest = new HttpRequestMessage(HttpMethod.Get, build.DownloadUrl);
+            if (Uri.TryCreate(build.DownloadUrl, UriKind.Absolute, out var downloadUri) &&
+                string.Equals(downloadUri.Host, "api.github.com", StringComparison.OrdinalIgnoreCase) &&
+                downloadUri.AbsolutePath.StartsWith($"/repos/{Repository}/releases/assets/", StringComparison.OrdinalIgnoreCase))
+            {
+                downloadRequest.Headers.Accept.Clear();
+                downloadRequest.Headers.Accept.Add(new MediaTypeWithQualityHeaderValue("application/octet-stream"));
+            }
+
+            using (var response = await http.SendAsync(downloadRequest, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
             {
                 response.EnsureSuccessStatusCode();
                 if (response.Content.Headers.ContentLength is long length && length > MaximumDownloadBytes)
