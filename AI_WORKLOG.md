@@ -1,3 +1,20 @@
+# Updater false-positive follow-up — 2026-10-16
+
+## User-reported behavior
+- The installed latest build still showed `Replace files and restart`, even though no newer intended build was available.
+
+## Additional root cause addressed on `fix/updater-check-button-state`
+- The updater was selecting successful CI builds from all branches. A newer feature-branch build could therefore be presented as an update even when the latest main-branch build was already installed.
+- Restrict the update feed to successful `main` runs (push/workflow_dispatch only), matching the project's documented update channel. Feature branches remain development builds and are not treated as public update candidates.
+- Updated lookup test fixtures to include branch metadata.
+
+## Validation
+- Source and test fixtures updated; CI has not yet been verified for this follow-up.
+- On Windows, install the resulting build, confirm the idle button says `Check update`, click it, and confirm `Replace files and restart` appears only when a newer successful `main` build is available.
+- Physical J2534 adapter testing remains deferred.
+
+---
+
 # Updater button state fix — 2026-10-16
 
 ## User-reported issue
