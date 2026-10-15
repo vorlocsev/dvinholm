@@ -1,3 +1,20 @@
+# Latest handoff — PR #224 merged; digest metadata hardening in progress (2026-10-15)
+
+## Verified
+- PR [#224](https://github.com/vorlocsev/dvinholm/pull/224) was squash-merged into `main` as `94ccbc14f4dc0022d142fd2bc3668d8187b9d04e`.
+- Post-merge CI passed: [workflow run #1578](https://github.com/vorlocsev/dvinholm/actions/runs/38744379744).
+- Test log: **452 passed, 0 failed, 0 skipped**.
+- PR #224 added isolated updater failure-path coverage, including HTTP errors, size/checksum mismatch, corrupt/unsafe ZIPs, missing executable, cancellation, and lookup fallback/security cases.
+
+## Current follow-up branch: `tests/updater-digest-metadata`
+- Hardened lookup of release assets: when GitHub supplies a non-empty `digest`, it must be a full `sha256:` value followed by 64 hexadecimal characters; malformed or unsupported digest metadata causes the updater to skip that asset and try an older eligible build.
+- Added `ReleaseWithMalformedDigest_FallsBackToOlderPublishedBuild` to verify fallback behavior.
+- CI for this follow-up has not yet been confirmed; wait for branch/PR checks before declaring it validated.
+- No physical J2534 adapter or vehicle testing is part of this stage; those checks remain deferred to a future release.
+- Do not merge the follow-up PR without explicit user approval.
+
+---
+
 # Manual regression update — 2026-10-15 (obsolete-file cleanup confirmed)
 
 - User confirmed that the in-place updater removes obsolete files from the application directory during replacement.
