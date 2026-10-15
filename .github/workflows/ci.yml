@@ -7,7 +7,7 @@ on:
   workflow_dispatch:
 
 permissions:
-  contents: read
+  contents: write
 
 jobs:
   build:
@@ -49,10 +49,26 @@ jobs:
           architecture: x64
 
       - name: Publish
-        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:InformationalVersion=0.1.0+${{ github.sha }} --output artifacts/app
+        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:InformationalVersion=0.1.0+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app
 
-      - name: Upload artifact
+      - name: Package public updater asset
+        if: github.event_name != 'pull_request'
+        shell: pwsh
+        run: Compress-Archive -Path artifacts/app/* -DestinationPath artifacts/Dvinholm-Windows-x86.zip -CompressionLevel Optimal
+
+      - name: Upload CI artifact
         uses: actions/upload-artifact@v7
         with:
           name: Dvinholm-Windows-x86
           path: artifacts/app
+
+      # Actions artifact ZIP downloads require authentication. Publish the same
+      # payload as a public prerelease asset so the installed app can update
+      # anonymously, without embedding a personal access token.
+      - name: Publish public CI asset
+        if: github.event_name != 'pull_request'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86.zip" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Dvinholm CI #${{ github.run_number }}" --notes "Automated Windows x86 CI build from commit ${{ github.sha }}. This prerelease is intended for the in-app updater."

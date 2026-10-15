@@ -11,13 +11,13 @@ internal sealed record LatestBuildInfo(
     string CommitSha,
     int RunNumber,
     long RunId,
-    long ArtifactId,
+    string DownloadUrl,
     long ArtifactSize,
     string? ArtifactDigest,
     string CreatedAt)
 {
     public string ShortSha => CommitSha.Length >= 7 ? CommitSha[..7] : CommitSha;
-    public string DisplayVersion => $"main {ShortSha} · CI #{RunNumber}";
+    public string DisplayVersion => $"CI #{RunNumber} · {ShortSha}";
 }
 
 internal static class LatestBuildUpdater
@@ -54,18 +54,21 @@ internal static class LatestBuildUpdater
         {
             var value = CurrentVersion;
             var plus = value.LastIndexOf('+');
-            if (plus >= 0)
-            {
-                var suffix = value[(plus + 1)..];
-                if (suffix.Length == 40 && suffix.All(Uri.IsHexDigit))
-                    return $"{value[..plus]} · {suffix[..7]}";
-            }
+            var sha = GetEmbeddedCommitSha(value, plus);
+            var runNumber = CurrentCiRunNumber;
+            if (sha is not null && runNumber is int ciRun)
+                return $"CI #{ciRun} · {sha[..7]}";
 
-            return value;
+            return sha is not null
+                ? $"{value[..plus]} · {sha[..7]}"
+                : value;
         }
     }
 
-    public static string? CurrentCommitSha
+    public static string CurrentWindowTitle =>
+        CurrentCiRunNumber is int runNumber ? $"Dvinholm CI #{runNumber}" : "Dvinholm";
+
+    public static int? CurrentCiRunNumber
     {
         get
         {
@@ -75,15 +78,31 @@ internal static class LatestBuildUpdater
                 return null;
 
             var suffix = value[(plus + 1)..];
-            return suffix.Length == 40 && suffix.All(Uri.IsHexDigit)
-                ? suffix.ToLowerInvariant()
+            var marker = suffix.LastIndexOf(".ci", StringComparison.OrdinalIgnoreCase);
+            return marker >= 0 && int.TryParse(suffix[(marker + 3)..], out var runNumber) && runNumber > 0
+                ? runNumber
                 : null;
         }
     }
 
+    public static string? CurrentCommitSha => GetEmbeddedCommitSha(CurrentVersion, CurrentVersion.LastIndexOf('+'));
+
+    private static string? GetEmbeddedCommitSha(string value, int plus)
+    {
+        if (plus < 0)
+            return null;
+
+        var suffix = value[(plus + 1)..];
+        var marker = suffix.IndexOf(".ci", StringComparison.OrdinalIgnoreCase);
+        var sha = marker >= 0 ? suffix[..marker] : suffix;
+        return sha.Length == 40 && sha.All(Uri.IsHexDigit) ? sha.ToLowerInvariant() : null;
+    }
+
     public static async Task<LatestBuildInfo> GetLatestSuccessfulBuildAsync(CancellationToken cancellationToken = default)
     {
-        var runsUrl = $"https://api.github.com/repos/{Repository}/actions/workflows/{WorkflowId}/runs?branch=main&status=success&per_page=20";
+        // Deliberately do not filter by branch: the user wants the newest successful
+        // CI build from any branch, including a feature branch or pull request.
+        var runsUrl = $"https://api.github.com/repos/{Repository}/actions/workflows/{WorkflowId}/runs?per_page=100";
         using var runsResponse = await Http.GetAsync(runsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         runsResponse.EnsureSuccessStatusCode();
         await using var runsStream = await runsResponse.Content.ReadAsStreamAsync(cancellationToken);
@@ -92,59 +111,60 @@ internal static class LatestBuildUpdater
         if (!runsJson.RootElement.TryGetProperty("workflow_runs", out var runs) || runs.ValueKind != JsonValueKind.Array)
             throw new InvalidDataException("GitHub did not return the CI workflow run list.");
 
-        JsonElement latestRun = default;
         foreach (var run in runs.EnumerateArray())
         {
-            if (ReadString(run, "head_branch") == "main" &&
-                ReadString(run, "status") == "completed" &&
-                ReadString(run, "conclusion") == "success")
+            // Push/workflow_dispatch artifacts are built from the exact head SHA.
+            // Pull-request workflows can build a synthetic merge ref, so their
+            // artifact SHA is not necessarily the branch's head_sha.
+            var eventName = ReadString(run, "event");
+            if (eventName is not ("push" or "workflow_dispatch") ||
+                ReadString(run, "status") != "completed" ||
+                ReadString(run, "conclusion") != "success")
+                continue;
+
+            var sha = ReadString(run, "head_sha");
+            if (sha.Length != 40 || !sha.All(Uri.IsHexDigit))
+                continue;
+
+            var runId = ReadInt64(run, "id");
+            var runNumber = checked((int)ReadInt64(run, "run_number"));
+            var createdAt = ReadString(run, "created_at");
+            // GitHub Actions artifact ZIP endpoints require authentication, even for
+            // public repositories. Successful non-PR CI runs publish a public
+            // prerelease asset tagged ci-<run number>; download that asset anonymously.
+            var releaseUrl = $"https://api.github.com/repos/{Repository}/releases/tags/ci-{runNumber}";
+            using var releaseResponse = await Http.GetAsync(releaseUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            if (!releaseResponse.IsSuccessStatusCode)
+                continue;
+
+            await using var releaseStream = await releaseResponse.Content.ReadAsStreamAsync(cancellationToken);
+            using var releaseJson = await JsonDocument.ParseAsync(releaseStream, cancellationToken: cancellationToken);
+            if (!releaseJson.RootElement.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array)
+                continue;
+
+            foreach (var asset in assets.EnumerateArray())
             {
-                latestRun = run;
-                break;
+                if (ReadString(asset, "name") != $"{ArtifactName}.zip")
+                    continue;
+
+                var size = ReadInt64(asset, "size");
+                var downloadUrl = ReadString(asset, "browser_download_url");
+                if (size <= 0 || size > MaximumDownloadBytes || !Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+                    continue;
+
+                var digest = ReadString(asset, "digest");
+                return new LatestBuildInfo(
+                    sha.ToLowerInvariant(),
+                    runNumber,
+                    runId,
+                    downloadUrl,
+                    size,
+                    digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ? digest.ToLowerInvariant() : null,
+                    createdAt);
             }
         }
 
-        if (latestRun.ValueKind == JsonValueKind.Undefined)
-            throw new InvalidOperationException("No successful Windows x86 CI run was found on main.");
-
-        var sha = ReadString(latestRun, "head_sha");
-        if (sha.Length != 40 || !sha.All(Uri.IsHexDigit))
-            throw new InvalidDataException("The latest successful CI run has an invalid commit SHA.");
-
-        var runId = ReadInt64(latestRun, "id");
-        var runNumber = checked((int)ReadInt64(latestRun, "run_number"));
-        var createdAt = ReadString(latestRun, "created_at");
-        var artifactsUrl = $"https://api.github.com/repos/{Repository}/actions/runs/{runId}/artifacts";
-        using var artifactsResponse = await Http.GetAsync(artifactsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        artifactsResponse.EnsureSuccessStatusCode();
-        await using var artifactsStream = await artifactsResponse.Content.ReadAsStreamAsync(cancellationToken);
-        using var artifactsJson = await JsonDocument.ParseAsync(artifactsStream, cancellationToken: cancellationToken);
-
-        if (!artifactsJson.RootElement.TryGetProperty("artifacts", out var artifacts) || artifacts.ValueKind != JsonValueKind.Array)
-            throw new InvalidDataException("GitHub did not return the latest CI artifact list.");
-
-        foreach (var artifact in artifacts.EnumerateArray())
-        {
-            if (ReadString(artifact, "name") != ArtifactName)
-                continue;
-            if (ReadBoolean(artifact, "expired"))
-                throw new InvalidOperationException("The latest CI artifact has expired. A new successful main build is required.");
-            var size = ReadInt64(artifact, "size_in_bytes");
-            if (size <= 0 || size > MaximumDownloadBytes)
-                throw new InvalidDataException("The latest CI artifact has an invalid or excessive size.");
-
-            var digest = ReadString(artifact, "digest");
-            return new LatestBuildInfo(
-                sha.ToLowerInvariant(),
-                runNumber,
-                runId,
-                ReadInt64(artifact, "id"),
-                size,
-                digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ? digest.ToLowerInvariant() : null,
-                createdAt);
-        }
-
-        throw new InvalidOperationException("The latest successful main CI run has no Windows x86 artifact.");
+        throw new InvalidOperationException("No successful CI run with a non-expired Windows x86 artifact was found across the repository branches.");
     }
 
     public static async Task<string> DownloadAndPrepareAsync(
@@ -155,25 +175,17 @@ internal static class LatestBuildUpdater
         var root = Path.Combine(
             Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
             "Dvinholm",
-            "Builds");
+            "UpdateStaging");
         Directory.CreateDirectory(root);
 
-        var destination = Path.Combine(root, build.CommitSha);
-        var executable = Path.Combine(destination, "Dvinholm.App.exe");
-        if (File.Exists(executable))
-        {
-            progress?.Report("The build is already downloaded; preparing to launch it…");
-            return executable;
-        }
-
-        var staging = Path.Combine(root, $".staging-{build.CommitSha}-{Guid.NewGuid():N}");
+        var staging = Path.Combine(root, $"{build.CommitSha}-{Guid.NewGuid():N}");
         var archivePath = Path.Combine(Path.GetTempPath(), $"dvinholm-{build.CommitSha}-{Guid.NewGuid():N}.zip");
+        var prepared = false;
 
         try
         {
-            progress?.Report($"Downloading CI artifact #{build.RunNumber}…");
-            var downloadUrl = $"https://api.github.com/repos/{Repository}/actions/artifacts/{build.ArtifactId}/zip";
-            using (var response = await Http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+            progress?.Report($"Downloading CI build #{build.RunNumber}…");
+            using (var response = await Http.GetAsync(build.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
             {
                 response.EnsureSuccessStatusCode();
                 if (response.Content.Headers.ContentLength is long length && length > MaximumDownloadBytes)
@@ -231,28 +243,100 @@ internal static class LatestBuildUpdater
             if (!File.Exists(Path.Combine(staging, "Dvinholm.App.exe")))
                 throw new InvalidDataException("The downloaded artifact does not contain Dvinholm.App.exe.");
 
-            if (Directory.Exists(destination))
-                Directory.Delete(destination, recursive: true);
-            Directory.Move(staging, destination);
-            return executable;
+            prepared = true;
+            return staging;
         }
         finally
         {
-            try { if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true); } catch (IOException) { }
+            if (!prepared)
+            {
+                try { if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true); } catch (IOException) { }
+            }
             try { if (File.Exists(archivePath)) File.Delete(archivePath); } catch (IOException) { }
         }
     }
 
-    public static Process StartBuild(string executablePath)
+    public static Process StartReplacement(string stagingDirectory, string destinationDirectory, int processId)
     {
+        var localRoot = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+            "Dvinholm");
+        var destination = Path.GetFullPath(destinationDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+        Directory.CreateDirectory(localRoot);
+
+        var scriptPath = Path.Combine(Path.GetTempPath(), $"dvinholm-update-{Guid.NewGuid():N}.ps1");
+        var script = $@"
+$ErrorActionPreference = 'Stop'
+$source = '{EscapePowerShellLiteral(Path.GetFullPath(stagingDirectory))}'
+$destination = '{EscapePowerShellLiteral(Path.GetFullPath(destination))}'
+$processId = {processId}
+$scriptPath = $MyInvocation.MyCommand.Path
+$logPath = Join-Path $env:LOCALAPPDATA 'Dvinholm\update.log'
+try {{
+    Wait-Process -Id $processId -ErrorAction SilentlyContinue
+    Start-Sleep -Milliseconds 400
+    if (-not (Test-Path -LiteralPath (Join-Path $source 'Dvinholm.App.exe'))) {{
+        throw 'The staged update is missing Dvinholm.App.exe.'
+    }}
+    New-Item -ItemType Directory -Path $destination -Force | Out-Null
+    & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $source $destination /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS
+    if ($LASTEXITCODE -ge 8) {{
+        throw ""Robocopy failed with exit code $LASTEXITCODE.""
+    }}
+    $targetExe = Join-Path $destination 'Dvinholm.App.exe'
+    if (-not (Test-Path -LiteralPath $targetExe)) {{
+        throw 'The updated executable is missing after file replacement.'
+    }}
+    $oldBuilds = Join-Path $env:LOCALAPPDATA 'Dvinholm\Builds'
+    if (Test-Path -LiteralPath $oldBuilds) {{
+        Get-ChildItem -LiteralPath $oldBuilds -Directory |
+            Where-Object {{ $_.FullName -ne $destination }} |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    }}
+    $stagingRoot = Join-Path $env:LOCALAPPDATA 'Dvinholm\UpdateStaging'
+    if (Test-Path -LiteralPath $stagingRoot) {{
+        Get-ChildItem -LiteralPath $stagingRoot -Directory |
+            Where-Object {{ $_.FullName -ne $source }} |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    }}
+    Start-Process -FilePath $targetExe -WorkingDirectory $destination
+    Remove-Item -LiteralPath $source -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue
+}}
+catch {{
+    ($_ | Out-String) | Set-Content -LiteralPath $logPath -Encoding UTF8
+    Start-Process -FilePath 'notepad.exe' -ArgumentList @($logPath)
+}}
+";
+        File.WriteAllText(scriptPath, script, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+
         var startInfo = new ProcessStartInfo
         {
-            FileName = executablePath,
-            WorkingDirectory = Path.GetDirectoryName(executablePath)!,
-            UseShellExecute = true
+            FileName = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe"),
+            WorkingDirectory = Path.GetTempPath(),
+            UseShellExecute = false,
+            CreateNoWindow = true
         };
-        return Process.Start(startInfo) ?? throw new InvalidOperationException("Windows could not start the updated application.");
+        startInfo.ArgumentList.Add("-NoProfile");
+        startInfo.ArgumentList.Add("-ExecutionPolicy");
+        startInfo.ArgumentList.Add("Bypass");
+        startInfo.ArgumentList.Add("-WindowStyle");
+        startInfo.ArgumentList.Add("Hidden");
+        startInfo.ArgumentList.Add("-File");
+        startInfo.ArgumentList.Add(scriptPath);
+
+        try
+        {
+            return Process.Start(startInfo) ?? throw new InvalidOperationException("Windows could not start the update helper.");
+        }
+        catch
+        {
+            try { File.Delete(scriptPath); } catch (IOException) { }
+            throw;
+        }
     }
+
+    private static string EscapePowerShellLiteral(string value) => value.Replace("'", "''");
 
     private static string ReadString(JsonElement element, string property) =>
         element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String

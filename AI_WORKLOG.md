@@ -1,3 +1,82 @@
+# Manual regression update — 2026-10-15 (obsolete-file cleanup confirmed)
+
+- User confirmed that the in-place updater removes obsolete files from the application directory during replacement.
+- The updater's key manual regression checks are now confirmed by the user: update succeeds without HTTP 401, ECU profiles are preserved, the updated app closes/reopens normally, and obsolete files are removed.
+- This confirms the observed Windows update flow; it does not replace CI or broader failure-path testing.
+- PR [#222](https://github.com/vorlocsev/dvinholm/pull/222) remains open and unmerged. Do not merge without explicit user approval. Physical J2534 adapter testing remains deferred to a future release.
+
+---
+
+# Manual regression update — 2026-10-15 (updated app relaunch confirmed)
+
+- User confirmed that after the in-place update, Dvinholm closes and launches again normally.
+- Combined manual evidence for this updater change: update completed successfully (no HTTP 401), saved ECU profiles remained present, and the updated application reopened successfully.
+- Obsolete-file deletion has not yet been independently confirmed by the user; keep that check open rather than claiming it passed.
+- Latest PR-head CI workflow run observed: [run #1576](https://github.com/vorlocsev/dvinholm/actions/runs/38659841631), still in progress at the time checked. Recheck before declaring the latest branch head green.
+- PR [#222](https://github.com/vorlocsev/dvinholm/pull/222) remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred.
+
+---
+
+# Manual regression update — 2026-10-15 (profiles preserved after in-place update)
+
+- User confirmed that existing ECU profiles were preserved after the successful in-place application update.
+- This closes the manual profile-persistence check for the current updater build.
+- Remaining practical post-update check: confirm Dvinholm can be closed and reopened normally and, if observable, that obsolete application files were removed by the replacement step.
+- CI runs for the work-log update are in progress; see [push run #1573](https://github.com/vorlocsev/dvinholm/actions/runs/38659748093) and [PR run #1574](https://github.com/vorlocsev/dvinholm/actions/runs/38659752664).
+- PR #222 remains open and unmerged; do not merge without explicit user approval. Physical J2534 testing remains deferred.
+
+---
+
+# Latest handoff update — 2026-10-15 (public CI updater manually confirmed)
+
+## Verified checkpoint
+- User manually confirmed that the in-app update completed successfully on Windows after the updater switched away from the authenticated GitHub Actions artifact endpoint. This confirms the observed HTTP 401 failure is resolved for this update path.
+- CI push run [#1571](https://github.com/vorlocsev/dvinholm/actions/runs/38658165715) succeeded on commit `5cf4783f95c6769b96c43c8c9a3426ba8f43c40d`; PR validation run [#1572](https://github.com/vorlocsev/dvinholm/actions/runs/38658169191) also succeeded.
+- Public prerelease [ci-1571](https://github.com/vorlocsev/dvinholm/releases/tag/ci-1571) exists and contains `Dvinholm-Windows-x86.zip` (66,927,853 bytes), GitHub digest `sha256:27dc59af143206d7c1b8435cac69a82dcf53e398b38043a83b1764e2393597a4`.
+- PR [#222](https://github.com/vorlocsev/dvinholm/pull/222) remains open and unmerged. Do not merge without explicit user approval.
+- Physical J2534 adapter testing remains deferred to a future release.
+
+## Next manual regression check
+1. Confirm existing ECU profiles are still present and can be opened after replacement.
+2. If possible, confirm obsolete files from the prior app build are removed and the updated app still closes/reopens cleanly.
+3. Keep the PR open until the remaining update checks and review are complete.
+
+---
+
+## Follow-up — updater failure diagnostics and current CI label (2026-10-15)
+
+- User reported the generic “Update preparation failed; the current app was left running” message and requested the Current label include the CI run number.
+- Current build label now displays `CI #<run-number> · <7-char-SHA>` when CI metadata is embedded, matching the compact build identity.
+- Update failures now write the full exception (including inner exception details) to `%LOCALAPPDATA%\\Dvinholm\\update.log` and show the sanitized error message in the app instead of hiding the cause behind a generic prompt. The current app remains running if preparation/replacement-helper startup fails.
+- Next: run CI, then ask user to retry the update and report the exact status message or log if it fails again. Confirm the app was launched from an ordinary writable folder; replacement needs permission to modify that folder. Do not merge PR #222 without explicit approval. Physical J2534 testing remains deferred.
+
+---
+
+# Latest handoff update — 2026-10-15 (compact CI title and build ID)
+
+## User request
+- Show the current build's commit identifier using exactly the first 7 SHA characters.
+- Reduce the app/window title to `Dvinholm CI #<run-number>`; remove “J2534 CAN Diagnostics” and the descriptive subtitle from the visible app header.
+
+## Changes on branch `ui/compact-ci-title`
+- Window caption is set at startup from embedded build metadata: `Dvinholm CI #<GitHub Actions run_number>`.
+- Removed the in-content product heading and OS/WinUI/x86/read-only description; kept the update status row and update button.
+- CI publish metadata now embeds both the full source SHA and workflow run number (`0.1.0+<sha>.ci<run_number>`).
+- Current build display retains the semantic version and displays only the first 7 characters of the embedded commit SHA. Update availability continues comparing the full SHA.
+- Updated metadata parsing to extract the full SHA and CI run number separately, preserving exact-commit comparisons.
+
+## Validation status
+- Pull-request CI passed on commit `cbc5ef8c6ae47f35820923770d954e2aec54d0e6` (run #1522); build, tests, publish, and artifact upload all succeeded. Manual Windows UI validation is still pending.
+- Do not claim the title or current-build label verified on Windows until the new artifact is launched.
+- Physical J2534/vehicle testing remains deferred; this UI change does not alter that scope.
+
+## Next actions
+1. Update this work log to reflect the successful CI run; this documentation-only commit triggers another CI run.
+2. Once that CI run passes, ask the user to launch the artifact on Windows and confirm the caption is `Dvinholm CI #<number>`, the app header no longer contains the removed heading/description, and the current build SHA is shown as 7 characters.
+3. Keep the updater targeting latest successful `main` CI until the later explicit switch to published Releases.
+
+---
+
 # Latest handoff update — 2026-10-15 (latest CI build updater in progress)
 
 ## User request
@@ -1107,3 +1186,21 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Physical J2534 adapter testing remains deferred to future releases; no physical adapter or vehicle compatibility is claimed.
 - Main commit under CI review at the time of this entry: `15e82064de8214ff45d6b06e61475874398d620d`; post-merge workflow run [#38641403628](https://github.com/vorlocsev/dvinholm/actions/runs/38641403628) had Restore and Build completed successfully, with test-host setup still in progress. Do not call the run fully green until Test, Publish, and Upload artifact complete successfully.
 - Next: confirm the complete post-merge CI result, then freeze the software-only MVP candidate. Public tag/release still requires explicit user approval.
+
+
+## Follow-up — update from the newest successful CI build and replace old files (2026-10-15)
+
+- User clarified that the in-app updater must select the latest successful CI artifact across all branches, not only `main`. The updater examines recent runs of the repository CI workflow in descending recency and accepts the first completed-success `push` or manual `workflow_dispatch` run with a non-expired `Dvinholm-Windows-x86` artifact, across all branches. Feature-branch builds are eligible and may contain unmerged work, so they are not necessarily release-stable. Pull-request validation runs are excluded because they can build a synthetic merge ref whose SHA differs from the branch commit. The UI displays the CI run number and seven-character SHA.
+- Update installation downloads and verifies the selected artifact, extracts it to a staging directory, then starts a PowerShell helper. The helper waits for the current app process to exit and uses Robocopy `/MIR` to replace files in the **same directory from which Dvinholm was launched**, deleting obsolete files in that directory before restarting the app.
+- After successful replacement, the helper removes old per-build cache directories except the active directory if it is inside `Builds`, and removes stale staging folders. ECU profiles remain separate at `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json` and are not deleted by the mirror. Helper errors are recorded in `%LOCALAPPDATA%\\Dvinholm\\update.log` and opened in Notepad.
+- Update detection compares both the full commit SHA and CI run number, so a newer CI artifact for the same source commit can still be offered.
+- Validation status at handoff: changes pushed to PR #222; CI must pass on the latest PR head before treating the code as validated. Manual Windows test remains required: update from an older build, confirm in-place replacement/restart, confirm an obsolete file is removed from the app directory, and verify saved ECU profiles remain. Physical J2534 hardware testing remains deferred.
+
+## Follow-up — fix anonymous updater downloads after HTTP 401 (2026-10-15)
+
+- Root cause confirmed from `%LOCALAPPDATA%\\Dvinholm\\update.log`: the updater requested `/actions/artifacts/{id}/zip`, an authenticated GitHub Actions artifact-download endpoint. The public repository's workflow artifact metadata can be read anonymously, but the artifact ZIP endpoint returned HTTP 401.
+- Changed the updater to resolve the matching public GitHub prerelease asset tagged `ci-<run_number>` and download its `browser_download_url` without credentials. It still verifies the downloaded size and GitHub asset SHA-256 digest when provided, then validates archive paths and the executable before staging.
+- Changed `.github/workflows/ci.yml` to package the published Windows x86 output into `Dvinholm-Windows-x86.zip` and publish it as a public prerelease asset for successful non-PR builds. The normal Actions artifact remains available for manual testing. Pull-request validation runs do not publish releases.
+- The workflow needs `contents: write` to create the automated prerelease. No personal access token is embedded in Dvinholm; the workflow uses its short-lived `github.token`.
+- Validation pending: CI must pass on the newest PR head; confirm the workflow creates the `ci-<run_number>` prerelease and that its asset digest/size are present in the release API. Then manually test update on Windows and confirm profiles persist and obsolete files are removed.
+- PR #222 remains open and unmerged. Physical J2534 adapter testing remains deferred.

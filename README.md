@@ -150,11 +150,13 @@ The application is self-contained, so a separate .NET runtime installation is no
 
 ### Check for and install the latest CI build
 
-The application checks GitHub Actions for the newest successful Windows x86 build from `main`. The version row shows the running build's informational version and the latest available commit/CI run. If a newer build exists, choose **Download and launch update**.
+The application checks GitHub Actions for the newest successful Windows x86 build from any branch. The version row shows the running build's CI number and seven-character commit SHA. Feature-branch builds may contain unmerged work and are not necessarily release-stable. If a newer build exists, choose **Download and launch update**.
 
-Updates are downloaded from the public repository's successful CI artifact, checked for size and unsafe archive paths, and extracted to a version-specific folder under `%LOCALAPPDATA%\\Dvinholm\\Builds\\<commit-sha>`. The new executable is launched from that folder; the currently running copy is not overwritten. ECU profile data remains in the shared `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json` location. Old build folders are not automatically deleted, so a previous build remains available for recovery.
+Updates are selected from the newest completed successful `push` or manual `workflow_dispatch` run across **all branches**. Pull-request validation runs are excluded. Since GitHub Actions artifact ZIP downloads require authentication, each successful non-PR CI run publishes the same Windows x86 ZIP as a public GitHub prerelease asset tagged `ci-<run-number>`. The updater downloads that asset anonymously—no GitHub token is stored in the app—and verifies its size and SHA-256 digest when GitHub provides one, checks archive paths, and stages the extracted files before installation.
 
-This initial updater targets the latest successful CI build on `main`, not the latest published release. Future versions can switch the update source to the GitHub Releases API without changing the user's profile storage.
+When an update is applied, a helper waits for the running app to exit, mirrors the staged files into the **same directory from which Dvinholm was launched** using Robocopy `/MIR`, and therefore replaces changed files and deletes obsolete application files there. It then removes old per-build cache directories (while preserving the active directory if it is inside `Builds`) and stale staging folders, then restarts Dvinholm. ECU profile data remains separate at `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json` and is preserved. If the update helper fails, it records details in `%LOCALAPPDATA%\\Dvinholm\\update.log`.
+
+The update channel follows public per-CI prerelease assets rather than the latest stable GitHub Release. The Current label shows the CI run number and seven-character commit SHA when build metadata is available. If update preparation fails, the app stays open and reports the immediate error; full exception details are written to `%LOCALAPPDATA%\\Dvinholm\\update.log`. The application directory must be writable for in-place replacement. Physical J2534 adapter validation is not implied by CI success and remains deferred to a future release.
 
 ### Troubleshooting
 
