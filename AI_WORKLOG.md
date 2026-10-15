@@ -1,3 +1,13 @@
+# Manual regression update — 2026-10-15 (updated app relaunch confirmed)
+
+- User confirmed that after the in-place update, Dvinholm closes and launches again normally.
+- Combined manual evidence for this updater change: update completed successfully (no HTTP 401), saved ECU profiles remained present, and the updated application reopened successfully.
+- Obsolete-file deletion has not yet been independently confirmed by the user; keep that check open rather than claiming it passed.
+- Latest PR-head CI workflow run observed: [run #1576](https://github.com/vorlocsev/dvinholm/actions/runs/38659841631), still in progress at the time checked. Recheck before declaring the latest branch head green.
+- PR [#222](https://github.com/vorlocsev/dvinholm/pull/222) remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred.
+
+---
+
 # Manual regression update — 2026-10-15 (profiles preserved after in-place update)
 
 - User confirmed that existing ECU profiles were preserved after the successful in-place application update.
