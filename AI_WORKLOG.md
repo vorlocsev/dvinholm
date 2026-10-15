@@ -1,3 +1,20 @@
+# Updater button state fix — 2026-10-16
+
+## User-reported issue
+- After applying an update and the application restarts, the button can still show `Replace files and restart`; the expected idle action is `Check update`, so the user can deliberately check for the next build.
+
+## Changes on branch `fix/updater-check-button-state`
+- Disabled the automatic latest-build check during application startup. The app now starts in an idle state with `Check update`; clicking it performs the online check.
+- If the check finds a newer build, the button changes to `Replace files and restart`. If the installed build is current, it returns to `Check update`.
+- This avoids the app immediately re-evaluating the CI feed after restart and re-presenting the replace action without a deliberate check.
+
+## Validation status
+- Source change committed; CI and Windows manual validation are pending.
+- Next: verify the CI build, then on Windows install an update and confirm the restarted app shows `Check update`; click it and verify the button changes only if a newer successful build is available.
+- This is an updater UI/state change; physical J2534 adapter testing remains deferred.
+
+---
+
 # Manual regression update — 2026-10-15 (obsolete-file cleanup confirmed)
 
 - User confirmed that the in-place updater removes obsolete files from the application directory during replacement.
