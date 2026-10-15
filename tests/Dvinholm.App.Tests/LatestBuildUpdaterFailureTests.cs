@@ -37,6 +37,39 @@ public sealed class LatestBuildUpdaterFailureTests
     }
 
     [Fact]
+    public async Task OversizedDeclaredResponse_ThrowsAndCleansStagingDirectory()
+    {
+        using var client = CreateClient(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(Array.Empty<byte>())
+            {
+                Headers = { ContentLength = 500L * 1024 * 1024 + 1 }
+            }
+        });
+        var build = BuildInfo(Array.Empty<byte>());
+        var stagingRoot = GetStagingRoot();
+
+        await Assert.ThrowsAsync<InvalidDataException>(
+            () => LatestBuildUpdater.DownloadAndPrepareAsync(build, client));
+
+        AssertNoStagingDirectory(stagingRoot, build.CommitSha);
+    }
+
+    [Fact]
+    public async Task CanceledDownload_ThrowsAndCleansStagingDirectory()
+    {
+        using var client = new HttpClient(new CancelingHttpMessageHandler());
+        using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
+        var build = BuildInfo(new byte[] { 1, 2, 3 });
+        var stagingRoot = GetStagingRoot();
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => LatestBuildUpdater.DownloadAndPrepareAsync(build, client, cancellationToken: cancellation.Token));
+
+        AssertNoStagingDirectory(stagingRoot, build.CommitSha);
+    }
+
+    [Fact]
     public async Task InvalidSha256_ThrowsAndCleansStagingDirectory()
     {
         var bytes = CreateZip(("Dvinholm.App.exe", "fake executable"));
@@ -147,6 +180,17 @@ public sealed class LatestBuildUpdaterFailureTests
             return;
 
         Assert.Empty(Directory.EnumerateDirectories(root, commitSha + "-*"));
+    }
+
+    private sealed class CancelingHttpMessageHandler : HttpMessageHandler
+    {
+        protected override async Task<HttpResponseMessage> SendAsync(
+            HttpRequestMessage request,
+            CancellationToken cancellationToken)
+        {
+            await Task.Delay(Timeout.InfiniteTimeSpan, cancellationToken);
+            throw new InvalidOperationException("The canceled request should not return a response.");
+        }
     }
 
     private sealed class StubHttpMessageHandler(
