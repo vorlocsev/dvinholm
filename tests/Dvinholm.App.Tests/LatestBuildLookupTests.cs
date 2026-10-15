@@ -239,8 +239,12 @@ public sealed class LatestBuildLookupTests
         Assert.Equal("https://github.com/vorlocsev/dvinholm/releases/download/ci-49/Dvinholm-Windows-x86.zip", build.DownloadUrl);
     }
 
-    [Fact]
-    public async Task ReleaseWithMalformedDigest_FallsBackToOlderPublishedBuild()
+    [Theory]
+    [InlineData("md5:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
+    [InlineData("sha256:abc")]
+    [InlineData("sha256:gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg")]
+    [InlineData("sha256:" + "a" + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
+    public async Task ReleaseWithMalformedDigest_FallsBackToOlderPublishedBuild(string malformedDigest)
     {
         using var client = new HttpClient(new QueueHttpMessageHandler(request =>
         {
@@ -258,18 +262,19 @@ public sealed class LatestBuildLookupTests
 
             if (request.RequestUri!.AbsolutePath.EndsWith("/ci-60", StringComparison.Ordinal))
             {
-                return JsonResponse("""
+                var release = """
                     {
                       "assets": [
                         {
                           "name": "Dvinholm-Windows-x86.zip",
                           "size": 2048,
                           "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-60/Dvinholm-Windows-x86.zip",
-                          "digest": "md5:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                          "digest": "__DIGEST__"
                         }
                       ]
                     }
-                    """);
+                    """.Replace("__DIGEST__", malformedDigest, StringComparison.Ordinal);
+                return JsonResponse(release);
             }
 
             return JsonResponse("""
