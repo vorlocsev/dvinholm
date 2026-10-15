@@ -1204,3 +1204,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The workflow needs `contents: write` to create the automated prerelease. No personal access token is embedded in Dvinholm; the workflow uses its short-lived `github.token`.
 - Validation pending: CI must pass on the newest PR head; confirm the workflow creates the `ci-<run_number>` prerelease and that its asset digest/size are present in the release API. Then manually test update on Windows and confirm profiles persist and obsolete files are removed.
 - PR #222 remains open and unmerged. Physical J2534 adapter testing remains deferred.
+
+
+## Updater failure-path test coverage — PR #224 (2026-10-15)
+
+- Opened [PR #224](https://github.com/vorlocsev/dvinholm/pull/224) to make the updater's download/preparation path accept an injected `HttpClient` while keeping the production entry point unchanged.
+- Added automated tests for HTTP 401/network-style request failure, artifact size mismatch, SHA-256 mismatch, corrupt ZIP, unsafe ZIP entry paths, and missing `Dvinholm.App.exe`. Failure tests assert that the per-build staging directory is not left behind.
+- Tests use a local stub HTTP handler and generated ZIPs; they do not call GitHub or require a physical J2534 adapter.
+- Validation pending: PR CI must compile and run the tests before considering these checks complete. The current CI run was queued at handoff.
+- Follow-up after CI: fix any failures, then consider extracting release discovery parsing into a testable component and adding cancellation/oversized-download cleanup cases. Physical J2534 adapter and vehicle tests remain deferred.
