@@ -1213,3 +1213,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Tests use a local stub HTTP handler and generated ZIPs; they do not call GitHub or require a physical J2534 adapter.
 - Validation pending: PR CI must compile and run the tests before considering these checks complete. The current CI run was queued at handoff.
 - Follow-up after CI: fix any failures, then consider extracting release discovery parsing into a testable component and adding cancellation/oversized-download cleanup cases. Physical J2534 adapter and vehicle tests remain deferred.
+
+## Updater failure-path tests — CI verified (2026-10-15)
+
+- PR [#224](https://github.com/vorlocsev/dvinholm/pull/224) head `5f406b81487c8053042f4201a6c57352e22836d9` passed GitHub Actions: Restore, Build, Test, Publish, and artifact publication all succeeded.
+- The test step reported **444 passed, 0 failed, 0 skipped**. This includes the six isolated updater failure-path tests; they use a stub HTTP handler and do not make live GitHub requests.
+- PR #224 remains open and unmerged pending review/explicit merge authorization.
+- PR #222 was subsequently merged into `main` as `4be4590832fba9e89dcf40973b877e02d4a07a30`; earlier handoff notes saying it remained open describe the state at their respective checkpoints and are historical.
+- Next coverage candidates: cancellation/oversized-response cleanup and testable parsing of latest-build discovery metadata. Keep physical J2534 adapter and vehicle checks deferred to a future release.
