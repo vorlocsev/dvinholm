@@ -1390,3 +1390,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The missing/null digest regression test now compiles and passes for both omitted `digest` and explicit JSON `null`; its fixture uses ordinary C# string concatenation.
 - The worklog entries above saying this change was pending are historical; this entry records the final successful validation.
 - PR #225 remains open and unmerged. No physical J2534 adapter was used or required.
+
+
+## Successful updater checksum verification — PR #225 (2026-10-15)
+
+- Added a positive-path regression test for a ZIP whose downloaded bytes match the declared SHA-256 digest.
+- The test verifies that the updater accepts the artifact, extracts `Dvinholm.App.exe`, and preserves the expected file contents; it removes the staging directory afterward.
+- This complements the existing mismatched-digest test, which asserts rejection and cleanup. Uses an in-memory HTTP stub; no live download or physical J2534 adapter is involved.
+- CI validation is pending for this change. PR #225 remains open and unmerged.
