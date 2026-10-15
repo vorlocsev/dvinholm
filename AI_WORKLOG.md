@@ -1,3 +1,12 @@
+## CI verification — unused exception warning cleanup (2026-10-15)
+
+- PR [#226](https://github.com/vorlocsev/dvinholm/pull/226) source changes passed both CI build jobs: [run 38766989144](https://github.com/vorlocsev/dvinholm/actions/runs/38766989144) and [run 38766964685](https://github.com/vorlocsev/dvinholm/actions/runs/38766964685).
+- Each run reported **452 passed, 0 failed, 0 skipped**. Build log reports **0 Warning(s)**; the previous CS0168 warnings are gone in these runs.
+- The code changes only remove unused exception variable names in catch clauses; behavior and user-facing messages are unchanged.
+- PR #226 remains open and unmerged. No physical J2534 adapter or vehicle testing was performed; those checks remain deferred.
+
+---
+
 ## Cleanup of unused exception variables — follow-up PR (2026-10-15)
 
 - Created branch `cleanup/unused-exception-catches` from `main` to remove eight compiler-warning sources where catch variables were not used.
