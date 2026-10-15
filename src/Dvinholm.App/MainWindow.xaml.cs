@@ -148,7 +148,7 @@ public sealed partial class MainWindow : Window
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {latest.DisplayVersion}";
             UpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check again";
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             _latestBuild = null;
             _updateAvailable = false;
@@ -243,7 +243,7 @@ public sealed partial class MainWindow : Window
             SetProfileCatalog(catalog);
             SetStatus($"Loaded {catalog.All.Count} saved ECU profile(s).");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             SetStatus("Saved ECU profiles could not be loaded. Check the local file and its permissions.");
         }
@@ -271,12 +271,12 @@ public sealed partial class MainWindow : Window
                 SaveProfileCatalog(imported);
                 SetStatus($"Imported and saved {imported.All.Count} ECU profile(s) from {file.Name}. Select a profile to apply its CAN IDs.");
             }
-            catch (Exception saveException)
+            catch (Exception)
             {
                 SetStatus($"Imported {imported.All.Count} profile(s), but could not save the local copy. Check folder permissions and available disk space.");
             }
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             _loadingProfiles = false;
             SetStatus("Profile import failed. Check that the selected file is valid JSON and can be read.");
@@ -303,7 +303,7 @@ public sealed partial class MainWindow : Window
             await File.WriteAllTextAsync(file.Path, _profileCatalog.ToJson());
             SetStatus($"Exported {_profileCatalog.All.Count} ECU profile(s) to {file.Name}.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             SetStatus("Profile export failed. Check destination permissions and available disk space.");
         }
@@ -1048,7 +1048,7 @@ public sealed partial class MainWindow : Window
             await File.WriteAllLinesAsync(file.Path, lines);
             SetStatus($"CSV saved: {file.Name}.");
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Picker and filesystem failures are expected user-environment errors.
             // Surface them in the status bar instead of escaping an async-void UI handler.
