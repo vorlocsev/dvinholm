@@ -1,3 +1,13 @@
+## CI verification — malformed updater metadata and run-number fallback (2026-10-15)
+
+- Latest PR #225 head `d10d08e0c72022afabd89cac968ff8267d7a32ff` passed both GitHub Actions build runs: [run 38764364523](https://github.com/vorlocsev/dvinholm/actions/runs/38764364523) and [run 38764357153](https://github.com/vorlocsev/dvinholm/actions/runs/38764357153).
+- Test log confirms **471 passed, 0 failed, 0 skipped**. Build and publish also succeeded.
+- Added regression coverage for malformed/out-of-range run metadata so one invalid newer run is skipped and discovery can fall back to an older eligible build.
+- CI still reports existing CS0168 warnings for unused exception variables in `MainWindow.xaml.cs` and `J2534Session.cs`; they do not fail the build and are a separate cleanup task.
+- PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) remains open and unmerged. No physical adapter/vehicle testing was performed; that remains deferred.
+
+---
+
 ## Release digest JSON type validation — PR #225 (2026-10-15)
 
 - Verified the preceding branch head `78da5e1f4132e4bbf38937e9332f5c2ec841aad3`: both CI build jobs succeeded with **462 passed, 0 failed, 0 skipped**.
