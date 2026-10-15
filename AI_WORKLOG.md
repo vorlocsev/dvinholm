@@ -1375,3 +1375,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - CI exposed a C# raw interpolated string syntax error in the new missing/null digest regression test (`CS1056` at the JSON opening brace).
 - Corrected the literal to use a two-dollar raw interpolated string, so JSON braces remain literal while the optional digest property is interpolated.
 - This is a test-only syntax fix. CI for the corrected commit is pending; do not count the compatibility test as validated until both jobs pass.
+
+
+## Follow-up fix for digest fixture syntax — PR #225 (2026-10-15)
+
+- The first raw-string correction did not change the source as intended; CI still reported `CS1056` at the JSON object brace.
+- Replaced the interpolated raw JSON literal with straightforward string concatenation for the optional `digest: null` property, avoiding brace interpolation entirely.
+- CI for commit `01421d5a07d2470bf36c5ddd7e4324cd4c8025b7` is pending. The test remains unvalidated until both CI jobs pass.
