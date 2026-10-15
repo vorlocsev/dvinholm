@@ -51,8 +51,7 @@ public sealed partial class MainWindow : Window
         EcusView.ItemsSource = _ecus;
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest CI build…";
-        DispatcherQueue.TryEnqueue(() => _ = CheckLatestBuildAsync());
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · select Check update to look for a new build.";
         _session.ReadError += ex => DispatcherQueue.TryEnqueue(() =>
         {
             var detail = J2534Native.SanitizeDriverDiagnostic(ex.Message);
@@ -146,7 +145,7 @@ public sealed partial class MainWindow : Window
                 currentRunNumber != latest.RunNumber;
 
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {latest.DisplayVersion}";
-            UpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check again";
+            UpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check update";
         }
         catch (Exception ex)
         {
