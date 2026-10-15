@@ -1,3 +1,18 @@
+# Latest handoff — updater HTTP 401 resolved by manual Windows verification (2026-10-15)
+
+## Verified
+- User confirmed that updating Dvinholm on Windows completed successfully after the updater release-asset download change.
+- GitHub Actions build/test workflow for PR #225 head `98ab47814272c84a275dc91a17c6c2f6e3ce9a9a` completed successfully: [run 38773749978](https://github.com/vorlocsev/dvinholm/actions/runs/38773749978).
+- The updater now selects the GitHub Releases asset API endpoint when an asset ID is available and sends `Accept: application/octet-stream`; it retains the validated browser-download URL fallback when no asset ID is present.
+- Manual success confirms the reported HTTP 401 no longer blocks the tested Windows update path. This does not establish that every possible release/download failure is impossible.
+
+## Next
+- Continue release-readiness review using CI and virtual/software tests only.
+- Keep real J2534 adapter and vehicle verification deferred to a future release; the user currently has no physical adapter available.
+- PR #225 remains open and unmerged; do not merge without explicit user approval.
+
+---
+
 # Latest handoff — updater HTTP 401 fix in progress (2026-10-15)
 
 ## Change made
