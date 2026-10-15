@@ -1,3 +1,21 @@
+# UI layout follow-up — compact ECU profiles (2026-10-16)
+
+## User-reported issue
+- The ECU Profiles section consumed too much vertical space. After selecting a profile, the CAN Monitor table was pushed below the visible window area.
+
+## Changes on branch `ui/compact-ecu-profiles`
+- Reduced the ECU discovery list's fixed height from 100 px to 76 px.
+- Replaced the tall stacked “Selected ECU” card with a single compact row containing ECU details, profile selector, and Import/Export JSON actions.
+- Removed the profile selector's separate header and clipped long ECU detail text with an ellipsis so it does not expand the row vertically.
+- This is a layout-only change; connection-gated controls remain gated. No physical adapter test is required for this UI change.
+
+## Validation status
+- Source change committed; CI and Windows manual validation have not yet been confirmed.
+- Next: review PR CI, then ask the user to launch the new artifact and confirm that CAN Monitor remains visible when selecting an ECU profile. If the table still moves out of view, inspect the remaining parent-grid sizing and adapt the layout further.
+- Physical J2534 adapter validation remains deferred to a future release.
+
+---
+
 # Manual regression update — 2026-10-15 (obsolete-file cleanup confirmed)
 
 - User confirmed that the in-place updater removes obsolete files from the application directory during replacement.
