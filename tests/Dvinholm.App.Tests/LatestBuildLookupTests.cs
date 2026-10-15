@@ -55,6 +55,49 @@ public sealed class LatestBuildLookupTests
     }
 
     [Fact]
+    public async Task RunWithOutOfRangeRunNumber_IsSkippedAndOlderBuildIsUsed()
+    {
+        var requestedReleasePaths = new List<string>();
+        using var client = new HttpClient(new QueueHttpMessageHandler(request =>
+        {
+            if (request.RequestUri!.AbsolutePath.EndsWith("/runs", StringComparison.Ordinal))
+            {
+                return JsonResponse("""
+                    {
+                      "workflow_runs": [
+                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 100, "run_number": 2147483648, "created_at": "2026-10-15T02:00:00Z" },
+                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 99, "run_number": 39, "created_at": "2026-10-15T01:00:00Z" }
+                      ]
+                    }
+                    """);
+            }
+
+            requestedReleasePaths.Add(request.RequestUri!.AbsolutePath);
+            if (!request.RequestUri.AbsolutePath.EndsWith("/ci-39", StringComparison.Ordinal))
+                throw new InvalidOperationException("An out-of-range run number must not trigger a release lookup.");
+
+            return JsonResponse("""
+                {
+                  "assets": [
+                    {
+                      "name": "Dvinholm-Windows-x86.zip",
+                      "size": 4096,
+                      "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-39/Dvinholm-Windows-x86.zip",
+                      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                    }
+                  ]
+                }
+                """);
+        }));
+
+        var build = await LatestBuildUpdater.GetLatestSuccessfulBuildAsync(client);
+
+        Assert.Equal(39, build.RunNumber);
+        Assert.Equal("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", build.CommitSha);
+        Assert.Single(requestedReleasePaths);
+    }
+
+    [Fact]
     public async Task MissingWorkflowRunsArray_ThrowsInvalidDataException()
     {
         using var client = new HttpClient(new QueueHttpMessageHandler(_ =>
