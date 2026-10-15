@@ -1238,3 +1238,14 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Tests do not access GitHub over the network and do not require a physical J2534 adapter.
 - Validation for this addition is pending CI on the latest PR head; do not mark these new tests passed until that run completes.
 - PR [#224](https://github.com/vorlocsev/dvinholm/pull/224) remains open and unmerged. Do not merge without explicit user approval.
+
+
+---
+
+# CI follow-up — deterministic CAN disposal test — 2026-10-15
+
+- The new updater lookup tests compiled, but the full suite exposed an existing scheduler-sensitive failure in `CanBusDisposeQueuedSendTests.DisposePreventsQueuedSendFromEnteringAdapterAfterActiveWriteCompletes` (448 passed, 1 failed at that run).
+- Root cause in the test: a fixed delay did not prove that `Dispose` had atomically marked the bus disposed before the active adapter write was released.
+- Added an internal read-only disposal-state accessor and changed the test to wait for that state with a bounded timeout before releasing the active write. This makes the intended race ordering explicit rather than timing-based.
+- Validation is pending CI on the latest head; do not mark the suite green until the rerun completes.
+- PR [#224](https://github.com/vorlocsev/dvinholm/pull/224) remains open and unmerged. No physical J2534 adapter is required.
