@@ -20,6 +20,41 @@ public sealed class LatestBuildUpdaterFailureTests
     }
 
     [Fact]
+    public async Task ReleaseAssetApiDownload_RequestsBinaryContent()
+    {
+        var bytes = CreateZip(("Dvinholm.App.exe", "fake executable"));
+        HttpRequestMessage? capturedRequest = null;
+        using var client = CreateClient(request =>
+        {
+            capturedRequest = request;
+            return new HttpResponseMessage(HttpStatusCode.OK)
+            {
+                Content = new ByteArrayContent(bytes)
+            };
+        });
+        var build = BuildInfo(
+            bytes,
+            url: "https://api.github.com/repos/vorlocsev/dvinholm/releases/assets/12345");
+        string? staging = null;
+
+        try
+        {
+            staging = await LatestBuildUpdater.DownloadAndPrepareAsync(build, client);
+
+            Assert.NotNull(capturedRequest);
+            Assert.Contains(capturedRequest!.Headers.Accept,
+                header => header.MediaType == "application/octet-stream");
+            Assert.True(File.Exists(Path.Combine(staging, "Dvinholm.App.exe")));
+        }
+        finally
+        {
+            capturedRequest?.Dispose();
+            if (staging is not null && Directory.Exists(staging))
+                Directory.Delete(staging, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task SizeMismatch_ThrowsAndCleansStagingDirectory()
     {
         var bytes = CreateZip(("Dvinholm.App.exe", "fake executable"));
@@ -168,14 +203,14 @@ public sealed class LatestBuildUpdaterFailureTests
     private static HttpClient CreateClient(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) =>
         new(new StubHttpMessageHandler(responseFactory));
 
-    private static LatestBuildInfo BuildInfo(byte[] bytes, long? sizeOverride = null, string? digest = null)
+    private static LatestBuildInfo BuildInfo(byte[] bytes, long? sizeOverride = null, string? digest = null, string? url = null)
     {
         var sha = Guid.NewGuid().ToString("N").PadRight(40, 'a')[..40];
         return new LatestBuildInfo(
             sha,
             1,
             1,
-            "https://example.invalid/update.zip",
+            url ?? "https://example.invalid/update.zip",
             sizeOverride ?? bytes.LongLength,
             digest,
             DateTimeOffset.UtcNow.ToString("O"));
