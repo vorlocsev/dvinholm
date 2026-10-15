@@ -146,7 +146,7 @@ public sealed class LatestBuildUpdaterFailureTests
         if (!Directory.Exists(root))
             return;
 
-        Assert.Empty(Directory.EnumerateDirectories(root, commitSha + "-"));
+        Assert.Empty(Directory.EnumerateDirectories(root, commitSha + "-*"));
     }
 
     private sealed class StubHttpMessageHandler(
