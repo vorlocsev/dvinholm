@@ -1221,3 +1221,9 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - PR #224 remains open and unmerged pending review/explicit merge authorization.
 - PR #222 was subsequently merged into `main` as `4be4590832fba9e89dcf40973b877e02d4a07a30`; earlier handoff notes saying it remained open describe the state at their respective checkpoints and are historical.
 - Next coverage candidates: cancellation/oversized-response cleanup and testable parsing of latest-build discovery metadata. Keep physical J2534 adapter and vehicle checks deferred to a future release.
+
+## Additional updater failure tests — PR #224 (2026-10-15)
+
+- Added two more isolated tests on the PR branch: a response declaring a download larger than the configured 500 MiB limit is rejected before streaming, and cancellation while awaiting the HTTP response propagates as cancellation.
+- Both tests assert that no per-build staging directory is left behind. They use a stub handler and do not contact GitHub or require a physical adapter.
+- The earlier PR head passed 444/444 tests. These two new tests are not yet validated; wait for CI on the latest head before claiming the updated test count is green.
