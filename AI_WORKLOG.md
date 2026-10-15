@@ -1249,3 +1249,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Added an internal read-only disposal-state accessor and changed the test to wait for that state with a bounded timeout before releasing the active write. This makes the intended race ordering explicit rather than timing-based.
 - Validation is pending CI on the latest head; do not mark the suite green until the rerun completes.
 - PR [#224](https://github.com/vorlocsev/dvinholm/pull/224) remains open and unmerged. No physical J2534 adapter is required.
+
+
+## Release metadata fallback coverage — PR #224 (2026-10-15)
+
+- Latest CI for commit `74d2bf003fe931adc1898c91ab1daec76a65edef` passed both GitHub Actions checks; the full test suite reported **449 passed, 0 failed, 0 skipped**.
+- Added two stubbed-HTTP lookup tests: a 404 for the newest CI prerelease falls back to an older published build, and a release lacking the expected `Dvinholm-Windows-x86.zip` asset also falls back instead of selecting invalid metadata.
+- These tests are committed to PR #224 and still require CI on the new head. No live GitHub requests or physical J2534 hardware are used by the tests.
+- PR #224 remains open and unmerged; wait for CI on the newest commit before marking these two tests validated.
