@@ -1382,3 +1382,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The first raw-string correction did not change the source as intended; CI still reported `CS1056` at the JSON object brace.
 - Replaced the interpolated raw JSON literal with straightforward string concatenation for the optional `digest: null` property, avoiding brace interpolation entirely.
 - CI for commit `01421d5a07d2470bf36c5ddd7e4324cd4c8025b7` is pending. The test remains unvalidated until both CI jobs pass.
+
+
+## Validation of missing/null digest compatibility — PR #225 (2026-10-15)
+
+- Follow-up CI completed successfully on branch head `7e3c54c726a00a7eabbc30cab184c04cf0289b42`: **469 passed, 0 failed, 0 skipped** in each build job.
+- The missing/null digest regression test now compiles and passes for both omitted `digest` and explicit JSON `null`; its fixture uses ordinary C# string concatenation.
+- The worklog entries above saying this change was pending are historical; this entry records the final successful validation.
+- PR #225 remains open and unmerged. No physical J2534 adapter was used or required.
