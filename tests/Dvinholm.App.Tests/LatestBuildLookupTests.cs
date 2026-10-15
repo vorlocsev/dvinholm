@@ -243,7 +243,7 @@ public sealed class LatestBuildLookupTests
     [InlineData("md5:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
     [InlineData("sha256:abc")]
     [InlineData("sha256:gggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggggg")]
-    [InlineData("sha256:" + "a" + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
+    [InlineData("sha256:" + "a" + "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa")]
     public async Task ReleaseWithMalformedDigest_FallsBackToOlderPublishedBuild(string malformedDigest)
     {
         using var client = new HttpClient(new QueueHttpMessageHandler(request =>
