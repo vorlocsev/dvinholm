@@ -158,13 +158,27 @@ internal static class LatestBuildUpdater
                     continue;
 
                 var digest = ReadString(asset, "digest");
+                string? validatedDigest = null;
+                if (!string.IsNullOrEmpty(digest))
+                {
+                    // Older release metadata may omit a digest, but if one is
+                    // supplied it must be a complete SHA-256 value. Do not select
+                    // an asset whose malformed digest would silently disable verification.
+                    if (!digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ||
+                        digest.Length != 71 ||
+                        !digest[7..].All(Uri.IsHexDigit))
+                        continue;
+
+                    validatedDigest = digest.ToLowerInvariant();
+                }
+
                 return new LatestBuildInfo(
                     sha.ToLowerInvariant(),
                     runNumber,
                     runId,
                     downloadUrl,
                     size,
-                    digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ? digest.ToLowerInvariant() : null,
+                    validatedDigest,
                     createdAt);
             }
         }
