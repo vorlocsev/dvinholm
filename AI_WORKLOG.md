@@ -1227,3 +1227,14 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Added two more isolated tests on the PR branch: a response declaring a download larger than the configured 500 MiB limit is rejected before streaming, and cancellation while awaiting the HTTP response propagates as cancellation.
 - Both tests assert that no per-build staging directory is left behind. They use a stub handler and do not contact GitHub or require a physical adapter.
 - The earlier PR head passed 444/444 tests. These two new tests are not yet validated; wait for CI on the latest head before claiming the updated test count is green.
+
+
+---
+
+# Automated updater metadata lookup tests — 2026-10-15
+
+- Added an injectable `HttpClient` overload for `GetLatestSuccessfulBuildAsync`; the production entry point still uses the configured shared client.
+- Added deterministic HTTP-stub tests for selecting a successful push/workflow-dispatch run while ignoring pull-request and failed runs, extracting the expected release asset metadata, rejecting a malformed workflow-runs response, and reporting when no eligible successful run exists.
+- Tests do not access GitHub over the network and do not require a physical J2534 adapter.
+- Validation for this addition is pending CI on the latest PR head; do not mark these new tests passed until that run completes.
+- PR [#224](https://github.com/vorlocsev/dvinholm/pull/224) remains open and unmerged. Do not merge without explicit user approval.
