@@ -98,12 +98,17 @@ internal static class LatestBuildUpdater
         return sha.Length == 40 && sha.All(Uri.IsHexDigit) ? sha.ToLowerInvariant() : null;
     }
 
-    public static async Task<LatestBuildInfo> GetLatestSuccessfulBuildAsync(CancellationToken cancellationToken = default)
+    public static Task<LatestBuildInfo> GetLatestSuccessfulBuildAsync(CancellationToken cancellationToken = default) =>
+        GetLatestSuccessfulBuildAsync(Http, cancellationToken);
+
+    internal static async Task<LatestBuildInfo> GetLatestSuccessfulBuildAsync(
+        HttpClient http,
+        CancellationToken cancellationToken = default)
     {
         // Deliberately do not filter by branch: the user wants the newest successful
         // CI build from any branch, including a feature branch or pull request.
         var runsUrl = $"https://api.github.com/repos/{Repository}/actions/workflows/{WorkflowId}/runs?per_page=100";
-        using var runsResponse = await Http.GetAsync(runsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        using var runsResponse = await http.GetAsync(runsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         runsResponse.EnsureSuccessStatusCode();
         await using var runsStream = await runsResponse.Content.ReadAsStreamAsync(cancellationToken);
         using var runsJson = await JsonDocument.ParseAsync(runsStream, cancellationToken: cancellationToken);
@@ -133,7 +138,7 @@ internal static class LatestBuildUpdater
             // public repositories. Successful non-PR CI runs publish a public
             // prerelease asset tagged ci-<run number>; download that asset anonymously.
             var releaseUrl = $"https://api.github.com/repos/{Repository}/releases/tags/ci-{runNumber}";
-            using var releaseResponse = await Http.GetAsync(releaseUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            using var releaseResponse = await http.GetAsync(releaseUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
             if (!releaseResponse.IsSuccessStatusCode)
                 continue;
 
@@ -167,8 +172,15 @@ internal static class LatestBuildUpdater
         throw new InvalidOperationException("No successful CI run with a non-expired Windows x86 artifact was found across the repository branches.");
     }
 
-    public static async Task<string> DownloadAndPrepareAsync(
+    public static Task<string> DownloadAndPrepareAsync(
         LatestBuildInfo build,
+        IProgress<string>? progress = null,
+        CancellationToken cancellationToken = default) =>
+        DownloadAndPrepareAsync(build, Http, progress, cancellationToken);
+
+    internal static async Task<string> DownloadAndPrepareAsync(
+        LatestBuildInfo build,
+        HttpClient http,
         IProgress<string>? progress = null,
         CancellationToken cancellationToken = default)
     {
@@ -185,7 +197,7 @@ internal static class LatestBuildUpdater
         try
         {
             progress?.Report($"Downloading CI build #{build.RunNumber}…");
-            using (var response = await Http.GetAsync(build.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+            using (var response = await http.GetAsync(build.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
             {
                 response.EnsureSuccessStatusCode();
                 if (response.Content.Headers.ContentLength is long length && length > MaximumDownloadBytes)

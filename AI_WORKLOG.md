@@ -1204,3 +1204,64 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The workflow needs `contents: write` to create the automated prerelease. No personal access token is embedded in Dvinholm; the workflow uses its short-lived `github.token`.
 - Validation pending: CI must pass on the newest PR head; confirm the workflow creates the `ci-<run_number>` prerelease and that its asset digest/size are present in the release API. Then manually test update on Windows and confirm profiles persist and obsolete files are removed.
 - PR #222 remains open and unmerged. Physical J2534 adapter testing remains deferred.
+
+
+## Updater failure-path test coverage — PR #224 (2026-10-15)
+
+- Opened [PR #224](https://github.com/vorlocsev/dvinholm/pull/224) to make the updater's download/preparation path accept an injected `HttpClient` while keeping the production entry point unchanged.
+- Added automated tests for HTTP 401/network-style request failure, artifact size mismatch, SHA-256 mismatch, corrupt ZIP, unsafe ZIP entry paths, and missing `Dvinholm.App.exe`. Failure tests assert that the per-build staging directory is not left behind.
+- Tests use a local stub HTTP handler and generated ZIPs; they do not call GitHub or require a physical J2534 adapter.
+- Validation pending: PR CI must compile and run the tests before considering these checks complete. The current CI run was queued at handoff.
+- Follow-up after CI: fix any failures, then consider extracting release discovery parsing into a testable component and adding cancellation/oversized-download cleanup cases. Physical J2534 adapter and vehicle tests remain deferred.
+
+## Updater failure-path tests — CI verified (2026-10-15)
+
+- PR [#224](https://github.com/vorlocsev/dvinholm/pull/224) head `5f406b81487c8053042f4201a6c57352e22836d9` passed GitHub Actions: Restore, Build, Test, Publish, and artifact publication all succeeded.
+- The test step reported **444 passed, 0 failed, 0 skipped**. This includes the six isolated updater failure-path tests; they use a stub HTTP handler and do not make live GitHub requests.
+- PR #224 remains open and unmerged pending review/explicit merge authorization.
+- PR #222 was subsequently merged into `main` as `4be4590832fba9e89dcf40973b877e02d4a07a30`; earlier handoff notes saying it remained open describe the state at their respective checkpoints and are historical.
+- Next coverage candidates: cancellation/oversized-response cleanup and testable parsing of latest-build discovery metadata. Keep physical J2534 adapter and vehicle checks deferred to a future release.
+
+## Additional updater failure tests — PR #224 (2026-10-15)
+
+- Added two more isolated tests on the PR branch: a response declaring a download larger than the configured 500 MiB limit is rejected before streaming, and cancellation while awaiting the HTTP response propagates as cancellation.
+- Both tests assert that no per-build staging directory is left behind. They use a stub handler and do not contact GitHub or require a physical adapter.
+- The earlier PR head passed 444/444 tests. These two new tests are not yet validated; wait for CI on the latest head before claiming the updated test count is green.
+
+
+---
+
+# Automated updater metadata lookup tests — 2026-10-15
+
+- Added an injectable `HttpClient` overload for `GetLatestSuccessfulBuildAsync`; the production entry point still uses the configured shared client.
+- Added deterministic HTTP-stub tests for selecting a successful push/workflow-dispatch run while ignoring pull-request and failed runs, extracting the expected release asset metadata, rejecting a malformed workflow-runs response, and reporting when no eligible successful run exists.
+- Tests do not access GitHub over the network and do not require a physical J2534 adapter.
+- Validation for this addition is pending CI on the latest PR head; do not mark these new tests passed until that run completes.
+- PR [#224](https://github.com/vorlocsev/dvinholm/pull/224) remains open and unmerged. Do not merge without explicit user approval.
+
+
+---
+
+# CI follow-up — deterministic CAN disposal test — 2026-10-15
+
+- The new updater lookup tests compiled, but the full suite exposed an existing scheduler-sensitive failure in `CanBusDisposeQueuedSendTests.DisposePreventsQueuedSendFromEnteringAdapterAfterActiveWriteCompletes` (448 passed, 1 failed at that run).
+- Root cause in the test: a fixed delay did not prove that `Dispose` had atomically marked the bus disposed before the active adapter write was released.
+- Added an internal read-only disposal-state accessor and changed the test to wait for that state with a bounded timeout before releasing the active write. This makes the intended race ordering explicit rather than timing-based.
+- Validation is pending CI on the latest head; do not mark the suite green until the rerun completes.
+- PR [#224](https://github.com/vorlocsev/dvinholm/pull/224) remains open and unmerged. No physical J2534 adapter is required.
+
+
+## Release metadata fallback coverage — PR #224 (2026-10-15)
+
+- Latest CI for commit `74d2bf003fe931adc1898c91ab1daec76a65edef` passed both GitHub Actions checks; the full test suite reported **449 passed, 0 failed, 0 skipped**.
+- Added two stubbed-HTTP lookup tests: a 404 for the newest CI prerelease falls back to an older published build, and a release lacking the expected `Dvinholm-Windows-x86.zip` asset also falls back instead of selecting invalid metadata.
+- These tests are committed to PR #224 and still require CI on the new head. No live GitHub requests or physical J2534 hardware are used by the tests.
+- PR #224 remains open and unmerged; wait for CI on the newest commit before marking these two tests validated.
+
+
+## CI green and HTTPS metadata validation — PR #224 (2026-10-15)
+
+- CI for `1d90ffd528154f5cffe7cd3a0ccd0f69cedd44b9` passed with **451 passed, 0 failed, 0 skipped**.
+- Added a lookup test ensuring a release asset with an insecure `http://` download URL is rejected and discovery falls back to the previous valid HTTPS asset.
+- The new test is isolated with a stub HTTP handler. CI validation is pending for the latest branch head.
+- PR #224 remains open and unmerged; physical adapter testing remains deferred.

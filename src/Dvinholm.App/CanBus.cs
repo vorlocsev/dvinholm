@@ -18,6 +18,8 @@ internal sealed class CanBus : IDisposable
 
     internal bool IsOnReadWorker => _rx.IsOnReadWorker;
 
+    internal bool IsDisposed => Volatile.Read(ref _disposed) != 0;
+
     internal event Action<Exception>? ReadError
     {
         add => _rx.ReadError += value;
