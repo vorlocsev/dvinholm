@@ -1,3 +1,13 @@
+# Manual regression update — 2026-10-15 (profiles preserved after in-place update)
+
+- User confirmed that existing ECU profiles were preserved after the successful in-place application update.
+- This closes the manual profile-persistence check for the current updater build.
+- Remaining practical post-update check: confirm Dvinholm can be closed and reopened normally and, if observable, that obsolete application files were removed by the replacement step.
+- CI runs for the work-log update are in progress; see [push run #1573](https://github.com/vorlocsev/dvinholm/actions/runs/38659748093) and [PR run #1574](https://github.com/vorlocsev/dvinholm/actions/runs/38659752664).
+- PR #222 remains open and unmerged; do not merge without explicit user approval. Physical J2534 testing remains deferred.
+
+---
+
 # Latest handoff update — 2026-10-15 (public CI updater manually confirmed)
 
 ## Verified checkpoint
