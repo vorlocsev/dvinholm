@@ -1325,3 +1325,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - A reported `401 Unauthorized` thrown from `DownloadAndPrepareAsync` means the running binary received an unauthorized response from its download request. The exact request URL and installed build identity are not present in the exception excerpt, so the specific cause cannot yet be conclusively assigned. A stale installed build using the Actions artifact endpoint is a plausible explanation, not a proven diagnosis.
 - Next diagnostic step if the error recurs: capture the installed build's displayed CI run/SHA and the sanitized download host/path from `update.log`; do not log credentials or signed query strings. Confirm the failing request is from the current release-asset implementation before changing download behavior.
 - PR #225 remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred to a future release.
+
+
+## Release download URL edge-case tests — PR #225 (2026-10-15)
+
+- The documentation-only commit `2c131e8fa77fa5ed5b668d2803630ab37f1524e7` passed both CI jobs; the test suite reported **456 passed, 0 failed, 0 skipped**.
+- Added a parameterized regression test covering release asset URLs with a query string, a fragment, or a non-default HTTPS port. Each invalid newest asset must be skipped in favor of the previous valid release asset.
+- The test addition is committed on `tests/updater-digest-metadata`; CI for the new head must complete before counting these cases as verified.
+- The reported historical `401 Unauthorized` was already manually confirmed resolved on the newer public-release download path in the existing handoff notes. If it recurs, capture the installed CI run/SHA and sanitized request host/path rather than assuming the same cause.
+- PR #225 remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred to a future release.
