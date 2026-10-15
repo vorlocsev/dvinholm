@@ -1,3 +1,19 @@
+# Latest handoff update — 2026-10-15 (public CI updater manually confirmed)
+
+## Verified checkpoint
+- User manually confirmed that the in-app update completed successfully on Windows after the updater switched away from the authenticated GitHub Actions artifact endpoint. This confirms the observed HTTP 401 failure is resolved for this update path.
+- CI push run [#1571](https://github.com/vorlocsev/dvinholm/actions/runs/38658165715) succeeded on commit `5cf4783f95c6769b96c43c8c9a3426ba8f43c40d`; PR validation run [#1572](https://github.com/vorlocsev/dvinholm/actions/runs/38658169191) also succeeded.
+- Public prerelease [ci-1571](https://github.com/vorlocsev/dvinholm/releases/tag/ci-1571) exists and contains `Dvinholm-Windows-x86.zip` (66,927,853 bytes), GitHub digest `sha256:27dc59af143206d7c1b8435cac69a82dcf53e398b38043a83b1764e2393597a4`.
+- PR [#222](https://github.com/vorlocsev/dvinholm/pull/222) remains open and unmerged. Do not merge without explicit user approval.
+- Physical J2534 adapter testing remains deferred to a future release.
+
+## Next manual regression check
+1. Confirm existing ECU profiles are still present and can be opened after replacement.
+2. If possible, confirm obsolete files from the prior app build are removed and the updated app still closes/reopens cleanly.
+3. Keep the PR open until the remaining update checks and review are complete.
+
+---
+
 ## Follow-up — updater failure diagnostics and current CI label (2026-10-15)
 
 - User reported the generic “Update preparation failed; the current app was left running” message and requested the Current label include the CI run number.
