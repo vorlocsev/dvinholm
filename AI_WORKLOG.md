@@ -1307,3 +1307,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Tightened updater metadata validation: release asset URLs must use HTTPS on the default port and match the repository's exact `/vorlocsev/dvinholm/releases/download/` path prefix, in addition to the exact `github.com` host.
 - Added a deterministic HTTP-stub test that rejects a URL hosted on `github.com` but pointing to a different repository path, and falls back to the previous valid release.
 - Validation of this latest change is pending CI. PR #225 remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred.
+
+
+## Ambiguous updater URL rejection — PR #225 (2026-10-15)
+
+- CI for commit `753aad1bd7787b8f1a84dc9b1ca1b88c141aed68` passed both build checks; test suite: **455 passed, 0 failed, 0 skipped**.
+- Extended the release URL allowlist to reject URLs containing user-info credentials, query strings, or fragments, in addition to requiring HTTPS, the default port, the exact `github.com` host, and the expected repository release-download path.
+- Added a deterministic fallback test for a credential-bearing GitHub URL. The newest invalid asset must be skipped in favor of the older trusted asset.
+- CI for this follow-up is pending. PR #225 remains open and unmerged; physical J2534 hardware testing remains deferred.
