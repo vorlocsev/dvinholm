@@ -154,7 +154,7 @@ internal static class LatestBuildUpdater
 
                 var size = ReadInt64(asset, "size");
                 var downloadUrl = ReadString(asset, "browser_download_url");
-                if (size <= 0 || size > MaximumDownloadBytes || !Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
+                if (size <= 0 || size > MaximumDownloadBytes || !Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps || !string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase))
                     continue;
 
                 var digest = ReadString(asset, "digest");
