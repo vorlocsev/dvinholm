@@ -572,6 +572,41 @@ public sealed class LatestBuildLookupTests
         Assert.Equal("https://github.com/vorlocsev/dvinholm/releases/download/ci-89/Dvinholm-Windows-x86.zip", build.DownloadUrl);
     }
 
+    [Fact]
+    public async Task ReleaseWithUppercaseDigest_NormalizesDigest()
+    {
+        using var client = new HttpClient(new QueueHttpMessageHandler(request =>
+        {
+            if (request.RequestUri!.AbsolutePath.EndsWith("/runs", StringComparison.Ordinal))
+            {
+                return JsonResponse("""
+                    {
+                      "workflow_runs": [
+                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 91, "run_number": 91, "created_at": "2026-10-15T08:00:00Z" }
+                      ]
+                    }
+                    """);
+            }
+
+            return JsonResponse("""
+                {
+                  "assets": [
+                    {
+                      "name": "Dvinholm-Windows-x86.zip",
+                      "size": 2048,
+                      "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-91/Dvinholm-Windows-x86.zip",
+                      "digest": "SHA256:AAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAAA"
+                    }
+                  ]
+                }
+                """);
+        }));
+
+        var build = await LatestBuildUpdater.GetLatestSuccessfulBuildAsync(client);
+
+        Assert.Equal("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", build.ArtifactDigest);
+    }
+
     private static HttpResponseMessage JsonResponse(string json) => new(HttpStatusCode.OK)
     {
         Content = new StringContent(json, Encoding.UTF8, "application/json")
