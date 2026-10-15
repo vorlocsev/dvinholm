@@ -132,7 +132,13 @@ internal static class LatestBuildUpdater
                 continue;
 
             var runId = ReadInt64(run, "id");
-            var runNumber = checked((int)ReadInt64(run, "run_number"));
+            var rawRunNumber = ReadInt64(run, "run_number");
+            // Treat malformed numeric metadata as an ineligible run instead of
+            // letting a checked cast abort discovery before older builds are tried.
+            if (runId <= 0 || rawRunNumber <= 0 || rawRunNumber > int.MaxValue)
+                continue;
+
+            var runNumber = (int)rawRunNumber;
             var createdAt = ReadString(run, "created_at");
             // GitHub Actions artifact ZIP endpoints require authentication, even for
             // public repositories. Successful non-PR CI runs publish a public
