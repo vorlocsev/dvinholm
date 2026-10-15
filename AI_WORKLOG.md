@@ -1204,3 +1204,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The workflow needs `contents: write` to create the automated prerelease. No personal access token is embedded in Dvinholm; the workflow uses its short-lived `github.token`.
 - Validation pending: CI must pass on the newest PR head; confirm the workflow creates the `ci-<run_number>` prerelease and that its asset digest/size are present in the release API. Then manually test update on Windows and confirm profiles persist and obsolete files are removed.
 - PR #222 remains open and unmerged. Physical J2534 adapter testing remains deferred.
+
+
+## Post-merge checkpoint — PR #222 merged and main CI passed (2026-10-15)
+
+- User explicitly authorized merging PR [#222](https://github.com/vorlocsev/dvinholm/pull/222). It was squash-merged into `main` at commit `4be4590832fba9e89dcf40973b877e02d4a07a30`.
+- Post-merge CI run [#38660339187](https://github.com/vorlocsev/dvinholm/actions/runs/38660339187) completed successfully on the exact merge commit; the `build` check concluded `success`.
+- Manual updater regression checks already confirmed by the user: update succeeds without HTTP 401, ECU profiles remain, the app closes/reopens normally, and obsolete files are removed from the managed app directory.
+- Historical entries above describe PR #222 as open because they were accurate when written; this entry supersedes those statuses. PR #222 is now merged.
+- Next software-only regression focus: audit automated coverage and failure-path behavior for update discovery/download/staging (network failure, missing release asset, invalid digest/size, unsafe/corrupt ZIP, and helper startup failure), then confirm main CI after this documentation update. Physical J2534 adapter and vehicle checks remain deferred to a future release.
