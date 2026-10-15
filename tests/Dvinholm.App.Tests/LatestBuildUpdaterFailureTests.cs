@@ -86,6 +86,34 @@ public sealed class LatestBuildUpdaterFailureTests
         AssertNoStagingDirectory(stagingRoot, build.CommitSha);
     }
 
+
+    [Fact]
+    public async Task MatchingSha256_PreparesBuildAndKeepsExtractedExecutable()
+    {
+        var bytes = CreateZip(("Dvinholm.App.exe", "fake executable"));
+        var digest = "sha256:" + Convert.ToHexString(System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant();
+        using var client = CreateClient(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(bytes)
+        });
+        var build = BuildInfo(bytes, digest: digest);
+        string? staging = null;
+
+        try
+        {
+            staging = await LatestBuildUpdater.DownloadAndPrepareAsync(build, client);
+
+            var executable = Path.Combine(staging, "Dvinholm.App.exe");
+            Assert.True(File.Exists(executable));
+            Assert.Equal("fake executable", await File.ReadAllTextAsync(executable));
+        }
+        finally
+        {
+            if (staging is not null && Directory.Exists(staging))
+                Directory.Delete(staging, recursive: true);
+        }
+    }
+
     [Fact]
     public async Task CorruptZip_ThrowsAndCleansStagingDirectory()
     {
