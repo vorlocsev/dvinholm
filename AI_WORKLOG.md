@@ -1150,3 +1150,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - After successful replacement, the helper removes old per-build cache directories except the active directory if it is inside `Builds`, and removes stale staging folders. ECU profiles remain separate at `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json` and are not deleted by the mirror. Helper errors are recorded in `%LOCALAPPDATA%\\Dvinholm\\update.log` and opened in Notepad.
 - Update detection compares both the full commit SHA and CI run number, so a newer CI artifact for the same source commit can still be offered.
 - Validation status at handoff: changes pushed to PR #222; CI must pass on the latest PR head before treating the code as validated. Manual Windows test remains required: update from an older build, confirm in-place replacement/restart, confirm an obsolete file is removed from the app directory, and verify saved ECU profiles remain. Physical J2534 hardware testing remains deferred.
+
+## Follow-up — fix anonymous updater downloads after HTTP 401 (2026-10-15)
+
+- Root cause confirmed from `%LOCALAPPDATA%\\Dvinholm\\update.log`: the updater requested `/actions/artifacts/{id}/zip`, an authenticated GitHub Actions artifact-download endpoint. The public repository's workflow artifact metadata can be read anonymously, but the artifact ZIP endpoint returned HTTP 401.
+- Changed the updater to resolve the matching public GitHub prerelease asset tagged `ci-<run_number>` and download its `browser_download_url` without credentials. It still verifies the downloaded size and GitHub asset SHA-256 digest when provided, then validates archive paths and the executable before staging.
+- Changed `.github/workflows/ci.yml` to package the published Windows x86 output into `Dvinholm-Windows-x86.zip` and publish it as a public prerelease asset for successful non-PR builds. The normal Actions artifact remains available for manual testing. Pull-request validation runs do not publish releases.
+- The workflow needs `contents: write` to create the automated prerelease. No personal access token is embedded in Dvinholm; the workflow uses its short-lived `github.token`.
+- Validation pending: CI must pass on the newest PR head; confirm the workflow creates the `ci-<run_number>` prerelease and that its asset digest/size are present in the release API. Then manually test update on Windows and confirm profiles persist and obsolete files are removed.
+- PR #222 remains open and unmerged. Physical J2534 adapter testing remains deferred.
