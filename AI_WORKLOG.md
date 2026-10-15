@@ -1398,3 +1398,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The test verifies that the updater accepts the artifact, extracts `Dvinholm.App.exe`, and preserves the expected file contents; it removes the staging directory afterward.
 - This complements the existing mismatched-digest test, which asserts rejection and cleanup. Uses an in-memory HTTP stub; no live download or physical J2534 adapter is involved.
 - CI validation is pending for this change. PR #225 remains open and unmerged.
+
+
+## Successful checksum verification regression test — CI passed (2026-10-15)
+
+- The positive-path updater test in `LatestBuildUpdaterFailureTests.cs` passed in both CI runs for commit `2c15f97bec22f9ca1b85d6fc3d383c893afd657e`: **470 passed, 0 failed, 0 skipped** per run.
+- The test downloads a ZIP through an in-memory HTTP stub, computes the correct SHA-256, verifies that the updater extracts the executable and checks its contents, then cleans the staging directory.
+- CI is green; PR #225 remains open and unmerged. Real J2534 hardware testing remains deferred.
