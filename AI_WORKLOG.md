@@ -1,3 +1,12 @@
+# Manual regression update — 2026-10-15 (obsolete-file cleanup confirmed)
+
+- User confirmed that the in-place updater removes obsolete files from the application directory during replacement.
+- The updater's key manual regression checks are now confirmed by the user: update succeeds without HTTP 401, ECU profiles are preserved, the updated app closes/reopens normally, and obsolete files are removed.
+- This confirms the observed Windows update flow; it does not replace CI or broader failure-path testing.
+- PR [#222](https://github.com/vorlocsev/dvinholm/pull/222) remains open and unmerged. Do not merge without explicit user approval. Physical J2534 adapter testing remains deferred to a future release.
+
+---
+
 # Manual regression update — 2026-10-15 (updated app relaunch confirmed)
 
 - User confirmed that after the in-place update, Dvinholm closes and launches again normally.
