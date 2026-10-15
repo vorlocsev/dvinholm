@@ -69,4 +69,4 @@ jobs:
         if: github.event_name != 'pull_request'
         env:
           GH_TOKEN: ${{ github.token }}
-        run: gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86.zip" --repo "${{ github.repository }}" --prerelease --title "Dvinholm CI #${{ github.run_number }}" --notes "Automated Windows x86 CI build from commit ${{ github.sha }}. This prerelease is intended for the in-app updater."
+        run: gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86.zip" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Dvinholm CI #${{ github.run_number }}" --notes "Automated Windows x86 CI build from commit ${{ github.sha }}. This prerelease is intended for the in-app updater."
