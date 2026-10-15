@@ -1413,3 +1413,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The preceding checksum-verification source/test change passed both jobs with **470 passed, 0 failed, 0 skipped** per run.
 - Current branch hardens release URL allowlisting, digest JSON type/format validation, backward compatibility for omitted/null digests, fallback to older eligible releases, and checksum verification before extraction.
 - This checkpoint records validation only; no code behavior changed in this commit. PR #225 remains open and unmerged. Physical J2534 adapter/vehicle testing remains deferred to a future release.
+
+
+## Malformed workflow run-number fallback regression — PR #225 (2026-10-15)
+
+- Source audit found that converting GitHub's `run_number` with a checked cast could throw on malformed/out-of-range metadata and abort update discovery instead of trying older successful builds.
+- Updated lookup to skip runs with a non-positive run ID or run number, or a run number greater than `Int32.MaxValue`.
+- Added a stubbed regression test with an out-of-range newest run and a valid older release; it asserts that only the older release is requested and selected.
+- CI for this code/test change is pending. PR #225 remains open and unmerged; no physical J2534 adapter or vehicle testing is involved.
