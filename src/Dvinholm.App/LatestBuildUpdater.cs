@@ -156,6 +156,9 @@ internal static class LatestBuildUpdater
                 var downloadUrl = ReadString(asset, "browser_download_url");
                 if (size <= 0 || size > MaximumDownloadBytes || !Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps || !string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase) ||
                     !uri.IsDefaultPort ||
+                    !string.IsNullOrEmpty(uri.UserInfo) ||
+                    !string.IsNullOrEmpty(uri.Query) ||
+                    !string.IsNullOrEmpty(uri.Fragment) ||
                     !uri.AbsolutePath.StartsWith($"/{Repository}/releases/download/", StringComparison.OrdinalIgnoreCase))
                     continue;
 
