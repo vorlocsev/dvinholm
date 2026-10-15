@@ -1,3 +1,19 @@
+# Latest handoff — updater HTTP 401 fix in progress (2026-10-15)
+
+## Change made
+- Updated release-asset lookup to prefer the GitHub Releases asset API endpoint (`/repos/vorlocsev/dvinholm/releases/assets/{asset_id}`) when GitHub supplies a valid asset ID, instead of downloading via `browser_download_url`.
+- The updater now requests `application/octet-stream` for this API endpoint, explicitly requesting the binary asset rather than API JSON.
+- Preserved the validated browser-download URL fallback for metadata without an asset ID.
+- Added regression coverage that verifies the API asset URL is selected and the download request asks for binary content.
+- The reported 401 was thrown while downloading the selected asset; the log did not include the response URL. This change addresses a plausible asset-download issue, but must not be marked fixed until CI passes and the user verifies an update on Windows.
+
+## Validation status
+- CI for the latest commits is pending.
+- PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) remains open and unmerged.
+- No physical J2534 adapter or vehicle testing is required for this updater change.
+
+---
+
 ## CI verification — malformed updater metadata and run-number fallback (2026-10-15)
 
 - Latest PR #225 head `d10d08e0c72022afabd89cac968ff8267d7a32ff` passed both GitHub Actions build runs: [run 38764364523](https://github.com/vorlocsev/dvinholm/actions/runs/38764364523) and [run 38764357153](https://github.com/vorlocsev/dvinholm/actions/runs/38764357153).
