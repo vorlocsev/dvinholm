@@ -56,25 +56,23 @@
                 <TextBlock x:Name="DiscoveryStatus" Grid.Column="2" VerticalAlignment="Center" Text="Not scanned"/>
                 <Button x:Name="CancelDiscoveryButton" Grid.Column="3" Content="Cancel scan" Click="CancelDiscovery_Click" IsEnabled="False"/>
             </Grid>
-            <ListView x:Name="EcusView" Grid.Row="1" Height="100" SelectionMode="Single" SelectionChanged="Ecu_SelectionChanged">
+            <ListView x:Name="EcusView" Grid.Row="1" Height="76" SelectionMode="Single" SelectionChanged="Ecu_SelectionChanged">
                 <ListView.Header><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Response"/><TextBlock Grid.Column="1" Text="Request"/><TextBlock Grid.Column="2" Text="Type"/><TextBlock Grid.Column="3" Text="Frames"/><TextBlock Grid.Column="4" Text="Max payload"/></Grid></ListView.Header>
                 <ListView.ItemTemplate><DataTemplate><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Response}"/><TextBlock Grid.Column="1" Text="{Binding Request}"/><TextBlock Grid.Column="2" Text="{Binding Type}"/><TextBlock Grid.Column="3" Text="{Binding Frames}"/><TextBlock Grid.Column="4" Text="{Binding MaxPayload}"/></Grid></DataTemplate></ListView.ItemTemplate>
             </ListView>
-            <Border Grid.Row="2" Padding="10" Margin="0,10,0,10" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-                <StackPanel Spacing="4">
-                    <TextBlock Text="Selected ECU" FontWeight="SemiBold"/>
-                    <TextBlock x:Name="EcuInfoText" Text="No ECU selected" TextWrapping="Wrap"/>
-                    <Grid ColumnSpacing="8" Margin="0,8,0,0">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <ComboBox x:Name="ProfileSelector" Header="ECU profiles" PlaceholderText="Import a profile catalog" SelectionChanged="ProfileSelector_SelectionChanged"/>
-                        <Button Grid.Column="1" Content="Import JSON" Click="ImportProfiles_Click" VerticalAlignment="Bottom"/>
-                        <Button Grid.Column="2" Content="Export JSON" Click="ExportProfiles_Click" VerticalAlignment="Bottom"/>
-                    </Grid>
-                </StackPanel>
+            <Border Grid.Row="2" Padding="6" Margin="0" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <Grid ColumnSpacing="8">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="250"/>
+                        <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
+                    </Grid.ColumnDefinitions>
+                    <TextBlock x:Name="EcuInfoText" Text="No ECU selected" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
+                    <ComboBox x:Name="ProfileSelector" Grid.Column="1" PlaceholderText="ECU profiles" SelectionChanged="ProfileSelector_SelectionChanged" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" Content="Import JSON" Click="ImportProfiles_Click" VerticalAlignment="Center"/>
+                    <Button Grid.Column="3" Content="Export JSON" Click="ExportProfiles_Click" VerticalAlignment="Center"/>
+                </Grid>
             </Border>
             <Grid Grid.Row="3">
             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
