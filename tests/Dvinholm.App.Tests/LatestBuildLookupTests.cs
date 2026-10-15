@@ -591,17 +591,9 @@ public sealed class LatestBuildLookupTests
             }
 
             var digestProperty = includeNullDigest ? ", \"digest\": null" : string.Empty;
-            var json = $"""
-                {
-                  "assets": [
-                    {
-                      "name": "Dvinholm-Windows-x86.zip",
-                      "size": 2048,
-                      "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-92/Dvinholm-Windows-x86.zip"{{digestProperty}}
-                    }
-                  ]
-                }
-                """;
+            var json = "{\"assets\":[{\"name\":\"Dvinholm-Windows-x86.zip\",\"size\":2048," +
+                "\"browser_download_url\":\"https://github.com/vorlocsev/dvinholm/releases/download/ci-92/Dvinholm-Windows-x86.zip\"" +
+                digestProperty + "}]}";
             return JsonResponse(json);
         }));
 
