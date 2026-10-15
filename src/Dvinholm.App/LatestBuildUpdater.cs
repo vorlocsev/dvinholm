@@ -11,7 +11,7 @@ internal sealed record LatestBuildInfo(
     string CommitSha,
     int RunNumber,
     long RunId,
-    long ArtifactId,
+    string DownloadUrl,
     long ArtifactSize,
     string? ArtifactDigest,
     string CreatedAt)
@@ -129,30 +129,35 @@ internal static class LatestBuildUpdater
             var runId = ReadInt64(run, "id");
             var runNumber = checked((int)ReadInt64(run, "run_number"));
             var createdAt = ReadString(run, "created_at");
-            var artifactsUrl = $"https://api.github.com/repos/{Repository}/actions/runs/{runId}/artifacts";
-            using var artifactsResponse = await Http.GetAsync(artifactsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-            artifactsResponse.EnsureSuccessStatusCode();
-            await using var artifactsStream = await artifactsResponse.Content.ReadAsStreamAsync(cancellationToken);
-            using var artifactsJson = await JsonDocument.ParseAsync(artifactsStream, cancellationToken: cancellationToken);
-
-            if (!artifactsJson.RootElement.TryGetProperty("artifacts", out var artifacts) || artifacts.ValueKind != JsonValueKind.Array)
+            // GitHub Actions artifact ZIP endpoints require authentication, even for
+            // public repositories. Successful non-PR CI runs publish a public
+            // prerelease asset tagged ci-<run number>; download that asset anonymously.
+            var releaseUrl = $"https://api.github.com/repos/{Repository}/releases/tags/ci-{runNumber}";
+            using var releaseResponse = await Http.GetAsync(releaseUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            if (!releaseResponse.IsSuccessStatusCode)
                 continue;
 
-            foreach (var artifact in artifacts.EnumerateArray())
+            await using var releaseStream = await releaseResponse.Content.ReadAsStreamAsync(cancellationToken);
+            using var releaseJson = await JsonDocument.ParseAsync(releaseStream, cancellationToken: cancellationToken);
+            if (!releaseJson.RootElement.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array)
+                continue;
+
+            foreach (var asset in assets.EnumerateArray())
             {
-                if (ReadString(artifact, "name") != ArtifactName || ReadBoolean(artifact, "expired"))
+                if (ReadString(asset, "name") != $"{ArtifactName}.zip")
                     continue;
 
-                var size = ReadInt64(artifact, "size_in_bytes");
-                if (size <= 0 || size > MaximumDownloadBytes)
+                var size = ReadInt64(asset, "size");
+                var downloadUrl = ReadString(asset, "browser_download_url");
+                if (size <= 0 || size > MaximumDownloadBytes || !Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps)
                     continue;
 
-                var digest = ReadString(artifact, "digest");
+                var digest = ReadString(asset, "digest");
                 return new LatestBuildInfo(
                     sha.ToLowerInvariant(),
                     runNumber,
                     runId,
-                    ReadInt64(artifact, "id"),
+                    downloadUrl,
                     size,
                     digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ? digest.ToLowerInvariant() : null,
                     createdAt);
@@ -179,9 +184,8 @@ internal static class LatestBuildUpdater
 
         try
         {
-            progress?.Report($"Downloading CI artifact #{build.RunNumber}…");
-            var downloadUrl = $"https://api.github.com/repos/{Repository}/actions/artifacts/{build.ArtifactId}/zip";
-            using (var response = await Http.GetAsync(downloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
+            progress?.Report($"Downloading CI build #{build.RunNumber}…");
+            using (var response = await Http.GetAsync(build.DownloadUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken))
             {
                 response.EnsureSuccessStatusCode();
                 if (response.Content.Headers.ContentLength is long length && length > MaximumDownloadBytes)
