@@ -476,3 +476,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Confirm primary and non-primary profiles retain their own CAN IDs across switching and app restart.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — import malformed CAN ID (2026-10-16)
+
+- [x] Import a copied profile JSON with a malformed CAN ID; app remains responsive and existing profiles/CAN IDs are preserved.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
