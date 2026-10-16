@@ -490,3 +490,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Import copied profile JSON with an empty name; app remains responsive and existing profiles stay unchanged.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — import JSON missing profile name field (2026-10-16)
+
+- [x] Import copied profile JSON without a profile-name field; app remains responsive and existing profiles remain unchanged.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
