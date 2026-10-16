@@ -2186,3 +2186,13 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Release-candidate gates remain: review release notes and the exact release archive separately from CI artifacts; active-session UDS/Monitor enablement cannot be verified in the current no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
 - Next: re-check CI after this documentation update, then inspect the current release notes/assets without publishing or merging anything.
+
+
+## CI verification — PR #255 documentation head (2026-10-16)
+
+- GitHub Actions CI run **#2227** (push) and **#2228** (pull request) both completed successfully for head `f0239cb37d0c6b12eeeb9dbb3aa1cd372d51f8fe`.
+- Both runs passed restore, build, automated tests, publish, updater-asset packaging, CI artifact upload, and public CI asset publishing.
+- PR #255 remains open and unmerged; no stable release was created.
+- Release gates still open: review release notes and verify the exact release archive separately from CI artifacts; verify Monitor/UDS controls become enabled only after a valid active J2534/CAN session.
+- Physical J2534 adapter and vehicle validation remain deferred to a future release.
+- Next: re-check CI on the updated documentation head after this record is committed.
