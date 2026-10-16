@@ -96,3 +96,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - This confirms local profile persistence across an ordinary restart only; it does not validate ECU communication or physical adapter compatibility.
 - Physical J2534 adapter and vehicle testing remains deferred to a future hardware-validation cycle.
 - [ ] Continue software-only release checks and record only confirmed outcomes.
+
+
+## Manual UI verification — edited profile persists across restart (2026-10-16)
+
+- [x] User confirmed that changing a safe profile field (profile name), saving it, then closing and relaunching Dvinholm preserves the updated name.
+- This confirms edited profile data persists in local storage across restart; no ECU communication was involved.
+- Physical J2534 adapter and vehicle testing remains deferred to a future hardware-validation cycle.
+- [ ] Continue with a non-destructive software-only profile check; protect the user's only useful profile.
