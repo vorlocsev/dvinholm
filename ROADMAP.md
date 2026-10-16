@@ -815,3 +815,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Exact stable archive is not independently inspected yet; direct download attempt was blocked by the available access path. Metadata alone is not a binary integrity verification.
 - [ ] Confirm Monitor/UDS controls become enabled only after a valid active J2534/CAN session; current no-adapter setup cannot validate this state transition.
 - Stable `0.2.0` is not published; do not publish without explicit user authorization. Physical J2534 adapter and vehicle checks remain deferred to a future release.
+
+
+## Post-PR #259 main CI and UI gating review — 2026-10-17
+
+- [x] PR #259 merged; main CI #2263 passed on merge commit `1935d56751453a5feeaa599f63302f6523717918` ([run #2263](https://github.com/vorlocsev/dvinholm/actions/runs/38978437672)).
+- [x] Source review confirms UDS controls are initially disabled, enabled after a successful connection, and guarded by connection/CAN-ID validation when commands execute. Disconnect disables Monitor/UDS controls before session teardown and resets the state if disconnect fails.
+- [ ] Confirm the UI state transition against a valid active J2534/CAN session when suitable hardware is available; this remains unverified in the current no-adapter setup.
+- [ ] Independently download and inspect the exact v0.1.1 release archive; published metadata and SHA-256 are recorded but the archive bytes have not been inspected independently.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not publish stable `0.2.0` without explicit user authorization.
