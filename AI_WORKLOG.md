@@ -2055,3 +2055,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed three connection attempts without a physical J2534 adapter are handled without hanging or crashing; the secondary profile and its CAN IDs remain unchanged and diagnostic actions remain unavailable.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release UI checks and verify CI on the current branch head before release-readiness assessment.
+
+
+## Manual Windows UI verification — secondary profile survives failed connection (2026-10-16)
+
+- User confirmed the selected secondary ECU profile and its request/response CAN IDs remained intact after a connection attempt without a physical J2534 adapter, closing Dvinholm, and relaunching it.
+- The application did not report a false active connection; Start Monitor, Read VIN, Read DTC, and Read DID remained unavailable while disconnected.
+- No physical J2534 adapter or vehicle was used.
+- Next: verify that switching ECU profiles while disconnected keeps all Monitor/UDS actions unavailable and does not leave a stale enabled control.
