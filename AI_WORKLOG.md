@@ -1810,3 +1810,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed a non-primary saved ECU profile retains its name and CAN request/response IDs after closing and relaunching Dvinholm.
 - No profile values were changed; no physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — cancel ECU profile selection (2026-10-16)
+
+- User confirmed cancelling/closing the profile-selection action leaves the primary ECU profile selected and its CAN IDs unchanged.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks with the virtual/no-adapter setup.
