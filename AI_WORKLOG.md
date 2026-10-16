@@ -1787,3 +1787,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The app remained responsive and open; each attempt completed without hanging or crashing, and Monitor/UDS actions remained unavailable while disconnected.
 - No physical adapter or vehicle was used.
 - Next: continue the remaining pre-release checks with the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — disconnected state after restart (2026-10-16)
+
+- User confirmed Dvinholm closes and relaunches normally after failed no-adapter connection attempts.
+- After relaunch without a physical adapter, the application does not show an active connection; Start Monitor, Read VIN, Read DTC, and Read DID remain disabled.
+- App closes normally. No physical adapter or vehicle was used.
+- Next: continue the remaining pre-release checks using the virtual/no-adapter setup.
