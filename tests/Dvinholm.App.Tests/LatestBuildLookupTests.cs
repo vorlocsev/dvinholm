@@ -18,6 +18,7 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
+                        { "event": "push", "head_branch": "feature/newer-build", "status": "completed", "conclusion": "success", "head_sha": "dddddddddddddddddddddddddddddddddddddddd", "id": 91, "run_number": 124, "created_at": "2026-10-15T02:00:00Z" },
                         { "event": "pull_request", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 90, "run_number": 90, "created_at": "2026-10-15T00:00:00Z" },
                         { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "failure", "head_sha": "cccccccccccccccccccccccccccccccccccccccc", "id": 89, "run_number": 89, "created_at": "2026-10-14T00:00:00Z" },
                         { "event": "workflow_dispatch", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 12345, "run_number": 123, "created_at": "2026-10-15T01:00:00Z" }
