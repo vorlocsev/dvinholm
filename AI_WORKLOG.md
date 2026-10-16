@@ -1,3 +1,13 @@
+## CI checkpoint — compact ECU layout PR #227 (2026-10-16)
+
+- Latest branch head `596f3da14d2663366d93202dfd612672ffb06419` passed both GitHub Actions workflows: push run [#1771](https://github.com/vorlocsev/dvinholm/actions/runs/38835346384) and pull-request validation [#1772](https://github.com/vorlocsev/dvinholm/actions/runs/38835349822).
+- The preceding head's push and PR validation also passed (runs [#1769](https://github.com/vorlocsev/dvinholm/actions/runs/38835188813) and [#1770](https://github.com/vorlocsev/dvinholm/actions/runs/38835192316)). The earlier “CI still pending” note below is historical and superseded by this checkpoint.
+- User-confirmed manual checks: CAN Monitor remains visible after selecting an ECU profile; profile selector and Import/Export JSON controls are not clipped at normal size or after narrowing the window.
+- This validates CI and the reported layout behavior only; it does not test live CAN traffic or physical J2534 hardware. Physical-adapter verification remains deferred to a future release.
+- PR [#227](https://github.com/vorlocsev/dvinholm/pull/227) remains open and unmerged. Do not merge without explicit user approval.
+
+---
+
 ## Windows manual verification — compact ECU layout at narrower width (2026-10-16)
 
 - User confirmed that the ECU profile selector and Import/Export JSON controls remain visible after reducing the application window width.
