@@ -1600,3 +1600,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This verifies malformed-input handling for local profile import only; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: continue software-only release gates and review PR #255 mergeability/CI before recommending release 0.2.0.
+
+
+## Manual Windows verification — valid JSON missing profile name (2026-10-16)
+
+- User confirmed the import test succeeded for a syntactically valid profile JSON copy with the profile-name field removed.
+- The test confirms the app handles this missing-required-field case acceptably; the original profile was kept separate from the test copy. The exact UI behavior (rejection versus safe fallback) was not specified, so no narrower behavior is claimed.
+- This covers local profile-import validation only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: test a syntactically valid profile with an invalid field value/type, using a disposable copy, and confirm safe handling without altering the original profile.
