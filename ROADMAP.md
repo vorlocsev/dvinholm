@@ -786,3 +786,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] After merge, confirm main CI and ensure no public `ci-*` prerelease is created for documentation/feature-branch pushes.
 - [ ] Verify stable release archive and release notes before considering release `0.2.0`.
 - Physical J2534 adapter and vehicle verification remain deferred. Do not merge PRs or publish release `0.2.0` without explicit user authorization.
+
+
+### Rollback test CI follow-up (2026-10-16)
+- [x] Diagnose CI #2243: one rollback runtime test failed while cleaning up a temp directory after PowerShell used a synthetic PID without a `Wait-Process` mock.
+- [x] Open PR #257 to mock `Wait-Process` in the isolated test.
+- [x] CI #2246 for PR #257 passed, including all tests and publish/artifact steps.
+- [ ] Confirm CI on docs PR #255 after the latest work-log/roadmap update.
+- [ ] Keep PRs unmerged until explicitly authorized; verify main-branch CI and stable release archive before v0.2.0. Physical adapter/vehicle testing remains deferred.
