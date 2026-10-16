@@ -1,7 +1,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-16  
-Current main checkpoint: `a21b0bb07eaea83785e6bb4299130f4943d9ebc8`  
+Current main checkpoint: `2f788ca4b1a03452b8370e16c782466161532bba`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
@@ -15,6 +15,7 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Updater checks release URLs against the expected GitHub project path and HTTPS host.
 - [x] Updater validates SHA-256 metadata when supplied and skips malformed metadata instead of trusting it.
 - [x] Updater can request the release asset API's binary response; tests cover this download path.
+- [x] PR #235 adds a regression test proving a mid-stream download I/O failure cleans up both the temporary ZIP and staging directory; PR CI passed. Post-merge main CI run #1812 is still pending confirmation.
 - [x] Automated coverage exists for CAN receive-dispatcher lifecycle/races, J2534 session lifecycle/read errors, ISO-TP malformed frames/timeouts/cancellation/recovery, UDS VIN/DTC parsing and response handling, and virtual J2534 adapter scenarios.
 - [x] User manually confirmed the updater success path and error/retry handling on Windows 11 LTSC IoT.
 - [x] User manually confirmed ECU profile controls and CAN Monitor remain visible in the compact layout, including a narrower window width.
@@ -22,7 +23,7 @@ This roadmap separates software/CI verification from physical adapter validation
 ## Next software-only work
 
 1. [ ] Review the current-main test inventory and CI test report to identify remaining untested release-critical paths; avoid duplicating already-covered lifecycle/timeout tests.
-2. [ ] Review updater failure cleanup end-to-end: incomplete/invalid download, digest mismatch, archive extraction failure, and restart/rollback behavior. Add focused regression tests for uncovered paths.
+2. [ ] Continue updater failure-path review: partial-download I/O failure is now covered by PR #235; check cancellation cleanup, digest mismatch, archive extraction failure, and replacement/restart rollback behavior for remaining gaps.
 3. [ ] Verify UDS read-only command gating and UI state transitions in code: Read VIN and Start Monitor should become enabled only when the required J2534/CAN session is active; do not bypass these safety gates.
 4. [ ] Review cancellation/disconnect behavior while VIN/DTC reads or monitoring are active; add deterministic virtual-adapter tests for any uncovered race.
 5. [ ] Re-run full CI after each change; update this roadmap and `AI_WORKLOG.md` only with confirmed results.
