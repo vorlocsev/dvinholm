@@ -2009,3 +2009,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed the app behaves correctly with no physical J2534 adapter: CAN Monitor cannot be started while disconnected, no false active-monitoring status is shown, and closing/relaunching the app works normally.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — UDS controls across ECU profiles while disconnected (2026-10-16)
+
+- User confirmed Read VIN, Read DTC, and Read DID remained unavailable while disconnected when switching between the primary and another saved ECU profile; no false connected state appeared.
+- The user returned to the primary profile and closed the app normally.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
