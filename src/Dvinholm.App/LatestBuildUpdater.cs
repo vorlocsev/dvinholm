@@ -344,49 +344,8 @@ internal static class LatestBuildUpdater
         Directory.CreateDirectory(localRoot);
 
         var scriptPath = Path.Combine(Path.GetTempPath(), $"dvinholm-update-{Guid.NewGuid():N}.ps1");
-        var script = $@"
-$ErrorActionPreference = 'Stop'
-$source = '{EscapePowerShellLiteral(Path.GetFullPath(stagingDirectory))}'
-$destination = '{EscapePowerShellLiteral(Path.GetFullPath(destination))}'
-$processId = {processId}
-$scriptPath = $MyInvocation.MyCommand.Path
-$logPath = Join-Path $env:LOCALAPPDATA 'Dvinholm\update.log'
-try {{
-    Wait-Process -Id $processId -ErrorAction SilentlyContinue
-    Start-Sleep -Milliseconds 400
-    if (-not (Test-Path -LiteralPath (Join-Path $source 'Dvinholm.App.exe'))) {{
-        throw 'The staged update is missing Dvinholm.App.exe.'
-    }}
-    New-Item -ItemType Directory -Path $destination -Force | Out-Null
-    & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $source $destination /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS
-    if ($LASTEXITCODE -ge 8) {{
-        throw ""Robocopy failed with exit code $LASTEXITCODE.""
-    }}
-    $targetExe = Join-Path $destination 'Dvinholm.App.exe'
-    if (-not (Test-Path -LiteralPath $targetExe)) {{
-        throw 'The updated executable is missing after file replacement.'
-    }}
-    $oldBuilds = Join-Path $env:LOCALAPPDATA 'Dvinholm\Builds'
-    if (Test-Path -LiteralPath $oldBuilds) {{
-        Get-ChildItem -LiteralPath $oldBuilds -Directory |
-            Where-Object {{ $_.FullName -ne $destination }} |
-            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-    }}
-    $stagingRoot = Join-Path $env:LOCALAPPDATA 'Dvinholm\UpdateStaging'
-    if (Test-Path -LiteralPath $stagingRoot) {{
-        Get-ChildItem -LiteralPath $stagingRoot -Directory |
-            Where-Object {{ $_.FullName -ne $source }} |
-            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
-    }}
-    Start-Process -FilePath $targetExe -WorkingDirectory $destination
-    Remove-Item -LiteralPath $source -Recurse -Force -ErrorAction SilentlyContinue
-    Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue
-}}
-catch {{
-    ($_ | Out-String) | Set-Content -LiteralPath $logPath -Encoding UTF8
-    Start-Process -FilePath 'notepad.exe' -ArgumentList @($logPath)
-}}
-";
+        var backupDirectory = Path.Combine(localRoot, "UpdateBackups", Guid.NewGuid().ToString("N"));
+        var script = BuildReplacementScript(stagingDirectory, destination, processId, scriptPath, backupDirectory);
         File.WriteAllText(scriptPath, script, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
         var startInfo = new ProcessStartInfo
@@ -413,6 +372,98 @@ catch {{
             try { File.Delete(scriptPath); } catch (IOException) { }
             throw;
         }
+    }
+
+    internal static string BuildReplacementScript(
+        string stagingDirectory,
+        string destinationDirectory,
+        int processId,
+        string scriptPath,
+        string backupDirectory)
+    {
+        var source = EscapePowerShellLiteral(Path.GetFullPath(stagingDirectory));
+        var destination = EscapePowerShellLiteral(Path.GetFullPath(destinationDirectory));
+        var backup = EscapePowerShellLiteral(Path.GetFullPath(backupDirectory));
+        var escapedScript = EscapePowerShellLiteral(Path.GetFullPath(scriptPath));
+        return $@"
+$ErrorActionPreference = 'Stop'
+$source = '{source}'
+$destination = '{destination}'
+$backup = '{backup}'
+$processId = {processId}
+$scriptPath = '{escapedScript}'
+$logPath = Join-Path $env:LOCALAPPDATA 'Dvinholm\update.log'
+$hadDestination = Test-Path -LiteralPath $destination
+$backupReady = $false
+$replacementStarted = $false
+try {{
+    Wait-Process -Id $processId -ErrorAction SilentlyContinue
+    Start-Sleep -Milliseconds 400
+    if (-not (Test-Path -LiteralPath (Join-Path $source 'Dvinholm.App.exe'))) {{
+        throw 'The staged update is missing Dvinholm.App.exe.'
+    }}
+    if ($hadDestination) {{
+        New-Item -ItemType Directory -Path $backup -Force | Out-Null
+        & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $destination $backup /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS
+        if ($LASTEXITCODE -ge 8) {{
+            throw ""Could not back up the current build (robocopy exit code $LASTEXITCODE).""
+        }}
+        if (-not (Test-Path -LiteralPath (Join-Path $backup 'Dvinholm.App.exe'))) {{
+            throw 'The backup does not contain Dvinholm.App.exe; replacement was not started.'
+        }}
+        $backupReady = $true
+    }}
+    New-Item -ItemType Directory -Path $destination -Force | Out-Null
+    $replacementStarted = $true
+    & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $source $destination /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS
+    if ($LASTEXITCODE -ge 8) {{
+        throw ""Robocopy failed with exit code $LASTEXITCODE.""
+    }}
+    $targetExe = Join-Path $destination 'Dvinholm.App.exe'
+    if (-not (Test-Path -LiteralPath $targetExe)) {{
+        throw 'The updated executable is missing after file replacement.'
+    }}
+    Start-Process -FilePath $targetExe -WorkingDirectory $destination
+    $oldBuilds = Join-Path $env:LOCALAPPDATA 'Dvinholm\Builds'
+    if (Test-Path -LiteralPath $oldBuilds) {{
+        Get-ChildItem -LiteralPath $oldBuilds -Directory |
+            Where-Object {{ $_.FullName -ne $destination }} |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    }}
+    $stagingRoot = Join-Path $env:LOCALAPPDATA 'Dvinholm\UpdateStaging'
+    if (Test-Path -LiteralPath $stagingRoot) {{
+        Get-ChildItem -LiteralPath $stagingRoot -Directory |
+            Where-Object {{ $_.FullName -ne $source }} |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    }}
+    Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $source -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue
+}}
+catch {{
+    $failure = ($_ | Out-String)
+    if ($replacementStarted -and $hadDestination -and $backupReady) {{
+        try {{
+            & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $backup $destination /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS
+            if ($LASTEXITCODE -ge 8) {{
+                throw ""Rollback copy failed with robocopy exit code $LASTEXITCODE.""
+            }}
+            $restoredExe = Join-Path $destination 'Dvinholm.App.exe'
+            if (-not (Test-Path -LiteralPath $restoredExe)) {{
+                throw 'Rollback completed without restoring Dvinholm.App.exe.'
+            }}
+            $failure += [Environment]::NewLine + 'The previous build was restored and will be restarted.'
+            Start-Process -FilePath $restoredExe -WorkingDirectory $destination
+            Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
+        }}
+        catch {{
+            $failure += [Environment]::NewLine + 'Rollback failed: ' + ($_ | Out-String)
+        }}
+    }}
+    $failure | Set-Content -LiteralPath $logPath -Encoding UTF8
+    Start-Process -FilePath 'notepad.exe' -ArgumentList @($logPath)
+}}
+";
     }
 
     private static string EscapePowerShellLiteral(string value) => value.Replace("'", "''");

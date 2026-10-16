@@ -1,7 +1,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-16  
-Current main checkpoint: `4106bdbb38fe5ec8e31ae553abc252607aea0ae3`  
+Current main checkpoint: `f2a9975353fcaf43ee111210af8cb8c0186a4710`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.

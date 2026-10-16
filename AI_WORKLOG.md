@@ -1,3 +1,12 @@
+## Updater replacement rollback hardening started (2026-10-16)
+
+- PR [#242](https://github.com/vorlocsev/dvinholm/pull/242) passed pull-request CI [run #38920564624](https://github.com/vorlocsev/dvinholm/actions/runs/38920564624) and was squash-merged as `f2a9975353fcaf43ee111210af8cb8c0186a4710`.
+- Post-merge main CI for the previous checkpoint [run #38920429003](https://github.com/vorlocsev/dvinholm/actions/runs/38920429003) passed; confirm the fresh main run for #242 before calling the latest checkpoint fully validated.
+- The risk in `StartReplacement`: `robocopy /MIR` mutates the installed directory in place, so a copy failure can leave a partial installation. A separate PR is being prepared to back up the current directory, verify the backup executable, and restore/relaunch the previous build if replacement fails.
+- The proposed unit test checks generated PowerShell script branches; it does not execute PowerShell or prove runtime rollback. CI must pass before merging. Real adapter/vehicle validation remains deferred.
+
+---
+
 ## Corrupt ZIP and missing-executable cleanup follow-up (2026-10-16)
 
 - PR [#241](https://github.com/vorlocsev/dvinholm/pull/241) passed PR and branch CI and was merged as `4106bdbb38fe5ec8e31ae553abc252607aea0ae3`. It strengthens the corrupt-ZIP test to verify that both the temporary archive and staging directory are cleaned.
