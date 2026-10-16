@@ -2048,3 +2048,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Monitor and UDS actions remain unavailable while disconnected.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release UI checks; verify CI on the current branch head before assessing release readiness.
+
+
+## Manual Windows UI verification — repeated Connect retries on secondary ECU profile (2026-10-16)
+
+- User confirmed three connection attempts without a physical J2534 adapter are handled without hanging or crashing; the secondary profile and its CAN IDs remain unchanged and diagnostic actions remain unavailable.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release UI checks and verify CI on the current branch head before release-readiness assessment.
