@@ -638,3 +638,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Verify canceling/closing the profile selector leaves the current profile and disconnected control state unchanged.
 - [ ] Verify CI for the current branch head and review release readiness before considering release 0.2.0.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
+
+
+## Manual Windows UI verification — cancel profile selection (2026-10-16)
+
+- [x] Confirmed canceling/closing the profile selector without choosing another profile preserves the selected ECU profile and CAN IDs.
+- [x] Confirmed disconnected state remains accurate and Monitor/UDS controls stay unavailable.
+- [ ] Verify canceling/discarding an unsaved CAN ID edit restores the persisted value.
+- [ ] Verify CI for the current branch head and review release readiness before considering release 0.2.0.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
