@@ -1,0 +1,46 @@
+name: Audit v0.1.1 release ZIP
+
+on:
+  pull_request:
+    branches: [main]
+    paths:
+      - ".github/workflows/audit-v0.1.1-release.yml"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-release-zip:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Download published release archive
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output Dvinholm-Windows-x86.zip \
+            https://github.com/vorlocsev/dvinholm/releases/download/v0.1.1/Dvinholm-Windows-x86.zip
+          echo "Downloaded bytes: $(stat -c '%s' Dvinholm-Windows-x86.zip)"
+      - name: Verify published SHA-256
+        shell: bash
+        run: |
+          set -euo pipefail
+          expected='3822d13e5a137bd92bf12d35d2a5794053481ef28873d2a08657beb756f3a53a'
+          actual="$(sha256sum Dvinholm-Windows-x86.zip | awk '{print $1}')"
+          echo "Expected SHA-256: $expected"
+          echo "Actual SHA-256:   $actual"
+          test "$actual" = "$expected"
+      - name: Validate ZIP and inspect packaged files
+        shell: bash
+        run: |
+          set -euo pipefail
+          unzip -t Dvinholm-Windows-x86.zip
+          echo "## v0.1.1 ZIP contents" >> "$GITHUB_STEP_SUMMARY"
+          unzip -Z1 Dvinholm-Windows-x86.zip | tee archive-files.txt
+          echo '~~~text' >> "$GITHUB_STEP_SUMMARY"
+          cat archive-files.txt >> "$GITHUB_STEP_SUMMARY"
+          echo '~~~' >> "$GITHUB_STEP_SUMMARY"
+          if ! grep -Eiq '(^|/)Dvinholm(\.App)?\.exe$' archive-files.txt; then
+            echo "::error::Expected Dvinholm application executable was not found in the release ZIP."
+            exit 1
+          fi
