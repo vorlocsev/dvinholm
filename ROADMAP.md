@@ -525,3 +525,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Verify an unsaved CAN ID edit is discarded on profile switch and the persisted value is restored when returning.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — save and restore CAN ID (2026-10-16)
+
+- [x] Verify a valid CAN ID change persists after profile switching and the original value can be restored and saved.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
