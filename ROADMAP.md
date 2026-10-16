@@ -1,7 +1,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-17  
-Current main code checkpoint before this documentation update: `d113d6536cdd6d2c76bd5ecfbd4b1a858a955922`  
+Current main checkpoint: `1749b56d826523bf382f2d287e8f1a30a791286f`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
@@ -841,7 +841,7 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] PR [#261](https://github.com/vorlocsev/dvinholm/pull/261) merged as `6620ad2bf9b4e3daa3b6e27b2347181e9f80b6c2`.
 - [x] Main CI [#2273](https://github.com/vorlocsev/dvinholm/actions/runs/38980902038) completed successfully on that exact commit; build, test, publish, and artifact packaging passed.
 - [x] Updated the roadmap header to the exact current `main` SHA.
-- [ ] Independently download and inspect the exact v0.1.1 release ZIP; GitHub metadata/checksum is not a substitute for inspecting the actual bytes.
+- [x] Exact published v0.1.1 release ZIP independently audited by GitHub Actions; see the audit checkpoint below.
 - [ ] Active-session Monitor/UDS enablement still cannot be manually verified without a J2534 adapter. Physical adapter/vehicle validation remains deferred.
 - Stable v0.2.0 remains unpublished and requires explicit user authorization.
 
@@ -851,6 +851,7 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] PR [#263](https://github.com/vorlocsev/dvinholm/pull/263) added a read-only GitHub Actions audit for the exact published asset [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.1.1/Dvinholm-Windows-x86.zip).
 - [x] Audit run [#2282](https://github.com/vorlocsev/dvinholm/actions/runs/38982113636) passed: GitHub Actions downloaded the published ZIP, verified SHA-256 `3822d13e5a137bd92bf12d35d2a5794053481ef28873d2a08657beb756f3a53a`, validated ZIP integrity, and confirmed a Dvinholm executable is present. The archive file inventory is published in the Actions job summary.
 - [x] PR #263 merged as `d113d6536cdd6d2c76bd5ecfbd4b1a858a955922`. The audit checks the actual release asset, not a newly generated CI artifact.
-- [ ] Verify the post-merge main CI run for the audit workflow.
+- [x] Post-merge main CI [#2286](https://github.com/vorlocsev/dvinholm/actions/runs/38983168717) passed on `d113d6536cdd6d2c76bd5ecfbd4b1a858a955922`, including the published ZIP audit and build/test/publish pipeline.
+- [ ] Post-merge main CI for documentation checkpoint `1749b56d826523bf382f2d287e8f1a30a791286f` is still running: [#2291](https://github.com/vorlocsev/dvinholm/actions/runs/38983741022).
 - [ ] Active-session Monitor/UDS control transition remains unverified because no physical J2534 adapter is available.
 - Physical adapter/vehicle validation remains deferred. Stable v0.2.0 remains unpublished and must not be published without explicit user authorization.
