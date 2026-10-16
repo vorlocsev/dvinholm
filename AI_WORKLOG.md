@@ -1544,3 +1544,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This verifies local profile persistence across an ordinary app restart; it does not validate ECU communication or physical adapter behavior.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: continue software-only release checks and record each confirmed manual result.
+
+
+## Manual Windows verification — edited profile persists across restart (2026-10-16)
+
+- User confirmed that changing a safe profile field (profile name), saving the profile, closing and relaunching Dvinholm preserves the updated name.
+- The profile remains available and its edited value persists after restart; this is a local UI/storage check only.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: continue with a non-destructive software-only profile check; do not delete the user's only useful profile.
