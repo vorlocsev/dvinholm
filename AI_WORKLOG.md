@@ -1928,3 +1928,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed both the primary and exported non-primary ECU profiles continue to show their own correct CAN IDs after switching between them and restarting the app.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — import malformed CAN ID (2026-10-16)
+
+- User confirmed a copied profile JSON with a malformed CAN ID value (`ZZZZ`) was handled safely: no hang, and existing profiles and their original CAN IDs remained intact.
+- The working JSON and backup were not edited.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
