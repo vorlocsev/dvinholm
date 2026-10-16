@@ -1,7 +1,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-16  
-Current main checkpoint: `09a68831ceb855a582c9808f7ac3ce56a7562bbf`  
+Current main checkpoint: `afef97288c1f9456130f2311b02181ab3b7ffca2`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
@@ -26,7 +26,8 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] PR #248 prevents J2534 disconnect from racing a still-unwinding CAN Monitor worker: it requests monitor cancellation and awaits the monitor task before disconnecting the session. PR CI [#38927452306](https://github.com/vorlocsev/dvinholm/actions/runs/38927452306), branch CI [#38927445038](https://github.com/vorlocsev/dvinholm/actions/runs/38927445038), and post-merge main CI [#38928179572](https://github.com/vorlocsev/dvinholm/actions/runs/38928179572) passed; merged as `6804b8828879df51f24f10a837cb9808b6989f68`.
 - [x] PR #250 preserves the CAN Monitor diagnostic when disconnect cleanup begins; PR CI [#38928375204](https://github.com/vorlocsev/dvinholm/actions/runs/38928375204) passed and it was merged as `c38e2e1de7c37c0fc9cfff26c7051ca74100a39b`. Post-merge main CI on that commit [#38929247943](https://github.com/vorlocsev/dvinholm/actions/runs/38929247943) passed.
 - [x] PR #249 records the monitor/disconnect lifecycle checkpoint and was merged as `6ef6046bfd819b436772c8731495d7cc3cc5fb3b`. Its first PR CI attempt had one ISO-TP receive-queue overflow test failure (475/476); retry [#38928314219](https://github.com/vorlocsev/dvinholm/actions/runs/38928314219) passed. The test uses a virtual adapter; no hardware was involved.
-- [x] PR #251 updates the monitor/disconnect checkpoint and UDS lifecycle audit; merged as `09a68831ceb855a582c9808f7ac3ce56a7562bbf`. PR-head CI [#38930299279](https://github.com/vorlocsev/dvinholm/actions/runs/38930299279) and branch CI [#38930277558](https://github.com/vorlocsev/dvinholm/actions/runs/38930277558) passed. Post-merge CI for the new merge commit must still be checked.
+- [x] PR #251 updates the monitor/disconnect checkpoint and UDS lifecycle audit; merged as `09a68831ceb855a582c9808f7ac3ce56a7562bbf`. PR-head CI [#38930299279](https://github.com/vorlocsev/dvinholm/actions/runs/38930299279) and branch CI [#38930277558](https://github.com/vorlocsev/dvinholm/actions/runs/38930277558) passed.
+- [x] PR #252 records the PR #251 merge checkpoint; merged as `afef97288c1f9456130f2311b02181ab3b7ffca2`. PR-head CI [#38931312837](https://github.com/vorlocsev/dvinholm/actions/runs/38931312837) and branch CI [#38931290345](https://github.com/vorlocsev/dvinholm/actions/runs/38931290345) passed. Post-merge main CI [#38932062825](https://github.com/vorlocsev/dvinholm/actions/runs/38932062825) is still running.
 - [x] Automated coverage exists for CAN receive-dispatcher lifecycle/races, J2534 session lifecycle/read errors, ISO-TP malformed frames/timeouts/cancellation/recovery, UDS VIN/DTC parsing and response handling, and virtual J2534 adapter scenarios.
 - [x] User manually confirmed the updater success path and error/retry handling on Windows 11 LTSC IoT.
 - [x] User manually confirmed ECU profile controls and CAN Monitor remain visible in the compact layout, including a narrower window width.
@@ -34,7 +35,7 @@ This roadmap separates software/CI verification from physical adapter validation
 ## Next software-only work
 
 - [x] Monitor/disconnect lifecycle fixes are merged: #248 awaits CAN Monitor shutdown before J2534 disconnect, and #250 preserves a monitor warning during disconnect. PR, branch, and post-merge main CI checks passed for these source changes.
-- [x] Documentation checkpoint after PR #249 passed post-merge main CI [#38930123098](https://github.com/vorlocsev/dvinholm/actions/runs/38930123098). PR #251 documentation updates also passed PR-head/branch CI; current merge commit is `09a68831ceb855a582c9808f7ac3ce56a7562bbf`, awaiting its own post-merge CI.
+- [x] Documentation checkpoint after PR #249 passed post-merge main CI [#38930123098](https://github.com/vorlocsev/dvinholm/actions/runs/38930123098). PR #251 and PR #252 documentation updates passed PR-head/branch CI. Main checkpoint is now `afef97288c1f9456130f2311b02181ab3b7ffca2`; post-merge main CI [#38932062825](https://github.com/vorlocsev/dvinholm/actions/runs/38932062825) is running. The preceding main run on `09a68831ceb855a582c9808f7ac3ce56a7562bbf` failed in an updater rollback runtime test cleanup, not in compilation.
 
 1. [ ] Review the current-main test inventory and CI test report to identify remaining untested release-critical paths; avoid duplicating already-covered lifecycle/timeout tests.
 2. [x] Updater failure-path cleanup covers partial-download I/O failure (#235), cancellation after partial content (#237), SHA-256 mismatch (#239), corrupt ZIP (#241), and missing executable (#242). Replacement backup/rollback is implemented in #243 and runtime-tested on Windows in #246 using isolated temporary directories and stubbed copy/process commands. This verifies the scripted rollback scenario without touching an installed application; it does not replace manual in-place updater testing on the user's Windows installation.
