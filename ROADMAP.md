@@ -647,3 +647,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Verify canceling/discarding an unsaved CAN ID edit restores the persisted value.
 - [ ] Verify CI for the current branch head and review release readiness before considering release 0.2.0.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
+
+
+## Manual Windows UI verification — discard unsaved CAN ID edit (2026-10-16)
+
+- [x] Confirmed discarding an unsaved CAN ID edit restores the persisted value; other settings remain intact and Monitor/UDS controls stay unavailable while disconnected.
+- [ ] Verify a valid CAN ID edit persists across profile switching and can be restored to its original value.
+- [ ] Verify CI for the current branch head and review release readiness before considering release 0.2.0.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
