@@ -76,3 +76,9 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] No uncovered race was demonstrated in the testable transport/session layers, so no redundant test was added. The UI close handler remains a review-only boundary because it is coupled to WinUI; consider a focused shutdown coordinator extraction only if further changes make a deterministic test seam valuable.
 - [x] Main CI after PR #253 passed: [run #38933065485](https://github.com/vorlocsev/dvinholm/actions/runs/38933065485).
 - Physical J2534 adapter and vehicle testing remain deferred.
+
+## Manual UI verification — connection retry (2026-10-16)
+
+- [x] User confirmed the manual Windows check for retrying after a failed J2534 connection attempt succeeded; the application remained usable and the retry path behaved as expected.
+- This is a UI/error-recovery confirmation only. No physical J2534 adapter or vehicle was used, and hardware compatibility remains unverified.
+- [ ] Continue software-only verification of connection-state controls and error recovery.
