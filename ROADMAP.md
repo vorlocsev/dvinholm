@@ -380,3 +380,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] No false persistent error or app malfunction observed.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — repeated ECU profile switching (2026-10-16)
+
+- [x] Five switches between two saved ECU profiles do not mix their names or CAN request/response IDs.
+- [x] Both profiles retain their respective values after restarting the application.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
