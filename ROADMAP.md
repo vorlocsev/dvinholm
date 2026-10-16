@@ -128,3 +128,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Switching profiles does not mix their names or data.
 - This verifies local profile selection/data isolation only; physical J2534 adapter and vehicle testing remains deferred.
 - [ ] Verify safe deletion behavior using only disposable `TEST-ECU`; preserve the original useful profile.
+
+
+## Manual UI verification — safe profile deletion (2026-10-16)
+
+- [x] User confirmed deleting disposable `TEST-ECU` removes it from the list.
+- [x] Original useful profile remains intact and available.
+- [x] After app restart, deleted `TEST-ECU` does not reappear.
+- This verifies local profile deletion/persistence only; physical J2534 adapter and vehicle testing remains deferred.
+- [ ] Finish final software-only profile workflow check, then review release-gate items and current PR/CI state before deciding on release 0.2.0.
