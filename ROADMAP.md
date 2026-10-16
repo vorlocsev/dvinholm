@@ -213,3 +213,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - Exact field and UI behavior were not specified; no specific error message or fallback is claimed. The original profile was kept separate.
 - Local profile-import validation only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - [ ] Next: inspect the repository's profile JSON schema and validation rules before choosing further field-specific tests; do not guess required fields.
+
+
+## Manual UI verification — required profile field missing (2026-10-16)
+
+- [x] User confirmed successful handling of a syntactically valid profile JSON copy with another required profile field omitted.
+- The exact field and UI behavior were not specified; no particular error message or fallback is claimed. The original profile was kept separate.
+- Local profile-import validation only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- [ ] Next: inspect the profile JSON schema/validation rules before further field-specific tests; then check empty-catalog import behavior using a backed-up catalog.
