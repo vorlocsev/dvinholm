@@ -236,3 +236,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Confirmed that restoring the saved JSON catalog after importing `[]` returned the original profiles, preserved names and main fields, and persisted after app restart.
 - This closes the empty-catalog recovery workflow. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
 - [ ] Next: test a catalog containing duplicate profile IDs in a disposable JSON copy; verify rejection is safe and the current catalog remains intact.
+
+
+## Manual UI verification — duplicate profile IDs (2026-10-16)
+
+- [x] Confirmed that importing a catalog with duplicate profile IDs is rejected/handled as an error without hanging or damaging the existing profiles.
+- No ECU communication or physical J2534 adapter/vehicle was used; hardware validation remains deferred.
+- [ ] Next: verify invalid CAN identifier validation using a disposable profile/catalog; confirm invalid values are not accepted and existing profiles remain intact.
