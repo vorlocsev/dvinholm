@@ -1,3 +1,12 @@
+## Updater metadata hardening merged and verified (2026-10-16)
+
+- Ported the former stale/conflicting PR #225 work onto current `main` in PR [#233](https://github.com/vorlocsev/dvinholm/pull/233); PR #233 was squash-merged as `a21b0bb07eaea83785e6bb4299130f4943d9ebc8`.
+- The PR validation workflow succeeded: [run #1801](https://github.com/vorlocsev/dvinholm/actions/runs/38850583003). The post-merge `main` build/test/publish workflow also succeeded: [run #1802](https://github.com/vorlocsev/dvinholm/actions/runs/38851091919).
+- Updater hardening covers malformed run numbers, strict trusted release-download URLs, optional-but-validated SHA-256 digest metadata, and binary download through the GitHub release-asset API when an asset ID is available. Regression tests cover malformed metadata, fallback behavior, and binary asset download.
+- The stale PR #225 was not merged; its relevant changes were carried forward and validated on current `main`.
+- Latest main checkpoint at this entry: `a21b0bb07eaea83785e6bb4299130f4943d9ebc8`.
+- No physical J2534 adapter or vehicle was used. Hardware verification remains deferred to a future release.
+
 ## Warning cleanup follow-up on current main (2026-10-16)
 
 - Recreated the unused-exception-variable cleanup against current `main`, rather than relying on the older PR #226 branch.
