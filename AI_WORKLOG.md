@@ -1592,3 +1592,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This consolidates the local profile edit/save/export/restart workflow; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: inspect the current roadmap, open PR #255 and current CI state; identify any remaining software-only release gates before recommending whether 0.2.0 is ready.
+
+
+## Manual Windows verification — malformed profile JSON rejected safely (2026-10-16)
+
+- User confirmed that importing a deliberately malformed JSON copy (removed closing brace) reports an import error, does not hang the app, and leaves the original saved profile unchanged.
+- This verifies malformed-input handling for local profile import only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: continue software-only release gates and review PR #255 mergeability/CI before recommending release 0.2.0.
