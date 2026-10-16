@@ -184,3 +184,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Confirmed that importing the same profile JSON twice and restarting Dvinholm left the saved profile list correct, with no observed unintended duplicates or corruption.
 - This verifies the repeated-import/persistence workflow for the tested profile only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - [ ] Next: cancel the profile-import file picker and verify that the profile list remains unchanged and no false import-success message appears.
+
+
+## Manual UI verification — cancel profile import (2026-10-16)
+
+- [x] Confirmed cancelling the profile-import file picker leaves the profile list unchanged and does not report a false successful import.
+- Local profile-import UI check only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- [ ] Next: if export/save offers a file dialog, cancel it and verify no file is falsely reported as saved and the existing profile remains intact.
