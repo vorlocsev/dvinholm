@@ -1370,3 +1370,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Added a lookup test ensuring a release asset with an insecure `http://` download URL is rejected and discovery falls back to the previous valid HTTPS asset.
 - The new test is isolated with a stub HTTP handler. CI validation is pending for the latest branch head.
 - PR #224 remains open and unmerged; physical adapter testing remains deferred.
+
+
+## Updater metadata hardening — port to current main (2026-10-16)
+
+- The original PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) was found to be based on an obsolete main commit and GitHub reports it as conflicting; it has not been merged.
+- Preparing a fresh branch from current main to carry forward its updater metadata validation, trusted GitHub release URL allowlist, SHA-256 digest checks, malformed run-number fallback, and binary release-asset API download request.
+- The current-main `IsUpdateAvailable` helper is preserved in the port.
+- The original PR head had successful CI (workflow run [#1718](https://github.com/vorlocsev/dvinholm/actions/runs/38823643808)); the fresh port must pass its own CI before it can be considered validated.
+- Hardware checks remain out of scope; physical J2534 adapter and vehicle verification stays deferred to a future release.
