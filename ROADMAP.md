@@ -169,3 +169,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - The test used a copy and the original saved profile was preserved. Exact UI behavior was not specified, so no particular error message or fallback is claimed.
 - This covers local profile-import handling only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - [ ] Next: test an unknown/extra JSON property in a disposable profile copy and confirm safe handling without altering the original profile.
+
+
+## Manual UI verification — extra unknown JSON property (2026-10-16)
+
+- [x] Confirmed successful handling of a valid profile JSON copy containing an extra property (`test_extra_field`); the original profile remained preserved.
+- This confirms safe import handling for an unknown/extra property, but does not claim whether that property is persisted or discarded.
+- Local profile-import check only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- [ ] Next: import the same valid profile JSON twice and check for unintended duplicate profiles or corruption of the saved profile list.
