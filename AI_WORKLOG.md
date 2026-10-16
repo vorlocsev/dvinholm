@@ -2040,3 +2040,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - UI remained responsive and the app closed normally.
 - No physical J2534 adapter or vehicle was used.
 - Next: finish the remaining pre-release checks, then verify CI for the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — failed connection on non-primary ECU profile (2026-10-16)
+
+- User confirmed a connection attempt without a physical J2534 adapter is handled without hanging; the non-primary profile remains selected and its CAN IDs remain unchanged.
+- Monitor and UDS actions remain unavailable while disconnected.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release UI checks; verify CI on the current branch head before assessing release readiness.
