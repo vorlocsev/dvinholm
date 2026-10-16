@@ -1,3 +1,12 @@
+## Windows manual verification — identical-SHA updater state (2026-10-16)
+
+- User installed the updater build and confirmed that after clicking **Check update** again, the button remained **Check update** rather than offering **Replace files and restart** for the same commit.
+- This confirms the reported same-SHA false-positive is resolved in the user's Windows environment for the tested build.
+- CI validation for the code and PR head was successful (runs #1757–#1759; see the entries above / linked workflow runs).
+- PR [#228](https://github.com/vorlocsev/dvinholm/pull/228) remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred to a future release.
+
+---
+
 ## Follow-up — identical commit SHA still triggered Replace (2026-10-16)
 
 - User tested the CI #1751 installation and reported: `Current: 0.1.0 · 6fd0da7` while `Available: CI #1751 · 6fd0da7`, with the Replace button still shown.
