@@ -1921,3 +1921,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Existing source and backup files were not overwritten.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — profile switching after export and restart (2026-10-16)
+
+- User confirmed both the primary and exported non-primary ECU profiles continue to show their own correct CAN IDs after switching between them and restarting the app.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
