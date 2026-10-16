@@ -59,3 +59,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - User-facing updater errors are recoverable and leave the installed application in a consistent state.
 - Read-only UDS functions remain explicitly gated by connection state.
 - Release notes clearly distinguish software/virtual testing from physical adapter verification.
+
+
+## CI checkpoint — PR #253 rollback-test cleanup (2026-10-16)
+
+- [x] PR [#253](https://github.com/vorlocsev/dvinholm/pull/253) fixes the Windows updater rollback test cleanup by disposing the PowerShell process before deleting its temporary root and draining redirected stdout/stderr concurrently. Existing rollback assertions remain intact.
+- [x] Latest PR-head CI [#38932272236](https://github.com/vorlocsev/dvinholm/actions/runs/38932272236) passed; PR #253 merged to `main` as `db3e8607ec0c28057649f7f616056a71b9bc991e`.
+- [ ] Post-merge main CI [#38933065485](https://github.com/vorlocsev/dvinholm/actions/runs/38933065485) is running. Do not mark the merge checkpoint green until it completes.
+- [ ] Continue software-only UDS lifecycle audit after main CI. Avoid duplicating existing active/queued UDS cancellation tests; add coverage only for a demonstrably uncovered close/disconnect race.
+- Physical J2534 adapter and vehicle checks remain deferred to a future release.
