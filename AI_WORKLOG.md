@@ -1959,3 +1959,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed the app closed and relaunched normally after the series of import edge-case checks; original profiles, names, and CAN IDs remained correct, with no false errors.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — rename profile, restart, restore name (2026-10-16)
+
+- User confirmed the primary ECU profile accepted a temporary `-TEST` rename, persisted it across restart with CAN IDs unchanged, and was restored to its original name successfully.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
