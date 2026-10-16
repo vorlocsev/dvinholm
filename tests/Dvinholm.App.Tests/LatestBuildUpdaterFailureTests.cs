@@ -428,4 +428,103 @@ public sealed class LatestBuildUpdaterFailureTests
         Assert.Contains("Rollback failed:", script);
     }
 
+
+    [Fact]
+    public async Task ReplacementScript_RestoresPreviousBuildWhenReplacementFailsAtRuntime()
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        var root = Path.Combine(Path.GetTempPath(), $"dvinholm-rollback-test-{Guid.NewGuid():N}");
+        var staging = Path.Combine(root, "staging");
+        var destination = Path.Combine(root, "installed");
+        var backup = Path.Combine(root, "backup");
+        var scriptPath = Path.Combine(root, "replace.ps1");
+        var localAppData = Path.Combine(root, "localappdata");
+        var launchLog = Path.Combine(root, "launch.log");
+        Directory.CreateDirectory(staging);
+        Directory.CreateDirectory(destination);
+        Directory.CreateDirectory(localAppData);
+        await File.WriteAllTextAsync(Path.Combine(staging, "Dvinholm.App.exe"), "new-build");
+        await File.WriteAllTextAsync(Path.Combine(staging, "new.marker"), "new");
+        await File.WriteAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe"), "old-build");
+        await File.WriteAllTextAsync(Path.Combine(destination, "old.marker"), "old");
+
+        try
+        {
+            var generated = LatestBuildUpdater.BuildReplacementScript(staging, destination, -1, scriptPath, backup);
+            generated = generated.Replace(
+                "& (Join-Path $env:SystemRoot 'System32\\robocopy.exe')",
+                "Invoke-TestRobocopy",
+                StringComparison.Ordinal);
+            Assert.DoesNotContain("System32\\robocopy.exe", generated, StringComparison.OrdinalIgnoreCase);
+
+            var mocks = @"
+function Invoke-TestRobocopy {
+    param([string]$From, [string]$To, [Parameter(ValueFromRemainingArguments=$true)][string[]]$Options)
+    if ($From -eq $env:DVINHOLM_TEST_FAIL_SOURCE) {
+        if (Test-Path -LiteralPath $To) { Remove-Item -LiteralPath $To -Recurse -Force }
+        New-Item -ItemType Directory -Path $To -Force | Out-Null
+        Set-Content -LiteralPath (Join-Path $To 'partial.marker') -Value 'partial'
+        $global:LASTEXITCODE = 8
+        return
+    }
+    if (Test-Path -LiteralPath $To) { Remove-Item -LiteralPath $To -Recurse -Force }
+    New-Item -ItemType Directory -Path $To -Force | Out-Null
+    Copy-Item -Path (Join-Path $From '*') -Destination $To -Recurse -Force
+    $global:LASTEXITCODE = 1
+}
+function Start-Process {
+    param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList)
+    Add-Content -LiteralPath $env:DVINHOLM_TEST_LAUNCH_LOG -Value $FilePath
+}
+";
+            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
+
+            var powershell = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+            Assert.True(File.Exists(powershell), $"Windows PowerShell was not found at {powershell}");
+
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = powershell,
+                WorkingDirectory = root,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            startInfo.ArgumentList.Add("-NoProfile");
+            startInfo.ArgumentList.Add("-ExecutionPolicy");
+            startInfo.ArgumentList.Add("Bypass");
+            startInfo.ArgumentList.Add("-File");
+            startInfo.ArgumentList.Add(scriptPath);
+            startInfo.Environment["LOCALAPPDATA"] = localAppData;
+            startInfo.Environment["DVINHOLM_TEST_FAIL_SOURCE"] = Path.GetFullPath(staging);
+            startInfo.Environment["DVINHOLM_TEST_LAUNCH_LOG"] = launchLog;
+
+            using var process = System.Diagnostics.Process.Start(startInfo)
+                ?? throw new InvalidOperationException("Could not start isolated PowerShell rollback test.");
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+            await process.WaitForExitAsync(timeout.Token);
+            var stdout = await process.StandardOutput.ReadToEndAsync();
+            var stderr = await process.StandardError.ReadToEndAsync();
+
+            Assert.True(process.ExitCode == 0, $"PowerShell exited with {process.ExitCode}. stdout: {stdout} stderr: {stderr}");
+            Assert.Equal("old-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
+            Assert.Equal("old", await File.ReadAllTextAsync(Path.Combine(destination, "old.marker")));
+            Assert.False(File.Exists(Path.Combine(destination, "partial.marker")));
+            var updateLog = await File.ReadAllTextAsync(Path.Combine(localAppData, "Dvinholm", "update.log"));
+            Assert.Contains("The previous build was restored and will be restarted.", updateLog);
+            Assert.Contains(Path.Combine(destination, "Dvinholm.App.exe"), await File.ReadAllTextAsync(launchLog));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+
 }
