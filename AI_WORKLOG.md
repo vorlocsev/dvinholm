@@ -2017,3 +2017,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The user returned to the primary profile and closed the app normally.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — repeated CAN Monitor attempts while disconnected (2026-10-16)
+
+- User confirmed repeated attempts to start CAN Monitor without a physical J2534 adapter did not hang or crash the app and did not produce a false active-monitoring state.
+- App closed and relaunched normally after the check.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
