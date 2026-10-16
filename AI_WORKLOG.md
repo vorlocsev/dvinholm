@@ -1,3 +1,14 @@
+## Windows manual updater regression — same SHA still offered Replace (2026-10-16)
+
+- User reported `Current: 0.1.0 · f16912e` and `Available: CI #1761 · f16912e`, but the button still offered replacement after updating.
+- Root cause: the compact-ECU-profiles branch still used the old comparison that treated a missing installed CI run number as an update, even when the commit SHA matched. The earlier SHA-only fix existed on PR #228 but was not present in this branch's build.
+- Applied the SHA-only availability check to this branch too. Identical commit SHA now means no update regardless of whether the installed CI run number is embedded/parseable; a different or unknown SHA still offers replacement. The idle button label is `Check update`.
+- Added regression tests for same-SHA/no-run-number and different-SHA cases.
+- CI and Windows re-test are pending on this new branch commit. PR [#227](https://github.com/vorlocsev/dvinholm/pull/227) remains open and unmerged. PR [#228](https://github.com/vorlocsev/dvinholm/pull/228) also remains open and unmerged.
+- Physical J2534 adapter testing remains deferred to a future release.
+
+---
+
 ## UI layout validation checkpoint — PR #227 (2026-10-16)
 
 - Checked commit `d8210f95c70b94cde6146441f10c5b24e41e454d`: both GitHub Actions build checks completed successfully ([run 38824990193](https://github.com/vorlocsev/dvinholm/actions/runs/38824990193), [run 38824981023](https://github.com/vorlocsev/dvinholm/actions/runs/38824981023)).
