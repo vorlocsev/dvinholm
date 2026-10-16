@@ -1892,3 +1892,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed that importing a JSON profile whose name matches an existing profile was handled safely; cancelling the overwrite prompt left the original profile and CAN IDs unchanged, with no hang.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — dismiss overwrite dialog (2026-10-16)
+
+- User confirmed the overwrite/duplicate-name dialog could be dismissed safely; the app remained responsive and the existing profile and CAN IDs were unchanged after restart.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
