@@ -1,3 +1,14 @@
+## Follow-up — investigate Windows rollback-test cleanup failure (2026-10-16)
+
+- The first main CI attempt for `09a68831ceb855a582c9808f7ac3ce56a7562bbf` failed with 475/476 tests passing. The sole failure was `LatestBuildUpdaterFailureTests.ReplacementScript_RestoresPreviousBuildWhenReplacementFailsAtRuntime`: cleanup could not delete its isolated temporary root because Windows reported it was still in use.
+- Build succeeded. This is a test cleanup/lifetime failure, not evidence that the updater rollback assertions themselves failed.
+- Created branch `test/dispose-powershell-before-cleanup` and changed the test to drain redirected stdout/stderr while PowerShell is running, scope/dispose the Process handle before the finally cleanup, and preserve the rollback assertions. No installed app or real hardware is touched.
+- Fix commit: `61f782d74494e230faf9fbe76379fb0b2f702c99`. CI run [#38932131202](https://github.com/vorlocsev/dvinholm/actions/runs/38932131202) is queued; do not claim the fix passes until the new run completes.
+- PR #252 was merged as `afef97288c1f9456130f2311b02181ab3b7ffca2`; its PR-head CI [#38931312837](https://github.com/vorlocsev/dvinholm/actions/runs/38931312837) and branch CI [#38931290345](https://github.com/vorlocsev/dvinholm/actions/runs/38931290345) passed. Post-merge main CI [#38932062825](https://github.com/vorlocsev/dvinholm/actions/runs/38932062825) is running.
+- Next: finish CI for the cleanup fix, open a PR if successful, and only then resume the UDS shutdown coverage audit. Physical J2534 adapter and vehicle testing remain deferred.
+
+---
+
 ## Latest checkpoint — PR #251 merged, post-merge verification pending (2026-10-16)
 
 - PR [#251](https://github.com/vorlocsev/dvinholm/pull/251) was squash-merged as `09a68831ceb855a582c9808f7ac3ce56a7562bbf`.

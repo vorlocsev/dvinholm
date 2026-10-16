@@ -505,14 +505,21 @@ function Start-Process {
             startInfo.Environment["DVINHOLM_TEST_FAIL_SOURCE"] = Path.GetFullPath(staging);
             startInfo.Environment["DVINHOLM_TEST_LAUNCH_LOG"] = launchLog;
 
-            using var process = System.Diagnostics.Process.Start(startInfo)
-                ?? throw new InvalidOperationException("Could not start isolated PowerShell rollback test.");
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-            await process.WaitForExitAsync(timeout.Token);
-            var stdout = await process.StandardOutput.ReadToEndAsync();
-            var stderr = await process.StandardError.ReadToEndAsync();
+            using (var process = System.Diagnostics.Process.Start(startInfo)
+                ?? throw new InvalidOperationException("Could not start isolated PowerShell rollback test."))
+            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)))
+            {
+                // Drain both redirected streams while the process is running to avoid pipe-buffer deadlocks.
+                var stdoutTask = process.StandardOutput.ReadToEndAsync();
+                var stderrTask = process.StandardError.ReadToEndAsync();
+                await process.WaitForExitAsync(timeout.Token);
+                var stdout = await stdoutTask;
+                var stderr = await stderrTask;
 
-            Assert.True(process.ExitCode == 0, $"PowerShell exited with {process.ExitCode}. stdout: {stdout} stderr: {stderr}");
+                Assert.True(process.ExitCode == 0, $"PowerShell exited with {process.ExitCode}. stdout: {stdout} stderr: {stderr}");
+            }
+
+            // Dispose the process handle before deleting its working directory in the finally block.
             Assert.Equal("old-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
             Assert.Equal("old", await File.ReadAllTextAsync(Path.Combine(destination, "old.marker")));
             Assert.False(File.Exists(Path.Combine(destination, "partial.marker")));
