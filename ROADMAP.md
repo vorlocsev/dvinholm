@@ -699,3 +699,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Confirmed no profiles were missing or duplicated and no false active connection was shown without an adapter.
 - [ ] Verify CI and required checks for the latest PR #255 head, then review remaining software-only release 0.2.0 gates.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
+
+
+## Manual Windows UI verification — repeat full-catalog import (2026-10-16)
+
+- [x] Confirmed re-importing the exported profile catalog did not create unexpected duplicates or alter existing profile settings unexpectedly.
+- [x] Confirmed profile names/CAN IDs remain correct and the separate backup is preserved.
+- [ ] Final disconnected-state smoke test after catalog import: restart, confirm no active connection, and verify Monitor/UDS controls remain disabled.
+- [ ] Verify terminal CI result for latest PR #255 head and review software-only release 0.2.0 gates.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
