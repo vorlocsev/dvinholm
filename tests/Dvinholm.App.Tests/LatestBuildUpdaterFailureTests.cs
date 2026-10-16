@@ -445,6 +445,7 @@ public sealed class LatestBuildUpdaterFailureTests
         Directory.CreateDirectory(staging);
         Directory.CreateDirectory(destination);
         Directory.CreateDirectory(localAppData);
+        Directory.CreateDirectory(Path.Combine(localAppData, "Dvinholm"));
         await File.WriteAllTextAsync(Path.Combine(staging, "Dvinholm.App.exe"), "new-build");
         await File.WriteAllTextAsync(Path.Combine(staging, "new.marker"), "new");
         await File.WriteAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe"), "old-build");
