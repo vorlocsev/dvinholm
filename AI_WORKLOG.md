@@ -2103,3 +2103,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - No physical J2534 adapter or vehicle was used.
 - PR #255 CI for the then-current head was still running at last check; verify the latest run before release-readiness decisions.
 - Next: inspect the exported JSON in Dvinholm by importing it as a separate profile, without overwriting the source profile, then verify the imported name and CAN IDs.
+
+
+## Manual Windows UI verification — import export as separate profile (2026-10-16)
+
+- User confirmed the exported JSON imports successfully as a separate ECU profile without overwriting the source profile.
+- Imported profile name and both CAN IDs match the exported values; switching between source and imported profiles preserves each profile's own settings.
+- No physical J2534 adapter or vehicle was used.
+- PR #255 CI on the latest documentation head was queued at the last check; confirm its final result before release-readiness decisions.
+- Next: verify that exporting the full profile catalog preserves the expected profile count, names, and CAN IDs without modifying the separate backup.
