@@ -728,6 +728,7 @@ public sealed partial class MainWindow : Window
             // the task if its worker has not fully unwound. Do not dispose the
             // session/bus until that subscriber has exited.
             var monitorTask = _monitorTask;
+            string? monitorWarning = null;
             StopMonitor();
             if (monitorTask is not null)
             {
@@ -735,9 +736,8 @@ public sealed partial class MainWindow : Window
                 catch (Exception ex)
                 {
                     // A monitor failure must not prevent session cleanup, but
-                    // keep a diagnostic hint before the disconnect status update.
-                    SetStatus("CAN monitor stopped with an error: " +
-                        FormatSafeException(ex, "unexpected monitor error."));
+                    // preserve its diagnostic hint in the disconnect status.
+                    monitorWarning = FormatSafeException(ex, "unexpected monitor error.");
                 }
             }
 
@@ -746,7 +746,9 @@ public sealed partial class MainWindow : Window
             StartButton.IsEnabled = false;
             SetUdsEnabled(false);
             DiscoverButton.IsEnabled = false;
-            SetStatus("Disconnecting J2534...");
+            SetStatus(monitorWarning is null
+                ? "Disconnecting J2534..."
+                : "Disconnecting J2534... CAN monitor warning: " + monitorWarning);
             var disconnectTask = Task.Run(() => _session.Disconnect());
             _disconnectTask = disconnectTask;
             try
