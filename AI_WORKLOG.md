@@ -1839,3 +1839,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed five switches between the primary and second ECU profiles, followed by an application restart, preserved both profile names and their respective CAN request/response IDs.
 - No profile edits were made and no physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — selected profile consistency on startup (2026-10-16)
+
+- User confirmed that after restarting Dvinholm, the currently selected ECU profile's displayed CAN IDs match that profile; switching between primary and second profiles also shows the correct corresponding values.
+- The app's choice of which profile is selected by default after restart is not treated as a failure, provided the selected profile and displayed parameters are consistent.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
