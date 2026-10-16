@@ -1,3 +1,13 @@
+# Updater channel correction — 2026-10-16
+
+- User clarified that the in-app updater must offer the newest successful CI build from **any branch**, not only `main`.
+- Corrected `LatestBuildUpdater` to consider completed-success `push` and `workflow_dispatch` runs regardless of `head_branch`. Pull-request runs remain excluded because their build SHA may represent a synthetic merge commit rather than the branch head.
+- Updated the lookup test so a newer successful `feature/newer-build` run (#124) is selected ahead of an older successful `main` manual run (#123), and updated the UI status text to say the lookup checks across branches.
+- PR #228 remains open and unmerged. CI for this correction and Windows verification are pending; do not treat the change as validated until CI passes. On Windows, check that the updater selects the newest successful branch build, then verify the idle button remains `Check update` after restart.
+- Physical J2534 adapter testing remains deferred to a future release.
+
+---
+
 # Updater false-positive follow-up — 2026-10-16
 
 ## User-reported behavior
