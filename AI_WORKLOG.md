@@ -1,11 +1,23 @@
+## Latest checkpoint — monitor/disconnect fixes and documentation (2026-10-16)
+
+- PR [#250](https://github.com/vorlocsev/dvinholm/pull/250) was squash-merged as `c38e2e1de7c37c0fc9cfff26c7051ca74100a39b`. It keeps a CAN Monitor warning visible when J2534 disconnect begins instead of immediately overwriting it with the generic disconnect status.
+- PR CI [#38928375204](https://github.com/vorlocsev/dvinholm/actions/runs/38928375204) passed. Post-merge main CI on the source-fix commit passed in [#38929247943](https://github.com/vorlocsev/dvinholm/actions/runs/38929247943).
+- Documentation PR [#249](https://github.com/vorlocsev/dvinholm/pull/249) was merged as `6ef6046bfd819b436772c8731495d7cc3cc5fb3b`. Its first CI attempt reported one failure in `IsoTpReceiveQueueOverflowRecoveryTests` (475/476); retry [#38928314219](https://github.com/vorlocsev/dvinholm/actions/runs/38928314219) passed. Treat this as a possible timing-sensitive test and watch for recurrence; do not hide or weaken the assertion.
+- Source review confirms UDS read-only actions use `TryGetUdsClient`, which checks the active connection and CAN ID format. UDS requests and discovery are serialized by `_udsGate`; the close handler cancels UDS/discovery and avoids disposing the session while tracked operations remain active. More deterministic tests of the shutdown boundary remain a follow-up.
+- Current main checkpoint is `6ef6046bfd819b436772c8731495d7cc3cc5fb3b`; post-merge main CI [#38930123098](https://github.com/vorlocsev/dvinholm/actions/runs/38930123098) is still running. Do not mark this exact checkpoint fully green until it completes.
+- No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
+- Next: add deterministic virtual-adapter coverage for cancellation/close while UDS is active, then continue software-only release gates.
+
+---
+
 ## Latest checkpoint — CAN Monitor shutdown before J2534 disconnect (2026-10-16)
 
 - PR [#248](https://github.com/vorlocsev/dvinholm/pull/248) was squash-merged as `6804b8828879df51f24f10a837cb9808b6989f68`.
 - The fix captures the monitor task, requests cancellation through `StopMonitor()`, then awaits that task before starting `_session.Disconnect()`. If the monitor task faults, the exception is reported and disconnect cleanup still proceeds.
-- PR CI [#38927452306](https://github.com/vorlocsev/dvinholm/actions/runs/38927452306) and branch CI [#38927445038](https://github.com/vorlocsev/dvinholm/actions/runs/38927445038) passed on head `ac81ebc89f16ffe650a81fd1ba1d98dcafcaa588`. Post-merge main CI [#38928179572](https://github.com/vorlocsev/dvinholm/actions/runs/38928179572) was in progress when this entry was prepared; verify it before marking the main checkpoint green.
+- PR CI [#38927452306](https://github.com/vorlocsev/dvinholm/actions/runs/38927452306) and branch CI [#38927445038](https://github.com/vorlocsev/dvinholm/actions/runs/38927445038) passed on head `ac81ebc89f16ffe650a81fd1ba1d98dcafcaa588`. Post-merge main CI [#38928179572](https://github.com/vorlocsev/dvinholm/actions/runs/38928179572) passed.
 - Source review confirmed Read VIN/Read DTC actions are guarded by `_connected` through `TryGetUdsClient`, and the UDS gate prevents disconnect during an active UDS request. UI read-only commands remain disabled until connection succeeds; do not bypass those guards.
 - This change prevents a race between monitor subscription shutdown and native session disconnect. No physical J2534 adapter or vehicle was used; hardware verification remains deferred.
-- Next: confirm post-merge main CI, then continue reviewing UDS cancellation/disconnect and remaining software-only release gates.
+- Next: add deterministic virtual-adapter coverage for cancellation/close while UDS is active; physical adapter testing remains deferred.
 
 ---
 
