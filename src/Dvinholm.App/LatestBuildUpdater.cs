@@ -87,6 +87,10 @@ internal static class LatestBuildUpdater
 
     public static string? CurrentCommitSha => GetEmbeddedCommitSha(CurrentVersion, CurrentVersion.LastIndexOf('+'));
 
+    internal static bool IsUpdateAvailable(string? currentCommitSha, LatestBuildInfo latestBuild) =>
+        string.IsNullOrWhiteSpace(currentCommitSha) ||
+        !string.Equals(currentCommitSha, latestBuild.CommitSha, StringComparison.OrdinalIgnoreCase);
+
     private static string? GetEmbeddedCommitSha(string value, int plus)
     {
         if (plus < 0)
@@ -105,8 +109,9 @@ internal static class LatestBuildUpdater
         HttpClient http,
         CancellationToken cancellationToken = default)
     {
-        // Deliberately do not filter by branch: the user wants the newest successful
-        // CI build from any branch, including a feature branch or pull request.
+        // Select the newest successful CI build from any branch. Only push and
+        // workflow_dispatch runs are eligible: pull-request runs can build a
+        // synthetic merge ref whose SHA differs from the branch commit.
         var runsUrl = $"https://api.github.com/repos/{Repository}/actions/workflows/{WorkflowId}/runs?per_page=100";
         using var runsResponse = await http.GetAsync(runsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         runsResponse.EnsureSuccessStatusCode();
@@ -169,7 +174,7 @@ internal static class LatestBuildUpdater
             }
         }
 
-        throw new InvalidOperationException("No successful CI run with a non-expired Windows x86 artifact was found across the repository branches.");
+        throw new InvalidOperationException("No successful CI run from any branch with a non-expired Windows x86 artifact was found.");
     }
 
     public static Task<string> DownloadAndPrepareAsync(

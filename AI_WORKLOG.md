@@ -1,3 +1,105 @@
+## Windows manual verification — identical-SHA updater state (2026-10-16)
+
+- User installed the updater build and confirmed that after clicking **Check update** again, the button remained **Check update** rather than offering **Replace files and restart** for the same commit.
+- This confirms the reported same-SHA false-positive is resolved in the user's Windows environment for the tested build.
+- CI validation for the code and PR head was successful (runs #1757–#1759; see the entries above / linked workflow runs).
+- PR [#228](https://github.com/vorlocsev/dvinholm/pull/228) remains open and unmerged; do not merge without explicit user approval. Physical J2534 adapter testing remains deferred to a future release.
+
+---
+
+## Follow-up — identical commit SHA still triggered Replace (2026-10-16)
+
+- User tested the CI #1751 installation and reported: `Current: 0.1.0 · 6fd0da7` while `Available: CI #1751 · 6fd0da7`, with the Replace button still shown.
+- Root cause: the availability check required both the commit SHA and CI run number to match. The installed assembly exposes the correct commit SHA but its informational version does not expose a parseable `.ci1751` suffix, so the run number is null even though the source commit is identical.
+- Changed `LatestBuildUpdater.IsUpdateAvailable` to treat an identical commit SHA as already installed, independent of whether the installed CI run number can be parsed. A different commit SHA still offers Replace.
+- Updated the UI to use the centralized comparison and added regression tests for identical-SHA/no-run-number and different-SHA cases.
+- Commits: `18306c3` updater helper; `bf780fb` UI comparison; `612aefb` regression tests. CI validation is pending.
+- PR #228 remains open and unmerged. Physical J2534 adapter testing remains deferred to a future release.
+
+## Follow-up — repeated Replace action caused by worklog-only CI builds (2026-10-16)
+
+- User confirmed the app still offered `Replace files and restart` after installing CI #1747.
+- Root cause: the CI workflow runs on every branch push, including commits that only update `AI_WORKLOG.md`. Each such run publishes a new `ci-<run number>` release asset, so the updater sees a new run even when application code has not changed.
+- Changed `.github/workflows/ci.yml` so push-triggered CI ignores `AI_WORKLOG.md`-only changes. Code/workflow changes still trigger builds; pull-request validation remains enabled. A commit changing only the work log should no longer publish a new update candidate.
+- Workflow change commit: `6fd0da7034abe616f756dfa206a00ea242b74e58`. CI and Windows behavior validation are pending.
+- After CI publishes a build containing this workflow change, install that build once. Subsequent work-log-only commits should no longer produce new push build candidates.
+- PR #228 remains open and unmerged. Physical J2534 adapter testing remains deferred.
+
+---
+
+## Windows manual updater checkpoint — CI #1747 (2026-10-16)
+
+- User confirmed that the in-app updater successfully installed the build from CI run #1747.
+- CI runs #1747 and #1748 both completed successfully on the same source commit `510950148454fa2902d48b16ac866934c39cddd1`; the binaries should represent the same source state, despite different run numbers.
+- Next manual check: after the updated app restarts, confirm the updater returns to the idle `Check update` state. Then click it once and verify it does not offer to replace the app with another build from the same commit.
+- This is a partial Windows updater validation only; do not mark post-restart/button-state validation complete until the user confirms it. PR #228 remains open and unmerged. Physical J2534 adapter testing remains deferred.
+
+---
+
+## CI validation completed — cross-branch updater selection (2026-10-16)
+
+- Confirmed GitHub Actions run [#1746](https://github.com/vorlocsev/dvinholm/actions/runs/38828216015) completed successfully on branch `fix/updater-check-button-state`, head `6a3dad175874a399fc5fef761c9d22b98cd6b440`. The corrected test and current CI pipeline are green.
+- The earlier failure was limited to a stale test URL expectation (`ci-123`); it was corrected to expect the newer eligible branch build (`ci-124`).
+- Cross-branch selection is now CI-validated for eligible successful `push` / `workflow_dispatch` runs. Pull-request-triggered runs remain excluded.
+- Remaining validation: on Windows, confirm the updater button starts at `Check update` after launch/restart; a manual check should show `Replace files and restart` only if a newer successful eligible build exists, and should remain/reset to `Check update` when the installed build is current.
+- No Windows manual verification has been claimed for this PR. Physical J2534 adapter testing remains deferred to a future release.
+- PR [#228](https://github.com/vorlocsev/dvinholm/pull/228) remains open and unmerged; do not merge without explicit user approval.
+
+---
+
+## CI follow-up — cross-branch updater selection test correction (2026-10-16)
+
+- Inspected the failed CI run for the cross-branch updater change. Build succeeded; the test suite reported **451 passed, 1 failed**. The failure was an outdated expected download URL still pointing to `ci-123`, while the test correctly selected the newer feature-branch run `ci-124`.
+- Corrected the expected URL in `LatestBuildLookupTests.cs` to `ci-124`. This is a test expectation correction; the production selection logic already returned the newer eligible branch build.
+- CI on the corrected head is pending. Do not mark this change validated until the full test, publish, and artifact steps pass.
+- PR #228 remains open and unmerged. No Windows manual verification yet; physical J2534 adapter validation remains deferred.
+
+---
+
+# Updater channel correction — 2026-10-16
+
+- User clarified that the in-app updater must offer the newest successful CI build from **any branch**, not only `main`.
+- Corrected `LatestBuildUpdater` to consider completed-success `push` and `workflow_dispatch` runs regardless of `head_branch`. Pull-request runs remain excluded because their build SHA may represent a synthetic merge commit rather than the branch head.
+- Updated the lookup test so a newer successful `feature/newer-build` run (#124) is selected ahead of an older successful `main` manual run (#123), and updated the UI status text to say the lookup checks across branches.
+- PR #228 remains open and unmerged. CI for this correction and Windows verification are pending; do not treat the change as validated until CI passes. On Windows, check that the updater selects the newest successful branch build, then verify the idle button remains `Check update` after restart.
+- Physical J2534 adapter testing remains deferred to a future release.
+
+---
+
+# Updater false-positive follow-up — 2026-10-16
+
+## User-reported behavior
+- The installed latest build still showed `Replace files and restart`, even though no newer intended build was available.
+
+## Additional root cause addressed on `fix/updater-check-button-state`
+- The updater was selecting successful CI builds from all branches. A newer feature-branch build could therefore be presented as an update even when the latest main-branch build was already installed.
+- Restrict the update feed to successful `main` runs (push/workflow_dispatch only), matching the project's documented update channel. Feature branches remain development builds and are not treated as public update candidates.
+- Updated lookup test fixtures to include branch metadata.
+
+## Validation
+- Source and test fixtures updated; CI has not yet been verified for this follow-up.
+- On Windows, install the resulting build, confirm the idle button says `Check update`, click it, and confirm `Replace files and restart` appears only when a newer successful `main` build is available.
+- Physical J2534 adapter testing remains deferred.
+
+---
+
+# Updater button state fix — 2026-10-16
+
+## User-reported issue
+- After applying an update and the application restarts, the button can still show `Replace files and restart`; the expected idle action is `Check update`, so the user can deliberately check for the next build.
+
+## Changes on branch `fix/updater-check-button-state`
+- Disabled the automatic latest-build check during application startup. The app now starts in an idle state with `Check update`; clicking it performs the online check.
+- If the check finds a newer build, the button changes to `Replace files and restart`. If the installed build is current, it returns to `Check update`.
+- This avoids the app immediately re-evaluating the CI feed after restart and re-presenting the replace action without a deliberate check.
+
+## Validation status
+- Source change committed; CI and Windows manual validation are pending.
+- Next: verify the CI build, then on Windows install an update and confirm the restarted app shows `Check update`; click it and verify the button changes only if a newer successful build is available.
+- This is an updater UI/state change; physical J2534 adapter testing remains deferred.
+
+---
+
 # Manual regression update — 2026-10-15 (obsolete-file cleanup confirmed)
 
 - User confirmed that the in-place updater removes obsolete files from the application directory during replacement.

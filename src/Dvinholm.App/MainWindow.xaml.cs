@@ -51,8 +51,7 @@ public sealed partial class MainWindow : Window
         EcusView.ItemsSource = _ecus;
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest CI build…";
-        DispatcherQueue.TryEnqueue(() => _ = CheckLatestBuildAsync());
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · select Check update to look for a new build.";
         _session.ReadError += ex => DispatcherQueue.TryEnqueue(() =>
         {
             var detail = J2534Native.SanitizeDriverDiagnostic(ex.Message);
@@ -133,20 +132,17 @@ public sealed partial class MainWindow : Window
         _updaterBusy = true;
         UpdateButton.IsEnabled = false;
         UpdateButton.Content = "Checking…";
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest successful CI build across all branches…";
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest successful CI build across branches…";
 
         try
         {
             var latest = await LatestBuildUpdater.GetLatestSuccessfulBuildAsync();
             _latestBuild = latest;
             var currentSha = LatestBuildUpdater.CurrentCommitSha;
-            var currentRunNumber = LatestBuildUpdater.CurrentCiRunNumber;
-            _updateAvailable = currentSha is null ||
-                !string.Equals(currentSha, latest.CommitSha, StringComparison.OrdinalIgnoreCase) ||
-                currentRunNumber != latest.RunNumber;
+            _updateAvailable = LatestBuildUpdater.IsUpdateAvailable(currentSha, latest);
 
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {latest.DisplayVersion}";
-            UpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check again";
+            UpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check update";
         }
         catch (Exception ex)
         {

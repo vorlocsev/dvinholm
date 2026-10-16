@@ -6,9 +6,33 @@ namespace Dvinholm.App.Tests;
 public sealed class LatestBuildLookupTests
 {
     [Fact]
+    public void SameCommitSha_DoesNotOfferReplaceWhenInstalledBuildNumberIsUnavailable()
+    {
+        const string sha = "6fd0da7034abe616f756dfa206a00ea242b74e58";
+        var latest = new LatestBuildInfo(
+            sha, 1751, 38830468262,
+            "https://github.com/vorlocsev/dvinholm/releases/download/ci-1751/Dvinholm-Windows-x86.zip",
+            1234, null, "2026-10-16T00:42:51Z");
+
+        Assert.False(LatestBuildUpdater.IsUpdateAvailable(sha, latest));
+    }
+
+    [Fact]
+    public void DifferentCommitSha_OffersReplace()
+    {
+        const string currentSha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        const string latestSha = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+        var latest = new LatestBuildInfo(
+            latestSha, 1752, 38830474549,
+            "https://github.com/vorlocsev/dvinholm/releases/download/ci-1752/Dvinholm-Windows-x86.zip",
+            1234, null, "2026-10-16T00:42:51Z");
+
+        Assert.True(LatestBuildUpdater.IsUpdateAvailable(currentSha, latest));
+    }
+    [Fact]
     public async Task LatestSuccessfulNonPrRun_ReturnsMatchingReleaseAssetMetadata()
     {
-        const string sha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        const string sha = "dddddddddddddddddddddddddddddddddddddddd";
         var requests = new List<string>();
         using var client = new HttpClient(new QueueHttpMessageHandler(request =>
         {
@@ -18,9 +42,10 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "pull_request", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 90, "run_number": 90, "created_at": "2026-10-15T00:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "failure", "head_sha": "cccccccccccccccccccccccccccccccccccccccc", "id": 89, "run_number": 89, "created_at": "2026-10-14T00:00:00Z" },
-                        { "event": "workflow_dispatch", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 12345, "run_number": 123, "created_at": "2026-10-15T01:00:00Z" }
+                        { "event": "push", "head_branch": "feature/newer-build", "status": "completed", "conclusion": "success", "head_sha": "dddddddddddddddddddddddddddddddddddddddd", "id": 91, "run_number": 124, "created_at": "2026-10-15T02:00:00Z" },
+                        { "event": "pull_request", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 90, "run_number": 90, "created_at": "2026-10-15T00:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "failure", "head_sha": "cccccccccccccccccccccccccccccccccccccccc", "id": 89, "run_number": 89, "created_at": "2026-10-14T00:00:00Z" },
+                        { "event": "workflow_dispatch", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 12345, "run_number": 123, "created_at": "2026-10-15T01:00:00Z" }
                       ]
                     }
                     """);
@@ -32,7 +57,7 @@ public sealed class LatestBuildLookupTests
                     {
                       "name": "Dvinholm-Windows-x86.zip",
                       "size": 1234,
-                      "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-123/Dvinholm-Windows-x86.zip",
+                      "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-124/Dvinholm-Windows-x86.zip",
                       "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
                     }
                   ]
@@ -43,14 +68,14 @@ public sealed class LatestBuildLookupTests
         var build = await LatestBuildUpdater.GetLatestSuccessfulBuildAsync(client);
 
         Assert.Equal(sha, build.CommitSha);
-        Assert.Equal(123, build.RunNumber);
-        Assert.Equal(12345, build.RunId);
+        Assert.Equal(124, build.RunNumber);
+        Assert.Equal(91, build.RunId);
         Assert.Equal(1234, build.ArtifactSize);
         Assert.Equal("sha256:" + new string('a', 64), build.ArtifactDigest);
-        Assert.Equal("https://github.com/vorlocsev/dvinholm/releases/download/ci-123/Dvinholm-Windows-x86.zip", build.DownloadUrl);
+        Assert.Equal("https://github.com/vorlocsev/dvinholm/releases/download/ci-124/Dvinholm-Windows-x86.zip", build.DownloadUrl);
         Assert.Equal(2, requests.Count);
         Assert.Contains("/actions/workflows/378992585/runs?per_page=100", requests[0]);
-        Assert.EndsWith("/releases/tags/ci-123", requests[1]);
+        Assert.EndsWith("/releases/tags/ci-124", requests[1]);
     }
 
     [Fact]
@@ -73,8 +98,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "not-a-valid-sha", "id": 12, "run_number": 12, "created_at": "2026-10-15T00:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "failure", "head_sha": "dddddddddddddddddddddddddddddddddddddddd", "id": 11, "run_number": 11, "created_at": "2026-10-14T00:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "not-a-valid-sha", "id": 12, "run_number": 12, "created_at": "2026-10-15T00:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "failure", "head_sha": "dddddddddddddddddddddddddddddddddddddddd", "id": 11, "run_number": 11, "created_at": "2026-10-14T00:00:00Z" }
                       ]
                     }
                     """);
@@ -99,8 +124,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 30, "run_number": 30, "created_at": "2026-10-15T02:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 29, "run_number": 29, "created_at": "2026-10-15T01:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 30, "run_number": 30, "created_at": "2026-10-15T02:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 29, "run_number": 29, "created_at": "2026-10-15T01:00:00Z" }
                       ]
                     }
                     """);
@@ -141,8 +166,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 40, "run_number": 40, "created_at": "2026-10-15T02:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 39, "run_number": 39, "created_at": "2026-10-15T01:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 40, "run_number": 40, "created_at": "2026-10-15T02:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 39, "run_number": 39, "created_at": "2026-10-15T01:00:00Z" }
                       ]
                     }
                     """);
@@ -195,8 +220,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 50, "run_number": 50, "created_at": "2026-10-15T03:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 49, "run_number": 49, "created_at": "2026-10-15T02:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 50, "run_number": 50, "created_at": "2026-10-15T03:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 49, "run_number": 49, "created_at": "2026-10-15T02:00:00Z" }
                       ]
                     }
                     """);

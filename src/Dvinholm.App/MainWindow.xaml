@@ -13,7 +13,7 @@
             <Grid ColumnSpacing="10" Margin="0,6,0,0">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <TextBlock x:Name="UpdateStatusText" Text="Current version: checking…" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                <Button x:Name="UpdateButton" Grid.Column="1" Content="Check for updates" Click="UpdateButton_Click" MinWidth="170"/>
+                <Button x:Name="UpdateButton" Grid.Column="1" Content="Check update" Click="UpdateButton_Click" MinWidth="170"/>
             </Grid>
         </StackPanel>
 
