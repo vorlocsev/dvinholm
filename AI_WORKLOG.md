@@ -2025,3 +2025,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - App closed and relaunched normally after the check.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — disconnected state after restart (2026-10-16)
+
+- User confirmed after closing and relaunching without a physical J2534 adapter, the app correctly reports no active connection and Start Monitor, Read VIN, Read DTC, and Read DID remain unavailable.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
