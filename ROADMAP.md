@@ -299,3 +299,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Confirmed current candidate reports the missing physical J2534 device, does not hang, keeps diagnostics unavailable while disconnected, and closes/relaunches normally.
 - This is a no-device software behavior check only. Physical adapter/vehicle verification remains deferred to a future release.
 - [ ] Next: inspect the latest CI result for the current PR head before evaluating release readiness.
+
+
+## UDS UI state and cancellation audit — 2026-10-16
+
+- [x] Source-audited UDS UI gating: diagnostic commands require an active connection and valid selected CAN-ID format/IDs; UDS requests and discovery are serialized; controls are disabled during requests and restored based on connection state.
+- [x] Reviewed close/disposal ordering and existing tests; current coverage already includes active/queued UDS cancellation, ISO-TP disposal/cancellation, dispatcher/session disposal races, CAN ID parsing, and virtual-adapter read-only UDS flows. No redundant test added.
+- [ ] Manually verify after a failed/no-device connection that Start Monitor and Read VIN/DTC/DID remain disabled and Connect is re-enabled for retry.
+- [ ] Review any concrete uncovered close/disconnect race before adding a new deterministic virtual-adapter test. Physical J2534 adapter and vehicle testing remain deferred.
