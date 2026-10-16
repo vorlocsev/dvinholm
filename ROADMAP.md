@@ -1,7 +1,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-16  
-Current main checkpoint: `bee02031b3e654d6b7932e0b4f7b32be76495f0b`  
+Current main checkpoint: `8b5797a96791a26775e0a379c36d5ea20559137b`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
@@ -26,8 +26,10 @@ This roadmap separates software/CI verification from physical adapter validation
 
 ## Next software-only work
 
+- [ ] Current checkpoint `8b5797a96791a26775e0a379c36d5ea20559137b` includes PR #244 documentation updates. PR #244 CI and post-merge main CI after PR #243 passed; main CI after PR #242 passed on retry [#38921421584](https://github.com/vorlocsev/dvinholm/actions/runs/38921421584). The initial public CI asset publish attempt hit a transient GitHub HTTP 500.
+
 1. [ ] Review the current-main test inventory and CI test report to identify remaining untested release-critical paths; avoid duplicating already-covered lifecycle/timeout tests.
-2. [ ] Continue updater failure-path review: partial-download I/O failure (#235), cancellation after partial content (#237), SHA-256 mismatch cleanup (#239), corrupt ZIP cleanup (#241), and missing-executable cleanup (#242) are covered. PR #243 adds backup/rollback handling for replacement failures; PR and branch CI passed, but post-merge main CI and runtime execution of the PowerShell rollback still need verification.
+2. [ ] Continue updater failure-path review: partial-download I/O failure (#235), cancellation after partial content (#237), SHA-256 mismatch cleanup (#239), corrupt ZIP cleanup (#241), and missing-executable cleanup (#242) are covered. PR #243 adds backup/rollback handling for replacement failures; PR and branch CI passed; post-merge main CI [#38922622760](https://github.com/vorlocsev/dvinholm/actions/runs/38922622760) also passed. Runtime execution of the PowerShell rollback is still unverified.
 3. [ ] Verify UDS read-only command gating and UI state transitions in code: Read VIN and Start Monitor should become enabled only when the required J2534/CAN session is active; do not bypass these safety gates.
 4. [ ] Review cancellation/disconnect behavior while VIN/DTC reads or monitoring are active; add deterministic virtual-adapter tests for any uncovered race.
 5. [ ] Re-run full CI after each change; update this roadmap and `AI_WORKLOG.md` only with confirmed results.
