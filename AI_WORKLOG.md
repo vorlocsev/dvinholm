@@ -1576,3 +1576,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Profile names/data remain distinct while switching; no cross-profile mixing was observed.
 - This verifies local profile selection and data isolation only. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
 - Next: verify safe deletion behavior using only the disposable `TEST-ECU` profile, keeping the original useful profile untouched.
+
+
+## Manual Windows verification — delete disposable profile safely (2026-10-16)
+
+- User confirmed that deleting the disposable `TEST-ECU` profile removes it from the profile list, the original profile remains intact, and after restarting Dvinholm the deleted test profile does not reappear.
+- This verifies local profile deletion/persistence and preservation of the remaining profile only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: run a final software-only profile workflow check, then review outstanding release-gate items and PR/CI status before deciding whether to prepare release 0.2.0.
