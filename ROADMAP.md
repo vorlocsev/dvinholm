@@ -560,3 +560,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Verify CI status for the current branch head and review release readiness.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
 - Do not merge the PR or publish release 0.2.0 without explicit user authorization.
+
+
+## Manual Windows UI verification — UDS controls across ECU profiles while disconnected (2026-10-16)
+
+- [x] Read VIN, Read DTC, and Read DID stay unavailable when switching between saved ECU profiles without an adapter.
+- [x] No false connected state appears; returning to the primary profile and closing the app work normally.
+- [ ] Finish remaining pre-release UI checks.
+- [ ] Verify CI status for the current branch head and review release readiness.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
+- Do not merge the PR or publish release 0.2.0 without explicit user authorization.
