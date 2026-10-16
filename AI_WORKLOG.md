@@ -1618,3 +1618,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This verifies local profile-import handling for an unexpected field type only; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: test an unknown/extra JSON property in a disposable profile copy and confirm the app imports or rejects it safely without altering the original profile.
+
+
+## Manual Windows verification — extra unknown JSON property (2026-10-16)
+
+- User confirmed successful handling of a profile JSON copy containing an extra property (`test_extra_field`) while preserving the original profile.
+- This verifies local profile-import behavior with an unknown/extra property only; it does not establish whether the importer persists or discards the extra property unless separately inspected.
+- No ECU communication was involved. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
+- Next: test importing the same valid profile JSON twice and confirm there is no unintended duplicate or corruption of the saved profile list.
