@@ -1,3 +1,13 @@
+## Latest checkpoint — PR #244 merged and CI verified (2026-10-16)
+
+- PR [#244](https://github.com/vorlocsev/dvinholm/pull/244) merged as `8b5797a96791a26775e0a379c36d5ea20559137b`; it records the updater rollback behavior and the important limitation that current tests inspect the generated PowerShell text rather than executing rollback.
+- PR CI [#38922788812](https://github.com/vorlocsev/dvinholm/actions/runs/38922788812) and branch CI [#38922769753](https://github.com/vorlocsev/dvinholm/actions/runs/38922769753) passed. Additional branch validation runs [#38922756834](https://github.com/vorlocsev/dvinholm/actions/runs/38922756834) and [#38922728308](https://github.com/vorlocsev/dvinholm/actions/runs/38922728308) passed.
+- Post-merge main CI for PR #243 passed: [#38922622760](https://github.com/vorlocsev/dvinholm/actions/runs/38922622760). The previously failed main run for PR #242 passed on retry (attempt 2): [#38921421584](https://github.com/vorlocsev/dvinholm/actions/runs/38921421584); its first failure was only the public CI asset publish step returning GitHub HTTP 500.
+- Current main checkpoint: `8b5797a96791a26775e0a379c36d5ea20559137b`.
+- Next: create deterministic Windows-only runtime coverage for the updater's replacement-failure rollback in isolated temporary directories. Do not overwrite the real app, launch the actual application, or claim rollback verified until the script is actually exercised. Preserve physical J2534 adapter/vehicle testing as deferred.
+
+---
+
 ## Latest checkpoint — updater replacement rollback (2026-10-16)
 
 - PR [#243](https://github.com/vorlocsev/dvinholm/pull/243) passed PR CI [#38921860383](https://github.com/vorlocsev/dvinholm/actions/runs/38921860383) and branch CI [#38921855588](https://github.com/vorlocsev/dvinholm/actions/runs/38921855588), then was squash-merged as `bee02031b3e654d6b7932e0b4f7b32be76495f0b`.
