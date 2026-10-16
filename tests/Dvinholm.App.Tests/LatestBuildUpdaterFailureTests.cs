@@ -461,6 +461,7 @@ public sealed class LatestBuildUpdaterFailureTests
             Assert.DoesNotContain("System32\\robocopy.exe", generated, StringComparison.OrdinalIgnoreCase);
 
             var mocks = @"
+function Wait-Process { param([int]$Id) }
 function Invoke-TestRobocopy {
     param([string]$From, [string]$To, [Parameter(ValueFromRemainingArguments=$true)][string[]]$Options)
     if ($From -eq $env:DVINHOLM_TEST_FAIL_SOURCE) {
