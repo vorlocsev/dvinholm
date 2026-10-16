@@ -1,7 +1,7 @@
 # Dvinholm development roadmap
 
-Updated: 2026-10-16  
-Current main checkpoint: `23e12e0f188178d469112df44fc1138e26100cab`  
+Updated: 2026-10-17  
+Current main checkpoint: `6620ad2bf9b4e3daa3b6e27b2347181e9f80b6c2`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
@@ -834,3 +834,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Independently inspect the exact v0.1.1 release archive. GitHub release metadata lists the published SHA-256, but the archive bytes have not yet been independently downloaded/inspected; metadata alone is not a binary verification.
 - [ ] Active-session UI transition for Monitor/UDS remains unverified because no physical J2534 adapter is available. Disconnected-state gating and source guards have been reviewed; no live CAN/UDS session was tested.
 - Stable v0.2.0 remains unpublished and requires explicit user authorization. Physical J2534 adapter and vehicle checks remain deferred to a future hardware-validation cycle.
+
+
+## Post-PR #261 main CI verification — 2026-10-17
+
+- [x] PR [#261](https://github.com/vorlocsev/dvinholm/pull/261) merged as `6620ad2bf9b4e3daa3b6e27b2347181e9f80b6c2`.
+- [x] Main CI [#2273](https://github.com/vorlocsev/dvinholm/actions/runs/38980902038) completed successfully on that exact commit; build, test, publish, and artifact packaging passed.
+- [x] Updated the roadmap header to the exact current `main` SHA.
+- [ ] Independently download and inspect the exact v0.1.1 release ZIP; GitHub metadata/checksum is not a substitute for inspecting the actual bytes.
+- [ ] Active-session Monitor/UDS enablement still cannot be manually verified without a J2534 adapter. Physical adapter/vehicle validation remains deferred.
+- Stable v0.2.0 remains unpublished and requires explicit user authorization.
