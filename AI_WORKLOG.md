@@ -2063,3 +2063,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The application did not report a false active connection; Start Monitor, Read VIN, Read DTC, and Read DID remained unavailable while disconnected.
 - No physical J2534 adapter or vehicle was used.
 - Next: verify that switching ECU profiles while disconnected keeps all Monitor/UDS actions unavailable and does not leave a stale enabled control.
+
+
+## Manual Windows UI verification — disconnected profile switching (2026-10-16)
+
+- User confirmed switching between the primary and secondary ECU profiles while disconnected leaves Start Monitor, Read VIN, Read DTC, and Read DID unavailable.
+- Both profiles continued to show their own correct CAN IDs; the application remained responsive and did not report an active connection.
+- No physical J2534 adapter or vehicle was used.
+- Next: verify that closing and reopening the profile selector without choosing a different profile does not alter the selected profile, CAN IDs, or disconnected control state.
