@@ -1870,3 +1870,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The temporary `-TEST` suffix was absent; the backup file and source profile were not overwritten or edited.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — import exported ECU profile without overwriting original (2026-10-16)
+
+- User confirmed importing the temporary JSON export was handled correctly and the original ECU profile remained unchanged.
+- The imported profile's name and CAN IDs were checked; no original profile was overwritten.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
