@@ -1722,3 +1722,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - No ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: verify catalog export after the validation tests: export the restored original catalog to a new JSON filename and confirm the file is valid JSON with the expected profile names and fields; do not overwrite the only backup.
+
+
+## Manual Windows verification — export catalog after validation tests (2026-10-16)
+
+- User confirmed the catalog exported successfully to a new JSON file; the file was valid JSON, contained the expected original profile names and key fields, and had no unintended temporary test profiles.
+- The sole backup was not overwritten and no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: import this newly exported JSON into a separate temporary/test catalog or use the app's safe import workflow, then verify profile count, names, and key fields match the exported source. Keep the original backup intact.
