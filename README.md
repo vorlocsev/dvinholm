@@ -3,13 +3,15 @@
 Windows CAN monitor and read-only UDS diagnostic client for Volvo interfaces that expose the SAE J2534 API.
 
 
-## Latest verified CI build and release (2026-10-15)
+## Latest stable release (2026-10-16)
 
-- Published release: [Dvinholm v0.1.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.0), tag `v0.1.0`, exact release commit `b3a9a82e8bb26527b34551c4b93b3e3381a6f94d`.
-- The exact release commit passed Restore, Build, Test, Publish, and Upload artifact in [GitHub Actions run #38644431705](https://github.com/vorlocsev/dvinholm/actions/runs/38644431705).
-- Release asset: [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.1.0/Dvinholm-Windows-x86.zip), 66,752,893 bytes; SHA-256: `990bb1e762b46bc0dff2883558c0b7398924f1e16b6b59434cd51d40047017bb`.
-- This is a portable self-contained x86 build, not an installer. The user-confirmed manual launch/title/no-device check was performed on the preceding CI artifact from [run #38640011679](https://github.com/vorlocsev/dvinholm/actions/runs/38640011679), built from `6a431be2ba7c7bb6451a13ceecadc63dcef83b01`; it was not a manual launch of the exact release asset.
+- Published stable release: [Dvinholm v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1), tag `v0.1.1`, targeting commit `2cb465918a18f7e136d51b1bdd9132d4293e0ade`.
+- The release commit passed Restore, Build, Test, Publish, and artifact upload in [GitHub Actions run #1781](https://github.com/vorlocsev/dvinholm/actions/runs/38837028529).
+- Release asset: [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.1.1/Dvinholm-Windows-x86.zip), 66,766,108 bytes; SHA-256: `3822d13e5a137bd92bf12d35d2a5794053481ef28873d2a08657beb756f3a53a`.
+- This is a portable self-contained x86 build, not an installer. Windows manual checks confirmed updater success/error retry and the compact ECU-profile layout on CI builds; the exact stable release asset has not yet been separately launched by the user.
 - Physical DiCE/Mongoose adapter and vehicle compatibility remain unverified and are deferred to a future hardware-validation cycle.
+
+Previous stable release: [Dvinholm v0.1.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.0), published 2026-10-15.
 
 ## Supported interfaces
 
