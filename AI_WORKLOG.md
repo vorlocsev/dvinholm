@@ -2112,3 +2112,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - No physical J2534 adapter or vehicle was used.
 - PR #255 CI on the latest documentation head was queued at the last check; confirm its final result before release-readiness decisions.
 - Next: verify that exporting the full profile catalog preserves the expected profile count, names, and CAN IDs without modifying the separate backup.
+
+
+## Manual Windows UI verification — full profile catalog export (2026-10-16)
+
+- User confirmed the full catalog exported to a new JSON file with the expected profile count, names, and CAN IDs for the primary, secondary, and imported profiles.
+- No unexpected temporary test values appeared and the separate backup was left untouched.
+- No physical J2534 adapter or vehicle was used.
+- PR #255 CI for the latest head was queued at the last check; confirm the final result before release-readiness decisions.
+- Next: verify the full catalog JSON can be imported as a round trip without unintended duplicates or missing/changed profiles, keeping a separate backup available.
