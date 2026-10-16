@@ -250,3 +250,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Confirmed that out-of-range CAN IDs for the selected identifier format are rejected/not accepted on save and existing profiles remain intact.
 - This was a profile validation check only; no ECU communication or physical adapter/vehicle was used. Hardware validation remains deferred.
 - [ ] Next: verify request and response CAN IDs cannot be identical in a disposable profile; confirm existing profiles remain intact.
+
+
+## Manual UI verification — identical request/response CAN IDs (2026-10-16)
+
+- [x] Confirmed that a profile with identical request and response CAN IDs is rejected/not accepted on save and other profiles remain intact.
+- This was a profile validation check only; no ECU communication or physical adapter/vehicle was used. Hardware validation remains deferred.
+- [ ] Next: verify invalid/malformed diagnostic identifier (DID) validation using a disposable profile, without modifying the existing catalog.
