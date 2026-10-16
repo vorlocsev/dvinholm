@@ -1650,3 +1650,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This verifies cancellation handling for local profile export only; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: export a profile to a new temporary filename, verify the file exists and contains valid JSON, then import it into a disposable test profile/workflow without overwriting the original.
+
+
+## Manual Windows verification — profile export/import round trip (2026-10-16)
+
+- User confirmed exporting a profile to a new temporary filename, verifying that the file exists and contains valid JSON, then importing it without overwriting the original profile succeeded.
+- This confirms the tested local profile export/import round trip and preservation of the original; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: check profile validation and error feedback by importing a JSON object with a required profile field missing (using a disposable copy), confirming the original profile remains intact and the app stays responsive.
