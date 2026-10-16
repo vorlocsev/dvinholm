@@ -1913,3 +1913,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed cancelling the JSON export/save dialog does not show a false export-success message, does not change the source profile, and leaves the app responsive.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — export non-primary ECU profile (2026-10-16)
+
+- User confirmed the non-primary profile displayed its own CAN IDs and its separate JSON export contained the matching profile name and CAN IDs.
+- Existing source and backup files were not overwritten.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
