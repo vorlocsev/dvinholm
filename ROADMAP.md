@@ -104,3 +104,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - This confirms edited profile data persists in local storage across restart; no ECU communication was involved.
 - Physical J2534 adapter and vehicle testing remains deferred to a future hardware-validation cycle.
 - [ ] Continue with a non-destructive software-only profile check; protect the user's only useful profile.
+
+
+## Manual UI verification — edited profile JSON export (2026-10-16)
+
+- [x] User confirmed exporting the edited ECU profile succeeds and the JSON includes the updated profile name with the expected fields/structure intact.
+- This verifies local profile export/serialization only; no ECU communication was involved.
+- Physical J2534 adapter and vehicle testing remains deferred to a future hardware-validation cycle.
+- [ ] Verify import round-trip with a separate copy of the exported JSON, keeping the original profile untouched.
