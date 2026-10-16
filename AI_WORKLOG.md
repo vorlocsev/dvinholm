@@ -1530,3 +1530,9 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed success for the manual retry check after a failed J2534 connection attempt. The app remained usable and the retry path behaved as expected.
 - This was a software/UI check only; no physical J2534 adapter or vehicle was used, so it does not establish hardware compatibility.
 - Next: continue with software-only validation of connection-state controls and error recovery. Keep real adapter/vehicle checks deferred.
+
+## Manual Windows verification — diagnostic controls gated without adapter (2026-10-16)
+
+- User confirmed that with no physical J2534 device connected, Read VIN, Read DTC, and Start Monitor remain unavailable; connection failure is handled without hanging and the app remains usable.
+- This verifies the expected UI safety gate only. It does not verify live CAN/UDS behavior or physical hardware compatibility.
+- Next: continue software-only release checks and keep physical adapter/vehicle tests deferred.
