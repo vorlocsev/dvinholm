@@ -682,3 +682,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Export the full profile catalog and verify expected profile count, names, and CAN IDs; keep the backup untouched.
 - [ ] Verify CI for the current PR #255 head and review remaining release 0.2.0 gates.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
+
+
+## Manual Windows UI verification — full profile catalog export (2026-10-16)
+
+- [x] Confirmed the full catalog JSON has the expected profile count, names, and CAN IDs for primary, secondary, and imported profiles.
+- [x] Confirmed no unexpected test values and no backup overwrite.
+- [ ] Verify full-catalog import round trip without unintended duplicates or missing/changed profiles; preserve a separate backup.
+- [ ] Verify CI for the current PR #255 head and review remaining release 0.2.0 gates.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
