@@ -198,3 +198,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Confirmed cancelling the profile export/save dialog does not show a false successful-save result and leaves the original profile unchanged.
 - Local profile-export UI check only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - [ ] Next: export to a new temporary filename, verify the file exists and is valid JSON, then exercise the export/import round trip without overwriting the original profile.
+
+
+## Manual UI verification — profile export/import round trip (2026-10-16)
+
+- [x] Confirmed export to a new temporary filename produced a file containing valid JSON, and importing it without overwriting the original profile succeeded.
+- This validates the tested local profile export/import round trip only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- [ ] Next: repeat required-field validation with a disposable JSON copy missing a required profile field, confirming the original remains intact and the app stays responsive.
