@@ -2078,3 +2078,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed canceling/closing the profile selector without choosing another profile leaves the selected secondary ECU profile and its CAN IDs unchanged.
 - The connection remains inactive and Start Monitor, Read VIN, Read DTC, and Read DID remain unavailable; no physical J2534 adapter or vehicle was used.
 - Next: verify that changing a profile's CAN ID, then canceling/discarding the edit, restores the saved value and leaves the disconnected UI state unchanged.
+
+
+## Manual Windows UI verification — discard unsaved CAN ID edit (2026-10-16)
+
+- User confirmed canceling/discarding an unsaved CAN ID edit restores the saved value after returning to the profile.
+- Other profile settings remained unchanged and Monitor/UDS actions stayed unavailable while disconnected.
+- No physical J2534 adapter or vehicle was used.
+- Next: verify a valid CAN ID edit can be saved, persists after switching away and back, and can then be restored to the original value.
