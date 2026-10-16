@@ -1,3 +1,13 @@
+## Latest checkpoint — PR #251 merged, post-merge verification pending (2026-10-16)
+
+- PR [#251](https://github.com/vorlocsev/dvinholm/pull/251) was squash-merged as `09a68831ceb855a582c9808f7ac3ce56a7562bbf`.
+- PR-head CI [#38930299279](https://github.com/vorlocsev/dvinholm/actions/runs/38930299279) and branch CI [#38930277558](https://github.com/vorlocsev/dvinholm/actions/runs/38930277558) passed. The prior main checkpoint `6ef6046bfd819b436772c8731495d7cc3cc5fb3b` also passed post-merge CI [#38930123098](https://github.com/vorlocsev/dvinholm/actions/runs/38930123098).
+- The updated roadmap now records PR #251 and the exact current main merge SHA. Do not call the new merge commit green until its own post-merge workflow completes.
+- Review of `MainWindow.xaml.cs` confirms close handling cancels UDS/discovery, waits for tracked operations with bounded timeouts, and avoids disposing the native session while operations remain active. Existing lower-level tests already cover active/queued UDS cancellation and several dispatcher/session disposal races; avoid duplicating those tests.
+- Next: inspect current CI test inventory and test seams for a concrete uncovered UI shutdown race. Only add deterministic virtual-adapter coverage if it tests a distinct gap; do not extract a large lifecycle framework just for tests. Physical J2534 adapter and vehicle testing remain deferred.
+
+---
+
 ## Latest checkpoint — monitor/disconnect fixes and documentation (2026-10-16)
 
 - PR [#250](https://github.com/vorlocsev/dvinholm/pull/250) was squash-merged as `c38e2e1de7c37c0fc9cfff26c7051ca74100a39b`. It keeps a CAN Monitor warning visible when J2534 disconnect begins instead of immediately overwriting it with the generic disconnect status.
