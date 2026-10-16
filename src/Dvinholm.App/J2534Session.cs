@@ -88,7 +88,7 @@ internal sealed class J2534Session : IDisposable
             _bus.Start();
             return true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             // Vendor DLL entry points and teardown can throw despite the
             // adapter contract. Cleanup failures must not escape this method
@@ -125,7 +125,7 @@ internal sealed class J2534Session : IDisposable
             _j2534.Unload();
             return string.Empty;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             return "J2534 adapter cleanup failed due to an unexpected driver error.";
         }
