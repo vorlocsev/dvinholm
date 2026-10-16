@@ -411,3 +411,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] CAN IDs remain unchanged, and the original profile name was restored and saved.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — export profile after name restoration (2026-10-16)
+
+- [x] Export to a separate temporary JSON file is valid and contains the expected original profile name and CAN IDs.
+- [x] Temporary `-TEST` suffix is absent; backup and source profile were not overwritten.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
