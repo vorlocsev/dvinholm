@@ -1,3 +1,13 @@
+## Latest checkpoint — updater replacement rollback (2026-10-16)
+
+- PR [#243](https://github.com/vorlocsev/dvinholm/pull/243) passed PR CI [#38921860383](https://github.com/vorlocsev/dvinholm/actions/runs/38921860383) and branch CI [#38921855588](https://github.com/vorlocsev/dvinholm/actions/runs/38921855588), then was squash-merged as `bee02031b3e654d6b7932e0b4f7b32be76495f0b`.
+- The replacement helper now attempts to copy the current build into a backup, verifies that backup contains `Dvinholm.App.exe`, and attempts to restore/relaunch it if in-place replacement fails.
+- Automated tests assert the generated PowerShell contains the backup/rollback branches and that backup is ordered before replacement. These tests do **not** execute PowerShell, simulate a real copy failure, or prove recovery on Windows.
+- The main CI run for the PR #242 merge [#38921421584](https://github.com/vorlocsev/dvinholm/actions/runs/38921421584) failed only at **Publish public CI asset**; build, tests, publish, and packaging steps succeeded. Investigate this CI publishing failure separately. The post-merge CI for #243 is queued as [#38922622760](https://github.com/vorlocsev/dvinholm/actions/runs/38922622760) and must finish before this main checkpoint is marked verified.
+- Physical J2534 adapter and vehicle testing remain deferred.
+
+---
+
 ## Updater replacement rollback hardening started (2026-10-16)
 
 - PR [#242](https://github.com/vorlocsev/dvinholm/pull/242) passed pull-request CI [run #38920564624](https://github.com/vorlocsev/dvinholm/actions/runs/38920564624) and was squash-merged as `f2a9975353fcaf43ee111210af8cb8c0186a4710`.
