@@ -2281,3 +2281,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - [ ] Check the post-merge main CI run after PR #263.
 - [ ] Active-session Monitor/UDS enablement remains unverified without a valid active J2534/CAN session; the user currently has no physical adapter.
 - Stable v0.2.0 remains unpublished and requires explicit user authorization. Physical adapter/vehicle validation remains deferred.
+
+
+## Post-merge documentation checkpoint — 2026-10-17
+
+- PR [#264](https://github.com/vorlocsev/dvinholm/pull/264) merged as `1749b56d826523bf382f2d287e8f1a30a791286f`; its PR-head CI [#2290](https://github.com/vorlocsev/dvinholm/actions/runs/38983217022) passed.
+- Main CI [#2286](https://github.com/vorlocsev/dvinholm/actions/runs/38983168717) passed on the preceding code merge `d113d6536cdd6d2c76bd5ecfbd4b1a858a955922`, including the published v0.1.1 release ZIP audit.
+- Post-merge main CI [#2291](https://github.com/vorlocsev/dvinholm/actions/runs/38983741022) for `1749b56d826523bf382f2d287e8f1a30a791286f` was still running at the time of this update; do not mark it green until it completes.
+- Exact release ZIP audit is complete. Active-session Monitor/UDS transition remains unverified without a valid J2534/CAN session. Stable v0.2.0 remains unpublished and requires explicit user authorization.
