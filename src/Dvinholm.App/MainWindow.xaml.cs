@@ -724,7 +724,18 @@ public sealed partial class MainWindow : Window
                 return;
             }
             _udsGate.Release();
+            // StopMonitor requests cancellation and waits briefly, but retains
+            // the task if its worker has not fully unwound. Do not dispose the
+            // session/bus until that subscriber has exited.
+            var monitorTask = _monitorTask;
             StopMonitor();
+            if (monitorTask is not null)
+            {
+                try { await monitorTask; }
+                catch (OperationCanceledException) { }
+                catch (ObjectDisposedException) { }
+            }
+
             ConnectButton.IsEnabled = false;
             HardwareFilterButton.IsEnabled = false;
             StartButton.IsEnabled = false;
