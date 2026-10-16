@@ -419,3 +419,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Temporary `-TEST` suffix is absent; backup and source profile were not overwritten.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — import exported profile safely (2026-10-16)
+
+- [x] Import of the exported ECU profile JSON was handled correctly.
+- [x] Imported profile details were checked and the original profile was not overwritten.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
