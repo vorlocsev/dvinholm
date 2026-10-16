@@ -1738,3 +1738,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The original backup was kept separately. No ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: perform a final Windows build/package smoke check on the current candidate: launch the app, verify the main window loads without an unhandled error, then close it normally. Do not treat this as release approval; exact-head CI and remaining roadmap gates still need verification.
+
+
+## Manual Windows verification — candidate startup and normal exit (2026-10-16)
+
+- User confirmed the current Windows candidate launches with the main window fully loaded, without an unhandled error or crash, and closes normally.
+- This was a startup/shutdown smoke check only. No ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: verify the current pull request head and CI/check status before deciding which release gates remain. Do not merge or publish a release without explicit user authorization.
