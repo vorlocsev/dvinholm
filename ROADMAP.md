@@ -580,3 +580,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Verify CI status for the current branch head and review release readiness.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
 - Do not merge the PR or publish release 0.2.0 without explicit user authorization.
+
+
+## Manual Windows UI verification — disconnected state after restart (2026-10-16)
+
+- [x] After restart without a physical J2534 adapter, no active connection is reported.
+- [x] Start Monitor, Read VIN, Read DTC, and Read DID remain unavailable while disconnected.
+- [ ] Finish remaining pre-release UI checks.
+- [ ] Verify CI status for the current branch head and review release readiness.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
+- Do not merge the PR or publish release 0.2.0 without explicit user authorization.
