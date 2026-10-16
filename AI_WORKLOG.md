@@ -1899,3 +1899,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed the overwrite/duplicate-name dialog could be dismissed safely; the app remained responsive and the existing profile and CAN IDs were unchanged after restart.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — cancel import file picker (2026-10-16)
+
+- User confirmed cancelling the import file picker leaves the profile list and selected profile unchanged and does not display a false import-success message.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
