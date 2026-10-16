@@ -1,3 +1,14 @@
+## Windows manual verification — updater same-SHA fix (2026-10-16, follow-up)
+
+- User reports the updater button now displays `Check update` instead of `Replace files and restart` after updating to the corrected build, addressing the repeated-install prompt for the same SHA.
+- CI #1763 (push) and #1764 (PR validation) for commit `2ffca912f2a80e12960b1bbadfcfaf1fad36da93` both succeeded:
+  - https://github.com/vorlocsev/dvinholm/actions/runs/38834397342
+  - https://github.com/vorlocsev/dvinholm/actions/runs/38834401620
+- PR #227 remains open and unmerged. PR #228 remains open and unmerged. No PR was merged without explicit user approval.
+- Physical J2534 adapter testing remains deferred to a future release.
+
+---
+
 ## Windows manual updater regression — same SHA still offered Replace (2026-10-16)
 
 - User reported `Current: 0.1.0 · f16912e` and `Available: CI #1761 · f16912e`, but the button still offered replacement after updating.
