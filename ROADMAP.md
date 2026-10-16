@@ -372,3 +372,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] The profile's original settings remain intact after rejection.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — recovery after invalid CAN ID (2026-10-16)
+
+- [x] After rejecting an out-of-range CAN ID, the original profile values remain intact and are displayed again after switching away and back.
+- [x] No false persistent error or app malfunction observed.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
