@@ -406,4 +406,25 @@ public sealed class LatestBuildUpdaterFailureTests
             CancellationToken cancellationToken) =>
             Task.FromResult(responseFactory(request));
     }
+
+    [Fact]
+    public void ReplacementScript_CreatesBackupBeforeReplacingAndRestoresOnFailure()
+    {
+        var script = LatestBuildUpdater.BuildReplacementScript(
+            @"C:\\staging",
+            @"C:\\app\\Builds\\current",
+            1234,
+            @"C:\\temp\\replace.ps1",
+            @"C:\\backup\\previous");
+
+        Assert.Contains("$backupReady = $false", script);
+        Assert.Contains("$replacementStarted = $true", script);
+        Assert.Contains("$destination $backup /MIR", script);
+        Assert.Contains("$source $destination /MIR", script);
+        Assert.Contains("if ($replacementStarted -and $hadDestination -and $backupReady)", script);
+        Assert.Contains("$backup $destination /MIR", script);
+        Assert.Contains("The previous build was restored and will be restarted.", script);
+        Assert.Contains("Rollback failed:", script);
+    }
+
 }
