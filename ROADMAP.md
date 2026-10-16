@@ -434,3 +434,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Re-import the same temporary ECU-profile JSON; original profile and CAN IDs remain unchanged, with no hang or false success.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — import name collision (2026-10-16)
+
+- [x] Import JSON using an existing profile name and cancel overwrite; original profile and CAN IDs remain unchanged, and the app stays responsive.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
