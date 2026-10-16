@@ -462,3 +462,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Cancel the JSON export/save dialog; no false success message, source profile unchanged, app remains responsive.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — export non-primary ECU profile (2026-10-16)
+
+- [x] Export a non-primary ECU profile and verify the JSON contains its own name and CAN IDs; source and backup files remain untouched.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
