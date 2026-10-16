@@ -1,3 +1,13 @@
+## Post-PR #260 main CI verification (2026-10-17)
+
+- PR [#260](https://github.com/vorlocsev/dvinholm/pull/260) merged as `23e12e0f188178d469112df44fc1138e26100cab`.
+- Main CI [#2268](https://github.com/vorlocsev/dvinholm/actions/runs/38979739897) completed successfully on that exact merge commit; build job passed and no failed steps were reported.
+- Updated `ROADMAP.md` to use the exact current main SHA and record the successful post-merge CI checkpoint.
+- Remaining release-review items: independently inspect the actual v0.1.1 release archive (asset metadata/digest is available but the bytes have not been inspected); active-session Monitor/UDS UI transition remains unverified because no physical adapter is available.
+- No physical J2534 adapter or vehicle testing was performed. Hardware validation remains deferred; stable v0.2.0 remains unpublished and requires explicit user authorization.
+
+---
+
 ## Follow-up — investigate Windows rollback-test cleanup failure (2026-10-16)
 
 - The first main CI attempt for `09a68831ceb855a582c9808f7ac3ce56a7562bbf` failed with 475/476 tests passing. The sole failure was `LatestBuildUpdaterFailureTests.ReplacementScript_RestoresPreviousBuildWhenReplacementFailsAtRuntime`: cleanup could not delete its isolated temporary root because Windows reported it was still in use.
