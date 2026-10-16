@@ -1754,3 +1754,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This is a no-device software behavior check only. No ECU communication was involved.
 - Physical adapter and vehicle verification remains explicitly deferred to a future release.
 - Next: inspect the latest CI run for the current PR head and record its final result before evaluating release readiness.
+
+
+## UDS UI state audit — 2026-10-16
+
+- Reviewed current-main `src/Dvinholm.App/MainWindow.xaml.cs` and the related test inventory.
+- Confirmed by source inspection: Read VIN/DTC/DID all route through `RunUdsOperationAsync` and `TryGetUdsClient`; the client guard requires an active connection and a selected CAN-ID format with valid IDs. UDS and ECU discovery share `_udsGate`; the UI disables UDS controls during a request and restores them according to `_connected`.
+- Confirmed close handling cancels discovery/UDS, waits with bounded timeouts, and only schedules session disposal when tracked tasks and the UDS gate have stopped. This is a source audit, not a new runtime test.
+- Existing tests already cover active/queued UDS cancellation, ISO-TP cancellation/disposal, dispatcher/session disposal races, CAN ID parsing, and virtual-adapter UDS flows. No duplicate test was added.
+- Next: manually verify disconnected/failed-connect button state (Start Monitor and Read VIN/DTC/DID remain disabled, Connect becomes available for retry) on the current Windows candidate. No physical adapter is needed; real adapter/vehicle tests remain deferred.
