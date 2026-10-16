@@ -725,3 +725,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Re-check CI for the current head after these documentation updates.
 - [ ] Inspect PR #255 review requirements and remaining software-only release 0.2.0 gates before making any release-readiness decision.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
+
+
+## CI verification — PR #255 latest documentation head (run 2218, 2026-10-16)
+
+- [x] CI run 2218 passed for head `6ec1af6551842a21a338ceab0c5e7bbbf8ac665c`: restore, build, automated tests, publish, and CI artifact upload succeeded.
+- [x] Confirmed PR #255 is documentation-only (`AI_WORKLOG.md`, `ROADMAP.md`) and remains open/unmerged.
+- [ ] Verify UDS/Monitor controls transition to enabled only after a valid active J2534/CAN session; this requires a suitable adapter/session and is not validated by the disconnected-state smoke test.
+- [ ] Complete the release-candidate checklist: review release notes and verify the exact release archive separately from CI artifacts.
+- [ ] Re-check CI on the eventual merge commit before any release.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
