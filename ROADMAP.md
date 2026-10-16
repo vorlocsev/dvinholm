@@ -264,3 +264,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] User confirmed malformed DID input was handled safely without hanging or damaging existing profiles.
 - No ECU communication or physical J2534 adapter/vehicle was used; hardware validation remains deferred.
 - [ ] Next: test duplicate DID handling in a disposable profile/catalog if the UI supports DID editing. If not, record the UI limitation and proceed to another software-only check.
+
+
+## Manual UI verification — duplicate DID entries (2026-10-16)
+
+- [x] User confirmed duplicate DID entries were handled safely without an app hang or damage to existing profiles.
+- No ECU communication or physical J2534 adapter/vehicle was used; hardware validation remains deferred.
+- [ ] Next: export the restored original catalog to a new JSON filename and verify valid JSON, expected profile names, and key fields without overwriting the only backup.
