@@ -205,3 +205,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Confirmed export to a new temporary filename produced a file containing valid JSON, and importing it without overwriting the original profile succeeded.
 - This validates the tested local profile export/import round trip only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - [ ] Next: repeat required-field validation with a disposable JSON copy missing a required profile field, confirming the original remains intact and the app stays responsive.
+
+
+## Manual UI verification — required profile field missing (2026-10-16)
+
+- [x] User confirmed successful handling of a syntactically valid profile JSON copy with another required field omitted.
+- Exact field and UI behavior were not specified; no specific error message or fallback is claimed. The original profile was kept separate.
+- Local profile-import validation only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- [ ] Next: inspect the repository's profile JSON schema and validation rules before choosing further field-specific tests; do not guess required fields.
