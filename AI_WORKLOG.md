@@ -1763,3 +1763,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Confirmed close handling cancels discovery/UDS, waits with bounded timeouts, and only schedules session disposal when tracked tasks and the UDS gate have stopped. This is a source audit, not a new runtime test.
 - Existing tests already cover active/queued UDS cancellation, ISO-TP cancellation/disposal, dispatcher/session disposal races, CAN ID parsing, and virtual-adapter UDS flows. No duplicate test was added.
 - Next: manually verify disconnected/failed-connect button state (Start Monitor and Read VIN/DTC/DID remain disabled, Connect becomes available for retry) on the current Windows candidate. No physical adapter is needed; real adapter/vehicle tests remain deferred.
+
+
+## Manual Windows UI verification — failed J2534 path and disconnected controls (2026-10-16)
+
+- User confirmed the manual test passed: configuring a deliberately nonexistent J2534 DLL path produces a handled connection error; Connect is available for retry afterward; Start Monitor, Read VIN, Read DTC, and Read DID remain disabled while disconnected.
+- No physical J2534 adapter or vehicle was used.
+- This closes the current manual UI check for disconnected-state control availability after a failed connection.
+- Next: continue the remaining pre-release checks with the virtual/no-adapter setup; keep physical adapter and vehicle verification deferred to a future release.
