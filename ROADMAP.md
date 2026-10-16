@@ -504,3 +504,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Restart after import edge-case checks; original profiles, names, and CAN IDs remain correct, and the app closes normally.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — rename profile, restart, restore name (2026-10-16)
+
+- [x] Verify profile rename persists across restart without changing CAN IDs, then restore and save the original name.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
