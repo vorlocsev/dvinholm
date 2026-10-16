@@ -1714,3 +1714,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - No ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: verify duplicate DID handling in a disposable profile/catalog, if the UI supports editing DID entries; otherwise report that the UI does not expose DID editing and continue with the next available software-only check.
+
+
+## Manual Windows verification — duplicate DID entries (2026-10-16)
+
+- User confirmed the duplicate DID test succeeded: repeated DID entries were handled safely, without an app hang or damage to existing profiles.
+- No ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: verify catalog export after the validation tests: export the restored original catalog to a new JSON filename and confirm the file is valid JSON with the expected profile names and fields; do not overwrite the only backup.
