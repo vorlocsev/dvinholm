@@ -1,3 +1,88 @@
+## CI checkpoint — compact ECU layout PR #227 (2026-10-16)
+
+- Latest branch head `596f3da14d2663366d93202dfd612672ffb06419` passed both GitHub Actions workflows: push run [#1771](https://github.com/vorlocsev/dvinholm/actions/runs/38835346384) and pull-request validation [#1772](https://github.com/vorlocsev/dvinholm/actions/runs/38835349822).
+- The preceding head's push and PR validation also passed (runs [#1769](https://github.com/vorlocsev/dvinholm/actions/runs/38835188813) and [#1770](https://github.com/vorlocsev/dvinholm/actions/runs/38835192316)). The earlier “CI still pending” note below is historical and superseded by this checkpoint.
+- User-confirmed manual checks: CAN Monitor remains visible after selecting an ECU profile; profile selector and Import/Export JSON controls are not clipped at normal size or after narrowing the window.
+- This validates CI and the reported layout behavior only; it does not test live CAN traffic or physical J2534 hardware. Physical-adapter verification remains deferred to a future release.
+- PR [#227](https://github.com/vorlocsev/dvinholm/pull/227) remains open and unmerged. Do not merge without explicit user approval.
+
+---
+
+## Windows manual verification — compact ECU layout at narrower width (2026-10-16)
+
+- User confirmed that the ECU profile selector and Import/Export JSON controls remain visible after reducing the application window width.
+- Together with the prior checks (CAN Monitor stays visible after selecting a profile; profile-row controls are not clipped at the normal window size), the compact ECU layout's targeted manual visibility checks are complete for the tested window sizes.
+- These checks cover UI layout only, not live CAN monitoring or physical J2534 hardware. Real-adapter testing remains deferred to a future release.
+- Latest code/worklog commit CI is still pending at handoff; check runs [#1769](https://github.com/vorlocsev/dvinholm/actions/runs/38835188813) and [#1770](https://github.com/vorlocsev/dvinholm/actions/runs/38835192316) before calling the PR fully validated. PR [#227](https://github.com/vorlocsev/dvinholm/pull/227) remains open and unmerged.
+
+---
+
+## Windows manual verification — compact ECU profile controls (2026-10-16)
+
+- User confirmed that the selected ECU profile row's controls are fully visible and not clipped, including the profile selector and Import/Export JSON actions.
+- Combined with the preceding check that CAN Monitor remains visible after selecting a profile, the compact layout's targeted vertical-space regression is manually verified at the user's current window size.
+- This verifies layout visibility only; it does not test live CAN monitoring or physical J2534 hardware. Real-adapter testing remains deferred to a future release.
+- PR [#227](https://github.com/vorlocsev/dvinholm/pull/227) remains open and unmerged. Next: perform a brief resize check (if practical) to ensure the compact row remains usable at a narrower window width; then review the PR's current CI status before any merge decision.
+
+---
+
+## Windows manual verification — compact ECU profile layout (2026-10-16)
+
+- User confirmed that **CAN Monitor is visible** after selecting an ECU profile in the compact layout, resolving the reported vertical-space regression for this check.
+- This is a visual layout check only; it does not verify live CAN monitoring or physical J2534 hardware. Real-adapter testing remains deferred to a future release.
+- PR [#227](https://github.com/vorlocsev/dvinholm/pull/227) remains open and unmerged. Next: continue checking that the profile row's controls are not clipped and that the layout remains usable at the current window size.
+
+---
+
+## Windows manual verification — updater same-SHA fix (2026-10-16, follow-up)
+
+- User reports the updater button now displays `Check update` instead of `Replace files and restart` after updating to the corrected build, addressing the repeated-install prompt for the same SHA.
+- CI #1763 (push) and #1764 (PR validation) for commit `2ffca912f2a80e12960b1bbadfcfaf1fad36da93` both succeeded:
+  - https://github.com/vorlocsev/dvinholm/actions/runs/38834397342
+  - https://github.com/vorlocsev/dvinholm/actions/runs/38834401620
+- PR #227 remains open and unmerged. PR #228 remains open and unmerged. No PR was merged without explicit user approval.
+- Physical J2534 adapter testing remains deferred to a future release.
+
+---
+
+## Windows manual updater regression — same SHA still offered Replace (2026-10-16)
+
+- User reported `Current: 0.1.0 · f16912e` and `Available: CI #1761 · f16912e`, but the button still offered replacement after updating.
+- Root cause: the compact-ECU-profiles branch still used the old comparison that treated a missing installed CI run number as an update, even when the commit SHA matched. The earlier SHA-only fix existed on PR #228 but was not present in this branch's build.
+- Applied the SHA-only availability check to this branch too. Identical commit SHA now means no update regardless of whether the installed CI run number is embedded/parseable; a different or unknown SHA still offers replacement. The idle button label is `Check update`.
+- Added regression tests for same-SHA/no-run-number and different-SHA cases.
+- CI and Windows re-test are pending on this new branch commit. PR [#227](https://github.com/vorlocsev/dvinholm/pull/227) remains open and unmerged. PR [#228](https://github.com/vorlocsev/dvinholm/pull/228) also remains open and unmerged.
+- Physical J2534 adapter testing remains deferred to a future release.
+
+---
+
+## UI layout validation checkpoint — PR #227 (2026-10-16)
+
+- Checked commit `d8210f95c70b94cde6146441f10c5b24e41e454d`: both GitHub Actions build checks completed successfully ([run 38824990193](https://github.com/vorlocsev/dvinholm/actions/runs/38824990193), [run 38824981023](https://github.com/vorlocsev/dvinholm/actions/runs/38824981023)).
+- The compact ECU-profile layout change is CI-validated, but Windows visual verification remains pending: confirm CAN Monitor remains visible while selecting an ECU profile and that the compact row does not clip controls.
+- No physical J2534 adapter is required for this layout check; adapter-dependent functions such as Read VIN and starting a live monitor can remain unavailable without a connected device.
+- PR [#227](https://github.com/vorlocsev/dvinholm/pull/227) remains open and unmerged.
+
+---
+
+# UI layout follow-up — compact ECU profiles (2026-10-16)
+
+## User-reported issue
+- The ECU Profiles section consumed too much vertical space. After selecting a profile, the CAN Monitor table was pushed below the visible window area.
+
+## Changes on branch `ui/compact-ecu-profiles`
+- Reduced the ECU discovery list's fixed height from 100 px to 76 px.
+- Replaced the tall stacked “Selected ECU” card with a single compact row containing ECU details, profile selector, and Import/Export JSON actions.
+- Removed the profile selector's separate header and clipped long ECU detail text with an ellipsis so it does not expand the row vertically.
+- This is a layout-only change; connection-gated controls remain gated. No physical adapter test is required for this UI change.
+
+## Validation status
+- Source change committed; CI and Windows manual validation have not yet been confirmed.
+- Next: review PR CI, then ask the user to launch the new artifact and confirm that CAN Monitor remains visible when selecting an ECU profile. If the table still moves out of view, inspect the remaining parent-grid sizing and adapt the layout further.
+- Physical J2534 adapter validation remains deferred to a future release.
+
+---
+
 # Manual regression update — 2026-10-15 (obsolete-file cleanup confirmed)
 
 - User confirmed that the in-place updater removes obsolete files from the application directory during replacement.
