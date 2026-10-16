@@ -664,3 +664,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Verify CI and required checks for the current branch head / PR #255.
 - [ ] Review remaining release 0.2.0 gates after checking current CI results.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
+
+
+## Manual Windows UI verification — export restored ECU profile (2026-10-16)
+
+- [x] Confirmed exported secondary-profile JSON contains the expected profile name and restored request/response CAN IDs.
+- [x] Confirmed no temporary test name/test CAN ID appears and backup files remain untouched.
+- [ ] Import the exported JSON as a separate profile and verify its name and CAN IDs without overwriting the source profile.
+- [ ] Verify CI for the current branch head and review remaining release 0.2.0 gates.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
