@@ -1824,3 +1824,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed that after switching to a non-primary ECU profile, an out-of-range CAN ID is not accepted on save and the profile's original settings remain intact.
 - This was performed without a physical J2534 adapter or vehicle.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — profile recovery after invalid CAN ID (2026-10-16)
+
+- User confirmed that after an out-of-range CAN ID is rejected, the original CAN IDs remain intact and can be re-opened by switching away from and back to the profile.
+- No false persistent error or app malfunction was observed.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
