@@ -1987,3 +1987,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed a valid changed CAN ID could be saved, persisted across profile switching, and then restored to its original value successfully.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — restart after CAN ID save/restore (2026-10-16)
+
+- User confirmed the app restarted normally after the CAN ID save/restore test; the primary profile's restored name and CAN IDs remained correct, and switching to another profile and back showed the correct values.
+- No physical J2534 adapter or vehicle was used.
+- Next: finish remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
