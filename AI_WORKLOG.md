@@ -2214,3 +2214,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - PR #256 is open and unmerged. Do not claim the behavior is active on `main` until the PR is reviewed and merged.
 - This addresses avoiding public updater prereleases from documentation/feature branches. Stable release `0.2.0` remains unpublished.
 - Physical J2534 adapter and vehicle validation remain deferred to a future release.
+
+
+## CI failure follow-up — PR #257 (2026-10-16)
+- CI #2243 for docs PR #255 failed in `LatestBuildUpdaterFailureTests.ReplacementScript_RestoresPreviousBuildWhenReplacementFailsAtRuntime`: 475 passed, 1 failed. The failure occurred during temporary-directory cleanup because PowerShell still held a handle; the isolated script also used synthetic PID `-1` without mocking `Wait-Process`.
+- Opened PR #257 (`fix/rollback-test-mock-wait-process`) adding a no-op `Wait-Process` mock for the isolated runtime test. PR #257 remains open/unmerged.
+- CI #2246 for PR #257 passed: restore, build, test, publish, and artifact upload succeeded; public updater/release steps were skipped as expected for a PR.
+- Follow-up: rerun/check CI for PR #255 and record its outcome. Do not merge PRs or publish v0.2.0 without explicit authorization. Physical J2534 adapter/vehicle validation remains deferred to a future release.
