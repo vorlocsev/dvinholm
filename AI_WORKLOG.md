@@ -1,3 +1,12 @@
+## Follow-up — identical commit SHA still triggered Replace (2026-10-16)
+
+- User tested the CI #1751 installation and reported: `Current: 0.1.0 · 6fd0da7` while `Available: CI #1751 · 6fd0da7`, with the Replace button still shown.
+- Root cause: the availability check required both the commit SHA and CI run number to match. The installed assembly exposes the correct commit SHA but its informational version does not expose a parseable `.ci1751` suffix, so the run number is null even though the source commit is identical.
+- Changed `LatestBuildUpdater.IsUpdateAvailable` to treat an identical commit SHA as already installed, independent of whether the installed CI run number can be parsed. A different commit SHA still offers Replace.
+- Updated the UI to use the centralized comparison and added regression tests for identical-SHA/no-run-number and different-SHA cases.
+- Commits: `18306c3` updater helper; `bf780fb` UI comparison; `612aefb` regression tests. CI validation is pending.
+- PR #228 remains open and unmerged. Physical J2534 adapter testing remains deferred to a future release.
+
 ## Follow-up — repeated Replace action caused by worklog-only CI builds (2026-10-16)
 
 - User confirmed the app still offered `Replace files and restart` after installing CI #1747.
