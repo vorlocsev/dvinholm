@@ -1,3 +1,12 @@
+## Corrupt updater archive cleanup test (2026-10-16)
+
+- PR [#240](https://github.com/vorlocsev/dvinholm/pull/240) was merged as `3062ea90bf29bcb9fa5939c6534192d7a6e11570`; its PR and branch CI passed. Post-merge main CI [#38917668043](https://github.com/vorlocsev/dvinholm/actions/runs/38917668043) was still running at this checkpoint.
+- Added a stronger assertion to `CorruptZip_ThrowsAndCleansTemporaryArchiveAndStagingDirectory`: a corrupt ZIP must leave neither the temporary downloaded archive nor the staging directory behind.
+- The test uses a local HTTP stub and a tiny invalid archive; it does not contact GitHub or require physical J2534 hardware.
+- Validation pending: PR and branch CI must pass before this regression test is marked verified. Physical adapter/vehicle testing remains deferred.
+
+---
+
 ## Updater SHA-256 mismatch cleanup test strengthened (2026-10-16)
 
 - PR [#239](https://github.com/vorlocsev/dvinholm/pull/239) was merged as `adee816ea2bf5704537b25f8fe6720ad0e1137a1` after PR and branch CI succeeded.

@@ -189,7 +189,7 @@ public sealed class LatestBuildUpdaterFailureTests
     }
 
     [Fact]
-    public async Task CorruptZip_ThrowsAndCleansStagingDirectory()
+    public async Task CorruptZip_ThrowsAndCleansTemporaryArchiveAndStagingDirectory()
     {
         var bytes = new byte[] { 0x44, 0x56, 0x49, 0x4E, 0x48, 0x4F, 0x4C, 0x4D };
         using var client = CreateClient(_ => new HttpResponseMessage(HttpStatusCode.OK)
@@ -198,11 +198,13 @@ public sealed class LatestBuildUpdaterFailureTests
         });
         var build = BuildInfo(bytes);
         var stagingRoot = GetStagingRoot();
+        var tempPattern = $"dvinholm-{build.CommitSha}-*.zip";
 
         await Assert.ThrowsAnyAsync<Exception>(
             () => LatestBuildUpdater.DownloadAndPrepareAsync(build, client));
 
         AssertNoStagingDirectory(stagingRoot, build.CommitSha);
+        Assert.Empty(Directory.EnumerateFiles(Path.GetTempPath(), tempPattern));
     }
 
     [Fact]
