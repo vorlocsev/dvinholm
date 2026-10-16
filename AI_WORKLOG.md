@@ -2121,3 +2121,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - No physical J2534 adapter or vehicle was used.
 - PR #255 CI for the latest head was queued at the last check; confirm the final result before release-readiness decisions.
 - Next: verify the full catalog JSON can be imported as a round trip without unintended duplicates or missing/changed profiles, keeping a separate backup available.
+
+
+## Manual Windows UI verification — profile catalog survives restart (2026-10-16)
+
+- User confirmed that after a normal close and relaunch, the profile count matched the exported catalog and the primary, secondary, and imported profiles retained their expected names and CAN IDs.
+- No profiles were missing or duplicated, and no false active connection was shown without a physical adapter.
+- No physical J2534 adapter or vehicle was used.
+- Next: verify the current PR #255 head and its CI status before deciding the remaining software-only release gates.
