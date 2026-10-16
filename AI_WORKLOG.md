@@ -1,3 +1,14 @@
+## Updater partial-download cleanup test merged (2026-10-16)
+
+- PR [#235](https://github.com/vorlocsev/dvinholm/pull/235) was squash-merged as `2f788ca4b1a03452b8370e16c782466161532bba`.
+- Added `PartialDownloadFailure_CleansTemporaryArchiveAndStagingDirectory`, which simulates an I/O failure after the first downloaded chunk and verifies both the temporary ZIP and staging directory are cleaned.
+- PR-head CI succeeded: [PR run #1811](https://github.com/vorlocsev/dvinholm/actions/runs/38910157051) and [branch run #1810](https://github.com/vorlocsev/dvinholm/actions/runs/38910148879).
+- Post-merge `main` CI [run #1812](https://github.com/vorlocsev/dvinholm/actions/runs/38910949365) was still in progress at the time of this entry; do not mark the merge fully validated until it completes successfully.
+- Remaining updater review: confirm failure cleanup for cancellation, digest mismatch, extraction failure, and replacement/restart recovery without duplicating existing tests.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred to a future release.
+
+---
+
 ## Updater metadata hardening merged and verified (2026-10-16)
 
 - Ported the former stale/conflicting PR #225 work onto current `main` in PR [#233](https://github.com/vorlocsev/dvinholm/pull/233); PR #233 was squash-merged as `a21b0bb07eaea83785e6bb4299130f4943d9ebc8`.
