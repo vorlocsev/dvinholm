@@ -1,3 +1,12 @@
+## CI follow-up — cross-branch updater selection test correction (2026-10-16)
+
+- Inspected the failed CI run for the cross-branch updater change. Build succeeded; the test suite reported **451 passed, 1 failed**. The failure was an outdated expected download URL still pointing to `ci-123`, while the test correctly selected the newer feature-branch run `ci-124`.
+- Corrected the expected URL in `LatestBuildLookupTests.cs` to `ci-124`. This is a test expectation correction; the production selection logic already returned the newer eligible branch build.
+- CI on the corrected head is pending. Do not mark this change validated until the full test, publish, and artifact steps pass.
+- PR #228 remains open and unmerged. No Windows manual verification yet; physical J2534 adapter validation remains deferred.
+
+---
+
 # Updater channel correction — 2026-10-16
 
 - User clarified that the in-app updater must offer the newest successful CI build from **any branch**, not only `main`.
