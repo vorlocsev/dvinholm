@@ -455,3 +455,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Cancel the import file picker; profile list and selection stay unchanged, with no false success notification.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — cancel profile export (2026-10-16)
+
+- [x] Cancel the JSON export/save dialog; no false success message, source profile unchanged, app remains responsive.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
