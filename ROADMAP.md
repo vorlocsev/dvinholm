@@ -1,7 +1,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-16  
-Current main checkpoint: `442f041f7afc355166419c489ac8569ae6e3a595`  
+Current main checkpoint: `adee816ea2bf5704537b25f8fe6720ad0e1137a1`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
@@ -16,7 +16,8 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Updater validates SHA-256 metadata when supplied and skips malformed metadata instead of trusting it.
 - [x] Updater can request the release asset API's binary response; tests cover this download path.
 - [x] PR #235 adds a regression test proving a mid-stream download I/O failure cleans up both the temporary ZIP and staging directory; PR and post-merge CI passed.
-- [x] PR #237 adds a regression test for cancellation after the first archive chunk; PR and branch CI passed. Post-merge main CI run [#38912910522](https://github.com/vorlocsev/dvinholm/actions/runs/38912910522) is pending confirmation.
+- [x] PR #237 adds a regression test for cancellation after the first archive chunk; PR, branch, and post-merge main CI passed.
+- [x] PR #239 strengthens SHA-256 mismatch cleanup coverage by asserting both temporary ZIP and staging directory removal; PR and branch CI passed. Latest main CI [#38916569004](https://github.com/vorlocsev/dvinholm/actions/runs/38916569004) is still pending confirmation.
 - [x] Automated coverage exists for CAN receive-dispatcher lifecycle/races, J2534 session lifecycle/read errors, ISO-TP malformed frames/timeouts/cancellation/recovery, UDS VIN/DTC parsing and response handling, and virtual J2534 adapter scenarios.
 - [x] User manually confirmed the updater success path and error/retry handling on Windows 11 LTSC IoT.
 - [x] User manually confirmed ECU profile controls and CAN Monitor remain visible in the compact layout, including a narrower window width.
@@ -24,7 +25,7 @@ This roadmap separates software/CI verification from physical adapter validation
 ## Next software-only work
 
 1. [ ] Review the current-main test inventory and CI test report to identify remaining untested release-critical paths; avoid duplicating already-covered lifecycle/timeout tests.
-2. [ ] Continue updater failure-path review: partial-download I/O failure (#235) and cancellation after partial content (#237) are covered; check digest mismatch, archive extraction failure, and replacement/restart rollback behavior for remaining gaps.
+2. [ ] Continue updater failure-path review: partial-download I/O failure (#235), cancellation after partial content (#237), and SHA-256 mismatch cleanup (#239) are covered; check archive extraction failure and replacement/restart rollback behavior for remaining gaps.
 3. [ ] Verify UDS read-only command gating and UI state transitions in code: Read VIN and Start Monitor should become enabled only when the required J2534/CAN session is active; do not bypass these safety gates.
 4. [ ] Review cancellation/disconnect behavior while VIN/DTC reads or monitoring are active; add deterministic virtual-adapter tests for any uncovered race.
 5. [ ] Re-run full CI after each change; update this roadmap and `AI_WORKLOG.md` only with confirmed results.
