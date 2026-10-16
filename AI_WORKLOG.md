@@ -2086,3 +2086,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Other profile settings remained unchanged and Monitor/UDS actions stayed unavailable while disconnected.
 - No physical J2534 adapter or vehicle was used.
 - Next: verify a valid CAN ID edit can be saved, persists after switching away and back, and can then be restored to the original value.
+
+
+## Manual Windows UI verification — save and restore CAN ID (2026-10-16)
+
+- User confirmed a valid CAN ID edit on the secondary ECU profile saved successfully and persisted after switching to another profile and back.
+- The primary profile was unaffected; the original CAN ID was restored, saved, and remained correct after application restart.
+- No physical J2534 adapter or vehicle was used.
+- Next: verify the current branch head and PR checks before continuing toward release 0.2.0.
