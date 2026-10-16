@@ -1,7 +1,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-16  
-Current main checkpoint: `afef97288c1f9456130f2311b02181ab3b7ffca2`  
+Current main checkpoint: `23e12e0f188178d469112df44fc1138e26100cab`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
@@ -824,3 +824,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Confirm the UI state transition against a valid active J2534/CAN session when suitable hardware is available; this remains unverified in the current no-adapter setup.
 - [ ] Independently download and inspect the exact v0.1.1 release archive; published metadata and SHA-256 are recorded but the archive bytes have not been inspected independently.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not publish stable `0.2.0` without explicit user authorization.
+
+
+## Post-PR #260 main CI verification — 2026-10-17
+
+- [x] PR [#260](https://github.com/vorlocsev/dvinholm/pull/260) merged as `23e12e0f188178d469112df44fc1138e26100cab`.
+- [x] Main CI [#2268](https://github.com/vorlocsev/dvinholm/actions/runs/38979739897) completed successfully on that exact merge commit; the build job passed with no failed steps.
+- [x] Current main checkpoint updated to the exact merge SHA.
+- [ ] Independently inspect the exact v0.1.1 release archive. GitHub release metadata lists the published SHA-256, but the archive bytes have not yet been independently downloaded/inspected; metadata alone is not a binary verification.
+- [ ] Active-session UI transition for Monitor/UDS remains unverified because no physical J2534 adapter is available. Disconnected-state gating and source guards have been reviewed; no live CAN/UDS session was tested.
+- Stable v0.2.0 remains unpublished and requires explicit user authorization. Physical J2534 adapter and vehicle checks remain deferred to a future hardware-validation cycle.
