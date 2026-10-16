@@ -2094,3 +2094,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The primary profile was unaffected; the original CAN ID was restored, saved, and remained correct after application restart.
 - No physical J2534 adapter or vehicle was used.
 - Next: verify the current branch head and PR checks before continuing toward release 0.2.0.
+
+
+## Manual Windows UI verification — export restored ECU profile (2026-10-16)
+
+- User confirmed exporting the secondary ECU profile to a new JSON file produced the expected profile name and both restored CAN IDs.
+- No temporary test name or prior test CAN ID was present; existing backup files were not overwritten.
+- No physical J2534 adapter or vehicle was used.
+- PR #255 CI for the then-current head was still running at last check; verify the latest run before release-readiness decisions.
+- Next: inspect the exported JSON in Dvinholm by importing it as a separate profile, without overwriting the source profile, then verify the imported name and CAN IDs.
