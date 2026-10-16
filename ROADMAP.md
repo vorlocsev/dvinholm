@@ -350,3 +350,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Returning to the primary profile restores its original values; no profile edits were made.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — ECU profile persistence (2026-10-16)
+
+- [x] A non-primary saved ECU profile retains its name and CAN request/response IDs after app restart.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
