@@ -153,3 +153,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Existing original profile remains available and unchanged.
 - This verifies local malformed-input handling only; physical J2534 adapter and vehicle testing remains deferred.
 - [ ] Continue software-only release gates and confirm PR #255 CI/mergeability before recommending release 0.2.0.
+
+
+## Manual UI verification — valid JSON missing profile name (2026-10-16)
+
+- [x] Confirmed safe handling when importing a syntactically valid profile JSON copy with the profile-name field omitted.
+- Exact UI behavior (rejection versus safe fallback) was not specified; record only the successful test outcome, without assuming implementation details.
+- This is local profile-import validation only. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
+- [ ] Next: test an invalid field value/type in a disposable, syntactically valid profile JSON copy and confirm safe handling without changing the original profile.
