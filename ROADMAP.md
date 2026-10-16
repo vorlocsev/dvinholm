@@ -1,7 +1,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-16  
-Current main checkpoint: `91f000014e7d09546f868c12299d2235f13d1f3f`  
+Current main checkpoint: `6804b8828879df51f24f10a837cb9808b6989f68`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
@@ -23,20 +23,22 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] PR #242 adds missing-executable cleanup assertions; PR CI passed and the transient post-merge public CI asset publish HTTP 500 passed on retry [#38921421584](https://github.com/vorlocsev/dvinholm/actions/runs/38921421584).
 - [x] PR #243 adds updater replacement backup/rollback behavior; PR/branch CI and post-merge main CI [#38922622760](https://github.com/vorlocsev/dvinholm/actions/runs/38922622760) passed.
 - [x] PR #246 executes the generated replacement PowerShell script in isolated Windows temp directories, injects a partial replacement failure, and verifies the old executable/marker are restored, the partial marker is absent, the rollback is logged, and relaunch is requested. PR CI [#38925619261](https://github.com/vorlocsev/dvinholm/actions/runs/38925619261) and branch CI [#38925610701](https://github.com/vorlocsev/dvinholm/actions/runs/38925610701) passed; merged as `91f000014e7d09546f868c12299d2235f13d1f3f`.
+- [x] PR #248 prevents J2534 disconnect from racing a still-unwinding CAN Monitor worker: it requests monitor cancellation and awaits the monitor task before disconnecting the session. PR CI [#38927452306](https://github.com/vorlocsev/dvinholm/actions/runs/38927452306) and branch CI [#38927445038](https://github.com/vorlocsev/dvinholm/actions/runs/38927445038) passed; merged as `6804b8828879df51f24f10a837cb9808b6989f68`. Post-merge main CI [#38928179572](https://github.com/vorlocsev/dvinholm/actions/runs/38928179572) was still running at documentation update time.
 - [x] Automated coverage exists for CAN receive-dispatcher lifecycle/races, J2534 session lifecycle/read errors, ISO-TP malformed frames/timeouts/cancellation/recovery, UDS VIN/DTC parsing and response handling, and virtual J2534 adapter scenarios.
 - [x] User manually confirmed the updater success path and error/retry handling on Windows 11 LTSC IoT.
 - [x] User manually confirmed ECU profile controls and CAN Monitor remain visible in the compact layout, including a narrower window width.
 
 ## Next software-only work
 
-- [x] Current main checkpoint `91f000014e7d09546f868c12299d2235f13d1f3f` includes PR #246 runtime rollback coverage. Main CI after PR #245 [#38925560914](https://github.com/vorlocsev/dvinholm/actions/runs/38925560914) passed; PR #246 CI [#38925619261](https://github.com/vorlocsev/dvinholm/actions/runs/38925619261) and branch CI [#38925610701](https://github.com/vorlocsev/dvinholm/actions/runs/38925610701) passed before merge.
+- [ ] Current main checkpoint `6804b8828879df51f24f10a837cb9808b6989f68` includes PR #248 CAN Monitor shutdown ordering fix. PR and branch CI passed; post-merge main CI [#38928179572](https://github.com/vorlocsev/dvinholm/actions/runs/38928179572) is pending at the time of this documentation update. PR #246 runtime rollback coverage is also merged and its PR/branch CI passed.
 
 1. [ ] Review the current-main test inventory and CI test report to identify remaining untested release-critical paths; avoid duplicating already-covered lifecycle/timeout tests.
 2. [x] Updater failure-path cleanup covers partial-download I/O failure (#235), cancellation after partial content (#237), SHA-256 mismatch (#239), corrupt ZIP (#241), and missing executable (#242). Replacement backup/rollback is implemented in #243 and runtime-tested on Windows in #246 using isolated temporary directories and stubbed copy/process commands. This verifies the scripted rollback scenario without touching an installed application; it does not replace manual in-place updater testing on the user's Windows installation.
-3. [ ] Verify UDS read-only command gating and UI state transitions in code: Read VIN and Start Monitor should become enabled only when the required J2534/CAN session is active; do not bypass these safety gates.
-4. [ ] Review cancellation/disconnect behavior while VIN/DTC reads or monitoring are active; add deterministic virtual-adapter tests for any uncovered race.
-5. [ ] Re-run full CI after each change; update this roadmap and `AI_WORKLOG.md` only with confirmed results.
-6. [ ] After the software-only checklist is complete, prepare a release-candidate checklist and confirm the exact published release archive separately from CI artifacts.
+3. [x] Reviewed monitor/disconnect ordering and merged PR #248 so the app waits for the monitor worker to exit before disconnecting the J2534 session. PR and branch CI passed; post-merge main CI is pending as noted above.
+4. [ ] Verify UDS read-only command gating and UI state transitions in code: Read VIN and Start Monitor should become enabled only when the required J2534/CAN session is active; do not bypass these safety gates.
+5. [ ] Review cancellation/disconnect behavior while VIN/DTC reads are active; add deterministic virtual-adapter tests for any uncovered race. CAN Monitor cancellation is now awaited before J2534 disconnect in PR #248.
+6. [ ] Re-run full CI after each change; update this roadmap and `AI_WORKLOG.md` only with confirmed results.
+7. [ ] After the software-only checklist is complete, prepare a release-candidate checklist and confirm the exact published release archive separately from CI artifacts.
 
 ## Deferred to a future hardware-validation cycle
 
