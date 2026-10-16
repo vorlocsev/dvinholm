@@ -1,3 +1,12 @@
+## Warning cleanup follow-up on current main (2026-10-16)
+
+- Recreated the unused-exception-variable cleanup against current `main`, rather than relying on the older PR #226 branch.
+- Removed unused exception variable names from the updater-check, saved-profile load/import/export, CSV export, J2534 connection, and adapter-unload catch clauses. Catch behavior and user-facing messages remain unchanged.
+- Validation is pending CI for the fresh PR. No physical J2534 adapter or vehicle testing is included; those checks remain deferred.
+- Historical PR #226 is still open; this follow-up is based on current main to avoid stale-base merge issues.
+
+---
+
 ## Stable release published — Dvinholm 0.1.1 (2026-10-16)
 
 - Verified the stable GitHub Release `v0.1.1` is published (not marked as a prerelease): https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1
