@@ -1552,3 +1552,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The profile remains available and its edited value persists after restart; this is a local UI/storage check only.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: continue with a non-destructive software-only profile check; do not delete the user's only useful profile.
+
+
+## Manual Windows verification — edited profile exports correctly (2026-10-16)
+
+- User confirmed that exporting the edited ECU profile to JSON succeeds and the exported file contains the updated profile name with the expected intact structure/fields.
+- This verifies profile export and local JSON serialization only; it does not validate ECU communication or physical adapter behavior.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: perform a safe import round-trip using a separate copy/file so the original profile remains untouched.
