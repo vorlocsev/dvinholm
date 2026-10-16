@@ -497,3 +497,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Import copied profile JSON without a profile-name field; app remains responsive and existing profiles remain unchanged.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — restart after import edge-case series (2026-10-16)
+
+- [x] Restart after import edge-case checks; original profiles, names, and CAN IDs remain correct, and the app closes normally.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
