@@ -1,3 +1,13 @@
+## Updater SHA-256 mismatch cleanup test strengthened (2026-10-16)
+
+- PR [#239](https://github.com/vorlocsev/dvinholm/pull/239) was merged as `adee816ea2bf5704537b25f8fe6720ad0e1137a1` after PR and branch CI succeeded.
+- The checksum-mismatch test now verifies that both the staging directory and temporary downloaded ZIP are removed when the artifact's SHA-256 does not match its metadata.
+- PR [#238](https://github.com/vorlocsev/dvinholm/pull/238) was also merged as `9bea78b83218b941fabe1a33a6781eb7e2d6fd92`; its PR and branch CI succeeded. The main-branch CI after the updater cancellation change passed in [run #38912910522](https://github.com/vorlocsev/dvinholm/actions/runs/38912910522).
+- Main CI after the latest documentation and checksum-test merges is running: [run #38916569004](https://github.com/vorlocsev/dvinholm/actions/runs/38916569004). Do not mark the latest main checkpoint fully verified until it completes successfully.
+- Next: review replacement-helper failure/recovery behavior and identify a safe automated test seam; do not attempt physical J2534 adapter or vehicle validation in this phase.
+
+---
+
 ## Updater mid-stream cancellation cleanup test merged (2026-10-16)
 
 - PR [#237](https://github.com/vorlocsev/dvinholm/pull/237) was squash-merged as `442f041f7afc355166419c489ac8569ae6e3a595`.
