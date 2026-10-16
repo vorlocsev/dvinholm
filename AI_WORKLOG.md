@@ -1944,3 +1944,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The working JSON and backup were not edited.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — import JSON missing profile name field (2026-10-16)
+
+- User confirmed a copied profile JSON with the profile-name field removed was handled safely; the app did not hang and existing profiles remained unchanged.
+- The working JSON and backup were not edited.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
