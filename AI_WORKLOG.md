@@ -1626,3 +1626,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This verifies local profile-import behavior with an unknown/extra property only; it does not establish whether the importer persists or discards the extra property unless separately inspected.
 - No ECU communication was involved. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
 - Next: test importing the same valid profile JSON twice and confirm there is no unintended duplicate or corruption of the saved profile list.
+
+
+## Manual Windows verification — repeated import of same profile JSON (2026-10-16)
+
+- User confirmed importing the same profile JSON twice and restarting Dvinholm completed successfully; the saved profile list remained correct with no observed unintended duplicates or corruption.
+- This verifies the manual repeated-import/persistence workflow for the tested profile only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: verify that cancelling out of the profile-import file picker leaves the profile list unchanged and does not report a false import success.
