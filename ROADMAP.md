@@ -88,3 +88,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] User confirmed Read VIN, Read DTC, and Start Monitor remain unavailable without an active J2534 connection; failed connection attempts do not hang the app.
 - This confirms UI gating only; no live CAN/UDS transaction or hardware compatibility was tested.
 - [ ] Continue software-only release checks. Physical adapter and vehicle testing remains deferred.
+
+
+## Manual UI verification — profile persistence across restart (2026-10-16)
+
+- [x] User confirmed that a previously saved ECU profile remains present after closing Dvinholm normally and launching it again.
+- This confirms local profile persistence across an ordinary restart only; it does not validate ECU communication or physical adapter compatibility.
+- Physical J2534 adapter and vehicle testing remains deferred to a future hardware-validation cycle.
+- [ ] Continue software-only release checks and record only confirmed outcomes.
