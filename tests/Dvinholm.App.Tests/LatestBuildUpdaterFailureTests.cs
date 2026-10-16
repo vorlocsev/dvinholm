@@ -225,7 +225,7 @@ public sealed class LatestBuildUpdaterFailureTests
     }
 
     [Fact]
-    public async Task MissingExecutable_ThrowsAndCleansStagingDirectory()
+    public async Task MissingExecutable_ThrowsAndCleansTemporaryArchiveAndStagingDirectory()
     {
         var bytes = CreateZip(("readme.txt", "not an app"));
         using var client = CreateClient(_ => new HttpResponseMessage(HttpStatusCode.OK)
@@ -234,11 +234,13 @@ public sealed class LatestBuildUpdaterFailureTests
         });
         var build = BuildInfo(bytes);
         var stagingRoot = GetStagingRoot();
+        var tempPattern = $"dvinholm-{build.CommitSha}-*.zip";
 
         await Assert.ThrowsAsync<InvalidDataException>(
             () => LatestBuildUpdater.DownloadAndPrepareAsync(build, client));
 
         AssertNoStagingDirectory(stagingRoot, build.CommitSha);
+        Assert.Empty(Directory.EnumerateFiles(Path.GetTempPath(), tempPattern));
     }
 
     private static HttpClient CreateClient(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) =>
