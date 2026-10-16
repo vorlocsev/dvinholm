@@ -717,3 +717,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Confirmed the app stays responsive and closes normally.
 - [ ] Verify CI for the latest PR #255 head and review remaining software-only release 0.2.0 gates.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
+
+
+## CI verification — PR #255 (run 2214, 2026-10-16)
+
+- [x] CI run 2214 passed for commit `220dee77d3f59ba7b4dd3075c2f9b9ec237bd09b`: restore, build, tests, publish, and artifact upload succeeded.
+- [ ] Re-check CI for the current head after these documentation updates.
+- [ ] Inspect PR #255 review requirements and remaining software-only release 0.2.0 gates before making any release-readiness decision.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
