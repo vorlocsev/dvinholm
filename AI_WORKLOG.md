@@ -2166,3 +2166,13 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - PR #255 remains open and unmerged; its only changed files are `AI_WORKLOG.md` and `ROADMAP.md`.
 - The passing CI validates this documentation head, not a future release merge commit. No release was created.
 - Release readiness is not yet established: connected-session UI gating cannot be verified without an active J2534/CAN session, and exact release archive/release-note checks remain to be completed.
+
+
+## CI verification — PR #255 documentation head (run 2222, 2026-10-16)
+
+- GitHub Actions CI run 2222 completed successfully for head `8928a4dbef800ac19d32d6ec6b54cd8d439fa73a`.
+- Restore, Build, Test, Publish, and CI artifact upload succeeded. Optional public updater-asset packaging/public-asset publishing steps were skipped by workflow conditions.
+- PR #255 remains open and unmerged; its current changes are documentation-only. No release was created.
+- This CI result does not establish release readiness: the enabled-controls transition requires a valid active J2534/CAN session, and release notes plus the exact release archive still need separate review.
+- Physical J2534 adapter and vehicle validation remain deferred to a future release.
+- Next: record this result in the roadmap, then re-check CI for the resulting documentation head before continuing the release-candidate review.
