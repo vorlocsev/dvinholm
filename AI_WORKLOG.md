@@ -1,3 +1,12 @@
+## Windows manual updater checkpoint — CI #1747 (2026-10-16)
+
+- User confirmed that the in-app updater successfully installed the build from CI run #1747.
+- CI runs #1747 and #1748 both completed successfully on the same source commit `510950148454fa2902d48b16ac866934c39cddd1`; the binaries should represent the same source state, despite different run numbers.
+- Next manual check: after the updated app restarts, confirm the updater returns to the idle `Check update` state. Then click it once and verify it does not offer to replace the app with another build from the same commit.
+- This is a partial Windows updater validation only; do not mark post-restart/button-state validation complete until the user confirms it. PR #228 remains open and unmerged. Physical J2534 adapter testing remains deferred.
+
+---
+
 ## CI validation completed — cross-branch updater selection (2026-10-16)
 
 - Confirmed GitHub Actions run [#1746](https://github.com/vorlocsev/dvinholm/actions/runs/38828216015) completed successfully on branch `fix/updater-check-button-state`, head `6a3dad175874a399fc5fef761c9d22b98cd6b440`. The corrected test and current CI pipeline are green.
