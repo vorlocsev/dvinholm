@@ -2176,3 +2176,13 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This CI result does not establish release readiness: the enabled-controls transition requires a valid active J2534/CAN session, and release notes plus the exact release archive still need separate review.
 - Physical J2534 adapter and vehicle validation remain deferred to a future release.
 - Next: record this result in the roadmap, then re-check CI for the resulting documentation head before continuing the release-candidate review.
+
+
+## CI verification — PR #255 updated documentation head (run 2225, 2026-10-16)
+
+- GitHub Actions run 2225 completed successfully for head `be269fd3849588ce7fe777b9b997c2a9dd1eee88`.
+- Both reported build checks completed successfully; the workflow includes restore, build, automated tests, publish, and CI artifact upload.
+- PR #255 remains open, unmerged, and mergeable at this check. No release was created.
+- Release-candidate gates remain: review release notes and the exact release archive separately from CI artifacts; active-session UDS/Monitor enablement cannot be verified in the current no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
+- Next: re-check CI after this documentation update, then inspect the current release notes/assets without publishing or merging anything.
