@@ -123,6 +123,25 @@ public sealed class LatestBuildUpdaterFailureTests
     }
 
     [Fact]
+    public async Task CancellationAfterPartialDownload_CleansTemporaryArchiveAndStagingDirectory()
+    {
+        using var cancellation = new CancellationTokenSource();
+        var build = BuildInfo(new byte[] { 1, 2, 3, 4, 5, 6 });
+        var stagingRoot = GetStagingRoot();
+        var tempPattern = $"dvinholm-{build.CommitSha}-*.zip";
+        using var client = CreateClient(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(new CancelAfterFirstChunkStream(new byte[] { 1, 2, 3, 4, 5, 6 }, cancellation))
+        });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => LatestBuildUpdater.DownloadAndPrepareAsync(build, client, cancellationToken: cancellation.Token));
+
+        AssertNoStagingDirectory(stagingRoot, build.CommitSha);
+        Assert.Empty(Directory.EnumerateFiles(Path.GetTempPath(), tempPattern));
+    }
+
+    [Fact]
     public async Task InvalidSha256_ThrowsAndCleansStagingDirectory()
     {
         var bytes = CreateZip(("Dvinholm.App.exe", "fake executable"));
@@ -302,6 +321,49 @@ public sealed class LatestBuildUpdaterFailureTests
             {
                 _hasThrown = true;
                 throw new IOException("Simulated connection failure during download.");
+            }
+
+            if (_position >= bytes.Length)
+                return ValueTask.FromResult(0);
+
+            var read = Math.Min(buffer.Length, Math.Min(3, bytes.Length - _position));
+            bytes.AsMemory(_position, read).CopyTo(buffer);
+            _position += read;
+            return ValueTask.FromResult(read);
+        }
+
+        public override void Flush() => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
+    }
+
+    private sealed class CancelAfterFirstChunkStream(byte[] bytes, CancellationTokenSource cancellation) : Stream
+    {
+        private int _position;
+        private bool _canceled;
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => bytes.Length;
+        public override long Position
+        {
+            get => _position;
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count) =>
+            throw new NotSupportedException("The test uses asynchronous reads only.");
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (_position > 0 && !_canceled)
+            {
+                _canceled = true;
+                cancellation.Cancel();
+                cancellationToken.ThrowIfCancellationRequested();
             }
 
             if (_position >= bytes.Length)
