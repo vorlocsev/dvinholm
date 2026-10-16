@@ -137,3 +137,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] After app restart, deleted `TEST-ECU` does not reappear.
 - This verifies local profile deletion/persistence only; physical J2534 adapter and vehicle testing remains deferred.
 - [ ] Finish final software-only profile workflow check, then review release-gate items and current PR/CI state before deciding on release 0.2.0.
+
+
+## Manual UI verification — complete profile workflow (2026-10-16)
+
+- [x] Opened the original profile, changed its name temporarily, saved, exported JSON, restarted the app and confirmed the edited name persisted.
+- [x] Restored the original profile name and saved successfully.
+- This confirms the local edit/save/export/restart workflow only; physical J2534 adapter and vehicle testing remains deferred.
+- [ ] Review remaining software-only release gates plus current PR #255 and CI state before deciding whether Dvinholm 0.2.0 is ready.
