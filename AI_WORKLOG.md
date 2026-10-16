@@ -2148,3 +2148,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - App stayed responsive and closed without hanging or an error.
 - Physical J2534 adapter and vehicle tests remain deferred to a future release.
 - CI for the latest PR #255 head was queued at the last check; check its result and assess remaining software-only release 0.2.0 gates next.
+
+
+## CI verification — PR #255 (run 2214, 2026-10-16)
+
+- GitHub Actions CI run 2214 for commit `220dee77d3f59ba7b4dd3075c2f9b9ec237bd09b` completed successfully.
+- Restore, Build, Test, Publish, and artifact upload steps all completed successfully. Optional public-asset packaging/publishing steps were skipped by workflow conditions.
+- This result applies to the tested commit; documentation updates create a new head and require their own CI run.
+- PR #255 remains open and unmerged. No release was created.
+- Next: inspect PR review/status requirements and remaining software-only release 0.2.0 gates; keep physical adapter/vehicle checks deferred.
