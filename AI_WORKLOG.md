@@ -1524,3 +1524,9 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Software-only UDS lifecycle audit reviewed MainWindow.Closed plus existing active/queued UDS cancellation, ISO-TP cancellation/recovery, and J2534 session lifecycle tests. The close handler cancels work and only schedules session disposal after tracked workers and the UDS gate are stopped.
 - No distinct uncovered race was demonstrated in the testable layers, so no duplicate test was added. Directly unit-testing the WinUI Closed handler would require extracting a focused shutdown coordinator; defer that refactor until it provides a concrete regression benefit.
 - Physical adapter and vehicle testing remain deferred.
+
+## Manual Windows connection-retry check (2026-10-16)
+
+- User confirmed success for the manual retry check after a failed J2534 connection attempt. The app remained usable and the retry path behaved as expected.
+- This was a software/UI check only; no physical J2534 adapter or vehicle was used, so it does not establish hardware compatibility.
+- Next: continue with software-only validation of connection-state controls and error recovery. Keep real adapter/vehicle checks deferred.
