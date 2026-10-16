@@ -1847,3 +1847,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The app's choice of which profile is selected by default after restart is not treated as a failure, provided the selected profile and displayed parameters are consistent.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — cancel unsaved ECU profile edit (2026-10-16)
+
+- User confirmed changing a CAN ID in the second profile's editor and cancelling/closing without saving leaves the persisted CAN ID unchanged.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
