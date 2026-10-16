@@ -91,6 +91,24 @@ public sealed class LatestBuildUpdaterFailureTests
     }
 
     [Fact]
+    public async Task PartialDownloadFailure_CleansTemporaryArchiveAndStagingDirectory()
+    {
+        var build = BuildInfo(new byte[] { 1, 2, 3, 4, 5, 6 });
+        var stagingRoot = GetStagingRoot();
+        var tempPattern = $"dvinholm-{build.CommitSha}-*.zip";
+        using var client = CreateClient(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new StreamContent(new ThrowAfterFirstChunkStream(new byte[] { 1, 2, 3, 4, 5, 6 }))
+        });
+
+        await Assert.ThrowsAsync<IOException>(
+            () => LatestBuildUpdater.DownloadAndPrepareAsync(build, client));
+
+        AssertNoStagingDirectory(stagingRoot, build.CommitSha);
+        Assert.Empty(Directory.EnumerateFiles(Path.GetTempPath(), tempPattern));
+    }
+
+    [Fact]
     public async Task CanceledDownload_ThrowsAndCleansStagingDirectory()
     {
         using var client = new HttpClient(new CancelingHttpMessageHandler());
@@ -243,6 +261,62 @@ public sealed class LatestBuildUpdaterFailureTests
             return;
 
         Assert.Empty(Directory.EnumerateDirectories(root, commitSha + "-*"));
+    }
+
+    private sealed class ThrowAfterFirstChunkStream(byte[] bytes) : Stream
+    {
+        private int _position;
+        private bool _hasThrown;
+
+        public override bool CanRead => true;
+        public override bool CanSeek => false;
+        public override bool CanWrite => false;
+        public override long Length => bytes.Length;
+        public override long Position
+        {
+            get => _position;
+            set => throw new NotSupportedException();
+        }
+
+        public override int Read(byte[] buffer, int offset, int count)
+        {
+            if (_position > 0 && !_hasThrown)
+            {
+                _hasThrown = true;
+                throw new IOException("Simulated connection failure during download.");
+            }
+
+            if (_position >= bytes.Length)
+                return 0;
+
+            var read = Math.Min(count, Math.Min(3, bytes.Length - _position));
+            Array.Copy(bytes, _position, buffer, offset, read);
+            _position += read;
+            return read;
+        }
+
+        public override ValueTask<int> ReadAsync(Memory<byte> buffer, CancellationToken cancellationToken = default)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            if (_position > 0 && !_hasThrown)
+            {
+                _hasThrown = true;
+                throw new IOException("Simulated connection failure during download.");
+            }
+
+            if (_position >= bytes.Length)
+                return ValueTask.FromResult(0);
+
+            var read = Math.Min(buffer.Length, Math.Min(3, bytes.Length - _position));
+            bytes.AsMemory(_position, read).CopyTo(buffer);
+            _position += read;
+            return ValueTask.FromResult(read);
+        }
+
+        public override void Flush() => throw new NotSupportedException();
+        public override long Seek(long offset, SeekOrigin origin) => throw new NotSupportedException();
+        public override void SetLength(long value) => throw new NotSupportedException();
+        public override void Write(byte[] buffer, int offset, int count) => throw new NotSupportedException();
     }
 
     private sealed class CancelingHttpMessageHandler : HttpMessageHandler
