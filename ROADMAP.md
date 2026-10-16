@@ -161,3 +161,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - Exact UI behavior (rejection versus safe fallback) was not specified; record only the successful test outcome, without assuming implementation details.
 - This is local profile-import validation only. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
 - [ ] Next: test an invalid field value/type in a disposable, syntactically valid profile JSON copy and confirm safe handling without changing the original profile.
+
+
+## Manual UI verification — profile name has wrong JSON type (2026-10-16)
+
+- [x] Confirmed successful handling of a syntactically valid profile JSON copy whose profile-name value was changed from a string to a number.
+- The test used a copy and the original saved profile was preserved. Exact UI behavior was not specified, so no particular error message or fallback is claimed.
+- This covers local profile-import handling only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- [ ] Next: test an unknown/extra JSON property in a disposable profile copy and confirm safe handling without altering the original profile.
