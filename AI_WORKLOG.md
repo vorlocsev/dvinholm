@@ -1584,3 +1584,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This verifies local profile deletion/persistence and preservation of the remaining profile only; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: run a final software-only profile workflow check, then review outstanding release-gate items and PR/CI status before deciding whether to prepare release 0.2.0.
+
+
+## Manual Windows verification — complete profile workflow (2026-10-16)
+
+- User confirmed the complete profile workflow succeeded: opened the original profile, temporarily renamed and saved it, exported JSON, restarted Dvinholm and confirmed the changed name persisted, then restored and saved the original name.
+- This consolidates the local profile edit/save/export/restart workflow; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: inspect the current roadmap, open PR #255 and current CI state; identify any remaining software-only release gates before recommending whether 0.2.0 is ready.
