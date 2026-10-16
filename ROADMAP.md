@@ -285,3 +285,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Confirmed re-import of the exported catalog preserves profile count, names, and key fields; no unintended duplicates or missing settings; data persists after restart.
 - Original backup kept separately. No ECU communication or physical adapter/vehicle was used; hardware validation remains deferred.
 - [ ] Next: launch the current Windows candidate, confirm the main window loads without an unhandled error, and close normally. This is not release approval; exact-head CI and all remaining release gates must still be checked.
+
+
+## Manual Windows verification — candidate startup and normal exit (2026-10-16)
+
+- [x] User confirmed the current Windows candidate starts with the main window fully loaded, without an unhandled error/crash, and closes normally.
+- Startup/shutdown smoke check only; no ECU communication or physical adapter/vehicle was used. Hardware validation remains deferred.
+- [ ] Next: inspect the current PR head and CI/check status to identify remaining release gates. Do not merge or publish a release without explicit user authorization.
