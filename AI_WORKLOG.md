@@ -1803,3 +1803,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - No profile settings were edited and no physical J2534 adapter or vehicle was used.
 - This verifies profile selection does not visibly mix CAN ID settings in the UI.
 - Next: continue the remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — ECU profile persistence after restart (2026-10-16)
+
+- User confirmed a non-primary saved ECU profile retains its name and CAN request/response IDs after closing and relaunching Dvinholm.
+- No profile values were changed; no physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
