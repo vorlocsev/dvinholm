@@ -1730,3 +1730,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The sole backup was not overwritten and no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: import this newly exported JSON into a separate temporary/test catalog or use the app's safe import workflow, then verify profile count, names, and key fields match the exported source. Keep the original backup intact.
+
+
+## Manual Windows verification — catalog export/import round trip (2026-10-16)
+
+- User confirmed re-importing the newly exported catalog succeeded; profile count, names, and key fields matched, no unintended duplicates or missing settings were observed, and the result persisted after restarting Dvinholm.
+- The original backup was kept separately. No ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: perform a final Windows build/package smoke check on the current candidate: launch the app, verify the main window loads without an unhandled error, then close it normally. Do not treat this as release approval; exact-head CI and remaining roadmap gates still need verification.
