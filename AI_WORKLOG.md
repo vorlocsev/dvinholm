@@ -1609,3 +1609,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This covers local profile-import validation only; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: test a syntactically valid profile with an invalid field value/type, using a disposable copy, and confirm safe handling without altering the original profile.
+
+
+## Manual Windows verification — profile name has wrong JSON type (2026-10-16)
+
+- User confirmed successful handling of a syntactically valid profile JSON copy where the profile-name value was changed from a string to a number.
+- The test was performed on a copy; the original saved profile was preserved. Exact UI behavior was not specified, so no specific error text or fallback behavior is claimed.
+- This verifies local profile-import handling for an unexpected field type only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: test an unknown/extra JSON property in a disposable profile copy and confirm the app imports or rejects it safely without altering the original profile.
