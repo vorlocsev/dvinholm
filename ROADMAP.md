@@ -629,3 +629,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Continue disconnected-state UI checks when switching ECU profiles.
 - [ ] Verify CI for the current branch head and review release readiness before considering release 0.2.0.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
+
+
+## Manual Windows UI verification — disconnected profile switching (2026-10-16)
+
+- [x] Confirmed switching between primary and secondary ECU profiles while disconnected preserves each profile's CAN IDs and keeps Start Monitor, Read VIN, Read DTC, and Read DID unavailable.
+- [x] Confirmed the application remains responsive and does not show a false active connection.
+- [ ] Verify canceling/closing the profile selector leaves the current profile and disconnected control state unchanged.
+- [ ] Verify CI for the current branch head and review release readiness before considering release 0.2.0.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
