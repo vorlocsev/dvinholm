@@ -1832,3 +1832,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - No false persistent error or app malfunction was observed.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — repeated profile switching and persistence (2026-10-16)
+
+- User confirmed five switches between the primary and second ECU profiles, followed by an application restart, preserved both profile names and their respective CAN request/response IDs.
+- No profile edits were made and no physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
