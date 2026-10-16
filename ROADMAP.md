@@ -570,3 +570,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Verify CI status for the current branch head and review release readiness.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
 - Do not merge the PR or publish release 0.2.0 without explicit user authorization.
+
+
+## Manual Windows UI verification — repeated CAN Monitor attempts while disconnected (2026-10-16)
+
+- [x] Repeated attempts to start CAN Monitor without an adapter do not hang or crash the app and do not show false active monitoring.
+- [x] App closes and relaunches normally after the check.
+- [ ] Finish remaining pre-release UI checks.
+- [ ] Verify CI status for the current branch head and review release readiness.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
+- Do not merge the PR or publish release 0.2.0 without explicit user authorization.
