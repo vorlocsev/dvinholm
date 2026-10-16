@@ -346,6 +346,7 @@ internal static class LatestBuildUpdater
         var scriptPath = Path.Combine(Path.GetTempPath(), $"dvinholm-update-{Guid.NewGuid():N}.ps1");
         var backupDirectory = Path.Combine(localRoot, "UpdateBackups", Guid.NewGuid().ToString("N"));
         var script = BuildReplacementScript(stagingDirectory, destination, processId, scriptPath, backupDirectory);
+        File.WriteAllText(scriptPath, script, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
         var startInfo = new ProcessStartInfo
         {
