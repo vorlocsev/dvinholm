@@ -1,3 +1,11 @@
+## Windows manual verification — compact ECU profile layout (2026-10-16)
+
+- User confirmed that **CAN Monitor is visible** after selecting an ECU profile in the compact layout, resolving the reported vertical-space regression for this check.
+- This is a visual layout check only; it does not verify live CAN monitoring or physical J2534 hardware. Real-adapter testing remains deferred to a future release.
+- PR [#227](https://github.com/vorlocsev/dvinholm/pull/227) remains open and unmerged. Next: continue checking that the profile row's controls are not clipped and that the layout remains usable at the current window size.
+
+---
+
 ## Windows manual verification — updater same-SHA fix (2026-10-16, follow-up)
 
 - User reports the updater button now displays `Check update` instead of `Replace files and restart` after updating to the corrected build, addressing the repeated-install prompt for the same SHA.
