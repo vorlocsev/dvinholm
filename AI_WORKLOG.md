@@ -1779,3 +1779,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Connect becomes available again after the attempt; Start Monitor, Read VIN, Read DTC, and Read DID remain disabled while disconnected.
 - No physical adapter or vehicle was used; hardware verification remains deferred.
 - Next: continue the pre-release virtual/no-adapter checks.
+
+
+## Manual Windows UI verification — repeated no-adapter connection attempts (2026-10-16)
+
+- User confirmed three consecutive Connect attempts with no physical J2534 adapter were handled correctly.
+- The app remained responsive and open; each attempt completed without hanging or crashing, and Monitor/UDS actions remained unavailable while disconnected.
+- No physical adapter or vehicle was used.
+- Next: continue the remaining pre-release checks with the virtual/no-adapter setup.
