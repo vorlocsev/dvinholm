@@ -655,3 +655,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Verify a valid CAN ID edit persists across profile switching and can be restored to its original value.
 - [ ] Verify CI for the current branch head and review release readiness before considering release 0.2.0.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
+
+
+## Manual Windows UI verification — save and restore CAN ID (2026-10-16)
+
+- [x] Confirmed a valid CAN ID edit persists across profile switching; the primary profile remains unchanged.
+- [x] Confirmed restoring the original CAN ID and restarting the application preserves the restored value.
+- [ ] Verify CI and required checks for the current branch head / PR #255.
+- [ ] Review remaining release 0.2.0 gates after checking current CI results.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
