@@ -1658,3 +1658,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This confirms the tested local profile export/import round trip and preservation of the original; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: check profile validation and error feedback by importing a JSON object with a required profile field missing (using a disposable copy), confirming the original profile remains intact and the app stays responsive.
+
+
+## Manual Windows verification — required profile field missing (2026-10-16)
+
+- User confirmed successful handling of an import test using a syntactically valid JSON profile copy with another required field omitted.
+- The original profile was kept separate. The exact field and UI behavior were not specified, so no particular validation message or fallback behavior is claimed.
+- This covers local profile-import validation only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: inspect the repository's documented profile JSON schema/validation rules before choosing any further field-specific tests; avoid guessing which fields are required.
