@@ -132,7 +132,7 @@ public sealed partial class MainWindow : Window
         _updaterBusy = true;
         UpdateButton.IsEnabled = false;
         UpdateButton.Content = "Checking…";
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest successful main-branch CI build…";
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest successful CI build across branches…";
 
         try
         {
