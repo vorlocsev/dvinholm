@@ -229,3 +229,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - This records the empty-catalog import path only; do not assume the original profiles have been restored or remained in the active list. Restore from the backup and verify integrity before further destructive-state tests.
 - Local profile UI check only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - [ ] Next: confirm the empty catalog displays correctly, restore the saved catalog backup, and verify the original profiles return intact.
+
+
+## Manual UI verification — restore catalog after empty import (2026-10-16)
+
+- [x] Confirmed that restoring the saved JSON catalog after importing `[]` returned the original profiles, preserved names and main fields, and persisted after app restart.
+- This closes the empty-catalog recovery workflow. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
+- [ ] Next: test a catalog containing duplicate profile IDs in a disposable JSON copy; verify rejection is safe and the current catalog remains intact.
