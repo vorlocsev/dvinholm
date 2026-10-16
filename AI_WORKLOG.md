@@ -1706,3 +1706,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This was a profile validation check only; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: verify that an invalid or malformed diagnostic identifier (DID) is rejected safely in a disposable profile, without modifying the existing catalog.
+
+
+## Manual Windows verification — malformed DID input (2026-10-16)
+
+- User confirmed the malformed DID input check was successful: the invalid value was handled safely, without a hang or damage to the existing profiles.
+- No ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: verify duplicate DID handling in a disposable profile/catalog, if the UI supports editing DID entries; otherwise report that the UI does not expose DID editing and continue with the next available software-only check.
