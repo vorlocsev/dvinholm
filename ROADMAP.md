@@ -333,3 +333,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] The app remains responsive and Monitor/UDS actions remain disabled while disconnected.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — disconnected state after restart (2026-10-16)
+
+- [x] App closes and relaunches normally after failed no-adapter connection attempts.
+- [x] Relaunch does not incorrectly report an active connection; Monitor and UDS actions remain disabled without an adapter.
+- [x] App closes normally after the check.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical adapter and vehicle verification remain deferred to a future release.
