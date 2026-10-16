@@ -1,3 +1,12 @@
+## Windows manual verification — compact ECU layout at narrower width (2026-10-16)
+
+- User confirmed that the ECU profile selector and Import/Export JSON controls remain visible after reducing the application window width.
+- Together with the prior checks (CAN Monitor stays visible after selecting a profile; profile-row controls are not clipped at the normal window size), the compact ECU layout's targeted manual visibility checks are complete for the tested window sizes.
+- These checks cover UI layout only, not live CAN monitoring or physical J2534 hardware. Real-adapter testing remains deferred to a future release.
+- Latest code/worklog commit CI is still pending at handoff; check runs [#1769](https://github.com/vorlocsev/dvinholm/actions/runs/38835188813) and [#1770](https://github.com/vorlocsev/dvinholm/actions/runs/38835192316) before calling the PR fully validated. PR [#227](https://github.com/vorlocsev/dvinholm/pull/227) remains open and unmerged.
+
+---
+
 ## Windows manual verification — compact ECU profile controls (2026-10-16)
 
 - User confirmed that the selected ECU profile row's controls are fully visible and not clipped, including the profile selector and Import/Export JSON actions.
