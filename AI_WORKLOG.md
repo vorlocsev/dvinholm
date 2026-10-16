@@ -1698,3 +1698,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This was a UI/profile validation check only; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: verify that request and response CAN IDs cannot be configured identically, using a disposable profile and confirming existing profiles remain intact.
+
+
+## Manual Windows verification — identical request/response CAN IDs (2026-10-16)
+
+- User confirmed that configuring the same CAN ID for request and response was rejected/not accepted on save; other profiles remained intact.
+- This was a profile validation check only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: verify that an invalid or malformed diagnostic identifier (DID) is rejected safely in a disposable profile, without modifying the existing catalog.
