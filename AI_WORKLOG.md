@@ -1854,3 +1854,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed changing a CAN ID in the second profile's editor and cancelling/closing without saving leaves the persisted CAN ID unchanged.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — save and restore ECU profile name (2026-10-16)
+
+- User confirmed changing the second ECU profile name with the temporary `-TEST` suffix, saving, switching away/back, and then restoring the original name all worked.
+- The profile's CAN IDs remained unchanged throughout.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
