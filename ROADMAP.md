@@ -145,3 +145,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Restored the original profile name and saved successfully.
 - This confirms the local edit/save/export/restart workflow only; physical J2534 adapter and vehicle testing remains deferred.
 - [ ] Review remaining software-only release gates plus current PR #255 and CI state before deciding whether Dvinholm 0.2.0 is ready.
+
+
+## Manual UI verification — malformed profile JSON rejected safely (2026-10-16)
+
+- [x] User confirmed importing a deliberately malformed JSON copy (missing closing brace) reports an error without hanging the app.
+- [x] Existing original profile remains available and unchanged.
+- This verifies local malformed-input handling only; physical J2534 adapter and vehicle testing remains deferred.
+- [ ] Continue software-only release gates and confirm PR #255 CI/mergeability before recommending release 0.2.0.
