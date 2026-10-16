@@ -1,3 +1,14 @@
+## Follow-up — repeated Replace action caused by worklog-only CI builds (2026-10-16)
+
+- User confirmed the app still offered `Replace files and restart` after installing CI #1747.
+- Root cause: the CI workflow runs on every branch push, including commits that only update `AI_WORKLOG.md`. Each such run publishes a new `ci-<run number>` release asset, so the updater sees a new run even when application code has not changed.
+- Changed `.github/workflows/ci.yml` so push-triggered CI ignores `AI_WORKLOG.md`-only changes. Code/workflow changes still trigger builds; pull-request validation remains enabled. A commit changing only the work log should no longer publish a new update candidate.
+- Workflow change commit: `6fd0da7034abe616f756dfa206a00ea242b74e58`. CI and Windows behavior validation are pending.
+- After CI publishes a build containing this workflow change, install that build once. Subsequent work-log-only commits should no longer produce new push build candidates.
+- PR #228 remains open and unmerged. Physical J2534 adapter testing remains deferred.
+
+---
+
 ## Windows manual updater checkpoint — CI #1747 (2026-10-16)
 
 - User confirmed that the in-app updater successfully installed the build from CI run #1747.
