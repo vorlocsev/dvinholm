@@ -2002,3 +2002,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Existing backup files were not overwritten.
 - No physical J2534 adapter or vehicle was used.
 - Next: finish remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — CAN Monitor unavailable without adapter (2026-10-16)
+
+- User confirmed the app behaves correctly with no physical J2534 adapter: CAN Monitor cannot be started while disconnected, no false active-monitoring status is shown, and closing/relaunching the app works normally.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
