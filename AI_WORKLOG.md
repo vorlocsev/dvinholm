@@ -1,3 +1,14 @@
+## Latest checkpoint — updater rollback runtime test merged (2026-10-16)
+
+- PR [#246](https://github.com/vorlocsev/dvinholm/pull/246) was squash-merged to `main` as `91f000014e7d09546f868c12299d2235f13d1f3f`.
+- PR workflow [#38925619261](https://github.com/vorlocsev/dvinholm/actions/runs/38925619261) and branch workflow [#38925610701](https://github.com/vorlocsev/dvinholm/actions/runs/38925610701) passed on head `00b3f5b83d84211ac7806d8500513625a19c0fd6`; main CI after PR #245 also passed in [#38925560914](https://github.com/vorlocsev/dvinholm/actions/runs/38925560914).
+- Added a Windows-only integration test that executes the actual generated replacement PowerShell script in isolated temp directories. Test doubles replace `robocopy` and `Start-Process`; replacement is made to fail after partially changing the destination. The test verifies the old executable and marker are restored, the partial marker is gone, rollback is logged, and relaunch of the restored executable is requested. It does not modify the installed app or launch the real application.
+- Runtime rollback behavior is now exercised in CI rather than inferred only from generated-script text. It remains a controlled test with stubbed filesystem-copy/process behavior; it is not a manual test of the real updater replacing the user's live installation.
+- Roadmap updated to main checkpoint `91f000014e7d09546f868c12299d2235f13d1f3f`. Physical J2534 adapter and vehicle testing remain deferred to a future release.
+- Next: audit remaining release-critical paths, particularly Read VIN/CAN Monitor connection-state gating and cancellation/disconnect during active reads/monitoring. Do not bypass the requirement for an active J2534/CAN session.
+
+---
+
 ## Latest checkpoint — PR #244 merged and CI verified (2026-10-16)
 
 - PR [#244](https://github.com/vorlocsev/dvinholm/pull/244) merged as `8b5797a96791a26775e0a379c36d5ea20559137b`; it records the updater rollback behavior and the important limitation that current tests inspect the generated PowerShell text rather than executing rollback.
