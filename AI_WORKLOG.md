@@ -1520,5 +1520,704 @@ No tests were run during this source audit; this is a coverage review, not a cla
 
 - PR [#253](https://github.com/vorlocsev/dvinholm/pull/253) passed latest PR-head CI [#38932272236](https://github.com/vorlocsev/dvinholm/actions/runs/38932272236) and was squash-merged to `main` as `db3e8607ec0c28057649f7f616056a71b9bc991e`.
 - The runtime rollback test now disposes its PowerShell process before deleting the isolated temporary directory; stdout/stderr are drained concurrently. Rollback assertions were retained.
-- Post-merge main CI [#38933065485](https://github.com/vorlocsev/dvinholm/actions/runs/38933065485) was still in progress at this checkpoint. Do not record it as passing until confirmed.
-- Next: finish the UDS close/disconnect software-only audit, adding deterministic virtual-adapter coverage only if an uncovered race is established. Physical adapter and vehicle testing remain deferred.
+- Post-merge main CI [#38933065485](https://github.com/vorlocsev/dvinholm/actions/runs/38933065485) completed successfully; build, tests, publish, and artifact steps passed on merge commit `db3e8607ec0c28057649f7f616056a71b9bc991e`.
+- Software-only UDS lifecycle audit reviewed MainWindow.Closed plus existing active/queued UDS cancellation, ISO-TP cancellation/recovery, and J2534 session lifecycle tests. The close handler cancels work and only schedules session disposal after tracked workers and the UDS gate are stopped.
+- No distinct uncovered race was demonstrated in the testable layers, so no duplicate test was added. Directly unit-testing the WinUI Closed handler would require extracting a focused shutdown coordinator; defer that refactor until it provides a concrete regression benefit.
+- Physical adapter and vehicle testing remain deferred.
+
+## Manual Windows connection-retry check (2026-10-16)
+
+- User confirmed success for the manual retry check after a failed J2534 connection attempt. The app remained usable and the retry path behaved as expected.
+- This was a software/UI check only; no physical J2534 adapter or vehicle was used, so it does not establish hardware compatibility.
+- Next: continue with software-only validation of connection-state controls and error recovery. Keep real adapter/vehicle checks deferred.
+
+## Manual Windows verification — diagnostic controls gated without adapter (2026-10-16)
+
+- User confirmed that with no physical J2534 device connected, Read VIN, Read DTC, and Start Monitor remain unavailable; connection failure is handled without hanging and the app remains usable.
+- This verifies the expected UI safety gate only. It does not verify live CAN/UDS behavior or physical hardware compatibility.
+- Next: continue software-only release checks and keep physical adapter/vehicle tests deferred.
+
+
+## Manual Windows verification — profile persists across restart (2026-10-16)
+
+- User confirmed that a previously saved ECU profile remains available after closing Dvinholm normally and launching it again.
+- This verifies local profile persistence across an ordinary app restart; it does not validate ECU communication or physical adapter behavior.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: continue software-only release checks and record each confirmed manual result.
+
+
+## Manual Windows verification — edited profile persists across restart (2026-10-16)
+
+- User confirmed that changing a safe profile field (profile name), saving the profile, closing and relaunching Dvinholm preserves the updated name.
+- The profile remains available and its edited value persists after restart; this is a local UI/storage check only.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: continue with a non-destructive software-only profile check; do not delete the user's only useful profile.
+
+
+## Manual Windows verification — edited profile exports correctly (2026-10-16)
+
+- User confirmed that exporting the edited ECU profile to JSON succeeds and the exported file contains the updated profile name with the expected intact structure/fields.
+- This verifies profile export and local JSON serialization only; it does not validate ECU communication or physical adapter behavior.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: perform a safe import round-trip using a separate copy/file so the original profile remains untouched.
+
+
+## Manual Windows verification — profile JSON import round-trip (2026-10-16)
+
+- User confirmed that importing the exported ECU profile JSON succeeds and the imported profile retains the expected name and fields.
+- The original profile remains available; this verifies the local export/import round-trip and profile data preservation only.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: check profile isolation by switching between profiles, but first ensure a second disposable/test profile exists; do not risk modifying or deleting the only useful profile.
+
+
+## Manual Windows verification — profile isolation/switching (2026-10-16)
+
+- User confirmed that the original ECU profile and a separate `TEST-ECU` profile are both available and can be opened independently.
+- Profile names/data remain distinct while switching; no cross-profile mixing was observed.
+- This verifies local profile selection and data isolation only. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
+- Next: verify safe deletion behavior using only the disposable `TEST-ECU` profile, keeping the original useful profile untouched.
+
+
+## Manual Windows verification — delete disposable profile safely (2026-10-16)
+
+- User confirmed that deleting the disposable `TEST-ECU` profile removes it from the profile list, the original profile remains intact, and after restarting Dvinholm the deleted test profile does not reappear.
+- This verifies local profile deletion/persistence and preservation of the remaining profile only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: run a final software-only profile workflow check, then review outstanding release-gate items and PR/CI status before deciding whether to prepare release 0.2.0.
+
+
+## Manual Windows verification — complete profile workflow (2026-10-16)
+
+- User confirmed the complete profile workflow succeeded: opened the original profile, temporarily renamed and saved it, exported JSON, restarted Dvinholm and confirmed the changed name persisted, then restored and saved the original name.
+- This consolidates the local profile edit/save/export/restart workflow; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: inspect the current roadmap, open PR #255 and current CI state; identify any remaining software-only release gates before recommending whether 0.2.0 is ready.
+
+
+## Manual Windows verification — malformed profile JSON rejected safely (2026-10-16)
+
+- User confirmed that importing a deliberately malformed JSON copy (removed closing brace) reports an import error, does not hang the app, and leaves the original saved profile unchanged.
+- This verifies malformed-input handling for local profile import only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: continue software-only release gates and review PR #255 mergeability/CI before recommending release 0.2.0.
+
+
+## Manual Windows verification — valid JSON missing profile name (2026-10-16)
+
+- User confirmed the import test succeeded for a syntactically valid profile JSON copy with the profile-name field removed.
+- The test confirms the app handles this missing-required-field case acceptably; the original profile was kept separate from the test copy. The exact UI behavior (rejection versus safe fallback) was not specified, so no narrower behavior is claimed.
+- This covers local profile-import validation only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: test a syntactically valid profile with an invalid field value/type, using a disposable copy, and confirm safe handling without altering the original profile.
+
+
+## Manual Windows verification — profile name has wrong JSON type (2026-10-16)
+
+- User confirmed successful handling of a syntactically valid profile JSON copy where the profile-name value was changed from a string to a number.
+- The test was performed on a copy; the original saved profile was preserved. Exact UI behavior was not specified, so no specific error text or fallback behavior is claimed.
+- This verifies local profile-import handling for an unexpected field type only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: test an unknown/extra JSON property in a disposable profile copy and confirm the app imports or rejects it safely without altering the original profile.
+
+
+## Manual Windows verification — extra unknown JSON property (2026-10-16)
+
+- User confirmed successful handling of a profile JSON copy containing an extra property (`test_extra_field`) while preserving the original profile.
+- This verifies local profile-import behavior with an unknown/extra property only; it does not establish whether the importer persists or discards the extra property unless separately inspected.
+- No ECU communication was involved. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
+- Next: test importing the same valid profile JSON twice and confirm there is no unintended duplicate or corruption of the saved profile list.
+
+
+## Manual Windows verification — repeated import of same profile JSON (2026-10-16)
+
+- User confirmed importing the same profile JSON twice and restarting Dvinholm completed successfully; the saved profile list remained correct with no observed unintended duplicates or corruption.
+- This verifies the manual repeated-import/persistence workflow for the tested profile only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: verify that cancelling out of the profile-import file picker leaves the profile list unchanged and does not report a false import success.
+
+
+## Manual Windows verification — cancel profile import (2026-10-16)
+
+- User confirmed cancelling the profile-import file picker completed safely: no profile was selected, the profile list remained unchanged, and the app did not report a false successful import.
+- This verifies cancellation handling for the local profile-import UI only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: test cancelling profile export/save dialog (if the app exposes cancellation) and confirm no file is falsely reported as saved and the existing profile remains intact.
+
+
+## Manual Windows verification — cancel profile export (2026-10-16)
+
+- User confirmed cancelling the profile export/save dialog completed safely: no false successful-save indication occurred and the original profile remained unchanged.
+- This verifies cancellation handling for local profile export only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: export a profile to a new temporary filename, verify the file exists and contains valid JSON, then import it into a disposable test profile/workflow without overwriting the original.
+
+
+## Manual Windows verification — profile export/import round trip (2026-10-16)
+
+- User confirmed exporting a profile to a new temporary filename, verifying that the file exists and contains valid JSON, then importing it without overwriting the original profile succeeded.
+- This confirms the tested local profile export/import round trip and preservation of the original; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: check profile validation and error feedback by importing a JSON object with a required profile field missing (using a disposable copy), confirming the original profile remains intact and the app stays responsive.
+
+
+## Manual Windows verification — required profile field missing (2026-10-16)
+
+- User confirmed successful handling of an import test using a syntactically valid JSON profile copy with another required field omitted.
+- The original profile was kept separate. The exact field and UI behavior were not specified, so no particular validation message or fallback behavior is claimed.
+- This covers local profile-import validation only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: inspect the repository's documented profile JSON schema/validation rules before choosing any further field-specific tests; avoid guessing which fields are required.
+
+
+## Manual Windows verification — import empty profile catalog (2026-10-16)
+
+- User confirmed the empty JSON array (`[]`) import test succeeded after creating a backup of the existing profile catalog.
+- This verifies the tested empty-catalog import/UI path only. Do not assume profiles were preserved in the active list; the user has not yet reported restoring the backup.
+- No ECU communication was involved. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
+- Next: ask the user to confirm the empty catalog is displayed correctly, then restore the saved catalog backup and verify the profiles return intact before continuing.
+
+
+## Manual Windows verification — restore catalog after empty import (2026-10-16)
+
+- User confirmed restoring the saved JSON catalog after importing the empty array (`[]`) succeeded; the original profiles returned, their names and main fields were intact, and the profiles persisted after restarting Dvinholm.
+- This verifies recovery from the tested empty-catalog import workflow; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: test duplicate profile IDs in an otherwise valid JSON catalog using a disposable copy, confirm import is rejected safely and the current catalog remains intact.
+
+
+## Manual Windows verification — duplicate profile IDs (2026-10-16)
+
+- User confirmed that importing a JSON catalog with duplicate profile IDs was handled safely: the duplicate catalog was rejected/reported as an error, the app did not hang, and the existing profiles remained intact.
+- No ECU communication was involved. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
+- Next: test invalid CAN identifier input in a disposable profile/catalog and verify validation prevents invalid settings from being accepted while existing profiles remain intact.
+
+
+## Manual Windows verification — invalid CAN identifiers (2026-10-16)
+
+- User confirmed invalid CAN identifiers outside the selected format's range were rejected/not accepted on save; existing profiles remained intact.
+- This was a UI/profile validation check only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: verify that request and response CAN IDs cannot be configured identically, using a disposable profile and confirming existing profiles remain intact.
+
+
+## Manual Windows verification — identical request/response CAN IDs (2026-10-16)
+
+- User confirmed that configuring the same CAN ID for request and response was rejected/not accepted on save; other profiles remained intact.
+- This was a profile validation check only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: verify that an invalid or malformed diagnostic identifier (DID) is rejected safely in a disposable profile, without modifying the existing catalog.
+
+
+## Manual Windows verification — malformed DID input (2026-10-16)
+
+- User confirmed the malformed DID input check was successful: the invalid value was handled safely, without a hang or damage to the existing profiles.
+- No ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: verify duplicate DID handling in a disposable profile/catalog, if the UI supports editing DID entries; otherwise report that the UI does not expose DID editing and continue with the next available software-only check.
+
+
+## Manual Windows verification — duplicate DID entries (2026-10-16)
+
+- User confirmed the duplicate DID test succeeded: repeated DID entries were handled safely, without an app hang or damage to existing profiles.
+- No ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: verify catalog export after the validation tests: export the restored original catalog to a new JSON filename and confirm the file is valid JSON with the expected profile names and fields; do not overwrite the only backup.
+
+
+## Manual Windows verification — export catalog after validation tests (2026-10-16)
+
+- User confirmed the catalog exported successfully to a new JSON file; the file was valid JSON, contained the expected original profile names and key fields, and had no unintended temporary test profiles.
+- The sole backup was not overwritten and no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: import this newly exported JSON into a separate temporary/test catalog or use the app's safe import workflow, then verify profile count, names, and key fields match the exported source. Keep the original backup intact.
+
+
+## Manual Windows verification — catalog export/import round trip (2026-10-16)
+
+- User confirmed re-importing the newly exported catalog succeeded; profile count, names, and key fields matched, no unintended duplicates or missing settings were observed, and the result persisted after restarting Dvinholm.
+- The original backup was kept separately. No ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: perform a final Windows build/package smoke check on the current candidate: launch the app, verify the main window loads without an unhandled error, then close it normally. Do not treat this as release approval; exact-head CI and remaining roadmap gates still need verification.
+
+
+## Manual Windows verification — candidate startup and normal exit (2026-10-16)
+
+- User confirmed the current Windows candidate launches with the main window fully loaded, without an unhandled error or crash, and closes normally.
+- This was a startup/shutdown smoke check only. No ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: verify the current pull request head and CI/check status before deciding which release gates remain. Do not merge or publish a release without explicit user authorization.
+
+
+## Manual Windows verification — startup without physical J2534 adapter (2026-10-16)
+
+- User confirmed the current Windows candidate correctly reports that no physical J2534 device is present, does not hang, keeps diagnostic actions unavailable without a connection, and can be closed and relaunched normally.
+- This is a no-device software behavior check only. No ECU communication was involved.
+- Physical adapter and vehicle verification remains explicitly deferred to a future release.
+- Next: inspect the latest CI run for the current PR head and record its final result before evaluating release readiness.
+
+
+## UDS UI state audit — 2026-10-16
+
+- Reviewed current-main `src/Dvinholm.App/MainWindow.xaml.cs` and the related test inventory.
+- Confirmed by source inspection: Read VIN/DTC/DID all route through `RunUdsOperationAsync` and `TryGetUdsClient`; the client guard requires an active connection and a selected CAN-ID format with valid IDs. UDS and ECU discovery share `_udsGate`; the UI disables UDS controls during a request and restores them according to `_connected`.
+- Confirmed close handling cancels discovery/UDS, waits with bounded timeouts, and only schedules session disposal when tracked tasks and the UDS gate have stopped. This is a source audit, not a new runtime test.
+- Existing tests already cover active/queued UDS cancellation, ISO-TP cancellation/disposal, dispatcher/session disposal races, CAN ID parsing, and virtual-adapter UDS flows. No duplicate test was added.
+- Next: manually verify disconnected/failed-connect button state (Start Monitor and Read VIN/DTC/DID remain disabled, Connect becomes available for retry) on the current Windows candidate. No physical adapter is needed; real adapter/vehicle tests remain deferred.
+
+
+## Manual Windows UI verification — failed J2534 path and disconnected controls (2026-10-16)
+
+- User confirmed the manual test passed: configuring a deliberately nonexistent J2534 DLL path produces a handled connection error; Connect is available for retry afterward; Start Monitor, Read VIN, Read DTC, and Read DID remain disabled while disconnected.
+- No physical J2534 adapter or vehicle was used.
+- This closes the current manual UI check for disconnected-state control availability after a failed connection.
+- Next: continue the remaining pre-release checks with the virtual/no-adapter setup; keep physical adapter and vehicle verification deferred to a future release.
+
+
+## Manual Windows UI verification — valid J2534 DLL path, adapter absent (2026-10-16)
+
+- User confirmed that selecting a real/previously detected J2534 DLL path and pressing Connect is handled correctly when no physical adapter is connected: the app reports the missing device without hanging.
+- Connect becomes available again after the attempt; Start Monitor, Read VIN, Read DTC, and Read DID remain disabled while disconnected.
+- No physical adapter or vehicle was used; hardware verification remains deferred.
+- Next: continue the pre-release virtual/no-adapter checks.
+
+
+## Manual Windows UI verification — repeated no-adapter connection attempts (2026-10-16)
+
+- User confirmed three consecutive Connect attempts with no physical J2534 adapter were handled correctly.
+- The app remained responsive and open; each attempt completed without hanging or crashing, and Monitor/UDS actions remained unavailable while disconnected.
+- No physical adapter or vehicle was used.
+- Next: continue the remaining pre-release checks with the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — disconnected state after restart (2026-10-16)
+
+- User confirmed Dvinholm closes and relaunches normally after failed no-adapter connection attempts.
+- After relaunch without a physical adapter, the application does not show an active connection; Start Monitor, Read VIN, Read DTC, and Read DID remain disabled.
+- App closes normally. No physical adapter or vehicle was used.
+- Next: continue the remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — switching ECU profiles (2026-10-16)
+
+- User confirmed switching between the primary and another saved ECU profile displays each profile's own CAN request/response IDs, and returning to the primary profile restores its original values.
+- No profile settings were edited and no physical J2534 adapter or vehicle was used.
+- This verifies profile selection does not visibly mix CAN ID settings in the UI.
+- Next: continue the remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — ECU profile persistence after restart (2026-10-16)
+
+- User confirmed a non-primary saved ECU profile retains its name and CAN request/response IDs after closing and relaunching Dvinholm.
+- No profile values were changed; no physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — cancel ECU profile selection (2026-10-16)
+
+- User confirmed cancelling/closing the profile-selection action leaves the primary ECU profile selected and its CAN IDs unchanged.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks with the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — invalid CAN ID rejected after profile switch (2026-10-16)
+
+- User confirmed that after switching to a non-primary ECU profile, an out-of-range CAN ID is not accepted on save and the profile's original settings remain intact.
+- This was performed without a physical J2534 adapter or vehicle.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — profile recovery after invalid CAN ID (2026-10-16)
+
+- User confirmed that after an out-of-range CAN ID is rejected, the original CAN IDs remain intact and can be re-opened by switching away from and back to the profile.
+- No false persistent error or app malfunction was observed.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — repeated profile switching and persistence (2026-10-16)
+
+- User confirmed five switches between the primary and second ECU profiles, followed by an application restart, preserved both profile names and their respective CAN request/response IDs.
+- No profile edits were made and no physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — selected profile consistency on startup (2026-10-16)
+
+- User confirmed that after restarting Dvinholm, the currently selected ECU profile's displayed CAN IDs match that profile; switching between primary and second profiles also shows the correct corresponding values.
+- The app's choice of which profile is selected by default after restart is not treated as a failure, provided the selected profile and displayed parameters are consistent.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — cancel unsaved ECU profile edit (2026-10-16)
+
+- User confirmed changing a CAN ID in the second profile's editor and cancelling/closing without saving leaves the persisted CAN ID unchanged.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — save and restore ECU profile name (2026-10-16)
+
+- User confirmed changing the second ECU profile name with the temporary `-TEST` suffix, saving, switching away/back, and then restoring the original name all worked.
+- The profile's CAN IDs remained unchanged throughout.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — export primary ECU profile after name restoration (2026-10-16)
+
+- User confirmed a primary ECU profile export to a separate temporary JSON file was valid and contained the expected original profile name and CAN IDs.
+- The temporary `-TEST` suffix was absent; the backup file and source profile were not overwritten or edited.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — import exported ECU profile without overwriting original (2026-10-16)
+
+- User confirmed importing the temporary JSON export was handled correctly and the original ECU profile remained unchanged.
+- The imported profile's name and CAN IDs were checked; no original profile was overwritten.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — repeat JSON import (2026-10-16)
+
+- User confirmed the repeat-import check passed: importing the same temporary JSON again did not damage the original ECU profile or its CAN IDs; no hang or false-success behavior was observed.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — import name collision (2026-10-16)
+
+- User confirmed that importing a JSON profile whose name matches an existing profile was handled safely; cancelling the overwrite prompt left the original profile and CAN IDs unchanged, with no hang.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — dismiss overwrite dialog (2026-10-16)
+
+- User confirmed the overwrite/duplicate-name dialog could be dismissed safely; the app remained responsive and the existing profile and CAN IDs were unchanged after restart.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — cancel import file picker (2026-10-16)
+
+- User confirmed cancelling the import file picker leaves the profile list and selected profile unchanged and does not display a false import-success message.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — cancel profile export (2026-10-16)
+
+- User confirmed cancelling the JSON export/save dialog does not show a false export-success message, does not change the source profile, and leaves the app responsive.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — export non-primary ECU profile (2026-10-16)
+
+- User confirmed the non-primary profile displayed its own CAN IDs and its separate JSON export contained the matching profile name and CAN IDs.
+- Existing source and backup files were not overwritten.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — profile switching after export and restart (2026-10-16)
+
+- User confirmed both the primary and exported non-primary ECU profiles continue to show their own correct CAN IDs after switching between them and restarting the app.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — import malformed CAN ID (2026-10-16)
+
+- User confirmed a copied profile JSON with a malformed CAN ID value (`ZZZZ`) was handled safely: no hang, and existing profiles and their original CAN IDs remained intact.
+- The working JSON and backup were not edited.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — import empty profile name (2026-10-16)
+
+- User confirmed a copied profile JSON with an empty profile name was handled safely; the app did not hang and existing profiles remained unchanged.
+- The working JSON and backup were not edited.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — import JSON missing profile name field (2026-10-16)
+
+- User confirmed a copied profile JSON with the profile-name field removed was handled safely; the app did not hang and existing profiles remained unchanged.
+- The working JSON and backup were not edited.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — restart after import edge-case series (2026-10-16)
+
+- User confirmed the app closed and relaunched normally after the series of import edge-case checks; original profiles, names, and CAN IDs remained correct, with no false errors.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — rename profile, restart, restore name (2026-10-16)
+
+- User confirmed the primary ECU profile accepted a temporary `-TEST` rename, persisted it across restart with CAN IDs unchanged, and was restored to its original name successfully.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — CAN IDs after repeated profile switching (2026-10-16)
+
+- User confirmed the primary profile's CAN IDs remain correct after switching to another saved profile and back repeatedly.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — discard unsaved CAN ID edit (2026-10-16)
+
+- User confirmed an unsaved CAN ID edit was discarded when switching profiles; returning to the primary profile showed its original persisted value.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — save and restore CAN ID (2026-10-16)
+
+- User confirmed a valid changed CAN ID could be saved, persisted across profile switching, and then restored to its original value successfully.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — restart after CAN ID save/restore (2026-10-16)
+
+- User confirmed the app restarted normally after the CAN ID save/restore test; the primary profile's restored name and CAN IDs remained correct, and switching to another profile and back showed the correct values.
+- No physical J2534 adapter or vehicle was used.
+- Next: finish remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — export profile and compare after restart (2026-10-16)
+
+- User confirmed the primary ECU profile retained its original name and CAN IDs after restart, and the separately exported JSON contained matching values.
+- Existing backup files were not overwritten.
+- No physical J2534 adapter or vehicle was used.
+- Next: finish remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — CAN Monitor unavailable without adapter (2026-10-16)
+
+- User confirmed the app behaves correctly with no physical J2534 adapter: CAN Monitor cannot be started while disconnected, no false active-monitoring status is shown, and closing/relaunching the app works normally.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — UDS controls across ECU profiles while disconnected (2026-10-16)
+
+- User confirmed Read VIN, Read DTC, and Read DID remained unavailable while disconnected when switching between the primary and another saved ECU profile; no false connected state appeared.
+- The user returned to the primary profile and closed the app normally.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — repeated CAN Monitor attempts while disconnected (2026-10-16)
+
+- User confirmed repeated attempts to start CAN Monitor without a physical J2534 adapter did not hang or crash the app and did not produce a false active-monitoring state.
+- App closed and relaunched normally after the check.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — disconnected state after restart (2026-10-16)
+
+- User confirmed after closing and relaunching without a physical J2534 adapter, the app correctly reports no active connection and Start Monitor, Read VIN, Read DTC, and Read DID remain unavailable.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — repeated ECU profile switching while disconnected (2026-10-16)
+
+- User confirmed repeated switching between the primary and another saved ECU profile showed each profile's correct CAN IDs; Start Monitor, Read VIN, Read DTC, and Read DID remained unavailable without a physical adapter.
+- UI remained responsive and the app closed normally.
+- No physical J2534 adapter or vehicle was used.
+- Next: finish the remaining pre-release checks, then verify CI for the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — failed connection on non-primary ECU profile (2026-10-16)
+
+- User confirmed a connection attempt without a physical J2534 adapter is handled without hanging; the non-primary profile remains selected and its CAN IDs remain unchanged.
+- Monitor and UDS actions remain unavailable while disconnected.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release UI checks; verify CI on the current branch head before assessing release readiness.
+
+
+## Manual Windows UI verification — repeated Connect retries on secondary ECU profile (2026-10-16)
+
+- User confirmed three connection attempts without a physical J2534 adapter are handled without hanging or crashing; the secondary profile and its CAN IDs remain unchanged and diagnostic actions remain unavailable.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release UI checks and verify CI on the current branch head before release-readiness assessment.
+
+
+## Manual Windows UI verification — secondary profile survives failed connection (2026-10-16)
+
+- User confirmed the selected secondary ECU profile and its request/response CAN IDs remained intact after a connection attempt without a physical J2534 adapter, closing Dvinholm, and relaunching it.
+- The application did not report a false active connection; Start Monitor, Read VIN, Read DTC, and Read DID remained unavailable while disconnected.
+- No physical J2534 adapter or vehicle was used.
+- Next: verify that switching ECU profiles while disconnected keeps all Monitor/UDS actions unavailable and does not leave a stale enabled control.
+
+
+## Manual Windows UI verification — disconnected profile switching (2026-10-16)
+
+- User confirmed switching between the primary and secondary ECU profiles while disconnected leaves Start Monitor, Read VIN, Read DTC, and Read DID unavailable.
+- Both profiles continued to show their own correct CAN IDs; the application remained responsive and did not report an active connection.
+- No physical J2534 adapter or vehicle was used.
+- Next: verify that closing and reopening the profile selector without choosing a different profile does not alter the selected profile, CAN IDs, or disconnected control state.
+
+
+## Manual Windows UI verification — cancel profile selection (2026-10-16)
+
+- User confirmed canceling/closing the profile selector without choosing another profile leaves the selected secondary ECU profile and its CAN IDs unchanged.
+- The connection remains inactive and Start Monitor, Read VIN, Read DTC, and Read DID remain unavailable; no physical J2534 adapter or vehicle was used.
+- Next: verify that changing a profile's CAN ID, then canceling/discarding the edit, restores the saved value and leaves the disconnected UI state unchanged.
+
+
+## Manual Windows UI verification — discard unsaved CAN ID edit (2026-10-16)
+
+- User confirmed canceling/discarding an unsaved CAN ID edit restores the saved value after returning to the profile.
+- Other profile settings remained unchanged and Monitor/UDS actions stayed unavailable while disconnected.
+- No physical J2534 adapter or vehicle was used.
+- Next: verify a valid CAN ID edit can be saved, persists after switching away and back, and can then be restored to the original value.
+
+
+## Manual Windows UI verification — save and restore CAN ID (2026-10-16)
+
+- User confirmed a valid CAN ID edit on the secondary ECU profile saved successfully and persisted after switching to another profile and back.
+- The primary profile was unaffected; the original CAN ID was restored, saved, and remained correct after application restart.
+- No physical J2534 adapter or vehicle was used.
+- Next: verify the current branch head and PR checks before continuing toward release 0.2.0.
+
+
+## Manual Windows UI verification — export restored ECU profile (2026-10-16)
+
+- User confirmed exporting the secondary ECU profile to a new JSON file produced the expected profile name and both restored CAN IDs.
+- No temporary test name or prior test CAN ID was present; existing backup files were not overwritten.
+- No physical J2534 adapter or vehicle was used.
+- PR #255 CI for the then-current head was still running at last check; verify the latest run before release-readiness decisions.
+- Next: inspect the exported JSON in Dvinholm by importing it as a separate profile, without overwriting the source profile, then verify the imported name and CAN IDs.
+
+
+## Manual Windows UI verification — import export as separate profile (2026-10-16)
+
+- User confirmed the exported JSON imports successfully as a separate ECU profile without overwriting the source profile.
+- Imported profile name and both CAN IDs match the exported values; switching between source and imported profiles preserves each profile's own settings.
+- No physical J2534 adapter or vehicle was used.
+- PR #255 CI on the latest documentation head was queued at the last check; confirm its final result before release-readiness decisions.
+- Next: verify that exporting the full profile catalog preserves the expected profile count, names, and CAN IDs without modifying the separate backup.
+
+
+## Manual Windows UI verification — full profile catalog export (2026-10-16)
+
+- User confirmed the full catalog exported to a new JSON file with the expected profile count, names, and CAN IDs for the primary, secondary, and imported profiles.
+- No unexpected temporary test values appeared and the separate backup was left untouched.
+- No physical J2534 adapter or vehicle was used.
+- PR #255 CI for the latest head was queued at the last check; confirm the final result before release-readiness decisions.
+- Next: verify the full catalog JSON can be imported as a round trip without unintended duplicates or missing/changed profiles, keeping a separate backup available.
+
+
+## Manual Windows UI verification — profile catalog survives restart (2026-10-16)
+
+- User confirmed that after a normal close and relaunch, the profile count matched the exported catalog and the primary, secondary, and imported profiles retained their expected names and CAN IDs.
+- No profiles were missing or duplicated, and no false active connection was shown without a physical adapter.
+- No physical J2534 adapter or vehicle was used.
+- Next: verify the current PR #255 head and its CI status before deciding the remaining software-only release gates.
+
+
+## Manual Windows UI verification — repeat full-catalog import (2026-10-16)
+
+- User confirmed importing the previously exported profile catalog completed successfully without unexpected duplicate profiles or unexpected changes to existing profile settings.
+- Profile names and CAN IDs remained correct; the separate backup was preserved.
+- No physical J2534 adapter or vehicle was used.
+- PR #255 CI for the latest head was queued at the last check; verify a terminal CI result before release-readiness decisions.
+- Next: perform one final disconnected-state smoke test after the catalog import: restart the app, confirm no active connection and verify Monitor/UDS actions stay disabled.
+
+
+## Manual Windows UI verification — post-import disconnected-state smoke test (2026-10-16)
+
+- User confirmed the app closed and relaunched normally after full-catalog import.
+- Profiles and CAN IDs remained correct after restart.
+- With no physical J2534 adapter attached, the app did not report an active connection and Start Monitor / Read VIN / Read DTC / Read DID remained unavailable.
+- App stayed responsive and closed without hanging or an error.
+- Physical J2534 adapter and vehicle tests remain deferred to a future release.
+- CI for the latest PR #255 head was queued at the last check; check its result and assess remaining software-only release 0.2.0 gates next.
+
+
+## CI verification — PR #255 (run 2214, 2026-10-16)
+
+- GitHub Actions CI run 2214 for commit `220dee77d3f59ba7b4dd3075c2f9b9ec237bd09b` completed successfully.
+- Restore, Build, Test, Publish, and artifact upload steps all completed successfully. Optional public-asset packaging/publishing steps were skipped by workflow conditions.
+- This result applies to the tested commit; documentation updates create a new head and require their own CI run.
+- PR #255 remains open and unmerged. No release was created.
+- Next: inspect PR review/status requirements and remaining software-only release 0.2.0 gates; keep physical adapter/vehicle checks deferred.
+
+
+## CI verification — PR #255 latest documentation head (run 2218, 2026-10-16)
+
+- GitHub Actions CI run 2218 completed successfully for documentation head `6ec1af6551842a21a338ceab0c5e7bbbf8ac665c`.
+- Restore, Build, Test, Publish, and CI artifact upload succeeded; optional public-asset packaging/publishing steps were skipped by workflow conditions.
+- PR #255 remains open and unmerged; its only changed files are `AI_WORKLOG.md` and `ROADMAP.md`.
+- The passing CI validates this documentation head, not a future release merge commit. No release was created.
+- Release readiness is not yet established: connected-session UI gating cannot be verified without an active J2534/CAN session, and exact release archive/release-note checks remain to be completed.
+
+
+## CI verification — PR #255 documentation head (run 2222, 2026-10-16)
+
+- GitHub Actions CI run 2222 completed successfully for head `8928a4dbef800ac19d32d6ec6b54cd8d439fa73a`.
+- Restore, Build, Test, Publish, and CI artifact upload succeeded. Optional public updater-asset packaging/public-asset publishing steps were skipped by workflow conditions.
+- PR #255 remains open and unmerged; its current changes are documentation-only. No release was created.
+- This CI result does not establish release readiness: the enabled-controls transition requires a valid active J2534/CAN session, and release notes plus the exact release archive still need separate review.
+- Physical J2534 adapter and vehicle validation remain deferred to a future release.
+- Next: record this result in the roadmap, then re-check CI for the resulting documentation head before continuing the release-candidate review.
+
+
+## CI verification — PR #255 updated documentation head (run 2225, 2026-10-16)
+
+- GitHub Actions run 2225 completed successfully for head `be269fd3849588ce7fe777b9b997c2a9dd1eee88`.
+- Both reported build checks completed successfully; the workflow includes restore, build, automated tests, publish, and CI artifact upload.
+- PR #255 remains open, unmerged, and mergeable at this check. No release was created.
+- Release-candidate gates remain: review release notes and the exact release archive separately from CI artifacts; active-session UDS/Monitor enablement cannot be verified in the current no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
+- Next: re-check CI after this documentation update, then inspect the current release notes/assets without publishing or merging anything.
+
+
+## CI verification — PR #255 documentation head (2026-10-16)
+
+- GitHub Actions CI run **#2227** (push) and **#2228** (pull request) both completed successfully for head `f0239cb37d0c6b12eeeb9dbb3aa1cd372d51f8fe`.
+- Both runs passed restore, build, automated tests, publish, updater-asset packaging, CI artifact upload, and public CI asset publishing.
+- PR #255 remains open and unmerged; no stable release was created.
+- Release gates still open: review release notes and verify the exact release archive separately from CI artifacts; verify Monitor/UDS controls become enabled only after a valid active J2534/CAN session.
+- Physical J2534 adapter and vehicle validation remain deferred to a future release.
+- Next: re-check CI on the updated documentation head after this record is committed.
+
+
+## CI verification — PR #255 (2026-10-16)
+
+- GitHub Actions PR CI run **#2232** completed successfully for `577c85223f11cc692ae1da8ea8c09b10929dbd83`.
+- Build, automated tests, publish, updater asset packaging, CI artifact upload, and public CI asset steps passed.
+- PR #255 remains open and unmerged; no stable release was created.
+- Physical J2534 adapter and vehicle validation remain deferred to a future release.
+- Remaining release gates: inspect CI prerelease publication behavior, verify the exact stable release archive, and validate Monitor/UDS enablement during an active J2534/CAN session when suitable hardware becomes available.
+
+
+## CI workflow review — PR #256 (2026-10-16)
+
+- CI run #2239 passed for `496af38ab82d4bfc7121b4f4484c642d6bb4d311`.
+- Reviewed `.github/workflows/ci.yml`: updater ZIP packaging and public `ci-*` prerelease creation are now conditioned on pushes to `refs/heads/main`; branch pushes and PRs still run build/test and upload the normal Actions artifact.
+- PR #256 is open and unmerged. Do not claim the behavior is active on `main` until the PR is reviewed and merged.
+- This addresses avoiding public updater prereleases from documentation/feature branches. Stable release `0.2.0` remains unpublished.
+- Physical J2534 adapter and vehicle validation remain deferred to a future release.
+
+
+## CI failure follow-up — PR #257 (2026-10-16)
+- CI #2243 for docs PR #255 failed in `LatestBuildUpdaterFailureTests.ReplacementScript_RestoresPreviousBuildWhenReplacementFailsAtRuntime`: 475 passed, 1 failed. The failure occurred during temporary-directory cleanup because PowerShell still held a handle; the isolated script also used synthetic PID `-1` without mocking `Wait-Process`.
+- Opened PR #257 (`fix/rollback-test-mock-wait-process`) adding a no-op `Wait-Process` mock for the isolated runtime test. PR #257 remains open/unmerged.
+- CI #2246 for PR #257 passed: restore, build, test, publish, and artifact upload succeeded; public updater/release steps were skipped as expected for a PR.
+- Follow-up: rerun/check CI for PR #255 and record its outcome. Do not merge PRs or publish v0.2.0 without explicit authorization. Physical J2534 adapter/vehicle validation remains deferred to a future release.
