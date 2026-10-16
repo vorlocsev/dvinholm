@@ -2157,3 +2157,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This result applies to the tested commit; documentation updates create a new head and require their own CI run.
 - PR #255 remains open and unmerged. No release was created.
 - Next: inspect PR review/status requirements and remaining software-only release 0.2.0 gates; keep physical adapter/vehicle checks deferred.
+
+
+## CI verification — PR #255 latest documentation head (run 2218, 2026-10-16)
+
+- GitHub Actions CI run 2218 completed successfully for documentation head `6ec1af6551842a21a338ceab0c5e7bbbf8ac665c`.
+- Restore, Build, Test, Publish, and CI artifact upload succeeded; optional public-asset packaging/publishing steps were skipped by workflow conditions.
+- PR #255 remains open and unmerged; its only changed files are `AI_WORKLOG.md` and `ROADMAP.md`.
+- The passing CI validates this documentation head, not a future release merge commit. No release was created.
+- Release readiness is not yet established: connected-session UI gating cannot be verified without an active J2534/CAN session, and exact release archive/release-note checks remain to be completed.
