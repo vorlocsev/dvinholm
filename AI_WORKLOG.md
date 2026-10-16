@@ -1994,3 +1994,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed the app restarted normally after the CAN ID save/restore test; the primary profile's restored name and CAN IDs remained correct, and switching to another profile and back showed the correct values.
 - No physical J2534 adapter or vehicle was used.
 - Next: finish remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
+
+
+## Manual Windows UI verification — export profile and compare after restart (2026-10-16)
+
+- User confirmed the primary ECU profile retained its original name and CAN IDs after restart, and the separately exported JSON contained matching values.
+- Existing backup files were not overwritten.
+- No physical J2534 adapter or vehicle was used.
+- Next: finish remaining pre-release UI checks, then verify CI on the current branch head and review release readiness.
