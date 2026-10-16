@@ -1690,3 +1690,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed that importing a JSON catalog with duplicate profile IDs was handled safely: the duplicate catalog was rejected/reported as an error, the app did not hang, and the existing profiles remained intact.
 - No ECU communication was involved. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
 - Next: test invalid CAN identifier input in a disposable profile/catalog and verify validation prevents invalid settings from being accepted while existing profiles remain intact.
+
+
+## Manual Windows verification — invalid CAN identifiers (2026-10-16)
+
+- User confirmed invalid CAN identifiers outside the selected format's range were rejected/not accepted on save; existing profiles remained intact.
+- This was a UI/profile validation check only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: verify that request and response CAN IDs cannot be configured identically, using a disposable profile and confirming existing profiles remain intact.
