@@ -673,3 +673,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Import the exported JSON as a separate profile and verify its name and CAN IDs without overwriting the source profile.
 - [ ] Verify CI for the current branch head and review remaining release 0.2.0 gates.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
+
+
+## Manual Windows UI verification — import export as separate profile (2026-10-16)
+
+- [x] Confirmed exported JSON imports as a separate profile without overwriting the source profile.
+- [x] Confirmed imported profile name/CAN IDs match the JSON and source/imported settings remain independent after switching.
+- [ ] Export the full profile catalog and verify expected profile count, names, and CAN IDs; keep the backup untouched.
+- [ ] Verify CI for the current PR #255 head and review remaining release 0.2.0 gates.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
