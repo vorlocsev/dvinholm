@@ -120,3 +120,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Original profile remains available; local export/import round-trip verified without ECU communication.
 - Physical J2534 adapter and vehicle testing remains deferred to a future hardware-validation cycle.
 - [ ] Check profile isolation by switching between profiles once a second disposable/test profile is available; protect the user's only useful profile.
+
+
+## Manual UI verification — profile isolation/switching (2026-10-16)
+
+- [x] User confirmed the original ECU profile and a separate `TEST-ECU` profile are both available and open independently.
+- [x] Switching profiles does not mix their names or data.
+- This verifies local profile selection/data isolation only; physical J2534 adapter and vehicle testing remains deferred.
+- [ ] Verify safe deletion behavior using only disposable `TEST-ECU`; preserve the original useful profile.
