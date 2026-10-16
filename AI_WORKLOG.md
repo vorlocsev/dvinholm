@@ -1,3 +1,14 @@
+## Updater mid-stream cancellation cleanup test merged (2026-10-16)
+
+- PR [#237](https://github.com/vorlocsev/dvinholm/pull/237) was squash-merged as `442f041f7afc355166419c489ac8569ae6e3a595`.
+- Added `CancellationAfterPartialDownload_CleansTemporaryArchiveAndStagingDirectory`: the test lets the updater receive the first archive chunk, cancels during the next read, and verifies the temporary ZIP and staging directory are removed.
+- PR validation [run #38912135263](https://github.com/vorlocsev/dvinholm/actions/runs/38912135263) and branch CI [run #38912118278](https://github.com/vorlocsev/dvinholm/actions/runs/38912118278) both succeeded. Post-merge main CI [run #38912910522](https://github.com/vorlocsev/dvinholm/actions/runs/38912910522) was in progress when this entry was written; verify it before declaring the merge fully validated.
+- This covers cancellation after partial content has been read, complementing the pre-download cancellation and mid-stream I/O failure tests.
+- Next: inspect remaining updater integrity and recovery paths (digest mismatch, extraction failure, replacement/restart rollback) and avoid duplicating existing tests.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred to a future release.
+
+---
+
 ## Updater partial-download cleanup test merged (2026-10-16)
 
 - PR [#235](https://github.com/vorlocsev/dvinholm/pull/235) was squash-merged as `2f788ca4b1a03452b8370e16c782466161532bba`.
