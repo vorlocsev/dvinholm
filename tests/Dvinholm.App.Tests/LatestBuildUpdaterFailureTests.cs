@@ -420,6 +420,7 @@ public sealed class LatestBuildUpdaterFailureTests
         Assert.Contains("$backupReady = $false", script);
         Assert.Contains("$replacementStarted = $true", script);
         Assert.Contains("$destination $backup /MIR", script);
+        Assert.True(script.IndexOf("$destination $backup /MIR", StringComparison.Ordinal) < script.IndexOf("$source $destination /MIR", StringComparison.Ordinal));
         Assert.Contains("$source $destination /MIR", script);
         Assert.Contains("if ($replacementStarted -and $hadDestination -and $backupReady)", script);
         Assert.Contains("$backup $destination /MIR", script);
