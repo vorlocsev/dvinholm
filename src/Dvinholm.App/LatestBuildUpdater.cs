@@ -87,6 +87,10 @@ internal static class LatestBuildUpdater
 
     public static string? CurrentCommitSha => GetEmbeddedCommitSha(CurrentVersion, CurrentVersion.LastIndexOf('+'));
 
+    internal static bool IsUpdateAvailable(string? currentCommitSha, LatestBuildInfo latestBuild) =>
+        string.IsNullOrWhiteSpace(currentCommitSha) ||
+        !string.Equals(currentCommitSha, latestBuild.CommitSha, StringComparison.OrdinalIgnoreCase);
+
     private static string? GetEmbeddedCommitSha(string value, int plus)
     {
         if (plus < 0)
