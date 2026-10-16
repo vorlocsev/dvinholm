@@ -2138,3 +2138,13 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - No physical J2534 adapter or vehicle was used.
 - PR #255 CI for the latest head was queued at the last check; verify a terminal CI result before release-readiness decisions.
 - Next: perform one final disconnected-state smoke test after the catalog import: restart the app, confirm no active connection and verify Monitor/UDS actions stay disabled.
+
+
+## Manual Windows UI verification — post-import disconnected-state smoke test (2026-10-16)
+
+- User confirmed the app closed and relaunched normally after full-catalog import.
+- Profiles and CAN IDs remained correct after restart.
+- With no physical J2534 adapter attached, the app did not report an active connection and Start Monitor / Read VIN / Read DTC / Read DID remained unavailable.
+- App stayed responsive and closed without hanging or an error.
+- Physical J2534 adapter and vehicle tests remain deferred to a future release.
+- CI for the latest PR #255 head was queued at the last check; check its result and assess remaining software-only release 0.2.0 gates next.
