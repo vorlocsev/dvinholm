@@ -2205,3 +2205,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - PR #255 remains open and unmerged; no stable release was created.
 - Physical J2534 adapter and vehicle validation remain deferred to a future release.
 - Remaining release gates: inspect CI prerelease publication behavior, verify the exact stable release archive, and validate Monitor/UDS enablement during an active J2534/CAN session when suitable hardware becomes available.
+
+
+## CI workflow review — PR #256 (2026-10-16)
+
+- CI run #2239 passed for `496af38ab82d4bfc7121b4f4484c642d6bb4d311`.
+- Reviewed `.github/workflows/ci.yml`: updater ZIP packaging and public `ci-*` prerelease creation are now conditioned on pushes to `refs/heads/main`; branch pushes and PRs still run build/test and upload the normal Actions artifact.
+- PR #256 is open and unmerged. Do not claim the behavior is active on `main` until the PR is reviewed and merged.
+- This addresses avoiding public updater prereleases from documentation/feature branches. Stable release `0.2.0` remains unpublished.
+- Physical J2534 adapter and vehicle validation remain deferred to a future release.
