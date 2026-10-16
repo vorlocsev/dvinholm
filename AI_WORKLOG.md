@@ -1906,3 +1906,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed cancelling the import file picker leaves the profile list and selected profile unchanged and does not display a false import-success message.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — cancel profile export (2026-10-16)
+
+- User confirmed cancelling the JSON export/save dialog does not show a false export-success message, does not change the source profile, and leaves the app responsive.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
