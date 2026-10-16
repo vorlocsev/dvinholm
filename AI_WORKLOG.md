@@ -1,3 +1,14 @@
+## Stable release published — Dvinholm 0.1.1 (2026-10-16)
+
+- Verified the stable GitHub Release `v0.1.1` is published (not marked as a prerelease): https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1
+- Windows x86 package: https://github.com/vorlocsev/dvinholm/releases/download/v0.1.1/Dvinholm-Windows-x86.zip
+- Release commit: `2cb465918a18f7e136d51b1bdd9132d4293e0ade`; main CI run [#1781](https://github.com/vorlocsev/dvinholm/actions/runs/38837028529) succeeded.
+- Physical J2534 adapter/vehicle verification remains deferred to a future release.
+- Follow-up: revalidate open PRs against the current main branch before considering them for merge. Priorities are updater digest-metadata regression tests (#225) and a software-only review of why Read VIN / CAN Monitor controls remain unavailable without an adapter; do not bypass connection gating.
+- Current Windows evidence covers updater success/error retry and compact layout visibility. It does not establish live CAN monitoring or VIN reads without connected hardware.
+
+---
+
 ## CI checkpoint — compact ECU layout PR #227 (2026-10-16)
 
 - Latest branch head `596f3da14d2663366d93202dfd612672ffb06419` passed both GitHub Actions workflows: push run [#1771](https://github.com/vorlocsev/dvinholm/actions/runs/38835346384) and pull-request validation [#1772](https://github.com/vorlocsev/dvinholm/actions/runs/38835349822).
