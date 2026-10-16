@@ -469,3 +469,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Export a non-primary ECU profile and verify the JSON contains its own name and CAN IDs; source and backup files remain untouched.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — profile switching after export and restart (2026-10-16)
+
+- [x] Confirm primary and non-primary profiles retain their own CAN IDs across switching and app restart.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
