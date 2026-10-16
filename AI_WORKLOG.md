@@ -1878,3 +1878,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The imported profile's name and CAN IDs were checked; no original profile was overwritten.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — repeat JSON import (2026-10-16)
+
+- User confirmed the repeat-import check passed: importing the same temporary JSON again did not damage the original ECU profile or its CAN IDs; no hang or false-success behavior was observed.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
