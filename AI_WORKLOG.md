@@ -1634,3 +1634,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This verifies the manual repeated-import/persistence workflow for the tested profile only; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: verify that cancelling out of the profile-import file picker leaves the profile list unchanged and does not report a false import success.
+
+
+## Manual Windows verification — cancel profile import (2026-10-16)
+
+- User confirmed cancelling the profile-import file picker completed safely: no profile was selected, the profile list remained unchanged, and the app did not report a false successful import.
+- This verifies cancellation handling for the local profile-import UI only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: test cancelling profile export/save dialog (if the app exposes cancellation) and confirm no file is falsely reported as saved and the existing profile remains intact.
