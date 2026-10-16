@@ -1795,3 +1795,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - After relaunch without a physical adapter, the application does not show an active connection; Start Monitor, Read VIN, Read DTC, and Read DID remain disabled.
 - App closes normally. No physical adapter or vehicle was used.
 - Next: continue the remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — switching ECU profiles (2026-10-16)
+
+- User confirmed switching between the primary and another saved ECU profile displays each profile's own CAN request/response IDs, and returning to the primary profile restores its original values.
+- No profile settings were edited and no physical J2534 adapter or vehicle was used.
+- This verifies profile selection does not visibly mix CAN ID settings in the UI.
+- Next: continue the remaining pre-release checks using the virtual/no-adapter setup.
