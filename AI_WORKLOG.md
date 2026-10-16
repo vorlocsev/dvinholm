@@ -1520,5 +1520,7 @@ No tests were run during this source audit; this is a coverage review, not a cla
 
 - PR [#253](https://github.com/vorlocsev/dvinholm/pull/253) passed latest PR-head CI [#38932272236](https://github.com/vorlocsev/dvinholm/actions/runs/38932272236) and was squash-merged to `main` as `db3e8607ec0c28057649f7f616056a71b9bc991e`.
 - The runtime rollback test now disposes its PowerShell process before deleting the isolated temporary directory; stdout/stderr are drained concurrently. Rollback assertions were retained.
-- Post-merge main CI [#38933065485](https://github.com/vorlocsev/dvinholm/actions/runs/38933065485) was still in progress at this checkpoint. Do not record it as passing until confirmed.
-- Next: finish the UDS close/disconnect software-only audit, adding deterministic virtual-adapter coverage only if an uncovered race is established. Physical adapter and vehicle testing remain deferred.
+- Post-merge main CI [#38933065485](https://github.com/vorlocsev/dvinholm/actions/runs/38933065485) completed successfully; build, tests, publish, and artifact steps passed on merge commit `db3e8607ec0c28057649f7f616056a71b9bc991e`.
+- Software-only UDS lifecycle audit reviewed MainWindow.Closed plus existing active/queued UDS cancellation, ISO-TP cancellation/recovery, and J2534 session lifecycle tests. The close handler cancels work and only schedules session disposal after tracked workers and the UDS gate are stopped.
+- No distinct uncovered race was demonstrated in the testable layers, so no duplicate test was added. Directly unit-testing the WinUI Closed handler would require extracting a focused shutdown coordinator; defer that refactor until it provides a concrete regression benefit.
+- Physical adapter and vehicle testing remain deferred.
