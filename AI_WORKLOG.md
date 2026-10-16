@@ -1560,3 +1560,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This verifies profile export and local JSON serialization only; it does not validate ECU communication or physical adapter behavior.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: perform a safe import round-trip using a separate copy/file so the original profile remains untouched.
+
+
+## Manual Windows verification — profile JSON import round-trip (2026-10-16)
+
+- User confirmed that importing the exported ECU profile JSON succeeds and the imported profile retains the expected name and fields.
+- The original profile remains available; this verifies the local export/import round-trip and profile data preservation only.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: check profile isolation by switching between profiles, but first ensure a second disposable/test profile exists; do not risk modifying or deleting the only useful profile.
