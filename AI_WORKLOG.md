@@ -2129,3 +2129,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - No profiles were missing or duplicated, and no false active connection was shown without a physical adapter.
 - No physical J2534 adapter or vehicle was used.
 - Next: verify the current PR #255 head and its CI status before deciding the remaining software-only release gates.
+
+
+## Manual Windows UI verification — repeat full-catalog import (2026-10-16)
+
+- User confirmed importing the previously exported profile catalog completed successfully without unexpected duplicate profiles or unexpected changes to existing profile settings.
+- Profile names and CAN IDs remained correct; the separate backup was preserved.
+- No physical J2534 adapter or vehicle was used.
+- PR #255 CI for the latest head was queued at the last check; verify a terminal CI result before release-readiness decisions.
+- Next: perform one final disconnected-state smoke test after the catalog import: restart the app, confirm no active connection and verify Monitor/UDS actions stay disabled.
