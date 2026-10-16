@@ -1,3 +1,12 @@
+## UI layout validation checkpoint — PR #227 (2026-10-16)
+
+- Checked commit `d8210f95c70b94cde6146441f10c5b24e41e454d`: both GitHub Actions build checks completed successfully ([run 38824990193](https://github.com/vorlocsev/dvinholm/actions/runs/38824990193), [run 38824981023](https://github.com/vorlocsev/dvinholm/actions/runs/38824981023)).
+- The compact ECU-profile layout change is CI-validated, but Windows visual verification remains pending: confirm CAN Monitor remains visible while selecting an ECU profile and that the compact row does not clip controls.
+- No physical J2534 adapter is required for this layout check; adapter-dependent functions such as Read VIN and starting a live monitor can remain unavailable without a connected device.
+- PR [#227](https://github.com/vorlocsev/dvinholm/pull/227) remains open and unmerged.
+
+---
+
 # UI layout follow-up — compact ECU profiles (2026-10-16)
 
 ## User-reported issue
