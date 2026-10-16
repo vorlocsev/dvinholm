@@ -441,3 +441,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Import JSON using an existing profile name and cancel overwrite; original profile and CAN IDs remain unchanged, and the app stays responsive.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — dismiss overwrite dialog (2026-10-16)
+
+- [x] Dismiss the profile overwrite dialog; app stays responsive and the existing profile/CAN IDs remain unchanged after restart.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
