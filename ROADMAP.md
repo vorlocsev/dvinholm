@@ -388,3 +388,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Both profiles retain their respective values after restarting the application.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — startup profile consistency (2026-10-16)
+
+- [x] After restart, the selected ECU profile's displayed CAN IDs match that profile.
+- [x] Switching between the primary and second profiles displays the corresponding CAN IDs correctly.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
