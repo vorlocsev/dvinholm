@@ -316,3 +316,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Start Monitor, Read VIN, Read DTC, and Read DID remain disabled while disconnected.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — valid J2534 DLL path, no device (2026-10-16)
+
+- [x] A valid/detected J2534 DLL path with no physical adapter produces a handled missing-device result without hanging.
+- [x] Connect is available again after the attempt.
+- [x] Start Monitor, Read VIN, Read DTC, and Read DID remain disabled while disconnected.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical adapter and vehicle checks remain deferred to a future release.
