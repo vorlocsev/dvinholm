@@ -1536,3 +1536,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed that with no physical J2534 device connected, Read VIN, Read DTC, and Start Monitor remain unavailable; connection failure is handled without hanging and the app remains usable.
 - This verifies the expected UI safety gate only. It does not verify live CAN/UDS behavior or physical hardware compatibility.
 - Next: continue software-only release checks and keep physical adapter/vehicle tests deferred.
+
+
+## Manual Windows verification — profile persists across restart (2026-10-16)
+
+- User confirmed that a previously saved ECU profile remains available after closing Dvinholm normally and launching it again.
+- This verifies local profile persistence across an ordinary app restart; it does not validate ECU communication or physical adapter behavior.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: continue software-only release checks and record each confirmed manual result.
