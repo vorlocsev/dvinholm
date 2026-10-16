@@ -271,3 +271,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] User confirmed duplicate DID entries were handled safely without an app hang or damage to existing profiles.
 - No ECU communication or physical J2534 adapter/vehicle was used; hardware validation remains deferred.
 - [ ] Next: export the restored original catalog to a new JSON filename and verify valid JSON, expected profile names, and key fields without overwriting the only backup.
+
+
+## Manual UI verification — export catalog after validation tests (2026-10-16)
+
+- [x] Confirmed export to a new JSON file succeeds; JSON is valid and contains expected original profile names/key fields with no unintended temporary test profiles.
+- The original backup was preserved; no ECU communication or physical adapter/vehicle was used. Hardware validation remains deferred.
+- [ ] Next: import the newly exported JSON through the safe test workflow and compare profile count, names, and key fields with the exported source, keeping the original backup intact.
