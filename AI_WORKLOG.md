@@ -2242,3 +2242,13 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - [ ] Independent archive download/content inspection is still incomplete: the GitHub release asset URL could not be fetched through the available browser/download path. Do not claim the archive was verified from its checksum metadata alone.
 - [ ] Software-only release review remains open for active-session Monitor/UDS enablement; current no-adapter setup cannot confirm controls transition to enabled only after a valid active J2534/CAN session.
 - Stable v0.2.0 remains unpublished and requires explicit user authorization. Physical adapter/vehicle validation remains deferred to a future release.
+
+
+## Post-PR #259 main CI verification (2026-10-17)
+
+- [x] PR #259 merged as commit `1935d56751453a5feeaa599f63302f6523717918`.
+- [x] Main CI #2263 passed for that merge commit: https://github.com/vorlocsev/dvinholm/actions/runs/38978437672.
+- [x] Reviewed current `MainWindow.xaml.cs`: UDS buttons are disabled before connection and enabled after successful J2534 connection; VIN/DTC/DID actions also pass through `TryGetUdsClient`, which checks connection state and validates CAN ID format/values. Disconnect disables Monitor and UDS controls before tearing down the session; session state is reset on disconnect failure.
+- [ ] Exact v0.1.1 release ZIP still has not been independently downloaded and inspected; GitHub release metadata/checksum alone does not establish that the local archive contents were verified.
+- [ ] Manual transition from disconnected to a valid active J2534/CAN session remains unverified because no physical adapter is available. Physical adapter/vehicle testing remains deferred to a future release.
+- Stable v0.2.0 remains unpublished; explicit user authorization is required before publishing it.
