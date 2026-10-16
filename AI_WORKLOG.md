@@ -1746,3 +1746,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This was a startup/shutdown smoke check only. No ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: verify the current pull request head and CI/check status before deciding which release gates remain. Do not merge or publish a release without explicit user authorization.
+
+
+## Manual Windows verification — startup without physical J2534 adapter (2026-10-16)
+
+- User confirmed the current Windows candidate correctly reports that no physical J2534 device is present, does not hang, keeps diagnostic actions unavailable without a connection, and can be closed and relaunched normally.
+- This is a no-device software behavior check only. No ECU communication was involved.
+- Physical adapter and vehicle verification remains explicitly deferred to a future release.
+- Next: inspect the latest CI run for the current PR head and record its final result before evaluating release readiness.
