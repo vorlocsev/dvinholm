@@ -403,3 +403,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Cancelling/closing an ECU profile editor after changing a CAN ID without saving preserves the original persisted value.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — ECU profile rename persistence (2026-10-16)
+
+- [x] A temporary profile-name change saves and persists after switching away and back.
+- [x] CAN IDs remain unchanged, and the original profile name was restored and saved.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
