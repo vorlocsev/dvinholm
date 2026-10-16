@@ -732,8 +732,13 @@ public sealed partial class MainWindow : Window
             if (monitorTask is not null)
             {
                 try { await monitorTask; }
-                catch (OperationCanceledException) { }
-                catch (ObjectDisposedException) { }
+                catch (Exception ex)
+                {
+                    // A monitor failure must not prevent session cleanup, but
+                    // keep a diagnostic hint before the disconnect status update.
+                    SetStatus("CAN monitor stopped with an error: " +
+                        FormatSafeException(ex, "unexpected monitor error."));
+                }
             }
 
             ConnectButton.IsEnabled = false;
