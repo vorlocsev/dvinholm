@@ -307,3 +307,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Reviewed close/disposal ordering and existing tests; current coverage already includes active/queued UDS cancellation, ISO-TP disposal/cancellation, dispatcher/session disposal races, CAN ID parsing, and virtual-adapter read-only UDS flows. No redundant test added.
 - [ ] Manually verify after a failed/no-device connection that Start Monitor and Read VIN/DTC/DID remain disabled and Connect is re-enabled for retry.
 - [ ] Review any concrete uncovered close/disconnect race before adding a new deterministic virtual-adapter test. Physical J2534 adapter and vehicle testing remain deferred.
+
+
+## Manual Windows UI verification — failed J2534 path (2026-10-16)
+
+- [x] A nonexistent J2534 DLL path produces a handled connection error.
+- [x] Connect is available for retry after the failure.
+- [x] Start Monitor, Read VIN, Read DTC, and Read DID remain disabled while disconnected.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
