@@ -2272,3 +2272,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - PR #228 (updater button state) remains open and unmerged. The work log records user confirmation that the identical-SHA false positive no longer appears on the tested Windows build; no merge was performed because explicit merge approval is required.
 - Remaining release-review tasks: independently inspect the exact v0.1.1 release archive and keep active-session Monitor/UDS transition marked unverified until a valid J2534/CAN session is available.
 - Physical adapter/vehicle validation remains deferred. Stable v0.2.0 must not be published without explicit user authorization.
+
+
+## Published v0.1.1 release ZIP audit — 2026-10-17
+
+- [x] Created and merged PR [#263](https://github.com/vorlocsev/dvinholm/pull/263) to add a read-only GitHub Actions audit of the exact published release asset.
+- [x] Audit CI [run #2282](https://github.com/vorlocsev/dvinholm/actions/runs/38982113636) passed. It downloaded the published `Dvinholm-Windows-x86.zip`, verified SHA-256 `3822d13e5a137bd92bf12d35d2a5794053481ef28873d2a08657beb756f3a53a`, ran ZIP integrity validation, and confirmed a Dvinholm executable is present. This is actual archive-byte verification, not merely reading release metadata or checking a CI-generated artifact.
+- [ ] Check the post-merge main CI run after PR #263.
+- [ ] Active-session Monitor/UDS enablement remains unverified without a valid active J2534/CAN session; the user currently has no physical adapter.
+- Stable v0.2.0 remains unpublished and requires explicit user authorization. Physical adapter/vehicle validation remains deferred.

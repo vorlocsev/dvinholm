@@ -1,7 +1,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-17  
-Current main checkpoint: `6620ad2bf9b4e3daa3b6e27b2347181e9f80b6c2`  
+Current main code checkpoint before this documentation update: `d113d6536cdd6d2c76bd5ecfbd4b1a858a955922`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
@@ -844,3 +844,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Independently download and inspect the exact v0.1.1 release ZIP; GitHub metadata/checksum is not a substitute for inspecting the actual bytes.
 - [ ] Active-session Monitor/UDS enablement still cannot be manually verified without a J2534 adapter. Physical adapter/vehicle validation remains deferred.
 - Stable v0.2.0 remains unpublished and requires explicit user authorization.
+
+
+## Published v0.1.1 release ZIP audit — 2026-10-17
+
+- [x] PR [#263](https://github.com/vorlocsev/dvinholm/pull/263) added a read-only GitHub Actions audit for the exact published asset [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.1.1/Dvinholm-Windows-x86.zip).
+- [x] Audit run [#2282](https://github.com/vorlocsev/dvinholm/actions/runs/38982113636) passed: GitHub Actions downloaded the published ZIP, verified SHA-256 `3822d13e5a137bd92bf12d35d2a5794053481ef28873d2a08657beb756f3a53a`, validated ZIP integrity, and confirmed a Dvinholm executable is present. The archive file inventory is published in the Actions job summary.
+- [x] PR #263 merged as `d113d6536cdd6d2c76bd5ecfbd4b1a858a955922`. The audit checks the actual release asset, not a newly generated CI artifact.
+- [ ] Verify the post-merge main CI run for the audit workflow.
+- [ ] Active-session Monitor/UDS control transition remains unverified because no physical J2534 adapter is available.
+- Physical adapter/vehicle validation remains deferred. Stable v0.2.0 remains unpublished and must not be published without explicit user authorization.
