@@ -105,9 +105,9 @@ internal static class LatestBuildUpdater
         HttpClient http,
         CancellationToken cancellationToken = default)
     {
-        // The updater channel is the latest successful main-branch build.
-        // Feature-branch builds are for development and must not be offered as
-        // updates to users who already installed the latest main build.
+        // Select the newest successful CI build from any branch. Only push and
+        // workflow_dispatch runs are eligible: pull-request runs can build a
+        // synthetic merge ref whose SHA differs from the branch commit.
         var runsUrl = $"https://api.github.com/repos/{Repository}/actions/workflows/{WorkflowId}/runs?per_page=100";
         using var runsResponse = await http.GetAsync(runsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
         runsResponse.EnsureSuccessStatusCode();
@@ -124,7 +124,6 @@ internal static class LatestBuildUpdater
             // artifact SHA is not necessarily the branch's head_sha.
             var eventName = ReadString(run, "event");
             if (eventName is not ("push" or "workflow_dispatch") ||
-                ReadString(run, "head_branch") != "main" ||
                 ReadString(run, "status") != "completed" ||
                 ReadString(run, "conclusion") != "success")
                 continue;
@@ -171,7 +170,7 @@ internal static class LatestBuildUpdater
             }
         }
 
-        throw new InvalidOperationException("No successful main-branch CI run with a non-expired Windows x86 artifact was found.");
+        throw new InvalidOperationException("No successful CI run from any branch with a non-expired Windows x86 artifact was found.");
     }
 
     public static Task<string> DownloadAndPrepareAsync(
