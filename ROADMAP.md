@@ -325,3 +325,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Start Monitor, Read VIN, Read DTC, and Read DID remain disabled while disconnected.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical adapter and vehicle checks remain deferred to a future release.
+
+
+## Manual Windows UI verification — repeated no-adapter attempts (2026-10-16)
+
+- [x] Three consecutive Connect attempts with no physical J2534 adapter complete without a hang or crash.
+- [x] The app remains responsive and Monitor/UDS actions remain disabled while disconnected.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical adapter and vehicle verification remain deferred to a future release.
