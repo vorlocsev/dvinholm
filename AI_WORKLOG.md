@@ -1,3 +1,14 @@
+## CI validation completed — cross-branch updater selection (2026-10-16)
+
+- Confirmed GitHub Actions run [#1746](https://github.com/vorlocsev/dvinholm/actions/runs/38828216015) completed successfully on branch `fix/updater-check-button-state`, head `6a3dad175874a399fc5fef761c9d22b98cd6b440`. The corrected test and current CI pipeline are green.
+- The earlier failure was limited to a stale test URL expectation (`ci-123`); it was corrected to expect the newer eligible branch build (`ci-124`).
+- Cross-branch selection is now CI-validated for eligible successful `push` / `workflow_dispatch` runs. Pull-request-triggered runs remain excluded.
+- Remaining validation: on Windows, confirm the updater button starts at `Check update` after launch/restart; a manual check should show `Replace files and restart` only if a newer successful eligible build exists, and should remain/reset to `Check update` when the installed build is current.
+- No Windows manual verification has been claimed for this PR. Physical J2534 adapter testing remains deferred to a future release.
+- PR [#228](https://github.com/vorlocsev/dvinholm/pull/228) remains open and unmerged; do not merge without explicit user approval.
+
+---
+
 ## CI follow-up — cross-branch updater selection test correction (2026-10-16)
 
 - Inspected the failed CI run for the cross-branch updater change. Build succeeded; the test suite reported **451 passed, 1 failed**. The failure was an outdated expected download URL still pointing to `ci-123`, while the test correctly selected the newer feature-branch run `ci-124`.
