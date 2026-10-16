@@ -1568,3 +1568,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The original profile remains available; this verifies the local export/import round-trip and profile data preservation only.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: check profile isolation by switching between profiles, but first ensure a second disposable/test profile exists; do not risk modifying or deleting the only useful profile.
+
+
+## Manual Windows verification — profile isolation/switching (2026-10-16)
+
+- User confirmed that the original ECU profile and a separate `TEST-ECU` profile are both available and can be opened independently.
+- Profile names/data remain distinct while switching; no cross-profile mixing was observed.
+- This verifies local profile selection and data isolation only. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
+- Next: verify safe deletion behavior using only the disposable `TEST-ECU` profile, keeping the original useful profile untouched.
