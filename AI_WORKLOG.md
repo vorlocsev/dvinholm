@@ -1771,3 +1771,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - No physical J2534 adapter or vehicle was used.
 - This closes the current manual UI check for disconnected-state control availability after a failed connection.
 - Next: continue the remaining pre-release checks with the virtual/no-adapter setup; keep physical adapter and vehicle verification deferred to a future release.
+
+
+## Manual Windows UI verification — valid J2534 DLL path, adapter absent (2026-10-16)
+
+- User confirmed that selecting a real/previously detected J2534 DLL path and pressing Connect is handled correctly when no physical adapter is connected: the app reports the missing device without hanging.
+- Connect becomes available again after the attempt; Start Monitor, Read VIN, Read DTC, and Read DID remain disabled while disconnected.
+- No physical adapter or vehicle was used; hardware verification remains deferred.
+- Next: continue the pre-release virtual/no-adapter checks.
