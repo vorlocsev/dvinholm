@@ -221,3 +221,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - The exact field and UI behavior were not specified; no particular error message or fallback is claimed. The original profile was kept separate.
 - Local profile-import validation only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - [ ] Next: inspect the profile JSON schema/validation rules before further field-specific tests; then check empty-catalog import behavior using a backed-up catalog.
+
+
+## Manual UI verification — import empty profile catalog (2026-10-16)
+
+- [x] User confirmed the empty JSON array (`[]`) import test succeeded after backing up the existing profile catalog.
+- This records the empty-catalog import path only; do not assume the original profiles have been restored or remained in the active list. Restore from the backup and verify integrity before further destructive-state tests.
+- Local profile UI check only; no physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- [ ] Next: confirm the empty catalog displays correctly, restore the saved catalog backup, and verify the original profiles return intact.
