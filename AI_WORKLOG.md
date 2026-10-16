@@ -2262,3 +2262,13 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - [ ] Exact v0.1.1 release ZIP still has not been independently downloaded and inspected; GitHub release metadata/checksum alone does not establish that the local archive contents were verified.
 - [ ] Manual transition from disconnected to a valid active J2534/CAN session remains unverified because no physical adapter is available. Physical adapter/vehicle testing remains deferred to a future release.
 - Stable v0.2.0 remains unpublished; explicit user authorization is required before publishing it.
+
+
+## Post-PR #261 main CI verification (2026-10-17)
+
+- PR [#261](https://github.com/vorlocsev/dvinholm/pull/261) merged as `6620ad2bf9b4e3daa3b6e27b2347181e9f80b6c2`.
+- Main CI [#2273](https://github.com/vorlocsev/dvinholm/actions/runs/38980902038) completed successfully on that exact commit; build, tests, publish, and artifact packaging passed.
+- Updated `ROADMAP.md` current-main checkpoint from the prior merge SHA to `6620ad2bf9b4e3daa3b6e27b2347181e9f80b6c2`.
+- PR #228 (updater button state) remains open and unmerged. The work log records user confirmation that the identical-SHA false positive no longer appears on the tested Windows build; no merge was performed because explicit merge approval is required.
+- Remaining release-review tasks: independently inspect the exact v0.1.1 release archive and keep active-session Monitor/UDS transition marked unverified until a valid J2534/CAN session is available.
+- Physical adapter/vehicle validation remains deferred. Stable v0.2.0 must not be published without explicit user authorization.
