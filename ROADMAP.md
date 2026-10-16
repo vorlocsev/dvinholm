@@ -776,3 +776,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Validate Monitor/UDS controls with an active J2534/CAN session when suitable hardware is available.
 - [ ] Re-check CI on the eventual merge commit before any release.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish release 0.2.0 without explicit user authorization.
+
+
+## CI updater-prerelease publication guard (2026-10-16)
+
+- [x] PR #256 workflow change passed CI run #2239.
+- [x] Confirmed workflow still builds/tests PRs and branch pushes, while public updater ZIP/prerelease steps are restricted to pushes to `main`.
+- [ ] Review and merge PR #256; the fix is not active on `main` before merge.
+- [ ] After merge, confirm main CI and ensure no public `ci-*` prerelease is created for documentation/feature-branch pushes.
+- [ ] Verify stable release archive and release notes before considering release `0.2.0`.
+- Physical J2534 adapter and vehicle verification remain deferred. Do not merge PRs or publish release `0.2.0` without explicit user authorization.
