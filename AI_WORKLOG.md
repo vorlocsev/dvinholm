@@ -1683,3 +1683,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This verifies recovery from the tested empty-catalog import workflow; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: test duplicate profile IDs in an otherwise valid JSON catalog using a disposable copy, confirm import is rejected safely and the current catalog remains intact.
+
+
+## Manual Windows verification — duplicate profile IDs (2026-10-16)
+
+- User confirmed that importing a JSON catalog with duplicate profile IDs was handled safely: the duplicate catalog was rejected/reported as an error, the app did not hang, and the existing profiles remained intact.
+- No ECU communication was involved. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
+- Next: test invalid CAN identifier input in a disposable profile/catalog and verify validation prevents invalid settings from being accepted while existing profiles remain intact.
