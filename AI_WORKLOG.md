@@ -1514,3 +1514,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The current-main `IsUpdateAvailable` helper is preserved in the port.
 - The original PR head had successful CI (workflow run [#1718](https://github.com/vorlocsev/dvinholm/actions/runs/38823643808)); the fresh port must pass its own CI before it can be considered validated.
 - Hardware checks remain out of scope; physical J2534 adapter and vehicle verification stays deferred to a future release.
+
+
+## PR #253 merged — rollback test cleanup fix (2026-10-16)
+
+- PR [#253](https://github.com/vorlocsev/dvinholm/pull/253) passed latest PR-head CI [#38932272236](https://github.com/vorlocsev/dvinholm/actions/runs/38932272236) and was squash-merged to `main` as `db3e8607ec0c28057649f7f616056a71b9bc991e`.
+- The runtime rollback test now disposes its PowerShell process before deleting the isolated temporary directory; stdout/stderr are drained concurrently. Rollback assertions were retained.
+- Post-merge main CI [#38933065485](https://github.com/vorlocsev/dvinholm/actions/runs/38933065485) was still in progress at this checkpoint. Do not record it as passing until confirmed.
+- Next: finish the UDS close/disconnect software-only audit, adding deterministic virtual-adapter coverage only if an uncovered race is established. Physical adapter and vehicle testing remain deferred.
