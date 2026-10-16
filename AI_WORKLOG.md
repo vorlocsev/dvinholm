@@ -1667,3 +1667,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This covers local profile-import validation only; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: inspect the repository's documented profile JSON schema/validation rules before choosing any further field-specific tests; avoid guessing which fields are required.
+
+
+## Manual Windows verification — import empty profile catalog (2026-10-16)
+
+- User confirmed the empty JSON array (`[]`) import test succeeded after creating a backup of the existing profile catalog.
+- This verifies the tested empty-catalog import/UI path only. Do not assume profiles were preserved in the active list; the user has not yet reported restoring the backup.
+- No ECU communication was involved. No physical J2534 adapter or vehicle was used; hardware validation remains deferred.
+- Next: ask the user to confirm the empty catalog is displayed correctly, then restore the saved catalog backup and verify the profiles return intact before continuing.
