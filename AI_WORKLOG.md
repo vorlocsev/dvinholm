@@ -1862,3 +1862,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - The profile's CAN IDs remained unchanged throughout.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — export primary ECU profile after name restoration (2026-10-16)
+
+- User confirmed a primary ECU profile export to a separate temporary JSON file was valid and contained the expected original profile name and CAN IDs.
+- The temporary `-TEST` suffix was absent; the backup file and source profile were not overwritten or edited.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
