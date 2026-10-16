@@ -2232,3 +2232,13 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - These results establish that the merged main commits passed CI (including the successful retry); the initial transient cleanup failure remains worth monitoring if it recurs.
 - Latest stable release remains `v0.1.1`; no stable `0.2.0` release was published.
 - Remaining release checks: review release notes and the exact stable archive independently; active-session Monitor/UDS control enablement remains unverified without a valid active J2534/CAN session. Physical adapter/vehicle verification remains deferred to a future release.
+
+
+## Post-PR #258 merge verification and release asset review (2026-10-16)
+
+- [x] PR #258 merged; documentation records post-merge CI outcomes for PRs #255–#257.
+- [x] Main CI #2258 passed on merge commit `5d70fe220fc73852a417c45bce730a1181b9dfbe`: https://github.com/vorlocsev/dvinholm/actions/runs/38977361452.
+- [x] Reviewed stable v0.1.1 release metadata and release notes. GitHub reports asset `Dvinholm-Windows-x86.zip` (66,766,108 bytes) and SHA-256 `3822d13e5a137bd92bf12d35d2a5794053481ef28873d2a08657beb756f3a53a`.
+- [ ] Independent archive download/content inspection is still incomplete: the GitHub release asset URL could not be fetched through the available browser/download path. Do not claim the archive was verified from its checksum metadata alone.
+- [ ] Software-only release review remains open for active-session Monitor/UDS enablement; current no-adapter setup cannot confirm controls transition to enabled only after a valid active J2534/CAN session.
+- Stable v0.2.0 remains unpublished and requires explicit user authorization. Physical adapter/vehicle validation remains deferred to a future release.
