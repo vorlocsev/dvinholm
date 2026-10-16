@@ -1,3 +1,14 @@
+## Latest checkpoint — CAN Monitor shutdown before J2534 disconnect (2026-10-16)
+
+- PR [#248](https://github.com/vorlocsev/dvinholm/pull/248) was squash-merged as `6804b8828879df51f24f10a837cb9808b6989f68`.
+- The fix captures the monitor task, requests cancellation through `StopMonitor()`, then awaits that task before starting `_session.Disconnect()`. If the monitor task faults, the exception is reported and disconnect cleanup still proceeds.
+- PR CI [#38927452306](https://github.com/vorlocsev/dvinholm/actions/runs/38927452306) and branch CI [#38927445038](https://github.com/vorlocsev/dvinholm/actions/runs/38927445038) passed on head `ac81ebc89f16ffe650a81fd1ba1d98dcafcaa588`. Post-merge main CI [#38928179572](https://github.com/vorlocsev/dvinholm/actions/runs/38928179572) was in progress when this entry was prepared; verify it before marking the main checkpoint green.
+- Source review confirmed Read VIN/Read DTC actions are guarded by `_connected` through `TryGetUdsClient`, and the UDS gate prevents disconnect during an active UDS request. UI read-only commands remain disabled until connection succeeds; do not bypass those guards.
+- This change prevents a race between monitor subscription shutdown and native session disconnect. No physical J2534 adapter or vehicle was used; hardware verification remains deferred.
+- Next: confirm post-merge main CI, then continue reviewing UDS cancellation/disconnect and remaining software-only release gates.
+
+---
+
 ## Latest checkpoint — updater rollback runtime test merged (2026-10-16)
 
 - PR [#246](https://github.com/vorlocsev/dvinholm/pull/246) was squash-merged to `main` as `91f000014e7d09546f868c12299d2235f13d1f3f`.
