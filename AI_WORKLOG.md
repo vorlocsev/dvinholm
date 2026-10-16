@@ -1,9 +1,10 @@
-## Corrupt updater archive cleanup test (2026-10-16)
+## Corrupt ZIP and missing-executable cleanup follow-up (2026-10-16)
 
-- PR [#240](https://github.com/vorlocsev/dvinholm/pull/240) was merged as `3062ea90bf29bcb9fa5939c6534192d7a6e11570`; its PR and branch CI passed. Post-merge main CI [#38917668043](https://github.com/vorlocsev/dvinholm/actions/runs/38917668043) was still running at this checkpoint.
-- Added a stronger assertion to `CorruptZip_ThrowsAndCleansTemporaryArchiveAndStagingDirectory`: a corrupt ZIP must leave neither the temporary downloaded archive nor the staging directory behind.
-- The test uses a local HTTP stub and a tiny invalid archive; it does not contact GitHub or require physical J2534 hardware.
-- Validation pending: PR and branch CI must pass before this regression test is marked verified. Physical adapter/vehicle testing remains deferred.
+- PR [#241](https://github.com/vorlocsev/dvinholm/pull/241) passed PR and branch CI and was merged as `4106bdbb38fe5ec8e31ae553abc252607aea0ae3`. It strengthens the corrupt-ZIP test to verify that both the temporary archive and staging directory are cleaned.
+- Post-merge main CI [#38920429003](https://github.com/vorlocsev/dvinholm/actions/runs/38920429003) is pending at this checkpoint; wait for success before marking the main SHA fully verified.
+- New follow-up test on PR #242 strengthens the missing-executable case: after a valid ZIP is extracted but lacks `Dvinholm.App.exe`, both the temporary downloaded archive and staging directory must be removed.
+- The test uses a local HTTP stub and generated ZIP content. It does not call GitHub or require a physical J2534 adapter; CI is pending.
+- Next after CI: review replacement/restart rollback safety. Physical adapter/vehicle verification remains deferred to a future release.
 
 ---
 
