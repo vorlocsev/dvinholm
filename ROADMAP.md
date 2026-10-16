@@ -600,3 +600,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Verify CI status for the current branch head and review release readiness.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
 - Do not merge the PR or publish release 0.2.0 without explicit user authorization.
+
+
+## Manual Windows UI verification — failed connection on non-primary ECU profile (2026-10-16)
+
+- [x] Failed connection without an adapter is handled without hanging; selected secondary profile and its CAN IDs are preserved.
+- [x] Monitor and UDS actions remain unavailable while disconnected.
+- [ ] Finish remaining pre-release UI checks.
+- [ ] Verify CI status for the current branch head and review release readiness.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
+- Do not merge the PR or publish release 0.2.0 without explicit user authorization.
