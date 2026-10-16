@@ -1980,3 +1980,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed an unsaved CAN ID edit was discarded when switching profiles; returning to the primary profile showed its original persisted value.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — save and restore CAN ID (2026-10-16)
+
+- User confirmed a valid changed CAN ID could be saved, persisted across profile switching, and then restored to its original value successfully.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
