@@ -82,3 +82,9 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] User confirmed the manual Windows check for retrying after a failed J2534 connection attempt succeeded; the application remained usable and the retry path behaved as expected.
 - This is a UI/error-recovery confirmation only. No physical J2534 adapter or vehicle was used, and hardware compatibility remains unverified.
 - [ ] Continue software-only verification of connection-state controls and error recovery.
+
+## Manual UI verification — diagnostic controls require connection (2026-10-16)
+
+- [x] User confirmed Read VIN, Read DTC, and Start Monitor remain unavailable without an active J2534 connection; failed connection attempts do not hang the app.
+- This confirms UI gating only; no live CAN/UDS transaction or hardware compatibility was tested.
+- [ ] Continue software-only release checks. Physical adapter and vehicle testing remains deferred.
