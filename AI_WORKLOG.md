@@ -2071,3 +2071,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Both profiles continued to show their own correct CAN IDs; the application remained responsive and did not report an active connection.
 - No physical J2534 adapter or vehicle was used.
 - Next: verify that closing and reopening the profile selector without choosing a different profile does not alter the selected profile, CAN IDs, or disconnected control state.
+
+
+## Manual Windows UI verification — cancel profile selection (2026-10-16)
+
+- User confirmed canceling/closing the profile selector without choosing another profile leaves the selected secondary ECU profile and its CAN IDs unchanged.
+- The connection remains inactive and Start Monitor, Read VIN, Read DTC, and Read DID remain unavailable; no physical J2534 adapter or vehicle was used.
+- Next: verify that changing a profile's CAN ID, then canceling/discarding the edit, restores the saved value and leaves the disconnected UI state unchanged.
