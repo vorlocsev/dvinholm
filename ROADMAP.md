@@ -243,3 +243,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Confirmed that importing a catalog with duplicate profile IDs is rejected/handled as an error without hanging or damaging the existing profiles.
 - No ECU communication or physical J2534 adapter/vehicle was used; hardware validation remains deferred.
 - [ ] Next: verify invalid CAN identifier validation using a disposable profile/catalog; confirm invalid values are not accepted and existing profiles remain intact.
+
+
+## Manual UI verification — invalid CAN identifiers (2026-10-16)
+
+- [x] Confirmed that out-of-range CAN IDs for the selected identifier format are rejected/not accepted on save and existing profiles remain intact.
+- This was a profile validation check only; no ECU communication or physical adapter/vehicle was used. Hardware validation remains deferred.
+- [ ] Next: verify request and response CAN IDs cannot be identical in a disposable profile; confirm existing profiles remain intact.
