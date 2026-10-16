@@ -1,3 +1,12 @@
+## Windows manual verification — compact ECU profile controls (2026-10-16)
+
+- User confirmed that the selected ECU profile row's controls are fully visible and not clipped, including the profile selector and Import/Export JSON actions.
+- Combined with the preceding check that CAN Monitor remains visible after selecting a profile, the compact layout's targeted vertical-space regression is manually verified at the user's current window size.
+- This verifies layout visibility only; it does not test live CAN monitoring or physical J2534 hardware. Real-adapter testing remains deferred to a future release.
+- PR [#227](https://github.com/vorlocsev/dvinholm/pull/227) remains open and unmerged. Next: perform a brief resize check (if practical) to ensure the compact row remains usable at a narrower window width; then review the PR's current CI status before any merge decision.
+
+---
+
 ## Windows manual verification — compact ECU profile layout (2026-10-16)
 
 - User confirmed that **CAN Monitor is visible** after selecting an ECU profile in the compact layout, resolving the reported vertical-space regression for this check.
