@@ -805,3 +805,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Review release notes and inspect the exact stable release archive separately from CI artifacts.
 - [ ] Validate Monitor/UDS controls becoming enabled only after a valid active J2534/CAN session; not verifiable with the current no-adapter setup.
 - Physical J2534 adapter and vehicle validation remain deferred to a future release. Do not publish `0.2.0` until release gates are reviewed and the user authorizes publication.
+
+
+## Post-PR #258 merge checkpoint — 2026-10-16
+
+- [x] PR #258 merged; `AI_WORKLOG.md` and `ROADMAP.md` now record the CI results for PRs #255–#257.
+- [x] Main CI #2258 passed on merge commit `5d70fe220fc73852a417c45bce730a1181b9dfbe` ([run #2258](https://github.com/vorlocsev/dvinholm/actions/runs/38977361452)).
+- [x] Reviewed v0.1.1 release notes and asset metadata: `Dvinholm-Windows-x86.zip`, 66,766,108 bytes; published SHA-256 `3822d13e5a137bd92bf12d35d2a5794053481ef28873d2a08657beb756f3a53a`.
+- [ ] Exact stable archive is not independently inspected yet; direct download attempt was blocked by the available access path. Metadata alone is not a binary integrity verification.
+- [ ] Confirm Monitor/UDS controls become enabled only after a valid active J2534/CAN session; current no-adapter setup cannot validate this state transition.
+- Stable `0.2.0` is not published; do not publish without explicit user authorization. Physical J2534 adapter and vehicle checks remain deferred to a future release.
