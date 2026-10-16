@@ -292,3 +292,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] User confirmed the current Windows candidate starts with the main window fully loaded, without an unhandled error/crash, and closes normally.
 - Startup/shutdown smoke check only; no ECU communication or physical adapter/vehicle was used. Hardware validation remains deferred.
 - [ ] Next: inspect the current PR head and CI/check status to identify remaining release gates. Do not merge or publish a release without explicit user authorization.
+
+
+## Manual Windows verification — startup without physical J2534 adapter (2026-10-16)
+
+- [x] Confirmed current candidate reports the missing physical J2534 device, does not hang, keeps diagnostics unavailable while disconnected, and closes/relaunches normally.
+- This is a no-device software behavior check only. Physical adapter/vehicle verification remains deferred to a future release.
+- [ ] Next: inspect the latest CI result for the current PR head before evaluating release readiness.
