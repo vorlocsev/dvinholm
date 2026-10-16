@@ -1642,3 +1642,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - This verifies cancellation handling for the local profile-import UI only; no ECU communication was involved.
 - No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
 - Next: test cancelling profile export/save dialog (if the app exposes cancellation) and confirm no file is falsely reported as saved and the existing profile remains intact.
+
+
+## Manual Windows verification — cancel profile export (2026-10-16)
+
+- User confirmed cancelling the profile export/save dialog completed safely: no false successful-save indication occurred and the original profile remained unchanged.
+- This verifies cancellation handling for local profile export only; no ECU communication was involved.
+- No physical J2534 adapter or vehicle was used. Hardware validation remains deferred.
+- Next: export a profile to a new temporary filename, verify the file exists and contains valid JSON, then import it into a disposable test profile/workflow without overwriting the original.
