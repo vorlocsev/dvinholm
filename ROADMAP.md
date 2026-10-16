@@ -257,3 +257,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Confirmed that a profile with identical request and response CAN IDs is rejected/not accepted on save and other profiles remain intact.
 - This was a profile validation check only; no ECU communication or physical adapter/vehicle was used. Hardware validation remains deferred.
 - [ ] Next: verify invalid/malformed diagnostic identifier (DID) validation using a disposable profile, without modifying the existing catalog.
+
+
+## Manual UI verification — malformed DID input (2026-10-16)
+
+- [x] User confirmed malformed DID input was handled safely without hanging or damaging existing profiles.
+- No ECU communication or physical J2534 adapter/vehicle was used; hardware validation remains deferred.
+- [ ] Next: test duplicate DID handling in a disposable profile/catalog if the UI supports DID editing. If not, record the UI limitation and proceed to another software-only check.
