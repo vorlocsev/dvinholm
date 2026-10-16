@@ -1966,3 +1966,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed the primary ECU profile accepted a temporary `-TEST` rename, persisted it across restart with CAN IDs unchanged, and was restored to its original name successfully.
 - No physical J2534 adapter or vehicle was used.
 - Next: continue remaining pre-release checks using the virtual/no-adapter setup.
+
+
+## Manual Windows UI verification — CAN IDs after repeated profile switching (2026-10-16)
+
+- User confirmed the primary profile's CAN IDs remain correct after switching to another saved profile and back repeatedly.
+- No physical J2534 adapter or vehicle was used.
+- Next: continue remaining pre-release checks using the virtual/no-adapter setup.
