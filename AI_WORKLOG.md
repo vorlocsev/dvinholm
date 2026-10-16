@@ -2221,3 +2221,14 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Opened PR #257 (`fix/rollback-test-mock-wait-process`) adding a no-op `Wait-Process` mock for the isolated runtime test. PR #257 remains open/unmerged.
 - CI #2246 for PR #257 passed: restore, build, test, publish, and artifact upload succeeded; public updater/release steps were skipped as expected for a PR.
 - Follow-up: rerun/check CI for PR #255 and record its outcome. Do not merge PRs or publish v0.2.0 without explicit authorization. Physical J2534 adapter/vehicle validation remains deferred to a future release.
+
+
+## Post-merge CI verification — PRs #255–#257 (2026-10-16)
+
+- PRs #256, #257, and #255 are merged into `main` in that order; latest reviewed main commit is `a47679bdb049fe6814751c319707e4119fa56c7c`.
+- Main CI #2251 passed for commit `cc4b849b8689dae08548c61e529e04f293709a12`; the updater ZIP/public `ci-*` prerelease steps ran on a `main` push as intended.
+- Main CI #2252 initially failed one rollback runtime test (475/476 passed) during temporary-directory cleanup. Retrying the failed job as attempt 2 succeeded: [CI #2252](https://github.com/vorlocsev/dvinholm/actions/runs/38975138132).
+- Main CI #2253 passed for commit `a47679bdb049fe6814751c319707e4119fa56c7c`, including restore, build, tests, publish, package, artifact upload, and public CI asset publishing.
+- These results establish that the merged main commits passed CI (including the successful retry); the initial transient cleanup failure remains worth monitoring if it recurs.
+- Latest stable release remains `v0.1.1`; no stable `0.2.0` release was published.
+- Remaining release checks: review release notes and the exact stable archive independently; active-session Monitor/UDS control enablement remains unverified without a valid active J2534/CAN session. Physical adapter/vehicle verification remains deferred to a future release.

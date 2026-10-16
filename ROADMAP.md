@@ -794,3 +794,14 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] CI #2246 for PR #257 passed, including all tests and publish/artifact steps.
 - [ ] Confirm CI on docs PR #255 after the latest work-log/roadmap update.
 - [ ] Keep PRs unmerged until explicitly authorized; verify main-branch CI and stable release archive before v0.2.0. Physical adapter/vehicle testing remains deferred.
+
+
+## Post-merge CI checkpoint — 2026-10-16
+
+- [x] PR #256 merged; main CI #2251 passed, including the main-only updater prerelease packaging/publication path.
+- [x] PR #257 merged; main CI #2252 passed on retry (attempt 2). Initial attempt had 475/476 tests pass and failed during temporary-directory cleanup in the rollback runtime test; monitor for recurrence rather than treating the first run as green.
+- [x] PR #255 merged; main CI #2253 passed on commit `a47679bdb049fe6814751c319707e4119fa56c7c`.
+- [x] Current stable release remains `v0.1.1`; `0.2.0` is not published.
+- [ ] Review release notes and inspect the exact stable release archive separately from CI artifacts.
+- [ ] Validate Monitor/UDS controls becoming enabled only after a valid active J2534/CAN session; not verifiable with the current no-adapter setup.
+- Physical J2534 adapter and vehicle validation remain deferred to a future release. Do not publish `0.2.0` until release gates are reviewed and the user authorizes publication.
