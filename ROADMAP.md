@@ -708,3 +708,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Final disconnected-state smoke test after catalog import: restart, confirm no active connection, and verify Monitor/UDS controls remain disabled.
 - [ ] Verify terminal CI result for latest PR #255 head and review software-only release 0.2.0 gates.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
+
+
+## Manual Windows UI verification — post-import disconnected-state smoke test (2026-10-16)
+
+- [x] After catalog import, restarted the app and confirmed profiles and CAN IDs remain correct.
+- [x] Without a physical J2534 adapter, confirmed no false active connection and Monitor / VIN / DTC / DID actions remain unavailable.
+- [x] Confirmed the app stays responsive and closes normally.
+- [ ] Verify CI for the latest PR #255 head and review remaining software-only release 0.2.0 gates.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release. Do not merge PR #255 or publish a release without explicit user authorization.
