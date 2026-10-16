@@ -357,3 +357,10 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] A non-primary saved ECU profile retains its name and CAN request/response IDs after app restart.
 - [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
 - Physical J2534 adapter and vehicle verification remain deferred to a future release.
+
+
+## Manual Windows UI verification — cancel ECU profile selection (2026-10-16)
+
+- [x] Cancelling/closing profile selection leaves the current ECU profile and CAN IDs unchanged.
+- [ ] Continue remaining pre-release checks using the virtual/no-adapter setup.
+- Physical J2534 adapter and vehicle verification remain deferred to a future release.
