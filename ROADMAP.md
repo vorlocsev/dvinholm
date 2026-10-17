@@ -1,3 +1,11 @@
+## Updater fix forward-port checkpoint (2026-10-17)
+
+- [CI #38988687671](https://github.com/vorlocsev/dvinholm/actions/runs/38988687671) passed after merge of documentation PR #269; both build/tests and v0.1.1 release audit are green.
+- A clean forward-port branch `fix/updater-state-rebased-main` has been prepared from that main checkpoint. It preserves the SHA-based update comparison already present in main and adds the remaining UX/test/workflow changes: manual update check on launch, consistent button label, same-SHA/different-SHA regression coverage, and skipping CI for worklog-only pushes.
+- Status: candidate branch awaiting CI and review; not merged. PR #228 remains open and unmerged. Do not publish v0.2.0 without explicit approval. Real-adapter testing remains deferred to a future release.
+
+---
+
 ## Latest CI checkpoint — main CI #2296 retry passed (2026-10-17)
 
 - Main commit `024addce1dbe68a6e573f7e67748e1946f0d4128` has a successful second attempt of [CI #2296](https://github.com/vorlocsev/dvinholm/actions/runs/38984726872): build/tests and v0.1.1 release archive audit passed.

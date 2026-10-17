@@ -7,6 +7,31 @@ namespace Dvinholm.App.Tests;
 public sealed class LatestBuildLookupTests
 {
     [Fact]
+    public void SameCommitSha_DoesNotOfferReplaceWhenInstalledBuildNumberIsUnavailable()
+    {
+        const string sha = "6fd0da7034abe616f756dfa206a00ea242b74e58";
+        var latest = new LatestBuildInfo(
+            sha, 1751, 38830468262,
+            "https://github.com/vorlocsev/dvinholm/releases/download/ci-1751/Dvinholm-Windows-x86.zip",
+            1234, null, "2026-10-16T00:42:51Z");
+
+        Assert.False(LatestBuildUpdater.IsUpdateAvailable(sha, latest));
+    }
+
+    [Fact]
+    public void DifferentCommitSha_OffersReplace()
+    {
+        const string currentSha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        const string latestSha = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
+        var latest = new LatestBuildInfo(
+            latestSha, 1752, 38830474549,
+            "https://github.com/vorlocsev/dvinholm/releases/download/ci-1752/Dvinholm-Windows-x86.zip",
+            1234, null, "2026-10-16T00:42:51Z");
+
+        Assert.True(LatestBuildUpdater.IsUpdateAvailable(currentSha, latest));
+    }
+
+    [Fact]
     public async Task LatestSuccessfulNonPrRun_ReturnsMatchingReleaseAssetMetadata()
     {
         const string sha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
