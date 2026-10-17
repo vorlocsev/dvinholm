@@ -1,3 +1,13 @@
+## PR #274 merged; updater CI run pagination — 2026-10-17
+
+- [x] PR [#274](https://github.com/vorlocsev/dvinholm/pull/274) merged into `main` as `53d32922ac4d198d80efc7a4c2d2a6b2d2266c82`.
+- [x] Both pre-merge CI runs on head `01d20a0a79c4ef5530b9df92dd6f6967591769f4` passed: [push run #39044585178](https://github.com/vorlocsev/dvinholm/actions/runs/39044585178) and [PR run #39044588419](https://github.com/vorlocsev/dvinholm/actions/runs/39044588419).
+- [x] Post-merge [CI run #39044984373](https://github.com/vorlocsev/dvinholm/actions/runs/39044984373) passed on the exact merge SHA; build/tests and audit of the published v0.1.1 ZIP succeeded.
+- [x] `LatestBuildUpdater.GetLatestSuccessfulBuildAsync` now paginates through GitHub Actions workflow runs (100 per page) until an eligible published build is found or a short page indicates there are no more runs. Pull-request events remain excluded because their SHA can identify a synthetic merge commit.
+- [x] Added `LookupContinuesToSecondPageWhenFirstPageHasNoEligibleBuild`, covering a full page of PR runs followed by an eligible push build on page 2. The test asserts page progression and expected build metadata.
+- [ ] Windows manual updater/button verification remains outstanding; no physical J2534 adapter/vehicle was available or needed for this API lookup change.
+- [ ] Stable v0.2.0 remains unpublished and requires explicit user authorization. PR #228 remains open and must not be merged without explicit user approval.
+
 ## Post-PR #272 main CI and UDS source-audit checkpoint — 2026-10-17
 
 - [x] PR [#272](https://github.com/vorlocsev/dvinholm/pull/272) merged as `8eb69feabc652984c4deaa6236efff249a70bd47`.
