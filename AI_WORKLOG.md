@@ -1,9 +1,10 @@
-## Updater-state fix forward-ported to current main (2026-10-17)
+## Updater-state forward-port merged; post-merge CI passed (2026-10-17)
 
-- Prepared branch `fix/updater-state-rebased-main` from main checkpoint `5c23cfa259c91f4bb152fc3cc04f4ea17c588f5d` after confirming post-merge [CI #38988687671](https://github.com/vorlocsev/dvinholm/actions/runs/38988687671) passed both build/tests and the v0.1.1 release audit.
-- Reapplied the remaining PR #228 behavior onto current main: startup now waits for an explicit **Check update** click instead of launching an automatic update lookup, the button label is consistent, regression tests cover identical-SHA and different-SHA decisions, and worklog-only pushes are ignored by CI.
-- The core SHA comparison helper and its use in the UI already exist on current main, so they were retained rather than duplicated.
-- This is a forward-port candidate, not merged. CI must pass before review; PR #228 remains open/unmerged and must not be merged without explicit user approval. No stable v0.2.0 release is authorized. Physical J2534 adapter testing remains deferred.
+- PR [#270](https://github.com/vorlocsev/dvinholm/pull/270) was squash-merged to `main` as `b2a4661aee05251472ee93f78e1b0ea815dcd33f`.
+- Post-merge [CI run #38989890059](https://github.com/vorlocsev/dvinholm/actions/runs/38989890059) completed successfully on that exact commit: build, tests, publish pipeline, and published v0.1.1 ZIP audit passed.
+- Forward-ported behavior: update discovery is user-initiated at startup, the button label is **Check update**, existing SHA-based comparison remains in place, regression tests cover same-SHA and different-SHA decisions, and worklog-only pushes are skipped by CI.
+- CI does not prove the WinUI updater flow at runtime. Manual Windows confirmation remains a follow-up when the app can be run.
+- PR #228 remains open and unmerged; do not merge it without separate explicit approval. No stable v0.2.0 release is authorized. Physical J2534 adapter/vehicle checks remain deferred.
 
 ---
 
