@@ -3,15 +3,16 @@
 Windows CAN monitor and read-only UDS diagnostic client for Volvo interfaces that expose the SAE J2534 API.
 
 
-## Latest stable release (2026-10-16)
+## Latest stable release (2026-10-17)
 
-- Published stable release: [Dvinholm v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1), tag `v0.1.1`, targeting commit `2cb465918a18f7e136d51b1bdd9132d4293e0ade`.
-- The release commit passed Restore, Build, Test, Publish, and artifact upload in [GitHub Actions run #1781](https://github.com/vorlocsev/dvinholm/actions/runs/38837028529).
-- Release asset: [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.1.1/Dvinholm-Windows-x86.zip), 66,766,108 bytes; SHA-256: `3822d13e5a137bd92bf12d35d2a5794053481ef28873d2a08657beb756f3a53a`.
-- This is a portable self-contained x86 build, not an installer. Windows manual checks confirmed updater success/error retry and the compact ECU-profile layout on CI builds; the exact stable release asset has not yet been separately launched by the user.
+- Published stable release: [Dvinholm v0.2.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.0), tag `v0.2.0`, targeting commit `23d18fd4e3949530f08171218e17c84a2cf7d60a`.
+- The dedicated stable-release workflow [#39047589614](https://github.com/vorlocsev/dvinholm/actions/runs/39047589614) passed Restore, Build, all 479 tests, Publish, ZIP packaging, and release metadata verification. Post-merge [main CI #39047577494](https://github.com/vorlocsev/dvinholm/actions/runs/39047577494) also passed on the same commit.
+- Release asset: [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.0/Dvinholm-Windows-x86.zip), 66,930,648 bytes; SHA-256: `c80e56a8cf594485cfeb82a1003907cff22c52716abf2e60e518d290b4f3deec`.
+- Checksum file: [SHA256SUMS.txt](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.0/SHA256SUMS.txt).
+- This is a portable self-contained x86 build, not an installer. The exact stable release asset has not yet been separately launched by the user.
 - Physical DiCE/Mongoose adapter and vehicle compatibility remain unverified and are deferred to a future hardware-validation cycle.
 
-Previous stable release: [Dvinholm v0.1.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.0), published 2026-10-15.
+Previous stable release: [Dvinholm v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1), published 2026-10-16.
 
 ## Supported interfaces
 

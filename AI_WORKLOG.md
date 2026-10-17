@@ -1,9 +1,10 @@
-## v0.2.0 publication authorized — preparation checkpoint — 2026-10-17
+## Dvinholm v0.2.0 published — 2026-10-17
 
-- User explicitly authorized stable v0.2.0 publication.
-- Preparing a version bump, release notes, and a release workflow triggered by the dedicated `release/v0.2.0` branch. The workflow gates publication on Windows x86 restore/build/test/publish and creates the portable ZIP plus SHA-256 checksum.
-- Publication is not complete until the release workflow succeeds and the GitHub release/assets are verified. README and final release metadata must be updated only after confirming the actual tag, asset digest, size, and checksum.
-- Physical J2534 adapter/vehicle validation remains deferred; do not imply hardware verification.
+- User authorized stable v0.2.0 publication; PR #277 merged as `23d18fd4e3949530f08171218e17c84a2cf7d60a`.
+- Stable release workflow [#39047589614](https://github.com/vorlocsev/dvinholm/actions/runs/39047589614) completed successfully: Restore, Build, 479/479 tests, Publish, package ZIP and SHA-256, create stable release, verify metadata.
+- Release: [Dvinholm v0.2.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.0). Asset `Dvinholm-Windows-x86.zip`, 66,930,648 bytes, SHA-256 `c80e56a8cf594485cfeb82a1003907cff22c52716abf2e60e518d290b4f3deec`; checksum asset `SHA256SUMS.txt`.
+- Post-merge [main CI #39047577494](https://github.com/vorlocsev/dvinholm/actions/runs/39047577494) passed on the exact release commit.
+- Remaining validation: user should launch the exact stable ZIP on Windows; physical J2534 adapter/vehicle testing remains deferred and is not claimed.
 
 ---
 
