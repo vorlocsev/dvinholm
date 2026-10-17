@@ -1,3 +1,13 @@
+## PR #274 merged; updater CI run pagination — 2026-10-17
+
+- PR [#274](https://github.com/vorlocsev/dvinholm/pull/274) (`fix: paginate updater CI run discovery`) was merged into `main` as `53d32922ac4d198d80efc7a4c2d2a6b2d2266c82`.
+- Pre-merge CI passed on exact PR head `01d20a0a79c4ef5530b9df92dd6f6967591769f4`: [push run #39044585178](https://github.com/vorlocsev/dvinholm/actions/runs/39044585178) and [pull_request run #39044588419](https://github.com/vorlocsev/dvinholm/actions/runs/39044588419). Both build/test and v0.1.1 release ZIP audit jobs succeeded.
+- Post-merge [CI run #39044984373](https://github.com/vorlocsev/dvinholm/actions/runs/39044984373) passed on the exact merge SHA. Build/tests and published v0.1.1 ZIP audit succeeded.
+- `LatestBuildUpdater.GetLatestSuccessfulBuildAsync` now requests `page=1,2,...` with `per_page=100`; it continues after a full page and stops after a page with fewer than 100 workflow runs. It only considers successful completed `push` and `workflow_dispatch` runs, avoiding PR synthetic merge SHAs.
+- Added regression test `LookupContinuesToSecondPageWhenFirstPageHasNoEligibleBuild`: page 1 contains 100 completed successful PR events (ineligible); page 2 contains a successful push with a valid `ci-201` release asset. Assertions verify the selected SHA/run number and requests to both pages.
+- Manual Windows updater/button behavior has not been re-verified by this change; do not claim a runtime UI result. This API lookup change needs no physical J2534 adapter/vehicle test.
+- Keep the user's release constraints: do not merge PR #228 without explicit approval; do not publish stable v0.2.0 without explicit authorization.
+
 ## Post-PR #272 CI passed; UDS lifecycle source audit — 2026-10-17
 
 - PR [#272](https://github.com/vorlocsev/dvinholm/pull/272) merged as `8eb69feabc652984c4deaa6236efff249a70bd47`.
