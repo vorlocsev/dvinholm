@@ -1,3 +1,13 @@
+## Main CI #2296 retry result (2026-10-17)
+
+- Main commit: `024addce1dbe68a6e573f7e67748e1946f0d4128`.
+- Retry attempt 2 passed: build/tests and the v0.1.1 release archive audit succeeded. [Workflow](https://github.com/vorlocsev/dvinholm/actions/runs/38984726872).
+- Attempt 1 had 475/476 tests pass. The only failure was `LatestBuildUpdaterFailureTests.ReplacementScript_RestoresPreviousBuildWhenReplacementFailsAtRuntime`, where Windows could not delete the test's temporary root because it was still in use. Attempt 2 passed; root cause remains unconfirmed, so record as a non-reproduced cleanup/lifetime flake rather than a verified product defect.
+- No code change was made for this incident. If it recurs, inspect the process/file lifetime before changing cleanup behavior; preserve rollback assertions.
+- No physical J2534 adapter or vehicle testing. PR #228 remains open and must not be merged without explicit approval. Stable v0.2.0 remains unpublished and requires explicit user authorization.
+
+---
+
 ## Post-PR #260 main CI verification (2026-10-17)
 
 - PR [#260](https://github.com/vorlocsev/dvinholm/pull/260) merged as `23e12e0f188178d469112df44fc1138e26100cab`.
