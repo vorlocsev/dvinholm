@@ -1,8 +1,11 @@
-## Updater fix forward-port checkpoint (2026-10-17)
+## Updater-state forward-port merged — post-merge CI passed (2026-10-17)
 
-- [CI #38988687671](https://github.com/vorlocsev/dvinholm/actions/runs/38988687671) passed after merge of documentation PR #269; both build/tests and v0.1.1 release audit are green.
-- A clean forward-port branch `fix/updater-state-rebased-main` has been prepared from that main checkpoint. It preserves the SHA-based update comparison already present in main and adds the remaining UX/test/workflow changes: manual update check on launch, consistent button label, same-SHA/different-SHA regression coverage, and skipping CI for worklog-only pushes.
-- Status: candidate branch awaiting CI and review; not merged. PR #228 remains open and unmerged. Do not publish v0.2.0 without explicit approval. Real-adapter testing remains deferred to a future release.
+- [x] PR [#270](https://github.com/vorlocsev/dvinholm/pull/270) was squash-merged into `main` as `b2a4661aee05251472ee93f78e1b0ea815dcd33f`.
+- [x] Post-merge CI [run #38989890059](https://github.com/vorlocsev/dvinholm/actions/runs/38989890059) passed on the exact merge commit. The build/test/publish pipeline and audit of the exact published v0.1.1 ZIP both succeeded.
+- [x] The forward-port preserves SHA-based update comparison already on main, makes update discovery user-initiated instead of automatic at startup, normalizes the button to **Check update**, adds same-SHA/different-SHA regression coverage, and skips CI for worklog-only pushes.
+- [ ] User should manually confirm the updater startup/button behavior in the Windows app when convenient; CI is not a substitute for runtime UI verification.
+- PR [#228](https://github.com/vorlocsev/dvinholm/pull/228) remains open and unmerged. Do not merge it without separate explicit approval.
+- Physical J2534 adapter/vehicle testing remains deferred. Stable v0.2.0 remains unpublished and requires explicit user authorization.
 
 ---
 
@@ -15,7 +18,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-17  
-Current main checkpoint: `08015d0f6f8808422fe3dc01c29c05c540445fe6`  
+Current main checkpoint: `b2a4661aee05251472ee93f78e1b0ea815dcd33f`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
