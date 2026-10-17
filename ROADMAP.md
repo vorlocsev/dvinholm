@@ -1,3 +1,14 @@
+## Current main checkpoint — PR #271 merged; post-merge CI passed (2026-10-17)
+
+- [x] PR [#271](https://github.com/vorlocsev/dvinholm/pull/271) was squash-merged as `bffd39ded30af567089dacab1cbdf95f1347912a`; it records the updater forward-port and its CI results in this roadmap and the AI work log.
+- [x] Post-merge CI [run #38990733864](https://github.com/vorlocsev/dvinholm/actions/runs/38990733864) passed on this exact `main` commit: build, tests, publish pipeline, and audit of the published v0.1.1 ZIP all succeeded.
+- [x] Current `main` includes the updater hardening for malformed run metadata, validated GitHub release asset URLs/digests, binary release-asset download, and user-initiated update discovery with SHA-based update-state handling.
+- [ ] Manual Windows runtime confirmation of updater startup/button behavior remains outstanding; CI does not substitute for this check.
+- PR [#228](https://github.com/vorlocsev/dvinholm/pull/228) remains open and unmerged. Do not merge it without separate explicit approval.
+- Physical J2534 adapter/vehicle testing remains deferred. Stable v0.2.0 remains unpublished and requires explicit user authorization.
+
+---
+
 ## Updater-state forward-port merged — post-merge CI passed (2026-10-17)
 
 - [x] PR [#270](https://github.com/vorlocsev/dvinholm/pull/270) was squash-merged into `main` as `b2a4661aee05251472ee93f78e1b0ea815dcd33f`.
@@ -18,7 +29,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-17  
-Current main checkpoint: `b2a4661aee05251472ee93f78e1b0ea815dcd33f`  
+Current main checkpoint: `bffd39ded30af567089dacab1cbdf95f1347912a`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
