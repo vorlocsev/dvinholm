@@ -6,6 +6,7 @@
 - No physical adapter was connected. The user made two consecutive Connect attempts; each resulted in `Connection failed`, and Connect became active again after each attempt. This verifies retry/recovery behavior for repeated no-adapter failures only.
 - Start Monitor, Read VIN, Read DTC, Read DID, Discover ECUs, Hardware Filter, and Disconnect were inactive while disconnected, which is expected.
 - The J2534 adapter selector remained available even though no physical adapter was connected; this confirms the selection UI remains accessible, not that a device is present or usable.
+- After the failed no-adapter connection attempt, the bottom status bar displayed `Connection failed`; the UI retains the failure message. This does not indicate a physical adapter connection.
 - More disconnected-state/status transitions still need checking.
 - Latest main CI run [#39073122096](https://github.com/vorlocsev/dvinholm/actions/runs/39073122096) passed on the current main SHA.
 - Next: continue software-only manual UI checks, including retry/error messaging and remaining disconnected controls. Keep physical J2534 adapter/vehicle validation deferred; do not claim hardware compatibility.
