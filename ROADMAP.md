@@ -1,3 +1,14 @@
+## Post-PR #272 main CI and UDS source-audit checkpoint — 2026-10-17
+
+- [x] PR [#272](https://github.com/vorlocsev/dvinholm/pull/272) merged as `8eb69feabc652984c4deaa6236efff249a70bd47`.
+- [x] Post-merge [CI run #38997313752](https://github.com/vorlocsev/dvinholm/actions/runs/38997313752) passed on the exact merge SHA; build/tests and audit of the published v0.1.1 ZIP both succeeded.
+- [x] Re-audited `MainWindow.xaml.cs`: UDS operations are serialized through `_udsGate`, cancel tokens are signalled on window close, and session disposal is gated on tracked task completion and gate availability. This is a source review, not a new WinUI runtime test.
+- [x] Reviewed the test inventory; existing tests already cover UDS cancellation, late-response correlation, ISO-TP cancellation/recovery, and virtual J2534 flows. No duplicate test was added.
+- [ ] Manual Windows updater/button-state confirmation remains outstanding. User has no physical adapter; active-session CAN/UDS UI behavior and hardware/vehicle validation remain deferred.
+- PR [#228](https://github.com/vorlocsev/dvinholm/pull/228) and stale updater PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) remain unmerged; do not merge either without explicit approval. Stable v0.2.0 remains unauthorized.
+
+---
+
 ## Current main checkpoint — PR #271 merged; post-merge CI passed (2026-10-17)
 
 - [x] PR [#271](https://github.com/vorlocsev/dvinholm/pull/271) was squash-merged as `bffd39ded30af567089dacab1cbdf95f1347912a`; it records the updater forward-port and its CI results in this roadmap and the AI work log.
@@ -29,7 +40,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-17  
-Current main checkpoint: `bffd39ded30af567089dacab1cbdf95f1347912a`  
+Current main checkpoint: `8eb69feabc652984c4deaa6236efff249a70bd47`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.

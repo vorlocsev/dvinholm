@@ -1,3 +1,13 @@
+## Post-PR #272 CI passed; UDS lifecycle source audit — 2026-10-17
+
+- PR [#272](https://github.com/vorlocsev/dvinholm/pull/272) merged as `8eb69feabc652984c4deaa6236efff249a70bd47`.
+- Post-merge [CI run #38997313752](https://github.com/vorlocsev/dvinholm/actions/runs/38997313752) completed successfully on the exact merge SHA. The build/test job and audit of the published v0.1.1 ZIP both passed.
+- Re-read current-main `MainWindow.xaml.cs` and the test inventory. UDS actions share `_udsGate`; closing the window signals discovery/UDS cancellation and background cleanup waits for tracked work and gate availability before disposing the session. This was source inspection only; no claim of a new WinUI runtime test.
+- Existing tests already cover active/queued UDS cancellation, late response correlation, ISO-TP cancellation/recovery, and virtual J2534 flows. Avoid duplicating these tests without a demonstrated gap.
+- Next: continue software-only checks; keep updater UI runtime verification outstanding until the user confirms it on Windows. Physical adapter/vehicle tests remain deferred. Do not merge PR #228 or PR #225 without explicit approval. Do not publish stable v0.2.0 without explicit authorization.
+
+---
+
 ## Current main checkpoint — PR #271 merged; post-merge CI passed (2026-10-17)
 
 - PR [#271](https://github.com/vorlocsev/dvinholm/pull/271) was squash-merged into `main` as `bffd39ded30af567089dacab1cbdf95f1347912a`.
