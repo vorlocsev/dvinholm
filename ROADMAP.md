@@ -1,10 +1,10 @@
-## v0.2.0 publication authorized — preparation checkpoint — 2026-10-17
+## Dvinholm v0.2.0 published — 2026-10-17
 
-- [x] User explicitly authorized publishing stable `v0.2.0`.
-- [x] Prepared version bump to `0.2.0`, release notes, and a dedicated stable-release workflow. The workflow will build/test the Windows x86 app, package the self-contained ZIP, calculate SHA-256, and create the GitHub release only after the validation steps succeed.
-- [ ] Stable release has **not yet been published**. The release preparation PR and its CI must pass first; then the dedicated `release/v0.2.0` branch will trigger the release workflow.
-- [ ] Confirm the final GitHub release asset digest, ZIP size, and SHA-256 after publication, then update README and final roadmap/work log with the exact release metadata.
-- Physical J2534 adapter/vehicle validation remains deferred. The release must not claim physical hardware verification.
+- [x] User authorized stable v0.2.0 publication. Release-preparation PR [#277](https://github.com/vorlocsev/dvinholm/pull/277) merged as `23d18fd4e3949530f08171218e17c84a2cf7d60a`.
+- [x] Stable release workflow [#39047589614](https://github.com/vorlocsev/dvinholm/actions/runs/39047589614) passed Restore, Build, all 479 tests, Publish, ZIP packaging, release creation, and metadata verification.
+- [x] Published stable [v0.2.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.0), targeting `23d18fd4e3949530f08171218e17c84a2cf7d60a`. Windows x86 ZIP: 66,930,648 bytes; SHA-256: `c80e56a8cf594485cfeb82a1003907cff22c52716abf2e60e518d290b4f3deec`. The release also includes `SHA256SUMS.txt`.
+- [x] Post-merge [main CI #39047577494](https://github.com/vorlocsev/dvinholm/actions/runs/39047577494) passed on the exact release commit.
+- [ ] The exact stable ZIP has not yet been separately launched by the user. Physical J2534 adapter/vehicle validation remains deferred; no hardware compatibility claim is made.
 
 ---
 
