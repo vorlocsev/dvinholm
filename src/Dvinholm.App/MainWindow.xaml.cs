@@ -37,6 +37,7 @@ public sealed partial class MainWindow : Window
     private readonly ObservableCollection<EcuRow> _ecus = new();
     private EcuProfileCatalog _profileCatalog = new();
     private bool _loadingProfiles;
+    private bool _loadingDllPath;
     private int _rateFrames;
     private uint? _activeHardwareFilterId;
     private LatestBuildInfo? _latestBuild;
@@ -46,6 +47,8 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        DllPath.Text = LoadSavedDllPath();
+        DllPath.TextChanged += DllPath_TextChanged;
         Title = LatestBuildUpdater.CurrentWindowTitle;
         LoadSavedProfileCatalog();
         FramesView.ItemsSource = _frames;
@@ -376,6 +379,47 @@ public sealed partial class MainWindow : Window
             Environment.NewLine + $"Candidate readable DIDs: {(profile.ReadableDataIdentifiers.Count == 0 ? "none listed" : string.Join(", ", profile.ReadableDataIdentifiers.Order().Select(did => did.ToString("X4"))))}" +
             Environment.NewLine + "Profile metadata does not guarantee that the ECU supports a listed DID.";
         SetStatus($"Applied profile '{profile.Name}'. No diagnostic request was sent.");
+    }
+
+
+    private static string DllPathSettingsFile => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Dvinholm",
+        "j2534-dll-path.txt");
+
+    private static string LoadSavedDllPath()
+    {
+        try
+        {
+            return new J2534DllPathStore(DllPathSettingsFile).Load();
+        }
+        catch (IOException)
+        {
+            return string.Empty;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            return string.Empty;
+        }
+    }
+
+    private void DllPath_TextChanged(object sender, TextChangedEventArgs e)
+    {
+        if (_loadingDllPath)
+            return;
+
+        try
+        {
+            new J2534DllPathStore(DllPathSettingsFile).Save(DllPath.Text);
+        }
+        catch (IOException)
+        {
+            // Keep the UI responsive; Connect will still validate the path.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Settings are a convenience, not a prerequisite for connecting.
+        }
     }
 
     private void RefreshJ2534Devices_Click(object sender, RoutedEventArgs e) =>
