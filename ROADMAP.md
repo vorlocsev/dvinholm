@@ -1,3 +1,13 @@
+## J2534 DLL path persistence bug — fix in progress (2026-10-18)
+
+- [x] Manual reproduction: after closing and reopening published v0.2.0 (4c7efcd), the J2534 DLL path field was empty.
+- [x] Started isolated fix branch fix/persist-j2534-dll-path; the selected/manual DLL path is saved under %LOCALAPPDATA%\\Dvinholm\\j2534-dll-path.txt and loaded at startup without auto-connecting.
+- [x] Added unit coverage for missing settings, save/load round-trip, clearing a saved path, and parent-directory creation.
+- [ ] CI/build and PR review are pending. Do not treat the fix as released until CI passes and it is merged.
+- Physical J2534 adapter and vehicle checks remain deferred; no hardware compatibility claim.
+
+---
+
 ## Dvinholm v0.2.0 stable release — Windows launch confirmed — 2026-10-18
 
 - [x] User manually confirmed that the exact published v0.2.0 Windows archive opens on Windows 11 LTSC IoT 26100.9550.
