@@ -733,7 +733,7 @@ public sealed class LatestBuildLookupTests
                     return JsonResponse("{\"workflow_runs\":[" + firstPage + "]}");
                 }
 
-                Assert.Contains("page=2", query, StringComparison.Ordinal);
+                Assert.Equal("2", page);
                 return JsonResponse("""
                     {
                       "workflow_runs": [
