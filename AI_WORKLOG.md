@@ -1,3 +1,14 @@
+## Current main checkpoint — PR #271 merged; post-merge CI passed (2026-10-17)
+
+- PR [#271](https://github.com/vorlocsev/dvinholm/pull/271) was squash-merged into `main` as `bffd39ded30af567089dacab1cbdf95f1347912a`.
+- Post-merge [CI run #38990733864](https://github.com/vorlocsev/dvinholm/actions/runs/38990733864) succeeded on that exact commit: build/tests, publish pipeline, and audit of the published v0.1.1 ZIP all passed.
+- Re-checked the current `LatestBuildUpdater.cs`: malformed/out-of-range run numbers are skipped; release URLs are constrained to the expected HTTPS GitHub project path; malformed digest metadata is rejected; release asset API downloads request binary content.
+- Current updater flow also includes the user-initiated discovery/SHA comparison behavior merged in PR #270. CI is not a substitute for checking the WinUI behavior in the actual Windows runtime; that manual check remains outstanding.
+- PR #228 remains open and unmerged; do not merge it without separate explicit approval. No stable v0.2.0 release is authorized. Physical J2534 adapter/vehicle checks remain deferred.
+- Next: continue software-only review/regression coverage; preserve strict cleanup assertions and do not claim physical-hardware validation.
+
+---
+
 ## Updater-state forward-port merged; post-merge CI passed (2026-10-17)
 
 - PR [#270](https://github.com/vorlocsev/dvinholm/pull/270) was squash-merged to `main` as `b2a4661aee05251472ee93f78e1b0ea815dcd33f`.
