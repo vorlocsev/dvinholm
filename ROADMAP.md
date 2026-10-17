@@ -1,3 +1,13 @@
+## Post-PR #275 main CI passed — 2026-10-17
+
+- [x] Documentation checkpoint PR [#275](https://github.com/vorlocsev/dvinholm/pull/275) is merged as `9d8dcbf9d7797b5a65d7fd9461c6472ba34ff931`; the complete existing `ROADMAP.md` and `AI_WORKLOG.md` content was preserved.
+- [x] Post-merge [CI run #39045906011](https://github.com/vorlocsev/dvinholm/actions/runs/39045906011) passed on the exact `main` SHA. Both `build` and `audit-v0-1-1-release` jobs completed successfully.
+- [x] The published stable v0.1.1 release ZIP audit remains green; this CI result does not constitute manual verification of updater behavior in the installed Windows UI.
+- [ ] Windows manual updater/button-state verification remains outstanding. Physical J2534 adapter/vehicle testing remains deferred.
+- [ ] Stable v0.2.0 remains unpublished and requires explicit user authorization. Do not merge PR #228 or PR #225 without explicit approval; the digest metadata fix from #225 is already present on `main`.
+
+---
+
 ## PR #274 merged; updater CI run pagination — 2026-10-17
 
 - [x] PR [#274](https://github.com/vorlocsev/dvinholm/pull/274) merged into `main` as `53d32922ac4d198d80efc7a4c2d2a6b2d2266c82`.
