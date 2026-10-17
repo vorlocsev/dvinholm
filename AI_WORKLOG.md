@@ -4,7 +4,7 @@
 - Stable release: [v0.2.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.0); archive SHA-256 `c80e56a8cf594485cfeb82a1003907cff22c52716abf2e60e518d290b4f3deec`.
 - User manually exercised the in-app updater and confirmed the running title/version is `0.2.0 4c7efcd`, matching main SHA `4c7efcdd455ce70730ec66778e6fdff2c7c6be1f`.
 - No physical adapter was connected. The user made two consecutive Connect attempts; each resulted in `Connection failed`, and Connect became active again after each attempt. This verifies retry/recovery behavior for repeated no-adapter failures only.
-- Start Monitor and Read VIN were inactive while disconnected, which is expected. More disconnected-state/status transitions still need checking.
+- Start Monitor, Read VIN, and Disconnect were inactive while disconnected, which is expected. More disconnected-state/status transitions still need checking.
 - Latest main CI run [#39073122096](https://github.com/vorlocsev/dvinholm/actions/runs/39073122096) passed on the current main SHA.
 - Next: continue software-only manual UI checks, including retry/error messaging and remaining disconnected controls. Keep physical J2534 adapter/vehicle validation deferred; do not claim hardware compatibility.
 
