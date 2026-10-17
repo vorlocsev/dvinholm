@@ -1,3 +1,9 @@
+## Latest CI checkpoint — main CI #2296 retry passed (2026-10-17)
+
+- Main commit `024addce1dbe68a6e573f7e67748e1946f0d4128` has a successful second attempt of [CI #2296](https://github.com/vorlocsev/dvinholm/actions/runs/38984726872): build/tests and v0.1.1 release archive audit passed.
+- The first attempt had 475/476 tests passing; `LatestBuildUpdaterFailureTests.ReplacementScript_RestoresPreviousBuildWhenReplacementFailsAtRuntime` failed while deleting its temporary directory because Windows reported it was still in use. The rerun passed, so this is currently non-reproducible and should not be described as a confirmed updater defect or a proven fix.
+- Continue investigating only if the cleanup failure recurs; do not weaken rollback assertions or hide cleanup failures. Hardware validation remains deferred; v0.2.0 requires explicit user authorization.
+
 # Dvinholm development roadmap
 
 Updated: 2026-10-17  
