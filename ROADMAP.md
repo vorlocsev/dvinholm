@@ -7,7 +7,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-17  
-Current main checkpoint: `78c555df959129a7a743ac8c34156703ca584bce`  
+Current main checkpoint: `08015d0f6f8808422fe3dc01c29c05c540445fe6`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
@@ -871,3 +871,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Shutdown cleanup no longer synchronously waits on tracked operations or the UDS gate on the UI thread. Monitor stopping requests cancellation without synchronously waiting; connect completion is tracked as the actual connect task, and the continuation avoids session access after window closing.
 - [ ] A dedicated WinUI window-close regression test/manual close stress test has not been run. CI confirms compilation and existing test suite only; do not claim direct runtime verification of the window-close behavior.
 - Physical J2534 adapter and vehicle checks remain deferred. Stable v0.2.0 remains unpublished and requires explicit user authorization.
+
+
+## Post-merge CI checkpoint — PR #268 (2026-10-17)
+
+- [x] PR [#268](https://github.com/vorlocsev/dvinholm/pull/268) merged by squash as `08015d0f6f8808422fe3dc01c29c05c540445fe6` after its PR-head CI [#38987327051](https://github.com/vorlocsev/dvinholm/actions/runs/38987327051) passed build/tests and the exact published v0.1.1 ZIP audit.
+- [x] Post-merge main CI [#38987746187](https://github.com/vorlocsev/dvinholm/actions/runs/38987746187) passed on the exact merge commit; build/tests and published v0.1.1 ZIP audit succeeded.
+- [x] Roadmap and AI worklog now record PR #267's non-blocking shutdown cleanup, its CI verification, and the limitation that no dedicated WinUI close-handler regression test/manual close stress test was run.
+- [ ] PR #228 (updater button state) remains open and must not be merged without explicit user approval. It is now behind current main and GitHub reports merge conflicts; rebase/conflict resolution and fresh CI would be required before considering it further.
+- Physical J2534 adapter/vehicle validation remains deferred. Stable v0.2.0 remains unpublished and requires explicit user authorization.

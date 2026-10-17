@@ -2309,3 +2309,13 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Change summary: window close requests cancellation and moves completion waits/UDS gate coordination to background cleanup; StopMonitor no longer synchronously waits on the UI thread; connection tracking uses the actual connect task and avoids reading session state after the window starts closing.
 - Scope caveat: no dedicated WinUI close-handler test seam or manual close stress test was run. CI establishes compilation and the existing automated suite passes, not direct proof of the UI shutdown path at runtime.
 - Physical J2534 adapter/vehicle testing remains deferred. PR #228 remains open and must not be merged without explicit approval. Stable v0.2.0 remains unpublished and requires explicit user authorization.
+
+
+## Post-merge CI checkpoint — PR #268 (2026-10-17)
+
+- [x] PR [#268](https://github.com/vorlocsev/dvinholm/pull/268) merged by squash as `08015d0f6f8808422fe3dc01c29c05c540445fe6` after PR-head CI [#38987327051](https://github.com/vorlocsev/dvinholm/actions/runs/38987327051) passed.
+- [x] Post-merge main CI [#38987746187](https://github.com/vorlocsev/dvinholm/actions/runs/38987746187) passed on the exact merge commit. Both the build/test job and audit of the exact published v0.1.1 release ZIP succeeded.
+- [x] Current roadmap checkpoint advanced to merge commit `08015d0f6f8808422fe3dc01c29c05c540445fe6`.
+- PR #228 remains open, unmerged, and must not be merged without explicit user approval. GitHub currently reports it has conflicts with base; any future rebase/conflict resolution needs fresh CI and the required Windows updater manual verification.
+- No dedicated WinUI window-close regression test or manual close stress test was run for PR #267; CI only confirms compilation and existing automated tests.
+- Physical J2534 adapter/vehicle validation remains deferred. Stable v0.2.0 remains unpublished and requires explicit user authorization.
