@@ -1,3 +1,12 @@
+## v0.2.0 publication authorized — preparation checkpoint — 2026-10-17
+
+- User explicitly authorized stable v0.2.0 publication.
+- Preparing a version bump, release notes, and a release workflow triggered by the dedicated `release/v0.2.0` branch. The workflow gates publication on Windows x86 restore/build/test/publish and creates the portable ZIP plus SHA-256 checksum.
+- Publication is not complete until the release workflow succeeds and the GitHub release/assets are verified. README and final release metadata must be updated only after confirming the actual tag, asset digest, size, and checksum.
+- Physical J2534 adapter/vehicle validation remains deferred; do not imply hardware verification.
+
+---
+
 ## Post-PR #275 main CI passed — 2026-10-17
 
 - Documentation checkpoint PR #275 merged as `9d8dcbf9d7797b5a65d7fd9461c6472ba34ff931`; full prior contents of both project tracking documents were preserved.

@@ -530,8 +530,20 @@ function Start-Process {
         }
         finally
         {
-            if (Directory.Exists(root))
-                Directory.Delete(root, recursive: true);
+            // Windows can briefly retain the executed .ps1 file handle after
+            // PowerShell exits. Retry only transient I/O cleanup failures;
+            // if the lock does not clear, let the test fail rather than hide it.
+            for (var attempt = 0; Directory.Exists(root); attempt++)
+            {
+                try
+                {
+                    Directory.Delete(root, recursive: true);
+                }
+                catch (IOException) when (attempt < 9)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(100));
+                }
+            }
         }
     }
 
