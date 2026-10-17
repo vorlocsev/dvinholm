@@ -939,12 +939,9 @@ public sealed partial class MainWindow : Window
 
         var task = _monitorTask;
 
-        if (task is not null && !task.IsCompleted)
-        {
-            try { task.Wait(TimeSpan.FromSeconds(1)); }
-            catch (AggregateException) { }
-        }
-
+        // Never block the UI waiting for a worker that may be inside a native
+        // J2534 read. Disconnect awaits this task explicitly; other callers
+        // leave cleanup to the continuation below.
         if (task is null || task.IsCompleted)
         {
             _monitorTask = null;
