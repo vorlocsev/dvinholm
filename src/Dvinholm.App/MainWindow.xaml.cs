@@ -37,7 +37,6 @@ public sealed partial class MainWindow : Window
     private readonly ObservableCollection<EcuRow> _ecus = new();
     private EcuProfileCatalog _profileCatalog = new();
     private bool _loadingProfiles;
-    private bool _loadingDllPath;
     private int _rateFrames;
     private uint? _activeHardwareFilterId;
     private LatestBuildInfo? _latestBuild;
@@ -405,9 +404,6 @@ public sealed partial class MainWindow : Window
 
     private void DllPath_TextChanged(object sender, TextChangedEventArgs e)
     {
-        if (_loadingDllPath)
-            return;
-
         try
         {
             new J2534DllPathStore(DllPathSettingsFile).Save(DllPath.Text);
