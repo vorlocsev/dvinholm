@@ -2299,3 +2299,13 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Main CI [#2286](https://github.com/vorlocsev/dvinholm/actions/runs/38983168717) passed on the preceding code merge `d113d6536cdd6d2c76bd5ecfbd4b1a858a955922`, including the published v0.1.1 release ZIP audit.
 - Post-merge main CI [#2291](https://github.com/vorlocsev/dvinholm/actions/runs/38983741022) for `1749b56d826523bf382f2d287e8f1a30a791286f` was still running at the time of this update; do not mark it green until it completes.
 - Exact release ZIP audit is complete. Active-session Monitor/UDS transition remains unverified without a valid J2534/CAN session. Stable v0.2.0 remains unpublished and requires explicit user authorization.
+
+
+## PR #267 — non-blocking window shutdown cleanup (2026-10-17)
+
+- PR [#267](https://github.com/vorlocsev/dvinholm/pull/267) merged by squash as `78c555df959129a7a743ac8c34156703ca584bce`.
+- Final PR-head CI [run #38986409454](https://github.com/vorlocsev/dvinholm/actions/runs/38986409454) passed both the build/test job and audit of the exact published v0.1.1 ZIP.
+- Post-merge main CI [run #38986840493](https://github.com/vorlocsev/dvinholm/actions/runs/38986840493) passed on the merge commit; build/tests and release ZIP audit succeeded.
+- Change summary: window close requests cancellation and moves completion waits/UDS gate coordination to background cleanup; StopMonitor no longer synchronously waits on the UI thread; connection tracking uses the actual connect task and avoids reading session state after the window starts closing.
+- Scope caveat: no dedicated WinUI close-handler test seam or manual close stress test was run. CI establishes compilation and the existing automated suite passes, not direct proof of the UI shutdown path at runtime.
+- Physical J2534 adapter/vehicle testing remains deferred. PR #228 remains open and must not be merged without explicit approval. Stable v0.2.0 remains unpublished and requires explicit user authorization.
