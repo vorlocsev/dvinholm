@@ -26,7 +26,8 @@ public sealed partial class MainWindow : Window
     private CanRxDispatcher.Subscription? _monitorSubscription;
     private bool _connected;
     private Task? _disconnectTask;
-    private Task<bool>? _connectTask;
+    private Task? _connectTask;
+    private bool _closing;
     private int _total;
     private readonly Stopwatch _rate = new();
     private readonly SemaphoreSlim _udsGate = new(1, 1);
@@ -62,6 +63,8 @@ public sealed partial class MainWindow : Window
         });
         Closed += (_, _) =>
         {
+            _closing = true;
+
             // Request cancellation synchronously, then perform all waits away
             // from the UI thread. RunUdsOperationAsync releases _udsGate from
             // its UI-context continuation, so synchronously waiting for the gate
@@ -844,14 +847,13 @@ public sealed partial class MainWindow : Window
             var connected = _session.Connect(dllPath, baud, out var error);
             return (connected, error);
         });
-        _connectTask = connectTask.ContinueWith(
-            completed => completed.Status == TaskStatus.RanToCompletion && completed.Result.connected,
-            CancellationToken.None,
-            TaskContinuationOptions.ExecuteSynchronously,
-            TaskScheduler.Default);
+        // Track the actual native connect operation. Its UI continuation must
+        // check _closing before inspecting session properties after this await.
+        _connectTask = connectTask;
         try
         {
             var result = await connectTask;
+            if (_closing) return;
             if (!result.connected)
             {
                 SetStatus("Connection failed: " + result.error);
@@ -876,12 +878,14 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            SetStatus("Connection failed: " + FormatSafeException(ex, "unexpected adapter error."));
+            if (!_closing)
+                SetStatus("Connection failed: " + FormatSafeException(ex, "unexpected adapter error."));
         }
         finally
         {
             _connectTask = null;
-            ConnectButton.IsEnabled = true;
+            if (!_closing)
+                ConnectButton.IsEnabled = true;
         }
     }
 
