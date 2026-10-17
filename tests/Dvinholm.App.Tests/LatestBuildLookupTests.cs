@@ -717,15 +717,17 @@ public sealed class LatestBuildLookupTests
             requests.Add(request.RequestUri!.AbsoluteUri);
             if (request.RequestUri.AbsolutePath.EndsWith("/runs", StringComparison.Ordinal))
             {
-                var page = System.Web.HttpUtility.ParseQueryString(request.RequestUri.Query)["page"];
-                if (page == "1")
+                var query = request.RequestUri.Query;
+                if (query.Contains("page=1", StringComparison.Ordinal))
                 {
                     var firstPage = string.Join(",", Enumerable.Range(1, 100).Select(i =>
-                        $"""{"event":"pull_request","status":"completed","conclusion":"success","head_sha":"{{new string('a', 40)}}","id":{{i}},"run_number":{{i}},"created_at":"2026-10-15T00:00:00Z"}"""));
-                    return JsonResponse($"""{"workflow_runs":[{{firstPage}}]}""");
+                        "{\"event\":\"pull_request\",\"status\":\"completed\",\"conclusion\":\"success\",\"head_sha\":\"" +
+                        new string('a', 40) + "\",\"id\":" + i + ",\"run_number\":" + i +
+                        ",\"created_at\":\"2026-10-15T00:00:00Z\"}"));
+                    return JsonResponse("{\"workflow_runs\":[" + firstPage + "]}");
                 }
 
-                Assert.Equal("2", page);
+                Assert.Contains("page=2", query, StringComparison.Ordinal);
                 return JsonResponse("""
                     {
                       "workflow_runs": [
