@@ -3,7 +3,7 @@
 - [x] User manually confirmed that the exact published v0.2.0 Windows archive opens on Windows 11 LTSC IoT 26100.9550.
 - [x] Stable release remains available at [v0.2.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.0). Asset SHA-256: `c80e56a8cf594485cfeb82a1003907cff22c52716abf2e60e518d290b4f3deec`.
 - [x] In-app updater was manually exercised; user confirmed the app updated and the window shows `0.2.0 4c7efcd`, matching main commit `4c7efcdd455ce70730ec66778e6fdff2c7c6be1f`.
-- [x] Without a physical J2534 adapter, Connect reports `Connection failed` and the Connect button becomes active again. This confirms recovery of the button after a failed attempt; it does not verify physical hardware connectivity.
+- [x] Without a physical J2534 adapter, two consecutive Connect attempts each reported `Connection failed`; after each attempt the Connect button became active again. This confirms retry/recovery behavior for repeated no-adapter failures, not physical hardware connectivity.
 - [x] Start Monitor and Read VIN remain inactive while disconnected, consistent with the expected disconnected-state behavior.
 - [x] Latest main CI on `4c7efcdd455ce70730ec66778e6fdff2c7c6be1f` passed: [run #39073122096](https://github.com/vorlocsev/dvinholm/actions/runs/39073122096).
 - [ ] Continue software-only manual UI checks: inspect connection error details/retry, and verify the remaining disconnected controls/status transitions. Do not claim UI paths not directly tested.
