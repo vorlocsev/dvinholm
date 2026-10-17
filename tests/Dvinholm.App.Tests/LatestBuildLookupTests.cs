@@ -717,8 +717,14 @@ public sealed class LatestBuildLookupTests
             requests.Add(request.RequestUri!.AbsoluteUri);
             if (request.RequestUri.AbsolutePath.EndsWith("/runs", StringComparison.Ordinal))
             {
-                var query = request.RequestUri.Query;
-                if (query.Contains("page=1", StringComparison.Ordinal))
+                var queryParameters = request.RequestUri.Query
+                    .TrimStart('?')
+                    .Split('&', StringSplitOptions.RemoveEmptyEntries)
+                    .Select(parameter => parameter.Split('=', 2))
+                    .Where(parts => parts.Length == 2)
+                    .ToDictionary(parts => Uri.UnescapeDataString(parts[0]), parts => Uri.UnescapeDataString(parts[1]), StringComparer.OrdinalIgnoreCase);
+                var page = queryParameters.TryGetValue("page", out var pageValue) ? pageValue : null;
+                if (page == "1")
                 {
                     var firstPage = string.Join(",", Enumerable.Range(1, 100).Select(i =>
                         "{\"event\":\"pull_request\",\"status\":\"completed\",\"conclusion\":\"success\",\"head_sha\":\"" +
