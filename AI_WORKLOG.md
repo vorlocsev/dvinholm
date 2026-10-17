@@ -1,3 +1,13 @@
+## Manual Windows verification — J2534 DLL path persistence (2026-10-18)
+
+- User confirmed the J2534 DLL path persisted after fully closing and reopening the app using the Windows x86 CI artifact on Windows 11 LTSC IoT 26100.9550.
+- Test value was `C:\\Dvinholm-Test\\missing-j2534.dll`; no Connect action was taken, so no adapter connection was attempted.
+- Fix is merged to `main` as `696aad80be40deac5acb6632d20b74e4471a2f9e` via [PR #281](https://github.com/vorlocsev/dvinholm/pull/281); branch CI passed [run #39077395043](https://github.com/vorlocsev/dvinholm/actions/runs/39077395043).
+- Manual check outcome: PASS for persistence across restart. This does not verify physical adapter compatibility.
+- Next: continue remaining software-only checks and review release gates before deciding on a release. Physical J2534 adapter/vehicle validation remains deferred.
+
+---
+
 ## Follow-up — persist J2534 DLL path (2026-10-18)
 
 - User confirmed the DLL path field is empty after closing/reopening stable v0.2.0 (4c7efcd).
