@@ -1,3 +1,13 @@
+## v0.2.0 publication authorized — preparation checkpoint — 2026-10-17
+
+- [x] User explicitly authorized publishing stable `v0.2.0`.
+- [x] Prepared version bump to `0.2.0`, release notes, and a dedicated stable-release workflow. The workflow will build/test the Windows x86 app, package the self-contained ZIP, calculate SHA-256, and create the GitHub release only after the validation steps succeed.
+- [ ] Stable release has **not yet been published**. The release preparation PR and its CI must pass first; then the dedicated `release/v0.2.0` branch will trigger the release workflow.
+- [ ] Confirm the final GitHub release asset digest, ZIP size, and SHA-256 after publication, then update README and final roadmap/work log with the exact release metadata.
+- Physical J2534 adapter/vehicle validation remains deferred. The release must not claim physical hardware verification.
+
+---
+
 ## Post-PR #275 main CI passed — 2026-10-17
 
 - [x] Documentation checkpoint PR [#275](https://github.com/vorlocsev/dvinholm/pull/275) is merged as `9d8dcbf9d7797b5a65d7fd9461c6472ba34ff931`; the complete existing `ROADMAP.md` and `AI_WORKLOG.md` content was preserved.
