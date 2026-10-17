@@ -1,0 +1,81 @@
+name: Stable release v0.2.0
+
+on:
+  push:
+    branches:
+      - "release/v0.2.0"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Verify .NET SDK
+        run: dotnet --version
+
+      - name: Restore
+        run: dotnet restore Dvinholm.sln
+
+      - name: Build
+        run: dotnet build Dvinholm.sln --configuration Release --no-restore -p:Platform=x86 -p:Version=0.2.0 -p:InformationalVersion=0.2.0+${{ github.sha }}
+
+      - name: Setup .NET x86 test host
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.401'
+          architecture: x86
+
+      - name: Test
+        run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release -p:Platform=x86 --logger "trx;LogFileName=test-results.trx"
+
+      - name: Setup .NET x64 for publish
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          architecture: x64
+
+      - name: Publish
+        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:Version=0.2.0 -p:InformationalVersion=0.2.0+${{ github.sha }} --output artifacts/app
+
+      - name: Package ZIP and SHA-256
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          Compress-Archive -Path artifacts/app/* -DestinationPath artifacts/Dvinholm-Windows-x86.zip -CompressionLevel Optimal
+          $hash = (Get-FileHash artifacts/Dvinholm-Windows-x86.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  Dvinholm-Windows-x86.zip" | Set-Content -Path artifacts/SHA256SUMS.txt -Encoding ascii
+          Write-Host "SHA-256: $hash"
+
+      - name: Publish stable GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release create "v0.2.0" "artifacts/Dvinholm-Windows-x86.zip" "artifacts/SHA256SUMS.txt" --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Dvinholm 0.2.0" --notes-file ".github/release-notes-v0.2.0.md"
+
+      - name: Verify release metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $release = gh release view "v0.2.0" --repo "${{ github.repository }}" --json tagName,isDraft,isPrerelease,assets | ConvertFrom-Json
+          if ($release.tagName -ne "v0.2.0" -or $release.isDraft -or $release.isPrerelease) {
+            throw "The stable v0.2.0 release metadata is not correct."
+          }
+          $zip = $release.assets | Where-Object { $_.name -eq "Dvinholm-Windows-x86.zip" }
+          $sums = $release.assets | Where-Object { $_.name -eq "SHA256SUMS.txt" }
+          if (-not $zip -or -not $sums) {
+            throw "Expected release assets are missing."
+          }
+          Write-Host "Published ZIP: $($zip.name), $($zip.size) bytes"
+          Write-Host "Published checksum: $($sums.name)"
