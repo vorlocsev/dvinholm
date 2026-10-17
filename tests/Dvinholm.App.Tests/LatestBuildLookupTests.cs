@@ -707,6 +707,58 @@ public sealed class LatestBuildLookupTests
         Assert.Equal("sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", build.ArtifactDigest);
     }
 
+
+    [Fact]
+    public async Task LookupContinuesToSecondPageWhenFirstPageHasNoEligibleBuild()
+    {
+        var requests = new List<string>();
+        using var client = new HttpClient(new QueueHttpMessageHandler(request =>
+        {
+            requests.Add(request.RequestUri!.AbsoluteUri);
+            if (request.RequestUri.AbsolutePath.EndsWith("/runs", StringComparison.Ordinal))
+            {
+                var page = System.Web.HttpUtility.ParseQueryString(request.RequestUri.Query)["page"];
+                if (page == "1")
+                {
+                    var firstPage = string.Join(",", Enumerable.Range(1, 100).Select(i =>
+                        $"""{"event":"pull_request","status":"completed","conclusion":"success","head_sha":"{{new string('a', 40)}}","id":{{i}},"run_number":{{i}},"created_at":"2026-10-15T00:00:00Z"}"""));
+                    return JsonResponse($"""{"workflow_runs":[{{firstPage}}]}""");
+                }
+
+                Assert.Equal("2", page);
+                return JsonResponse("""
+                    {
+                      "workflow_runs": [
+                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 201, "run_number": 201, "created_at": "2026-10-16T00:00:00Z" }
+                      ]
+                    }
+                    """);
+            }
+
+            Assert.EndsWith("/releases/tags/ci-201", request.RequestUri.AbsolutePath);
+            return JsonResponse("""
+                {
+                  "assets": [
+                    {
+                      "id": 987,
+                      "name": "Dvinholm-Windows-x86.zip",
+                      "size": 2048,
+                      "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-201/Dvinholm-Windows-x86.zip",
+                      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                    }
+                  ]
+                }
+                """);
+        }));
+
+        var build = await LatestBuildUpdater.GetLatestSuccessfulBuildAsync(client);
+
+        Assert.Equal(201, build.RunNumber);
+        Assert.Equal("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", build.CommitSha);
+        Assert.Contains(requests, url => url.Contains("page=1", StringComparison.Ordinal));
+        Assert.Contains(requests, url => url.Contains("page=2", StringComparison.Ordinal));
+    }
+
     private static HttpResponseMessage JsonResponse(string json) => new(HttpStatusCode.OK)
     {
         Content = new StringContent(json, Encoding.UTF8, "application/json")
