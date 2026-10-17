@@ -5,6 +5,7 @@
 - [x] In-app updater was manually exercised; user confirmed the app updated and the window shows `0.2.0 4c7efcd`, matching main commit `4c7efcdd455ce70730ec66778e6fdff2c7c6be1f`.
 - [x] Without a physical J2534 adapter, two consecutive Connect attempts each reported `Connection failed`; after each attempt the Connect button became active again. This confirms retry/recovery behavior for repeated no-adapter failures, not physical hardware connectivity.
 - [x] Start Monitor, Read VIN, Read DTC, Read DID, Discover ECUs, Hardware Filter, and Disconnect are inactive while disconnected, consistent with the expected disconnected-state behavior.
+- [x] J2534 adapter selection remains available with no physical adapter connected, allowing the user to choose an installed driver entry before attempting a connection.
 - [x] Latest main CI on `4c7efcdd455ce70730ec66778e6fdff2c7c6be1f` passed: [run #39073122096](https://github.com/vorlocsev/dvinholm/actions/runs/39073122096).
 - [ ] Continue software-only manual UI checks: inspect connection error details/retry, and verify the remaining disconnected controls/status transitions. Do not claim UI paths not directly tested.
 - [ ] Physical J2534 adapter and vehicle testing remain deferred to a future release; do not claim hardware validation.
