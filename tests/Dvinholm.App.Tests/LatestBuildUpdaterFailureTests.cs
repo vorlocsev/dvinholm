@@ -530,18 +530,18 @@ function Start-Process {
         }
         finally
         {
-            // Windows can briefly retain the executed .ps1 file handle after
-            // PowerShell exits. Retry only transient I/O cleanup failures;
-            // if the lock does not clear, let the test fail rather than hide it.
+            // Windows can briefly retain handles to files in a temporary test
+            // tree after PowerShell exits. Retry transient I/O cleanup failures
+            // for a bounded interval; a persistent lock must still fail the test.
             for (var attempt = 0; Directory.Exists(root); attempt++)
             {
                 try
                 {
                     Directory.Delete(root, recursive: true);
                 }
-                catch (IOException) when (attempt < 9)
+                catch (IOException) when (attempt < 49)
                 {
-                    await Task.Delay(TimeSpan.FromMilliseconds(100));
+                    await Task.Delay(TimeSpan.FromMilliseconds(200));
                 }
             }
         }
