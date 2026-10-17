@@ -7,7 +7,7 @@
 # Dvinholm development roadmap
 
 Updated: 2026-10-17  
-Current main checkpoint: `1749b56d826523bf382f2d287e8f1a30a791286f`  
+Current main checkpoint: `78c555df959129a7a743ac8c34156703ca584bce`  
 Latest stable release: [v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1)
 
 This roadmap separates software/CI verification from physical adapter validation. Passing tests do not establish compatibility with a real interface or vehicle.
@@ -861,3 +861,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Post-merge main CI for documentation checkpoint `1749b56d826523bf382f2d287e8f1a30a791286f` is still running: [#2291](https://github.com/vorlocsev/dvinholm/actions/runs/38983741022).
 - [ ] Active-session Monitor/UDS control transition remains unverified because no physical J2534 adapter is available.
 - Physical adapter/vehicle validation remains deferred. Stable v0.2.0 remains unpublished and must not be published without explicit user authorization.
+
+
+## Window shutdown lifecycle fix — PR #267 (2026-10-17)
+
+- [x] PR [#267](https://github.com/vorlocsev/dvinholm/pull/267) merged as `78c555df959129a7a743ac8c34156703ca584bce`.
+- [x] Final PR-head CI [run #38986409454](https://github.com/vorlocsev/dvinholm/actions/runs/38986409454) passed: build/tests and the published v0.1.1 ZIP audit succeeded.
+- [x] Post-merge main CI [run #38986840493](https://github.com/vorlocsev/dvinholm/actions/runs/38986840493) passed on the exact merge commit; build/tests and published release ZIP audit both succeeded.
+- [x] Shutdown cleanup no longer synchronously waits on tracked operations or the UDS gate on the UI thread. Monitor stopping requests cancellation without synchronously waiting; connect completion is tracked as the actual connect task, and the continuation avoids session access after window closing.
+- [ ] A dedicated WinUI window-close regression test/manual close stress test has not been run. CI confirms compilation and existing test suite only; do not claim direct runtime verification of the window-close behavior.
+- Physical J2534 adapter and vehicle checks remain deferred. Stable v0.2.0 remains unpublished and requires explicit user authorization.
