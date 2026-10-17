@@ -109,111 +109,118 @@ internal static class LatestBuildUpdater
         HttpClient http,
         CancellationToken cancellationToken = default)
     {
-        // Deliberately do not filter by branch: the user wants the newest successful
-        // CI build from any branch, including a feature branch or pull request.
-        var runsUrl = $"https://api.github.com/repos/{Repository}/actions/workflows/{WorkflowId}/runs?per_page=100";
-        using var runsResponse = await http.GetAsync(runsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        runsResponse.EnsureSuccessStatusCode();
-        await using var runsStream = await runsResponse.Content.ReadAsStreamAsync(cancellationToken);
-        using var runsJson = await JsonDocument.ParseAsync(runsStream, cancellationToken: cancellationToken);
-
-        if (!runsJson.RootElement.TryGetProperty("workflow_runs", out var runs) || runs.ValueKind != JsonValueKind.Array)
-            throw new InvalidDataException("GitHub did not return the CI workflow run list.");
-
-        foreach (var run in runs.EnumerateArray())
+        // Search all pages in descending GitHub Actions order. Branch pushes may not
+        // publish updater assets, so the newest eligible build can be older than page 1.
+        for (var page = 1; ; page++)
         {
-            // Push/workflow_dispatch artifacts are built from the exact head SHA.
-            // Pull-request workflows can build a synthetic merge ref, so their
-            // artifact SHA is not necessarily the branch's head_sha.
-            var eventName = ReadString(run, "event");
-            if (eventName is not ("push" or "workflow_dispatch") ||
-                ReadString(run, "status") != "completed" ||
-                ReadString(run, "conclusion") != "success")
-                continue;
+            var runsUrl = $"https://api.github.com/repos/{Repository}/actions/workflows/{WorkflowId}/runs?per_page=100&page={page}";
+            using var runsResponse = await http.GetAsync(runsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            runsResponse.EnsureSuccessStatusCode();
+            await using var runsStream = await runsResponse.Content.ReadAsStreamAsync(cancellationToken);
+            using var runsJson = await JsonDocument.ParseAsync(runsStream, cancellationToken: cancellationToken);
 
-            var sha = ReadString(run, "head_sha");
-            if (sha.Length != 40 || !sha.All(Uri.IsHexDigit))
-                continue;
+            if (!runsJson.RootElement.TryGetProperty("workflow_runs", out var runs) || runs.ValueKind != JsonValueKind.Array)
+                throw new InvalidDataException("GitHub did not return the CI workflow run list.");
 
-            var runId = ReadInt64(run, "id");
-            var rawRunNumber = ReadInt64(run, "run_number");
-            // Treat malformed numeric metadata as an ineligible run instead of
-            // letting a checked cast abort discovery before older builds are tried.
-            if (runId <= 0 || rawRunNumber <= 0 || rawRunNumber > int.MaxValue)
-                continue;
-
-            var runNumber = (int)rawRunNumber;
-            var createdAt = ReadString(run, "created_at");
-            // GitHub Actions artifact ZIP endpoints require authentication, even for
-            // public repositories. Successful non-PR CI runs publish a public
-            // prerelease asset tagged ci-<run number>; download that asset anonymously.
-            var releaseUrl = $"https://api.github.com/repos/{Repository}/releases/tags/ci-{runNumber}";
-            using var releaseResponse = await http.GetAsync(releaseUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-            if (!releaseResponse.IsSuccessStatusCode)
-                continue;
-
-            await using var releaseStream = await releaseResponse.Content.ReadAsStreamAsync(cancellationToken);
-            using var releaseJson = await JsonDocument.ParseAsync(releaseStream, cancellationToken: cancellationToken);
-            if (!releaseJson.RootElement.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array)
-                continue;
-
-            foreach (var asset in assets.EnumerateArray())
+            foreach (var run in runs.EnumerateArray())
             {
-                if (ReadString(asset, "name") != $"{ArtifactName}.zip")
+                // Pull-request workflows can build a synthetic merge ref, so their
+                // artifact SHA is not necessarily the branch's head_sha. Only push
+                // and manual runs are eligible for updater assets.
+                var eventName = ReadString(run, "event");
+                if (eventName is not ("push" or "workflow_dispatch") ||
+                    ReadString(run, "status") != "completed" ||
+                    ReadString(run, "conclusion") != "success")
                     continue;
 
-                var size = ReadInt64(asset, "size");
-                var downloadUrl = ReadString(asset, "browser_download_url");
-                if (size <= 0 || size > MaximumDownloadBytes || !Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps || !string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase) ||
-                    !uri.IsDefaultPort ||
-                    !string.IsNullOrEmpty(uri.UserInfo) ||
-                    !string.IsNullOrEmpty(uri.Query) ||
-                    !string.IsNullOrEmpty(uri.Fragment) ||
-                    !uri.AbsolutePath.StartsWith($"/{Repository}/releases/download/", StringComparison.OrdinalIgnoreCase))
+                var sha = ReadString(run, "head_sha");
+                if (sha.Length != 40 || !sha.All(Uri.IsHexDigit))
                     continue;
 
-                string? digest = null;
-                if (asset.TryGetProperty("digest", out var digestElement) &&
-                    digestElement.ValueKind != JsonValueKind.Null)
+                var runId = ReadInt64(run, "id");
+                var rawRunNumber = ReadInt64(run, "run_number");
+                // Treat malformed numeric metadata as an ineligible run instead of
+                // letting a checked cast abort discovery before older builds are tried.
+                if (runId <= 0 || rawRunNumber <= 0 || rawRunNumber > int.MaxValue)
+                    continue;
+
+                var runNumber = (int)rawRunNumber;
+                var createdAt = ReadString(run, "created_at");
+                // GitHub Actions artifact ZIP endpoints require authentication, even for
+                // public repositories. Successful non-PR CI runs publish a public
+                // prerelease asset tagged ci-<run number>; download that asset anonymously.
+                var releaseUrl = $"https://api.github.com/repos/{Repository}/releases/tags/ci-{runNumber}";
+                using var releaseResponse = await http.GetAsync(releaseUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+                if (!releaseResponse.IsSuccessStatusCode)
+                    continue;
+
+                await using var releaseStream = await releaseResponse.Content.ReadAsStreamAsync(cancellationToken);
+                using var releaseJson = await JsonDocument.ParseAsync(releaseStream, cancellationToken: cancellationToken);
+                if (!releaseJson.RootElement.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array)
+                    continue;
+
+                foreach (var asset in assets.EnumerateArray())
                 {
-                    // GitHub may omit the digest or return null for older assets.
-                    // If the property is present with any other value, it must be
-                    // a non-empty string containing a complete SHA-256 value.
-                    if (digestElement.ValueKind != JsonValueKind.String)
+                    if (ReadString(asset, "name") != $"{ArtifactName}.zip")
                         continue;
 
-                    digest = digestElement.GetString();
-                    if (string.IsNullOrEmpty(digest))
+                    var size = ReadInt64(asset, "size");
+                    var downloadUrl = ReadString(asset, "browser_download_url");
+                    if (size <= 0 || size > MaximumDownloadBytes || !Uri.TryCreate(downloadUrl, UriKind.Absolute, out var uri) || uri.Scheme != Uri.UriSchemeHttps || !string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase) ||
+                        !uri.IsDefaultPort ||
+                        !string.IsNullOrEmpty(uri.UserInfo) ||
+                        !string.IsNullOrEmpty(uri.Query) ||
+                        !string.IsNullOrEmpty(uri.Fragment) ||
+                        !uri.AbsolutePath.StartsWith($"/{Repository}/releases/download/", StringComparison.OrdinalIgnoreCase))
                         continue;
+
+                    string? digest = null;
+                    if (asset.TryGetProperty("digest", out var digestElement) &&
+                        digestElement.ValueKind != JsonValueKind.Null)
+                    {
+                        // GitHub may omit the digest or return null for older assets.
+                        // If the property is present with any other value, it must be
+                        // a non-empty string containing a complete SHA-256 value.
+                        if (digestElement.ValueKind != JsonValueKind.String)
+                            continue;
+
+                        digest = digestElement.GetString();
+                        if (string.IsNullOrEmpty(digest))
+                            continue;
+                    }
+
+                    string? validatedDigest = null;
+                    if (digest is not null)
+                    {
+                        if (!digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ||
+                            digest.Length != 71 ||
+                            !digest[7..].All(Uri.IsHexDigit))
+                            continue;
+
+                        validatedDigest = digest.ToLowerInvariant();
+                    }
+
+                    // Prefer GitHub's release-asset API with an explicit octet-stream
+                    // request. The browser URL can redirect to a signed asset URL and
+                    // may fail with 401 in clients that negotiate the API JSON media type.
+                    var assetId = ReadInt64(asset, "id");
+                    if (assetId > 0)
+                        downloadUrl = $"https://api.github.com/repos/{Repository}/releases/assets/{assetId}";
+
+                    return new LatestBuildInfo(
+                        sha.ToLowerInvariant(),
+                        runNumber,
+                        runId,
+                        downloadUrl,
+                        size,
+                        validatedDigest,
+                        createdAt);
                 }
-
-                string? validatedDigest = null;
-                if (digest is not null)
-                {
-                    if (!digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ||
-                        digest.Length != 71 ||
-                        !digest[7..].All(Uri.IsHexDigit))
-                        continue;
-
-                    validatedDigest = digest.ToLowerInvariant();
-                }
-
-                // Prefer GitHub's release-asset API with an explicit octet-stream
-                // request. The browser URL can redirect to a signed asset URL and
-                // may fail with 401 in clients that negotiate the API JSON media type.
-                var assetId = ReadInt64(asset, "id");
-                if (assetId > 0)
-                    downloadUrl = $"https://api.github.com/repos/{Repository}/releases/assets/{assetId}";
-
-                return new LatestBuildInfo(
-                    sha.ToLowerInvariant(),
-                    runNumber,
-                    runId,
-                    downloadUrl,
-                    size,
-                    validatedDigest,
-                    createdAt);
             }
+
+            // A short page means GitHub has no further runs to inspect.
+            if (runs.GetArrayLength() < 100)
+                break;
         }
 
         throw new InvalidOperationException("No successful CI run with a non-expired Windows x86 artifact was found across the repository branches.");
