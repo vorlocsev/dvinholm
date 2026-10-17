@@ -1,3 +1,11 @@
+## Manual Windows verification — disconnected startup state (2026-10-18)
+
+- [x] After relaunch, user confirmed the saved test DLL path remains visible and the app reports **not connected**.
+- [x] This confirms the app does not auto-connect on startup. The Connect action was not used; no physical adapter was available or tested.
+- [x] Continue with software-only release checks; do not claim physical J2534/vehicle compatibility.
+
+---
+
 ## Manual Windows verification — J2534 DLL path persistence (2026-10-18)
 
 - User confirmed the J2534 DLL path persisted after fully closing and reopening the app using the Windows x86 CI artifact on Windows 11 LTSC IoT 26100.9550.
