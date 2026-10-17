@@ -1,3 +1,12 @@
+## Post-PR #275 main CI passed — 2026-10-17
+
+- Documentation checkpoint PR #275 merged as `9d8dcbf9d7797b5a65d7fd9461c6472ba34ff931`; full prior contents of both project tracking documents were preserved.
+- Post-merge [CI run #39045906011](https://github.com/vorlocsev/dvinholm/actions/runs/39045906011) passed on the exact merge SHA: `build` and `audit-v0-1-1-release` both succeeded.
+- The stable v0.1.1 release archive audit passed. CI does not substitute for manual updater/button verification on the user's Windows installation.
+- Next: continue software-only release-critical review; keep physical adapter/vehicle validation deferred; do not publish stable v0.2.0 without explicit permission. Do not merge stale PR #228 or #225 without explicit permission.
+
+---
+
 ## PR #274 merged; updater CI run pagination — 2026-10-17
 
 - PR [#274](https://github.com/vorlocsev/dvinholm/pull/274) (`fix: paginate updater CI run discovery`) was merged into `main` as `53d32922ac4d198d80efc7a4c2d2a6b2d2266c82`.
