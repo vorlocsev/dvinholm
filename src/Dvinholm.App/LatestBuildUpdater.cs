@@ -109,22 +109,24 @@ internal static class LatestBuildUpdater
         HttpClient http,
         CancellationToken cancellationToken = default)
     {
-        // Deliberately do not filter by branch: the user wants the newest successful
-        // CI build from any branch, including a feature branch or pull request.
-        var runsUrl = $"https://api.github.com/repos/{Repository}/actions/workflows/{WorkflowId}/runs?per_page=100";
-        using var runsResponse = await http.GetAsync(runsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-        runsResponse.EnsureSuccessStatusCode();
-        await using var runsStream = await runsResponse.Content.ReadAsStreamAsync(cancellationToken);
-        using var runsJson = await JsonDocument.ParseAsync(runsStream, cancellationToken: cancellationToken);
-
-        if (!runsJson.RootElement.TryGetProperty("workflow_runs", out var runs) || runs.ValueKind != JsonValueKind.Array)
-            throw new InvalidDataException("GitHub did not return the CI workflow run list.");
-
-        foreach (var run in runs.EnumerateArray())
+        // Search all pages in descending GitHub Actions order. Branch pushes may not
+        // publish updater assets, so the newest eligible build can be older than page 1.
+        for (var page = 1; ; page++)
         {
-            // Push/workflow_dispatch artifacts are built from the exact head SHA.
-            // Pull-request workflows can build a synthetic merge ref, so their
-            // artifact SHA is not necessarily the branch's head_sha.
+            var runsUrl = $"https://api.github.com/repos/{Repository}/actions/workflows/{WorkflowId}/runs?per_page=100&page={page}";
+            using var runsResponse = await http.GetAsync(runsUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            runsResponse.EnsureSuccessStatusCode();
+            await using var runsStream = await runsResponse.Content.ReadAsStreamAsync(cancellationToken);
+            using var runsJson = await JsonDocument.ParseAsync(runsStream, cancellationToken: cancellationToken);
+
+            if (!runsJson.RootElement.TryGetProperty("workflow_runs", out var runs) || runs.ValueKind != JsonValueKind.Array)
+                throw new InvalidDataException("GitHub did not return the CI workflow run list.");
+
+            foreach (var run in runs.EnumerateArray())
+            {
+                // Pull-request workflows can build a synthetic merge ref, so their
+                // artifact SHA is not necessarily the branch's head_sha. Only push
+                // and manual runs are eligible for updater assets.
             var eventName = ReadString(run, "event");
             if (eventName is not ("push" or "workflow_dispatch") ||
                 ReadString(run, "status") != "completed" ||
@@ -214,6 +216,11 @@ internal static class LatestBuildUpdater
                     validatedDigest,
                     createdAt);
             }
+            }
+
+            // A short page means GitHub has no further runs to inspect.
+            if (runs.GetArrayLength() < 100)
+                break;
         }
 
         throw new InvalidOperationException("No successful CI run with a non-expired Windows x86 artifact was found across the repository branches.");
