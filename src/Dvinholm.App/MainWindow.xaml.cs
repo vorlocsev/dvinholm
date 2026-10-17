@@ -26,7 +26,8 @@ public sealed partial class MainWindow : Window
     private CanRxDispatcher.Subscription? _monitorSubscription;
     private bool _connected;
     private Task? _disconnectTask;
-    private Task<bool>? _connectTask;
+    private Task? _connectTask;
+    private bool _closing;
     private int _total;
     private readonly Stopwatch _rate = new();
     private readonly SemaphoreSlim _udsGate = new(1, 1);
@@ -62,45 +63,81 @@ public sealed partial class MainWindow : Window
         });
         Closed += (_, _) =>
         {
-            // Ask background operations to stop before touching the native J2534
-            // session. Do not dispose it while a worker may still be using it.
+            _closing = true;
+
+            // Request cancellation synchronously, then perform all waits away
+            // from the UI thread. RunUdsOperationAsync releases _udsGate from
+            // its UI-context continuation, so synchronously waiting for the gate
+            // here would prevent that continuation from running until timeout.
             _discoveryCts?.Cancel();
             _udsCts?.Cancel();
 
-            var discoveryTask = _discoveryTask;
-            var monitorTask = _monitorTask;
-            var disconnectTask = _disconnectTask;
-            var connectTask = _connectTask;
+            var trackedTasks = new Task?[]
+            {
+                _discoveryTask,
+                _monitorTask,
+                _disconnectTask,
+                _connectTask
+            };
             StopMonitor();
 
-            try { discoveryTask?.Wait(TimeSpan.FromSeconds(2)); }
-            catch (AggregateException) { }
-            try { monitorTask?.Wait(TimeSpan.FromSeconds(2)); }
-            catch (AggregateException) { }
-            try { disconnectTask?.Wait(TimeSpan.FromSeconds(2)); }
-            catch (AggregateException) { }
-            try { connectTask?.Wait(TimeSpan.FromSeconds(2)); }
-            catch (AggregateException) { }
+            _ = Task.Run(async () =>
+            {
+                // Observe every task without letting one fault skip the others.
+                // Keep shutdown bounded if a vendor driver never returns.
+                var completionTasks = trackedTasks
+                    .Where(task => task is not null)
+                    .Select(task => ObserveCompletionAsync(task!))
+                    .ToArray();
 
-            var udsStopped = _udsGate.Wait(TimeSpan.FromSeconds(2));
-            if (udsStopped)
+                try
+                {
+                    await Task.WhenAll(completionTasks)
+                        .WaitAsync(TimeSpan.FromSeconds(2))
+                        .ConfigureAwait(false);
+                }
+                catch (TimeoutException)
+                {
+                    // An active worker may still own native resources. Process
+                    // shutdown will reclaim them rather than racing Dispose.
+                    return;
+                }
+
+                bool udsStopped;
+                try
+                {
+                    udsStopped = await _udsGate.WaitAsync(TimeSpan.FromSeconds(2))
+                        .ConfigureAwait(false);
+                }
+                catch (ObjectDisposedException)
+                {
+                    return;
+                }
+
+                if (!udsStopped)
+                    return;
+
                 _udsGate.Release();
 
-            var discoveryStopped = discoveryTask is null || discoveryTask.IsCompleted;
-            var monitorStopped = monitorTask is null || monitorTask.IsCompleted;
-            var disconnectStopped = disconnectTask is null || disconnectTask.IsCompleted;
-            var connectStopped = connectTask is null || connectTask.IsCompleted;
-            if (discoveryStopped && monitorStopped && udsStopped && disconnectStopped && connectStopped)
-            {
-                // Session disposal may wait for a vendor J2534 read that ignores
-                // its timeout. Keep the window-close path non-blocking; Dispose
-                // still waits for the native worker before unloading the DLL.
-                // If the driver never returns, process shutdown reclaims its handles.
-                _ = Task.Run(_session.Dispose);
-            }
-            // If an application operation is still active, leave native teardown
-            // to process shutdown rather than racing it against that operation.
+                // Never unload the native DLL until tracked operations and the
+                // UDS gate have both drained. Dispose may itself wait on a
+                // vendor read that ignores its timeout, so it stays off the UI.
+                _session.Dispose();
+            });
         };
+    }
+
+    private static async Task ObserveCompletionAsync(Task task)
+    {
+        try
+        {
+            await task.ConfigureAwait(false);
+        }
+        catch
+        {
+            // Shutdown only needs to know that the operation has stopped.
+            // Its operational error is already handled by the owning workflow.
+        }
     }
 
     private static string FormatSafeException(Exception exception, string fallback)
@@ -810,14 +847,13 @@ public sealed partial class MainWindow : Window
             var connected = _session.Connect(dllPath, baud, out var error);
             return (connected, error);
         });
-        _connectTask = connectTask.ContinueWith(
-            completed => completed.Status == TaskStatus.RanToCompletion && completed.Result.connected,
-            CancellationToken.None,
-            TaskContinuationOptions.ExecuteSynchronously,
-            TaskScheduler.Default);
+        // Track the actual native connect operation. Its UI continuation must
+        // check _closing before inspecting session properties after this await.
+        _connectTask = connectTask;
         try
         {
             var result = await connectTask;
+            if (_closing) return;
             if (!result.connected)
             {
                 SetStatus("Connection failed: " + result.error);
@@ -842,12 +878,14 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
-            SetStatus("Connection failed: " + FormatSafeException(ex, "unexpected adapter error."));
+            if (!_closing)
+                SetStatus("Connection failed: " + FormatSafeException(ex, "unexpected adapter error."));
         }
         finally
         {
             _connectTask = null;
-            ConnectButton.IsEnabled = true;
+            if (!_closing)
+                ConnectButton.IsEnabled = true;
         }
     }
 
@@ -905,12 +943,9 @@ public sealed partial class MainWindow : Window
 
         var task = _monitorTask;
 
-        if (task is not null && !task.IsCompleted)
-        {
-            try { task.Wait(TimeSpan.FromSeconds(1)); }
-            catch (AggregateException) { }
-        }
-
+        // Never block the UI waiting for a worker that may be inside a native
+        // J2534 read. Disconnect awaits this task explicitly; other callers
+        // leave cleanup to the continuation below.
         if (task is null || task.IsCompleted)
         {
             _monitorTask = null;
