@@ -1,3 +1,12 @@
+## Updater-state fix forward-ported to current main (2026-10-17)
+
+- Prepared branch `fix/updater-state-rebased-main` from main checkpoint `5c23cfa259c91f4bb152fc3cc04f4ea17c588f5d` after confirming post-merge [CI #38988687671](https://github.com/vorlocsev/dvinholm/actions/runs/38988687671) passed both build/tests and the v0.1.1 release audit.
+- Reapplied the remaining PR #228 behavior onto current main: startup now waits for an explicit **Check update** click instead of launching an automatic update lookup, the button label is consistent, regression tests cover identical-SHA and different-SHA decisions, and worklog-only pushes are ignored by CI.
+- The core SHA comparison helper and its use in the UI already exist on current main, so they were retained rather than duplicated.
+- This is a forward-port candidate, not merged. CI must pass before review; PR #228 remains open/unmerged and must not be merged without explicit user approval. No stable v0.2.0 release is authorized. Physical J2534 adapter testing remains deferred.
+
+---
+
 ## Main CI #2296 retry result (2026-10-17)
 
 - Main commit: `024addce1dbe68a6e573f7e67748e1946f0d4128`.
