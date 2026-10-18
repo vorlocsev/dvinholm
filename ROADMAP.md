@@ -1,3 +1,13 @@
+## Updater helper-start cleanup merged — 2026-10-18
+
+- [x] PR [#297](https://github.com/vorlocsev/dvinholm/pull/297) merged as `c8466f49e53ebb2332e9f40733f159af41729e7b` after the latest PR CI run [#39114708239](https://github.com/vorlocsev/dvinholm/actions/runs/39114708239) passed both build/tests and stable-release audit.
+- [x] Failed update-helper startup now triggers best-effort cleanup of the temporary PowerShell script and staging directory; script-write failures are covered by the same cleanup path. Cleanup exceptions do not replace the original startup/write error.
+- [x] Added regression coverage for removing the script and staging directory when helper startup fails.
+- [x] Increased the rollback runtime integration test timeout from 20 to 60 seconds after CI hit a timeout while waiting for the PowerShell test process. The updated PR CI passed; this is a test-timeout adjustment, not evidence of a production rollback defect.
+- [ ] Await post-merge `main` CI before marking the merge checkpoint fully green. Continue software-only updater review; physical J2534 adapter/vehicle testing remains deferred. No stable release was published.
+
+---
+
 ## Updater expanded-size guard — arithmetic overflow edge case (2026-10-18)
 
 - [x] Strengthened the production guard to compare each entry length against the remaining 1,048,576,000-byte budget before adding it, preventing aggregate arithmetic overflow from escaping as `OverflowException`.
