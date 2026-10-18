@@ -250,6 +250,30 @@ public sealed class LatestBuildUpdaterFailureTests
         Assert.Empty(Directory.EnumerateFiles(Path.GetTempPath(), tempPattern));
     }
 
+    [Fact]
+    public async Task FailedHelperStartCleanup_RemovesScriptAndStagingDirectory()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"dvinholm-helper-start-failure-{Guid.NewGuid():N}");
+        var staging = Path.Combine(root, "staging");
+        var script = Path.Combine(root, "replace.ps1");
+        Directory.CreateDirectory(staging);
+        await File.WriteAllTextAsync(Path.Combine(staging, "Dvinholm.App.exe"), "fake executable");
+        await File.WriteAllTextAsync(script, "test script");
+
+        try
+        {
+            LatestBuildUpdater.CleanupFailedStart(script, staging);
+
+            Assert.False(File.Exists(script));
+            Assert.False(Directory.Exists(staging));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static HttpClient CreateClient(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) =>
         new(new StubHttpMessageHandler(responseFactory));
 
