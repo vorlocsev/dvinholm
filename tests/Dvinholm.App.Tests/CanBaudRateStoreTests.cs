@@ -52,6 +52,20 @@ public sealed class CanBaudRateStoreTests
     }
 
     [Fact]
+    public void Save_WhenReplacementFails_CleansTemporaryFile()
+    {
+        using var directory = new TemporaryDirectory();
+        var path = Path.Combine(directory.Path, "can-baud-rate.txt");
+        Directory.CreateDirectory(path);
+        var store = new CanBaudRateStore(path);
+
+        Assert.Throws<IOException>(() => store.Save(250000));
+
+        Assert.True(Directory.Exists(path));
+        Assert.Empty(Directory.GetFiles(directory.Path, "can-baud-rate.txt.*.tmp"));
+    }
+
+    [Fact]
     public void Constructor_RejectsBlankSettingsPath()
     {
         Assert.Throws<ArgumentException>(() => new CanBaudRateStore(" "));
