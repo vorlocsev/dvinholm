@@ -1057,3 +1057,14 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Removed the final unused exception variable in the profile-import save handler without changing behavior.
 - [ ] Continue software-only updater reliability review after the post-merge main build completes.
 - Physical J2534 adapter and vehicle testing remain deferred; no new stable release is authorized by this cleanup.
+
+
+## Updater first-install cleanup runtime regression test — 2026-10-18
+
+- [x] PR [#294](https://github.com/vorlocsev/dvinholm/pull/294) merged; documentation records PR #293 cleanup and CI results.
+- [x] PR [#295](https://github.com/vorlocsev/dvinholm/pull/295) merged as `6ebcd4f25c92c6052c52f049fb16511889fe05f9`. Added a Windows runtime regression test that simulates a partial first-install destination and a failing copy operation, then asserts the partial destination is removed and the error is logged.
+- [x] PR #295 CI passed: [push run #39113276689](https://github.com/vorlocsev/dvinholm/actions/runs/39113276689) and [PR run #39113283879](https://github.com/vorlocsev/dvinholm/actions/runs/39113283879).
+- [x] Main run for PR #293 merge [#39113096094](https://github.com/vorlocsev/dvinholm/actions/runs/39113096094) completed successfully.
+- [ ] Post-merge main runs for documentation and regression test are still running; do not treat main CI as fully green until those complete.
+- [ ] Continue software-only updater reliability review, including rollback and staging cleanup. No stable release planned from these maintenance changes.
+- Physical J2534 adapter and vehicle tests remain deferred.
