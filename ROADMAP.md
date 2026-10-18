@@ -5,6 +5,7 @@
 - [x] PR-head CI passed for #307 ([run #39119334834](https://github.com/vorlocsev/dvinholm/actions/runs/39119334834)) and #308 ([run #39119376885](https://github.com/vorlocsev/dvinholm/actions/runs/39119376885)); both also passed their push CI runs.
 - [x] Main CI after the prior docs checkpoint passed ([run #39119254855](https://github.com/vorlocsev/dvinholm/actions/runs/39119254855)).
 - [x] Post-merge main CI passed after PR #307 ([run #39119672274](https://github.com/vorlocsev/dvinholm/actions/runs/39119672274)) and PR #308 ([run #39119700082](https://github.com/vorlocsev/dvinholm/actions/runs/39119700082)).
+- [x] Documentation checkpoint PR [#311](https://github.com/vorlocsev/dvinholm/pull/311) merged; its post-merge main CI passed in [run #39120748971](https://github.com/vorlocsev/dvinholm/actions/runs/39120748971).
 - [ ] Continue software-only updater failure-path audit. No stable release is being published; physical J2534 adapter/vehicle verification remains deferred.
 
 ---
