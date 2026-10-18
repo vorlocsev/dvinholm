@@ -285,6 +285,28 @@ public sealed class LatestBuildUpdaterFailureTests
     }
 
     [Fact]
+    public void InvalidDestinationPath_CleansStagingWhenReplacementSetupFails()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"dvinholm-invalid-destination-{Guid.NewGuid():N}");
+        var staging = Path.Combine(root, "staging");
+        Directory.CreateDirectory(staging);
+        File.WriteAllText(Path.Combine(staging, "Dvinholm.App.exe"), "fake executable");
+
+        try
+        {
+            Assert.ThrowsAny<Exception>(() =>
+                LatestBuildUpdater.StartReplacement(staging, "\\0", Environment.ProcessId));
+
+            Assert.False(Directory.Exists(staging));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
+    [Fact]
     public async Task FailedHelperStartCleanup_RemovesScriptAndStagingDirectory()
     {
         var root = Path.Combine(Path.GetTempPath(), $"dvinholm-helper-start-failure-{Guid.NewGuid():N}");
