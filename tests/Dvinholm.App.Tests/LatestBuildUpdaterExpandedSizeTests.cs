@@ -48,11 +48,17 @@ public sealed class LatestBuildUpdaterExpandedSizeTests
             writer.Write("small payload");
 
         var bytes = stream.ToArray();
+        var localHeaderOffset = FindLastSignature(bytes, 0x04034b50);
         var centralDirectoryOffset = FindLastSignature(bytes, 0x02014b50);
+        Assert.True(localHeaderOffset >= 0, "ZIP local file header was not found.");
         Assert.True(centralDirectoryOffset >= 0, "ZIP central directory entry was not found.");
 
-        // ZIP central-directory header: uncompressed size is a 32-bit value at offset 24.
-        // The updater checks this metadata before extraction, so the payload stays tiny.
+        // Keep the local file header and central-directory metadata consistent.
+        // The uncompressed-size field is at offset 22 in the local header and
+        // offset 24 in the central-directory header. The payload itself stays tiny.
+        BinaryPrimitives.WriteUInt32LittleEndian(
+            bytes.AsSpan(localHeaderOffset + 22, sizeof(uint)),
+            ExpandedSizeOverLimit);
         BinaryPrimitives.WriteUInt32LittleEndian(
             bytes.AsSpan(centralDirectoryOffset + 24, sizeof(uint)),
             ExpandedSizeOverLimit);
