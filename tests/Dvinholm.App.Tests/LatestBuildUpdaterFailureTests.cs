@@ -42,6 +42,24 @@ public sealed class LatestBuildUpdaterFailureTests
     }
 
     [Fact]
+    public async Task DownloadFailure_DoesNotExposeSensitiveQueryStringInError()
+    {
+        const string secret = "temporary-secret-token";
+        using var client = CreateClient(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized));
+        var build = BuildInfo(
+            Array.Empty<byte>(),
+            url: $"https://api.github.com/repos/vorlocsev/dvinholm/releases/assets/12345?token={secret}");
+
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(
+            () => LatestBuildUpdater.DownloadAndPrepareAsync(build, client));
+
+        Assert.Contains("HTTP 401", exception.Message);
+        Assert.Contains("/repos/vorlocsev/dvinholm/releases/assets/12345", exception.Message);
+        Assert.DoesNotContain(secret, exception.Message);
+        Assert.DoesNotContain("?token=", exception.Message);
+    }
+
+    [Fact]
     public async Task ReleaseAssetApiDownload_RequestsBinaryContent()
     {
         var bytes = CreateZip(("Dvinholm.App.exe", "fake executable"));
