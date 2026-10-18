@@ -496,7 +496,7 @@ try {{
         throw 'The updated executable is missing after file replacement.'
     }}
     $updatedProcess = Start-Process -FilePath $targetExe -WorkingDirectory $destination -PassThru
-    Start-Sleep -Seconds 3
+    Start-Sleep -Seconds 5
     if ($updatedProcess.HasExited) {{
         throw ""The updated application exited during startup (exit code $($updatedProcess.ExitCode)).""
     }}
@@ -530,7 +530,7 @@ catch {{
             }}
             $failure += [Environment]::NewLine + 'The previous build was restored and will be restarted.'
             $restoredProcess = Start-Process -FilePath $restoredExe -WorkingDirectory $destination -PassThru
-            Start-Sleep -Seconds 3
+            Start-Sleep -Seconds 5
             if ($restoredProcess.HasExited) {{
                 throw ""The restored application exited during startup (exit code $($restoredProcess.ExitCode)).""
             }}
