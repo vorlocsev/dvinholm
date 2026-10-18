@@ -1,9 +1,20 @@
+## ECU profile manual validation — 2026-10-18
+
+- [x] Invalid JSON import was rejected with the expected `Profile import failed` status.
+- [x] Confirmed rejection leaves the existing catalog intact; both synthetic profiles remained present and the Standard profile retained Request ID `7E0`, Response ID `7E8`, and DID `F190`.
+- [x] Confirmed Extended profile values: Request ID `18DA10F1`, Response ID `18DAF110`, Extended 29-bit format, DID `1234`.
+- [x] Confirmed synthetic profile metadata accurately marks it as `unverified draft` / UI-test-only rather than vehicle-verified.
+- [x] Earlier checks passed: profile creation is idempotent, values switch/restore correctly, JSON export/import succeeds, and profiles persist across app restart.
+- Physical J2534 adapter and vehicle tests remain deferred. No diagnostic requests were sent. Stable release remains `0.2.0`.
+
+---
+
 ## Synthetic ECU test profiles — 2026-10-18
 
 - [x] Added an **Add test profiles** action that safely appends two clearly labeled, unverified synthetic profiles to the existing local catalog without replacing user profiles.
 - [x] Standard 11-bit profile uses request/response IDs `7E0/7E8`; extended 29-bit profile uses `18DA10F1/18DAF110`. Their DIDs differ to make field refresh easy to observe.
 - [x] Test profiles are persisted in the user's existing catalog and are explicitly marked as UI-test-only, not vehicle-verified.
-- [ ] Verify CI; then test adding the profiles and switching between them on Windows. Stable release remains `0.2.0`.
+- [x] Verified CI and manually tested adding profiles, switching, persistence, import/export, malformed-import safety, and test-only metadata on Windows. Stable release remains `0.2.0`.
 
 ---
 
