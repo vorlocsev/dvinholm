@@ -1,3 +1,12 @@
+## Updater startup-launch exception rollback — 2026-10-19
+
+- [x] Added a Windows PowerShell regression case to [PR #357](https://github.com/vorlocsev/dvinholm/pull/357): simulated `Start-Process` exception before the updated executable starts.
+- [x] The test asserts that the previous build and its marker are restored, the previous executable is restarted, and the original launch error is logged without misreporting a successful rollback as failed.
+- [ ] Confirm PR Windows CI (build, tests, packaging, stable-release audit), merge, and verify post-merge `main` CI.
+- Stable release stays `v0.2.0`; real J2534 adapter and vehicle testing remain deferred.
+
+---
+
 ## Synthetic ECU test profiles — 2026-10-18
 
 - [x] Added an **Add test profiles** action that safely appends two clearly labeled, unverified synthetic profiles to the existing local catalog without replacing user profiles.
