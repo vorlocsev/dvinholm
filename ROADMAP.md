@@ -1018,3 +1018,7 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Replace the stale hard-coded v0.1.1 archive audit with a dynamic lookup of GitHub's latest stable (non-prerelease) release.
 - [x] Verify the current release ZIP against its published SHA256SUMS.txt, test ZIP integrity, and confirm the executable exists.
 - [ ] Await CI on the workflow change before marking verified or merging.
+
+
+- [x] Corrected checksum parsing for both plain and binary-mode (*filename) SHA256SUMS formats after the first dynamic-audit run exposed the filename-prefix mismatch.
+- [ ] Re-run CI and verify the latest stable release audit succeeds.
