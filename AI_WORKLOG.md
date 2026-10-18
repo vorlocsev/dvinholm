@@ -1,3 +1,13 @@
+## Updater runtime-failure cleanup and recovery preservation — 2026-10-18
+
+- Merged PR [#328](https://github.com/vorlocsev/dvinholm/pull/328) (`ac05588e26f4b9e255181d7a23cd6e76a04776c0`): runtime failures best-effort clean the staging directory unless rollback fails, always attempt helper-script cleanup, and append cleanup errors to the update log. If rollback fails, recovery staging and backup data are retained.
+- PR CI [#39129093156](https://github.com/vorlocsev/dvinholm/actions/runs/39129093156) passed; post-merge main CI [#39133270837](https://github.com/vorlocsev/dvinholm/actions/runs/39133270837) passed build/tests, publish, and stable-release audit.
+- Merged test PR [#329](https://github.com/vorlocsev/dvinholm/pull/329) (`2404addf2af1b71688e04b5fe55474da39f3b81b`): added assertions that staging is preserved if rollback fails while the temporary helper script is still removed. PR CI [#39133330458](https://github.com/vorlocsev/dvinholm/actions/runs/39133330458) passed.
+- Post-merge main CI #39133643286 is still running at this checkpoint. Do not mark the main branch green until confirmed.
+- Next: verify post-merge CI and continue software-only updater failure-path audit. No stable release or physical adapter/vehicle testing.
+
+---
+
 ## Updater process-exit wait hardening — 2026-10-18
 
 - Merged PR [#325](https://github.com/vorlocsev/dvinholm/pull/325) (`cc2cca05a2c66838ed3705c8a82b2daffbd07978`): updater helper wait for previous app process is bounded to 60 seconds. If the process remains alive, failure is logged before backup/replacement begins. Windows PowerShell regression test confirms installed files stay unchanged; PR CI [#39127243905](https://github.com/vorlocsev/dvinholm/actions/runs/39127243905) and post-merge main CI [#39127517071](https://github.com/vorlocsev/dvinholm/actions/runs/39127517071) passed.
