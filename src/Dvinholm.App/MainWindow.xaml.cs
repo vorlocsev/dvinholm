@@ -292,6 +292,59 @@ public sealed partial class MainWindow : Window
     private static void SaveProfileCatalog(EcuProfileCatalog catalog) =>
         new EcuProfileCatalogStore(ProfileCatalogPath).Save(catalog);
 
+    private void AddTestProfiles_Click(object sender, RoutedEventArgs e)
+    {
+        const string standardId = "dvinholm-test-standard-11bit";
+        const string extendedId = "dvinholm-test-extended-29bit";
+
+        var profiles = _profileCatalog.All.ToList();
+        var added = 0;
+
+        if (!_profileCatalog.TryGet(standardId, out _))
+        {
+            profiles.Add(new EcuProfile(
+                standardId,
+                "TEST — Standard CAN (11-bit)",
+                0x7E0,
+                0x7E8,
+                isExtended: false,
+                readableDataIdentifiers: new ushort[] { 0xF190 },
+                source: "Synthetic Dvinholm UI test profile only; not verified for any vehicle."));
+            added++;
+        }
+
+        if (!_profileCatalog.TryGet(extendedId, out _))
+        {
+            profiles.Add(new EcuProfile(
+                extendedId,
+                "TEST — Extended CAN (29-bit)",
+                0x18DA10F1,
+                0x18DAF110,
+                isExtended: true,
+                readableDataIdentifiers: new ushort[] { 0x1234 },
+                source: "Synthetic Dvinholm UI test profile only; not verified for any vehicle."));
+            added++;
+        }
+
+        if (added == 0)
+        {
+            SetStatus("Both test ECU profiles are already present.");
+            return;
+        }
+
+        var updated = new EcuProfileCatalog(profiles);
+        try
+        {
+            SaveProfileCatalog(updated);
+            SetProfileCatalog(updated);
+            SetStatus($"Added and saved {added} synthetic test ECU profile(s). These profiles are for UI testing only, not vehicle use.");
+        }
+        catch (Exception)
+        {
+            SetStatus("Test profiles were not saved. Check the local Dvinholm folder permissions and available disk space.");
+        }
+    }
+
     private async void ImportProfiles_Click(object sender, RoutedEventArgs e)
     {
         try
