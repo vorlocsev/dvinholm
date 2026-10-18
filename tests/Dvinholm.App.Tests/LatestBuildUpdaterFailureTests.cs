@@ -1083,6 +1083,8 @@ function Start-Process {
             Assert.Equal("old-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
             Assert.Equal("old", await File.ReadAllTextAsync(Path.Combine(destination, "old.marker")));
             Assert.False(Directory.Exists(backup), "A partial backup should be removed while the installed build is still untouched.");
+            Assert.False(Directory.Exists(staging), "Staging files should be removed when backup creation fails.");
+            Assert.False(File.Exists(scriptPath), "The helper script should be removed after backup creation fails.");
             Assert.False(File.Exists(launchLog), "The application must not launch if the existing build could not be backed up.");
             var updateLog = await File.ReadAllTextAsync(Path.Combine(localAppData, "Dvinholm", "update.log"));
             Assert.Contains("Could not back up the current build", updateLog);
@@ -1172,6 +1174,8 @@ function Start-Process {
 
             Assert.Equal("old-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
             Assert.False(Directory.Exists(backup), "The helper must abort before creating a backup or replacing the installed build.");
+            Assert.False(Directory.Exists(staging), "Staging files should be removed after an early updater failure.");
+            Assert.False(File.Exists(scriptPath), "The helper script should be removed after an early updater failure.");
             var updateLog = await File.ReadAllTextAsync(Path.Combine(localAppData, "Dvinholm", "update.log"));
             Assert.Contains("Simulated process-exit timeout.", updateLog);
         }
