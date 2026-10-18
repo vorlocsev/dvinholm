@@ -2730,3 +2730,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Closed superseded documentation PRs #347–#350 because the manual ECU profile validations were already consolidated by PR #352. No profile results or unique code changes were lost.
 - Stable release remains v0.2.0; no stable release was published. Physical J2534 adapter and vehicle checks remain deferred.
 - Next: continue the software-only updater reliability review. Do not change production code without a concrete defect; no further uncovered rollback issue was established by this review pass.
+
+
+## PR #355 — cancellation before extraction — 2026-10-18
+
+- Merged [PR #355](https://github.com/vorlocsev/dvinholm/pull/355) as `552f5ea2aa75f5f1af093e9f7d2be97f11b7c825` after green CI [#39165406043](https://github.com/vorlocsev/dvinholm/actions/runs/39165406043).
+- Added `CancellationBeforeExtraction_CleansTemporaryArchiveAndStagingDirectory`. A synchronous progress callback cancels at the “Validating and extracting” boundary, after the archive download finishes but before the first extraction entry is processed. The test checks cancellation is propagated and both temporary archive and staging directory are cleaned.
+- Build, tests, publish/package, and stable release archive SHA-256/ZIP audit passed. Production updater code unchanged; no stable release published (still v0.2.0).
+- Physical J2534 adapter/vehicle validation remains deferred.
+- Next: continue software-only review of cleanup and recovery failure paths, and add tests only for reproducible uncovered behavior.
