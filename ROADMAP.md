@@ -3,7 +3,7 @@
 - [x] PR [#328](https://github.com/vorlocsev/dvinholm/pull/328) merged as `ac05588e26f4b9e255181d7a23cd6e76a04776c0`. Runtime failure paths now best-effort remove the staging directory when rollback did not fail, and remove the temporary PowerShell helper script; cleanup errors are appended to the update log. Recovery files are retained if rollback fails.
 - [x] PR-head build/tests and stable-release audit passed in [run #39129093156](https://github.com/vorlocsev/dvinholm/actions/runs/39129093156); post-merge main CI [run #39133270837](https://github.com/vorlocsev/dvinholm/actions/runs/39133270837) passed build/tests, publish, and stable-release audit.
 - [x] PR [#329](https://github.com/vorlocsev/dvinholm/pull/329) merged as `2404addf2af1b71688e04b5fe55474da39f3b81b`. Strengthened the Windows PowerShell runtime test: when the restored app exits during startup and rollback is declared failed, staging data must remain available for recovery while the helper script is still removed. PR CI passed in [run #39133330458](https://github.com/vorlocsev/dvinholm/actions/runs/39133330458).
-- [ ] Post-merge main CI for PR #329 is running at [run #39133643286](https://github.com/vorlocsev/dvinholm/actions/runs/39133643286); verify it before marking the main branch fully green.
+- [x] Post-merge main CI for PR #329 passed in [run #39133643286](https://github.com/vorlocsev/dvinholm/actions/runs/39133643286), including build/tests, publish, and stable-release audit.
 - [ ] Continue software-only updater failure-path review. Stable release `0.2.0` remains unchanged; physical J2534 adapter/vehicle testing remains deferred.
 
 ---
