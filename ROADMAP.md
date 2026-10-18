@@ -1,3 +1,12 @@
+## Verify updater process startup before discarding rollback copy — 2026-10-18
+
+- [ ] The replacement helper now waits five seconds after launching the updated app and checks whether the process exited. An early exit is treated as an update failure, triggering the existing rollback path when an older installation exists.
+- [ ] Rollback startup is checked too. If the restored app exits during its startup window, the helper records rollback failure instead of claiming it was successfully restarted; the backup is not deleted before this check.
+- [ ] Added a Windows PowerShell runtime regression test that simulates the new executable exiting immediately and verifies that the previous executable is restored and relaunched. CI validation is pending.
+- [ ] No stable release or physical J2534 adapter/vehicle validation is included.
+
+---
+
 ## Updater API error handling and ZIP expansion limits — 2026-10-18
 
 - [x] PR [#307](https://github.com/vorlocsev/dvinholm/pull/307) merged as `f75d8fb9d7050aff0cda0d74601570ae23ea2ddf`. Added boundary tests for ZIP expansion accounting: exact configured limit is accepted, negative entry sizes are rejected, and over-limit/near-overflow values are rejected.
