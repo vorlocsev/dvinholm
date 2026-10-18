@@ -1,3 +1,12 @@
+## Updater startup health check — 2026-10-18
+
+- Added a five-second post-launch check in the PowerShell replacement helper. If the new process has already exited, update completion is treated as failure so the existing backup/rollback path is used rather than deleting the backup after a failed startup.
+- The restored process is checked as well; if it exits during the startup window, the helper records rollback failure and retains the backup.
+- Added a Windows-only PowerShell runtime test with a mock process that exits immediately; it asserts the old build is restored and relaunched. CI is pending.
+- No stable release and no physical J2534 adapter/vehicle testing.
+
+---
+
 ## Updater release lookup errors and ZIP size guard tests — 2026-10-18
 
 - Merged [PR #307](https://github.com/vorlocsev/dvinholm/pull/307) (`f75d8fb9d7050aff0cda0d74601570ae23ea2ddf)): tests cover exact expanded-size budget acceptance, negative entry rejection, aggregate over-limit rejection, and `long.MaxValue` input without overflow.
