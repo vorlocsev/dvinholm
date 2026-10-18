@@ -784,7 +784,8 @@ function Start-Process {
             }
             var updateLog = await File.ReadAllTextAsync(Path.Combine(localAppData, "Dvinholm", "update.log"));
             Assert.Contains("The updated application exited during startup (exit code 17).", updateLog);
-            Assert.Contains("The previous build was restored and will be restarted.", updateLog);
+            if (!rollbackCopyFails)
+                Assert.Contains("The previous build was restored and will be restarted.", updateLog);
             var launches = await File.ReadAllTextAsync(launchLog);
             Assert.Contains(Path.Combine(destination, "Dvinholm.App.exe"), launches);
 
