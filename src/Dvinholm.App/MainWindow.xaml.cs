@@ -364,7 +364,22 @@ public sealed partial class MainWindow : Window
         if (_loadingProfiles)
             return;
 
-        if (ProfileSelector.SelectedItem is not EcuProfile profile)
+        // WinUI can raise selection notifications while the ComboBox is still
+        // reconciling its selected item. Apply the final selection on the UI
+        // queue so returning to a profile always restores its saved values,
+        // rather than leaving a manually edited ID in the TextBox.
+        DispatcherQueue.TryEnqueue(() =>
+        {
+            if (_loadingProfiles)
+                return;
+
+            ApplySelectedProfile(ProfileSelector.SelectedItem as EcuProfile);
+        });
+    }
+
+    private void ApplySelectedProfile(EcuProfile? profile)
+    {
+        if (profile is null)
         {
             ClearProfileInputs();
             EcuInfoText.Text = "No ECU profile selected.";
@@ -382,7 +397,7 @@ public sealed partial class MainWindow : Window
             Environment.NewLine + $"Source: {profile.Source}" +
             Environment.NewLine + $"Candidate readable DIDs: {(profile.ReadableDataIdentifiers.Count == 0 ? "none listed" : string.Join(", ", profile.ReadableDataIdentifiers.Order().Select(did => did.ToString("X4"))))}" +
             Environment.NewLine + "Profile metadata does not guarantee that the ECU supports a listed DID.";
-        SetStatus($"Applied profile '{profile.Name}'. No diagnostic request was sent.");
+        SetStatus($"Applied profile '{profile.Name}' (request {UdsRequestId.Text}, response {UdsResponseId.Text}). No diagnostic request was sent.");
     }
 
 
