@@ -1,3 +1,13 @@
+## Updater release lookup: fail fast on HTTP errors — 2026-10-18
+
+- Merged PR [#308](https://github.com/vorlocsev/dvinholm/pull/308) as `0a7bcd2df9b6a4d3650fc6da7735501503aad476`.
+- The updater now continues to older builds only for HTTP 404. 403/429 and other non-success responses stop discovery immediately, avoiding wasted GitHub API requests and preserving the actual HTTP failure.
+- Added regression coverage proving HTTP 403 triggers only one release lookup. Latest-head build/tests and stable-release audit passed in [PR run #39119376885](https://github.com/vorlocsev/dvinholm/actions/runs/39119376885) and [push run #39119358746](https://github.com/vorlocsev/dvinholm/actions/runs/39119358746).
+- Post-merge main CI [run #39119700082](https://github.com/vorlocsev/dvinholm/actions/runs/39119700082) was queued when this entry was written; verify the final result.
+- Continue software-only updater audit. No release publication or physical adapter/vehicle testing.
+
+---
+
 ## Post-merge verification — PR #304 — 2026-10-18
 
 - Main CI [run #39118506041](https://github.com/vorlocsev/dvinholm/actions/runs/39118506041) passed on merge commit `369da5ead23b3299b7f4f53a1a4ead3c2c9c3e8a`, including build/tests and latest-stable-release audit.
