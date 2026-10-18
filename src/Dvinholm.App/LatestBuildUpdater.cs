@@ -559,6 +559,17 @@ catch {{
             $failure += [Environment]::NewLine + 'Could not remove the incomplete first-install destination: ' + ($_ | Out-String)
         }}
     }}
+    elseif (-not $replacementStarted -and (Test-Path -LiteralPath $backup)) {{
+        # The installed app is still untouched. A failed or incomplete backup
+        # is not usable for rollback, so remove it instead of leaking partial data.
+        try {{
+            Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction Stop
+            $failure += [Environment]::NewLine + 'The incomplete update backup was removed because replacement had not started.'
+        }}
+        catch {{
+            $failure += [Environment]::NewLine + 'Could not remove the incomplete update backup: ' + ($_ | Out-String)
+        }}
+    }}
     $failure | Set-Content -LiteralPath $logPath -Encoding UTF8
     Start-Process -FilePath 'notepad.exe' -ArgumentList @($logPath)
 }}
