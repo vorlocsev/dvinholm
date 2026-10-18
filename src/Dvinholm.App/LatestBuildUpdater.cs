@@ -390,6 +390,13 @@ internal static class LatestBuildUpdater
         catch
         {
             try { File.Delete(scriptPath); } catch (IOException) { }
+            try
+            {
+                if (Directory.Exists(stagingDirectory))
+                    Directory.Delete(stagingDirectory, recursive: true);
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
             throw;
         }
     }
