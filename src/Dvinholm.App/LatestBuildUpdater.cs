@@ -471,6 +471,7 @@ $logPath = Join-Path $env:LOCALAPPDATA 'Dvinholm\update.log'
 $hadDestination = Test-Path -LiteralPath $destination
 $backupReady = $false
 $replacementStarted = $false
+$rollbackFailed = $false
 try {{
     if (Get-Process -Id $processId -ErrorAction SilentlyContinue) {{
         # Do not let a hung app process block the updater helper indefinitely.
@@ -552,6 +553,7 @@ catch {{
             Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
         }}
         catch {{
+            $rollbackFailed = $true
             $failure += [Environment]::NewLine + 'Rollback failed: ' + ($_ | Out-String)
         }}
     }}
@@ -581,6 +583,24 @@ catch {{
         catch {{
             $failure += [Environment]::NewLine + 'Could not remove the incomplete update backup: ' + ($_ | Out-String)
         }}
+    }}
+    if (-not $rollbackFailed) {{
+        try {{
+            if (Test-Path -LiteralPath $source) {{
+                Remove-Item -LiteralPath $source -Recurse -Force -ErrorAction Stop
+            }}
+        }}
+        catch {{
+            $failure += [Environment]::NewLine + 'Could not remove failed update staging directory: ' + ($_ | Out-String)
+        }}
+    }}
+    try {{
+        if (Test-Path -LiteralPath $scriptPath) {{
+            Remove-Item -LiteralPath $scriptPath -Force -ErrorAction Stop
+        }}
+    }}
+    catch {{
+        $failure += [Environment]::NewLine + 'Could not remove update helper script: ' + ($_ | Out-String)
     }}
     $failure | Set-Content -LiteralPath $logPath -Encoding UTF8
     Start-Process -FilePath 'notepad.exe' -ArgumentList @($logPath)
