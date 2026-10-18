@@ -1,9 +1,19 @@
+## ECU profile manual validation — 2026-10-18
+
+- [x] Invalid JSON import was rejected and did not replace or damage the current profile catalog.
+- [x] Both synthetic profiles and their expected Standard/Extended CAN IDs and DIDs were manually verified.
+- [x] Synthetic profile metadata correctly communicates `unverified draft` / UI-test-only status.
+- [x] Export/import, persistence across restart, duplicate prevention, and profile switching checks passed.
+- Physical J2534 adapter and vehicle validation remain deferred. No diagnostic requests were sent; stable release remains `0.2.0`.
+
+---
+
 ## Synthetic ECU test profiles — 2026-10-18
 
 - [x] Added an **Add test profiles** action that safely appends two clearly labeled, unverified synthetic profiles to the existing local catalog without replacing user profiles.
 - [x] Standard 11-bit profile uses request/response IDs `7E0/7E8`; extended 29-bit profile uses `18DA10F1/18DAF110`. Their DIDs differ to make field refresh easy to observe.
 - [x] Test profiles are persisted in the user's existing catalog and are explicitly marked as UI-test-only, not vehicle-verified.
-- [ ] Verify CI; then test adding the profiles and switching between them on Windows. Stable release remains `0.2.0`.
+- [x] CI and Windows manual checks passed for profile creation, switching, persistence, import/export, malformed-import safety, and test-only metadata. Stable release remains `0.2.0`.
 
 ---
 
@@ -1272,5 +1282,5 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] User confirmed the `Add test profiles` button appears in CI build `ci-2715`.
 - [x] User verified both profiles' request/response IDs, CAN identifier format, and DID; switching back restored saved values even after a manual response-ID edit.
 - [x] User verified profiles persist after app restart and repeated creation does not add duplicates.
-- [ ] Continue manual UI checks for profile metadata and selection behavior; no diagnostic request should be sent with synthetic profiles.
+- [x] Manual UI checks for profile metadata and selection behavior passed; no diagnostic request was sent with synthetic profiles.
 - Physical J2534 adapter/vehicle tests remain deferred. Stable release remains v0.2.0; no stable release was published for this work.
