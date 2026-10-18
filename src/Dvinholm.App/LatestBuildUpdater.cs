@@ -474,7 +474,16 @@ $replacementStarted = $false
 try {{
     if (Get-Process -Id $processId -ErrorAction SilentlyContinue) {{
         # Do not let a hung app process block the updater helper indefinitely.
-        Wait-Process -Id $processId -Timeout 60 -ErrorAction Stop
+        try {{
+            Wait-Process -Id $processId -Timeout 60 -ErrorAction Stop
+        }}
+        catch {{
+            # The app may exit between Get-Process and Wait-Process. Continue only
+            # if it is now gone; if it still exists, preserve the timeout/error.
+            if (Get-Process -Id $processId -ErrorAction SilentlyContinue) {{
+                throw
+            }}
+        }}
     }}
     Start-Sleep -Milliseconds 400
     if (-not (Test-Path -LiteralPath (Join-Path $source 'Dvinholm.App.exe'))) {{
