@@ -4,7 +4,8 @@
 - Merged [PR #308](https://github.com/vorlocsev/dvinholm/pull/308) (`0a7bcd2df9b6a4d3650fc6da7735501503aad476`): only release-tag HTTP 404 is treated as a missing unpublished asset; other status codes now throw, preventing rate-limit/server errors from being silently converted into repeated lookups and a misleading no-build message.
 - PR-head build/tests and latest-stable-release audit passed for #307 ([run #39119334834](https://github.com/vorlocsev/dvinholm/actions/runs/39119334834)) and #308 ([run #39119376885](https://github.com/vorlocsev/dvinholm/actions/runs/39119376885)); both push runs passed as well.
 - Main CI for commit `3089b43d22d3c4c89fb48f60b2f8d1331f88f5d5` passed in [run #39119254855](https://github.com/vorlocsev/dvinholm/actions/runs/39119254855). Post-merge main CI then passed after PR #307 ([run #39119672274](https://github.com/vorlocsev/dvinholm/actions/runs/39119672274)) and PR #308 ([run #39119700082](https://github.com/vorlocsev/dvinholm/actions/runs/39119700082)).
-- Next: verify both post-merge main runs, then continue software-only updater failure-path review. Do not publish a stable release or claim physical adapter/vehicle validation.
+- Documentation checkpoint PR [#311](https://github.com/vorlocsev/dvinholm/pull/311) merged; post-merge main CI passed in [run #39120748971](https://github.com/vorlocsev/dvinholm/actions/runs/39120748971).
+- Next: continue software-only updater failure-path review. Do not publish a stable release or claim physical adapter/vehicle validation.
 
 ---
 
