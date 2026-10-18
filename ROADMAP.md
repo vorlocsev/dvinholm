@@ -1040,3 +1040,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Verify post-merge main CI for commit `2ccb296e8e745201188371a55d9967994f73a467` before treating the merge pipeline as fully green.
 - [x] Re-recorded the v0.2.0 manual checks: the updater was exercised, repeated no-adapter connection failures return the Connect control to an active state, and disconnected-only actions remain disabled. This does not validate a physical adapter or vehicle.
 - [ ] Continue software-only updater review: validate rollback/cleanup paths and their tests; defer real J2534 adapter and vehicle checks.
+
+
+## Warning cleanup rebased onto current main — 2026-10-18
+
+- [x] Audited stale PR #226 against current main; all but one of its source cleanups were already present.
+- [x] Removed the remaining unused `saveException` variable in the profile-import save failure handler. No exception behavior or user-facing message changed.
+- [ ] Fresh CI must pass before merging the rebased cleanup.
+- Physical J2534 adapter/vehicle checks remain deferred.
