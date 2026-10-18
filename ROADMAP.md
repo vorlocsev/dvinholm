@@ -1217,3 +1217,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Post-merge main runs for documentation and regression test are still running; do not treat main CI as fully green until those complete.
 - [ ] Continue software-only updater reliability review, including rollback and staging cleanup. No stable release planned from these maintenance changes.
 - Physical J2534 adapter and vehicle tests remain deferred.
+
+
+## Updater rollback-copy failure regression — 2026-10-18
+
+- [x] Extended the Windows runtime rollback test to simulate failure of the backup-to-destination robocopy operation after the updated application exits during startup.
+- [x] Assert that rollback failure is logged, the recovery backup and staging directory are preserved, and the helper script is still cleaned up; the destination is explicitly expected to remain on the failed new build when restore copying itself fails.
+- [ ] Await PR and post-merge main CI before marking the test verified.
+- No production code or stable release changed. Physical J2534 adapter and vehicle testing remain deferred.

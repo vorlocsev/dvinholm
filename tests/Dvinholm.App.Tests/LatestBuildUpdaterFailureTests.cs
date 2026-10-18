@@ -675,9 +675,12 @@ function Start-Process {
 
 
     [Theory]
-    [InlineData(false)]
-    [InlineData(true)]
-    public async Task ReplacementScript_RollsBackWhenUpdatedApplicationExitsDuringStartup(bool restoredApplicationExits)
+    [InlineData(false, false)]
+    [InlineData(true, false)]
+    [InlineData(false, true)]
+    public async Task ReplacementScript_RollsBackWhenUpdatedApplicationExitsDuringStartup(
+        bool restoredApplicationExits,
+        bool rollbackCopyFails)
     {
         if (!OperatingSystem.IsWindows())
             return;
@@ -710,6 +713,10 @@ function Wait-Process { param([int]$Id, [int]$Timeout) }
 function Start-Sleep { param([int]$Seconds, [int]$Milliseconds) }
 function Invoke-TestRobocopy {
     param([string]$From, [string]$To, [Parameter(ValueFromRemainingArguments=$true)][string[]]$Options)
+    if ($env:DVINHOLM_TEST_FAIL_ROLLBACK_COPY -eq '1' -and $From -eq $env:DVINHOLM_TEST_BACKUP_SOURCE) {
+        $global:LASTEXITCODE = 8
+        return
+    }
     if (Test-Path -LiteralPath $To) { Remove-Item -LiteralPath $To -Recurse -Force }
     New-Item -ItemType Directory -Path $To -Force | Out-Null
     Copy-Item -Path (Join-Path $From '*') -Destination $To -Recurse -Force
@@ -750,6 +757,8 @@ function Start-Process {
             startInfo.Environment["LOCALAPPDATA"] = localAppData;
             startInfo.Environment["DVINHOLM_TEST_LAUNCH_LOG"] = launchLog;
             startInfo.Environment["DVINHOLM_TEST_RESTORED_APP_EXITS"] = restoredApplicationExits ? "1" : "0";
+            startInfo.Environment["DVINHOLM_TEST_FAIL_ROLLBACK_COPY"] = rollbackCopyFails ? "1" : "0";
+            startInfo.Environment["DVINHOLM_TEST_BACKUP_SOURCE"] = Path.GetFullPath(backup);
 
             using (var process = System.Diagnostics.Process.Start(startInfo)
                 ?? throw new InvalidOperationException("Could not start isolated PowerShell startup-exit test."))
@@ -763,21 +772,33 @@ function Start-Process {
                 Assert.True(process.ExitCode == 0, $"PowerShell exited with {process.ExitCode}. stdout: {stdout} stderr: {stderr}");
             }
 
-            Assert.Equal("old-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
-            Assert.Equal("old", await File.ReadAllTextAsync(Path.Combine(destination, "old.marker")));
+            if (rollbackCopyFails)
+            {
+                Assert.Equal("new-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
+                Assert.False(File.Exists(Path.Combine(destination, "old.marker")));
+            }
+            else
+            {
+                Assert.Equal("old-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
+                Assert.Equal("old", await File.ReadAllTextAsync(Path.Combine(destination, "old.marker")));
+            }
             var updateLog = await File.ReadAllTextAsync(Path.Combine(localAppData, "Dvinholm", "update.log"));
             Assert.Contains("The updated application exited during startup (exit code 17).", updateLog);
-            Assert.Contains("The previous build was restored and will be restarted.", updateLog);
+            if (!rollbackCopyFails)
+                Assert.Contains("The previous build was restored and will be restarted.", updateLog);
             var launches = await File.ReadAllTextAsync(launchLog);
             Assert.Contains(Path.Combine(destination, "Dvinholm.App.exe"), launches);
 
-            if (restoredApplicationExits)
+            if (restoredApplicationExits || rollbackCopyFails)
             {
-                Assert.Contains("The restored application exited during startup (exit code 17).", updateLog);
                 Assert.Contains("Rollback failed:", updateLog);
+                if (restoredApplicationExits)
+                    Assert.Contains("The restored application exited during startup (exit code 17).", updateLog);
+                if (rollbackCopyFails)
+                    Assert.Contains("Rollback copy failed with robocopy exit code 8.", updateLog);
                 Assert.True(
                     File.Exists(Path.Combine(backup, "Dvinholm.App.exe")),
-                    "The rollback backup must be retained when the restored app also exits during startup.");
+                    "The rollback backup must be retained when rollback cannot complete.");
                 Assert.True(
                     Directory.Exists(staging),
                     "The extracted update must be retained when rollback fails so recovery data is not discarded.");

@@ -2650,3 +2650,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - PR #295 CI passed in [run #39113276689](https://github.com/vorlocsev/dvinholm/actions/runs/39113276689) and [run #39113283879](https://github.com/vorlocsev/dvinholm/actions/runs/39113283879).
 - Main run after PR #293, [#39113096094](https://github.com/vorlocsev/dvinholm/actions/runs/39113096094), is now successful. Post-merge main runs for the docs and new test are still in progress.
 - Continue software-only updater review. No new stable release; physical adapter and vehicle testing remain deferred.
+
+
+### Updater rollback-copy failure coverage — 2026-10-18
+
+- Extended the existing Windows runtime rollback test with a separate scenario where the updated executable exits during startup and the mocked backup-to-destination robocopy returns failure code 8.
+- The scenario asserts the rollback failure is logged, the backup executable and extracted staging remain available for recovery, the temporary helper script is removed, and the destination remains in the failed updated state rather than falsely claiming restoration.
+- Validation and merge are pending fresh CI. This is test-only; no production updater behavior or release changed. Physical adapter/vehicle checks remain deferred.
