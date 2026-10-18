@@ -67,11 +67,13 @@
                         <ColumnDefinition Width="250"/>
                         <ColumnDefinition Width="Auto"/>
                         <ColumnDefinition Width="Auto"/>
+                        <ColumnDefinition Width="Auto"/>
                     </Grid.ColumnDefinitions>
                     <TextBlock x:Name="EcuInfoText" Text="No ECU selected" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
                     <ComboBox x:Name="ProfileSelector" Grid.Column="1" PlaceholderText="ECU profiles" SelectionChanged="ProfileSelector_SelectionChanged" VerticalAlignment="Center"/>
-                    <Button Grid.Column="2" Content="Import JSON" Click="ImportProfiles_Click" VerticalAlignment="Center"/>
-                    <Button Grid.Column="3" Content="Export JSON" Click="ExportProfiles_Click" VerticalAlignment="Center"/>
+                    <Button Grid.Column="2" Content="Add test profiles" Click="AddTestProfiles_Click" VerticalAlignment="Center"/>
+                    <Button Grid.Column="3" Content="Import JSON" Click="ImportProfiles_Click" VerticalAlignment="Center"/>
+                    <Button Grid.Column="4" Content="Export JSON" Click="ExportProfiles_Click" VerticalAlignment="Center"/>
                 </Grid>
             </Border>
             <Grid Grid.Row="3">

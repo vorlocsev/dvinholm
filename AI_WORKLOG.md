@@ -1,3 +1,20 @@
+## Synthetic ECU test profiles — 2026-10-18
+
+- [x] Added an **Add test profiles** action that safely appends two clearly labeled, unverified synthetic profiles to the existing local catalog without replacing user profiles.
+- [x] Standard 11-bit profile uses request/response IDs `7E0/7E8`; extended 29-bit profile uses `18DA10F1/18DAF110`. Their DIDs differ to make field refresh easy to observe.
+- [x] Test profiles are persisted in the user's existing catalog and are explicitly marked as UI-test-only, not vehicle-verified.
+- [ ] Verify CI; then test adding the profiles and switching between them on Windows. Stable release remains `0.2.0`.
+
+---
+
+## ECU profile selection refresh — 2026-10-18
+
+- [ ] User reproduced a UI defect: after manually editing UDS Response ID, switching to another ECU profile and returning to the first profile leaves the manual value instead of restoring the first profile's saved response ID.
+- [x] Updated profile-selection handling to apply the final ComboBox selection on the UI dispatcher queue and report the applied request/response IDs in status text.
+- [ ] Verify CI and then have the user retest profile A → profile B → profile A using the latest successful CI build. Stable release remains `0.2.0`; no physical J2534 adapter or vehicle is available/required for this UI-only issue.
+
+---
+
 ## CAN baud-rate persistence — 2026-10-18
 
 - User reported that the selected CAN speed did not persist; source inspection confirmed the ComboBox had no save/load logic.
