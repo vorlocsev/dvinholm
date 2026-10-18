@@ -1292,3 +1292,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Closed superseded documentation PRs #347–#350; their manual ECU profile validation details are already consolidated in merged PR #352 and the current roadmap/work log.
 - No production updater behavior or stable release changed. Stable release remains v0.2.0; physical J2534 adapter/vehicle testing remains deferred.
 - [ ] Continue software-only updater reliability review; only open a production fix or test PR when a concrete uncovered defect or regression gap is identified.
+
+
+## Updater cancellation boundary coverage — 2026-10-18
+
+- [x] Merged [PR #355](https://github.com/vorlocsev/dvinholm/pull/355) after successful CI [#39165406043](https://github.com/vorlocsev/dvinholm/actions/runs/39165406043).
+- [x] Added a regression test cancelling at the validation/extraction progress boundary after download completes; it asserts cancellation propagates and both the staging directory and temporary archive are cleaned.
+- [x] Build, test suite, publish/package steps, and latest stable release SHA-256/ZIP audit passed on the PR.
+- No production code or stable release changed. Stable remains v0.2.0; physical J2534 adapter/vehicle testing remains deferred.
+- [ ] Continue software-only updater review, focusing on cleanup/recovery failure paths where tests can reproduce behavior without real hardware.
