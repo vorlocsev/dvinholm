@@ -1,9 +1,11 @@
 ## CAN baud-rate persistence — 2026-10-18
 
-- [x] Reproduced the source-level gap: the CAN speed ComboBox had a default selection but no persistence/load handler, unlike the J2534 DLL path.
-- [x] Added a dedicated settings store for supported rates (500000, 250000, 125000), defaulting safely to 500000 when the file is missing or invalid.
-- [x] Added round-trip, missing-file, invalid-value, and unsupported-rate tests.
-- [ ] PR CI and post-merge CI pending. Stable release remains 0.2.0; no physical J2534 adapter/vehicle testing required for this fix.
+- [x] Reproduced the source-level gap: the CAN speed ComboBox had a default selection but no persistence/load handler.
+- [x] Merged PR [#343](https://github.com/vorlocsev/dvinholm/pull/343) as `2787b85d77c2a6249598182775a5a9c320092c08`; supported rates (500000, 250000, 125000) now persist to the per-user settings file and invalid/missing values safely fall back to 500000.
+- [x] Added unit tests for missing settings, supported-rate round trips, invalid values, unsupported rates, and blank paths.
+- [x] PR CI [#39150451313](https://github.com/vorlocsev/dvinholm/actions/runs/39150451313) and post-merge main CI [#39150903328](https://github.com/vorlocsev/dvinholm/actions/runs/39150903328) passed build/tests, publish, and stable-release audit.
+- [x] Manual Windows verification passed after full application restarts for 250 kbit/s, 125 kbit/s, and 500 kbit/s.
+- [x] Stable release remains `0.2.0`; no physical J2534 adapter/vehicle test was needed for this fix.
 
 ---
 

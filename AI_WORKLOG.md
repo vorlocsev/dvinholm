@@ -1,11 +1,11 @@
 ## CAN baud-rate persistence — 2026-10-18
 
-- User reported that the selected CAN speed does not persist.
-- Source inspection confirmed the BaudRate ComboBox had only SelectedIndex=0 and no save/load logic.
-- Added CanBaudRateStore under %LOCALAPPDATA%\\Dvinholm\\can-baud-rate.txt; supported values are 500000, 250000, and 125000 baud. Missing/invalid data falls back to 500000.
-- Added unit tests for missing settings, all supported-rate round trips, invalid saved values, unsupported values, and settings path validation.
-- Wired startup restore and selection-change persistence in MainWindow; I/O permission failures remain non-fatal.
-- Validation and PR CI pending. Do not mark the user's manual persistence check passed until they test the updated build.
+- User reported that the selected CAN speed did not persist; source inspection confirmed the ComboBox had no save/load logic.
+- Merged PR [#343](https://github.com/vorlocsev/dvinholm/pull/343) as `2787b85d77c2a6249598182775a5a9c320092c08`. Added `CanBaudRateStore` under `%LOCALAPPDATA%\\Dvinholm\\can-baud-rate.txt`; supported rates are 500000, 250000, and 125000 baud, with 500000 as the missing/invalid fallback.
+- Added unit tests for missing settings, supported-rate round trips, invalid saved values, unsupported values, and blank paths.
+- PR CI [#39150451313](https://github.com/vorlocsev/dvinholm/actions/runs/39150451313) passed build, tests, publish, and stable-release audit. Post-merge main CI [#39150903328](https://github.com/vorlocsev/dvinholm/actions/runs/39150903328) also passed and produced `Dvinholm-Windows-x86` (66,771,233 bytes; SHA-256 `f380aee03e1c036b6f1fe0a7fdd3e27aaed5ff4fef958df4f9b51d18a10e1d4d`).
+- Manual Windows smoke tests passed after fully closing and restarting the app: 250 kbit/s, 125 kbit/s, and 500 kbit/s all restored correctly.
+- Stable release remains `0.2.0`; no physical J2534 adapter or vehicle was needed.
 
 ---
 
