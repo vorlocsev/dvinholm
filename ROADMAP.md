@@ -1270,7 +1270,11 @@ This roadmap separates software/CI verification from physical adapter validation
 
 - [x] Merged PR [#345](https://github.com/vorlocsev/dvinholm/pull/345) and verified the post-merge CI build [#39156713010](https://github.com/vorlocsev/dvinholm/actions/runs/39156713010) passed.
 - [x] User confirmed the `Add test profiles` button appears in CI build `ci-2715`.
-- [x] User verified both profiles' request/response IDs, CAN identifier format, and DID; switching back restored saved values even after a manual response-ID edit.
-- [x] User verified profiles persist after app restart and repeated creation does not add duplicates.
-- [ ] Continue manual UI checks for profile metadata and selection behavior; no diagnostic request should be sent with synthetic profiles.
-- Physical J2534 adapter/vehicle tests remain deferred. Stable release remains v0.2.0; no stable release was published for this work.
+- [x] User verified Standard CAN values: request `7E0`, response `7E8`, 11-bit, DID `F190`; Extended CAN values: request `18DA10F1`, response `18DAF110`, 29-bit, DID `1234`.
+- [x] Switching between profiles restored the correct saved values, including after a manual response-ID edit.
+- [x] Both profiles persisted across app restarts, including the final restart-and-reselect check.
+- [x] Repeated profile creation did not create duplicates.
+- [x] JSON export and re-import succeeded; importing invalid JSON failed safely and preserved the existing profiles and values.
+- [x] User confirmed profile metadata/status and the synthetic-test-profile description were correct.
+- [ ] Future release: verify behavior with a real J2534 adapter and vehicle; do not send diagnostic requests using synthetic test profiles.
+- Stable release remains v0.2.0; no stable release was published for this work.
