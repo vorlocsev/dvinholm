@@ -177,8 +177,10 @@ public sealed class LatestBuildLookupTests
             throw new InvalidOperationException("No release request should be made for invalid or failed runs.");
         }));
 
-        await Assert.ThrowsAsync<InvalidOperationException>(
+        var exception = await Assert.ThrowsAsync<InvalidOperationException>(
             () => LatestBuildUpdater.GetLatestSuccessfulBuildAsync(client));
+        Assert.Contains("main-branch CI run", exception.Message);
+        Assert.Contains("published Windows x86 updater asset", exception.Message);
     }
 
 
