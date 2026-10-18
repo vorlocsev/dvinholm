@@ -2505,3 +2505,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Change is limited to removing the unused `saveException` catch variable; error handling and user-facing text are unchanged.
 - Post-merge main run [#39113096094](https://github.com/vorlocsev/dvinholm/actions/runs/39113096094) has passed the latest-stable-release audit; build was still running at the time of this note.
 - Continue software-only updater review after main CI completes. No stable release and no physical J2534 adapter/vehicle testing.
+
+
+### Runtime regression coverage for failed first install — 2026-10-18
+
+- Merged [PR #294](https://github.com/vorlocsev/dvinholm/pull/294), updating `ROADMAP.md` and this work log with PR #293's verified merge status.
+- Merged [PR #295](https://github.com/vorlocsev/dvinholm/pull/295) as `6ebcd4f25c92c6052c52f049fb16511889fe05f9`. Added a Windows-only runtime test to execute the generated replacement PowerShell with a mocked copy command: simulate failure after creating a partial install destination, assert cleanup removes that destination, and confirm the updater log records the cleanup. No production code changed.
+- PR #295 CI passed in [run #39113276689](https://github.com/vorlocsev/dvinholm/actions/runs/39113276689) and [run #39113283879](https://github.com/vorlocsev/dvinholm/actions/runs/39113283879).
+- Main run after PR #293, [#39113096094](https://github.com/vorlocsev/dvinholm/actions/runs/39113096094), is now successful. Post-merge main runs for the docs and new test are still in progress.
+- Continue software-only updater review. No new stable release; physical adapter and vehicle testing remain deferred.
