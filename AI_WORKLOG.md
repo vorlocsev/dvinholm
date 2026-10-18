@@ -2497,3 +2497,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Removed that unused variable without changing exception handling or user-facing behavior. J2534Session already uses unnamed catch variables for cleanup-only catches on current main, so no redundant edit was made there.
 - Historical PR #226 CI reported 452 passed, 0 failed, 0 skipped and zero warnings, but this rebased one-line delta must pass fresh CI before merge.
 - No physical J2534 adapter or vehicle validation was performed; those checks remain deferred.
+
+
+### PR #293 merged; post-merge CI in progress — 2026-10-18
+
+- Merged [PR #293](https://github.com/vorlocsev/dvinholm/pull/293) as `ddec537cbc5e8affe251d0b66d518dfd9fd23f00` after both latest-head PR runs passed build/tests and the dynamic latest-stable-release audit: [run #39112176555](https://github.com/vorlocsev/dvinholm/actions/runs/39112176555) and [run #39112180900](https://github.com/vorlocsev/dvinholm/actions/runs/39112180900).
+- Change is limited to removing the unused `saveException` catch variable; error handling and user-facing text are unchanged.
+- Post-merge main run [#39113096094](https://github.com/vorlocsev/dvinholm/actions/runs/39113096094) has passed the latest-stable-release audit; build was still running at the time of this note.
+- Continue software-only updater review after main CI completes. No stable release and no physical J2534 adapter/vehicle testing.
