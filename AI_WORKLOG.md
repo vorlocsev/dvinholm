@@ -1,3 +1,12 @@
+## Updater release asset path validation — 2026-10-18
+
+- Merged PR [#316](https://github.com/vorlocsev/dvinholm/pull/316) as `fb9bc552e6854419f6e0a281320b0970f8b67b76`.
+- Tightened metadata validation from a broad same-repository download prefix to the exact expected release tag and filename: `ci-{runNumber}/Dvinholm-Windows-x86.zip`. This avoids accepting inconsistent metadata that points a run to a different release tag or asset path.
+- Added `ReleaseWithMismatchedReleaseTag_FallsBackToOlderPublishedBuild`. PR CI [#39122775092](https://github.com/vorlocsev/dvinholm/actions/runs/39122775092) and post-merge main CI [#39123078698](https://github.com/vorlocsev/dvinholm/actions/runs/39123078698) both passed build/tests and stable-release audit.
+- Next: continue software-only updater review, particularly process-start health verification and rollback. No stable release or physical adapter/vehicle testing.
+
+---
+
 ## Updater setup-failure cleanup — 2026-10-18
 
 - Merged PR [#314](https://github.com/vorlocsev/dvinholm/pull/314) as `9ae0ab54dd9d0846974cb47f86e7a980fb4f00a9`. PR CI [#39121712511](https://github.com/vorlocsev/dvinholm/actions/runs/39121712511) passed build/tests and stable-release audit.
