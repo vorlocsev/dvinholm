@@ -1,3 +1,12 @@
+## Updater expanded-archive size-limit regression test — CI failure investigated (2026-10-18)
+
+- [x] PR #285 CI exposed a real test-fixture flaw: changing only the ZIP central-directory size did not make the .NET ZIP reader report the oversized entry; 483 tests passed and this new test failed because no exception was thrown.
+- [x] Created follow-up branch `fix/updater-expanded-size-test` from PR #285 and updated the fixture to set the uncompressed-size field consistently in both the local file header (offset 22) and central-directory header (offset 24), without creating a huge payload.
+- [ ] Run CI on the follow-up branch and confirm the oversized entry is rejected before extraction and both staging/temporary ZIP files are cleaned up.
+- [ ] Do not mark this regression test verified until CI passes. No production-code changes, release publication, or physical adapter/vehicle testing.
+
+---
+
 ## Updater expanded-archive size-limit regression test — 2026-10-18
 
 - [x] Added a focused regression test that alters a small ZIP's central-directory metadata to declare an entry larger than the 1,000,000,000-byte extraction limit, without allocating a huge test payload.
