@@ -2473,3 +2473,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - First CI attempt correctly resolved and downloaded v0.2.0, but checksum matching failed because the published SHA256SUMS line uses the standard binary-mode filename prefix (*Dvinholm-Windows-x86.zip).
 - Adjusted verification to extract the expected digest for either plain or *-prefixed filename and compare it directly with the computed ZIP SHA-256.
 - New CI run is required to verify this correction.
+
+
+### Updater first-install failure cleanup — 2026-10-18
+
+- Review found that a failed first-time replacement could leave a partial destination directory because rollback only ran when an existing build was available.
+- Added a separate cleanup path that removes an incomplete first-install destination and records this in the updater log; existing-install rollback remains unchanged.
+- Added regression assertions for the generated replacement script. Validation is pending CI on the current main base; no release or physical adapter/vehicle test is included.

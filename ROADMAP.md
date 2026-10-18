@@ -1022,3 +1022,11 @@ This roadmap separates software/CI verification from physical adapter validation
 
 - [x] Corrected checksum parsing for both plain and binary-mode (*filename) SHA256SUMS formats after the first dynamic-audit run exposed the filename-prefix mismatch.
 - [ ] Re-run CI and verify the latest stable release audit succeeds.
+
+
+## Updater first-install failure cleanup — 2026-10-18
+
+- [x] Added cleanup of a partially created destination if first-time installation fails after replacement starts; existing-build rollback remains unchanged.
+- [x] Added regression assertions for the generated PowerShell replacement script.
+- [ ] Await current-main PR CI before marking this change verified or merging it.
+- No stable release or physical J2534/vehicle test is included.
