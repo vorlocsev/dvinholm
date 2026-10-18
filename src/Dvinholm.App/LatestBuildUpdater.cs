@@ -180,7 +180,10 @@ internal static class LatestBuildUpdater
                         !string.IsNullOrEmpty(uri.UserInfo) ||
                         !string.IsNullOrEmpty(uri.Query) ||
                         !string.IsNullOrEmpty(uri.Fragment) ||
-                        !uri.AbsolutePath.StartsWith($"/{Repository}/releases/download/", StringComparison.OrdinalIgnoreCase))
+                        !string.Equals(
+                            uri.AbsolutePath,
+                            $"/{Repository}/releases/download/ci-{runNumber}/{ArtifactName}.zip",
+                            StringComparison.OrdinalIgnoreCase))
                         continue;
 
                     string? digest = null;
