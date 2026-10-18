@@ -2447,3 +2447,15 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - PR #228 remains open, unmerged, and must not be merged without explicit user approval. GitHub currently reports it has conflicts with base; any future rebase/conflict resolution needs fresh CI and the required Windows updater manual verification.
 - No dedicated WinUI window-close regression test or manual close stress test was run for PR #267; CI only confirms compilation and existing automated tests.
 - Physical J2534 adapter/vehicle validation remains deferred. Stable v0.2.0 remains unpublished and requires explicit user authorization.
+
+
+## Autonomous PR audit and updater regression checkpoint — 2026-10-18
+
+- [x] PR [#286](https://github.com/vorlocsev/dvinholm/pull/286) merged as `f923d408e691aface6f67e925216f9b74fba8ae8`; CI [#39105288517](https://github.com/vorlocsev/dvinholm/actions/runs/39105288517) passed build, tests, publish, and artifact upload. The published v0.1.1 archive audit also passed.
+- [x] Closed stale PR [#225](https://github.com/vorlocsev/dvinholm/pull/225) as superseded: current `main` already validates SHA-256 digest metadata and has malformed/non-string/empty digest fallback tests.
+- [x] Closed stale PR [#228](https://github.com/vorlocsev/dvinholm/pull/228) as superseded: current `main` already starts with the idle “Check update” action and restores that action when no newer build is available. The old branch conflicted with current main.
+- [x] Closed PR [#283](https://github.com/vorlocsev/dvinholm/pull/283) as redundant documentation: the disconnected-state manual check is already recorded by merged PR #282 and its supporting note.
+- [x] Closed PR [#284](https://github.com/vorlocsev/dvinholm/pull/284) after its branch conflicted with current main; recreated the unique ZIP traversal escape-path and cleanup assertions on a fresh branch in [PR #287](https://github.com/vorlocsev/dvinholm/pull/287).
+- [x] Closed PR [#285](https://github.com/vorlocsev/dvinholm/pull/285) as superseded by deterministic expanded-size tests in merged PR #286.
+- [ ] PR #287 CI is running. Merge only after the current head's full build/test/publish pipeline and published v0.1.1 archive audit pass.
+- Physical J2534 adapter and vehicle validation remain deferred; no hardware compatibility is claimed. Stable release publication remains gated on release readiness review.
