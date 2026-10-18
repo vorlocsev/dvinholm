@@ -3,7 +3,7 @@
 - [x] PR [#314](https://github.com/vorlocsev/dvinholm/pull/314) merged as `9ae0ab54dd9d0846974cb47f86e7a980fb4f00a9` after [PR CI #39121712511](https://github.com/vorlocsev/dvinholm/actions/runs/39121712511) passed build/tests and the stable-release audit.
 - [x] `StartReplacement` now guards destination normalization, local app-data directory creation, replacement-script construction, script writing, and process launch with the same failure cleanup path. If setup fails before a helper-script path exists, the extracted staging directory is still removed best-effort.
 - [x] Added a regression test using a NUL-containing destination path to verify setup failure throws `ArgumentException` and removes the staging directory.
-- [ ] Post-merge main CI [run #39121998264](https://github.com/vorlocsev/dvinholm/actions/runs/39121998264) is finishing its public CI asset publication step; confirm the run concludes successfully before marking main green.
+- [x] Post-merge main CI [run #39121998264](https://github.com/vorlocsev/dvinholm/actions/runs/39121998264) completed successfully, including build/tests and stable-release audit.
 - [ ] Continue software-only updater failure-path review. Stable release `0.2.0` remains unchanged; physical J2534 adapter/vehicle testing remains deferred.
 
 ---
