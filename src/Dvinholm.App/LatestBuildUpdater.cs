@@ -472,7 +472,10 @@ $hadDestination = Test-Path -LiteralPath $destination
 $backupReady = $false
 $replacementStarted = $false
 try {{
-    Wait-Process -Id $processId -ErrorAction SilentlyContinue
+    if (Get-Process -Id $processId -ErrorAction SilentlyContinue) {
+        # Do not let a hung app process block the updater helper indefinitely.
+        Wait-Process -Id $processId -Timeout 60 -ErrorAction Stop
+    }
     Start-Sleep -Milliseconds 400
     if (-not (Test-Path -LiteralPath (Join-Path $source 'Dvinholm.App.exe'))) {{
         throw 'The staged update is missing Dvinholm.App.exe.'
