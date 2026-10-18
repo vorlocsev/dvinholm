@@ -1,3 +1,12 @@
+## CAN baud-rate persistence — 2026-10-18
+
+- [x] Reproduced the source-level gap: the CAN speed ComboBox had a default selection but no persistence/load handler, unlike the J2534 DLL path.
+- [x] Added a dedicated settings store for supported rates (500000, 250000, 125000), defaulting safely to 500000 when the file is missing or invalid.
+- [x] Added round-trip, missing-file, invalid-value, and unsupported-rate tests.
+- [ ] PR CI and post-merge CI pending. Stable release remains 0.2.0; no physical J2534 adapter/vehicle testing required for this fix.
+
+---
+
 ## Rollback-copy failure-path regression — 2026-10-18
 
 - [x] PR [#336](https://github.com/vorlocsev/dvinholm/pull/336) merged as `7fb38e25936ca718b4701f4ec0f8141940048b22`; regression covers robocopy exit code 8, verifies rollback failure is logged, recovery artifacts are preserved, and the temporary helper script is removed. Main CI [#39140253444](https://github.com/vorlocsev/dvinholm/actions/runs/39140253444) passed.

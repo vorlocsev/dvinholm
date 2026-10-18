@@ -1,3 +1,14 @@
+## CAN baud-rate persistence — 2026-10-18
+
+- User reported that the selected CAN speed does not persist.
+- Source inspection confirmed the BaudRate ComboBox had only SelectedIndex=0 and no save/load logic.
+- Added CanBaudRateStore under %LOCALAPPDATA%\\Dvinholm\\can-baud-rate.txt; supported values are 500000, 250000, and 125000 baud. Missing/invalid data falls back to 500000.
+- Added unit tests for missing settings, all supported-rate round trips, invalid saved values, unsupported values, and settings path validation.
+- Wired startup restore and selection-change persistence in MainWindow; I/O permission failures remain non-fatal.
+- Validation and PR CI pending. Do not mark the user's manual persistence check passed until they test the updated build.
+
+---
+
 ## Updater rollback-copy failure regressions — 2026-10-18
 
 - Merged PR [#336](https://github.com/vorlocsev/dvinholm/pull/336) as `7fb38e25936ca718b4701f4ec0f8141940048b22`. Added a Windows PowerShell runtime regression for robocopy exit code 8 during rollback; it verifies the failure is logged, backup/staging recovery files are retained, and the temporary helper script is removed. Main CI [#39140253444](https://github.com/vorlocsev/dvinholm/actions/runs/39140253444) passed.
