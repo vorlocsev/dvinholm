@@ -91,6 +91,14 @@ internal static class LatestBuildUpdater
         string.IsNullOrWhiteSpace(currentCommitSha) ||
         !string.Equals(currentCommitSha, latestBuild.CommitSha, StringComparison.OrdinalIgnoreCase);
 
+    internal static string FormatUpdateStatus(
+        string currentDisplayVersion,
+        LatestBuildInfo latestBuild,
+        bool updateAvailable) =>
+        updateAvailable
+            ? $"Current: {currentDisplayVersion} · Available: {latestBuild.DisplayVersion}"
+            : $"Current: {currentDisplayVersion} · Up to date (latest: {latestBuild.DisplayVersion})";
+
     private static string? GetEmbeddedCommitSha(string value, int plus)
     {
         if (plus < 0)
