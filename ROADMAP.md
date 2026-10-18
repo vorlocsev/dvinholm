@@ -1,3 +1,13 @@
+## First-install cleanup reporting hardened — 2026-10-18
+
+- [x] PR [#304](https://github.com/vorlocsev/dvinholm/pull/304) merged as `369da5ead23b3299b7f4f53a1a4ead3c2c9c3e8a`.
+- [x] The updater no longer unconditionally claims that a partial first-install destination was removed. It checks the result and records a distinct error if deletion fails or the destination remains.
+- [x] Added Windows PowerShell runtime coverage simulating access denied during cleanup, while asserting that the failure is logged and the app is not launched. Current-head PR CI passed build/tests and latest-stable-release audit ([PR run #39118180207](https://github.com/vorlocsev/dvinholm/actions/runs/39118180207), [push run #39118177031](https://github.com/vorlocsev/dvinholm/actions/runs/39118177031)).
+- [ ] Post-merge main CI [run #39118506041](https://github.com/vorlocsev/dvinholm/actions/runs/39118506041) is still running; verify before marking this merge checkpoint green.
+- [ ] Continue software-only updater failure-path review. No stable release or physical J2534 adapter/vehicle validation is included.
+
+---
+
 ## Updater discovery restricted to published main builds — 2026-10-18
 
 - [x] PR [#301](https://github.com/vorlocsev/dvinholm/pull/301) merged as `8afeba1a27f326f97ef87fde2f78072216e77c7d`. Lookup now considers only completed successful `push` runs for `main`, matching the workflow that publishes public updater assets.
