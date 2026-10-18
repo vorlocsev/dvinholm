@@ -8,13 +8,13 @@ public sealed class LatestBuildUpdaterExpandedSizeTests
         // Test the aggregate-size guard directly, without inconsistent ZIP metadata
         // or allocating a huge payload.
         Assert.Throws<InvalidDataException>(() =>
-            LatestBuildUpdater.ValidateExpandedSize([12, 1_000_000_000, 1]));
+            LatestBuildUpdater.ValidateExpandedSize([12, 1_048_576_000, 1]));
     }
 
     [Fact]
     public void ExpandedArchiveWithinLimit_IsAccepted()
     {
-        LatestBuildUpdater.ValidateExpandedSize([500_000_000, 500_000_000]);
+        LatestBuildUpdater.ValidateExpandedSize([500_000_000, 548_576_000]);
     }
 
     [Fact]
