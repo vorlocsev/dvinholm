@@ -295,7 +295,7 @@ public sealed class LatestBuildUpdaterFailureTests
         try
         {
             Assert.ThrowsAny<Exception>(() =>
-                LatestBuildUpdater.StartReplacement(staging, "\\0", Environment.ProcessId));
+                LatestBuildUpdater.StartReplacement(staging, "\0", Environment.ProcessId));
 
             Assert.False(Directory.Exists(staging));
         }
