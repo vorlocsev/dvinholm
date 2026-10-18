@@ -16,6 +16,9 @@ public sealed class LatestBuildLookupTests
             1234, null, "2026-10-16T00:42:51Z");
 
         Assert.False(LatestBuildUpdater.IsUpdateAvailable(sha, latest));
+        Assert.Equal(
+            "Current: CI #1751 · 6fd0da7 · Up to date (latest: CI #1751 · 6fd0da7)",
+            LatestBuildUpdater.FormatUpdateStatus("CI #1751 · 6fd0da7", latest, updateAvailable: false));
     }
 
     [Fact]
@@ -29,6 +32,9 @@ public sealed class LatestBuildLookupTests
             1234, null, "2026-10-16T00:42:51Z");
 
         Assert.True(LatestBuildUpdater.IsUpdateAvailable(currentSha, latest));
+        Assert.Equal(
+            "Current: CI #1751 · aaaaaaa · Available: CI #1752 · bbbbbbb",
+            LatestBuildUpdater.FormatUpdateStatus("CI #1751 · aaaaaaa", latest, updateAvailable: true));
     }
 
     [Fact]
