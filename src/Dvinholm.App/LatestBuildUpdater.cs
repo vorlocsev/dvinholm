@@ -156,8 +156,12 @@ internal static class LatestBuildUpdater
                 // prerelease asset tagged ci-<run number>; download that asset anonymously.
                 var releaseUrl = $"https://api.github.com/repos/{Repository}/releases/tags/ci-{runNumber}";
                 using var releaseResponse = await http.GetAsync(releaseUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
-                if (!releaseResponse.IsSuccessStatusCode)
+                // A missing tag is expected when an older successful run did not publish
+                // an updater asset. Other HTTP errors (especially 403/429 rate limits)
+                // must stop discovery rather than trigger more requests for older runs.
+                if (releaseResponse.StatusCode == System.Net.HttpStatusCode.NotFound)
                     continue;
+                releaseResponse.EnsureSuccessStatusCode();
 
                 await using var releaseStream = await releaseResponse.Content.ReadAsStreamAsync(cancellationToken);
                 using var releaseJson = await JsonDocument.ParseAsync(releaseStream, cancellationToken: cancellationToken);
