@@ -306,7 +306,7 @@ public sealed partial class MainWindow : Window
                 SaveProfileCatalog(imported);
                 SetStatus($"Imported and saved {imported.All.Count} ECU profile(s) from {file.Name}. Select a profile to apply its CAN IDs.");
             }
-            catch (Exception saveException)
+            catch (Exception)
             {
                 SetStatus($"Imported {imported.All.Count} profile(s), but could not save the local copy. Check folder permissions and available disk space.");
             }
