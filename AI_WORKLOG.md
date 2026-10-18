@@ -2459,3 +2459,17 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - [x] Closed PR [#285](https://github.com/vorlocsev/dvinholm/pull/285) as superseded by deterministic expanded-size tests in merged PR #286.
 - [ ] PR #287 CI is running. Merge only after the current head's full build/test/publish pipeline and published v0.1.1 archive audit pass.
 - Physical J2534 adapter and vehicle validation remain deferred; no hardware compatibility is claimed. Stable release publication remains gated on release readiness review.
+
+
+## CI release audit target corrected — 2026-10-18
+
+- User correctly pointed out that the workflow's hard-coded v0.1.1 archive audit was stale while the current stable release is v0.2.0.
+- Reworked the audit job to resolve GitHub's latest non-prerelease release dynamically, then download its Windows ZIP and SHA256SUMS.txt, verify the checksum, validate ZIP integrity, and confirm the app executable is present.
+- This avoids pinning the CI release audit to v0.1.1 and automatically follows future stable releases. CI pending; not yet verified.
+
+
+### Checksum audit fixture correction — 2026-10-18
+
+- First CI attempt correctly resolved and downloaded v0.2.0, but checksum matching failed because the published SHA256SUMS line uses the standard binary-mode filename prefix (*Dvinholm-Windows-x86.zip).
+- Adjusted verification to extract the expected digest for either plain or *-prefixed filename and compare it directly with the computed ZIP SHA-256.
+- New CI run is required to verify this correction.

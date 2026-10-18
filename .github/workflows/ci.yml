@@ -75,22 +75,40 @@ jobs:
         run: |
           gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86.zip" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Dvinholm CI #${{ github.run_number }}" --notes "Automated Windows x86 CI build from commit ${{ github.sha }}. This prerelease is intended for the in-app updater."
 
-  audit-v0-1-1-release:
+  audit-latest-stable-release:
     runs-on: ubuntu-latest
     steps:
-      - name: Download published v0.1.1 archive
+      - name: Resolve latest stable release
+        id: release
         shell: bash
         run: |
           set -euo pipefail
-          curl --fail --location --retry 3 --output Dvinholm-Windows-x86.zip \
-            https://github.com/vorlocsev/dvinholm/releases/download/v0.1.1/Dvinholm-Windows-x86.zip
+          release_json="$(curl --fail --location --retry 3 https://api.github.com/repos/${GITHUB_REPOSITORY}/releases/latest)"
+          tag="$(jq -r '.tag_name' <<< "$release_json")"
+          zip_url="$(jq -r '.assets[] | select(.name == "Dvinholm-Windows-x86.zip") | .browser_download_url' <<< "$release_json")"
+          sums_url="$(jq -r '.assets[] | select(.name == "SHA256SUMS.txt") | .browser_download_url' <<< "$release_json")"
+          test -n "$tag" && test "$tag" != "null"
+          test -n "$zip_url" && test "$zip_url" != "null"
+          test -n "$sums_url" && test "$sums_url" != "null"
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "zip_url=$zip_url" >> "$GITHUB_OUTPUT"
+          echo "sums_url=$sums_url" >> "$GITHUB_OUTPUT"
+          echo "Auditing latest stable release: $tag"
+      - name: Download latest stable release assets
+        shell: bash
+        run: |
+          set -euo pipefail
+          curl --fail --location --retry 3 --output Dvinholm-Windows-x86.zip "${{ steps.release.outputs.zip_url }}"
+          curl --fail --location --retry 3 --output SHA256SUMS.txt "${{ steps.release.outputs.sums_url }}"
+          echo "Release tag: ${{ steps.release.outputs.tag }}"
           echo "Downloaded bytes: $(stat -c '%s' Dvinholm-Windows-x86.zip)"
       - name: Verify published SHA-256
         shell: bash
         run: |
           set -euo pipefail
-          expected='3822d13e5a137bd92bf12d35d2a5794053481ef28873d2a08657beb756f3a53a'
+          expected="$(sed -nE 's/^[[:space:]]*([[:xdigit:]]{64})[[:space:]]+\*?Dvinholm-Windows-x86\.zip[[:space:]]*$/\1/p' SHA256SUMS.txt | head -n 1)"
           actual="$(sha256sum Dvinholm-Windows-x86.zip | awk '{print $1}')"
+          test -n "$expected"
           echo "Expected SHA-256: $expected"
           echo "Actual SHA-256:   $actual"
           test "$actual" = "$expected"
@@ -99,7 +117,7 @@ jobs:
         run: |
           set -euo pipefail
           unzip -t Dvinholm-Windows-x86.zip
-          echo "## v0.1.1 ZIP contents" >> "$GITHUB_STEP_SUMMARY"
+          echo "## Latest stable release ZIP contents (${{ steps.release.outputs.tag }})" >> "$GITHUB_STEP_SUMMARY"
           unzip -Z1 Dvinholm-Windows-x86.zip | tee archive-files.txt
           echo '~~~text' >> "$GITHUB_STEP_SUMMARY"
           cat archive-files.txt >> "$GITHUB_STEP_SUMMARY"
