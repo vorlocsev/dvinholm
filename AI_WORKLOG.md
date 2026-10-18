@@ -1,3 +1,11 @@
+## ECU profile selection refresh — 2026-10-18
+
+- [ ] User reproduced a UI defect: after manually editing UDS Response ID, switching to another ECU profile and returning to the first profile leaves the manual value instead of restoring the first profile's saved response ID.
+- [x] Updated profile-selection handling to apply the final ComboBox selection on the UI dispatcher queue and report the applied request/response IDs in status text.
+- [ ] Verify CI and then have the user retest profile A → profile B → profile A using the latest successful CI build. Stable release remains `0.2.0`; no physical J2534 adapter or vehicle is available/required for this UI-only issue.
+
+---
+
 ## CAN baud-rate persistence — 2026-10-18
 
 - User reported that the selected CAN speed did not persist; source inspection confirmed the ComboBox had no save/load logic.
