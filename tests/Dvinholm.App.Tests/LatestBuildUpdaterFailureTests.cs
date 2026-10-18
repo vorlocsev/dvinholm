@@ -505,6 +505,7 @@ public sealed class LatestBuildUpdaterFailureTests
             @"C:\\backup\\previous");
 
         Assert.Contains("$backupReady = $false", script);
+        Assert.Contains("Wait-Process -Id $processId -Timeout 60 -ErrorAction Stop", script);
         Assert.Contains("$replacementStarted = $true", script);
         Assert.Contains("$destination $backup /MIR", script);
         Assert.True(script.IndexOf("$destination $backup /MIR", StringComparison.Ordinal) < script.IndexOf("$source $destination /MIR", StringComparison.Ordinal));
@@ -1084,6 +1085,89 @@ function Start-Process {
             var updateLog = await File.ReadAllTextAsync(Path.Combine(localAppData, "Dvinholm", "update.log"));
             Assert.Contains("Could not back up the current build", updateLog);
             Assert.Contains("The incomplete update backup was removed because replacement had not started.", updateLog);
+        }
+        finally
+        {
+            for (var attempt = 0; Directory.Exists(root); attempt++)
+            {
+                try
+                {
+                    Directory.Delete(root, recursive: true);
+                }
+                catch (IOException) when (attempt < 49)
+                {
+                    awai
+
+    [Fact]
+    public async Task ReplacementScript_AbortsWhenPreviousProcessDoesNotExitWithinTimeout()
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        var root = Path.Combine(Path.GetTempPath(), $"dvinholm-process-exit-timeout-{Guid.NewGuid():N}");
+        var staging = Path.Combine(root, "staging");
+        var destination = Path.Combine(root, "installed");
+        var backup = Path.Combine(root, "backup");
+        var scriptPath = Path.Combine(root, "replace.ps1");
+        var localAppData = Path.Combine(root, "localappdata");
+        Directory.CreateDirectory(staging);
+        Directory.CreateDirectory(destination);
+        Directory.CreateDirectory(localAppData);
+        Directory.CreateDirectory(Path.Combine(localAppData, "Dvinholm"));
+        await File.WriteAllTextAsync(Path.Combine(staging, "Dvinholm.App.exe"), "new-build");
+        await File.WriteAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe"), "old-build");
+
+        try
+        {
+            var generated = LatestBuildUpdater.BuildReplacementScript(staging, destination, 1234, scriptPath, backup);
+            var mocks = @"
+function Get-Process { param([int]$Id) return [pscustomobject]@{ Id = $Id } }
+function Wait-Process { [CmdletBinding()] param([int]$Id, [int]$Timeout) throw 'Simulated process-exit timeout.' }
+function Start-Process {
+    param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList, [switch]$PassThru)
+    if ($FilePath -eq 'notepad.exe') { return }
+    throw 'The application must not launch when the old process does not exit.'
+}
+";
+            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
+
+            var powershell = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+            Assert.True(File.Exists(powershell), $"Windows PowerShell was not found at {powershell}");
+
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = powershell,
+                WorkingDirectory = root,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            startInfo.ArgumentList.Add("-NoProfile");
+            startInfo.ArgumentList.Add("-ExecutionPolicy");
+            startInfo.ArgumentList.Add("Bypass");
+            startInfo.ArgumentList.Add("-File");
+            startInfo.ArgumentList.Add(scriptPath);
+            startInfo.Environment["LOCALAPPDATA"] = localAppData;
+
+            using (var process = System.Diagnostics.Process.Start(startInfo)
+                ?? throw new InvalidOperationException("Could not start isolated PowerShell process-timeout test."))
+            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
+            {
+                var stdoutTask = process.StandardOutput.ReadToEndAsync();
+                var stderrTask = process.StandardError.ReadToEndAsync();
+                await process.WaitForExitAsync(timeout.Token);
+                var stdout = await stdoutTask;
+                var stderr = await stderrTask;
+                Assert.True(process.ExitCode == 0, $"PowerShell exited with {process.ExitCode}. stdout: {stdout} stderr: {stderr}");
+            }
+
+            Assert.Equal("old-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
+            Assert.False(Directory.Exists(backup), "The helper must abort before creating a backup or replacing the installed build.");
+            var updateLog = await File.ReadAllTextAsync(Path.Combine(localAppData, "Dvinholm", "update.log"));
+            Assert.Contains("Simulated process-exit timeout.", updateLog);
         }
         finally
         {
