@@ -1,3 +1,12 @@
+## Updater startup health check — 2026-10-18
+
+- Added a five-second post-launch check in the PowerShell replacement helper. If the new process has already exited, update completion is treated as failure so the existing backup/rollback path is used rather than deleting the backup after a failed startup.
+- The restored process is checked as well; if it exits during the startup window, the helper records rollback failure and retains the backup.
+- Added a Windows-only PowerShell runtime test with a mock process that exits immediately; it asserts the old build is restored and relaunched. CI is pending.
+- No stable release and no physical J2534 adapter/vehicle testing.
+
+---
+
 ## Updater setup-failure cleanup — 2026-10-18
 
 - Merged PR [#314](https://github.com/vorlocsev/dvinholm/pull/314) as `9ae0ab54dd9d0846974cb47f86e7a980fb4f00a9`. PR CI [#39121712511](https://github.com/vorlocsev/dvinholm/actions/runs/39121712511) passed build/tests and stable-release audit.

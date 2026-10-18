@@ -1,3 +1,12 @@
+## Verify updater process startup before discarding rollback copy — 2026-10-18
+
+- [ ] The replacement helper waits five seconds after launching the updated app and checks whether the process exited. An early exit is treated as an update failure, triggering the existing rollback path when an older installation exists.
+- [ ] Rollback startup is checked too. If the restored app exits during its startup window, the helper records rollback failure instead of claiming it was successfully restarted; the backup is not deleted before this check.
+- [ ] Added a Windows PowerShell runtime regression test that simulates the new executable exiting immediately and verifies that the previous executable is restored and relaunched. CI validation is pending.
+- [ ] No stable release or physical J2534 adapter/vehicle validation is included.
+
+---
+
 ## Updater helper-setup cleanup — 2026-10-18
 
 - [x] PR [#314](https://github.com/vorlocsev/dvinholm/pull/314) merged as `9ae0ab54dd9d0846974cb47f86e7a980fb4f00a9` after [PR CI #39121712511](https://github.com/vorlocsev/dvinholm/actions/runs/39121712511) passed build/tests and the stable-release audit.
