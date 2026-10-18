@@ -1,3 +1,13 @@
+## First-install cleanup failure diagnostics — 2026-10-18
+
+- Merged PR [#304](https://github.com/vorlocsev/dvinholm/pull/304) as `369da5ead23b3299b7f4f53a1a4ead3c2c9c3e8a`.
+- First-install rollback now verifies whether the incomplete destination was actually removed. If deletion throws or the directory remains, the update log records a cleanup failure instead of claiming success.
+- Added Windows-only PowerShell runtime regression coverage with simulated access denied. Latest-head build/tests and latest-stable-release audit passed in [PR run #39118180207](https://github.com/vorlocsev/dvinholm/actions/runs/39118180207) and [push run #39118177031](https://github.com/vorlocsev/dvinholm/actions/runs/39118177031).
+- Post-merge main CI [run #39118506041](https://github.com/vorlocsev/dvinholm/actions/runs/39118506041) was still in progress at this checkpoint; verify its outcome before marking main green.
+- Next: continue software-only updater audit. No stable release or physical J2534 adapter/vehicle test is included.
+
+---
+
 ## Updater discovery rate-limit reduction — 2026-10-18
 
 - Merged PR [#301](https://github.com/vorlocsev/dvinholm/pull/301) (`8afeba1a27f326f97ef87fde2f78072216e77c7d`): updater discovery skips workflow runs except completed successful pushes to `main`, the only event/branch that publishes public updater release assets.
