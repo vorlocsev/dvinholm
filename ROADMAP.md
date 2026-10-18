@@ -1,3 +1,12 @@
+## Updater cleanup error handling — 2026-10-18
+
+- [x] PR [#299](https://github.com/vorlocsev/dvinholm/pull/299) merged as `a0f7162e2c984acb90970778795b004336aafd9e` after both PR CI runs passed build/tests and stable-release audit.
+- [x] Best-effort cleanup after failed downloads/extraction now catches both `IOException` and `UnauthorizedAccessException`, so expected cleanup failures do not mask the original failure.
+- [x] Added regression coverage for both cleanup exception types.
+- [ ] Verify post-merge `main` CI before declaring the merge checkpoint fully green. Continue reviewing updater failure-path coverage and avoid publishing a new stable release until software validation is complete. Physical J2534 adapter/vehicle tests remain deferred.
+
+---
+
 ## Updater helper-start cleanup merged — 2026-10-18
 
 - [x] PR [#297](https://github.com/vorlocsev/dvinholm/pull/297) merged as `c8466f49e53ebb2332e9f40733f159af41729e7b` after the latest PR CI run [#39114708239](https://github.com/vorlocsev/dvinholm/actions/runs/39114708239) passed both build/tests and stable-release audit.
