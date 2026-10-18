@@ -128,7 +128,12 @@ internal static class LatestBuildUpdater
                 // artifact SHA is not necessarily the branch's head_sha. Only push
                 // and manual runs are eligible for updater assets.
                 var eventName = ReadString(run, "event");
-                if (eventName is not ("push" or "workflow_dispatch") ||
+                // The CI workflow publishes public updater release assets only for
+                // pushes to main. Feature-branch pushes and workflow_dispatch runs
+                // cannot have matching assets, so querying each release wastes the
+                // unauthenticated GitHub API rate limit.
+                if (eventName != "push" ||
+                    ReadString(run, "head_branch") != "main" ||
                     ReadString(run, "status") != "completed" ||
                     ReadString(run, "conclusion") != "success")
                     continue;
