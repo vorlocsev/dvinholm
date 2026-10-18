@@ -106,9 +106,12 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          grep -E '(^|[[:space:]])Dvinholm-Windows-x86\.zip$' SHA256SUMS.txt > expected-sum.txt
-          test -s expected-sum.txt
-          sha256sum --check expected-sum.txt
+          expected="$(awk '$2 == "Dvinholm-Windows-x86.zip" || $2 == "*Dvinholm-Windows-x86.zip" {print $1}' SHA256SUMS.txt)"
+          actual="$(sha256sum Dvinholm-Windows-x86.zip | awk '{print $1}')"
+          test -n "$expected"
+          echo "Expected SHA-256: $expected"
+          echo "Actual SHA-256:   $actual"
+          test "$actual" = "$expected"
       - name: Validate ZIP and inspect packaged files
         shell: bash
         run: |
