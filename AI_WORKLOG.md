@@ -2489,3 +2489,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Post-merge main CI is running and must be checked before calling the merge pipeline fully green.
 - Updater fix: if a first-time installation fails after replacement starts and there was no previous destination, remove the incomplete destination and record the cleanup in the failure log. Existing-install rollback behavior is preserved. Regression assertions verify the generated PowerShell branch/message.
 - Manual evidence still limited to the user's v0.2.0 update and no-adapter retry checks. No physical J2534 adapter or vehicle validation has been performed.
+
+
+## Rebased warning cleanup — 2026-10-18
+
+- Rechecked stale PR [#226](https://github.com/vorlocsev/dvinholm/pull/226) against current `main`. Most catch-variable cleanups from the old patch are already present in current main; only the profile-import save catch still declared an unused `saveException` variable.
+- Removed that unused variable without changing exception handling or user-facing behavior. J2534Session already uses unnamed catch variables for cleanup-only catches on current main, so no redundant edit was made there.
+- Historical PR #226 CI reported 452 passed, 0 failed, 0 skipped and zero warnings, but this rebased one-line delta must pass fresh CI before merge.
+- No physical J2534 adapter or vehicle validation was performed; those checks remain deferred.
