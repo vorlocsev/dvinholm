@@ -185,6 +185,36 @@ public sealed class LatestBuildLookupTests
 
 
     [Fact]
+    public async Task ReleaseLookupForbidden_StopsDiscoveryWithoutQueryingOlderRuns()
+    {
+        var releaseRequests = 0;
+        using var client = new HttpClient(new QueueHttpMessageHandler(request =>
+        {
+            if (request.RequestUri!.AbsolutePath.EndsWith("/runs", StringComparison.Ordinal))
+            {
+                return JsonResponse("""
+                    {
+                      "workflow_runs": [
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 50, "run_number": 50, "created_at": "2026-10-18T02:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 49, "run_number": 49, "created_at": "2026-10-18T01:00:00Z" }
+                      ]
+                    }
+                    """);
+            }
+
+            releaseRequests++;
+            return new HttpResponseMessage(HttpStatusCode.Forbidden);
+        }));
+
+        var exception = await Assert.ThrowsAsync<HttpRequestException>(
+            () => LatestBuildUpdater.GetLatestSuccessfulBuildAsync(client));
+
+        Assert.Equal(HttpStatusCode.Forbidden, exception.StatusCode);
+        Assert.Equal(1, releaseRequests);
+    }
+
+
+    [Fact]
     public async Task MissingReleaseForNewestRun_FallsBackToOlderPublishedBuild()
     {
         var releaseRequests = new List<string>();
