@@ -772,8 +772,16 @@ function Start-Process {
                 Assert.True(process.ExitCode == 0, $"PowerShell exited with {process.ExitCode}. stdout: {stdout} stderr: {stderr}");
             }
 
-            Assert.Equal("old-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
-            Assert.Equal("old", await File.ReadAllTextAsync(Path.Combine(destination, "old.marker")));
+            if (rollbackCopyFails)
+            {
+                Assert.Equal("new-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
+                Assert.False(File.Exists(Path.Combine(destination, "old.marker")));
+            }
+            else
+            {
+                Assert.Equal("old-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
+                Assert.Equal("old", await File.ReadAllTextAsync(Path.Combine(destination, "old.marker")));
+            }
             var updateLog = await File.ReadAllTextAsync(Path.Combine(localAppData, "Dvinholm", "update.log"));
             Assert.Contains("The updated application exited during startup (exit code 17).", updateLog);
             Assert.Contains("The previous build was restored and will be restarted.", updateLog);
