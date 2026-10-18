@@ -1,3 +1,12 @@
+## Updater expanded-archive size-limit regression test — 2026-10-18
+
+- [x] Added a focused regression test that alters a small ZIP's central-directory metadata to declare an entry larger than the 1,000,000,000-byte extraction limit, without allocating a huge test payload.
+- [x] The test expects rejection before extraction and verifies staging-directory and temporary-archive cleanup.
+- [ ] Await CI on PR #285 before marking the test verified.
+- [ ] Continue software-only updater review. No production-code changes, release publication, or physical adapter/vehicle testing.
+
+---
+
 ## Manual Windows verification — disconnected startup state (2026-10-18)
 
 - [x] After relaunch, user confirmed the saved test DLL path remains visible and the app reports **not connected**.
