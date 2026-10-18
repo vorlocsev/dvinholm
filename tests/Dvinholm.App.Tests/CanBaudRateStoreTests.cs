@@ -59,7 +59,9 @@ public sealed class CanBaudRateStoreTests
         Directory.CreateDirectory(path);
         var store = new CanBaudRateStore(path);
 
-        Assert.Throws<IOException>(() => store.Save(250000));
+        var exception = Record.Exception(() => store.Save(250000));
+        Assert.True(exception is IOException or UnauthorizedAccessException,
+            $"Expected a file-system replacement failure, but got {exception?.GetType().Name ?? "no exception"}.");
 
         Assert.True(Directory.Exists(path));
         Assert.Empty(Directory.GetFiles(directory.Path, "can-baud-rate.txt.*.tmp"));
