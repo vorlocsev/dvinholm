@@ -2,7 +2,7 @@
 
 - Merged PR [#325](https://github.com/vorlocsev/dvinholm/pull/325) (`cc2cca05a2c66838ed3705c8a82b2daffbd07978`): updater helper wait for previous app process is bounded to 60 seconds. If the process remains alive, failure is logged before backup/replacement begins. Windows PowerShell regression test confirms installed files stay unchanged; PR CI [#39127243905](https://github.com/vorlocsev/dvinholm/actions/runs/39127243905) and post-merge main CI [#39127517071](https://github.com/vorlocsev/dvinholm/actions/runs/39127517071) passed.
 - Merged PR [#326](https://github.com/vorlocsev/dvinholm/pull/326) (`7662476e99595a41beb5dc0fb47a675efda26817`): handles the race where the old process exits between `Get-Process` and `Wait-Process`. If the wait throws, a second process check permits continuation only when the old process is gone; otherwise the error is rethrown. Added a Windows PowerShell runtime regression test; PR CI [#39127650770](https://github.com/vorlocsev/dvinholm/actions/runs/39127650770) and push CI [#39127638650](https://github.com/vorlocsev/dvinholm/actions/runs/39127638650) passed.
-- Post-merge main CI [#39127972826](https://github.com/vorlocsev/dvinholm/actions/runs/39127972826) was still running at this checkpoint.
+- Post-merge main CI [#39127972826](https://github.com/vorlocsev/dvinholm/actions/runs/39127972826) passed build/tests and stable-release audit.
 - Next: confirm main CI, then continue software-only updater failure-path review. No stable release or physical adapter/vehicle validation was performed.
 
 ---
