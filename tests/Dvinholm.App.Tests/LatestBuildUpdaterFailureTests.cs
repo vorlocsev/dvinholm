@@ -330,6 +330,34 @@ public sealed class LatestBuildUpdaterFailureTests
         }
     }
 
+    [Fact]
+    public void ReplacementScript_EscapesApostrophesInAllFilesystemPaths()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"dvinholm O'Neil {Guid.NewGuid():N}");
+        var staging = Path.Combine(root, "staging O'Neil");
+        var destination = Path.Combine(root, "installed O'Neil");
+        var scriptPath = Path.Combine(root, "replace O'Neil.ps1");
+        var backup = Path.Combine(root, "backup O'Neil");
+
+        var script = LatestBuildUpdater.BuildReplacementScript(
+            staging,
+            destination,
+            1234,
+            scriptPath,
+            backup);
+
+        static string Escape(string path) => Path.GetFullPath(path).Replace("'", "''", StringComparison.Ordinal);
+
+        Assert.Contains($"$source = '{Escape(staging)}'", script);
+        Assert.Contains($"$destination = '{Escape(destination)}'", script);
+        Assert.Contains($"$scriptPath = '{Escape(scriptPath)}'", script);
+        Assert.Contains($"$backup = '{Escape(backup)}'", script);
+        Assert.DoesNotContain(Path.GetFullPath(staging), script.Replace(Escape(staging), string.Empty, StringComparison.Ordinal));
+        Assert.DoesNotContain(Path.GetFullPath(destination), script.Replace(Escape(destination), string.Empty, StringComparison.Ordinal));
+        Assert.DoesNotContain(Path.GetFullPath(scriptPath), script.Replace(Escape(scriptPath), string.Empty, StringComparison.Ordinal));
+        Assert.DoesNotContain(Path.GetFullPath(backup), script.Replace(Escape(backup), string.Empty, StringComparison.Ordinal));
+    }
+
     private static HttpClient CreateClient(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) =>
         new(new StubHttpMessageHandler(responseFactory));
 
