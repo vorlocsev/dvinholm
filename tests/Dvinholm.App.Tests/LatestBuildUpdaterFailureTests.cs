@@ -6,6 +6,28 @@ namespace Dvinholm.App.Tests;
 public sealed class LatestBuildUpdaterFailureTests
 {
     [Fact]
+    public void ValidateExpandedSize_AcceptsEntriesAtConfiguredLimit()
+    {
+        LatestBuildUpdater.ValidateExpandedSize([500_000_000L, 548_576_000L]);
+    }
+
+    [Fact]
+    public void ValidateExpandedSize_RejectsNegativeEntryLength()
+    {
+        Assert.Throws<InvalidDataException>(
+            () => LatestBuildUpdater.ValidateExpandedSize([1L, -1L]));
+    }
+
+    [Fact]
+    public void ValidateExpandedSize_RejectsAggregateOverLimitWithoutOverflow()
+    {
+        Assert.Throws<InvalidDataException>(
+            () => LatestBuildUpdater.ValidateExpandedSize([1_048_576_000L, 1L]));
+
+        Assert.Throws<InvalidDataException>(
+            () => LatestBuildUpdater.ValidateExpandedSize([long.MaxValue, 1L]));
+    }
+    [Fact]
     public async Task DownloadFailure_ThrowsAndCleansStagingDirectory()
     {
         using var client = CreateClient(_ => new HttpResponseMessage(HttpStatusCode.Unauthorized));
