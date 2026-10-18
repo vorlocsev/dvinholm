@@ -1,3 +1,13 @@
+## Follow-up — expanded ZIP size test fixture correction (2026-10-18)
+
+- PR #285 CI run [#39101692614](https://github.com/vorlocsev/dvinholm/actions/runs/39101692614) failed at the new test: build succeeded, 483 tests passed, and `ExpandedArchiveOverLimit_IsRejectedBeforeExtractionAndCleansTemporaryFiles` failed because no exception was thrown.
+- Root cause in the test fixture: only the central-directory uncompressed-size field was modified. The ZIP reader did not surface the intended expanded length from that inconsistent fixture.
+- Created branch `fix/updater-expanded-size-test` and updated the fixture to modify both the local file header and central-directory uncompressed-size fields, keeping metadata consistent while the actual payload remains tiny.
+- Production updater code was not changed. The fix is unverified until CI runs on the follow-up branch.
+- Next: open a follow-up PR, inspect CI, then continue the software-only updater review. Do not merge any PR or publish a release without explicit approval. No physical J2534 adapter/vehicle testing.
+
+---
+
 ## Follow-up — updater expanded archive size limit test (2026-10-18)
 
 - Added `LatestBuildUpdaterExpandedSizeTests.cs` on branch `test/updater-expanded-size-limit`.
