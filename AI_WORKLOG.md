@@ -1,3 +1,12 @@
+## ECU profile validation and CI closure — 2026-10-18
+
+- Confirmed post-merge main CI [#39162799935](https://github.com/vorlocsev/dvinholm/actions/runs/39162799935) completed successfully on `5d592d5ee1f3715d68dd670eda7e555822a31375`: build, tests, publish/package, and latest stable-release audit all passed.
+- User verified the update completed successfully and a subsequent Check update reported no newer build. Both synthetic ECU profiles remained present with correct parameters.
+- Manual profile checks are complete: standard IDs `7E0/7E8` (11-bit, DID `F190`); extended IDs `18DA10F1/18DAF110` (29-bit, DID `1234`); profile switching restored saved values; both profiles persisted through restarts; repeated add did not duplicate; JSON export/import worked; invalid JSON was rejected while preserving existing data.
+- Updated `ROADMAP.md` to close the now-completed manual and CI checklist items. Stable release remains `0.2.0`; no release was published. Physical J2534 adapter/vehicle testing remains deferred.
+
+---
+
 ## Synthetic ECU test profiles — 2026-10-18
 
 - [x] Added an **Add test profiles** action that safely appends two clearly labeled, unverified synthetic profiles to the existing local catalog without replacing user profiles.
