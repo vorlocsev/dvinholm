@@ -1,3 +1,13 @@
+## Updater discovery restricted to published main builds — 2026-10-18
+
+- [x] PR [#301](https://github.com/vorlocsev/dvinholm/pull/301) merged as `8afeba1a27f326f97ef87fde2f78072216e77c7d`. Lookup now considers only completed successful `push` runs for `main`, matching the workflow that publishes public updater assets.
+- [x] Added regression coverage proving feature-branch pushes and `workflow_dispatch` runs are skipped without release lookups. PR-head build/tests and latest-stable-release audit passed ([run #39116058181](https://github.com/vorlocsev/dvinholm/actions/runs/39116058181), [run #39116048252](https://github.com/vorlocsev/dvinholm/actions/runs/39116048252)).
+- [x] PR [#300](https://github.com/vorlocsev/dvinholm/pull/300) merged as `052e9d2a26ad5d030cdb6dd35934c887ff11c294`, recording PR #299 cleanup hardening.
+- [ ] Post-merge main CI for #301 and #300 is running at [#39116463864](https://github.com/vorlocsev/dvinholm/actions/runs/39116463864) and [#39116480546](https://github.com/vorlocsev/dvinholm/actions/runs/39116480546); verify both before marking main fully green.
+- [ ] Continue software-only updater failure-path review. Do not publish a new stable release until release gates are satisfied. Physical J2534 adapter/vehicle testing remains deferred.
+
+---
+
 ## Updater cleanup error handling — 2026-10-18
 
 - [x] PR [#299](https://github.com/vorlocsev/dvinholm/pull/299) merged as `a0f7162e2c984acb90970778795b004336aafd9e` after both PR CI runs passed build/tests and stable-release audit.
