@@ -556,7 +556,7 @@ public sealed class LatestBuildUpdaterFailureTests
             Assert.DoesNotContain("System32\\robocopy.exe", generated, StringComparison.OrdinalIgnoreCase);
 
             var mocks = @"
-function Wait-Process { param([int]$Id) }
+function Wait-Process { param([int]$Id, [int]$Timeout) }
 function Invoke-TestRobocopy {
     param([string]$From, [string]$To, [Parameter(ValueFromRemainingArguments=$true)][string[]]$Options)
     if ($From -eq $env:DVINHOLM_TEST_FAIL_SOURCE) {
@@ -676,7 +676,7 @@ function Start-Process {
                 StringComparison.Ordinal);
 
             var mocks = @"
-function Wait-Process { param([int]$Id) }
+function Wait-Process { param([int]$Id, [int]$Timeout) }
 function Start-Sleep { param([int]$Seconds, [int]$Milliseconds) }
 function Invoke-TestRobocopy {
     param([string]$From, [string]$To, [Parameter(ValueFromRemainingArguments=$true)][string[]]$Options)
@@ -797,7 +797,7 @@ function Start-Process {
                 "Invoke-TestRobocopy",
                 StringComparison.Ordinal);
             var mocks = @"
-function Wait-Process { param([int]$Id) }
+function Wait-Process { param([int]$Id, [int]$Timeout) }
 function Invoke-TestRobocopy {
     param([string]$From, [string]$To, [Parameter(ValueFromRemainingArguments=$true)][string[]]$Options)
     if ($From -eq $env:DVINHOLM_TEST_FAIL_SOURCE) {
@@ -910,7 +910,7 @@ function Start-Process {
             Assert.DoesNotContain("System32\\robocopy.exe", generated, StringComparison.OrdinalIgnoreCase);
 
             var mocks = @"
-function Wait-Process { param([int]$Id) }
+function Wait-Process { param([int]$Id, [int]$Timeout) }
 function Invoke-TestRobocopy {
     param([string]$From, [string]$To, [Parameter(ValueFromRemainingArguments=$true)][string[]]$Options)
     if ($From -eq $env:DVINHOLM_TEST_FAIL_SOURCE) {
@@ -1023,7 +1023,7 @@ function Start-Process {
                 "Invoke-TestRobocopy",
                 StringComparison.Ordinal);
             var mocks = @"
-function Wait-Process { param([int]$Id) }
+function Wait-Process { param([int]$Id, [int]$Timeout) }
 function Invoke-TestRobocopy {
     param([string]$From, [string]$To, [Parameter(ValueFromRemainingArguments=$true)][string[]]$Options)
     if ($From -eq $env:DVINHOLM_TEST_FAIL_SOURCE) {
