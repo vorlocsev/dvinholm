@@ -1264,3 +1264,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Assert that rollback failure is logged, the recovery backup and staging directory are preserved, and the helper script is still cleaned up; the destination is explicitly expected to remain on the failed new build when restore copying itself fails.
 - [ ] Await PR and post-merge main CI before marking the test verified.
 - No production code or stable release changed. Physical J2534 adapter and vehicle testing remain deferred.
+
+
+## ECU test profiles — manual validation — 2026-10-18
+
+- [x] Merged PR [#345](https://github.com/vorlocsev/dvinholm/pull/345) and verified the post-merge CI build [#39156713010](https://github.com/vorlocsev/dvinholm/actions/runs/39156713010) passed.
+- [x] User confirmed the `Add test profiles` button appears in CI build `ci-2715`.
+- [x] User verified both profiles' request/response IDs, CAN identifier format, and DID; switching back restored saved values even after a manual response-ID edit.
+- [x] User verified profiles persist after app restart and repeated creation does not add duplicates.
+- [ ] Continue manual UI checks for profile metadata and selection behavior; no diagnostic request should be sent with synthetic profiles.
+- Physical J2534 adapter/vehicle tests remain deferred. Stable release remains v0.2.0; no stable release was published for this work.
