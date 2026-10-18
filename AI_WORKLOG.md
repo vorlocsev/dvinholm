@@ -1,3 +1,12 @@
+## Updater helper-start cleanup merged — 2026-10-18
+
+- PR [#297](https://github.com/vorlocsev/dvinholm/pull/297) was squash-merged as `c8466f49e53ebb2332e9f40733f159af41729e7b` after [PR CI #39114708239](https://github.com/vorlocsev/dvinholm/actions/runs/39114708239) passed both build/tests and stable-release audit.
+- `LatestBuildUpdater` now best-effort deletes the generated update-helper script and staging directory if writing or launching the helper fails. Cleanup exceptions are swallowed so they do not mask the original write/start error.
+- Added `FailedHelperStartCleanup_RemovesScriptAndStagingDirectory` regression coverage. The existing PowerShell rollback integration test timeout was increased from 20 to 60 seconds after a CI timeout; the current PR CI passed with this adjustment.
+- Post-merge `main` CI run #39115059949 was in progress when this entry was prepared; verify its final outcome before calling main green. No stable release or hardware validation was performed. Physical J2534 adapter/vehicle testing remains deferred.
+
+---
+
 ## Follow-up — expanded-size arithmetic overflow guard (2026-10-18)
 
 - Added a defensive check that compares each ZIP entry length against the remaining expanded-size budget before adding it. This avoids relying on checked arithmetic when processing hostile ZIP64 metadata.
