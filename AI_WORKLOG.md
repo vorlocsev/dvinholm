@@ -2459,3 +2459,11 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - [x] Closed PR [#285](https://github.com/vorlocsev/dvinholm/pull/285) as superseded by deterministic expanded-size tests in merged PR #286.
 - [ ] PR #287 CI is running. Merge only after the current head's full build/test/publish pipeline and published v0.1.1 archive audit pass.
 - Physical J2534 adapter and vehicle validation remain deferred; no hardware compatibility is claimed. Stable release publication remains gated on release readiness review.
+
+
+## Updater first-install failure cleanup — 2026-10-18
+
+- During source review, identified a failure-path gap in the generated replacement script: when installing the first build (no existing destination), a failed copy could leave a partial destination directory because rollback only ran when a previous build existed.
+- Added a cleanup branch that removes the incomplete first-install destination after replacement has started and records that action in the update log. Existing-install rollback behavior is unchanged.
+- Added a regression assertion for the generated script's first-install cleanup path.
+- PR/CI verification pending. This is software-only validation; no new stable release, physical J2534 adapter test, or vehicle test.
