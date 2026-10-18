@@ -332,9 +332,34 @@ internal static class LatestBuildUpdater
         {
             if (!prepared)
             {
-                try { if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true); } catch (IOException) { }
+                TryCleanup(() =>
+                {
+                    if (Directory.Exists(staging))
+                        Directory.Delete(staging, recursive: true);
+                });
             }
-            try { if (File.Exists(archivePath)) File.Delete(archivePath); } catch (IOException) { }
+
+            TryCleanup(() =>
+            {
+                if (File.Exists(archivePath))
+                    File.Delete(archivePath);
+            });
+        }
+    }
+
+    internal static void TryCleanup(Action cleanup)
+    {
+        try
+        {
+            cleanup();
+        }
+        catch (IOException)
+        {
+            // Best-effort cleanup must not replace the original download/extraction error.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // A transient ACL/lock issue must not hide the original failure either.
         }
     }
 
