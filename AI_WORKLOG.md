@@ -1,3 +1,13 @@
+## Manual Windows verification — disconnected Monitor/UDS controls (2026-10-18)
+
+- User confirmed all four controls — **Start Monitor**, **Read VIN**, **Read DTC**, and **Read DID** — are inactive while disconnected.
+- This confirms only the expected disconnected-state UI gating; it does not verify enabled behavior after a successful J2534/CAN connection.
+- Added the full manual result to `docs/manual-ui-verification-disconnected-controls-2026-10-18.md`.
+- Documentation PR [#282](https://github.com/vorlocsev/dvinholm/pull/282) merged as `cdf07aec7a078f2627ebd86a412b78924495e0ad`. Post-merge CI [#39099976109](https://github.com/vorlocsev/dvinholm/actions/runs/39099976109) was still running at the time of this update.
+- Next: confirm CI result and continue software-only checks. No physical J2534 adapter or vehicle is available; do not claim hardware compatibility or publish a new release without explicit authorization.
+
+---
+
 ## Manual Windows verification — disconnected startup state (2026-10-18)
 
 - [x] After relaunch, user confirmed the saved test DLL path remains visible and the app reports **not connected**.
