@@ -1,3 +1,12 @@
+## ECU profile import safety — manual checkpoint (2026-10-18)
+
+- [x] Invalid JSON import was rejected with the expected `Profile import failed` status.
+- [x] Existing Standard and Extended synthetic ECU test profiles remained present after rejection; both profiles' expected IDs and DIDs were confirmed.
+- [ ] Continue UI-only ECU profile checks (valid export/import round-trip and persistence). Do not send diagnostic requests with synthetic profiles.
+- Physical J2534 adapter/vehicle validation remains deferred. Stable release remains `0.2.0`.
+
+---
+
 ## Synthetic ECU test profiles — 2026-10-18
 
 - [x] Added an **Add test profiles** action that safely appends two clearly labeled, unverified synthetic profiles to the existing local catalog without replacing user profiles.
