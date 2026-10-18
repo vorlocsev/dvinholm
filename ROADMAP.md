@@ -1,9 +1,18 @@
+## Updater release-asset URL validation — 2026-10-18
+
+- [x] PR [#316](https://github.com/vorlocsev/dvinholm/pull/316) merged as `fb9bc552e6854419f6e0a281320b0970f8b67b76`. PR CI [#39122775092](https://github.com/vorlocsev/dvinholm/actions/runs/39122775092) and post-merge main CI [#39123078698](https://github.com/vorlocsev/dvinholm/actions/runs/39123078698) passed build/tests and the stable-release audit.
+- [x] Updater lookup requires the browser download URL to match the exact expected `ci-{runNumber}/Dvinholm-Windows-x86.zip` release path, preventing mismatched run/tag/asset metadata.
+- [x] Regression coverage verifies a newer run pointing to an older release tag is rejected and discovery falls back to an older valid published build.
+- [ ] Continue software-only updater failure-path review. Stable release `0.2.0` remains unchanged; physical J2534 adapter/vehicle testing remains deferred.
+
+---
+
 ## Verify updater process startup before discarding rollback copy — 2026-10-18
 
-- [ ] The replacement helper waits five seconds after launching the updated app and checks whether the process exited. An early exit is treated as an update failure, triggering the existing rollback path when an older installation exists.
-- [ ] Rollback startup is checked too. If the restored app exits during its startup window, the helper records rollback failure instead of claiming it was successfully restarted; the backup is not deleted before this check.
-- [ ] Added a Windows PowerShell runtime regression test that simulates the new executable exiting immediately and verifies that the previous executable is restored and relaunched. CI validation is pending.
-- [ ] No stable release or physical J2534 adapter/vehicle validation is included.
+- [x] The replacement helper waits five seconds after launching the updated app and checks whether the process exited. An early exit is treated as an update failure, triggering the existing rollback path when an older installation exists.
+- [x] Rollback startup is checked too. If the restored app exits during its startup window, the helper records rollback failure instead of claiming it was successfully restarted; the backup is not deleted before this check.
+- [x] Added a Windows PowerShell runtime regression test that simulates the new executable exiting immediately and verifies that the previous executable is restored and relaunched. CI validation is pending.
+- [x] PR [#318](https://github.com/vorlocsev/dvinholm/pull/318) merged as `00d49cb75fdefe2f3ee90811c1fbf5cbdd619ce4`; PR CI [#39123184595](https://github.com/vorlocsev/dvinholm/actions/runs/39123184595) and post-merge main CI [#39124043911](https://github.com/vorlocsev/dvinholm/actions/runs/39124043911) passed build/tests and stable-release audit. No stable release or physical J2534 adapter/vehicle validation is included.
 
 ---
 
