@@ -389,16 +389,23 @@ internal static class LatestBuildUpdater
         }
         catch
         {
-            try { File.Delete(scriptPath); } catch (IOException) { }
-            try
-            {
-                if (Directory.Exists(stagingDirectory))
-                    Directory.Delete(stagingDirectory, recursive: true);
-            }
-            catch (IOException) { }
-            catch (UnauthorizedAccessException) { }
+            CleanupFailedStart(scriptPath, stagingDirectory);
             throw;
         }
+    }
+
+    internal static void CleanupFailedStart(string scriptPath, string stagingDirectory)
+    {
+        try { File.Delete(scriptPath); } catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+
+        try
+        {
+            if (Directory.Exists(stagingDirectory))
+                Directory.Delete(stagingDirectory, recursive: true);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     internal static string BuildReplacementScript(
