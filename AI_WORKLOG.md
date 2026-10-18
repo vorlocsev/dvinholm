@@ -1,3 +1,11 @@
+## Post-merge verification — PR #304 — 2026-10-18
+
+- Main CI [run #39118506041](https://github.com/vorlocsev/dvinholm/actions/runs/39118506041) passed on merge commit `369da5ead23b3299b7f4f53a1a4ead3c2c9c3e8a`, including build/tests and latest-stable-release audit.
+- Docs PR [#305](https://github.com/vorlocsev/dvinholm/pull/305) merged after current-head CI [run #39118570583](https://github.com/vorlocsev/dvinholm/actions/runs/39118570583) passed.
+- Continue software-only updater review. No stable release or physical adapter/vehicle testing.
+
+---
+
 ## First-install cleanup failure diagnostics — 2026-10-18
 
 - Merged PR [#304](https://github.com/vorlocsev/dvinholm/pull/304) as `369da5ead23b3299b7f4f53a1a4ead3c2c9c3e8a`.
