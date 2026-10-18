@@ -429,10 +429,13 @@ internal static class LatestBuildUpdater
         }
     }
 
-    internal static void CleanupFailedStart(string scriptPath, string stagingDirectory)
+    internal static void CleanupFailedStart(string? scriptPath, string stagingDirectory)
     {
-        try { File.Delete(scriptPath); } catch (IOException) { }
-        catch (UnauthorizedAccessException) { }
+        if (!string.IsNullOrEmpty(scriptPath))
+        {
+            try { File.Delete(scriptPath); } catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
 
         try
         {
