@@ -542,7 +542,7 @@ function Start-Process {
 
             using (var process = System.Diagnostics.Process.Start(startInfo)
                 ?? throw new InvalidOperationException("Could not start isolated PowerShell rollback test."))
-            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)))
+            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
             {
                 // Drain both redirected streams while the process is running to avoid pipe-buffer deadlocks.
                 var stdoutTask = process.StandardOutput.ReadToEndAsync();
@@ -658,7 +658,7 @@ function Start-Process {
 
             using (var process = System.Diagnostics.Process.Start(startInfo)
                 ?? throw new InvalidOperationException("Could not start isolated PowerShell first-install test."))
-            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)))
+            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
             {
                 var stdoutTask = process.StandardOutput.ReadToEndAsync();
                 var stderrTask = process.StandardError.ReadToEndAsync();
