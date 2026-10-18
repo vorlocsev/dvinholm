@@ -2,7 +2,8 @@
 
 - Added a defensive check that compares each ZIP entry length against the remaining expanded-size budget before adding it. This avoids relying on checked arithmetic when processing hostile ZIP64 metadata.
 - Added a regression test using entry lengths `[1, long.MaxValue]`; it must reject the archive with `InvalidDataException`, consistent with other over-limit input.
-- Changes are on PR #286 branch `fix/updater-expanded-size-test`; CI is pending for the new head. This is a software-only updater test; no release, merge, adapter, or vehicle testing was performed.
+- CI passed on head `8b960c192ffc3b356429232814cc5408d5afa08d`: build, test, publish, and artifact upload succeeded; the v0.1.1 archive audit also passed ([run #39103682783](https://github.com/vorlocsev/dvinholm/actions/runs/39103682783)). This validates the overflow guard and tests in CI, not real updater replacement on a user's machine.
+- PR #286 remains open pending explicit approval. No release, merge, adapter, or vehicle testing was performed.
 
 ---
 
