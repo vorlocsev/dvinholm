@@ -1048,3 +1048,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Removed the remaining unused `saveException` variable in the profile-import save failure handler. No exception behavior or user-facing message changed.
 - [ ] Fresh CI must pass before merging the rebased cleanup.
 - Physical J2534 adapter/vehicle checks remain deferred.
+
+
+## Current-main warning cleanup verified — 2026-10-18
+
+- [x] PR [#293](https://github.com/vorlocsev/dvinholm/pull/293) merged as `ddec537cbc5e8affe251d0b66d518dfd9fd23f00` after current-head build/tests and latest-stable-release audit passed in [run #39112180900](https://github.com/vorlocsev/dvinholm/actions/runs/39112180900).
+- [x] Main pipeline for the merge commit started; release audit passed in [run #39113096094](https://github.com/vorlocsev/dvinholm/actions/runs/39113096094). Build is still running, so post-merge main CI is not yet fully green.
+- [x] Removed the final unused exception variable in the profile-import save handler without changing behavior.
+- [ ] Continue software-only updater reliability review after the post-merge main build completes.
+- Physical J2534 adapter and vehicle testing remain deferred; no new stable release is authorized by this cleanup.
