@@ -1,3 +1,12 @@
+## Updater ZIP path-traversal test hardening — 2026-10-18
+
+- Reviewed `LatestBuildUpdater.DownloadAndPrepareAsync` and its unsafe-archive-path regression test.
+- Existing code validates every extracted target stays beneath the staging root before calling ZIP extraction. The existing test rejected `../escape.txt`, but did not assert that no escaped file was written or that the temporary downloaded ZIP was deleted.
+- Opened [PR #284](https://github.com/vorlocsev/dvinholm/pull/284), adding a unique traversal target and assertions for no escaped file, no staging directory, and no leftover temporary ZIP.
+- CI is pending; do not describe the new assertions as passed until the workflow completes. No production-code change, release, or hardware test.
+
+---
+
 ## Manual Windows verification — disconnected startup state (2026-10-18)
 
 - [x] After relaunch, user confirmed the saved test DLL path remains visible and the app reports **not connected**.
