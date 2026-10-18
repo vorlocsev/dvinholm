@@ -1,3 +1,13 @@
+## ECU profile import failure handling — manual validation — 2026-10-18
+
+- [x] User imported deliberately invalid JSON (`not valid json`); Dvinholm displayed `Profile import failed`.
+- [x] User confirmed both existing synthetic test profiles remained in the catalog and the Standard CAN profile retained Request ID `7E0`, Response ID `7E8`, and DID `F190`.
+- [x] User confirmed the Extended CAN profile still shows Request ID `18DA10F1`, Response ID `18DAF110`, Extended (29-bit), and DID `1234`.
+- [x] This confirms malformed JSON is rejected without replacing the in-memory profile catalog in the tested Windows build. Import/save behavior is manually checked; no hardware or diagnostic requests were involved.
+- [ ] Continue remaining profile UI regression checks and update this log with each confirmed result. Stable release remains `0.2.0`.
+
+---
+
 ## Synthetic ECU test profiles — 2026-10-18
 
 - [x] Added an **Add test profiles** action that safely appends two clearly labeled, unverified synthetic profiles to the existing local catalog without replacing user profiles.
