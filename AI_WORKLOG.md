@@ -1,7 +1,7 @@
 ## Follow-up — expanded-size guard tests made deterministic (2026-10-18)
 
 - CI runs #39102009534 and #39102018577 both failed the synthetic ZIP test even after modifying both local and central-directory size fields: the expected `InvalidDataException` was not thrown; 483 other tests passed.
-- Dropped the brittle ZIP metadata fixture. Extracted the existing aggregate size calculation into `LatestBuildUpdater.ValidateExpandedSize(IEnumerable<long>)`; the extraction path calls this helper before extracting files, preserving the 1,000,000,000-byte cap.
+- Dropped the brittle ZIP metadata fixture. Extracted the existing aggregate size calculation into `LatestBuildUpdater.ValidateExpandedSize(IEnumerable<long>)`; the extraction path calls this helper before extracting files, preserving the 1,048,576,000-byte cap (1,000 MiB).
 - Replaced the test with direct boundary cases: total above the limit rejected, exactly at the limit accepted, and negative declared size rejected. This validates the production guard without creating a huge file or depending on malformed ZIP-reader behavior.
 - This is a small production refactor plus tests, not yet verified. CI on PR #286 must pass before considering it complete.
 - Continue software-only checks. Do not merge any PR or publish a release without explicit approval. No physical J2534 adapter/vehicle testing.

@@ -1,8 +1,8 @@
 ## Updater expanded-archive size-limit test — fixture approach revised (2026-10-18)
 
 - [x] CI repeatedly showed that editing ZIP size metadata in the synthetic archive did not trigger the expected exception (483 other tests passed). The test fixture was unreliable; no conclusion about a production defect follows from that failure.
-- [x] Isolated the existing aggregate expanded-size guard in `LatestBuildUpdater.ValidateExpandedSize`, which is called by the production extraction path.
-- [x] Replaced ZIP-metadata manipulation with direct boundary tests: over-limit aggregate rejected, exactly-at-limit aggregate accepted, and negative entry size rejected.
+- [x] Confirmed the production limit is `1_000L * 1024 * 1024` = 1,048,576,000 bytes (1,000 MiB). Isolated the existing aggregate expanded-size guard in `LatestBuildUpdater.ValidateExpandedSize`, called by the production extraction path.
+- [x] Replaced ZIP-metadata manipulation with direct boundary tests: aggregate above 1,048,576,000 bytes rejected, exactly 1,048,576,000 bytes accepted, and negative entry size rejected.
 - [ ] Await CI on PR #286 after this revision. Do not mark verified until the full build/test job passes.
 - [ ] Continue software-only updater review. No release publication or physical adapter/vehicle testing.
 
