@@ -1274,3 +1274,11 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] User verified profiles persist after app restart and repeated creation does not add duplicates.
 - [ ] Continue manual UI checks for profile metadata and selection behavior; no diagnostic request should be sent with synthetic profiles.
 - Physical J2534 adapter/vehicle tests remain deferred. Stable release remains v0.2.0; no stable release was published for this work.
+
+
+## Invalid ECU profile JSON import — manual validation — 2026-10-18
+
+- [x] Import of malformed JSON was rejected with `Profile import failed`.
+- [x] User confirmed the existing Standard CAN and Extended CAN synthetic profiles remained present and Standard CAN values were preserved after the failed import.
+- [ ] Continue safe profile-import validation with syntactically valid JSON that does not match the expected catalog schema, if the app's error path can be tested without risking the saved profiles.
+- Physical J2534 adapter and vehicle testing remain deferred; no diagnostic requests were sent. Stable release remains v0.2.0.
