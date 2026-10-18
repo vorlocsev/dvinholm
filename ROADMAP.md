@@ -1,3 +1,13 @@
+## Updater release-lookup HTTP error handling — 2026-10-18
+
+- [x] PR [#308](https://github.com/vorlocsev/dvinholm/pull/308) merged as `0a7bcd2df9b6a4d3650fc6da7735501503aad476`.
+- [x] Lookup now falls back to an older published build only when the candidate `ci-<run>` release returns HTTP 404. Other HTTP errors are propagated immediately instead of being mistaken for missing releases.
+- [x] Added a regression test confirming a 403 stops discovery after one release request. Current-head build/tests and latest-stable-release audit passed ([PR run #39119376885](https://github.com/vorlocsev/dvinholm/actions/runs/39119376885), [push run #39119358746](https://github.com/vorlocsev/dvinholm/actions/runs/39119358746)).
+- [ ] Post-merge main CI [run #39119700082](https://github.com/vorlocsev/dvinholm/actions/runs/39119700082) is queued at this checkpoint; verify it before marking the merge green.
+- [ ] Continue software-only updater review; no stable release or physical J2534 adapter/vehicle validation.
+
+---
+
 ## Post-merge verification — first-install cleanup diagnostics — 2026-10-18
 
 - [x] Main CI [run #39118506041](https://github.com/vorlocsev/dvinholm/actions/runs/39118506041) completed successfully on merge commit `369da5ead23b3299b7f4f53a1a4ead3c2c9c3e8a`; build/tests and latest-stable-release audit passed.
