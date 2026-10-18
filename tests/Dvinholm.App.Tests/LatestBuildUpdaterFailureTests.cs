@@ -643,8 +643,10 @@ function Start-Process {
     }
 
 
-    [Fact]
-    public async Task ReplacementScript_RollsBackWhenUpdatedApplicationExitsDuringStartup()
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task ReplacementScript_RollsBackWhenUpdatedApplicationExitsDuringStartup(bool restoredApplicationExits)
     {
         if (!OperatingSystem.IsWindows())
             return;
@@ -685,7 +687,9 @@ function Invoke-TestRobocopy {
 function Start-Process {
     param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList, [switch]$PassThru)
     Add-Content -LiteralPath $env:DVINHOLM_TEST_LAUNCH_LOG -Value $FilePath
-    if ($FilePath -ne 'notepad.exe' -and (Get-Content -LiteralPath $FilePath -Raw) -eq 'new-build') {
+    if ($FilePath -ne 'notepad.exe' -and (
+        (Get-Content -LiteralPath $FilePath -Raw) -eq 'new-build' -or
+        $env:DVINHOLM_TEST_RESTORED_APP_EXITS -eq '1')) {
         return [pscustomobject]@{ HasExited = $true; ExitCode = 17 }
     }
     return [pscustomobject]@{ HasExited = $false; ExitCode = 0 }
@@ -714,6 +718,7 @@ function Start-Process {
             startInfo.ArgumentList.Add(scriptPath);
             startInfo.Environment["LOCALAPPDATA"] = localAppData;
             startInfo.Environment["DVINHOLM_TEST_LAUNCH_LOG"] = launchLog;
+            startInfo.Environment["DVINHOLM_TEST_RESTORED_APP_EXITS"] = restoredApplicationExits ? "1" : "0";
 
             using (var process = System.Diagnostics.Process.Start(startInfo)
                 ?? throw new InvalidOperationException("Could not start isolated PowerShell startup-exit test."))
@@ -734,6 +739,20 @@ function Start-Process {
             Assert.Contains("The previous build was restored and will be restarted.", updateLog);
             var launches = await File.ReadAllTextAsync(launchLog);
             Assert.Contains(Path.Combine(destination, "Dvinholm.App.exe"), launches);
+
+            if (restoredApplicationExits)
+            {
+                Assert.Contains("The restored application exited during startup (exit code 17).", updateLog);
+                Assert.Contains("Rollback failed:", updateLog);
+                Assert.True(
+                    File.Exists(Path.Combine(backup, "Dvinholm.App.exe")),
+                    "The rollback backup must be retained when the restored app also exits during startup.");
+            }
+            else
+            {
+                Assert.DoesNotContain("Rollback failed:", updateLog);
+                Assert.False(Directory.Exists(backup), "The backup should be removed only after the restored app survives startup.");
+            }
         }
         finally
         {
