@@ -1,3 +1,13 @@
+## Updater discovery rate-limit reduction — 2026-10-18
+
+- Merged PR [#301](https://github.com/vorlocsev/dvinholm/pull/301) (`8afeba1a27f326f97ef87fde2f78072216e77c7d`): updater discovery skips workflow runs except completed successful pushes to `main`, the only event/branch that publishes public updater release assets.
+- Added regression coverage that feature-branch and manual workflow runs trigger no release lookups. PR-head build/tests and stable-release audit passed in runs [#39116058181](https://github.com/vorlocsev/dvinholm/actions/runs/39116058181) and [#39116048252](https://github.com/vorlocsev/dvinholm/actions/runs/39116048252).
+- Merged docs PR [#300](https://github.com/vorlocsev/dvinholm/pull/300) (`052e9d2a26ad5d030cdb6dd35934c887ff11c294`) recording PR #299 cleanup exception handling.
+- Post-merge main CI runs #39116463864 and #39116480546 were still running at this checkpoint; do not mark main green until confirmed.
+- Next: confirm both main runs, then continue software-only updater audit (download integrity, replacement/rollback, cleanup). No stable release or physical adapter/vehicle test is included.
+
+---
+
 ## Updater cleanup error handling — 2026-10-18
 
 - PR [#299](https://github.com/vorlocsev/dvinholm/pull/299) merged as `a0f7162e2c984acb90970778795b004336aafd9e`. Both the PR workflow run #39115542015 and push run #39115532165 passed build/tests and stable-release audit.
