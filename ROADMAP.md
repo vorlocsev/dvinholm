@@ -1,3 +1,14 @@
+## Updater process-exit wait hardening — 2026-10-18
+
+- [x] PR [#325](https://github.com/vorlocsev/dvinholm/pull/325) merged as `cc2cca05a2c66838ed3705c8a82b2daffbd07978`. The PowerShell replacement helper now limits waiting for the previous app process to 60 seconds and aborts before file replacement if that process remains stuck.
+- [x] Added a Windows PowerShell runtime regression test confirming a simulated wait timeout leaves the installed executable untouched and does not create a rollback backup. PR CI [#39127243905](https://github.com/vorlocsev/dvinholm/actions/runs/39127243905) passed; post-merge main CI [#39127517071](https://github.com/vorlocsev/dvinholm/actions/runs/39127517071) passed build/tests, publish, and stable-release audit.
+- [x] PR [#326](https://github.com/vorlocsev/dvinholm/pull/326) merged as `7662476e99595a41beb5dc0fb47a675efda26817`. It handles the race where the old process exits between the initial process check and `Wait-Process`: proceed only if a second check confirms that the process is gone; preserve the error if it remains.
+- [x] Added a Windows PowerShell runtime regression test for the process-exit race. PR CI [#39127650770](https://github.com/vorlocsev/dvinholm/actions/runs/39127650770) and push CI [#39127638650](https://github.com/vorlocsev/dvinholm/actions/runs/39127638650) passed.
+- [x] Post-merge main CI for #326 passed in [run #39127972826](https://github.com/vorlocsev/dvinholm/actions/runs/39127972826), including build/tests and stable-release audit.
+- [ ] Continue software-only updater failure-path review. Stable release `0.2.0` remains unchanged; physical J2534 adapter/vehicle testing remains deferred.
+
+---
+
 ## Cleanup after rollback-backup creation fails — 2026-10-18
 
 - [x] PR [#323](https://github.com/vorlocsev/dvinholm/pull/323) merged as `38d2133e69f646a49c99717cb80f1acb894bc3a9`.
