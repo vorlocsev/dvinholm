@@ -1,3 +1,12 @@
+## Rollback backup retention when restored startup fails — 2026-10-18
+
+- [x] PR [#321](https://github.com/vorlocsev/dvinholm/pull/321) merged as `2f3446d5362cac3d122873007b88dfd9f3cbde9b`; PR CI [#39124778330](https://github.com/vorlocsev/dvinholm/actions/runs/39124778330) passed build/tests and stable-release audit.
+- [x] Expanded the Windows PowerShell runtime regression test to cover both cases: a restored app that survives startup permits backup cleanup; a restored app that exits causes a rollback-failure diagnostic and retains the backup executable.
+- [ ] Post-merge main CI [#39125088281](https://github.com/vorlocsev/dvinholm/actions/runs/39125088281) is pending; verify before marking the merge fully green.
+- [ ] Continue software-only updater failure-path review. Stable release `0.2.0` remains unchanged; physical J2534 adapter/vehicle validation remains deferred.
+
+---
+
 ## Updater release-asset URL validation — 2026-10-18
 
 - [x] PR [#316](https://github.com/vorlocsev/dvinholm/pull/316) merged as `fb9bc552e6854419f6e0a281320b0970f8b67b76`. PR CI [#39122775092](https://github.com/vorlocsev/dvinholm/actions/runs/39122775092) and post-merge main CI [#39123078698](https://github.com/vorlocsev/dvinholm/actions/runs/39123078698) passed build/tests and the stable-release audit.
