@@ -495,7 +495,11 @@ try {{
     if (-not (Test-Path -LiteralPath $targetExe)) {{
         throw 'The updated executable is missing after file replacement.'
     }}
-    Start-Process -FilePath $targetExe -WorkingDirectory $destination
+    $updatedProcess = Start-Process -FilePath $targetExe -WorkingDirectory $destination -PassThru
+    Start-Sleep -Seconds 3
+    if ($updatedProcess.HasExited) {{
+        throw ""The updated application exited during startup (exit code $($updatedProcess.ExitCode)).""
+    }}
     $oldBuilds = Join-Path $env:LOCALAPPDATA 'Dvinholm\Builds'
     if (Test-Path -LiteralPath $oldBuilds) {{
         Get-ChildItem -LiteralPath $oldBuilds -Directory |
@@ -525,7 +529,11 @@ catch {{
                 throw 'Rollback completed without restoring Dvinholm.App.exe.'
             }}
             $failure += [Environment]::NewLine + 'The previous build was restored and will be restarted.'
-            Start-Process -FilePath $restoredExe -WorkingDirectory $destination
+            $restoredProcess = Start-Process -FilePath $restoredExe -WorkingDirectory $destination -PassThru
+            Start-Sleep -Seconds 3
+            if ($restoredProcess.HasExited) {{
+                throw ""The restored application exited during startup (exit code $($restoredProcess.ExitCode)).""
+            }}
             Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
         }}
         catch {{
