@@ -250,6 +250,18 @@ public sealed class LatestBuildUpdaterFailureTests
         Assert.Empty(Directory.EnumerateFiles(Path.GetTempPath(), tempPattern));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public void TryCleanup_DoesNotPropagateExpectedFileSystemCleanupFailures(bool unauthorized)
+    {
+        var exception = unauthorized
+            ? (Exception)new UnauthorizedAccessException("simulated access denial")
+            : new IOException("simulated file-system failure");
+
+        LatestBuildUpdater.TryCleanup(() => throw exception);
+    }
+
     [Fact]
     public async Task FailedHelperStartCleanup_RemovesScriptAndStagingDirectory()
     {
