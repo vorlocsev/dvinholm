@@ -346,9 +346,12 @@ internal static class LatestBuildUpdater
             if (entryLength < 0)
                 throw new InvalidDataException("The artifact contains an invalid entry size.");
 
-            expandedBytes = checked(expandedBytes + entryLength);
-            if (expandedBytes > MaximumExpandedBytes)
+            // Compare against the remaining budget before adding, so hostile ZIP64
+            // lengths cannot overflow the aggregate counter.
+            if (entryLength > MaximumExpandedBytes - expandedBytes)
                 throw new InvalidDataException("The extracted artifact exceeds the configured size limit.");
+
+            expandedBytes += entryLength;
         }
     }
 
