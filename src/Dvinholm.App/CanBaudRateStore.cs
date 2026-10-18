@@ -38,9 +38,22 @@ public sealed class CanBaudRateStore
         if (!string.IsNullOrEmpty(directory))
             Directory.CreateDirectory(directory);
 
-        var temporaryPath = _path + ".tmp";
-        File.WriteAllText(temporaryPath, baudRate.ToString(System.Globalization.CultureInfo.InvariantCulture),
-            new System.Text.UTF8Encoding(false));
-        File.Move(temporaryPath, _path, overwrite: true);
+        var temporaryPath = _path + $".{Guid.NewGuid():N}.tmp";
+        try
+        {
+            File.WriteAllText(temporaryPath, baudRate.ToString(System.Globalization.CultureInfo.InvariantCulture),
+                new System.Text.UTF8Encoding(false));
+            File.Move(temporaryPath, _path, overwrite: true);
+        }
+        finally
+        {
+            try
+            {
+                if (File.Exists(temporaryPath))
+                    File.Delete(temporaryPath);
+            }
+            catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
     }
 }
