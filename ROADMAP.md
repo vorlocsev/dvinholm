@@ -2,7 +2,7 @@
 
 - [x] PR [#336](https://github.com/vorlocsev/dvinholm/pull/336) merged as `7fb38e25936ca718b4701f4ec0f8141940048b22`; regression covers robocopy exit code 8, verifies rollback failure is logged, recovery artifacts are preserved, and the temporary helper script is removed. Main CI [#39140253444](https://github.com/vorlocsev/dvinholm/actions/runs/39140253444) passed.
 - [x] PR [#337](https://github.com/vorlocsev/dvinholm/pull/337) merged as `369c3d38c20d86bec827914a42b38a5b67771dc5`; regression covers robocopy reporting success while the restored `Dvinholm.App.exe` is missing. PR CI [#39140363953](https://github.com/vorlocsev/dvinholm/actions/runs/39140363953) passed.
-- [ ] Post-merge main CI [#39140786191](https://github.com/vorlocsev/dvinholm/actions/runs/39140786191) is running; confirm before marking the final verification complete.
+- [x] Post-merge main CI [#39140786191](https://github.com/vorlocsev/dvinholm/actions/runs/39140786191) passed. Latest main CI after docs PR #338, [#39141242021](https://github.com/vorlocsev/dvinholm/actions/runs/39141242021), also passed build/tests and the latest-stable-release audit.
 - [x] Stable release remains `0.2.0`; no release change and no physical J2534 adapter/vehicle testing.
 - [ ] Next: finish bounded software-only updater audit, then final Windows app smoke scenarios and artifact/docs check. Avoid duplicate tests; defer physical hardware checks.
 
