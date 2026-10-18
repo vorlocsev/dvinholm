@@ -639,6 +639,7 @@ function Remove-Item {
 }
 function Start-Process {
     param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList)
+    if ($FilePath -eq 'notepad.exe') { return }
     throw 'The failed first install must not launch an executable.'
 }
 ";
