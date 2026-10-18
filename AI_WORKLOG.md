@@ -3,7 +3,7 @@
 - Merged PR [#314](https://github.com/vorlocsev/dvinholm/pull/314) as `9ae0ab54dd9d0846974cb47f86e7a980fb4f00a9`. PR CI [#39121712511](https://github.com/vorlocsev/dvinholm/actions/runs/39121712511) passed build/tests and stable-release audit.
 - Previously, `StartReplacement` began its catch/cleanup only after destination path normalization, creation of the local app-data directory, and construction of the replacement script. Failures in those earlier setup steps could leave the extracted staging directory behind.
 - Moved the full setup sequence inside the guarded block; cleanup now accepts a missing script path and still attempts to remove staging. Added a regression test for an invalid NUL destination path, asserting the expected `ArgumentException` and staging cleanup.
-- Post-merge main CI run #39121998264 was still in the public CI asset publication step when this entry was prepared; verify its final status.
+- Post-merge main CI [run #39121998264](https://github.com/vorlocsev/dvinholm/actions/runs/39121998264) completed successfully; build/tests and stable-release audit passed on the exact merge commit.
 - Next: confirm post-merge CI, then continue software-only updater audit. No stable release or physical adapter/vehicle testing.
 
 ---
