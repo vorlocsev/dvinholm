@@ -430,6 +430,9 @@ public sealed class LatestBuildUpdaterFailureTests
         Assert.True(script.IndexOf("$destination $backup /MIR", StringComparison.Ordinal) < script.IndexOf("$source $destination /MIR", StringComparison.Ordinal));
         Assert.Contains("$source $destination /MIR", script);
         Assert.Contains("if ($replacementStarted -and $hadDestination -and $backupReady)", script);
+        Assert.Contains("elseif ($replacementStarted -and -not $hadDestination)", script);
+        Assert.Contains("Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction SilentlyContinue", script);
+        Assert.Contains("The incomplete first-install destination was removed.", script);
         Assert.Contains("$backup $destination /MIR", script);
         Assert.Contains("The previous build was restored and will be restarted.", script);
         Assert.Contains("Rollback failed:", script);
