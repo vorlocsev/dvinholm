@@ -182,6 +182,32 @@ public sealed class LatestBuildUpdaterFailureTests
     }
 
     [Fact]
+    public async Task CancellationBeforeExtraction_CleansTemporaryArchiveAndStagingDirectory()
+    {
+        var bytes = CreateZip(("Dvinholm.App.exe", "fake executable"), ("readme.txt", "test"));
+        using var client = CreateClient(_ => new HttpResponseMessage(HttpStatusCode.OK)
+        {
+            Content = new ByteArrayContent(bytes)
+        });
+        using var cancellation = new CancellationTokenSource();
+        var build = BuildInfo(bytes);
+        var stagingRoot = GetStagingRoot();
+        var tempPattern = $"dvinholm-{build.CommitSha}-*.zip";
+        var progress = new CallbackProgress(message =>
+        {
+            if (message.StartsWith("Validating and extracting", StringComparison.Ordinal))
+                cancellation.Cancel();
+        });
+
+        await Assert.ThrowsAnyAsync<OperationCanceledException>(
+            () => LatestBuildUpdater.DownloadAndPrepareAsync(
+                build, client, progress, cancellation.Token));
+
+        AssertNoStagingDirectory(stagingRoot, build.CommitSha);
+        Assert.Empty(Directory.EnumerateFiles(Path.GetTempPath(), tempPattern));
+    }
+
+    [Fact]
     public async Task DigestMismatch_ThrowsAndCleansTemporaryArchiveAndStagingDirectory()
     {
         var bytes = CreateZip(("Dvinholm.App.exe", "fake executable"));
@@ -1498,6 +1524,15 @@ function Start-Process {
                 }
             }
         }
+    }
+
+    private sealed class CallbackProgress : IProgress<string>
+    {
+        private readonly Action<string> _callback;
+
+        public CallbackProgress(Action<string> callback) => _callback = callback;
+
+        public void Report(string value) => _callback(value);
     }
 
 }
