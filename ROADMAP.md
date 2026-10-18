@@ -1,3 +1,13 @@
+## ECU profile catalog manual validation — 2026-10-18
+
+- [x] User confirmed malformed JSON import is rejected with `Profile import failed` and both existing synthetic profiles remain intact.
+- [x] User verified the extended profile values: request ID `18DA10F1`, response ID `18DAF110`, Extended (29-bit), DID `1234`.
+- [x] User confirmed profile metadata is displayed correctly and indicates an unverified synthetic/test draft, not vehicle-verified settings.
+- [x] User restarted Dvinholm and confirmed both profiles remain available after restart.
+- [x] This is UI/catalog validation only; no diagnostic requests, physical J2534 adapter, or vehicle were used. Stable release remains `0.2.0`.
+
+---
+
 ## Synthetic ECU test profiles — 2026-10-18
 
 - [x] Added an **Add test profiles** action that safely appends two clearly labeled, unverified synthetic profiles to the existing local catalog without replacing user profiles.
