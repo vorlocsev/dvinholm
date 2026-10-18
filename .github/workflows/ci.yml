@@ -106,7 +106,7 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
-          expected="$(awk '$2 == "Dvinholm-Windows-x86.zip" || $2 == "*Dvinholm-Windows-x86.zip" {print $1}' SHA256SUMS.txt)"
+          expected="$(sed -nE 's/^[[:space:]]*([[:xdigit:]]{64})[[:space:]]+\*?Dvinholm-Windows-x86\.zip[[:space:]]*$/\1/p' SHA256SUMS.txt | head -n 1)"
           actual="$(sha256sum Dvinholm-Windows-x86.zip | awk '{print $1}')"
           test -n "$expected"
           echo "Expected SHA-256: $expected"
