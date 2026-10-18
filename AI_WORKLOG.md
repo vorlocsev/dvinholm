@@ -2707,3 +2707,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - [x] Both test profiles remained present after restarting the app.
 - [x] Clicking `Add test profiles` again reported the profiles already exist; no duplicates appeared.
 - No diagnostic request was sent. No physical J2534 adapter or vehicle was available or tested. Stable release remains v0.2.0; CI build `ci-2715` is a prerelease test build.
+
+
+### Invalid ECU profile JSON import — manual validation — 2026-10-18
+
+- [x] User imported `Dvinholm-invalid-test.json` containing invalid JSON; the app displayed `Profile import failed` as expected.
+- [x] User confirmed both synthetic ECU test profiles remained present and the Standard CAN profile values were unchanged (`Request ID 7E0`, `Response ID 7E8`, DID `F190`).
+- This validates that a malformed JSON import does not replace the existing profile catalog in the tested UI flow. No physical adapter or diagnostic request was used; stable release remains v0.2.0.
