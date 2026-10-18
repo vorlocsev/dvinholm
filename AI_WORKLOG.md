@@ -1,3 +1,13 @@
+## PowerShell updater path-escaping regression — 2026-10-18
+
+- Merged PR [#332](https://github.com/vorlocsev/dvinholm/pull/332) as `56fac7e6a9a9b88e5c60782931709384ca7f326b`.
+- Added a regression test for apostrophes in staging, destination, helper-script, and backup paths. It verifies that generated PowerShell literals double embedded apostrophes and do not contain the corresponding raw unescaped path.
+- PR CI runs [#39135634503](https://github.com/vorlocsev/dvinholm/actions/runs/39135634503) and [#39135642946](https://github.com/vorlocsev/dvinholm/actions/runs/39135642946) passed build/tests and stable-release audit.
+- Post-merge main CI [#39136947275](https://github.com/vorlocsev/dvinholm/actions/runs/39136947275) was still running at the time of this entry; verify before closing the check.
+- Next: continue software-only updater failure-path review. Physical J2534 adapter/vehicle testing remains deferred.
+
+---
+
 ## Updater runtime-failure cleanup and recovery preservation — 2026-10-18
 
 - Merged PR [#328](https://github.com/vorlocsev/dvinholm/pull/328) (`ac05588e26f4b9e255181d7a23cd6e76a04776c0`): runtime failures best-effort clean the staging directory unless rollback fails, always attempt helper-script cleanup, and append cleanup errors to the update log. If rollback fails, recovery staging and backup data are retained.
