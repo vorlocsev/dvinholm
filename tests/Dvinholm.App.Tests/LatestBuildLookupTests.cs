@@ -45,8 +45,8 @@ public sealed class LatestBuildLookupTests
                     {
                       "workflow_runs": [
                         { "event": "pull_request", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 90, "run_number": 90, "created_at": "2026-10-15T00:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "failure", "head_sha": "cccccccccccccccccccccccccccccccccccccccc", "id": 89, "run_number": 89, "created_at": "2026-10-14T00:00:00Z" },
-                        { "event": "workflow_dispatch", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 12345, "run_number": 123, "created_at": "2026-10-15T01:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "failure", "head_sha": "cccccccccccccccccccccccccccccccccccccccc", "id": 89, "run_number": 89, "created_at": "2026-10-14T00:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 12345, "run_number": 123, "created_at": "2026-10-15T01:00:00Z" }
                       ]
                     }
                     """);
@@ -81,6 +81,30 @@ public sealed class LatestBuildLookupTests
     }
 
     [Fact]
+    public async Task FeatureBranchAndManualRuns_AreSkippedWithoutReleaseLookups()
+    {
+        using var client = new HttpClient(new QueueHttpMessageHandler(request =>
+        {
+            if (request.RequestUri!.AbsolutePath.EndsWith("/runs", StringComparison.Ordinal))
+            {
+                return JsonResponse("""
+                    {
+                      "workflow_runs": [
+                        { "event": "push", "head_branch": "feature/example", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 100, "run_number": 100, "created_at": "2026-10-18T00:00:00Z" },
+                        { "event": "workflow_dispatch", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 99, "run_number": 99, "created_at": "2026-10-17T00:00:00Z" }
+                      ]
+                    }
+                    """);
+            }
+
+            throw new InvalidOperationException("No release lookup should be made for runs that cannot publish updater assets.");
+        }));
+
+        await Assert.ThrowsAsync<InvalidOperationException>(
+            () => LatestBuildUpdater.GetLatestSuccessfulBuildAsync(client));
+    }
+
+    [Fact]
     public async Task RunWithOutOfRangeRunNumber_IsSkippedAndOlderBuildIsUsed()
     {
         var requestedReleasePaths = new List<string>();
@@ -91,8 +115,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 100, "run_number": 2147483648, "created_at": "2026-10-15T02:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 99, "run_number": 39, "created_at": "2026-10-15T01:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 100, "run_number": 2147483648, "created_at": "2026-10-15T02:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 99, "run_number": 39, "created_at": "2026-10-15T01:00:00Z" }
                       ]
                     }
                     """);
@@ -143,8 +167,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "not-a-valid-sha", "id": 12, "run_number": 12, "created_at": "2026-10-15T00:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "failure", "head_sha": "dddddddddddddddddddddddddddddddddddddddd", "id": 11, "run_number": 11, "created_at": "2026-10-14T00:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "not-a-valid-sha", "id": 12, "run_number": 12, "created_at": "2026-10-15T00:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "failure", "head_sha": "dddddddddddddddddddddddddddddddddddddddd", "id": 11, "run_number": 11, "created_at": "2026-10-14T00:00:00Z" }
                       ]
                     }
                     """);
@@ -169,8 +193,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 30, "run_number": 30, "created_at": "2026-10-15T02:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 29, "run_number": 29, "created_at": "2026-10-15T01:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 30, "run_number": 30, "created_at": "2026-10-15T02:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 29, "run_number": 29, "created_at": "2026-10-15T01:00:00Z" }
                       ]
                     }
                     """);
@@ -211,8 +235,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 40, "run_number": 40, "created_at": "2026-10-15T02:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 39, "run_number": 39, "created_at": "2026-10-15T01:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 40, "run_number": 40, "created_at": "2026-10-15T02:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 39, "run_number": 39, "created_at": "2026-10-15T01:00:00Z" }
                       ]
                     }
                     """);
@@ -265,8 +289,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 50, "run_number": 50, "created_at": "2026-10-15T03:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 49, "run_number": 49, "created_at": "2026-10-15T02:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 50, "run_number": 50, "created_at": "2026-10-15T03:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 49, "run_number": 49, "created_at": "2026-10-15T02:00:00Z" }
                       ]
                     }
                     """);
@@ -322,8 +346,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 60, "run_number": 60, "created_at": "2026-10-15T04:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 59, "run_number": 59, "created_at": "2026-10-15T03:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 60, "run_number": 60, "created_at": "2026-10-15T04:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 59, "run_number": 59, "created_at": "2026-10-15T03:00:00Z" }
                       ]
                     }
                     """);
@@ -380,8 +404,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 61, "run_number": 61, "created_at": "2026-10-15T04:30:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 59, "run_number": 59, "created_at": "2026-10-15T03:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 61, "run_number": 61, "created_at": "2026-10-15T04:30:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 59, "run_number": 59, "created_at": "2026-10-15T03:00:00Z" }
                       ]
                     }
                     """);
@@ -434,8 +458,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 70, "run_number": 70, "created_at": "2026-10-15T05:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 69, "run_number": 69, "created_at": "2026-10-15T04:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 70, "run_number": 70, "created_at": "2026-10-15T05:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 69, "run_number": 69, "created_at": "2026-10-15T04:00:00Z" }
                       ]
                     }
                     """);
@@ -487,8 +511,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 80, "run_number": 80, "created_at": "2026-10-15T06:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 79, "run_number": 79, "created_at": "2026-10-15T05:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 80, "run_number": 80, "created_at": "2026-10-15T06:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 79, "run_number": 79, "created_at": "2026-10-15T05:00:00Z" }
                       ]
                     }
                     """);
@@ -540,8 +564,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 90, "run_number": 90, "created_at": "2026-10-15T07:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 89, "run_number": 89, "created_at": "2026-10-15T06:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 90, "run_number": 90, "created_at": "2026-10-15T07:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 89, "run_number": 89, "created_at": "2026-10-15T06:00:00Z" }
                       ]
                     }
                     """);
@@ -596,8 +620,8 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 90, "run_number": 90, "created_at": "2026-10-15T07:00:00Z" },
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 89, "run_number": 89, "created_at": "2026-10-15T06:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 90, "run_number": 90, "created_at": "2026-10-15T07:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 89, "run_number": 89, "created_at": "2026-10-15T06:00:00Z" }
                       ]
                     }
                     """);
@@ -653,7 +677,7 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 92, "run_number": 92, "created_at": "2026-10-15T09:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 92, "run_number": 92, "created_at": "2026-10-15T09:00:00Z" }
                       ]
                     }
                     """);
@@ -682,7 +706,7 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 91, "run_number": 91, "created_at": "2026-10-15T08:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 91, "run_number": 91, "created_at": "2026-10-15T08:00:00Z" }
                       ]
                     }
                     """);
@@ -737,7 +761,7 @@ public sealed class LatestBuildLookupTests
                 return JsonResponse("""
                     {
                       "workflow_runs": [
-                        { "event": "push", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 201, "run_number": 201, "created_at": "2026-10-16T00:00:00Z" }
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 201, "run_number": 201, "created_at": "2026-10-16T00:00:00Z" }
                       ]
                     }
                     """);
