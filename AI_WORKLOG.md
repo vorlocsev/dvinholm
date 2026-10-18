@@ -2695,3 +2695,15 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Extended the existing Windows runtime rollback test with a separate scenario where the updated executable exits during startup and the mocked backup-to-destination robocopy returns failure code 8.
 - The scenario asserts the rollback failure is logged, the backup executable and extracted staging remain available for recovery, the temporary helper script is removed, and the destination remains in the failed updated state rather than falsely claiming restoration.
 - Validation and merge are pending fresh CI. This is test-only; no production updater behavior or release changed. Physical adapter/vehicle checks remain deferred.
+
+
+## Manual ECU test-profile validation — 2026-10-18
+
+- [x] User confirmed the fresh CI build `ci-2715` contains the `Add test profiles` button.
+- [x] Added both synthetic test profiles; the app reported that two profiles were added.
+- [x] Verified Standard CAN profile values: request ID `7E0`, response ID `7E8`, 11-bit format, DID `F190`.
+- [x] Verified Extended CAN profile values: request ID `18DA10F1`, response ID `18DAF110`, 29-bit format, DID `1234`.
+- [x] Switching back to Standard CAN restored the saved values. After manually changing response ID to `7E9`, switching to Extended and back restored `7E8`.
+- [x] Both test profiles remained present after restarting the app.
+- [x] Clicking `Add test profiles` again reported the profiles already exist; no duplicates appeared.
+- No diagnostic request was sent. No physical J2534 adapter or vehicle was available or tested. Stable release remains v0.2.0; CI build `ci-2715` is a prerelease test build.
