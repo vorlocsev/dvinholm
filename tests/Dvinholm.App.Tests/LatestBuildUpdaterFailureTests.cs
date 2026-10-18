@@ -516,6 +516,9 @@ public sealed class LatestBuildUpdaterFailureTests
         Assert.Contains("The incomplete first-install destination was removed.", script);
         Assert.Contains("$backup $destination /MIR", script);
         Assert.Contains("The previous build was restored and will be restarted.", script);
+        Assert.Contains("Start-Process -FilePath $targetExe -WorkingDirectory $destination -PassThru", script);
+        Assert.Contains("The updated application exited during startup", script);
+        Assert.Contains("The restored application exited during startup", script);
         Assert.Contains("Rollback failed:", script);
     }
 
@@ -568,8 +571,9 @@ function Invoke-TestRobocopy {
     $global:LASTEXITCODE = 1
 }
 function Start-Process {
-    param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList)
+    param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList, [switch]$PassThru)
     Add-Content -LiteralPath $env:DVINHOLM_TEST_LAUNCH_LOG -Value $FilePath
+    return [pscustomobject]@{ HasExited = $false; ExitCode = 0 }
 }
 ";
             await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
@@ -624,6 +628,115 @@ function Start-Process {
             // Windows can briefly retain handles to files in a temporary test
             // tree after PowerShell exits. Retry transient I/O cleanup failures
             // for a bounded interval; a persistent lock must still fail the test.
+            for (var attempt = 0; Directory.Exists(root); attempt++)
+            {
+                try
+                {
+                    Directory.Delete(root, recursive: true);
+                }
+                catch (IOException) when (attempt < 49)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(200));
+                }
+            }
+        }
+    }
+
+
+    [Fact]
+    public async Task ReplacementScript_RollsBackWhenUpdatedApplicationExitsDuringStartup()
+    {
+        if (!OperatingSystem.IsWindows())
+            return;
+
+        var root = Path.Combine(Path.GetTempPath(), $"dvinholm-startup-exit-test-{Guid.NewGuid():N}");
+        var staging = Path.Combine(root, "staging");
+        var destination = Path.Combine(root, "installed");
+        var backup = Path.Combine(root, "backup");
+        var scriptPath = Path.Combine(root, "replace.ps1");
+        var localAppData = Path.Combine(root, "localappdata");
+        var launchLog = Path.Combine(root, "launch.log");
+        Directory.CreateDirectory(staging);
+        Directory.CreateDirectory(destination);
+        Directory.CreateDirectory(localAppData);
+        Directory.CreateDirectory(Path.Combine(localAppData, "Dvinholm"));
+        await File.WriteAllTextAsync(Path.Combine(staging, "Dvinholm.App.exe"), "new-build");
+        await File.WriteAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe"), "old-build");
+        await File.WriteAllTextAsync(Path.Combine(destination, "old.marker"), "old");
+
+        try
+        {
+            var generated = LatestBuildUpdater.BuildReplacementScript(staging, destination, -1, scriptPath, backup);
+            generated = generated.Replace(
+                "& (Join-Path $env:SystemRoot 'System32\\robocopy.exe')",
+                "Invoke-TestRobocopy",
+                StringComparison.Ordinal);
+
+            var mocks = @"
+function Wait-Process { param([int]$Id) }
+function Start-Sleep { param([int]$Seconds, [int]$Milliseconds) }
+function Invoke-TestRobocopy {
+    param([string]$From, [string]$To, [Parameter(ValueFromRemainingArguments=$true)][string[]]$Options)
+    if (Test-Path -LiteralPath $To) { Remove-Item -LiteralPath $To -Recurse -Force }
+    New-Item -ItemType Directory -Path $To -Force | Out-Null
+    Copy-Item -Path (Join-Path $From '*') -Destination $To -Recurse -Force
+    $global:LASTEXITCODE = 1
+}
+function Start-Process {
+    param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList, [switch]$PassThru)
+    Add-Content -LiteralPath $env:DVINHOLM_TEST_LAUNCH_LOG -Value $FilePath
+    if ($FilePath -ne 'notepad.exe' -and (Get-Content -LiteralPath $FilePath -Raw) -eq 'new-build') {
+        return [pscustomobject]@{ HasExited = $true; ExitCode = 17 }
+    }
+    return [pscustomobject]@{ HasExited = $false; ExitCode = 0 }
+}
+";
+            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
+
+            var powershell = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+            Assert.True(File.Exists(powershell), $"Windows PowerShell was not found at {powershell}");
+
+            var startInfo = new System.Diagnostics.ProcessStartInfo
+            {
+                FileName = powershell,
+                WorkingDirectory = root,
+                UseShellExecute = false,
+                CreateNoWindow = true,
+                RedirectStandardOutput = true,
+                RedirectStandardError = true
+            };
+            startInfo.ArgumentList.Add("-NoProfile");
+            startInfo.ArgumentList.Add("-ExecutionPolicy");
+            startInfo.ArgumentList.Add("Bypass");
+            startInfo.ArgumentList.Add("-File");
+            startInfo.ArgumentList.Add(scriptPath);
+            startInfo.Environment["LOCALAPPDATA"] = localAppData;
+            startInfo.Environment["DVINHOLM_TEST_LAUNCH_LOG"] = launchLog;
+
+            using (var process = System.Diagnostics.Process.Start(startInfo)
+                ?? throw new InvalidOperationException("Could not start isolated PowerShell startup-exit test."))
+            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
+            {
+                var stdoutTask = process.StandardOutput.ReadToEndAsync();
+                var stderrTask = process.StandardError.ReadToEndAsync();
+                await process.WaitForExitAsync(timeout.Token);
+                var stdout = await stdoutTask;
+                var stderr = await stderrTask;
+                Assert.True(process.ExitCode == 0, $"PowerShell exited with {process.ExitCode}. stdout: {stdout} stderr: {stderr}");
+            }
+
+            Assert.Equal("old-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
+            Assert.Equal("old", await File.ReadAllTextAsync(Path.Combine(destination, "old.marker")));
+            var updateLog = await File.ReadAllTextAsync(Path.Combine(localAppData, "Dvinholm", "update.log"));
+            Assert.Contains("The updated application exited during startup (exit code 17).", updateLog);
+            Assert.Contains("The previous build was restored and will be restarted.", updateLog);
+            var launches = await File.ReadAllTextAsync(launchLog);
+            Assert.Contains(Path.Combine(destination, "Dvinholm.App.exe"), launches);
+        }
+        finally
+        {
             for (var attempt = 0; Directory.Exists(root); attempt++)
             {
                 try
@@ -793,8 +906,9 @@ function Invoke-TestRobocopy {
     $global:LASTEXITCODE = 1
 }
 function Start-Process {
-    param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList)
+    param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList, [switch]$PassThru)
     Add-Content -LiteralPath $env:DVINHOLM_TEST_LAUNCH_LOG -Value $FilePath
+    return [pscustomobject]@{ HasExited = $false; ExitCode = 0 }
 }
 ";
             await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
