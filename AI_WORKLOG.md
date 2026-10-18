@@ -1,3 +1,14 @@
+## Partial rollback-backup cleanup — 2026-10-18
+
+- Merged PR [#323](https://github.com/vorlocsev/dvinholm/pull/323) as `38d2133e69f646a49c99717cb80f1acb894bc3a9`.
+- Fixed cleanup when copying the installed build to a new rollback backup fails before replacement begins. The helper removes the unusable partial backup while leaving the original installation untouched, and logs a cleanup failure rather than masking the original error.
+- Added a Windows PowerShell runtime regression test: simulate backup robocopy failure, assert old executable and marker remain intact, backup directory is removed, and no application launch occurs.
+- CI passed on PR head [#39125629739](https://github.com/vorlocsev/dvinholm/actions/runs/39125629739), push [#39125615157](https://github.com/vorlocsev/dvinholm/actions/runs/39125615157), and post-merge main [#39125940869](https://github.com/vorlocsev/dvinholm/actions/runs/39125940869). Build/tests and stable-release audit passed; main also completed publish.
+- Documentation PR [#322](https://github.com/vorlocsev/dvinholm/pull/322) records PR #321's rollback-backup retention test; post-merge main CI [#39125736986](https://github.com/vorlocsev/dvinholm/actions/runs/39125736986) passed.
+- Next: continue software-only updater failure-path review. No stable release or physical adapter/vehicle validation was performed.
+
+---
+
 ## Rollback backup retention test — 2026-10-18
 
 - Merged PR [#321](https://github.com/vorlocsev/dvinholm/pull/321) as `2f3446d5362cac3d122873007b88dfd9f3cbde9b`; PR CI [#39124778330](https://github.com/vorlocsev/dvinholm/actions/runs/39124778330) passed build/tests and stable-release audit.

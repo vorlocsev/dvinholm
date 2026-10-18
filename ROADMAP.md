@@ -1,3 +1,14 @@
+## Cleanup after rollback-backup creation fails — 2026-10-18
+
+- [x] PR [#323](https://github.com/vorlocsev/dvinholm/pull/323) merged as `38d2133e69f646a49c99717cb80f1acb894bc3a9`.
+- [x] Fixed a failure path where copying the installed build into its rollback backup could fail after creating a partial backup directory. Since replacement has not started and the installed build is untouched, the helper now removes the incomplete backup; if cleanup fails, it appends that diagnostic to the update log.
+- [x] Added a Windows PowerShell runtime regression test simulating backup-copy failure, asserting the original executable/marker remain unchanged, the partial backup is removed, and the app is not launched.
+- [x] PR-head CI passed in [run #39125629739](https://github.com/vorlocsev/dvinholm/actions/runs/39125629739); the push run [#39125615157](https://github.com/vorlocsev/dvinholm/actions/runs/39125615157) also passed build/tests and the stable-release audit. Post-merge main CI [#39125940869](https://github.com/vorlocsev/dvinholm/actions/runs/39125940869) passed build/tests, publish, and stable-release audit.
+- [x] PR [#322](https://github.com/vorlocsev/dvinholm/pull/322) documented PR #321's rollback-backup retention test; its post-merge main CI [#39125736986](https://github.com/vorlocsev/dvinholm/actions/runs/39125736986) passed.
+- [ ] Continue software-only updater failure-path review. Stable release `0.2.0` remains unchanged; physical J2534 adapter/vehicle testing remains deferred.
+
+---
+
 ## Rollback backup retention when restored startup fails — 2026-10-18
 
 - [x] PR [#321](https://github.com/vorlocsev/dvinholm/pull/321) merged as `2f3446d5362cac3d122873007b88dfd9f3cbde9b`; PR CI [#39124778330](https://github.com/vorlocsev/dvinholm/actions/runs/39124778330) passed build/tests and stable-release audit.
