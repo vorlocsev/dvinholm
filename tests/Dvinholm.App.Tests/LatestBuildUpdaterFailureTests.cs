@@ -635,7 +635,7 @@ function Remove-Item {
     if ($LiteralPath -eq $env:DVINHOLM_TEST_DESTINATION) {
         throw 'Simulated access denied while removing partial destination.'
     }
-    Microsoft.PowerShell.Management\\Remove-Item -LiteralPath $LiteralPath -Recurse:$Recurse -Force:$Force -ErrorAction $ErrorAction
+    Microsoft.PowerShell.Management\Remove-Item -LiteralPath $LiteralPath -Recurse:$Recurse -Force:$Force -ErrorAction $ErrorAction
 }
 function Start-Process {
     param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList)
