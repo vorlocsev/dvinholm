@@ -2480,3 +2480,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Review found that a failed first-time replacement could leave a partial destination directory because rollback only ran when an existing build was available.
 - Added a separate cleanup path that removes an incomplete first-install destination and records this in the updater log; existing-install rollback remains unchanged.
 - Added regression assertions for the generated replacement script. Validation is pending CI on the current main base; no release or physical adapter/vehicle test is included.
+
+
+## Current-main updater verification — 2026-10-18
+
+- Merged [PR #289](https://github.com/vorlocsev/dvinholm/pull/289) to replace the hard-coded v0.1.1 release archive audit with a dynamic latest-stable-release audit. Main CI run [#39109327293](https://github.com/vorlocsev/dvinholm/actions/runs/39109327293) passed after that merge, including build and release audit.
+- Merged [PR #290](https://github.com/vorlocsev/dvinholm/pull/290) at `2ccb296e8e745201188371a55d9967994f73a467`. Its PR CI run [#39109404796](https://github.com/vorlocsev/dvinholm/actions/runs/39109404796) passed build/tests and release audit.
+- Post-merge main CI is running and must be checked before calling the merge pipeline fully green.
+- Updater fix: if a first-time installation fails after replacement starts and there was no previous destination, remove the incomplete destination and record the cleanup in the failure log. Existing-install rollback behavior is preserved. Regression assertions verify the generated PowerShell branch/message.
+- Manual evidence still limited to the user's v0.2.0 update and no-adapter retry checks. No physical J2534 adapter or vehicle validation has been performed.
