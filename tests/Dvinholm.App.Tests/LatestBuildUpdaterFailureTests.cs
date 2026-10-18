@@ -208,20 +208,27 @@ public sealed class LatestBuildUpdaterFailureTests
     }
 
     [Fact]
-    public async Task UnsafeArchivePath_ThrowsAndCleansStagingDirectory()
+    public async Task UnsafeArchivePath_ThrowsAndCleansTemporaryArchiveAndStagingDirectoryWithoutEscapingRoot()
     {
-        var bytes = CreateZip(("../escape.txt", "unsafe"), ("Dvinholm.App.exe", "fake executable"));
+        var escapedFile = Path.Combine(GetStagingRoot(), $"escape-{Guid.NewGuid():N}.txt");
+        var escapedEntry = $"../{Path.GetFileName(escapedFile)}";
+        var bytes = CreateZip((escapedEntry, "unsafe"), ("Dvinholm.App.exe", "fake executable"));
         using var client = CreateClient(_ => new HttpResponseMessage(HttpStatusCode.OK)
         {
             Content = new ByteArrayContent(bytes)
         });
         var build = BuildInfo(bytes);
         var stagingRoot = GetStagingRoot();
+        var tempPattern = $"dvinholm-{build.CommitSha}-*.zip";
+
+        Assert.False(File.Exists(escapedFile));
 
         await Assert.ThrowsAsync<InvalidDataException>(
             () => LatestBuildUpdater.DownloadAndPrepareAsync(build, client));
 
+        Assert.False(File.Exists(escapedFile));
         AssertNoStagingDirectory(stagingRoot, build.CommitSha);
+        Assert.Empty(Directory.EnumerateFiles(Path.GetTempPath(), tempPattern));
     }
 
     [Fact]
