@@ -2,9 +2,9 @@
 
 - Merged PR [#336](https://github.com/vorlocsev/dvinholm/pull/336) as `7fb38e25936ca718b4701f4ec0f8141940048b22`. Added a Windows PowerShell runtime regression for robocopy exit code 8 during rollback; it verifies the failure is logged, backup/staging recovery files are retained, and the temporary helper script is removed. Main CI [#39140253444](https://github.com/vorlocsev/dvinholm/actions/runs/39140253444) passed.
 - Merged PR [#337](https://github.com/vorlocsev/dvinholm/pull/337) as `369c3d38c20d86bec827914a42b38a5b67771dc5`. Added a regression for a rollback copy that reports success but does not restore `Dvinholm.App.exe`; the helper logs the failure, preserves recovery artifacts, and removes its temporary script. PR CI [#39140363953](https://github.com/vorlocsev/dvinholm/actions/runs/39140363953) passed.
-- Post-merge main CI [#39140786191](https://github.com/vorlocsev/dvinholm/actions/runs/39140786191) passed. The following main CI after docs PR #338, [#39141242021](https://github.com/vorlocsev/dvinholm/actions/runs/39141242021), also passed build/tests and the latest-stable-release audit.
-- Stable release remains `0.2.0`. No physical J2534 adapter or vehicle was used.
-- Next: verify post-merge CI, then finish the bounded software-only updater audit and run the final app/artifact checks without duplicating covered cases.
+- Post-merge main CI [#39140786191](https://github.com/vorlocsev/dvinholm/actions/runs/39140786191), [#39141242021](https://github.com/vorlocsev/dvinholm/actions/runs/39141242021), and [#39142078521](https://github.com/vorlocsev/dvinholm/actions/runs/39142078521) passed build/tests and the latest-stable-release audit.
+- Main CI #39142078521 produced `Dvinholm-Windows-x86` (66,770,176 bytes; SHA-256 `0c2a02c876fd8ef1fbf8d1d787defa642224457caf329a2cb36705e9b6491a09`). The stable release remains `0.2.0`; this CI artifact is not a new stable release.
+- No physical J2534 adapter or vehicle was used. Remaining validation: bounded software-only updater review and Windows UI smoke checks using the current CI artifact.
 
 ---
 

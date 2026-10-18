@@ -2,9 +2,10 @@
 
 - [x] PR [#336](https://github.com/vorlocsev/dvinholm/pull/336) merged as `7fb38e25936ca718b4701f4ec0f8141940048b22`; regression covers robocopy exit code 8, verifies rollback failure is logged, recovery artifacts are preserved, and the temporary helper script is removed. Main CI [#39140253444](https://github.com/vorlocsev/dvinholm/actions/runs/39140253444) passed.
 - [x] PR [#337](https://github.com/vorlocsev/dvinholm/pull/337) merged as `369c3d38c20d86bec827914a42b38a5b67771dc5`; regression covers robocopy reporting success while the restored `Dvinholm.App.exe` is missing. PR CI [#39140363953](https://github.com/vorlocsev/dvinholm/actions/runs/39140363953) passed.
-- [x] Post-merge main CI [#39140786191](https://github.com/vorlocsev/dvinholm/actions/runs/39140786191) passed. Latest main CI after docs PR #338, [#39141242021](https://github.com/vorlocsev/dvinholm/actions/runs/39141242021), also passed build/tests and the latest-stable-release audit.
+- [x] Post-merge main CI [#39140786191](https://github.com/vorlocsev/dvinholm/actions/runs/39140786191), [#39141242021](https://github.com/vorlocsev/dvinholm/actions/runs/39141242021), and [#39142078521](https://github.com/vorlocsev/dvinholm/actions/runs/39142078521) passed build/tests and the latest-stable-release audit.
+- [x] Main CI #39142078521 published the Windows x86 workflow artifact `Dvinholm-Windows-x86` (66,770,176 bytes; SHA-256 `0c2a02c876fd8ef1fbf8d1d787defa642224457caf329a2cb36705e9b6491a09`).
 - [x] Stable release remains `0.2.0`; no release change and no physical J2534 adapter/vehicle testing.
-- [ ] Next: finish bounded software-only updater audit, then final Windows app smoke scenarios and artifact/docs check. Avoid duplicate tests; defer physical hardware checks.
+- [ ] Next: finish the bounded software-only updater audit and validate the current CI artifact with the remaining Windows UI smoke scenarios. Hardware testing remains deferred.
 
 ---
 
