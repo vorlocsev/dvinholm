@@ -1011,3 +1011,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Closed PR [#285](https://github.com/vorlocsev/dvinholm/pull/285) as superseded by deterministic expanded-size tests in merged PR #286.
 - [ ] PR #287 CI is running. Merge only after the current head's full build/test/publish pipeline and published v0.1.1 archive audit pass.
 - Physical J2534 adapter and vehicle validation remain deferred; no hardware compatibility is claimed. Stable release publication remains gated on release readiness review.
+
+
+## Updater first-install failure cleanup — 2026-10-18
+
+- [x] Source review found that a failed first-time replacement could leave a partial destination directory: rollback previously required an existing build and a valid backup.
+- [x] Added a separate first-install failure path that removes the incomplete destination and records the cleanup in the updater log; existing-build rollback remains unchanged.
+- [x] Added a regression assertion for the generated PowerShell script's cleanup branch.
+- [ ] Await PR CI before marking this change verified or merging it.
+- No stable release or physical J2534/vehicle test is included in this checkpoint.
