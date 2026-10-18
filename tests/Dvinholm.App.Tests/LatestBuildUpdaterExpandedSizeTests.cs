@@ -23,4 +23,11 @@ public sealed class LatestBuildUpdaterExpandedSizeTests
         Assert.Throws<InvalidDataException>(() =>
             LatestBuildUpdater.ValidateExpandedSize([10, -1]));
     }
+
+    [Fact]
+    public void AggregateOverflow_IsRejectedAsInvalidDataException()
+    {
+        Assert.Throws<InvalidDataException>(() =>
+            LatestBuildUpdater.ValidateExpandedSize([1, long.MaxValue]));
+    }
 }
