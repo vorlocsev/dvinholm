@@ -1,3 +1,11 @@
+## Updater cleanup error handling — 2026-10-18
+
+- PR [#299](https://github.com/vorlocsev/dvinholm/pull/299) merged as `a0f7162e2c984acb90970778795b004336aafd9e`. Both the PR workflow run #39115542015 and push run #39115532165 passed build/tests and stable-release audit.
+- `LatestBuildUpdater.DownloadAndPrepareAsync` now routes temporary archive/staging cleanup through `TryCleanup(Action)`, which swallows `IOException` and `UnauthorizedAccessException` so cleanup does not hide the original download/validation/extraction failure. Added tests for both exception types.
+- Post-merge `main` CI run #39115926016 was still in progress when this entry was prepared. Confirm its final status before marking main green. No release published; hardware validation remains deferred.
+
+---
+
 ## Updater helper-start cleanup merged — 2026-10-18
 
 - PR [#297](https://github.com/vorlocsev/dvinholm/pull/297) was squash-merged as `c8466f49e53ebb2332e9f40733f159af41729e7b` after [PR CI #39114708239](https://github.com/vorlocsev/dvinholm/actions/runs/39114708239) passed both build/tests and stable-release audit.
