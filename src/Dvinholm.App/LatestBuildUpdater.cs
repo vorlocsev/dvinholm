@@ -391,33 +391,34 @@ internal static class LatestBuildUpdater
 
     public static Process StartReplacement(string stagingDirectory, string destinationDirectory, int processId)
     {
-        var localRoot = Path.Combine(
-            Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-            "Dvinholm");
-        var destination = Path.GetFullPath(destinationDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
-        Directory.CreateDirectory(localRoot);
-
-        var scriptPath = Path.Combine(Path.GetTempPath(), $"dvinholm-update-{Guid.NewGuid():N}.ps1");
-        var backupDirectory = Path.Combine(localRoot, "UpdateBackups", Guid.NewGuid().ToString("N"));
-        var script = BuildReplacementScript(stagingDirectory, destination, processId, scriptPath, backupDirectory);
-
-        var startInfo = new ProcessStartInfo
-        {
-            FileName = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe"),
-            WorkingDirectory = Path.GetTempPath(),
-            UseShellExecute = false,
-            CreateNoWindow = true
-        };
-        startInfo.ArgumentList.Add("-NoProfile");
-        startInfo.ArgumentList.Add("-ExecutionPolicy");
-        startInfo.ArgumentList.Add("Bypass");
-        startInfo.ArgumentList.Add("-WindowStyle");
-        startInfo.ArgumentList.Add("Hidden");
-        startInfo.ArgumentList.Add("-File");
-        startInfo.ArgumentList.Add(scriptPath);
-
+        string? scriptPath = null;
         try
         {
+            var localRoot = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+                "Dvinholm");
+            var destination = Path.GetFullPath(destinationDirectory).TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+            Directory.CreateDirectory(localRoot);
+
+            scriptPath = Path.Combine(Path.GetTempPath(), $"dvinholm-update-{Guid.NewGuid():N}.ps1");
+            var backupDirectory = Path.Combine(localRoot, "UpdateBackups", Guid.NewGuid().ToString("N"));
+            var script = BuildReplacementScript(stagingDirectory, destination, processId, scriptPath, backupDirectory);
+
+            var startInfo = new ProcessStartInfo
+            {
+                FileName = Path.Combine(Environment.SystemDirectory, "WindowsPowerShell", "v1.0", "powershell.exe"),
+                WorkingDirectory = Path.GetTempPath(),
+                UseShellExecute = false,
+                CreateNoWindow = true
+            };
+            startInfo.ArgumentList.Add("-NoProfile");
+            startInfo.ArgumentList.Add("-ExecutionPolicy");
+            startInfo.ArgumentList.Add("Bypass");
+            startInfo.ArgumentList.Add("-WindowStyle");
+            startInfo.ArgumentList.Add("Hidden");
+            startInfo.ArgumentList.Add("-File");
+            startInfo.ArgumentList.Add(scriptPath);
+
             File.WriteAllText(scriptPath, script, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             return Process.Start(startInfo) ?? throw new InvalidOperationException("Windows could not start the update helper.");
         }
@@ -428,10 +429,13 @@ internal static class LatestBuildUpdater
         }
     }
 
-    internal static void CleanupFailedStart(string scriptPath, string stagingDirectory)
+    internal static void CleanupFailedStart(string? scriptPath, string stagingDirectory)
     {
-        try { File.Delete(scriptPath); } catch (IOException) { }
-        catch (UnauthorizedAccessException) { }
+        if (!string.IsNullOrEmpty(scriptPath))
+        {
+            try { File.Delete(scriptPath); } catch (IOException) { }
+            catch (UnauthorizedAccessException) { }
+        }
 
         try
         {
