@@ -46,6 +46,8 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        LoadSavedBaudRate();
+        BaudRate.SelectionChanged += BaudRate_SelectionChanged;
         DllPath.Text = LoadSavedDllPath();
         DllPath.TextChanged += DllPath_TextChanged;
         Title = LatestBuildUpdater.CurrentWindowTitle;
@@ -383,6 +385,59 @@ public sealed partial class MainWindow : Window
         SetStatus($"Applied profile '{profile.Name}'. No diagnostic request was sent.");
     }
 
+
+    private static string CanBaudRateSettingsFile => Path.Combine(
+        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
+        "Dvinholm",
+        "can-baud-rate.txt");
+
+    private void LoadSavedBaudRate()
+    {
+        uint baudRate;
+        try
+        {
+            baudRate = new CanBaudRateStore(CanBaudRateSettingsFile).Load();
+        }
+        catch (IOException)
+        {
+            baudRate = CanBaudRateStore.DefaultBaudRate;
+        }
+        catch (UnauthorizedAccessException)
+        {
+            baudRate = CanBaudRateStore.DefaultBaudRate;
+        }
+
+        foreach (var item in BaudRate.Items.OfType<ComboBoxItem>())
+        {
+            if (uint.TryParse(item.Tag?.ToString(), out var itemBaudRate) && itemBaudRate == baudRate)
+            {
+                BaudRate.SelectedItem = item;
+                return;
+            }
+        }
+
+        BaudRate.SelectedIndex = 0;
+    }
+
+    private void BaudRate_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (BaudRate.SelectedItem is not ComboBoxItem item ||
+            !uint.TryParse(item.Tag?.ToString(), out var baudRate))
+            return;
+
+        try
+        {
+            new CanBaudRateStore(CanBaudRateSettingsFile).Save(baudRate);
+        }
+        catch (IOException)
+        {
+            // Keep the UI responsive; Connect will still validate the selected rate.
+        }
+        catch (UnauthorizedAccessException)
+        {
+            // Settings are a convenience, not a prerequisite for connecting.
+        }
+    }
 
     private static string DllPathSettingsFile => Path.Combine(
         Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
