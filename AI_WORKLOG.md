@@ -1,6 +1,6 @@
 ## Updater startup health check — 2026-10-18
 
-- PR [#318](https://github.com/vorlocsev/dvinholm/pull/318) merged; PR CI [#39123184595](https://github.com/vorlocsev/dvinholm/actions/runs/39123184595) passed build/tests and stable-release audit. Post-merge main CI [#39124043911](https://github.com/vorlocsev/dvinholm/actions/runs/39124043911) is pending at this checkpoint.
+- PR [#318](https://github.com/vorlocsev/dvinholm/pull/318) merged as `00d49cb75fdefe2f3ee90811c1fbf5cbdd619ce4`; both PR CI [#39123184595](https://github.com/vorlocsev/dvinholm/actions/runs/39123184595) and post-merge main CI [#39124043911](https://github.com/vorlocsev/dvinholm/actions/runs/39124043911) passed build/tests and stable-release audit.
 - Added a five-second post-launch check in the PowerShell replacement helper. If the new process has already exited, update completion is treated as failure so the existing backup/rollback path is used rather than deleting the backup after a failed startup.
 - The restored process is checked as well; if it exits during the startup window, the helper records rollback failure and retains the backup.
 - Added a Windows-only PowerShell runtime test with a mock process that exits immediately; it asserts the old build is restored and relaunched.
