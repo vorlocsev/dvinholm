@@ -1,3 +1,11 @@
+## Updater launch-failure rollback regression — 2026-10-19
+
+- Opened [PR #357](https://github.com/vorlocsev/dvinholm/pull/357) to cover `Start-Process` throwing before the updated build launches, a distinct failure from an app that launches and exits immediately.
+- Extended the existing Windows PowerShell rollback theory using an isolated simulated launch exception. The test checks restoration of the previous executable and marker, relaunch of that build, and preservation of the original error in `update.log`.
+- CI and merge pending at time of writing; do not count this test as verified until successful Windows CI. No production implementation changes; stable release `v0.2.0` remains unchanged. Physical-adapter/vehicle testing deferred.
+
+---
+
 ## ECU profile validation and CI closure — 2026-10-18
 
 - Confirmed post-merge main CI [#39162799935](https://github.com/vorlocsev/dvinholm/actions/runs/39162799935) completed successfully on `5d592d5ee1f3715d68dd670eda7e555822a31375`: build, tests, publish/package, and latest stable-release audit all passed.
