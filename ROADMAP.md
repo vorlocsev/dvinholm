@@ -1,3 +1,11 @@
+## Post-merge verification — first-install cleanup diagnostics — 2026-10-18
+
+- [x] Main CI [run #39118506041](https://github.com/vorlocsev/dvinholm/actions/runs/39118506041) completed successfully on merge commit `369da5ead23b3299b7f4f53a1a4ead3c2c9c3e8a`; build/tests and latest-stable-release audit passed.
+- [x] Documentation PR [#305](https://github.com/vorlocsev/dvinholm/pull/305) merged after its current-head CI [run #39118570583](https://github.com/vorlocsev/dvinholm/actions/runs/39118570583) passed.
+- [ ] Continue software-only updater review. No new stable release and no physical J2534 adapter/vehicle validation.
+
+---
+
 ## First-install cleanup reporting hardened — 2026-10-18
 
 - [x] PR [#304](https://github.com/vorlocsev/dvinholm/pull/304) merged as `369da5ead23b3299b7f4f53a1a4ead3c2c9c3e8a`.
