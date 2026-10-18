@@ -2703,7 +2703,10 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - [x] Added both synthetic test profiles; the app reported that two profiles were added.
 - [x] Verified Standard CAN profile values: request ID `7E0`, response ID `7E8`, 11-bit format, DID `F190`.
 - [x] Verified Extended CAN profile values: request ID `18DA10F1`, response ID `18DAF110`, 29-bit format, DID `1234`.
-- [x] Switching back to Standard CAN restored the saved values. After manually changing response ID to `7E9`, switching to Extended and back restored `7E8`.
-- [x] Both test profiles remained present after restarting the app.
+- [x] Switching back to Standard CAN restored saved values. After manually changing response ID to `7E9`, switching to Extended and back restored `7E8`.
+- [x] Both profiles remained present after multiple app restarts, and their respective parameters restored correctly after the final restart.
 - [x] Clicking `Add test profiles` again reported the profiles already exist; no duplicates appeared.
+- [x] Exported the profiles to JSON and imported the file successfully; both profiles remained available after import.
+- [x] Imported intentionally invalid JSON; the app reported `profile import failed` and retained the existing profile catalog and values.
+- [x] User confirmed profile metadata/status and synthetic-profile description were displayed as expected.
 - No diagnostic request was sent. No physical J2534 adapter or vehicle was available or tested. Stable release remains v0.2.0; CI build `ci-2715` is a prerelease test build.
