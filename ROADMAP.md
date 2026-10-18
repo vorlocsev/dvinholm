@@ -1,3 +1,42 @@
+## Updater expanded-size guard — arithmetic overflow edge case (2026-10-18)
+
+- [x] Strengthened the production guard to compare each entry length against the remaining 1,048,576,000-byte budget before adding it, preventing aggregate arithmetic overflow from escaping as `OverflowException`.
+- [x] Added a regression test for `[1, long.MaxValue]`, expecting the consistent `InvalidDataException` rejection path.
+- [x] CI passed on head `8b960c192ffc3b356429232814cc5408d5afa08d`: build/tests, publish, artifact upload, and v0.1.1 release ZIP audit succeeded ([run #39103682783](https://github.com/vorlocsev/dvinholm/actions/runs/39103682783)).
+- [ ] Continue software-only updater review; PR [#286](https://github.com/vorlocsev/dvinholm/pull/286) remains open pending explicit approval.
+- PR remains open pending explicit approval. No release publication or physical J2534 adapter/vehicle testing.
+
+---
+
+## Updater expanded-archive size-limit test — fixture approach revised (2026-10-18)
+
+- [x] CI repeatedly showed that editing ZIP size metadata in the synthetic archive did not trigger the expected exception (483 other tests passed). The test fixture was unreliable; no conclusion about a production defect follows from that failure.
+- [x] Confirmed the production limit is `1_000L * 1024 * 1024` = 1,048,576,000 bytes (1,000 MiB). Isolated the existing aggregate expanded-size guard in `LatestBuildUpdater.ValidateExpandedSize`, called by the production extraction path.
+- [x] Replaced ZIP-metadata manipulation with direct boundary tests: aggregate above 1,048,576,000 bytes rejected, exactly 1,048,576,000 bytes accepted, and negative entry size rejected.
+- [x] CI passed on head `aa2a816e214e9f34ca5387595962fd8b4c1ed055`: all 486 tests passed and the published v0.1.1 archive audit succeeded ([run #39102771531](https://github.com/vorlocsev/dvinholm/actions/runs/39102771531)).
+- [x] Confirmed the new size-guard tests are now aligned with the production cap and pass in CI.
+- [ ] Continue software-only updater review. PR #286 remains open; do not merge or publish a release without explicit approval. No physical adapter/vehicle testing.
+
+---
+
+## Updater expanded-archive size-limit regression test — CI failure investigated (2026-10-18)
+
+- [x] PR #285 CI exposed a real test-fixture flaw: changing only the ZIP central-directory size did not make the .NET ZIP reader report the oversized entry; 483 tests passed and this new test failed because no exception was thrown.
+- [x] Created follow-up branch `fix/updater-expanded-size-test` from PR #285 and updated the fixture to set the uncompressed-size field consistently in both the local file header (offset 22) and central-directory header (offset 24), without creating a huge payload.
+- [ ] Run CI on the follow-up branch and confirm the oversized entry is rejected before extraction and both staging/temporary ZIP files are cleaned up.
+- [ ] Do not mark this regression test verified until CI passes. No production-code changes, release publication, or physical adapter/vehicle testing.
+
+---
+
+## Updater expanded-archive size-limit regression test — 2026-10-18
+
+- [x] Added a focused regression test that alters a small ZIP's central-directory metadata to declare an entry larger than the 1,000,000,000-byte extraction limit, without allocating a huge test payload.
+- [x] The test expects rejection before extraction and verifies staging-directory and temporary-archive cleanup.
+- [ ] Await CI on PR #285 before marking the test verified.
+- [ ] Continue software-only updater review. No production-code changes, release publication, or physical adapter/vehicle testing.
+
+---
+
 ## Manual Windows verification — disconnected startup state (2026-10-18)
 
 - [x] After relaunch, user confirmed the saved test DLL path remains visible and the app reports **not connected**.

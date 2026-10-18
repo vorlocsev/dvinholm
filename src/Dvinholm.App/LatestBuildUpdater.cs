@@ -309,15 +309,11 @@ internal static class LatestBuildUpdater
             Directory.CreateDirectory(staging);
             using (var archive = ZipFile.OpenRead(archivePath))
             {
-                long expandedBytes = 0;
+                ValidateExpandedSize(archive.Entries.Select(entry => entry.Length));
                 var fullRoot = Path.GetFullPath(staging) + Path.DirectorySeparatorChar;
                 foreach (var entry in archive.Entries)
                 {
                     cancellationToken.ThrowIfCancellationRequested();
-                    expandedBytes = checked(expandedBytes + entry.Length);
-                    if (expandedBytes > MaximumExpandedBytes)
-                        throw new InvalidDataException("The extracted artifact exceeds the configured size limit.");
-
                     var target = Path.GetFullPath(Path.Combine(staging, entry.FullName));
                     if (!target.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
                         throw new InvalidDataException("The artifact contains an unsafe archive path.");
@@ -339,6 +335,23 @@ internal static class LatestBuildUpdater
                 try { if (Directory.Exists(staging)) Directory.Delete(staging, recursive: true); } catch (IOException) { }
             }
             try { if (File.Exists(archivePath)) File.Delete(archivePath); } catch (IOException) { }
+        }
+    }
+
+    internal static void ValidateExpandedSize(IEnumerable<long> entryLengths)
+    {
+        long expandedBytes = 0;
+        foreach (var entryLength in entryLengths)
+        {
+            if (entryLength < 0)
+                throw new InvalidDataException("The artifact contains an invalid entry size.");
+
+            // Compare against the remaining budget before adding, so hostile ZIP64
+            // lengths cannot overflow the aggregate counter.
+            if (entryLength > MaximumExpandedBytes - expandedBytes)
+                throw new InvalidDataException("The extracted artifact exceeds the configured size limit.");
+
+            expandedBytes += entryLength;
         }
     }
 

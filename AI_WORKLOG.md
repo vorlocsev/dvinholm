@@ -1,3 +1,42 @@
+## Follow-up — expanded-size arithmetic overflow guard (2026-10-18)
+
+- Added a defensive check that compares each ZIP entry length against the remaining expanded-size budget before adding it. This avoids relying on checked arithmetic when processing hostile ZIP64 metadata.
+- Added a regression test using entry lengths `[1, long.MaxValue]`; it must reject the archive with `InvalidDataException`, consistent with other over-limit input.
+- CI passed on head `8b960c192ffc3b356429232814cc5408d5afa08d`: build, test, publish, and artifact upload succeeded; the v0.1.1 archive audit also passed ([run #39103682783](https://github.com/vorlocsev/dvinholm/actions/runs/39103682783)). This validates the overflow guard and tests in CI, not real updater replacement on a user's machine.
+- PR #286 remains open pending explicit approval. No release, merge, adapter, or vehicle testing was performed.
+
+---
+
+## Follow-up — expanded-size guard tests made deterministic (2026-10-18)
+
+- CI runs #39102009534 and #39102018577 both failed the synthetic ZIP test even after modifying both local and central-directory size fields: the expected `InvalidDataException` was not thrown; 483 other tests passed.
+- Dropped the brittle ZIP metadata fixture. Extracted the existing aggregate size calculation into `LatestBuildUpdater.ValidateExpandedSize(IEnumerable<long>)`; the extraction path calls this helper before extracting files, preserving the 1,048,576,000-byte cap (1,000 MiB).
+- Replaced the test with direct boundary cases: total above the limit rejected, exactly at the limit accepted, and negative declared size rejected. This validates the production guard without creating a huge file or depending on malformed ZIP-reader behavior.
+- This is a small production refactor plus tests. CI passed on head `aa2a816e214e9f34ca5387595962fd8b4c1ed055`: all 486 tests passed and the published v0.1.1 archive audit succeeded ([run #39102771531](https://github.com/vorlocsev/dvinholm/actions/runs/39102771531)).
+- Continue software-only checks. PR #286 remains open; do not merge any PR or publish a release without explicit approval. No physical J2534 adapter/vehicle testing.
+
+---
+
+## Follow-up — expanded ZIP size test fixture correction (2026-10-18)
+
+- PR #285 CI run [#39101692614](https://github.com/vorlocsev/dvinholm/actions/runs/39101692614) failed at the new test: build succeeded, 483 tests passed, and `ExpandedArchiveOverLimit_IsRejectedBeforeExtractionAndCleansTemporaryFiles` failed because no exception was thrown.
+- Root cause in the test fixture: only the central-directory uncompressed-size field was modified. The ZIP reader did not surface the intended expanded length from that inconsistent fixture.
+- Created branch `fix/updater-expanded-size-test` and updated the fixture to modify both the local file header and central-directory uncompressed-size fields, keeping metadata consistent while the actual payload remains tiny.
+- Production updater code was not changed. The fix is unverified until CI runs on the follow-up branch.
+- Next: open a follow-up PR, inspect CI, then continue the software-only updater review. Do not merge any PR or publish a release without explicit approval. No physical J2534 adapter/vehicle testing.
+
+---
+
+## Follow-up — updater expanded archive size limit test (2026-10-18)
+
+- Added `LatestBuildUpdaterExpandedSizeTests.cs` on branch `test/updater-expanded-size-limit`.
+- The test constructs a small ZIP and modifies the central-directory uncompressed-size metadata to exceed the updater's 1,000,000,000-byte expanded-size limit. This exercises the pre-extraction guard without allocating a large file.
+- Expected behavior: `InvalidDataException`; temporary staging directory and downloaded ZIP are cleaned up.
+- Test-only change. CI pending; do not claim verified until CI completes.
+- Next: inspect CI results, then continue the software-only release gate review. Do not publish a release or perform physical J2534/vehicle testing.
+
+---
+
 ## Manual Windows verification — disconnected startup state (2026-10-18)
 
 - [x] After relaunch, user confirmed the saved test DLL path remains visible and the app reports **not connected**.
