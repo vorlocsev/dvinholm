@@ -2,7 +2,7 @@
 
 - Merged PR [#321](https://github.com/vorlocsev/dvinholm/pull/321) as `2f3446d5362cac3d122873007b88dfd9f3cbde9b`; PR CI [#39124778330](https://github.com/vorlocsev/dvinholm/actions/runs/39124778330) passed build/tests and stable-release audit.
 - Converted the Windows PowerShell startup-failure regression into two cases. When the old app survives its startup window, rollback backup cleanup is expected; when the restored app also exits, the log must say rollback failed and the backup executable must remain for recovery.
-- Post-merge main CI [#39125088281](https://github.com/vorlocsev/dvinholm/actions/runs/39125088281) is pending at this checkpoint.
+- Post-merge main CI [#39125088281](https://github.com/vorlocsev/dvinholm/actions/runs/39125088281) passed build/tests, publish, and stable-release audit.
 - No runtime behavior changed in #321. No stable release or physical J2534 adapter/vehicle test is included.
 
 ---
