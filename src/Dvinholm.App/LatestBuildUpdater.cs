@@ -480,6 +480,12 @@ catch {{
             $failure += [Environment]::NewLine + 'Rollback failed: ' + ($_ | Out-String)
         }}
     }}
+    elseif ($replacementStarted -and -not $hadDestination) {{
+        # A first install has no previous build to restore. Remove any partial
+        # destination so a failed copy cannot leave a seemingly installed app.
+        Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction SilentlyContinue
+        $failure += [Environment]::NewLine + 'The incomplete first-install destination was removed.'
+    }}
     $failure | Set-Content -LiteralPath $logPath -Encoding UTF8
     Start-Process -FilePath 'notepad.exe' -ArgumentList @($logPath)
 }}
