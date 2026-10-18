@@ -1,3 +1,12 @@
+## Updater expanded-size guard — arithmetic overflow edge case (2026-10-18)
+
+- [x] Strengthened the production guard to compare each entry length against the remaining 1,048,576,000-byte budget before adding it, preventing aggregate arithmetic overflow from escaping as `OverflowException`.
+- [x] Added a regression test for `[1, long.MaxValue]`, expecting the consistent `InvalidDataException` rejection path.
+- [ ] Wait for CI on PR [#286](https://github.com/vorlocsev/dvinholm/pull/286) to validate the latest code and documentation head.
+- PR remains open pending explicit approval. No release publication or physical J2534 adapter/vehicle testing.
+
+---
+
 ## Updater expanded-archive size-limit test — fixture approach revised (2026-10-18)
 
 - [x] CI repeatedly showed that editing ZIP size metadata in the synthetic archive did not trigger the expected exception (483 other tests passed). The test fixture was unreliable; no conclusion about a production defect follows from that failure.
