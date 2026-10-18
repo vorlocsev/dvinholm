@@ -1,3 +1,14 @@
+## Successful updater replacement cleanup regression — 2026-10-18
+
+- Merged PR [#334](https://github.com/vorlocsev/dvinholm/pull/334) as `ff3f8eaeae3634f265718376a7b2ef8e6eefdecc`.
+- Added a Windows-only PowerShell runtime regression test that mocks file-copy and process-launch operations while exercising the generated replacement script.
+- The test checks the new build replaces the old one, starts the new executable, and removes the backup and staging directories after startup succeeds.
+- PR CI passed in [run #2656](https://github.com/vorlocsev/dvinholm/actions/runs/39137524253) and [run #2657](https://github.com/vorlocsev/dvinholm/actions/runs/39137530241). Main CI before merge passed in [run #2655](https://github.com/vorlocsev/dvinholm/actions/runs/39137390573).
+- Post-merge main CI [run #2658](https://github.com/vorlocsev/dvinholm/actions/runs/39138576615) is still running; keep it pending until its conclusion is success.
+- Next: audit remaining updater rollback and cleanup failure paths using software-only tests; no physical J2534 adapter or vehicle test in this phase.
+
+---
+
 ## PowerShell updater path-escaping regression — 2026-10-18
 
 - Merged PR [#332](https://github.com/vorlocsev/dvinholm/pull/332) as `56fac7e6a9a9b88e5c60782931709384ca7f326b`.

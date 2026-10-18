@@ -1,3 +1,14 @@
+## Successful updater replacement cleanup regression — 2026-10-18
+
+- [x] PR [#334](https://github.com/vorlocsev/dvinholm/pull/334) merged as `ff3f8eaeae3634f265718376a7b2ef8e6eefdecc`.
+- [x] Added a Windows-only runtime test for successful replacement: new executable and files are installed, the updated executable is launched, and backup/staging directories are removed after startup succeeds.
+- [x] Both PR CI runs passed: [#2656](https://github.com/vorlocsev/dvinholm/actions/runs/39137524253) and [#2657](https://github.com/vorlocsev/dvinholm/actions/runs/39137530241).
+- [x] Preceding main CI passed in [run #2655](https://github.com/vorlocsev/dvinholm/actions/runs/39137390573).
+- [ ] Post-merge main CI [run #2658](https://github.com/vorlocsev/dvinholm/actions/runs/39138576615) is running; confirm before marking complete.
+- [ ] Continue software-only updater failure-path audit. Physical J2534 adapter/vehicle testing remains deferred.
+
+---
+
 ## PowerShell updater path-escaping regression — 2026-10-18
 
 - [x] PR [#332](https://github.com/vorlocsev/dvinholm/pull/332) merged as `56fac7e6a9a9b88e5c60782931709384ca7f326b`.
