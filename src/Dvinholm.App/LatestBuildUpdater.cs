@@ -527,8 +527,18 @@ catch {{
     elseif ($replacementStarted -and -not $hadDestination) {{
         # A first install has no previous build to restore. Remove any partial
         # destination so a failed copy cannot leave a seemingly installed app.
-        Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction SilentlyContinue
-        $failure += [Environment]::NewLine + 'The incomplete first-install destination was removed.'
+        try {{
+            if (Test-Path -LiteralPath $destination) {{
+                Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction Stop
+            }}
+            if (Test-Path -LiteralPath $destination) {{
+                throw 'The incomplete destination still exists after cleanup.'
+            }}
+            $failure += [Environment]::NewLine + 'The incomplete first-install destination was removed.'
+        }}
+        catch {{
+            $failure += [Environment]::NewLine + 'Could not remove the incomplete first-install destination: ' + ($_ | Out-String)
+        }}
     }}
     $failure | Set-Content -LiteralPath $logPath -Encoding UTF8
     Start-Process -FilePath 'notepad.exe' -ArgumentList @($logPath)
