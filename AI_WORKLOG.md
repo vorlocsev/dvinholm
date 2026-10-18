@@ -1,3 +1,13 @@
+## Follow-up — updater expanded archive size limit test (2026-10-18)
+
+- Added `LatestBuildUpdaterExpandedSizeTests.cs` on branch `test/updater-expanded-size-limit`.
+- The test constructs a small ZIP and modifies the central-directory uncompressed-size metadata to exceed the updater's 1,000,000,000-byte expanded-size limit. This exercises the pre-extraction guard without allocating a large file.
+- Expected behavior: `InvalidDataException`; temporary staging directory and downloaded ZIP are cleaned up.
+- Test-only change. CI pending; do not claim verified until CI completes.
+- Next: inspect CI results, then continue the software-only release gate review. Do not publish a release or perform physical J2534/vehicle testing.
+
+---
+
 ## Manual Windows verification — disconnected startup state (2026-10-18)
 
 - [x] After relaunch, user confirmed the saved test DLL path remains visible and the app reports **not connected**.
