@@ -180,7 +180,10 @@ public sealed partial class MainWindow : Window
             var currentSha = LatestBuildUpdater.CurrentCommitSha;
             _updateAvailable = LatestBuildUpdater.IsUpdateAvailable(currentSha, latest);
 
-            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {latest.DisplayVersion}";
+            UpdateStatusText.Text = LatestBuildUpdater.FormatUpdateStatus(
+                LatestBuildUpdater.CurrentDisplayVersion,
+                latest,
+                _updateAvailable);
             UpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check update";
         }
         catch (Exception)
