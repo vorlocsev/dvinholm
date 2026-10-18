@@ -4,7 +4,7 @@
 - [x] PR [#308](https://github.com/vorlocsev/dvinholm/pull/308) merged as `0a7bcd2df9b6a4d3650fc6da7735501503aad476`. Updater discovery now treats HTTP 404 on a CI release tag as an expected missing asset and falls back to older builds; other HTTP errors (including 403/429 and server errors) stop the scan via `EnsureSuccessStatusCode` rather than making more requests and obscuring the real failure.
 - [x] PR-head CI passed for #307 ([run #39119334834](https://github.com/vorlocsev/dvinholm/actions/runs/39119334834)) and #308 ([run #39119376885](https://github.com/vorlocsev/dvinholm/actions/runs/39119376885)); both also passed their push CI runs.
 - [x] Main CI after the prior docs checkpoint passed ([run #39119254855](https://github.com/vorlocsev/dvinholm/actions/runs/39119254855)).
-- [ ] Post-merge main CI after #307 and #308 is pending/running: [run #39119672274](https://github.com/vorlocsev/dvinholm/actions/runs/39119672274) and [run #39119700082](https://github.com/vorlocsev/dvinholm/actions/runs/39119700082). Confirm both before marking the main pipeline fully green.
+- [x] Post-merge main CI passed after PR #307 ([run #39119672274](https://github.com/vorlocsev/dvinholm/actions/runs/39119672274)) and PR #308 ([run #39119700082](https://github.com/vorlocsev/dvinholm/actions/runs/39119700082)).
 - [ ] Continue software-only updater failure-path audit. No stable release is being published; physical J2534 adapter/vehicle verification remains deferred.
 
 ---
