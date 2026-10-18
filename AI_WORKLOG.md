@@ -1,3 +1,11 @@
+## Follow-up — expanded-size arithmetic overflow guard (2026-10-18)
+
+- Added a defensive check that compares each ZIP entry length against the remaining expanded-size budget before adding it. This avoids relying on checked arithmetic when processing hostile ZIP64 metadata.
+- Added a regression test using entry lengths `[1, long.MaxValue]`; it must reject the archive with `InvalidDataException`, consistent with other over-limit input.
+- Changes are on PR #286 branch `fix/updater-expanded-size-test`; CI is pending for the new head. This is a software-only updater test; no release, merge, adapter, or vehicle testing was performed.
+
+---
+
 ## Follow-up — expanded-size guard tests made deterministic (2026-10-18)
 
 - CI runs #39102009534 and #39102018577 both failed the synthetic ZIP test even after modifying both local and central-directory size fields: the expected `InvalidDataException` was not thrown; 483 other tests passed.
