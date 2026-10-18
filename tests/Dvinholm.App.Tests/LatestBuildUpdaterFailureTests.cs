@@ -571,8 +571,9 @@ function Invoke-TestRobocopy {
     $global:LASTEXITCODE = 1
 }
 function Start-Process {
-    param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList)
+    param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList, [switch]$PassThru)
     Add-Content -LiteralPath $env:DVINHOLM_TEST_LAUNCH_LOG -Value $FilePath
+    return [pscustomobject]@{ HasExited = $false; ExitCode = 0 }
 }
 ";
             await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
@@ -905,8 +906,9 @@ function Invoke-TestRobocopy {
     $global:LASTEXITCODE = 1
 }
 function Start-Process {
-    param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList)
+    param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList, [switch]$PassThru)
     Add-Content -LiteralPath $env:DVINHOLM_TEST_LAUNCH_LOG -Value $FilePath
+    return [pscustomobject]@{ HasExited = $false; ExitCode = 0 }
 }
 ";
             await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
