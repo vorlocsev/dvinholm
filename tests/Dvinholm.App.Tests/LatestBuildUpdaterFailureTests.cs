@@ -1096,7 +1096,11 @@ function Start-Process {
                 }
                 catch (IOException) when (attempt < 49)
                 {
-                    awai
+                    await Task.Delay(TimeSpan.FromMilliseconds(200));
+                }
+            }
+        }
+    }
 
     [Fact]
     public async Task ReplacementScript_AbortsWhenPreviousProcessDoesNotExitWithinTimeout()
