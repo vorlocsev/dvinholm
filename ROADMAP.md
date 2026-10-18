@@ -1030,3 +1030,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Added regression assertions for the generated PowerShell replacement script.
 - [ ] Await current-main PR CI before marking this change verified or merging it.
 - No stable release or physical J2534/vehicle test is included.
+
+
+## Current-main updater verification — 2026-10-18
+
+- [x] PR [#289](https://github.com/vorlocsev/dvinholm/pull/289) merged: release audit resolves the latest stable GitHub release dynamically, verifies the published SHA-256, validates ZIP integrity, and checks that the application executable is present.
+- [x] Main CI at the PR #289 merge commit passed build and latest-stable-release audit: [run #39109327293](https://github.com/vorlocsev/dvinholm/actions/runs/39109327293).
+- [x] PR [#290](https://github.com/vorlocsev/dvinholm/pull/290) merged as `2ccb296e8e745201188371a55d9967994f73a467`. Its current-head CI passed build/tests and latest-stable-release audit: [run #39109404796](https://github.com/vorlocsev/dvinholm/actions/runs/39109404796).
+- [ ] Verify post-merge main CI for commit `2ccb296e8e745201188371a55d9967994f73a467` before treating the merge pipeline as fully green.
+- [x] Re-recorded the v0.2.0 manual checks: the updater was exercised, repeated no-adapter connection failures return the Connect control to an active state, and disconnected-only actions remain disabled. This does not validate a physical adapter or vehicle.
+- [ ] Continue software-only updater review: validate rollback/cleanup paths and their tests; defer real J2534 adapter and vehicle checks.
