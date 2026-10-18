@@ -750,6 +750,10 @@ function Start-Process {
                 Assert.True(
                     File.Exists(Path.Combine(backup, "Dvinholm.App.exe")),
                     "The rollback backup must be retained when the restored app also exits during startup.");
+                Assert.True(
+                    Directory.Exists(staging),
+                    "The extracted update must be retained when rollback fails so recovery data is not discarded.");
+                Assert.False(File.Exists(scriptPath), "The temporary helper script should be removed even when rollback fails.");
             }
             else
             {
