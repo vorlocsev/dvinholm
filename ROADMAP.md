@@ -3,8 +3,8 @@
 - [x] User confirmed **Start Monitor**, **Read VIN**, **Read DTC**, and **Read DID** are all inactive while the app is disconnected.
 - [x] This matches the expected disconnected-state gate. The check did not attempt a connection and does not establish active-session enablement.
 - [x] Recorded in [manual UI verification notes](docs/manual-ui-verification-disconnected-controls-2026-10-18.md).
-- [x] PR [#282](https://github.com/vorlocsev/dvinholm/pull/282) merged to `main` as `cdf07aec7a078f2627ebd86a412b78924495e0ad`; post-merge CI run [#39099976109](https://github.com/vorlocsev/dvinholm/actions/runs/39099976109) is running at the time of this update.
-- [ ] Confirm post-merge CI passes before treating this documentation checkpoint as complete. Physical J2534 adapter/vehicle and active-session UI validation remain deferred; do not publish a release without explicit user authorization.
+- [x] PR [#282](https://github.com/vorlocsev/dvinholm/pull/282) merged to `main` as `cdf07aec7a078f2627ebd86a412b78924495e0ad`; post-merge CI run [#39099976109](https://github.com/vorlocsev/dvinholm/actions/runs/39099976109) passed, including build/tests and the published v0.1.1 archive audit.
+- [x] PR #283 documentation changes passed CI [run #39100027530](https://github.com/vorlocsev/dvinholm/actions/runs/39100027530); the PR remains open pending explicit merge approval. Physical J2534 adapter/vehicle and active-session UI validation remain deferred; do not publish a release without explicit user authorization.
 
 ---
 
