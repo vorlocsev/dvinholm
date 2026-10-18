@@ -1,3 +1,13 @@
+## Updater rollback-copy failure regressions — 2026-10-18
+
+- Merged PR [#336](https://github.com/vorlocsev/dvinholm/pull/336) as `7fb38e25936ca718b4701f4ec0f8141940048b22`. Added a Windows PowerShell runtime regression for robocopy exit code 8 during rollback; it verifies the failure is logged, backup/staging recovery files are retained, and the temporary helper script is removed. Main CI [#39140253444](https://github.com/vorlocsev/dvinholm/actions/runs/39140253444) passed.
+- Merged PR [#337](https://github.com/vorlocsev/dvinholm/pull/337) as `369c3d38c20d86bec827914a42b38a5b67771dc5`. Added a regression for a rollback copy that reports success but does not restore `Dvinholm.App.exe`; the helper logs the failure, preserves recovery artifacts, and removes its temporary script. PR CI [#39140363953](https://github.com/vorlocsev/dvinholm/actions/runs/39140363953) passed.
+- Post-merge main CI [#39140786191](https://github.com/vorlocsev/dvinholm/actions/runs/39140786191) is still running; update this entry when its conclusion is known.
+- Stable release remains `0.2.0`. No physical J2534 adapter or vehicle was used.
+- Next: verify post-merge CI, then finish the bounded software-only updater audit and run the final app/artifact checks without duplicating covered cases.
+
+---
+
 ## Successful updater replacement cleanup regression — 2026-10-18
 
 - Merged PR [#334](https://github.com/vorlocsev/dvinholm/pull/334) as `ff3f8eaeae3634f265718376a7b2ef8e6eefdecc`.
