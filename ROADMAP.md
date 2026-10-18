@@ -1,10 +1,17 @@
-## J2534 DLL path persistence bug — fix in progress (2026-10-18)
+## Manual Windows verification — disconnected startup state (2026-10-18)
 
-- [x] Manual reproduction: after closing and reopening published v0.2.0 (4c7efcd), the J2534 DLL path field was empty.
-- [x] Started isolated fix branch fix/persist-j2534-dll-path; the selected/manual DLL path is saved under %LOCALAPPDATA%\\Dvinholm\\j2534-dll-path.txt and loaded at startup without auto-connecting.
-- [x] Added unit coverage for missing settings, save/load round-trip, clearing a saved path, and parent-directory creation.
-- [ ] CI/build and PR review are pending. Do not treat the fix as released until CI passes and it is merged.
-- Physical J2534 adapter and vehicle checks remain deferred; no hardware compatibility claim.
+- [x] After relaunch, user confirmed the saved test DLL path remains visible and the app reports **not connected**.
+- [x] This confirms the app does not auto-connect on startup. The Connect action was not used; no physical adapter was available or tested.
+- [x] Continue with software-only release checks; do not claim physical J2534/vehicle compatibility.
+
+---
+
+## J2534 DLL path persistence — manual verification passed (2026-10-18)
+
+- [x] User tested the Windows x86 CI artifact on Windows 11 LTSC IoT 26100.9550: entered `C:\\Dvinholm-Test\\missing-j2534.dll`, fully closed the app, reopened it, and confirmed the path was still present.
+- [x] This confirms the saved DLL-path setting survives an application restart. No connection attempt was made; this was a persistence-only check.
+- [x] Fix is merged to `main` in commit `696aad80be40deac5acb6632d20b74e4471a2f9e` via [PR #281](https://github.com/vorlocsev/dvinholm/pull/281). Branch CI passed: [run #39077395043](https://github.com/vorlocsev/dvinholm/actions/runs/39077395043).
+- [ ] Do not publish a new stable release until the remaining software-only checks and release gates are reviewed. Physical J2534 adapter/vehicle testing remains deferred.
 
 ---
 
