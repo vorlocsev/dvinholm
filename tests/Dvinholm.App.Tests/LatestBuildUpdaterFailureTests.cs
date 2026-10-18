@@ -675,12 +675,14 @@ function Start-Process {
 
 
     [Theory]
-    [InlineData(false, false)]
-    [InlineData(true, false)]
-    [InlineData(false, true)]
+    [InlineData(false, false, false)]
+    [InlineData(true, false, false)]
+    [InlineData(false, true, false)]
+    [InlineData(false, false, true)]
     public async Task ReplacementScript_RollsBackWhenUpdatedApplicationExitsDuringStartup(
         bool restoredApplicationExits,
-        bool rollbackCopyFails)
+        bool rollbackCopyFails,
+        bool rollbackCopyOmitsExecutable)
     {
         if (!OperatingSystem.IsWindows())
             return;
@@ -713,8 +715,14 @@ function Wait-Process { param([int]$Id, [int]$Timeout) }
 function Start-Sleep { param([int]$Seconds, [int]$Milliseconds) }
 function Invoke-TestRobocopy {
     param([string]$From, [string]$To, [Parameter(ValueFromRemainingArguments=$true)][string[]]$Options)
-    if ($env:DVINHOLM_TEST_FAIL_ROLLBACK_COPY -eq '1' -and $From -eq $env:DVINHOLM_TEST_BACKUP_SOURCE) {
+    if ($From -eq $env:DVINHOLM_TEST_BACKUP_SOURCE -and $env:DVINHOLM_TEST_FAIL_ROLLBACK_COPY -eq '1') {
         $global:LASTEXITCODE = 8
+        return
+    }
+    if ($From -eq $env:DVINHOLM_TEST_BACKUP_SOURCE -and $env:DVINHOLM_TEST_OMIT_ROLLBACK_EXE -eq '1') {
+        if (Test-Path -LiteralPath $To) { Remove-Item -LiteralPath $To -Recurse -Force }
+        New-Item -ItemType Directory -Path $To -Force | Out-Null
+        $global:LASTEXITCODE = 1
         return
     }
     if (Test-Path -LiteralPath $To) { Remove-Item -LiteralPath $To -Recurse -Force }
@@ -758,6 +766,7 @@ function Start-Process {
             startInfo.Environment["DVINHOLM_TEST_LAUNCH_LOG"] = launchLog;
             startInfo.Environment["DVINHOLM_TEST_RESTORED_APP_EXITS"] = restoredApplicationExits ? "1" : "0";
             startInfo.Environment["DVINHOLM_TEST_FAIL_ROLLBACK_COPY"] = rollbackCopyFails ? "1" : "0";
+            startInfo.Environment["DVINHOLM_TEST_OMIT_ROLLBACK_EXE"] = rollbackCopyOmitsExecutable ? "1" : "0";
             startInfo.Environment["DVINHOLM_TEST_BACKUP_SOURCE"] = Path.GetFullPath(backup);
 
             using (var process = System.Diagnostics.Process.Start(startInfo)
@@ -777,6 +786,11 @@ function Start-Process {
                 Assert.Equal("new-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
                 Assert.False(File.Exists(Path.Combine(destination, "old.marker")));
             }
+            else if (rollbackCopyOmitsExecutable)
+            {
+                Assert.False(File.Exists(Path.Combine(destination, "Dvinholm.App.exe")));
+                Assert.False(File.Exists(Path.Combine(destination, "old.marker")));
+            }
             else
             {
                 Assert.Equal("old-build", await File.ReadAllTextAsync(Path.Combine(destination, "Dvinholm.App.exe")));
@@ -784,18 +798,22 @@ function Start-Process {
             }
             var updateLog = await File.ReadAllTextAsync(Path.Combine(localAppData, "Dvinholm", "update.log"));
             Assert.Contains("The updated application exited during startup (exit code 17).", updateLog);
-            if (!rollbackCopyFails)
+            if (!rollbackCopyFails && !rollbackCopyOmitsExecutable)
                 Assert.Contains("The previous build was restored and will be restarted.", updateLog);
+            if (rollbackCopyOmitsExecutable)
+                Assert.Contains("Rollback completed without restoring Dvinholm.App.exe.", updateLog);
             var launches = await File.ReadAllTextAsync(launchLog);
             Assert.Contains(Path.Combine(destination, "Dvinholm.App.exe"), launches);
 
-            if (restoredApplicationExits || rollbackCopyFails)
+            if (restoredApplicationExits || rollbackCopyFails || rollbackCopyOmitsExecutable)
             {
                 Assert.Contains("Rollback failed:", updateLog);
                 if (restoredApplicationExits)
                     Assert.Contains("The restored application exited during startup (exit code 17).", updateLog);
                 if (rollbackCopyFails)
                     Assert.Contains("Rollback copy failed with robocopy exit code 8.", updateLog);
+                if (rollbackCopyOmitsExecutable)
+                    Assert.Contains("Rollback completed without restoring Dvinholm.App.exe.", updateLog);
                 Assert.True(
                     File.Exists(Path.Combine(backup, "Dvinholm.App.exe")),
                     "The rollback backup must be retained when rollback cannot complete.");
