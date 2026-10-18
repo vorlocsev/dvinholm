@@ -125,8 +125,8 @@ internal static class LatestBuildUpdater
             foreach (var run in runs.EnumerateArray())
             {
                 // Pull-request workflows can build a synthetic merge ref, so their
-                // artifact SHA is not necessarily the branch's head_sha. Only push
-                // and manual runs are eligible for updater assets.
+                // artifact SHA is not necessarily the branch's head_sha. Only successful
+                // pushes to main publish the public updater assets.
                 var eventName = ReadString(run, "event");
                 // The CI workflow publishes public updater release assets only for
                 // pushes to main. Feature-branch pushes and workflow_dispatch runs
@@ -228,7 +228,7 @@ internal static class LatestBuildUpdater
                 break;
         }
 
-        throw new InvalidOperationException("No successful CI run with a non-expired Windows x86 artifact was found across the repository branches.");
+        throw new InvalidOperationException("No successful main-branch CI run with a published Windows x86 updater asset was found.");
     }
 
     public static Task<string> DownloadAndPrepareAsync(
