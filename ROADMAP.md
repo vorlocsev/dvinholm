@@ -1,3 +1,11 @@
+## Updater ZIP path-traversal regression coverage — 2026-10-18
+
+- [x] Source review found the unsafe-archive-path test only asserted staging cleanup; it did not assert that an escaped file was not created or that the temporary ZIP was removed.
+- [x] Opened [PR #284](https://github.com/vorlocsev/dvinholm/pull/284) to strengthen this test with a unique escape target plus explicit escaped-file, staging-directory, and temporary-archive cleanup assertions.
+- [ ] Await PR CI before treating the regression-coverage change as validated. Test-only; no release or physical J2534/vehicle testing.
+
+---
+
 ## Manual Windows verification — disconnected startup state (2026-10-18)
 
 - [x] After relaunch, user confirmed the saved test DLL path remains visible and the app reports **not connected**.
