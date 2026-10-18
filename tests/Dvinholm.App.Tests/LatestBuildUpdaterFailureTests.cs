@@ -1213,7 +1213,7 @@ function Start-Process {
         {
             var generated = LatestBuildUpdater.BuildReplacementScript(staging, destination, 1234, scriptPath, backup);
             generated = generated.Replace(
-                "& (Join-Path $env:SystemRoot 'System32\\\\robocopy.exe')",
+                "& (Join-Path $env:SystemRoot 'System32\\robocopy.exe')",
                 "Invoke-TestRobocopy",
                 StringComparison.Ordinal);
             var mocks = @"
