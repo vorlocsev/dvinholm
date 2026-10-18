@@ -2,7 +2,8 @@
 
 - [x] Strengthened the production guard to compare each entry length against the remaining 1,048,576,000-byte budget before adding it, preventing aggregate arithmetic overflow from escaping as `OverflowException`.
 - [x] Added a regression test for `[1, long.MaxValue]`, expecting the consistent `InvalidDataException` rejection path.
-- [ ] Wait for CI on PR [#286](https://github.com/vorlocsev/dvinholm/pull/286) to validate the latest code and documentation head.
+- [x] CI passed on head `8b960c192ffc3b356429232814cc5408d5afa08d`: build/tests, publish, artifact upload, and v0.1.1 release ZIP audit succeeded ([run #39103682783](https://github.com/vorlocsev/dvinholm/actions/runs/39103682783)).
+- [ ] Continue software-only updater review; PR [#286](https://github.com/vorlocsev/dvinholm/pull/286) remains open pending explicit approval.
 - PR remains open pending explicit approval. No release publication or physical J2534 adapter/vehicle testing.
 
 ---
