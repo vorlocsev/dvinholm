@@ -312,6 +312,60 @@ public sealed class LatestBuildLookupTests
 
 
     [Fact]
+    public async Task ReleaseWithMismatchedReleaseTag_FallsBackToOlderPublishedBuild()
+    {
+        using var client = new HttpClient(new QueueHttpMessageHandler(request =>
+        {
+            if (request.RequestUri!.AbsolutePath.EndsWith("/runs", StringComparison.Ordinal))
+            {
+                return JsonResponse("""
+                    {
+                      "workflow_runs": [
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "id": 80, "run_number": 80, "created_at": "2026-10-18T06:00:00Z" },
+                        { "event": "push", "head_branch": "main", "status": "completed", "conclusion": "success", "head_sha": "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", "id": 79, "run_number": 79, "created_at": "2026-10-18T05:00:00Z" }
+                      ]
+                    }
+                    """);
+            }
+
+            if (request.RequestUri!.AbsolutePath.EndsWith("/ci-80", StringComparison.Ordinal))
+            {
+                return JsonResponse("""
+                    {
+                      "assets": [
+                        {
+                          "name": "Dvinholm-Windows-x86.zip",
+                          "size": 2048,
+                          "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-79/Dvinholm-Windows-x86.zip",
+                          "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+                        }
+                      ]
+                    }
+                    """);
+            }
+
+            return JsonResponse("""
+                {
+                  "assets": [
+                    {
+                      "name": "Dvinholm-Windows-x86.zip",
+                      "size": 4096,
+                      "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-79/Dvinholm-Windows-x86.zip",
+                      "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+                    }
+                  ]
+                }
+                """);
+        }));
+
+        var build = await LatestBuildUpdater.GetLatestSuccessfulBuildAsync(client);
+
+        Assert.Equal(79, build.RunNumber);
+        Assert.Equal("bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb", build.CommitSha);
+        Assert.Equal("https://github.com/vorlocsev/dvinholm/releases/download/ci-79/Dvinholm-Windows-x86.zip", build.DownloadUrl);
+    }
+
+    [Fact]
     public async Task ReleaseWithUnsafeDownloadUrl_FallsBackToOlderPublishedBuild()
     {
         using var client = new HttpClient(new QueueHttpMessageHandler(request =>
