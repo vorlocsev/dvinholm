@@ -1282,3 +1282,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] User confirmed profile metadata/status and the synthetic-test-profile description were correct.
 - [ ] Future release: verify behavior with a real J2534 adapter and vehicle; do not send diagnostic requests using synthetic test profiles.
 - Stable release remains v0.2.0; no stable release was published for this work.
+
+
+## Post-merge updater error-redaction test — 2026-10-18
+
+- [x] Merged [PR #353](https://github.com/vorlocsev/dvinholm/pull/353) as `dbcc0a5d2b4a3902fd262f531d23df7ebdb0dfeb`. Added a regression test proving HTTP download errors retain the status and URL path but do not expose a sensitive query token.
+- [x] PR CI [#39163653989](https://github.com/vorlocsev/dvinholm/actions/runs/39163653989) passed build, tests, publish, and the latest-stable-release archive audit.
+- [x] Post-merge main CI [#39164047182](https://github.com/vorlocsev/dvinholm/actions/runs/39164047182) passed build, tests, publish/package, public CI asset publishing, and latest-stable-release SHA-256/ZIP validation.
+- [x] Closed superseded documentation PRs #347–#350; their manual ECU profile validation details are already consolidated in merged PR #352 and the current roadmap/work log.
+- No production updater behavior or stable release changed. Stable release remains v0.2.0; physical J2534 adapter/vehicle testing remains deferred.
+- [ ] Continue software-only updater reliability review; only open a production fix or test PR when a concrete uncovered defect or regression gap is identified.

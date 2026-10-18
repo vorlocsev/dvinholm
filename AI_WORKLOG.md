@@ -2719,3 +2719,14 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - [x] Imported intentionally invalid JSON; the app reported `profile import failed` and retained the existing profile catalog and values.
 - [x] User confirmed profile metadata/status and synthetic-profile description were displayed as expected.
 - No diagnostic request was sent. No physical J2534 adapter or vehicle was available or tested. Stable release remains v0.2.0; CI build `ci-2715` is a prerelease test build.
+
+
+## PR #353 — updater error query-string redaction — 2026-10-18
+
+- Merged [PR #353](https://github.com/vorlocsev/dvinholm/pull/353) as `dbcc0a5d2b4a3902fd262f531d23df7ebdb0dfeb` after the full PR CI passed.
+- Added `DownloadFailure_DoesNotExposeSensitiveQueryStringInError`: an HTTP 401 from an asset URL containing a temporary query token must preserve the HTTP status and path while excluding both the token and query-string marker from the exception message. Production updater behavior was unchanged; this is regression coverage for existing redaction.
+- PR CI [#39163653989](https://github.com/vorlocsev/dvinholm/actions/runs/39163653989) passed build, tests, publish, and stable-release archive audit.
+- Post-merge main CI [#39164047182](https://github.com/vorlocsev/dvinholm/actions/runs/39164047182) passed build, tests, publish/package, public CI asset publishing, and stable-release archive SHA-256/ZIP audit.
+- Closed superseded documentation PRs #347–#350 because the manual ECU profile validations were already consolidated by PR #352. No profile results or unique code changes were lost.
+- Stable release remains v0.2.0; no stable release was published. Physical J2534 adapter and vehicle checks remain deferred.
+- Next: continue the software-only updater reliability review. Do not change production code without a concrete defect; no further uncovered rollback issue was established by this review pass.
