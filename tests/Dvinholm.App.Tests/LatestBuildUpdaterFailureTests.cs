@@ -467,7 +467,8 @@ public sealed class LatestBuildUpdaterFailureTests
         Assert.Contains("$source $destination /MIR", script);
         Assert.Contains("if ($replacementStarted -and $hadDestination -and $backupReady)", script);
         Assert.Contains("elseif ($replacementStarted -and -not $hadDestination)", script);
-        Assert.Contains("Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction SilentlyContinue", script);
+        Assert.Contains("Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction Stop", script);
+        Assert.Contains("Could not remove the incomplete first-install destination:", script);
         Assert.Contains("The incomplete first-install destination was removed.", script);
         Assert.Contains("$backup $destination /MIR", script);
         Assert.Contains("The previous build was restored and will be restarted.", script);
