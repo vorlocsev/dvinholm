@@ -366,7 +366,6 @@ internal static class LatestBuildUpdater
         var scriptPath = Path.Combine(Path.GetTempPath(), $"dvinholm-update-{Guid.NewGuid():N}.ps1");
         var backupDirectory = Path.Combine(localRoot, "UpdateBackups", Guid.NewGuid().ToString("N"));
         var script = BuildReplacementScript(stagingDirectory, destination, processId, scriptPath, backupDirectory);
-        File.WriteAllText(scriptPath, script, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
 
         var startInfo = new ProcessStartInfo
         {
@@ -385,13 +384,28 @@ internal static class LatestBuildUpdater
 
         try
         {
+            File.WriteAllText(scriptPath, script, new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             return Process.Start(startInfo) ?? throw new InvalidOperationException("Windows could not start the update helper.");
         }
         catch
         {
-            try { File.Delete(scriptPath); } catch (IOException) { }
+            CleanupFailedStart(scriptPath, stagingDirectory);
             throw;
         }
+    }
+
+    internal static void CleanupFailedStart(string scriptPath, string stagingDirectory)
+    {
+        try { File.Delete(scriptPath); } catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+
+        try
+        {
+            if (Directory.Exists(stagingDirectory))
+                Directory.Delete(stagingDirectory, recursive: true);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
     }
 
     internal static string BuildReplacementScript(

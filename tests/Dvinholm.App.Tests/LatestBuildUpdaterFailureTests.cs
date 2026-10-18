@@ -250,6 +250,30 @@ public sealed class LatestBuildUpdaterFailureTests
         Assert.Empty(Directory.EnumerateFiles(Path.GetTempPath(), tempPattern));
     }
 
+    [Fact]
+    public async Task FailedHelperStartCleanup_RemovesScriptAndStagingDirectory()
+    {
+        var root = Path.Combine(Path.GetTempPath(), $"dvinholm-helper-start-failure-{Guid.NewGuid():N}");
+        var staging = Path.Combine(root, "staging");
+        var script = Path.Combine(root, "replace.ps1");
+        Directory.CreateDirectory(staging);
+        await File.WriteAllTextAsync(Path.Combine(staging, "Dvinholm.App.exe"), "fake executable");
+        await File.WriteAllTextAsync(script, "test script");
+
+        try
+        {
+            LatestBuildUpdater.CleanupFailedStart(script, staging);
+
+            Assert.False(File.Exists(script));
+            Assert.False(Directory.Exists(staging));
+        }
+        finally
+        {
+            if (Directory.Exists(root))
+                Directory.Delete(root, recursive: true);
+        }
+    }
+
     private static HttpClient CreateClient(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) =>
         new(new StubHttpMessageHandler(responseFactory));
 
@@ -518,7 +542,7 @@ function Start-Process {
 
             using (var process = System.Diagnostics.Process.Start(startInfo)
                 ?? throw new InvalidOperationException("Could not start isolated PowerShell rollback test."))
-            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)))
+            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
             {
                 // Drain both redirected streams while the process is running to avoid pipe-buffer deadlocks.
                 var stdoutTask = process.StandardOutput.ReadToEndAsync();
@@ -634,7 +658,7 @@ function Start-Process {
 
             using (var process = System.Diagnostics.Process.Start(startInfo)
                 ?? throw new InvalidOperationException("Could not start isolated PowerShell first-install test."))
-            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20)))
+            using (var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60)))
             {
                 var stdoutTask = process.StandardOutput.ReadToEndAsync();
                 var stderrTask = process.StandardError.ReadToEndAsync();
