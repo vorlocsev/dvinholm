@@ -1,3 +1,13 @@
+## Stable release v0.2.1 — 2026-10-19
+
+- [x] Prepared Windows x86 v0.2.1 packaging, release notes, changelog, updated README links and in-app version metadata.
+- [x] Release workflow configured to verify branded icon, publish portable ZIP plus SHA-256 file, then re-download and validate the published assets.
+- [ ] Merge release preparation PR after green Windows CI and verify latest `main` CI.
+- [ ] Trigger dedicated v0.2.1 workflow by creating `release/v0.2.1` from the validated `main` commit; confirm published GitHub Release ZIP and SHA-256.
+- [ ] Manually confirm actual window/titlebar/taskbar/Explorer icon rendering on Windows using the v0.2.1 ZIP; physical adapter/vehicle testing stays deferred.
+
+---
+
 ## Dvinholm repository branding and Windows icons — 2026-10-19
 
 - [x] Prepared approved silver-arrow / northern-river logo as a 7-size Windows `.ico` (16–256 px), a README PNG icon, and a wide README WebP banner.

@@ -1,3 +1,12 @@
+## Dvinholm v0.2.1 release preparation — 2026-10-19
+
+- Requested a stable patch release after branding and icon integration. Preparing v0.2.1 with current `main` software fixes, but without new physical-adapter claims.
+- Updated application/CI version identifiers, release workflow, dedicated release notes, README download links, CHANGELOG and roadmap.
+- Release workflow must build/test/publish on Windows x86, ensure the application icon is packaged, publish `Dvinholm-Windows-x86.zip` and `SHA256SUMS.txt`, then independently re-download/check the ZIP.
+- GitHub publication and post-release audit are pending until release CI succeeds. The user has not confirmed Windows appearance of the new icon; retain as a manual follow-up.
+
+---
+
 ## Repository branding, README refresh and Windows app icon — 2026-10-19
 
 - User approved the silver circle-and-arrow emblem with a northern river landscape, and the wide Dvinholm ECU Diagnostics banner for GitHub.

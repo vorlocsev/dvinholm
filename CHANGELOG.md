@@ -1,5 +1,23 @@
 # Changelog
 
+## [0.2.1] — 2026-10-19
+
+### Added
+- Branded GitHub README banner and new Dvinholm application icon, embedded in the Windows executable and displayed in the WinUI title bar.
+- Built-in clearly labeled synthetic ECU profiles for UI testing, without asserting vehicle-specific compatibility.
+- Persistent CAN baud-rate selection for supported speeds: 125, 250 and 500 kbit/s.
+
+### Improved and fixed
+- Restore ECU profile fields reliably when switching between saved profiles.
+- Expand updater safety coverage: cancel before archive extraction, redact signed download query parameters from error messages, and restore the previous build when a new executable fails to start.
+- Polish connection, update-status, and Windows UI recovery behavior with additional hardware-independent regressions.
+
+### Validation and limitations
+- The stable-release workflow builds/tests a self-contained portable Windows x86 ZIP, checks that the icon is packaged, publishes a SHA-256 checksum, and verifies the uploaded ZIP.
+- Real J2534 adapter, driver and vehicle compatibility is **not verified**; hardware testing remains deferred.
+- UDS remains read-only. Not affiliated with Volvo Cars or adapter manufacturers.
+
+
 ## [0.2.0] — 2026-10-17
 
 ### Improved
