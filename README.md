@@ -10,13 +10,13 @@
 
 <p align="center">
   <a href="https://github.com/vorlocsev/dvinholm/actions/workflows/ci.yml"><img alt="Windows CI" src="https://github.com/vorlocsev/dvinholm/actions/workflows/ci.yml/badge.svg?branch=main"></a>
-  <a href="https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.0"><img alt="Stable v0.2.0" src="https://img.shields.io/badge/stable-v0.2.0-167cc1"></a>
+  <a href="https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.1"><img alt="Stable v0.2.1" src="https://img.shields.io/badge/stable-v0.2.1-167cc1"></a>
   <img alt="Windows x86" src="https://img.shields.io/badge/platform-Windows%20x86-203f60">
   <img alt="UDS read-only" src="https://img.shields.io/badge/UDS-read--only-008b8b">
 </p>
 
 <p align="center">
-  <a href="https://github.com/vorlocsev/dvinholm/releases/download/v0.2.0/Dvinholm-Windows-x86.zip"><strong>Download stable release</strong></a>
+  <a href="https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/Dvinholm-Windows-x86.zip"><strong>Download stable release</strong></a>
   &nbsp;·&nbsp; <a href="https://github.com/vorlocsev/dvinholm/actions">Latest CI builds</a>
   &nbsp;·&nbsp; <a href="ROADMAP.md">Roadmap</a>
   &nbsp;·&nbsp; <a href="CHANGELOG.md">Changelog</a>
@@ -27,24 +27,25 @@
 
 ## Quick start
 
-1. [Download **Dvinholm v0.2.0** for Windows x86](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.0/Dvinholm-Windows-x86.zip) or choose a successful current `main` build from [GitHub Actions](https://github.com/vorlocsev/dvinholm/actions).
+1. [Download **Dvinholm v0.2.1** for Windows x86](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/Dvinholm-Windows-x86.zip) or choose a successful current `main` build from [GitHub Actions](https://github.com/vorlocsev/dvinholm/actions).
 2. **Extract the entire ZIP** into a writable local directory; it is a portable build, not an installer.
 3. Run `Dvinholm.App.exe`. A separate .NET runtime is normally not needed for this self-contained build.
 4. For adapter use, install the **32-bit J2534 driver** supplied by the hardware manufacturer, then select the registered DLL or enter its path in Dvinholm.
 5. Start with **passive CAN monitoring** once a compatible adapter and vehicle are available. UDS commands are read-only.
 
-The new window and executable icon is included in current `main` CI builds; the already-published `v0.2.0` ZIP remains unchanged.
+The branded window, taskbar, and executable icon is packaged with v0.2.1. The exact icon appearance in Windows still needs a manual smoke test.
 
-## Latest stable release (2026-10-17)
+## Latest stable release — v0.2.1 (2026-10-19)
 
-- Published stable release: [Dvinholm v0.2.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.0), tag `v0.2.0`, targeting commit `23d18fd4e3949530f08171218e17c84a2cf7d60a`.
-- The dedicated stable-release workflow [#39047589614](https://github.com/vorlocsev/dvinholm/actions/runs/39047589614) passed Restore, Build, all 479 tests, Publish, ZIP packaging, and release metadata verification. Post-merge [main CI #39047577494](https://github.com/vorlocsev/dvinholm/actions/runs/39047577494) also passed on the same commit.
-- Release asset: [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.0/Dvinholm-Windows-x86.zip), 66,930,648 bytes; SHA-256: `c80e56a8cf594485cfeb82a1003907cff22c52716abf2e60e518d290b4f3deec`.
-- Checksum file: [SHA256SUMS.txt](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.0/SHA256SUMS.txt).
-- This is a portable self-contained x86 build, not an installer. The exact stable release asset has not yet been separately launched by the user.
-- Physical DiCE/Mongoose adapter and vehicle compatibility remain unverified and are deferred to a future hardware-validation cycle.
+- **Release:** [Dvinholm v0.2.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.1).
+- **Windows x86 portable ZIP:** [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/Dvinholm-Windows-x86.zip). This is not an installer; extract the full archive before launching `Dvinholm.App.exe`.
+- **SHA-256:** [SHA256SUMS.txt](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/SHA256SUMS.txt). Verify the downloaded ZIP against this checksum.
+- **What's new:** branded icon and README, persisted CAN speed, two clearly labeled synthetic ECU profiles, profile-selection fixes, and additional updater/cancellation/rollback regression coverage. See [CHANGELOG.md](CHANGELOG.md).
+- **Validation:** the dedicated release workflow must pass Windows build, test, publish and release-integrity verification; physical adapter and vehicle compatibility remain **unverified**.
+- **Windows visual check:** titlebar/taskbar/Explorer icon appearance awaits manual confirmation. CI verifies packaged icon data, not screen rendering.
 
-Previous stable release: [Dvinholm v0.1.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.1.1), published 2026-10-16.
+Previous stable release: [Dvinholm v0.2.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.0), published 2026-10-17.
+
 
 ## Supported interfaces
 
@@ -181,7 +182,7 @@ The process is x86, so it can load 32-bit J2534 DLLs but not 64-bit-only DLLs.
 
 The CI pipeline publishes a self-contained x86 application artifact. It is a portable build output, **not an installer**.
 
-1. Download the [stable v0.2.0 Windows x86 ZIP](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.0/Dvinholm-Windows-x86.zip), or open [GitHub Actions](https://github.com/vorlocsev/dvinholm/actions), choose a successful `main` run, and download the `Dvinholm-Windows-x86` artifact.
+1. Download the [stable v0.2.1 Windows x86 ZIP](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/Dvinholm-Windows-x86.zip), or open [GitHub Actions](https://github.com/vorlocsev/dvinholm/actions), choose a successful `main` run, and download the `Dvinholm-Windows-x86` artifact.
 2. Extract the entire archive to a normal writable local folder. Do not run the executable from inside the ZIP.
 3. Launch `Dvinholm.App.exe` from the extracted folder.
 4. Install the adapter manufacturer's 32-bit J2534 driver separately. Connect the interface only after following the manufacturer's instructions.
