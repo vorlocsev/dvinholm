@@ -1392,3 +1392,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Build, test suite, publish/package steps, and latest stable release SHA-256/ZIP audit passed on the PR.
 - No production code or stable release changed. Stable remains v0.2.0; physical J2534 adapter/vehicle testing remains deferred.
 - [ ] Continue software-only updater review, focusing on cleanup/recovery failure paths where tests can reproduce behavior without real hardware.
+
+## ECU editor validation feedback — confirmed CI (2026-10-20)
+
+- [x] [PR #372](https://github.com/vorlocsev/dvinholm/pull/372): move profile validation errors above the scrollable editor. [PR CI #2850](https://github.com/vorlocsev/dvinholm/actions/runs/39332349835) and [post-merge main CI #2851](https://github.com/vorlocsev/dvinholm/actions/runs/39333268386) passed.
+- [x] [PR #373](https://github.com/vorlocsev/dvinholm/pull/373): link validation failures to individual editor fields, highlight and focus invalid entries, and add eight parameter-name regression cases. [PR CI #2853](https://github.com/vorlocsev/dvinholm/actions/runs/39334351132) and [post-merge main CI #2854](https://github.com/vorlocsev/dvinholm/actions/runs/39335101214) passed on `347a83d655644d00aa00d798377df4570dec0211`.
+- [x] Close stale duplicate PR #371 as superseded by merged PRs #372 and #373.
+- [x] Main CI #2854 built and tested Windows x86, uploaded its artifact and published the public CI updater asset; the stable-release archive audit succeeded.
+- [ ] Complete the **eight manual Windows UI checks** in [the validation-feedback checklist](docs/manual-ecu-profile-validation-ui-2026-10-20.md) on a current CI build. **Do not mark manual UI checks passed from CI alone.**
+- [ ] Physical J2534 adapter/vehicle testing remains deferred to later releases; no ECU compatibility claim. Stable release stays v0.2.1 pending a separate release decision.
