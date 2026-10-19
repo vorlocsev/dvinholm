@@ -21,11 +21,17 @@ internal sealed record UdsEcuCandidate(
 internal sealed class UdsEcuDiscoveryCancelledException : OperationCanceledException
 {
     internal IReadOnlyList<UdsEcuCandidate> Candidates { get; }
+    internal long DroppedFrameCount { get; }
 
-    internal UdsEcuDiscoveryCancelledException(IReadOnlyList<UdsEcuCandidate> candidates)
-        : base("Passive ECU scan was cancelled. Observed candidates are preserved but the scan is incomplete.")
+    internal UdsEcuDiscoveryCancelledException(
+        IReadOnlyList<UdsEcuCandidate> candidates,
+        long droppedFrameCount)
+        : base(droppedFrameCount > 0
+            ? $"Passive ECU scan was cancelled; {droppedFrameCount} CAN frame(s) were dropped. Observed candidates are incomplete and may be missing."
+            : "Passive ECU scan was cancelled. Observed candidates are preserved but the scan is incomplete.")
     {
         Candidates = candidates;
+        DroppedFrameCount = droppedFrameCount;
     }
 }
 
@@ -118,7 +124,11 @@ internal sealed class UdsEcuDiscovery
         {
             // Preserve useful observations so the UI can report a cancelled
             // scan without throwing away responders already seen.
-            throw new UdsEcuDiscoveryCancelledException(BuildCandidates(observations));
+            // Cancelling a scan must not hide receive-queue overflow: a partial
+            // candidate list may also have lost ECU responses before cancellation.
+            throw new UdsEcuDiscoveryCancelledException(
+                BuildCandidates(observations),
+                subscription.DroppedFrameCount - initialDroppedFrameCount);
         }
 
         var droppedFrameCount = subscription.DroppedFrameCount - initialDroppedFrameCount;

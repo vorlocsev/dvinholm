@@ -1,3 +1,12 @@
+## Passive ECU discovery — preserve CAN losses on cancellation (2026-10-19)
+
+- [x] Updated cancelled passive scans to retain the receive-queue dropped-frame count alongside previously observed ECU candidates.
+- [x] WinUI cancellation status now calls out the number of dropped frames, and the detailed status message warns that partial observations may be missing responders.
+- [x] Added deterministic unit coverage for cancellation messages with and without dropped frames; retained the existing virtual-adapter cancellation coverage.
+- [ ] Confirm Windows CI and merge the fix; no physical J2534 adapter is required. Stable release remains `v0.2.1`.
+
+---
+
 ## Stable release v0.2.1 — 2026-10-19
 
 - [x] Prepared Windows x86 v0.2.1 packaging, release notes, changelog, updated README links and in-app version metadata.

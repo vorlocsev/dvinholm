@@ -1,3 +1,12 @@
+## Passive ECU scan cancellation drop reporting — 2026-10-19
+
+- Source inspection found that a cancelled passive discovery scan returned partial candidates but omitted the subscription's dropped-frame count, even though completed scans already report queue overflow.
+- The change carries `DroppedFrameCount` into `UdsEcuDiscoveryCancelledException` and surfaces it in WinUI cancellation status and error description.
+- Deterministic no-adapter unit cases cover clean cancellation vs cancellation with drops. The existing virtual-adapter cancellation test now checks that no drops were recorded in its controlled scenario.
+- CI and merge are pending. No ECU commands were added, and physical J2534/vehicle testing stays deferred; stable release remains `v0.2.1`.
+
+---
+
 ## Dvinholm v0.2.1 release preparation — 2026-10-19
 
 - Published [Dvinholm v0.2.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.1) as a stable patch release after branding and icon integration, with the current `main` software fixes but without new physical-adapter claims.

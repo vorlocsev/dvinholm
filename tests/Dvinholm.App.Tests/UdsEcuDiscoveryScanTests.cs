@@ -157,7 +157,76 @@ public sealed class UdsEcuDiscoveryScanTests
         Assert.Equal((uint)0x7E8, candidate.ResponseId);
         Assert.Equal((uint?)0x7E0, candidate.RequestId);
         Assert.Contains("cancelled", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0L, error.DroppedFrameCount);
         Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
+    [Fact]
+    public async Task ScanAsync_CancelAfterQueueOverflow_RetainsLossWarningAndPartialCandidates()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ =>
+            Array.Empty<Dvinholm.App.CanFrame>());
+        using var bus = new Dvinholm.App.CanBus(adapter);
+        bus.Start();
+        var discovery = new Dvinholm.App.UdsEcuDiscovery(bus);
+        using var cancellation = new CancellationTokenSource();
+
+        var scan = discovery.ScanAsync(
+            TimeSpan.FromSeconds(5),
+            cancellation.Token,
+            receiveQueueCapacity: 1);
+        await Task.Delay(50);
+
+        var response = new Dvinholm.App.CanFrame(
+            0x7E8, false, false, new byte[] { 0x03, 0x62, 0xF1, 0x90 }, 0, 0);
+        // Establish a candidate before inducing queue overflow, so cancellation
+        // must preserve observations as well as the frame-loss warning.
+        adapter.InjectReceiveFrame(response);
+        await Task.Delay(50);
+
+        for (var i = 0; i < 20_000; i++)
+            adapter.InjectReceiveFrame(response);
+
+        // Allow the virtual receive worker to publish the burst before
+        // cancellation, matching the tested overflow scenario above.
+        await Task.Delay(200);
+        cancellation.Cancel();
+
+        var error = await Assert.ThrowsAsync<Dvinholm.App.UdsEcuDiscoveryCancelledException>(
+            async () => await scan.WaitAsync(TimeSpan.FromSeconds(3)));
+
+        Assert.True(error.DroppedFrameCount > 0);
+        Assert.Contains(error.Candidates, candidate => candidate.ResponseId == 0x7E8);
+        Assert.Contains("dropped", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("incomplete", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
+    [Theory]
+    [InlineData(0L)]
+    [InlineData(7L)]
+    public void CancelledScan_PreservesQueueDropCountAndWarnsWhenFramesWereLost(long dropped)
+    {
+        var candidates = new[]
+        {
+            new Dvinholm.App.UdsEcuCandidate(0x7E8, 0x7E0, false, 1, 4)
+        };
+
+        var error = new Dvinholm.App.UdsEcuDiscoveryCancelledException(candidates, dropped);
+
+        Assert.Same(candidates, error.Candidates);
+        Assert.Equal(dropped, error.DroppedFrameCount);
+        Assert.Contains("cancelled", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("incomplete", error.Message, StringComparison.OrdinalIgnoreCase);
+        if (dropped > 0)
+        {
+            Assert.Contains(dropped.ToString(), error.Message);
+            Assert.Contains("dropped", error.Message, StringComparison.OrdinalIgnoreCase);
+        }
+        else
+        {
+            Assert.DoesNotContain("dropped", error.Message, StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     [Fact]
