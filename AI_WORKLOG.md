@@ -1,9 +1,18 @@
+## Readable UDS DID results — 2026-10-19
+
+- Added `UdsDidDisplayFormatter` to present DID ID and full raw diagnostic reply while decoding ISO 14229's `F190` VIN strictly with the existing VIN validator.
+- Generic printable data may be shown as a clearly labeled **unverified ASCII preview**; arbitrary binary data and vehicle-specific physical units are never guessed.
+- Hooked the helper to WinUI `Read DID`; `Read VIN` remains a separate strict operation. Unit tests cover valid/invalid VIN, text preview, binary, empty, malformed/mismatched DID and null responses.
+- Implementation CI/merge pending; software-only tests require no physical J2534 adapter; stable `v0.2.1` unchanged.
+
+---
+
 ## Passive ECU scan cancellation drop reporting — 2026-10-19
 
 - Source inspection found that a cancelled passive discovery scan returned partial candidates but omitted the subscription's dropped-frame count, even though completed scans already report queue overflow.
 - The change carries `DroppedFrameCount` into `UdsEcuDiscoveryCancelledException` and surfaces it in WinUI cancellation status and error description.
 - Deterministic no-adapter unit cases cover clean cancellation vs cancellation with drops. The existing virtual-adapter cancellation test now checks that no drops were recorded in its controlled scenario.
-- CI and merge are pending. No ECU commands were added, and physical J2534/vehicle testing stays deferred; stable release remains `v0.2.1`.
+- [PR #363](https://github.com/vorlocsev/dvinholm/pull/363) passed Windows CI [#39281948860](https://github.com/vorlocsev/dvinholm/actions/runs/39281948860), then merged as `fde996e7ca7555391519e2ab8c10f440f148534c`. [PR #362](https://github.com/vorlocsev/dvinholm/pull/362) (Windows icon confirmation) also passed CI [#39279472702](https://github.com/vorlocsev/dvinholm/actions/runs/39279472702) and merged as `4d1c20db42128217a9efa0e94962ed197d77cfd9`. Post-merge main checks are pending. No ECU commands were added, and physical J2534/vehicle testing stays deferred; stable release remains `v0.2.1`.
 
 ---
 
