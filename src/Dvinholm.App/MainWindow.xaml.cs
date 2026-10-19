@@ -421,12 +421,19 @@ public sealed partial class MainWindow : Window
                    "Do not use unconfirmed CAN IDs or DIDs on a real vehicle.",
             TextWrapping = TextWrapping.Wrap
         };
+        var errorBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.IndianRed);
         var errorText = new TextBlock
         {
             TextWrapping = TextWrapping.Wrap,
             Visibility = Visibility.Collapsed,
-            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.IndianRed)
+            Foreground = errorBrush
         };
+        // Restore each field's normal border as soon as the user edits it.
+        foreach (var box in new[] { idBox, nameBox, requestBox, responseBox, didBox, sourceBox })
+        {
+            var normalBorder = box.BorderBrush;
+            box.TextChanged += (_, _) => box.BorderBrush = normalBorder;
+        }
         var fields = new StackPanel { Spacing = 9 };
         foreach (var control in new UIElement[]
                  { idBox, nameBox, formatBox, requestBox, responseBox, didBox, sourceBox, warning })
@@ -473,7 +480,31 @@ public sealed partial class MainWindow : Window
             catch (ArgumentException ex)
             {
                 args.Cancel = true;
-                errorText.Text = "Profile not saved: " + ex.Message;
+                var invalidField = ex.ParamName switch
+                {
+                    nameof(EcuProfileDraft.Id) => idBox,
+                    nameof(EcuProfileDraft.Name) => nameBox,
+                    nameof(EcuProfileDraft.RequestId) => requestBox,
+                    nameof(EcuProfileDraft.ResponseId) => responseBox,
+                    nameof(EcuProfileDraft.CandidateDids) => didBox,
+                    nameof(EcuProfileDraft.Source) => sourceBox,
+                    _ => null
+                };
+                if (invalidField is not null)
+                {
+                    invalidField.BorderBrush = errorBrush;
+                    invalidField.Focus(FocusState.Programmatic);
+                }
+                // ArgumentException appends the parameter name to Message;
+                // keep the user-facing validation wording free of that suffix.
+                var message = ex.Message;
+                if (ex.ParamName is not null)
+                {
+                    var suffix = $" (Parameter '{ex.ParamName}')";
+                    if (message.EndsWith(suffix, StringComparison.Ordinal))
+                        message = message[..^suffix.Length];
+                }
+                errorText.Text = "Profile not saved: " + message;
                 errorText.Visibility = Visibility.Visible;
             }
             catch (IOException)

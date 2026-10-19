@@ -169,4 +169,35 @@ public sealed class EcuProfileEditorTests
             Dvinholm.App.EcuProfileEditor.Save(
                 new Dvinholm.App.EcuProfileCatalog(), null!));
     }
+    [Theory]
+    [InlineData("ZZZZ", "7E8", "F190", "RequestId")]
+    [InlineData("7E0", "ZZZZ", "F190", "ResponseId")]
+    [InlineData("7E0", "7E0", "F190", "ResponseId")]
+    [InlineData("7E0", "7E8", "ZZZZ", "CandidateDids")]
+    [InlineData("7E0", "7E8", "F190, F190", "CandidateDids")]
+    public void InvalidDiagnosticFieldsIdentifyTheEditorInput(
+        string request, string response, string dids, string expectedField)
+    {
+        var error = Assert.Throws<ArgumentException>(() =>
+            Dvinholm.App.EcuProfileEditor.Save(
+                new Dvinholm.App.EcuProfileCatalog(),
+                Draft(request: request, response: response, dids: dids)));
+
+        Assert.Equal(expectedField, error.ParamName);
+    }
+
+    [Theory]
+    [InlineData("", "User ECM", "test source", "Id")]
+    [InlineData("user.test.ecm", "", "test source", "Name")]
+    [InlineData("user.test.ecm", "User ECM", "", "Source")]
+    public void MissingRequiredMetadataIdentifiesTheEditorInput(
+        string id, string name, string source, string expectedField)
+    {
+        var error = Assert.Throws<ArgumentException>(() =>
+            Dvinholm.App.EcuProfileEditor.Save(
+                new Dvinholm.App.EcuProfileCatalog(),
+                Draft(id: id, name: name, source: source)));
+
+        Assert.Equal(expectedField, error.ParamName);
+    }
 }

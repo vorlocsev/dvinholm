@@ -30,16 +30,16 @@ internal static class EcuProfileEditor
         var source = (draft.Source ?? string.Empty).Trim();
 
         if (id.Length == 0 || id.Length > 120)
-            throw new ArgumentException("Profile ID must contain 1–120 characters.");
+            throw new ArgumentException("Profile ID must contain 1–120 characters.", nameof(draft.Id));
         if (name.Length == 0 || name.Length > 160)
-            throw new ArgumentException("Profile name must contain 1–160 characters.");
+            throw new ArgumentException("Profile name must contain 1–160 characters.", nameof(draft.Name));
         if (source.Length == 0 || source.Length > 2000)
-            throw new ArgumentException("Provide a source / verification note (up to 2000 characters).");
+            throw new ArgumentException("Provide a source / verification note (up to 2000 characters).", nameof(draft.Source));
 
         if (editingId is null)
         {
             if (existing.TryGet(id, out _))
-                throw new ArgumentException($"Profile ID '{id}' already exists. Choose a unique ID.");
+                throw new ArgumentException($"Profile ID '{id}' already exists. Choose a unique ID.", nameof(draft.Id));
         }
         else
         {
@@ -48,14 +48,14 @@ internal static class EcuProfileEditor
             // Stable IDs are used as the identity in local catalogs; editing
             // them here would implicitly create a different profile.
             if (!string.Equals(id, editingId, StringComparison.Ordinal))
-                throw new ArgumentException("Profile ID cannot be changed when editing.");
+                throw new ArgumentException("Profile ID cannot be changed when editing.", nameof(draft.Id));
         }
 
         var maxId = draft.IsExtended ? 0x1FFFFFFFu : 0x7FFu;
-        var requestId = ParseCanId(draft.RequestId, maxId, "Request ID");
-        var responseId = ParseCanId(draft.ResponseId, maxId, "Response ID");
+        var requestId = ParseCanId(draft.RequestId, maxId, "Request ID", nameof(draft.RequestId));
+        var responseId = ParseCanId(draft.ResponseId, maxId, "Response ID", nameof(draft.ResponseId));
         if (requestId == responseId)
-            throw new ArgumentException("Request and response CAN IDs must be different.");
+            throw new ArgumentException("Request and response CAN IDs must be different.", nameof(draft.ResponseId));
 
         var dids = ParseDids(draft.CandidateDids);
         // Any edit invalidates an earlier self-reported verification. A new
@@ -72,7 +72,7 @@ internal static class EcuProfileEditor
         return (new EcuProfileCatalog(entries), next);
     }
 
-    private static uint ParseCanId(string? input, uint maximum, string field)
+    private static uint ParseCanId(string? input, uint maximum, string field, string parameterName)
     {
         var value = (input ?? string.Empty).Trim();
         if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
@@ -82,7 +82,7 @@ internal static class EcuProfileEditor
             !uint.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var result) ||
             result > maximum)
             throw new ArgumentException(
-                $"{field} must be hexadecimal between 0 and {maximum:X}.");
+                $"{field} must be hexadecimal between 0 and {maximum:X}.", parameterName);
 
         return result;
     }
@@ -96,7 +96,7 @@ internal static class EcuProfileEditor
             [',', ';', ' ', '\t', '\r', '\n'],
             StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries);
         if (tokens.Length > 128)
-            throw new ArgumentException("Enter at most 128 candidate DIDs.");
+            throw new ArgumentException("Enter at most 128 candidate DIDs.", nameof(EcuProfileDraft.CandidateDids));
 
         var result = new List<ushort>(tokens.Length);
         var unique = new HashSet<ushort>();
@@ -106,9 +106,9 @@ internal static class EcuProfileEditor
                 ? raw[2..] : raw;
             if (text.Length == 0 ||
                 !ushort.TryParse(text, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out var did))
-                throw new ArgumentException($"Invalid hexadecimal DID '{raw}'.");
+                throw new ArgumentException($"Invalid hexadecimal DID '{raw}'.", nameof(EcuProfileDraft.CandidateDids));
             if (!unique.Add(did))
-                throw new ArgumentException($"Duplicate candidate DID {did:X4}.");
+                throw new ArgumentException($"Duplicate candidate DID {did:X4}.", nameof(EcuProfileDraft.CandidateDids));
             result.Add(did);
         }
         return result;
