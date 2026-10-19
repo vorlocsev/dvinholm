@@ -816,7 +816,8 @@ public sealed partial class MainWindow : Window
     {
         if (!TryParseDid(out var did)) return;
 
-        await RunUdsOperationAsync("Read DID", (client, token) => Hex(client.ReadDataByIdentifier(did, token)));
+        await RunUdsOperationAsync("Read DID", (client, token) =>
+            UdsDidDisplayFormatter.Format(did, client.ReadDataByIdentifier(did, token)));
     }
 
     private async void ReadVin_Click(object sender, RoutedEventArgs e)
@@ -834,8 +835,6 @@ public sealed partial class MainWindow : Window
         : string.Join(", ", dtcs.Select(d => $"0x{d.Code:X6}/status=0x{d.Status:X2} [{UdsDtcStatusFormatter.Format(d.Status)}]"));
 });
     }
-
-    private static string Hex(byte[] data) => BitConverter.ToString(data).Replace('-', ' ');
 
     private bool TryParseDid(out ushort did)
     {
