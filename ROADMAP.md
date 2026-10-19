@@ -1411,3 +1411,15 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] A distinct invalid-DID edit followed by Cancel, exact local Current CI label verification, and independent immediate border-reset observation remain to be confirmed. Do not claim 8/8 complete checklist rows without these substeps.
 - [ ] Physical J2534 adapter/vehicle testing is deferred; stable release remains v0.2.1.
 - Detailed evidence: [Windows validation checklist and results](docs/manual-ecu-profile-validation-ui-2026-10-20.md), [PR #374](https://github.com/vorlocsev/dvinholm/pull/374).
+
+## CAN Monitor: bounded RX history and live software refilter — 2026-10-20
+
+- [x] [PR #376](https://github.com/vorlocsev/dvinholm/pull/376) merged as `2dec8831b63c0c5306694dd21209ce8b2a19e07d`. Before this fix, software CAN ID filtering discarded nonmatching frames from the UI collection and the filter-change handler did not rebuild the list.
+- [x] Preserve the last **5000 received CAN frames**, independently of the selected software ID filter, and rebuild the displayed list from that history when the filter text changes.
+- [x] Preserve oldest-first ordering and evict rows from the visible list when their underlying history entries expire; count all received frames separately from shown rows. Clear resets captured history, view, count and rate.
+- [x] Added seven offline regression tests including receive injection through the existing `VirtualJ2534Adapter`, filter changes, malformed and zero ID queries, bounded eviction, clear, and invalid-capacity guard.
+- [x] [PR CI #2862](https://github.com/vorlocsev/dvinholm/actions/runs/39342233407) completed successfully (Windows build/test/publish and latest stable release archive audit).
+- [ ] Verify post-merge [main CI #2863](https://github.com/vorlocsev/dvinholm/actions/runs/39342680771) before marking its pipeline successful.
+- [ ] Validate visible CAN Monitor interaction and CSV export on Windows using a future explicit synthetic-data UI mode or a real J2534 adapter. The existing virtual adapter is a **test fixture**, not a user-facing WinUI device; do not claim a disconnected app can run live monitoring.
+- [ ] A future standalone stage may add a prominently labeled, offline, read-only **Demo CAN Monitor** feed for Windows UI checks without accessing J2534 hardware. Keep demo data isolated from actual ECU/UDS connections.
+- Physical adapter/vehicle validation remains postponed; stable release remains v0.2.1.

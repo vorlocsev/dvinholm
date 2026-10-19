@@ -2842,3 +2842,13 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed rename to `Test ECU Final` persisted after full restart, with CAN IDs and DIDs unchanged and unrelated profiles intact.
 - Each checkpoint was recorded on [PR #374](https://github.com/vorlocsev/dvinholm/pull/374); confirmation of the final rename/restart check is also there.
 - Evidence boundaries: exact installed CI number/short SHA was not supplied, immediate border-reset upon typing was not separately observed, and an explicit invalid-DID edit followed by Cancel was not tested in the final check. Leave those checklist subparts pending. Physical adapter and vehicle testing remain deferred. Stable v0.2.1 is unchanged.
+
+## CAN Monitor software ID refilter and bounded history — 2026-10-20
+
+- Audited the WinUI CAN Monitor path in `MainWindow.xaml.cs`: `AddFrame` discarded incoming rows that did not match the currently typed ID filter; `Filter_Changed` was a no-op. A later filter change could therefore not reveal previously hidden frames.
+- [PR #376](https://github.com/vorlocsev/dvinholm/pull/376) merged as `2dec8831b63c0c5306694dd21209ce8b2a19e07d`. Created `CanMonitorRow` and `CanMonitorHistory` (bounded to 5000 raw received rows) and preserved historical RX rows independent of the selected filter.
+- Refreshing the software filter now rebuilds the visible ListView projection from the bounded buffer. Count text distinguishes shown frames from total received, and Clear resets buffer and rate. CSV export still uses the filtered visible rows.
+- Added seven no-hardware automated tests in `CanMonitorHistoryTests.cs`, including virtual J2534 receive injection and multi-ID filter replay. [PR CI #2862](https://github.com/vorlocsev/dvinholm/actions/runs/39342233407) passed Build, Test, Publish and the stable ZIP audit.
+- Post-merge main [CI #2863](https://github.com/vorlocsev/dvinholm/actions/runs/39342680771) started; final result pending at this checkpoint.
+- Not covered: manual WinUI monitoring and CSV export with injected demo frames, because `VirtualJ2534Adapter` exists only as a test fixture and disconnected Start Monitor remains disabled by design. A dedicated offline demo UI mode is a future enhancement, not a claim about current functionality.
+- Physical J2534 and vehicle checks remain deferred; stable release still v0.2.1.
