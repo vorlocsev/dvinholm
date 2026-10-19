@@ -1,8 +1,19 @@
+## Dvinholm repository branding and Windows icons — 2026-10-19
+
+- [x] Prepared approved silver-arrow / northern-river logo as a 7-size Windows `.ico` (16–256 px), a README PNG icon, and a wide README WebP banner.
+- [x] Updated `README.md` presentation, quick-start, stable/CI links and corrected updater-channel wording; archived older development plans to `docs/DEVELOPMENT_HISTORY.md`.
+- [x] Wired `ApplicationIcon` into the project, copied the ICO to published output and applied the same icon to the WinUI window at startup.
+- [x] Added an automated Windows CI packaging check for the icon file and ICO directory.
+- [ ] Verify branding PR CI, merge into `main`, and confirm post-merge CI; Windows UI screenshot check remains manual.
+- Stable release `v0.2.0` remains unchanged; J2534 hardware/vehicle testing remains deferred.
+
+---
+
 ## Updater startup-launch exception rollback — 2026-10-19
 
 - [x] Added a Windows PowerShell regression case to [PR #357](https://github.com/vorlocsev/dvinholm/pull/357): simulated `Start-Process` exception before the updated executable starts.
 - [x] The test asserts that the previous build and its marker are restored, the previous executable is restarted, and the original launch error is logged without misreporting a successful rollback as failed.
-- [ ] Confirm PR Windows CI (build, tests, packaging, stable-release audit), merge, and verify post-merge `main` CI.
+- [x] PR [#357](https://github.com/vorlocsev/dvinholm/pull/357) merged as `90c42b96c4e2b87ea74d5dca8006a7f75ffff97f`; PR CI [#39178639657](https://github.com/vorlocsev/dvinholm/actions/runs/39178639657) and post-merge main CI [#39178995450](https://github.com/vorlocsev/dvinholm/actions/runs/39178995450) passed build, tests, packaging, and stable-release audit.
 - Stable release stays `v0.2.0`; real J2534 adapter and vehicle testing remain deferred.
 
 ---
