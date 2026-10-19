@@ -4,7 +4,7 @@
 - [x] Release workflow configured to verify branded icon, publish portable ZIP plus SHA-256 file, then re-download and validate the published assets.
 - [x] [PR #360](https://github.com/vorlocsev/dvinholm/pull/360) merged as `eb51b998cee3557b661b5cfa9626126ddaea6be4` after green Windows PR CI [#39183661356](https://github.com/vorlocsev/dvinholm/actions/runs/39183661356); post-merge `main` CI [#39184066818](https://github.com/vorlocsev/dvinholm/actions/runs/39184066818) also passed.
 - [x] Created `release/v0.2.1` from `eb51b99`; [stable release CI #39184108681](https://github.com/vorlocsev/dvinholm/actions/runs/39184108681) passed build/tests/publish/icon checks and re-download/SHA-256 verification. [v0.2.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.1) is published as the latest stable release: ZIP 67,042,782 bytes, SHA-256 `5245d7691482da6434262b5767a0b23ed757df9136fb38b9aed196523a47bf09`.
-- [ ] Manually confirm actual window/titlebar/taskbar/Explorer icon rendering on Windows using the v0.2.1 ZIP; physical adapter/vehicle testing stays deferred.
+- [x] User manually confirmed that the branded icon is visible in Dvinholm v0.2.1 on Windows (2026-10-19). Per-surface rendering in the titlebar, taskbar and Explorer was not separately specified in this confirmation; physical adapter/vehicle testing stays deferred.
 
 ---
 
@@ -15,7 +15,7 @@
 - [x] Wired `ApplicationIcon` into the project, copied the ICO to published output and applied the same icon to the WinUI window at startup.
 - [x] Added an automated Windows CI packaging check for the icon file and ICO directory.
 - [x] [PR #358](https://github.com/vorlocsev/dvinholm/pull/358) merged as `780768061ca5bc8972ddc22924f3c124f63f1cc3` after successful PR CI [#39181656596](https://github.com/vorlocsev/dvinholm/actions/runs/39181656596); post-merge main CI [#39182025601](https://github.com/vorlocsev/dvinholm/actions/runs/39182025601) also passed build, tests, icon package verification and stable-release audit.
-- [ ] Manually verify actual window/titlebar/taskbar/Explorer icon appearance in the latest Windows CI build; CI verifies packaging, not appearance.
+- [x] Windows visual smoke check: user confirmed the branded icon is visible in v0.2.1 on 2026-10-19, in addition to the earlier CI packaging checks. Specific Windows display surfaces were not individually reported.
 - Stable release `v0.2.0` remains unchanged; J2534 hardware/vehicle testing remains deferred.
 
 ---
