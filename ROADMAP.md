@@ -1,9 +1,18 @@
+## Russian user guide and accurate update-channel wording — 2026-10-19
+
+- [x] Added a user-oriented Russian guide for installation, disconnected UI, J2534 connection, CAN Monitor, passive ECU discovery, ECU profiles, read-only UDS, updates and troubleshooting.
+- [x] Corrected the WinUI Check update label: the updater searches successful **main-branch** CI assets, not all branches; existing code tests cover branch filtering.
+- [x] Linked the guide from the GitHub README.
+- [ ] Verify documentation + UI string change with Windows PR CI and merge. Real J2534/vehicle validation remains deferred.
+
+---
+
 ## Readable UDS DTC results — 2026-10-19
 
 - [x] Added a read-only DTC formatter with result count and requested status mask, raw 24-bit code and ISO 14229 status flags displayed on separate lines.
 - [x] UI `Read DTC` shows human-readable individual entries in the existing bounded/selectable status panel; no guesses about Volvo-specific fault names or causes.
 - [x] Added deterministic unit tests for empty, single/multiple, duplicate, zero-status, zero-mask and manufacturer-specific records.
-- [ ] Review Windows PR CI and merge after success. Stable release `v0.2.1` remains unchanged; physical adapter testing is deferred.
+- [x] [PR #365](https://github.com/vorlocsev/dvinholm/pull/365) passed Windows CI [#39290526032](https://github.com/vorlocsev/dvinholm/actions/runs/39290526032), then merged as `fae165f57aedf9067883311eee71d466ed65237b`. Post-merge main CI is tracked separately. Stable release `v0.2.1` remains unchanged; physical adapter testing is deferred.
 
 ---
 
@@ -12,7 +21,7 @@
 - [x] New safe formatter displays the requested DID, the exact raw response bytes and validated VIN for `F190`.
 - [x] For unfamiliar DIDs, only printable ASCII previews are suggested, explicitly marked unverified; physical units and Volvo-specific interpretations are not invented.
 - [x] Wired the formatter into the existing read-only `Read DID` button, made the status panel scrollable/selectable without pushing CAN Monitor out of view, and added no-adapter regression tests for VIN, binary, malformed, empty and ASCII-preview responses.
-- [x] [PR #364](https://github.com/vorlocsev/dvinholm/pull/364) passed Windows CI [#39287171823](https://github.com/vorlocsev/dvinholm/actions/runs/39287171823) and merged as `ba192e1ff97ccd6923d08b43130967dab9fc96fb`. Post-merge `main` CI is tracked separately. Hardware/vehicle testing remains deferred; stable release remains `v0.2.1`.
+- [x] [PR #364](https://github.com/vorlocsev/dvinholm/pull/364) passed Windows CI [#39287171823](https://github.com/vorlocsev/dvinholm/actions/runs/39287171823) and merged as `ba192e1ff97ccd6923d08b43130967dab9fc96fb`. Post-merge `main` CI [#39290076530](https://github.com/vorlocsev/dvinholm/actions/runs/39290076530) passed. Hardware/vehicle testing remains deferred; stable release remains `v0.2.1`.
 
 ---
 
