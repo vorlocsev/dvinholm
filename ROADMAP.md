@@ -6,7 +6,8 @@
 - [x] Saves to the existing JSON catalog atomically *before* replacing the live UI catalog. Cancel, invalid input and failed writes cannot silently overwrite valid saved profiles.
 - [x] Editor clears search/verification filters and selects the saved profile. UI changes are local, with no J2534 commands sent.
 - [x] Added software-only regression coverage for creation, replacement, invariants, 11/29-bit ranges, DID input, JSON roundtrip and preserving unrelated profiles.
-- [ ] Verify PR Windows CI, merge and run post-merge `main` CI. Then manually check dialog layout and user interaction on Windows; physical adapter tests remain deferred.
+- [x] [PR #369](https://github.com/vorlocsev/dvinholm/pull/369) passed Windows CI [#39323572877](https://github.com/vorlocsev/dvinholm/actions/runs/39323572877) with **587/587 passing tests**, and merged as `2989b0bb52515123ef27976b6cc83dc5df7df847`. Post-merge [main CI #39324283802](https://github.com/vorlocsev/dvinholm/actions/runs/39324283802) is checked separately.
+- [ ] Manual dialog validation on Windows: [ten-step checklist](docs/manual-ecu-profile-editor-2026-10-19.md), with no adapter. Real adapter/vehicle tests remain deferred.
 
 ---
 ## ECU profile catalog search and provenance — 2026-10-19
