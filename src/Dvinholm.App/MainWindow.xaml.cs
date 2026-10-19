@@ -37,6 +37,7 @@ public sealed partial class MainWindow : Window
     private readonly ObservableCollection<EcuRow> _ecus = new();
     private EcuProfileCatalog _profileCatalog = new();
     private bool _loadingProfiles;
+    private int _profileFilterGeneration;
     private int _rateFrames;
     private uint? _activeHardwareFilterId;
     private LatestBuildInfo? _latestBuild;
@@ -261,18 +262,69 @@ public sealed partial class MainWindow : Window
     private void SetProfileCatalog(EcuProfileCatalog catalog)
     {
         _profileCatalog = catalog;
+        _profileFilterGeneration++;
         _loadingProfiles = true;
         try
         {
-            ProfileSelector.ItemsSource = _profileCatalog.All;
+            ProfileSelector.ItemsSource = null;
             ProfileSelector.SelectedIndex = -1;
             ClearProfileInputs();
-            EcuInfoText.Text = "No ECU profile selected. Choose a profile to view its metadata.";
         }
         finally
         {
             _loadingProfiles = false;
         }
+
+        RefreshProfileFilter();
+    }
+
+    private void ProfileSearch_TextChanged(object sender, TextChangedEventArgs e) =>
+        RefreshProfileFilter();
+
+    private void MarkedVerifiedOnly_Changed(object sender, RoutedEventArgs e) =>
+        RefreshProfileFilter();
+
+    private void RefreshProfileFilter()
+    {
+        // WinUI may fire TextChanged/Checked during InitializeComponent.
+        if (ProfileSelector is null || EcuInfoText is null ||
+            ProfileSearch is null || MarkedVerifiedOnly is null || _loadingProfiles)
+            return;
+
+        var previousId = (ProfileSelector.SelectedItem as EcuProfile)?.Id;
+        var filtered = EcuProfileCatalogSearch.Filter(
+            _profileCatalog, ProfileSearch.Text, MarkedVerifiedOnly.IsChecked == true);
+        var retained = previousId is null
+            ? null
+            : filtered.FirstOrDefault(profile =>
+                string.Equals(profile.Id, previousId, StringComparison.OrdinalIgnoreCase));
+
+        // Suppress ComboBox selection changes caused by replacing its ItemsSource;
+        // this should not overwrite manually edited UDS fields for a retained
+        // profile or trigger a vehicle diagnostic request.
+        _profileFilterGeneration++;
+        _loadingProfiles = true;
+        try
+        {
+            ProfileSelector.ItemsSource = filtered;
+            ProfileSelector.SelectedItem = retained;
+        }
+        finally
+        {
+            _loadingProfiles = false;
+        }
+
+        if (previousId is not null && retained is null)
+        {
+            ClearProfileInputs();
+            SetStatus("Previously selected ECU profile is hidden by the filter. No diagnostic request was sent.");
+        }
+
+        EcuInfoText.Text = retained is null
+            ? $"ECU profiles: {filtered.Count} shown of {_profileCatalog.All.Count}. " +
+              "Choose a profile to view its source and candidate DIDs. " +
+              "The 'marked verified' flag is supplied by the catalog author, not checked against a vehicle."
+            : EcuProfileCatalogSearch.Describe(retained);
     }
 
     private void LoadSavedProfileCatalog()
@@ -425,9 +477,10 @@ public sealed partial class MainWindow : Window
         // reconciling its selected item. Apply the final selection on the UI
         // queue so returning to a profile always restores its saved values,
         // rather than leaving a manually edited ID in the TextBox.
+        var generation = _profileFilterGeneration;
         DispatcherQueue.TryEnqueue(() =>
         {
-            if (_loadingProfiles)
+            if (_loadingProfiles || generation != _profileFilterGeneration)
                 return;
 
             ApplySelectedProfile(ProfileSelector.SelectedItem as EcuProfile);
@@ -450,10 +503,7 @@ public sealed partial class MainWindow : Window
             ? profile.ReadableDataIdentifiers.Order().First().ToString("X4")
             : string.Empty;
 
-        EcuInfoText.Text = $"Profile: {profile.Name} ({profile.Id}) · {(profile.IsVerified ? "verified" : "unverified draft")}" +
-            Environment.NewLine + $"Source: {profile.Source}" +
-            Environment.NewLine + $"Candidate readable DIDs: {(profile.ReadableDataIdentifiers.Count == 0 ? "none listed" : string.Join(", ", profile.ReadableDataIdentifiers.Order().Select(did => did.ToString("X4"))))}" +
-            Environment.NewLine + "Profile metadata does not guarantee that the ECU supports a listed DID.";
+        EcuInfoText.Text = EcuProfileCatalogSearch.Describe(profile);
         SetStatus($"Applied profile '{profile.Name}' (request {UdsRequestId.Text}, response {UdsResponseId.Text}). No diagnostic request was sent.");
     }
 

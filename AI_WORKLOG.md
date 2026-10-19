@@ -1,8 +1,18 @@
+## Searchable ECU profiles with provenance display — 2026-10-19
+
+- Added `EcuProfileCatalogSearch` for case-insensitive profile-name/id/source matching plus CAN ID / candidate DID hex search. Optional `0x` prefix is accepted, no external data fetched.
+- The WinUI profiles panel now offers **Find ECU profile** and **Marked verified only** plus bounded scrollable/selectable details. Verification is explicitly a self-reported flag from JSON, not confirmation by Dvinholm. No vehicle-specific Volvo addresses were added.
+- Filtering preserves a selected profile and manually edited UDS fields when still visible. Filtering out the selected profile clears CAN ID, DID and addressing fields to prevent accidentally using stale data; no CAN requests are sent by filtering.
+- Added deterministic software-only regression tests for name, catalog ID, source, 11/29-bit request/response IDs, DID, combined verification flag, empty results, immutability and provenance descriptions.
+- CI and merge pending; hardware adapter testing deferred. Stable release v0.2.1 remains unchanged.
+
+---
+
 ## Russian user guide and updater-channel label — 2026-10-19
 
 - Added `docs/USER_GUIDE_RU.md` containing practical steps for the portable x86 release, disconnected UI, vendor 32-bit J2534 DLL, CAN Monitor/filters/CSV, passive discovery, ECU profiles, UDS DID/VIN/DTC, updater mechanics and limitations.
 - Source audit confirmed the updater accepts only successful `push` CI runs on `main` with published assets; corrected the misleading WinUI text claiming builds from all branches.
-- Linked the guide on the README landing page; code path and updater behavior are unchanged. Validation PR CI and merge pending.
+- Linked the guide on the README landing page; code path and updater behavior are unchanged. [PR #366](https://github.com/vorlocsev/dvinholm/pull/366) passed CI [#39291963115](https://github.com/vorlocsev/dvinholm/actions/runs/39291963115) and merged as `9b42f31fcdf046cc6c006398ae0e1d80c90b0acd`. Post-merge `main` CI [#39292558370](https://github.com/vorlocsev/dvinholm/actions/runs/39292558370) passed.
 
 ---
 
