@@ -62,7 +62,7 @@ Install the interface drivers and vendor J2534 DLL separately. The application i
 - Live CAN capture, software CAN ID filtering, optional J2534 hardware ID filters, frame-rate/count statistics, and CSV export.
 - Report firmware, vendor DLL, and J2534 API versions when the driver supports `PassThruReadVersion`.
 - Detect optional vendor exports for hardware filters, version queries, and extended error details. Export detection is not a hardware conformance test.
-- Import, validate, select, and export JSON ECU profile catalogs. The catalog starts empty; no unsupported vehicle-specific CAN IDs or DIDs are guessed.
+- Import, validate, search, select, and export JSON ECU profile catalogs. Search supports names, catalog IDs, source notes, CAN IDs and candidate DIDs; a separate filter shows profiles **marked verified by the catalog author**, without implying actual hardware compatibility. Profile details are selectable and scrollable. The catalog starts empty; no unsupported vehicle-specific CAN IDs or DIDs are guessed.
 - Discover observed UDS responders and select 11-bit or 29-bit CAN addressing.
 - Read a configured Data Identifier (UDS `0x22`), read VIN from DID `0xF190`, and read DTC records using UDS `0x19` / subfunction `0x02`.
 - Display **Read DID** replies with their DID and raw bytes, strict VIN interpretation for `F190`, and clearly marked optional printable ASCII previews for otherwise unknown payloads; no unsupported vehicle-specific units are inferred. The bounded, scrollable status panel allows selecting/copying long replies without obscuring CAN Monitor.
