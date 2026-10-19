@@ -1,9 +1,9 @@
 ## Dvinholm v0.2.1 release preparation — 2026-10-19
 
-- Requested a stable patch release after branding and icon integration. Preparing v0.2.1 with current `main` software fixes, but without new physical-adapter claims.
+- Published [Dvinholm v0.2.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.1) as a stable patch release after branding and icon integration, with the current `main` software fixes but without new physical-adapter claims.
 - Updated application/CI version identifiers, release workflow, dedicated release notes, README download links, CHANGELOG and roadmap.
-- Release workflow must build/test/publish on Windows x86, ensure the application icon is packaged, publish `Dvinholm-Windows-x86.zip` and `SHA256SUMS.txt`, then independently re-download/check the ZIP.
-- GitHub publication and post-release audit are pending until release CI succeeds. The user has not confirmed Windows appearance of the new icon; retain as a manual follow-up.
+- Release workflow [#39184108681](https://github.com/vorlocsev/dvinholm/actions/runs/39184108681) passed Windows x86 build/tests/publish and icon verification, published `Dvinholm-Windows-x86.zip` plus `SHA256SUMS.txt`, then re-downloaded and verified the ZIP checksum. Published ZIP: 67,042,782 bytes; SHA-256 `5245d7691482da6434262b5767a0b23ed757df9136fb38b9aed196523a47bf09`.
+- [PR #360](https://github.com/vorlocsev/dvinholm/pull/360) merged as `eb51b998cee3557b661b5cfa9626126ddaea6be4`; PR CI [#39183661356](https://github.com/vorlocsev/dvinholm/actions/runs/39183661356), post-merge `main` CI [#39184066818](https://github.com/vorlocsev/dvinholm/actions/runs/39184066818), and dedicated release CI all passed. GitHub confirms tag `v0.2.1` is neither draft nor prerelease and is the newest stable. The user has not yet confirmed the new icon's Windows appearance; retain as a manual follow-up.
 
 ---
 

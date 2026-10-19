@@ -2,8 +2,8 @@
 
 - [x] Prepared Windows x86 v0.2.1 packaging, release notes, changelog, updated README links and in-app version metadata.
 - [x] Release workflow configured to verify branded icon, publish portable ZIP plus SHA-256 file, then re-download and validate the published assets.
-- [ ] Merge release preparation PR after green Windows CI and verify latest `main` CI.
-- [ ] Trigger dedicated v0.2.1 workflow by creating `release/v0.2.1` from the validated `main` commit; confirm published GitHub Release ZIP and SHA-256.
+- [x] [PR #360](https://github.com/vorlocsev/dvinholm/pull/360) merged as `eb51b998cee3557b661b5cfa9626126ddaea6be4` after green Windows PR CI [#39183661356](https://github.com/vorlocsev/dvinholm/actions/runs/39183661356); post-merge `main` CI [#39184066818](https://github.com/vorlocsev/dvinholm/actions/runs/39184066818) also passed.
+- [x] Created `release/v0.2.1` from `eb51b99`; [stable release CI #39184108681](https://github.com/vorlocsev/dvinholm/actions/runs/39184108681) passed build/tests/publish/icon checks and re-download/SHA-256 verification. [v0.2.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.1) is published as the latest stable release: ZIP 67,042,782 bytes, SHA-256 `5245d7691482da6434262b5767a0b23ed757df9136fb38b9aed196523a47bf09`.
 - [ ] Manually confirm actual window/titlebar/taskbar/Explorer icon rendering on Windows using the v0.2.1 ZIP; physical adapter/vehicle testing stays deferred.
 
 ---
