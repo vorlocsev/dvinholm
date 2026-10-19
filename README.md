@@ -64,7 +64,7 @@ Install the interface drivers and vendor J2534 DLL separately. The application i
 - Import, validate, select, and export JSON ECU profile catalogs. The catalog starts empty; no unsupported vehicle-specific CAN IDs or DIDs are guessed.
 - Discover observed UDS responders and select 11-bit or 29-bit CAN addressing.
 - Read a configured Data Identifier (UDS `0x22`), read VIN from DID `0xF190`, and read DTC records using UDS `0x19` / subfunction `0x02`.
-- Display **Read DID** replies with their DID and raw bytes, strict VIN interpretation for `F190`, and clearly marked optional printable ASCII previews for otherwise unknown payloads; no unsupported vehicle-specific units are inferred.
+- Display **Read DID** replies with their DID and raw bytes, strict VIN interpretation for `F190`, and clearly marked optional printable ASCII previews for otherwise unknown payloads; no unsupported vehicle-specific units are inferred. The bounded, scrollable status panel allows selecting/copying long replies without obscuring CAN Monitor.
 - Use ISO-TP over Classic CAN for single-frame and multi-frame requests and responses, including Flow Control, Block Size, STmin, timeouts, cancellation, and sequence-number validation.
 
 UDS functionality is currently read-only. A profile or DID marked as a candidate does not guarantee that a particular ECU supports it. Do not treat observed responses or profile metadata as proof of support.
