@@ -5,7 +5,8 @@
 - [x] Replaced truncated metadata with a bounded, scrollable, selectable profile description showing CAN IDs, source and DID list, including a warning that the profile is not hardware-certified.
 - [x] Filter changes retain the active profile and manually edited UDS values if it remains visible, and clear stale UDS fields when the selected profile becomes hidden.
 - [x] Added hardware-independent unit tests for filter criteria, empty and verified-only results, catalog immutability, source and verification details.
-- [ ] Windows CI and final PR review before merge. Manual layout check on Windows afterward; real-adapter testing stays in a future release.
+- [ ] Manual Windows layout, search/selection and no-adapter verification: [nine-step checklist](docs/manual-ecu-profile-search-2026-10-19.md). Physical J2534 validation remains deferred.
+- [x] [PR #367](https://github.com/vorlocsev/dvinholm/pull/367) passed Windows CI [#39297846535](https://github.com/vorlocsev/dvinholm/actions/runs/39297846535) (564/564 tests) and merged as `15f43e16fa9a697a857bdfa46e4bbd8e71e4e38c`. Post-merge `main` CI [#39298463839](https://github.com/vorlocsev/dvinholm/actions/runs/39298463839) also passed Windows build/tests, ZIP publishing, branded-icon packaging and stable-release audit.
 
 ---
 
