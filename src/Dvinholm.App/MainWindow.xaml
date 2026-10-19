@@ -60,20 +60,47 @@
                 <ListView.Header><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Response"/><TextBlock Grid.Column="1" Text="Request"/><TextBlock Grid.Column="2" Text="Type"/><TextBlock Grid.Column="3" Text="Frames"/><TextBlock Grid.Column="4" Text="Max payload"/></Grid></ListView.Header>
                 <ListView.ItemTemplate><DataTemplate><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Response}"/><TextBlock Grid.Column="1" Text="{Binding Request}"/><TextBlock Grid.Column="2" Text="{Binding Type}"/><TextBlock Grid.Column="3" Text="{Binding Frames}"/><TextBlock Grid.Column="4" Text="{Binding MaxPayload}"/></Grid></DataTemplate></ListView.ItemTemplate>
             </ListView>
-            <Border Grid.Row="2" Padding="6" Margin="0" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-                <Grid ColumnSpacing="8">
-                    <Grid.ColumnDefinitions>
-                        <ColumnDefinition Width="*"/>
-                        <ColumnDefinition Width="250"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                        <ColumnDefinition Width="Auto"/>
-                    </Grid.ColumnDefinitions>
-                    <TextBlock x:Name="EcuInfoText" Text="No ECU selected" VerticalAlignment="Center" TextWrapping="NoWrap" TextTrimming="CharacterEllipsis"/>
-                    <ComboBox x:Name="ProfileSelector" Grid.Column="1" PlaceholderText="ECU profiles" SelectionChanged="ProfileSelector_SelectionChanged" VerticalAlignment="Center"/>
-                    <Button Grid.Column="2" Content="Add test profiles" Click="AddTestProfiles_Click" VerticalAlignment="Center"/>
-                    <Button Grid.Column="3" Content="Import JSON" Click="ImportProfiles_Click" VerticalAlignment="Center"/>
-                    <Button Grid.Column="4" Content="Export JSON" Click="ExportProfiles_Click" VerticalAlignment="Center"/>
+            <Border Grid.Row="2" Padding="8" Margin="0" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+                <!-- Keep controls visible and expose complete imported profile
+                     metadata without pushing the CAN monitor out of view. -->
+                <Grid RowSpacing="6">
+                    <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
+                    </Grid.RowDefinitions>
+                    <Grid Grid.Row="0" ColumnSpacing="8">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="235"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="Auto"/>
+                        </Grid.ColumnDefinitions>
+                        <TextBox x:Name="ProfileSearch" Grid.Column="0"
+                                 Header="Find ECU profile"
+                                 PlaceholderText="Name, ID, CAN ID, DID or source"
+                                 TextChanged="ProfileSearch_TextChanged"/>
+                        <ComboBox x:Name="ProfileSelector" Grid.Column="1"
+                                  Header="ECU profiles" PlaceholderText="Select profile"
+                                  SelectionChanged="ProfileSelector_SelectionChanged"/>
+                        <CheckBox x:Name="MarkedVerifiedOnly" Grid.Column="2"
+                                  Content="Marked verified only"
+                                  Checked="MarkedVerifiedOnly_Changed"
+                                  Unchecked="MarkedVerifiedOnly_Changed"
+                                  VerticalAlignment="Bottom"/>
+                        <Button Grid.Column="3" Content="Add test profiles" Click="AddTestProfiles_Click" VerticalAlignment="Bottom"/>
+                        <Button Grid.Column="4" Content="Import JSON" Click="ImportProfiles_Click" VerticalAlignment="Bottom"/>
+                        <Button Grid.Column="5" Content="Export JSON" Click="ExportProfiles_Click" VerticalAlignment="Bottom"/>
+                    </Grid>
+                    <ScrollViewer Grid.Row="1" MaxHeight="76"
+                                  VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <TextBlock x:Name="EcuInfoText"
+                                   Text="No ECU profile selected"
+                                   TextWrapping="Wrap"
+                                   IsTextSelectionEnabled="True"/>
+                    </ScrollViewer>
                 </Grid>
             </Border>
             <Grid Grid.Row="3">
