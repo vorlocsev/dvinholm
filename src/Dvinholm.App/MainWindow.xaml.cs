@@ -424,7 +424,7 @@ public sealed partial class MainWindow : Window
         var errorText = new TextBlock { TextWrapping = TextWrapping.Wrap };
         var fields = new StackPanel { Spacing = 9 };
         foreach (var control in new UIElement[]
-                 { idBox, nameBox, formatBox, requestBox, responseBox, didBox, sourceBox, warning, errorText })
+                 { idBox, nameBox, formatBox, requestBox, responseBox, didBox, sourceBox, warning })
             fields.Children.Add(control);
 
         var viewer = new ScrollViewer
@@ -437,7 +437,12 @@ public sealed partial class MainWindow : Window
         {
             Title = editing is null ? "New ECU profile" : "Edit ECU profile",
             XamlRoot = RootLayout.XamlRoot,
-            Content = viewer,
+            // Keep validation errors visible above the scrollable fields.
+            Content = new StackPanel
+            {
+                Spacing = 8,
+                Children = { errorText, viewer }
+            },
             PrimaryButtonText = editing is null ? "Create and save" : "Save changes",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Primary
