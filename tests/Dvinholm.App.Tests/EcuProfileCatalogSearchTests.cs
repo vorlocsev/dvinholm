@@ -98,6 +98,58 @@ public sealed class EcuProfileCatalogSearchTests
     }
 
     [Fact]
+    public void Describe_UnverifiedProfileShowsSourceDidAndHardwareCaveat()
+    {
+        var profile = CreateCatalog().All.Single(x => x.Id == "demo.engine");
+
+        var info = Dvinholm.App.EcuProfileCatalogSearch.Describe(profile);
+
+        Assert.Contains("Example ECM", info);
+        Assert.Contains("demo.engine", info);
+        Assert.Contains("unverified", info);
+        Assert.Contains("Synthetic fixture only", info);
+        Assert.Contains("F187, F190", info);
+        Assert.Contains("7E0", info);
+        Assert.Contains("7E8", info);
+        Assert.Contains("11-bit", info);
+        Assert.Contains("not been established", info);
+    }
+
+    [Fact]
+    public void Describe_MarkedVerifiedProfileStillDisclaimsVehicleCompatibility()
+    {
+        var profile = CreateCatalog().All.Single(x => x.Id == "verified.generic");
+
+        var info = Dvinholm.App.EcuProfileCatalogSearch.Describe(profile);
+
+        Assert.Contains("marked verified by profile author", info);
+        Assert.Contains("18DA10F1", info);
+        Assert.Contains("18DAF110", info);
+        Assert.Contains("29-bit", info);
+        Assert.Contains("1234", info);
+        Assert.Contains("not been established", info);
+    }
+
+    [Fact]
+    public void Describe_ProfileWithNoCandidateDidsSaysNoneListed()
+    {
+        var profile = new Dvinholm.App.EcuProfile(
+            "empty", "Empty sample", 0x700, 0x708, false,
+            Array.Empty<ushort>(), "No DIDs documented.");
+
+        var info = Dvinholm.App.EcuProfileCatalogSearch.Describe(profile);
+
+        Assert.Contains("Candidate readable DIDs: none listed", info);
+    }
+
+    [Fact]
+    public void Describe_NullProfileThrows()
+    {
+        Assert.Throws<ArgumentNullException>(() =>
+            Dvinholm.App.EcuProfileCatalogSearch.Describe(null!));
+    }
+
+    [Fact]
     public void Filter_NullCatalogThrows()
     {
         Assert.Throws<ArgumentNullException>(() =>
