@@ -6,7 +6,7 @@
     xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
-    <Grid Padding="20" RowSpacing="14">
+    <Grid x:Name="RootLayout" Padding="20" RowSpacing="14">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
         <StackPanel Spacing="4">
@@ -61,20 +61,18 @@
                 <ListView.ItemTemplate><DataTemplate><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Response}"/><TextBlock Grid.Column="1" Text="{Binding Request}"/><TextBlock Grid.Column="2" Text="{Binding Type}"/><TextBlock Grid.Column="3" Text="{Binding Frames}"/><TextBlock Grid.Column="4" Text="{Binding MaxPayload}"/></Grid></DataTemplate></ListView.ItemTemplate>
             </ListView>
             <Border Grid.Row="2" Padding="8" Margin="0" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-                <!-- Keep controls visible and expose complete imported profile
-                     metadata without pushing the CAN monitor out of view. -->
+                <!-- Separate filtering from actions; keep the metadata scrollable
+                     and the CAN monitor visible in a compact window. -->
                 <Grid RowSpacing="6">
                     <Grid.RowDefinitions>
+                        <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
                             <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="235"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
-                            <ColumnDefinition Width="Auto"/>
+                            <ColumnDefinition Width="250"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBox x:Name="ProfileSearch" Grid.Column="0"
@@ -89,11 +87,17 @@
                                   Checked="MarkedVerifiedOnly_Changed"
                                   Unchecked="MarkedVerifiedOnly_Changed"
                                   VerticalAlignment="Bottom"/>
-                        <Button Grid.Column="3" Content="Add test profiles" Click="AddTestProfiles_Click" VerticalAlignment="Bottom"/>
-                        <Button Grid.Column="4" Content="Import JSON" Click="ImportProfiles_Click" VerticalAlignment="Bottom"/>
-                        <Button Grid.Column="5" Content="Export JSON" Click="ExportProfiles_Click" VerticalAlignment="Bottom"/>
                     </Grid>
-                    <ScrollViewer Grid.Row="1" MaxHeight="76"
+                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+                        <Button x:Name="CreateProfileButton" Content="New profile"
+                                Click="CreateProfile_Click"/>
+                        <Button x:Name="EditProfileButton" Content="Edit selected"
+                                Click="EditProfile_Click" IsEnabled="False"/>
+                        <Button Content="Add test profiles" Click="AddTestProfiles_Click"/>
+                        <Button Content="Import JSON" Click="ImportProfiles_Click"/>
+                        <Button Content="Export JSON" Click="ExportProfiles_Click"/>
+                    </StackPanel>
+                    <ScrollViewer Grid.Row="2" MaxHeight="76"
                                   VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
                         <TextBlock x:Name="EcuInfoText"
