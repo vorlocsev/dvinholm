@@ -242,6 +242,7 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 
 - [Руководство пользователя на русском](docs/USER_GUIDE_RU.md) — установка, J2534, CAN Monitor, ECU profiles, UDS и обновления.
 - [Ручная проверка поиска ECU-профилей](docs/manual-ecu-profile-search-2026-10-19.md) — девять шагов без физического адаптера после обновления до CI-сборки `main`.
+- [Ручная проверка создания/редактирования ECU-профилей](docs/manual-ecu-profile-editor-2026-10-19.md) — десять шагов для Windows без адаптера.
 - [Current roadmap](ROADMAP.md) — planned work and verified milestones.
 - [Development history](docs/DEVELOPMENT_HISTORY.md) — archived MVP and historical version plans.
 - [Engineering handoff log](AI_WORKLOG.md) — detailed CI evidence and project notes.
