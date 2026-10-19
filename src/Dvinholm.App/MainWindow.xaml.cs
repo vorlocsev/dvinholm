@@ -640,6 +640,8 @@ public sealed partial class MainWindow : Window
             DiscoveryStatus.Text = ex.Candidates.Count == 0
                 ? "Cancelled · no ECUs observed"
                 : $"Cancelled · {ex.Candidates.Count} ECU(s) observed; scan incomplete";
+            if (ex.DroppedFrameCount > 0)
+                DiscoveryStatus.Text += $" · {ex.DroppedFrameCount} frame(s) dropped";
             SetStatus(ex.Message);
         }
         catch (UdsEcuDiscoveryIncompleteException ex)
