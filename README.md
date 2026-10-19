@@ -39,9 +39,9 @@ The branded window, taskbar, and executable icon is packaged with v0.2.1. The ex
 
 - **Release:** [Dvinholm v0.2.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.1).
 - **Windows x86 portable ZIP:** [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/Dvinholm-Windows-x86.zip). This is not an installer; extract the full archive before launching `Dvinholm.App.exe`.
-- **SHA-256:** [SHA256SUMS.txt](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/SHA256SUMS.txt). Verify the downloaded ZIP against this checksum.
+- **Archive size:** 67,042,782 bytes. **SHA-256:** `5245d7691482da6434262b5767a0b23ed757df9136fb38b9aed196523a47bf09` — [SHA256SUMS.txt](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/SHA256SUMS.txt).
 - **What's new:** branded icon and README, persisted CAN speed, two clearly labeled synthetic ECU profiles, profile-selection fixes, and additional updater/cancellation/rollback regression coverage. See [CHANGELOG.md](CHANGELOG.md).
-- **Validation:** the dedicated release workflow must pass Windows build, test, publish and release-integrity verification; physical adapter and vehicle compatibility remain **unverified**.
+- **Validation:** [stable release CI #39184108681](https://github.com/vorlocsev/dvinholm/actions/runs/39184108681) passed Windows build, tests, publish, packaged icon check, release metadata verification, and a separate re-download/SHA-256 check. Release commit: `eb51b998cee3557b661b5cfa9626126ddaea6be4`. Physical adapter/vehicle compatibility is **unverified**.
 - **Windows visual check:** titlebar/taskbar/Explorer icon appearance awaits manual confirmation. CI verifies packaged icon data, not screen rendering.
 
 Previous stable release: [Dvinholm v0.2.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.0), published 2026-10-17.
