@@ -1,9 +1,18 @@
+## Readable UDS DID values — 2026-10-19
+
+- [x] New safe formatter displays the requested DID, the exact raw response bytes and validated VIN for `F190`.
+- [x] For unfamiliar DIDs, only printable ASCII previews are suggested, explicitly marked unverified; physical units and Volvo-specific interpretations are not invented.
+- [x] Wired the formatter into the existing read-only `Read DID` button and added no-adapter regression tests for VIN, binary, malformed, empty and ASCII-preview responses.
+- [ ] Review CI on the implementation PR and merge only after a green Windows build. Hardware/vehicle testing remains deferred; stable release remains `v0.2.1`.
+
+---
+
 ## Passive ECU discovery — preserve CAN losses on cancellation (2026-10-19)
 
 - [x] Updated cancelled passive scans to retain the receive-queue dropped-frame count alongside previously observed ECU candidates.
 - [x] WinUI cancellation status now calls out the number of dropped frames, and the detailed status message warns that partial observations may be missing responders.
 - [x] Added deterministic unit coverage for cancellation messages with and without dropped frames; retained the existing virtual-adapter cancellation coverage.
-- [ ] Confirm Windows CI and merge the fix; no physical J2534 adapter is required. Stable release remains `v0.2.1`.
+- [x] [PR #363](https://github.com/vorlocsev/dvinholm/pull/363) passed Windows CI [#39281948860](https://github.com/vorlocsev/dvinholm/actions/runs/39281948860) and was merged as `fde996e7ca7555391519e2ab8c10f440f148534c`. No physical J2534 adapter was required; stable release remains `v0.2.1`.
 
 ---
 
