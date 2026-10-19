@@ -53,6 +53,26 @@ jobs:
       - name: Publish
         run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:Version=0.2.0 -p:InformationalVersion=0.2.0+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app
 
+      - name: Verify branded Windows icon is published
+        shell: pwsh
+        run: |
+          $iconPath = 'artifacts/app/Assets/Dvinholm.ico'
+          if (-not (Test-Path -LiteralPath $iconPath -PathType Leaf)) {
+            throw "The published Dvinholm app icon is missing: $iconPath"
+          }
+          if (-not (Test-Path -LiteralPath 'artifacts/app/Dvinholm.App.exe' -PathType Leaf)) {
+            throw 'The published Dvinholm executable is missing.'
+          }
+          $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path -LiteralPath $iconPath).Path)
+          if ($bytes.Length -lt 6) { throw 'Published ICO file is truncated.' }
+          $reserved = [System.BitConverter]::ToUInt16($bytes, 0)
+          $kind = [System.BitConverter]::ToUInt16($bytes, 2)
+          $count = [System.BitConverter]::ToUInt16($bytes, 4)
+          if ($reserved -ne 0 -or $kind -ne 1 -or $count -lt 7) {
+            throw "Published ICO header is invalid (type $kind, images $count)."
+          }
+          Write-Host "Verified $count embedded icon sizes and packaged Dvinholm.App.exe."
+
       - name: Package public updater asset
         if: github.event_name == 'push' && github.ref == 'refs/heads/main'
         shell: pwsh

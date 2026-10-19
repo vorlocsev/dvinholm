@@ -1,8 +1,19 @@
+## Repository branding, README refresh and Windows app icon — 2026-10-19
+
+- User approved the silver circle-and-arrow emblem with a northern river landscape, and the wide Dvinholm ECU Diagnostics banner for GitHub.
+- Added `assets/dvinholm-banner.webp`, `assets/dvinholm-icon.png`, and `src/Dvinholm.App/Assets/Dvinholm.ico` (16, 24, 32, 48, 64, 128, 256 px frames).
+- `README.md` now has a branded hero, CI/release badges, fast Windows instructions and clear hardware-validation caveats. Historic MVP notes moved to `docs/DEVELOPMENT_HISTORY.md` instead of deleting them. Fixed outdated 'all branches' updater wording to match the current main-only implementation.
+- Embedded icon through `ApplicationIcon`, copied ICO in portable publish output, and assigned the icon to the WinUI title bar through `AppWindow.SetIcon`.
+- CI now asserts that publish output includes a structurally valid multi-size ICO and the executable.
+- PR/CI merge confirmation pending. Stable release `v0.2.0` not republished. Physical J2534/vehicle testing still deferred.
+
+---
+
 ## Updater launch-failure rollback regression — 2026-10-19
 
 - Opened [PR #357](https://github.com/vorlocsev/dvinholm/pull/357) to cover `Start-Process` throwing before the updated build launches, a distinct failure from an app that launches and exits immediately.
 - Extended the existing Windows PowerShell rollback theory using an isolated simulated launch exception. The test checks restoration of the previous executable and marker, relaunch of that build, and preservation of the original error in `update.log`.
-- CI and merge pending at time of writing; do not count this test as verified until successful Windows CI. No production implementation changes; stable release `v0.2.0` remains unchanged. Physical-adapter/vehicle testing deferred.
+- PR #357 merged as `90c42b96c4e2b87ea74d5dca8006a7f75ffff97f`. PR CI [#39178639657](https://github.com/vorlocsev/dvinholm/actions/runs/39178639657) and post-merge main CI [#39178995450](https://github.com/vorlocsev/dvinholm/actions/runs/39178995450) passed. No production implementation changes; stable release `v0.2.0` remains unchanged. Physical-adapter/vehicle testing deferred.
 
 ---
 

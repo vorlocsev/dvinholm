@@ -51,6 +51,10 @@ public sealed partial class MainWindow : Window
         DllPath.Text = LoadSavedDllPath();
         DllPath.TextChanged += DllPath_TextChanged;
         Title = LatestBuildUpdater.CurrentWindowTitle;
+        // The EXE also embeds this icon; SetIcon applies it to the WinUI title bar and taskbar.
+        var iconPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "Dvinholm.ico");
+        if (System.IO.File.Exists(iconPath))
+            AppWindow.SetIcon(iconPath);
         LoadSavedProfileCatalog();
         FramesView.ItemsSource = _frames;
         EcusView.ItemsSource = _ecus;
