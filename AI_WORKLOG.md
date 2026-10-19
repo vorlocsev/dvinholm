@@ -5,7 +5,8 @@
 - `README.md` now has a branded hero, CI/release badges, fast Windows instructions and clear hardware-validation caveats. Historic MVP notes moved to `docs/DEVELOPMENT_HISTORY.md` instead of deleting them. Fixed outdated 'all branches' updater wording to match the current main-only implementation.
 - Embedded icon through `ApplicationIcon`, copied ICO in portable publish output, and assigned the icon to the WinUI title bar through `AppWindow.SetIcon`.
 - CI now asserts that publish output includes a structurally valid multi-size ICO and the executable.
-- PR/CI merge confirmation pending. Stable release `v0.2.0` not republished. Physical J2534/vehicle testing still deferred.
+- [PR #358](https://github.com/vorlocsev/dvinholm/pull/358) merged as `780768061ca5bc8972ddc22924f3c124f63f1cc3`. PR CI [#39181656596](https://github.com/vorlocsev/dvinholm/actions/runs/39181656596) and post-merge main CI [#39182025601](https://github.com/vorlocsev/dvinholm/actions/runs/39182025601) completed successfully, including build, tests, publish, 7-frame ICO package check and latest stable-release ZIP audit. Windows visual confirmation of the titlebar/taskbar icon remains pending.
+- Stable release `v0.2.0` not republished. Physical J2534/vehicle testing still deferred.
 
 ---
 
