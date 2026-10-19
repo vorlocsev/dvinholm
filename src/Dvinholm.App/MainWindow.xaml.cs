@@ -421,10 +421,15 @@ public sealed partial class MainWindow : Window
                    "Do not use unconfirmed CAN IDs or DIDs on a real vehicle.",
             TextWrapping = TextWrapping.Wrap
         };
-        var errorText = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        var errorText = new TextBlock
+        {
+            TextWrapping = TextWrapping.Wrap,
+            Visibility = Visibility.Collapsed,
+            Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(Microsoft.UI.Colors.IndianRed)
+        };
         var fields = new StackPanel { Spacing = 9 };
         foreach (var control in new UIElement[]
-                 { idBox, nameBox, formatBox, requestBox, responseBox, didBox, sourceBox, warning, errorText })
+                 { idBox, nameBox, formatBox, requestBox, responseBox, didBox, sourceBox, warning })
             fields.Children.Add(control);
 
         var viewer = new ScrollViewer
@@ -437,7 +442,11 @@ public sealed partial class MainWindow : Window
         {
             Title = editing is null ? "New ECU profile" : "Edit ECU profile",
             XamlRoot = RootLayout.XamlRoot,
-            Content = viewer,
+            Content = new StackPanel
+            {
+                Spacing = 10,
+                Children = { errorText, viewer }
+            },
             PrimaryButtonText = editing is null ? "Create and save" : "Save changes",
             CloseButtonText = "Cancel",
             DefaultButton = ContentDialogButton.Primary
@@ -459,21 +468,25 @@ public sealed partial class MainWindow : Window
                 savedCatalog = result.Catalog;
                 savedProfile = result.Profile;
                 errorText.Text = string.Empty;
+                errorText.Visibility = Visibility.Collapsed;
             }
             catch (ArgumentException ex)
             {
                 args.Cancel = true;
                 errorText.Text = "Profile not saved: " + ex.Message;
+                errorText.Visibility = Visibility.Visible;
             }
             catch (IOException)
             {
                 args.Cancel = true;
                 errorText.Text = "Profile not saved: check local storage and free disk space.";
+                errorText.Visibility = Visibility.Visible;
             }
             catch (UnauthorizedAccessException)
             {
                 args.Cancel = true;
                 errorText.Text = "Profile not saved: access to local storage was denied.";
+                errorText.Visibility = Visibility.Visible;
             }
         };
 
