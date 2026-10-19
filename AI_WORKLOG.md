@@ -1,9 +1,18 @@
+## Multi-line UDS DTC display — 2026-10-19
+
+- Added `UdsDtcDisplayFormatter` to show the count of ECU-returned records, the requested status mask and one line per 24-bit raw DTC with standard ISO 14229 status-bit explanation.
+- The UI `Read DTC` handler now uses this formatter. The existing scrollable/selectable result panel handles multiple records without replacing CAN Monitor or inventing manufacturer-specific fault meanings.
+- The empty result explicitly states that no records returned for this ECU/mask does not confirm a fault-free vehicle. Duplicate DTC records and ECU order are preserved.
+- Deterministic xUnit coverage checks empty, one/many, combined flags, masks, zero status, duplicates, unknown-code handling and null input. CI and merge pending; stable v0.2.1 untouched; hardware validation deferred.
+
+---
+
 ## Readable UDS DID results — 2026-10-19
 
 - Added `UdsDidDisplayFormatter` to present DID ID and full raw diagnostic reply while decoding ISO 14229's `F190` VIN strictly with the existing VIN validator.
 - Generic printable data may be shown as a clearly labeled **unverified ASCII preview**; arbitrary binary data and vehicle-specific physical units are never guessed.
 - Hooked the helper to WinUI `Read DID`; `Read VIN` remains a separate strict operation. The status TextBlock is now selectable/wrapping inside a bounded vertical ScrollViewer, so raw replies can be copied without crowding CAN Monitor. Unit tests cover valid/invalid VIN, text preview, binary, empty, malformed/mismatched DID and null responses.
-- Implementation CI/merge pending; software-only tests require no physical J2534 adapter; stable `v0.2.1` unchanged.
+- [PR #364](https://github.com/vorlocsev/dvinholm/pull/364) passed Windows CI [#39287171823](https://github.com/vorlocsev/dvinholm/actions/runs/39287171823) and merged as `ba192e1ff97ccd6923d08b43130967dab9fc96fb`. Post-merge `main` CI pending; software-only tests require no physical J2534 adapter; stable `v0.2.1` unchanged.
 
 ---
 
