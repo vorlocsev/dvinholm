@@ -827,13 +827,12 @@ public sealed partial class MainWindow : Window
 
     private async void ReadDtc_Click(object sender, RoutedEventArgs e)
     {
+        const byte statusMask = 0xFF;
         await RunUdsOperationAsync("Read DTC", (client, token) =>
-{
-    var dtcs = client.ReadDtcByStatusMask(0xFF, token);
-    return dtcs.Count == 0
-        ? "No DTCs"
-        : string.Join(", ", dtcs.Select(d => $"0x{d.Code:X6}/status=0x{d.Status:X2} [{UdsDtcStatusFormatter.Format(d.Status)}]"));
-});
+        {
+            var records = client.ReadDtcByStatusMask(statusMask, token);
+            return UdsDtcDisplayFormatter.Format(records, statusMask);
+        });
     }
 
     private bool TryParseDid(out ushort did)
