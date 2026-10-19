@@ -18,6 +18,7 @@
 <p align="center">
   <a href="https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/Dvinholm-Windows-x86.zip"><strong>Download stable release</strong></a>
   &nbsp;·&nbsp; <a href="https://github.com/vorlocsev/dvinholm/actions">Latest CI builds</a>
+  &nbsp;·&nbsp; <a href="docs/USER_GUIDE_RU.md">Руководство (RU)</a>
   &nbsp;·&nbsp; <a href="ROADMAP.md">Roadmap</a>
   &nbsp;·&nbsp; <a href="CHANGELOG.md">Changelog</a>
 </p>
@@ -237,6 +238,7 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 
 ## Project history and roadmap
 
+- [Руководство пользователя на русском](docs/USER_GUIDE_RU.md) — установка, J2534, CAN Monitor, ECU profiles, UDS и обновления.
 - [Current roadmap](ROADMAP.md) — planned work and verified milestones.
 - [Development history](docs/DEVELOPMENT_HISTORY.md) — archived MVP and historical version plans.
 - [Engineering handoff log](AI_WORKLOG.md) — detailed CI evidence and project notes.
