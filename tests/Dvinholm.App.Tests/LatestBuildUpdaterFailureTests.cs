@@ -719,14 +719,16 @@ function Start-Process {
 
 
     [Theory]
-    [InlineData(false, false, false)]
-    [InlineData(true, false, false)]
-    [InlineData(false, true, false)]
-    [InlineData(false, false, true)]
+    [InlineData(false, false, false, false)]
+    [InlineData(true, false, false, false)]
+    [InlineData(false, true, false, false)]
+    [InlineData(false, false, true, false)]
+    [InlineData(false, false, false, true)]
     public async Task ReplacementScript_RollsBackWhenUpdatedApplicationExitsDuringStartup(
         bool restoredApplicationExits,
         bool rollbackCopyFails,
-        bool rollbackCopyOmitsExecutable)
+        bool rollbackCopyOmitsExecutable,
+        bool updatedApplicationFailsToLaunch)
     {
         if (!OperatingSystem.IsWindows())
             return;
@@ -777,6 +779,11 @@ function Invoke-TestRobocopy {
 function Start-Process {
     param([string]$FilePath, [string]$WorkingDirectory, [string[]]$ArgumentList, [switch]$PassThru)
     Add-Content -LiteralPath $env:DVINHOLM_TEST_LAUNCH_LOG -Value $FilePath
+    if ($env:DVINHOLM_TEST_UPDATED_APP_LAUNCH_FAILS -eq '1' -and
+        $FilePath -ne 'notepad.exe' -and
+        (Get-Content -LiteralPath $FilePath -Raw) -eq 'new-build') {
+        throw 'Simulated updated application launch failure.'
+    }
     if ($FilePath -ne 'notepad.exe' -and (
         (Get-Content -LiteralPath $FilePath -Raw) -eq 'new-build' -or
         $env:DVINHOLM_TEST_RESTORED_APP_EXITS -eq '1')) {
@@ -809,6 +816,7 @@ function Start-Process {
             startInfo.Environment["LOCALAPPDATA"] = localAppData;
             startInfo.Environment["DVINHOLM_TEST_LAUNCH_LOG"] = launchLog;
             startInfo.Environment["DVINHOLM_TEST_RESTORED_APP_EXITS"] = restoredApplicationExits ? "1" : "0";
+            startInfo.Environment["DVINHOLM_TEST_UPDATED_APP_LAUNCH_FAILS"] = updatedApplicationFailsToLaunch ? "1" : "0";
             startInfo.Environment["DVINHOLM_TEST_FAIL_ROLLBACK_COPY"] = rollbackCopyFails ? "1" : "0";
             startInfo.Environment["DVINHOLM_TEST_OMIT_ROLLBACK_EXE"] = rollbackCopyOmitsExecutable ? "1" : "0";
             startInfo.Environment["DVINHOLM_TEST_BACKUP_SOURCE"] = Path.GetFullPath(backup);
@@ -841,7 +849,10 @@ function Start-Process {
                 Assert.Equal("old", await File.ReadAllTextAsync(Path.Combine(destination, "old.marker")));
             }
             var updateLog = await File.ReadAllTextAsync(Path.Combine(localAppData, "Dvinholm", "update.log"));
-            Assert.Contains("The updated application exited during startup (exit code 17).", updateLog);
+            if (updatedApplicationFailsToLaunch)
+                Assert.Contains("Simulated updated application launch failure.", updateLog);
+            else
+                Assert.Contains("The updated application exited during startup (exit code 17).", updateLog);
             if (!rollbackCopyFails && !rollbackCopyOmitsExecutable)
                 Assert.Contains("The previous build was restored and will be restarted.", updateLog);
             if (rollbackCopyOmitsExecutable)
