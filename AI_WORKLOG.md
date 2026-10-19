@@ -2833,3 +2833,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - [x] Old overlapping PR #371 closed as superseded by #372/#373.
 - [ ] No manual WinUI interaction run of the *new* validation display/focus/highlight behavior has yet been confirmed. Follow [the eight-step Windows smoke checklist](docs/manual-ecu-profile-validation-ui-2026-10-20.md) using a build containing `347a83d`, with no J2534 adapter.
 - Stable release remains v0.2.1; current changes are present on main/CI only. No physical adapter/vehicle tests performed.
+
+## User-confirmed Windows ECU editor behavior — 2026-10-20
+
+- Main post-documentation merge CI [#2857](https://github.com/vorlocsev/dvinholm/actions/runs/39336486699) completed successfully on `99727e1cd568e5d133626f520755183ec9ffafc6`.
+- User confirmed visible, field-specific rejection of malformed Request CAN ID `ZZZZ`, matching Request/Response IDs `7E0`/`7E0`, malformed DID `ZZZZ`, duplicate DID `F190, F190`, empty required Source and case-insensitive duplicate Profile ID.
+- User confirmed that correcting to request `7E0`, response `7E8`, candidate DID `F190`, and a synthetic Source permits Save, with an Unverified profile.
+- User confirmed rename to `Test ECU Final` persisted after full restart, with CAN IDs and DIDs unchanged and unrelated profiles intact.
+- Each checkpoint was recorded on [PR #374](https://github.com/vorlocsev/dvinholm/pull/374); confirmation of the final rename/restart check is also there.
+- Evidence boundaries: exact installed CI number/short SHA was not supplied, immediate border-reset upon typing was not separately observed, and an explicit invalid-DID edit followed by Cancel was not tested in the final check. Leave those checklist subparts pending. Physical adapter and vehicle testing remain deferred. Stable v0.2.1 is unchanged.
