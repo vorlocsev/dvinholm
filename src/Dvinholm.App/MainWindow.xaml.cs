@@ -9,16 +9,8 @@ namespace Dvinholm.App;
 
 public sealed partial class MainWindow : Window
 {
-    private sealed class Frame
-    {
-        public uint Timestamp { get; init; }
-        public string Id { get; init; } = "";
-        public string Type { get; init; } = "";
-        public uint Dlc { get; init; }
-        public string Data { get; init; } = "";
-    }
-
-    private readonly ObservableCollection<Frame> _frames = new();
+    private readonly ObservableCollection<CanMonitorRow> _frames = new();
+    private readonly CanMonitorHistory _monitorHistory = new();
     private readonly ObservableCollection<J2534Device> _j2534Devices = new();
     private readonly J2534Session _session = new();
     private CancellationTokenSource? _cts;
@@ -1399,52 +1391,49 @@ public sealed partial class MainWindow : Window
             if (!subscription.TryRead(TimeSpan.FromMilliseconds(250), token, out var canFrame))
                 continue;
 
-            var frame = new Frame
-            {
-                Timestamp = canFrame.Timestamp,
-                Id = canFrame.IdHex,
-                Type = canFrame.IsExtended ? "29-bit" : "11-bit",
-                Dlc = canFrame.Dlc,
-                Data = canFrame.DataHex
-            };
-
+            var frame = CanMonitorRow.FromFrame(canFrame);
             DispatcherQueue.TryEnqueue(() => AddFrame(frame));
         }
     }
 
-    private void AddFrame(Frame frame)
+    private void AddFrame(CanMonitorRow frame)
     {
+        // Preserve all received frames, even those currently hidden by the
+        // software filter. The view is a projection of the last 5000 RX frames.
+        var evicted = _monitorHistory.Append(frame);
+        if (evicted is not null && _frames.Count > 0 &&
+            ReferenceEquals(_frames[0], evicted))
+            _frames.RemoveAt(0);
+
         DroppedFrameText.Text = $"{(_monitorSubscription?.DroppedFrameCount ?? 0):N0} dropped";
-        if (!Matches(frame)) return;
-        _frames.Add(frame); _total++; _rateFrames++;
-        if (_frames.Count > 5000) _frames.RemoveAt(0);
-        FrameCountText.Text = $"{_total:N0} frames";
+        if (CanMonitorHistory.MatchesCanIdFilter(IdFilter.Text, frame.Id))
+            _frames.Add(frame);
+        _total++;
+        _rateFrames++;
+        UpdateFrameCountText();
 
         if (_rate.ElapsedMilliseconds >= 1000)
         {
             FrameRateText.Text = $"{_rateFrames} frames/s";
-            _rateFrames = 0; _rate.Restart();
+            _rateFrames = 0;
+            _rate.Restart();
         }
     }
 
-    private bool Matches(Frame frame) => MatchesCanIdFilter(IdFilter.Text, frame.Id);
+    private void UpdateFrameCountText() =>
+        FrameCountText.Text = $"{_frames.Count:N0} shown / {_total:N0} rx";
 
-    internal static bool MatchesCanIdFilter(string query, string frameId)
+    private void RefreshMonitorFilter()
     {
-        query = query.Trim();
-        if (query.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-            query = query[2..];
-        if (query.Length == 0)
-            return true;
-
-        // Parse numerically rather than trimming leading zeroes: "0" is a
-        // real CAN-ID filter, not an empty filter that matches every frame.
-        return uint.TryParse(query, System.Globalization.NumberStyles.HexNumber,
-                   System.Globalization.CultureInfo.InvariantCulture, out var wanted) &&
-               uint.TryParse(frameId, System.Globalization.NumberStyles.HexNumber,
-                   System.Globalization.CultureInfo.InvariantCulture, out var actual) &&
-               wanted == actual;
+        var visible = _monitorHistory.Filter(IdFilter.Text);
+        _frames.Clear();
+        foreach (var frame in visible)
+            _frames.Add(frame);
+        UpdateFrameCountText();
     }
+
+    internal static bool MatchesCanIdFilter(string query, string frameId) =>
+        CanMonitorHistory.MatchesCanIdFilter(query, frameId);
 
     private void HardwareFilter_Click(object sender, RoutedEventArgs e)
     {
@@ -1493,10 +1482,19 @@ public sealed partial class MainWindow : Window
         SetStatus($"J2534 hardware filter active for 0x{id:X} ({(extended ? "29-bit" : "11-bit")}).");
     }
 
-    private void Filter_Changed(object sender, TextChangedEventArgs e) { }
+    private void Filter_Changed(object sender, TextChangedEventArgs e) =>
+        RefreshMonitorFilter();
 
     private void Clear_Click(object sender, RoutedEventArgs e)
-    { _frames.Clear(); _total = 0; FrameCountText.Text = "0 frames"; }
+    {
+        _monitorHistory.Clear();
+        _frames.Clear();
+        _total = 0;
+        _rateFrames = 0;
+        _rate.Restart();
+        FrameRateText.Text = "0 frames/s";
+        UpdateFrameCountText();
+    }
 
     private async void Csv_Click(object sender, RoutedEventArgs e)
     {
