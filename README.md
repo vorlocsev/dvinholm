@@ -33,7 +33,7 @@
 4. For adapter use, install the **32-bit J2534 driver** supplied by the hardware manufacturer, then select the registered DLL or enter its path in Dvinholm.
 5. Start with **passive CAN monitoring** once a compatible adapter and vehicle are available. UDS commands are read-only.
 
-The branded window, taskbar, and executable icon is packaged with v0.2.1. The exact icon appearance in Windows still needs a manual smoke test.
+The branded window, taskbar, and executable icon is packaged with v0.2.1. On 2026-10-19, a user confirmed that the icon is visible in the Windows application; individual display locations were not separately specified.
 
 ## Latest stable release — v0.2.1 (2026-10-19)
 
@@ -42,7 +42,7 @@ The branded window, taskbar, and executable icon is packaged with v0.2.1. The ex
 - **Archive size:** 67,042,782 bytes. **SHA-256:** `5245d7691482da6434262b5767a0b23ed757df9136fb38b9aed196523a47bf09` — [SHA256SUMS.txt](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/SHA256SUMS.txt).
 - **What's new:** branded icon and README, persisted CAN speed, two clearly labeled synthetic ECU profiles, profile-selection fixes, and additional updater/cancellation/rollback regression coverage. See [CHANGELOG.md](CHANGELOG.md).
 - **Validation:** [stable release CI #39184108681](https://github.com/vorlocsev/dvinholm/actions/runs/39184108681) passed Windows build, tests, publish, packaged icon check, release metadata verification, and a separate re-download/SHA-256 check. Release commit: `eb51b998cee3557b661b5cfa9626126ddaea6be4`. Physical adapter/vehicle compatibility is **unverified**.
-- **Windows visual check:** titlebar/taskbar/Explorer icon appearance awaits manual confirmation. CI verifies packaged icon data, not screen rendering.
+- **Windows visual check:** user-confirmed icon visibility in v0.2.1 on 2026-10-19. CI separately verifies packaged icon data; individual titlebar/taskbar/Explorer locations were not reported.
 
 Previous stable release: [Dvinholm v0.2.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.0), published 2026-10-17.
 
