@@ -103,10 +103,25 @@ jobs:
           New-Item -ItemType Directory -Force artifacts/verify | Out-Null
           gh release download "v0.2.1" --repo "${{ github.repository }}" --dir artifacts/verify --pattern "Dvinholm-Windows-x86.zip" --pattern "SHA256SUMS.txt"
           $checksumLine = (Get-Content -LiteralPath artifacts/verify/SHA256SUMS.txt -Raw).Trim()
-          if ($checksumLine -notmatch '^([0-9a-fA-F]{64})\s+\*?Dvinholm-Windows-x86\.zip$') {
+          if ($checksumLine -match '^([0-9a-fA-F]{64})\s+\*?Dvinholm-Windows-x86\.zip
+          $actual = (Get-FileHash -LiteralPath artifacts/verify/Dvinholm-Windows-x86.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "Published ZIP checksum mismatch: expected $expected but got $actual" }
+          Add-Type -AssemblyName System.IO.Compression
+          $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path artifacts/verify/Dvinholm-Windows-x86.zip).Path)
+          try {
+            $entries = @($archive.Entries | ForEach-Object { $_.FullName.Replace('\\','/') })
+            if ($entries -notcontains 'Dvinholm.App.exe' -or $entries -notcontains 'Assets/Dvinholm.ico') {
+              throw 'Published archive is missing the executable or branded icon.'
+            }
+          } finally {
+            $archive.Dispose()
+          }
+          Write-Host "Published release v0.2.1 ZIP verified: SHA-256 $actual"
+) {
+            $expected = $Matches[1].ToLowerInvariant()
+          } else {
             throw 'Malformed published checksum file.'
           }
-          $expected = $Matches[1].ToLowerInvariant()
           $actual = (Get-FileHash -LiteralPath artifacts/verify/Dvinholm-Windows-x86.zip -Algorithm SHA256).Hash.ToLowerInvariant()
           if ($actual -ne $expected) { throw "Published ZIP checksum mismatch: expected $expected but got $actual" }
           Add-Type -AssemblyName System.IO.Compression
