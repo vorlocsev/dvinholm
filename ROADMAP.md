@@ -4,7 +4,8 @@
 - [x] Updated `README.md` presentation, quick-start, stable/CI links and corrected updater-channel wording; archived older development plans to `docs/DEVELOPMENT_HISTORY.md`.
 - [x] Wired `ApplicationIcon` into the project, copied the ICO to published output and applied the same icon to the WinUI window at startup.
 - [x] Added an automated Windows CI packaging check for the icon file and ICO directory.
-- [ ] Verify branding PR CI, merge into `main`, and confirm post-merge CI; Windows UI screenshot check remains manual.
+- [x] [PR #358](https://github.com/vorlocsev/dvinholm/pull/358) merged as `780768061ca5bc8972ddc22924f3c124f63f1cc3` after successful PR CI [#39181656596](https://github.com/vorlocsev/dvinholm/actions/runs/39181656596); post-merge main CI [#39182025601](https://github.com/vorlocsev/dvinholm/actions/runs/39182025601) also passed build, tests, icon package verification and stable-release audit.
+- [ ] Manually verify actual window/titlebar/taskbar/Explorer icon appearance in the latest Windows CI build; CI verifies packaging, not appearance.
 - Stable release `v0.2.0` remains unchanged; J2534 hardware/vehicle testing remains deferred.
 
 ---
