@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Dispatching;
 using Windows.Storage.Pickers;
 using WinRT.Interop;
 using System.Collections.ObjectModel;
@@ -17,6 +18,9 @@ public sealed partial class MainWindow : Window
     private Task? _monitorTask;
     private CanRxDispatcher.Subscription? _monitorSubscription;
     private bool _connected;
+    private DispatcherQueueTimer? _demoTimer;
+    private uint _demoTick;
+    private bool _demoDataPresent;
     private Task? _disconnectTask;
     private Task? _connectTask;
     private bool _closing;
@@ -64,6 +68,7 @@ public sealed partial class MainWindow : Window
         Closed += (_, _) =>
         {
             _closing = true;
+            StopDemoMonitor();
 
             // Request cancellation synchronously, then perform all waits away
             // from the UI thread. RunUdsOperationAsync releases _udsGate from
@@ -1164,6 +1169,14 @@ public sealed partial class MainWindow : Window
 
     private async void Connect_Click(object sender, RoutedEventArgs e)
     {
+        // Demo never touches the real adapter. Do not allow either path to
+        // transition into the other while its frame source is running.
+        if (_demoTimer is not null)
+        {
+            SetStatus("Stop the offline CAN demo before connecting a J2534 adapter.");
+            return;
+        }
+
         if (_connected)
         {
             if (_discoveryCts is not null || !_udsGate.Wait(0))
@@ -1230,6 +1243,7 @@ public sealed partial class MainWindow : Window
                 _disconnectTask = null;
                 HardwareFilterButton.IsEnabled = _connected;
                 ConnectButton.IsEnabled = true;
+                DemoMonitorButton.IsEnabled = !_connected && !_closing;
             }
             return;
         }
@@ -1247,7 +1261,12 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        // Never combine previously generated demo rows with real CAN capture.
+        if (_demoDataPresent)
+            ClearDemoData();
+
         var dllPath = DllPath.Text.Trim();
+        DemoMonitorButton.IsEnabled = false;
         ConnectButton.IsEnabled = false;
         StartButton.IsEnabled = false;
         SetUdsEnabled(false);
@@ -1296,7 +1315,10 @@ public sealed partial class MainWindow : Window
         {
             _connectTask = null;
             if (!_closing)
+            {
                 ConnectButton.IsEnabled = true;
+                DemoMonitorButton.IsEnabled = !_connected;
+            }
         }
     }
 
@@ -1305,7 +1327,7 @@ public sealed partial class MainWindow : Window
 
     private void StartMonitor()
     {
-        if (!_connected) return;
+        if (!_connected || _demoTimer is not null) return;
 
         // A cancelled monitor may still be unwinding from a native adapter call.
         // Never start a second reader until the previous task has actually ended.
@@ -1485,7 +1507,7 @@ public sealed partial class MainWindow : Window
     private void Filter_Changed(object sender, TextChangedEventArgs e) =>
         RefreshMonitorFilter();
 
-    private void Clear_Click(object sender, RoutedEventArgs e)
+    private void ResetMonitorView()
     {
         _monitorHistory.Clear();
         _frames.Clear();
@@ -1496,24 +1518,108 @@ public sealed partial class MainWindow : Window
         UpdateFrameCountText();
     }
 
+    private void ClearDemoData()
+    {
+        // A stopped demo keeps its data for CSV until explicitly cleared or
+        // the user begins a genuine J2534 connection.
+        ResetMonitorView();
+        _demoDataPresent = false;
+        DemoStatusText.Visibility = Visibility.Collapsed;
+    }
+
+    private void Clear_Click(object sender, RoutedEventArgs e)
+    {
+        if (_demoTimer is null && _demoDataPresent)
+            ClearDemoData();
+        else
+            ResetMonitorView();
+    }
+
+    private void DemoMonitor_Click(object sender, RoutedEventArgs e)
+    {
+        if (_demoTimer is not null)
+        {
+            StopDemoMonitor();
+            SetStatus("DEMO stopped. Synthetic frames remain available for filtering and CSV.");
+            return;
+        }
+
+        if (_closing || _connected || _cts is not null ||
+            _monitorTask is { IsCompleted: false } ||
+            _connectTask is { IsCompleted: false } ||
+            _disconnectTask is { IsCompleted: false })
+        {
+            SetStatus("Demo requires a disconnected and idle J2534 session.");
+            return;
+        }
+
+        // All demo rows come from an in-process generator. No adapter is
+        // opened, and no J2534 / ISO-TP / UDS operation is issued.
+        ResetMonitorView();
+        IdFilter.Text = string.Empty;
+        _demoDataPresent = true;
+        _demoTick = 0;
+        DemoStatusText.Text = "DEMO ACTIVE — synthetic CAN frames only; no adapter or vehicle.";
+        DemoStatusText.Visibility = Visibility.Visible;
+        DemoMonitorButton.Content = "Stop demo";
+        ConnectButton.IsEnabled = false;
+        DroppedFrameText.Text = "0 dropped";
+
+        var timer = DispatcherQueue.CreateTimer();
+        timer.Interval = TimeSpan.FromMilliseconds(CanDemoFrameGenerator.IntervalMilliseconds);
+        timer.IsRepeating = true;
+        timer.Tick += DemoTimer_Tick;
+        _demoTimer = timer;
+        timer.Start();
+        EmitDemoFrames(); // Make the first batch visible immediately.
+        SetStatus("DEMO ONLY: synthetic CAN frames. J2534 and diagnostics are not connected.");
+    }
+
+    private void DemoTimer_Tick(DispatcherQueueTimer sender, object args) =>
+        EmitDemoFrames();
+
+    private void EmitDemoFrames()
+    {
+        if (_demoTimer is null || _closing)
+            return;
+
+        foreach (var row in CanDemoFrameGenerator.CreateBatch(_demoTick++))
+            AddFrame(row);
+    }
+
+    private void StopDemoMonitor()
+    {
+        var timer = _demoTimer;
+        _demoTimer = null;
+        if (timer is null)
+            return;
+
+        timer.Stop();
+        timer.Tick -= DemoTimer_Tick;
+        DemoMonitorButton.Content = "Start demo";
+        if (_demoDataPresent)
+            DemoStatusText.Text = "DEMO DATA — synthetic frames retained for filtering/CSV.";
+        if (!_closing && !_connected && _connectTask is not { IsCompleted: false })
+            ConnectButton.IsEnabled = true;
+    }
+
     private async void Csv_Click(object sender, RoutedEventArgs e)
     {
         try
         {
             var picker = new FileSavePicker();
             InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
-            picker.SuggestedFileName = "can-log";
+            picker.SuggestedFileName = _demoDataPresent ? "can-demo-SYNTHETIC" : "can-log";
             picker.FileTypeChoices.Add("CSV", new List<string> { ".csv" });
 
             var file = await picker.PickSaveFileAsync();
             if (file is null) return;
 
-            var lines = new List<string> { "timestamp,id,type,dlc,data" };
-            lines.AddRange(_frames.Select(frame =>
-                $"{frame.Timestamp},{frame.Id},{frame.Type},{frame.Dlc},\"{frame.Data}\""));
-
+            var lines = CanMonitorCsv.BuildLines(_frames, _demoDataPresent);
             await File.WriteAllLinesAsync(file.Path, lines);
-            SetStatus($"CSV saved: {file.Name}.");
+            SetStatus(_demoDataPresent
+                ? $"SYNTHETIC DEMO CSV saved: {file.Name}."
+                : $"CSV saved: {file.Name}.");
         }
         catch (Exception)
         {
