@@ -96,7 +96,11 @@
         </Grid>
 
         <Border Grid.Row="4" Padding="10" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-            <TextBlock x:Name="StatusText" Text="Disconnected"/>
+            <!-- Keep detailed UDS response bytes readable and selectable without
+                 letting a long reply push the CAN monitor off screen. -->
+            <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <TextBlock x:Name="StatusText" Text="Disconnected" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+            </ScrollViewer>
         </Border>
     </Grid>
 </Window>
