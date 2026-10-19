@@ -4,7 +4,8 @@
 - The WinUI profiles panel now offers **Find ECU profile** and **Marked verified only** plus bounded scrollable/selectable details. Verification is explicitly a self-reported flag from JSON, not confirmation by Dvinholm. No vehicle-specific Volvo addresses were added.
 - Filtering preserves a selected profile and manually edited UDS fields when still visible. Filtering out the selected profile clears CAN ID, DID and addressing fields to prevent accidentally using stale data; no CAN requests are sent by filtering.
 - Added deterministic software-only regression tests for name, catalog ID, source, 11/29-bit request/response IDs, DID, combined verification flag, empty results, immutability and provenance descriptions.
-- CI and merge pending; hardware adapter testing deferred. Stable release v0.2.1 remains unchanged.
+- Offline manual test plan added in [docs/manual-ecu-profile-search-2026-10-19.md](docs/manual-ecu-profile-search-2026-10-19.md). No manual result is claimed yet.
+- [PR #367](https://github.com/vorlocsev/dvinholm/pull/367) passed Windows CI [#39297846535](https://github.com/vorlocsev/dvinholm/actions/runs/39297846535), reporting 564/564 passing tests (0 skipped), and merged to main as `15f43e16fa9a697a857bdfa46e4bbd8e71e4e38c`. Post-merge CI [#39298463839](https://github.com/vorlocsev/dvinholm/actions/runs/39298463839) is being followed separately; hardware adapter testing is deferred. Stable release v0.2.1 remains unchanged.
 
 ---
 
