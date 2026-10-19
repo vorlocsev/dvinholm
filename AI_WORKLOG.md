@@ -2824,3 +2824,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Build, tests, publish/package, and stable release archive SHA-256/ZIP audit passed. Production updater code unchanged; no stable release published (still v0.2.0).
 - Physical J2534 adapter/vehicle validation remains deferred.
 - Next: continue software-only review of cleanup and recovery failure paths, and add tests only for reproducible uncovered behavior.
+
+## ECU editor field-validation UI — merged and CI verified (2026-10-20)
+
+- [x] [PR #372](https://github.com/vorlocsev/dvinholm/pull/372) merged at `f36094cccda5d29f1b305be68879c3d1abe27cb2`. Its PR CI #2850 ([run #39332349835](https://github.com/vorlocsev/dvinholm/actions/runs/39332349835)) and main CI #2851 ([run #39333268386](https://github.com/vorlocsev/dvinholm/actions/runs/39333268386)) passed. Editor errors are outside the scrollable form and visible after a rejected Save.
+- [x] [PR #373](https://github.com/vorlocsev/dvinholm/pull/373) merged at `347a83d655644d00aa00d798377df4570dec0211`. Added parameter-specific validation exceptions, field highlighting/focus and eight xUnit cases. PR CI #2853 ([run #39334351132](https://github.com/vorlocsev/dvinholm/actions/runs/39334351132)) and main CI #2854 ([run #39335101214](https://github.com/vorlocsev/dvinholm/actions/runs/39335101214)) both passed.
+- [x] On the exact post-merge main CI #2854, build, test, publish/package, branded icon check, artifact upload, public CI asset publication, and stable release archive audit passed.
+- [x] Old overlapping PR #371 closed as superseded by #372/#373.
+- [ ] No manual WinUI interaction run of the *new* validation display/focus/highlight behavior has yet been confirmed. Follow [the eight-step Windows smoke checklist](docs/manual-ecu-profile-validation-ui-2026-10-20.md) using a build containing `347a83d`, with no J2534 adapter.
+- Stable release remains v0.2.1; current changes are present on main/CI only. No physical adapter/vehicle tests performed.
