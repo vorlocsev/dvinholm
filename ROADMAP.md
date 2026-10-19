@@ -1,9 +1,20 @@
+## ECU profile catalog search and provenance — 2026-10-19
+
+- [x] Added search by profile name/id, source, CAN Request/Response ID and candidate DID with case-insensitive matching and optional `0x` prefix.
+- [x] Added an explicitly **author-marked verified** filter; retained JSON format and avoided inventing Volvo P2 addresses or diagnostic capabilities.
+- [x] Replaced truncated metadata with a bounded, scrollable, selectable profile description showing CAN IDs, source and DID list, including a warning that the profile is not hardware-certified.
+- [x] Filter changes retain the active profile and manually edited UDS values if it remains visible, and clear stale UDS fields when the selected profile becomes hidden.
+- [x] Added hardware-independent unit tests for filter criteria, empty and verified-only results, catalog immutability, source and verification details.
+- [ ] Windows CI and final PR review before merge. Manual layout check on Windows afterward; real-adapter testing stays in a future release.
+
+---
+
 ## Russian user guide and accurate update-channel wording — 2026-10-19
 
 - [x] Added a user-oriented Russian guide for installation, disconnected UI, J2534 connection, CAN Monitor, passive ECU discovery, ECU profiles, read-only UDS, updates and troubleshooting.
 - [x] Corrected the WinUI Check update label: the updater searches successful **main-branch** CI assets, not all branches; existing code tests cover branch filtering.
 - [x] Linked the guide from the GitHub README.
-- [ ] Verify documentation + UI string change with Windows PR CI and merge. Real J2534/vehicle validation remains deferred.
+- [x] [PR #366](https://github.com/vorlocsev/dvinholm/pull/366) passed Windows CI [#39291963115](https://github.com/vorlocsev/dvinholm/actions/runs/39291963115) and merged as `9b42f31fcdf046cc6c006398ae0e1d80c90b0acd`; post-merge `main` CI [#39292558370](https://github.com/vorlocsev/dvinholm/actions/runs/39292558370) passed. Real J2534/vehicle validation remains deferred.
 
 ---
 
