@@ -20,3 +20,19 @@
 **Report:** Windows version, the exact `Current` CI number and 7-character SHA, each check's pass/fail result, and optionally a cropped screenshot of the error area. Redact vehicle identifiers, private file paths and adapter details.
 
 **Scope:** A passing software CI run is not a manual WinUI interaction test and cannot establish physical J2534 adapter or vehicle compatibility.
+
+## User-confirmed manual results — 2026-10-20
+
+**Confirmed on Windows UI by the user:**
+
+- [x] Invalid Request CAN ID `ZZZZ` is rejected; the validation message is visible without scrolling and the Request CAN ID input is highlighted/focused.
+- [x] Matching Request/Response CAN IDs (`7E0`/`7E0`) are rejected with the Response CAN ID input highlighted.
+- [x] Malformed DID `ZZZZ` and duplicate DID `F190, F190` are rejected, with DID highlighting and without saving invalid changes.
+- [x] A blank required Source/verification note is rejected and Source is highlighted.
+- [x] Correcting values to Request `7E0`, Response `7E8`, DID `F190` and a synthetic source note allows Save; the profile is present in the catalog and remains Unverified.
+- [x] An existing Profile ID entered with different letter case is rejected, with no duplicate or modifications to the existing profile.
+- [x] After a valid edit renaming the profile to `Test ECU Final`, a full application restart retains the name, CAN IDs and DIDs, and unrelated profiles remain unchanged.
+
+**Not yet explicitly confirmed:** the exact installed `Current: CI #... · SHA` displayed during the UI checks; a separate edit-invalid-DID-then-Cancel scenario (the first half of checklist step 8); the Request border reset immediately upon typing, independently of subsequent validation. These are not marked as passed. The original checklist above is retained as a complete reproducible protocol rather than rewriting unverified sub-steps as successful.
+
+**Evidence:** consecutive user confirmations are recorded in the conversation of [PR #374](https://github.com/vorlocsev/dvinholm/pull/374). Main CI #2857 ([run #39336486699](https://github.com/vorlocsev/dvinholm/actions/runs/39336486699)) passed on `99727e1cd568e5d133626f520755183ec9ffafc6`. No physical J2534 adapter/vehicle validation was conducted.

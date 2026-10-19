@@ -1401,3 +1401,13 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Main CI #2854 built and tested Windows x86, uploaded its artifact and published the public CI updater asset; the stable-release archive audit succeeded.
 - [ ] Complete the **eight manual Windows UI checks** in [the validation-feedback checklist](docs/manual-ecu-profile-validation-ui-2026-10-20.md) on a current CI build. **Do not mark manual UI checks passed from CI alone.**
 - [ ] Physical J2534 adapter/vehicle testing remains deferred to later releases; no ECU compatibility claim. Stable release stays v0.2.1 pending a separate release decision.
+
+## ECU profile editor — user-confirmed Windows results (2026-10-20)
+
+- [x] On a Windows CI build incorporating PRs #372/#373, user confirmed correct visible error and field highlight for malformed Request CAN ID, identical Request/Response CAN IDs, malformed DID, duplicate DID, empty required Source, and case-insensitive duplicate Profile ID.
+- [x] Valid synthetic profile Save succeeded with `7E0`/`7E8`, DID `F190`, synthetic Source and Unverified status.
+- [x] Valid rename to `Test ECU Final` and full restart preserved the edited profile's name, CAN IDs and DIDs while unrelated profiles were unchanged.
+- [x] Post-merge [main CI #2857](https://github.com/vorlocsev/dvinholm/actions/runs/39336486699) finished successfully.
+- [ ] A distinct invalid-DID edit followed by Cancel, exact local Current CI label verification, and independent immediate border-reset observation remain to be confirmed. Do not claim 8/8 complete checklist rows without these substeps.
+- [ ] Physical J2534 adapter/vehicle testing is deferred; stable release remains v0.2.1.
+- Detailed evidence: [Windows validation checklist and results](docs/manual-ecu-profile-validation-ui-2026-10-20.md), [PR #374](https://github.com/vorlocsev/dvinholm/pull/374).
