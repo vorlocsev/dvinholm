@@ -157,7 +157,35 @@ public sealed class UdsEcuDiscoveryScanTests
         Assert.Equal((uint)0x7E8, candidate.ResponseId);
         Assert.Equal((uint?)0x7E0, candidate.RequestId);
         Assert.Contains("cancelled", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Equal(0L, error.DroppedFrameCount);
         Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
+    [Theory]
+    [InlineData(0L)]
+    [InlineData(7L)]
+    public void CancelledScan_PreservesQueueDropCountAndWarnsWhenFramesWereLost(long dropped)
+    {
+        var candidates = new[]
+        {
+            new Dvinholm.App.UdsEcuCandidate(0x7E8, 0x7E0, false, 1, 4)
+        };
+
+        var error = new Dvinholm.App.UdsEcuDiscoveryCancelledException(candidates, dropped);
+
+        Assert.Same(candidates, error.Candidates);
+        Assert.Equal(dropped, error.DroppedFrameCount);
+        Assert.Contains("cancelled", error.Message, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("incomplete", error.Message, StringComparison.OrdinalIgnoreCase);
+        if (dropped > 0)
+        {
+            Assert.Contains(dropped.ToString(), error.Message);
+            Assert.Contains("dropped", error.Message, StringComparison.OrdinalIgnoreCase);
+        }
+        else
+        {
+            Assert.DoesNotContain("dropped", error.Message, StringComparison.OrdinalIgnoreCase);
+        }
     }
 
     [Fact]
