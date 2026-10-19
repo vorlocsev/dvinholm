@@ -2,7 +2,7 @@
 
 - Added `UdsDidDisplayFormatter` to present DID ID and full raw diagnostic reply while decoding ISO 14229's `F190` VIN strictly with the existing VIN validator.
 - Generic printable data may be shown as a clearly labeled **unverified ASCII preview**; arbitrary binary data and vehicle-specific physical units are never guessed.
-- Hooked the helper to WinUI `Read DID`; `Read VIN` remains a separate strict operation. Unit tests cover valid/invalid VIN, text preview, binary, empty, malformed/mismatched DID and null responses.
+- Hooked the helper to WinUI `Read DID`; `Read VIN` remains a separate strict operation. The status TextBlock is now selectable/wrapping inside a bounded vertical ScrollViewer, so raw replies can be copied without crowding CAN Monitor. Unit tests cover valid/invalid VIN, text preview, binary, empty, malformed/mismatched DID and null responses.
 - Implementation CI/merge pending; software-only tests require no physical J2534 adapter; stable `v0.2.1` unchanged.
 
 ---
