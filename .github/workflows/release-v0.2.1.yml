@@ -1,0 +1,122 @@
+name: Stable release v0.2.1
+
+on:
+  create:
+    branches:
+      - "release/v0.2.1"
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    # The create event's branch filter is not consistently applied by GitHub.
+    # Guard at job level so creating any other branch cannot try to republish v0.2.1.
+    if: github.event_name == 'create' && github.event.ref_type == 'branch' && github.event.ref == 'release/v0.2.1'
+    runs-on: windows-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Verify .NET SDK
+        run: dotnet --version
+
+      - name: Restore
+        run: dotnet restore Dvinholm.sln
+
+      - name: Build
+        run: dotnet build Dvinholm.sln --configuration Release --no-restore -p:Platform=x86 -p:Version=0.2.1 -p:InformationalVersion=0.2.1+${{ github.sha }}
+
+      - name: Setup .NET x86 test host
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.401'
+          architecture: x86
+
+      - name: Test
+        run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release -p:Platform=x86 --logger "trx;LogFileName=test-results.trx"
+
+      - name: Setup .NET x64 for publish
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          architecture: x64
+
+      - name: Publish
+        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:Version=0.2.1 -p:InformationalVersion=0.2.1+${{ github.sha }} --output artifacts/app
+
+      - name: Verify packaged Dvinholm icon
+        shell: pwsh
+        run: |
+          $iconPath = 'artifacts/app/Assets/Dvinholm.ico'
+          $exePath = 'artifacts/app/Dvinholm.App.exe'
+          if (-not (Test-Path -LiteralPath $iconPath -PathType Leaf)) { throw "The branded icon is missing: $iconPath" }
+          if (-not (Test-Path -LiteralPath $exePath -PathType Leaf)) { throw "Dvinholm executable is missing: $exePath" }
+          $bytes = [System.IO.File]::ReadAllBytes((Resolve-Path -LiteralPath $iconPath).Path)
+          if ($bytes.Length -lt 6 -or [System.BitConverter]::ToUInt16($bytes, 2) -ne 1 -or [System.BitConverter]::ToUInt16($bytes, 4) -lt 7) {
+            throw 'The packaged icon does not contain the expected ICO frames.'
+          }
+
+      - name: Package ZIP and SHA-256
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts | Out-Null
+          Compress-Archive -Path artifacts/app/* -DestinationPath artifacts/Dvinholm-Windows-x86.zip -CompressionLevel Optimal
+          $hash = (Get-FileHash artifacts/Dvinholm-Windows-x86.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          "$hash  Dvinholm-Windows-x86.zip" | Set-Content -Path artifacts/SHA256SUMS.txt -Encoding ascii
+          Write-Host "SHA-256: $hash"
+
+      - name: Publish stable GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release create "v0.2.1" "artifacts/Dvinholm-Windows-x86.zip" "artifacts/SHA256SUMS.txt" --repo "${{ github.repository }}" --target "${{ github.sha }}" --title "Dvinholm 0.2.1" --notes-file ".github/release-notes-v0.2.1.md"
+
+      - name: Verify release metadata
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $release = gh release view "v0.2.1" --repo "${{ github.repository }}" --json tagName,isDraft,isPrerelease,assets | ConvertFrom-Json
+          if ($release.tagName -ne "v0.2.1" -or $release.isDraft -or $release.isPrerelease) {
+            throw "The stable v0.2.1 release metadata is not correct."
+          }
+          $zip = $release.assets | Where-Object { $_.name -eq "Dvinholm-Windows-x86.zip" }
+          $sums = $release.assets | Where-Object { $_.name -eq "SHA256SUMS.txt" }
+          if (-not $zip -or -not $sums) {
+            throw "Expected release assets are missing."
+          }
+          Write-Host "Published ZIP: $($zip.name), $($zip.size) bytes"
+          Write-Host "Published checksum: $($sums.name)"
+
+      - name: Verify downloaded release assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Force artifacts/verify | Out-Null
+          gh release download "v0.2.1" --repo "${{ github.repository }}" --dir artifacts/verify --pattern "Dvinholm-Windows-x86.zip" --pattern "SHA256SUMS.txt"
+          $checksumLine = (Get-Content -LiteralPath artifacts/verify/SHA256SUMS.txt -Raw).Trim()
+          if ($checksumLine -notmatch '^([0-9a-fA-F]{64})\s+\*?Dvinholm-Windows-x86\.zip$') {
+            throw 'Malformed published checksum file.'
+          }
+          $expected = $Matches[1].ToLowerInvariant()
+          $actual = (Get-FileHash -LiteralPath artifacts/verify/Dvinholm-Windows-x86.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -ne $expected) { throw "Published ZIP checksum mismatch: expected $expected but got $actual" }
+          Add-Type -AssemblyName System.IO.Compression
+          $archive = [System.IO.Compression.ZipFile]::OpenRead((Resolve-Path artifacts/verify/Dvinholm-Windows-x86.zip).Path)
+          try {
+            $entries = @($archive.Entries | ForEach-Object { $_.FullName.Replace('\\','/') })
+            if ($entries -notcontains 'Dvinholm.App.exe' -or $entries -notcontains 'Assets/Dvinholm.ico') {
+              throw 'Published archive is missing the executable or branded icon.'
+            }
+          } finally {
+            $archive.Dispose()
+          }
+          Write-Host "Published release v0.2.1 ZIP verified: SHA-256 $actual"
