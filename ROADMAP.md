@@ -1,3 +1,14 @@
+## Create and edit ECU profiles in WinUI — 2026-10-19
+
+- [x] Added a local profile editor for new and existing ECU entries with name, stable ID, 11/29-bit CAN addresses, candidate DID list and required source note.
+- [x] Validates duplicate IDs, hexadecimal CAN ranges, identical request/response IDs, invalid/duplicate DIDs and required metadata before attempting a disk write.
+- [x] Every edited or newly created profile is marked unverified; old author-verified flag never silently carries over to modified data.
+- [x] Saves to the existing JSON catalog atomically *before* replacing the live UI catalog. Cancel, invalid input and failed writes cannot silently overwrite valid saved profiles.
+- [x] Editor clears search/verification filters and selects the saved profile. UI changes are local, with no J2534 commands sent.
+- [x] Added software-only regression coverage for creation, replacement, invariants, 11/29-bit ranges, DID input, JSON roundtrip and preserving unrelated profiles.
+- [ ] Verify PR Windows CI, merge and run post-merge `main` CI. Then manually check dialog layout and user interaction on Windows; physical adapter tests remain deferred.
+
+---
 ## ECU profile catalog search and provenance — 2026-10-19
 
 - [x] Added search by profile name/id, source, CAN Request/Response ID and candidate DID with case-insensitive matching and optional `0x` prefix.

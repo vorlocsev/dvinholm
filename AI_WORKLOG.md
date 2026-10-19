@@ -1,3 +1,12 @@
+## In-app ECU profile create/edit flow — 2026-10-19
+
+- Added immutable `EcuProfileDraft`/`EcuProfileEditor` for validating new and existing local profile values. Supports optional `0x` prefix on CAN IDs and DIDs, 11/29-bit addressing, space/comma/semicolon-separated DID list, duplicate checks and required source note.
+- New/Edit WinUI ContentDialog supports validation errors without dismissing the form. Existing profile identity is fixed; any edit clears the self-reported `isVerified` flag. Saving calls the already atomic `EcuProfileCatalogStore.Save` before swapping the in-memory catalog.
+- After saving, clear UI search/verified-only filters and select the saved profile. No bus requests are sent. Cancel or failed validation/storage leaves catalog intact.
+- Added deterministic no-adapter tests for creation, JSON compatibility, duplicate IDs/DIDs, invalid CAN IDs, 29-bit support, replacement without mutating unrelated entries and author verification reset.
+- Windows CI, PR merge and manual UI smoke check pending; stable v0.2.1 unaffected; physical J2534 test deferred.
+
+---
 ## Searchable ECU profiles with provenance display — 2026-10-19
 
 - Added `EcuProfileCatalogSearch` for case-insensitive profile-name/id/source matching plus CAN ID / candidate DID hex search. Optional `0x` prefix is accepted, no external data fetched.

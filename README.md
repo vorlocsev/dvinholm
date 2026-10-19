@@ -158,6 +158,8 @@ The client handles negative responses, ignores clearly unrelated responses, and 
 
 `EcuProfile` stores request/response CAN IDs, 11-bit vs 29-bit addressing, candidate readable DIDs, source notes, and a verification flag. `EcuProfileCatalog` supports case-insensitive lookup and JSON import/export. Imports validate required fields, addressing, DIDs, and duplicate IDs before accepting the catalog. The catalog intentionally starts empty: no vehicle-specific identifiers or ECU capabilities are inferred without a reliable source.
 
+**New in current CI builds:** **New profile** and **Edit selected** open an in-app editor for local catalog entries, including ID, name, 11/29-bit CAN IDs, candidate DIDs and a required source note. The editor rejects duplicate profile IDs, invalid/out-of-range addresses and duplicate/invalid DIDs before saving atomically to `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json`. Editing keeps the stable profile ID; **all new/edited profiles are marked unverified**, even if an imported record was previously marked verified. Cancel or a failed disk write does not replace the in-memory catalog. These controls do not transmit any CAN messages.
+
 ## Dependencies
 
 Dependencies are version-pinned for reproducible CI builds. The application currently references `Microsoft.WindowsAppSDK` 2.5.1. Tests use `Microsoft.NET.Test.Sdk` 18.10.1, `xunit` 2.9.3, and `xunit.runner.visualstudio` 3.1.5 (xUnit v2-compatible adapter). The Windows App SDK package was checked against Microsoft's current stable release listing; avoid broad automatic upgrades without running the full Windows CI suite. The test SDK and Visual Studio adapter have been updated to current stable xUnit v2-compatible releases. CI must pass before merging.

@@ -320,6 +320,8 @@ public sealed partial class MainWindow : Window
             SetStatus("Previously selected ECU profile is hidden by the filter. No diagnostic request was sent.");
         }
 
+        EditProfileButton.IsEnabled = retained is not null;
+
         EcuInfoText.Text = retained is null
             ? $"ECU profiles: {filtered.Count} shown of {_profileCatalog.All.Count}. " +
               "Choose a profile to view its source and candidate DIDs. " +
@@ -347,6 +349,157 @@ public sealed partial class MainWindow : Window
 
     private static void SaveProfileCatalog(EcuProfileCatalog catalog) =>
         new EcuProfileCatalogStore(ProfileCatalogPath).Save(catalog);
+
+    private async void CreateProfile_Click(object sender, RoutedEventArgs e) =>
+        await ShowProfileEditorAsync(null);
+
+    private async void EditProfile_Click(object sender, RoutedEventArgs e)
+    {
+        if (ProfileSelector.SelectedItem is not EcuProfile profile)
+        {
+            SetStatus("Select an ECU profile before editing.");
+            return;
+        }
+
+        await ShowProfileEditorAsync(profile);
+    }
+
+    private async Task ShowProfileEditorAsync(EcuProfile? editing)
+    {
+        // Editing and creating are LOCAL operations; nothing is sent to CAN.
+        // Stable profile IDs cannot be renamed. Author-provided verification
+        // is reset for EVERY edit to avoid carrying an obsolete assertion.
+        var idBox = new TextBox
+        {
+            Header = "Profile ID (unique; immutable on edit)",
+            Text = editing?.Id ?? string.Empty,
+            IsReadOnly = editing is not null,
+            PlaceholderText = "e.g. my.ecu.draft"
+        };
+        var nameBox = new TextBox
+        {
+            Header = "ECU name",
+            Text = editing?.Name ?? string.Empty,
+            PlaceholderText = "e.g. My test ECU"
+        };
+        var requestBox = new TextBox
+        {
+            Header = "Request CAN ID (hex)",
+            Text = editing?.RequestId.ToString(editing.IsExtended ? "X8" : "X3") ?? string.Empty,
+            PlaceholderText = "e.g. 7E0"
+        };
+        var responseBox = new TextBox
+        {
+            Header = "Response CAN ID (hex)",
+            Text = editing?.ResponseId.ToString(editing.IsExtended ? "X8" : "X3") ?? string.Empty,
+            PlaceholderText = "e.g. 7E8"
+        };
+        var formatBox = new ComboBox { Header = "CAN ID format" };
+        formatBox.Items.Add(new ComboBoxItem { Content = "11-bit" });
+        formatBox.Items.Add(new ComboBoxItem { Content = "29-bit" });
+        formatBox.SelectedIndex = editing?.IsExtended == true ? 1 : 0;
+        var didBox = new TextBox
+        {
+            Header = "Candidate readable DIDs (hex; comma or space separated)",
+            Text = editing is null
+                ? string.Empty
+                : string.Join(", ", editing.ReadableDataIdentifiers.Order().Select(did => did.ToString("X4"))),
+            PlaceholderText = "e.g. F190, F187 (optional)"
+        };
+        var sourceBox = new TextBox
+        {
+            Header = "Source / verification note (required)",
+            Text = editing?.Source ?? string.Empty,
+            PlaceholderText = "Describe where the addresses and DIDs came from",
+            AcceptsReturn = true,
+            TextWrapping = TextWrapping.Wrap,
+            Height = 76
+        };
+        var warning = new TextBlock
+        {
+            Text = "Saved profiles are marked UNVERIFIED. Any edit clears a previous author verification flag. " +
+                   "Do not use unconfirmed CAN IDs or DIDs on a real vehicle.",
+            TextWrapping = TextWrapping.Wrap
+        };
+        var errorText = new TextBlock { TextWrapping = TextWrapping.Wrap };
+        var fields = new StackPanel { Spacing = 9 };
+        foreach (var control in new UIElement[]
+                 { idBox, nameBox, formatBox, requestBox, responseBox, didBox, sourceBox, warning, errorText })
+            fields.Children.Add(control);
+
+        var viewer = new ScrollViewer
+        {
+            Content = fields,
+            MaxHeight = 480,
+            VerticalScrollBarVisibility = ScrollBarVisibility.Auto
+        };
+        var dialog = new ContentDialog
+        {
+            Title = editing is null ? "New ECU profile" : "Edit ECU profile",
+            XamlRoot = RootLayout.XamlRoot,
+            Content = viewer,
+            PrimaryButtonText = editing is null ? "Create and save" : "Save changes",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Primary
+        };
+
+        EcuProfileCatalog? savedCatalog = null;
+        EcuProfile? savedProfile = null;
+        dialog.PrimaryButtonClick += (_, args) =>
+        {
+            try
+            {
+                var draft = new EcuProfileDraft(
+                    idBox.Text, nameBox.Text, requestBox.Text, responseBox.Text,
+                    formatBox.SelectedIndex == 1, didBox.Text, sourceBox.Text);
+                var result = EcuProfileEditor.Save(_profileCatalog, draft, editing?.Id);
+                // Persist the replacement catalog FIRST. A failed disk write
+                // must leave the current in-memory profile list untouched.
+                SaveProfileCatalog(result.Catalog);
+                savedCatalog = result.Catalog;
+                savedProfile = result.Profile;
+                errorText.Text = string.Empty;
+            }
+            catch (ArgumentException ex)
+            {
+                args.Cancel = true;
+                errorText.Text = "Profile not saved: " + ex.Message;
+            }
+            catch (IOException)
+            {
+                args.Cancel = true;
+                errorText.Text = "Profile not saved: check local storage and free disk space.";
+            }
+            catch (UnauthorizedAccessException)
+            {
+                args.Cancel = true;
+                errorText.Text = "Profile not saved: access to local storage was denied.";
+            }
+        };
+
+        if (await dialog.ShowAsync() != ContentDialogResult.Primary ||
+            savedCatalog is null || savedProfile is null)
+            return;
+
+        // A newly created or edited profile should be immediately visible,
+        // even if the old search/verification filter was hiding it.
+        _loadingProfiles = true;
+        try
+        {
+            ProfileSearch.Text = string.Empty;
+            MarkedVerifiedOnly.IsChecked = false;
+        }
+        finally
+        {
+            _loadingProfiles = false;
+        }
+        SetProfileCatalog(savedCatalog);
+        var selected = ((IEnumerable<EcuProfile>)ProfileSelector.ItemsSource)
+            .First(p => string.Equals(p.Id, savedProfile.Id, StringComparison.OrdinalIgnoreCase));
+        ProfileSelector.SelectedItem = selected;
+        ApplySelectedProfile(selected);
+        SetStatus($"Saved ECU profile '{savedProfile.Name}' as unverified. No diagnostic request was sent.");
+    }
 
     private void AddTestProfiles_Click(object sender, RoutedEventArgs e)
     {
@@ -473,6 +626,8 @@ public sealed partial class MainWindow : Window
         if (_loadingProfiles)
             return;
 
+        EditProfileButton.IsEnabled = ProfileSelector.SelectedItem is EcuProfile;
+
         // WinUI can raise selection notifications while the ComboBox is still
         // reconciling its selected item. Apply the final selection on the UI
         // queue so returning to a profile always restores its saved values,
@@ -489,6 +644,7 @@ public sealed partial class MainWindow : Window
 
     private void ApplySelectedProfile(EcuProfile? profile)
     {
+        EditProfileButton.IsEnabled = profile is not null;
         if (profile is null)
         {
             ClearProfileInputs();
