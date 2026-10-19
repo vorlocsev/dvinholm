@@ -2,7 +2,7 @@
 
 - [x] New safe formatter displays the requested DID, the exact raw response bytes and validated VIN for `F190`.
 - [x] For unfamiliar DIDs, only printable ASCII previews are suggested, explicitly marked unverified; physical units and Volvo-specific interpretations are not invented.
-- [x] Wired the formatter into the existing read-only `Read DID` button and added no-adapter regression tests for VIN, binary, malformed, empty and ASCII-preview responses.
+- [x] Wired the formatter into the existing read-only `Read DID` button, made the status panel scrollable/selectable without pushing CAN Monitor out of view, and added no-adapter regression tests for VIN, binary, malformed, empty and ASCII-preview responses.
 - [ ] Review CI on the implementation PR and merge only after a green Windows build. Hardware/vehicle testing remains deferred; stable release remains `v0.2.1`.
 
 ---
