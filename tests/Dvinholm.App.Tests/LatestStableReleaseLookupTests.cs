@@ -177,6 +177,23 @@ public sealed class LatestStableReleaseLookupTests
         Assert.Equal(HttpStatusCode.Forbidden, error.StatusCode);
     }
 
+    [Theory]
+    [InlineData(true, "dddddddddddddddddddddddddddddddddddddddd", "v0.2.2", true)]
+    [InlineData(true, "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa", "v0.2.2", false)]
+    [InlineData(false, "dddddddddddddddddddddddddddddddddddddddd", "v0.2.2", false)]
+    [InlineData(true, "dddddddddddddddddddddddddddddddddddddddd", null, false)]
+    [InlineData(true, null, "v0.2.2", true)]
+    public void StableReplacementRequiresExplicitConfirmationForDifferentCommit(
+        bool isStableChannel, string? currentSha, string? releaseTag, bool expected)
+    {
+        var candidate = new LatestBuildInfo(
+            Sha, 0, 0, ZipUrl, 123456, Digest, "2026-10-20T04:35:06Z", releaseTag);
+
+        Assert.Equal(expected,
+            LatestBuildUpdater.RequiresStableReplacementConfirmation(
+                isStableChannel, currentSha, candidate));
+    }
+
     private static HttpClient SuccessfulClient(string? releaseJson = null) =>
         Client(request => request.RequestUri!.AbsolutePath.EndsWith("/releases/latest", StringComparison.Ordinal)
             ? Json(releaseJson ?? Release())
