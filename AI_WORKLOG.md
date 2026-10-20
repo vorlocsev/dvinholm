@@ -2878,3 +2878,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Pending separate Windows validation: UI source switching and fresh stable/CI checks on a merged CI build. Real J2534 adapters and vehicles are not tested; v0.2.2 remains the shipped stable release.
 
 - User requested the labels **Development / Stable** rather than **CI (main) / Stable releases**. Keep internals and release eligibility unchanged; Windows UI verification of both modes remains pending after merge.
+
+## Development / Stable switching and ECU persistence — Windows acceptance (2026-10-20)
+
+- Post-merge [main CI #2884](https://github.com/vorlocsev/dvinholm/actions/runs/39457307648) for [PR #383](https://github.com/vorlocsev/dvinholm/pull/383) completed successfully; public [ci-2884](https://github.com/vorlocsev/dvinholm/releases/tag/ci-2884) asset published for `651e68b`. CI #2883 on the PR also passed.
+- User manually installed Development CI #2884 over stable v0.2.2 via **Check update → Replace files and restart** and saw **Development** (default) and **Stable** in the WinUI source selector.
+- Development update check returned **Up to date** for CI #2884 (`651e68b`). Stable update check found release v0.2.2 (`77b6899`), correctly identifying that it differs from current Development build. Switching back to Development reset the old Stable candidate and returned the button to **Check update**, without installing a downgrade.
+- User confirmed persisted synthetic `user.demo.v022.ecm` after CI update/restart: edited name, 11-bit `7E0/7E8`, DIDs `F187,F190`, source note and `isVerified=false` remained. Both built-in synthetic profiles remained available. The saved catalog was not overwritten by replacement of application files.
+- Evidence recorded in successive [PR #383 comments](https://github.com/vorlocsev/dvinholm/pull/383) on the date above; [manual acceptance record](docs/manual-updater-channels-2026-10-20.md). No physical J2534 hardware or vehicle tests.
+- Next proposed stage: prevent confusing replacement with an older stable release as a forward update; commit ancestry must be determined before calling an update a downgrade. Do not claim a safe downgrade flow until implemented and tested.
