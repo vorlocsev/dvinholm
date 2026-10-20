@@ -51,7 +51,7 @@ jobs:
           architecture: x64
 
       - name: Publish
-        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:Version=0.2.1 -p:InformationalVersion=0.2.1+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app
+        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:Version=0.2.2 -p:InformationalVersion=0.2.2+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app
 
       - name: Verify branded Windows icon is published
         shell: pwsh

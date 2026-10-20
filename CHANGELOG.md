@@ -1,5 +1,24 @@
 # Changelog
 
+## [0.2.2] — 2026-10-20
+
+### Added
+- Offline **Demo CAN Monitor** in WinUI: clearly labeled, deterministic synthetic CAN frames without a J2534 adapter or vehicle, with Start/Stop, filter, counters, Clear and source-marked CSV export. Demo frames are isolated from real J2534 and read-only UDS workflows.
+- Built-in **New profile / Edit selected** dialogs with validated 11/29-bit CAN IDs, candidate DIDs, required provenance and persistent JSON catalog updates; edited/new profiles are always marked unverified.
+- Searchable ECU-profile catalog by ID/name/source/CAN ID/DID with provenance details and an optional author-marked verified filter.
+- Readable, selectable UDS DID and DTC response formatting: validated VIN, raw bytes and strictly labeled optional ASCII previews; individual DTC records and ISO 14229 status bits.
+- Additional coverage and visibility of passive ECU discovery, cancellation and CAN receive losses.
+
+### Improved and fixed
+- CAN Monitor now buffers the last **5,000 received frames** independently of the active software CAN-ID filter; changing or clearing the filter restores still-buffered rows. Live counters distinguish displayed vs received frames.
+- Invalid ECU-editor fields display a clear validation message with appropriate field highlighting and focus; invalid or duplicate CAN IDs/DIDs and required metadata are rejected.
+- Improved WinUI layout for bounded diagnostic output and ECU-profile descriptions; continued virtual-J2534, ISO-TP/UDS, updater and lifecycle regression coverage.
+
+### Validation and limitations
+- Offline Demo CAN Monitor completed eight **user-confirmed Windows smoke scenarios** on a CI build, including filter replay, zero/invalid ID handling, actual synthetic-tagged CSV export, Clear/Stop and default-off after restart. ECU profile editor validation and persistence were also manually exercised.
+- The versioned release workflow rebuilds/tests Windows x86, packages a self-contained portable ZIP, checks the branded icon and published release metadata, and re-downloads and verifies the ZIP against SHA-256.
+- No physical J2534 adapter, vendor-driver, ECU or vehicle compatibility has been verified; the application is **not affiliated with or endorsed by Volvo Cars**. UDS functionality remains read-only. No vehicle-specific DID or fault interpretation is implied by synthetic data.
+
 ## [0.2.1] — 2026-10-19
 
 ### Added
