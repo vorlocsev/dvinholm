@@ -14,10 +14,13 @@ internal sealed record LatestBuildInfo(
     string DownloadUrl,
     long ArtifactSize,
     string? ArtifactDigest,
-    string CreatedAt)
+    string CreatedAt,
+    string? ReleaseTag = null)
 {
     public string ShortSha => CommitSha.Length >= 7 ? CommitSha[..7] : CommitSha;
-    public string DisplayVersion => $"CI #{RunNumber} · {ShortSha}";
+    public string DisplayVersion => ReleaseTag is null
+        ? $"CI #{RunNumber} · {ShortSha}"
+        : $"{ReleaseTag[1..]} · {ShortSha}";
 }
 
 internal static class LatestBuildUpdater
@@ -246,6 +249,117 @@ internal static class LatestBuildUpdater
         throw new InvalidOperationException("No successful main-branch CI run with a published Windows x86 updater asset was found.");
     }
 
+    // Unlike the CI channel, the stable channel resolves the *published* release
+    // tag to a Git commit. It never trusts a moving branch or a release's
+    // free-form target_commitish as the identity of the archive.
+    public static Task<LatestBuildInfo> GetLatestStableReleaseAsync(CancellationToken cancellationToken = default) =>
+        GetLatestStableReleaseAsync(Http, cancellationToken);
+
+    internal static async Task<LatestBuildInfo> GetLatestStableReleaseAsync(
+        HttpClient http,
+        CancellationToken cancellationToken = default)
+    {
+        var releaseUrl = $"https://api.github.com/repos/{Repository}/releases/latest";
+        using var response = await http.GetAsync(releaseUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var release = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+        var root = release.RootElement;
+
+        if (!root.TryGetProperty("draft", out var draft) || draft.ValueKind != JsonValueKind.False ||
+            !root.TryGetProperty("prerelease", out var prerelease) || prerelease.ValueKind != JsonValueKind.False)
+            throw new InvalidDataException("The latest GitHub release is not a published stable release.");
+
+        var tag = ReadString(root, "tag_name");
+        var components = tag.Length > 1 && tag[0] == 'v' ? tag[1..].Split('.') : [];
+        if (components.Length != 3 ||
+            components.Any(part => part.Length == 0 || !part.All(char.IsAsciiDigit) ||
+                !int.TryParse(part, out _)))
+            throw new InvalidDataException("The latest GitHub release has an invalid stable version tag.");
+
+        var sha = await ResolvePublishedTagCommitAsync(http, tag, cancellationToken);
+
+        if (!root.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array)
+            throw new InvalidDataException("The stable release contains no asset list.");
+
+        foreach (var asset in assets.EnumerateArray())
+        {
+            if (ReadString(asset, "name") != $"{ArtifactName}.zip")
+                continue;
+
+            var size = ReadInt64(asset, "size");
+            var rawDownloadUrl = ReadString(asset, "browser_download_url");
+            if (size <= 0 || size > MaximumDownloadBytes ||
+                !Uri.TryCreate(rawDownloadUrl, UriKind.Absolute, out var uri) ||
+                uri.Scheme != Uri.UriSchemeHttps ||
+                !string.Equals(uri.Host, "github.com", StringComparison.OrdinalIgnoreCase) ||
+                !uri.IsDefaultPort || !string.IsNullOrEmpty(uri.UserInfo) ||
+                !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment) ||
+                !string.Equals(uri.AbsolutePath,
+                    $"/{Repository}/releases/download/{tag}/{ArtifactName}.zip",
+                    StringComparison.OrdinalIgnoreCase))
+                throw new InvalidDataException("The stable release archive has invalid size or download URL metadata.");
+
+            // All current stable releases publish an authenticated GitHub SHA-256 digest.
+            // Do not offer a stable update whose archive cannot be integrity-checked.
+            var digest = ReadString(asset, "digest");
+            if (!digest.StartsWith("sha256:", StringComparison.OrdinalIgnoreCase) ||
+                digest.Length != 71 || !digest[7..].All(Uri.IsHexDigit))
+                throw new InvalidDataException("The stable release archive is missing a valid SHA-256 digest.");
+
+            var assetId = ReadInt64(asset, "id");
+            if (assetId <= 0)
+                throw new InvalidDataException("The stable release archive has no valid GitHub asset ID.");
+
+            return new LatestBuildInfo(
+                sha, 0, 0,
+                $"https://api.github.com/repos/{Repository}/releases/assets/{assetId}",
+                size, digest.ToLowerInvariant(),
+                ReadString(root, "published_at"), tag);
+        }
+
+        throw new InvalidOperationException("The latest stable release has no Windows x86 portable ZIP.");
+    }
+
+    private static async Task<string> ResolvePublishedTagCommitAsync(
+        HttpClient http, string tag, CancellationToken cancellationToken)
+    {
+        var referenceUrl = $"https://api.github.com/repos/{Repository}/git/ref/tags/{tag}";
+        using var response = await http.GetAsync(referenceUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+        response.EnsureSuccessStatusCode();
+        await using var stream = await response.Content.ReadAsStreamAsync(cancellationToken);
+        using var reference = await JsonDocument.ParseAsync(stream, cancellationToken: cancellationToken);
+
+        if (!reference.RootElement.TryGetProperty("object", out var target))
+            throw new InvalidDataException("The release tag has no Git object.");
+
+        // An annotated Git tag points to another tag object, while a lightweight
+        // tag points directly to its commit. Limit recursion to prevent cycles.
+        for (var depth = 0; depth < 3; depth++)
+        {
+            var type = ReadString(target, "type");
+            var sha = ReadString(target, "sha");
+            if (sha.Length != 40 || !sha.All(Uri.IsHexDigit))
+                throw new InvalidDataException("The release tag points to an invalid Git object SHA.");
+            if (type == "commit")
+                return sha.ToLowerInvariant();
+            if (type != "tag")
+                throw new InvalidDataException("The stable release tag does not point to a commit.");
+
+            var tagObjectUrl = $"https://api.github.com/repos/{Repository}/git/tags/{sha}";
+            using var tagResponse = await http.GetAsync(tagObjectUrl, HttpCompletionOption.ResponseHeadersRead, cancellationToken);
+            tagResponse.EnsureSuccessStatusCode();
+            await using var tagStream = await tagResponse.Content.ReadAsStreamAsync(cancellationToken);
+            using var tagDocument = await JsonDocument.ParseAsync(tagStream, cancellationToken: cancellationToken);
+            if (!tagDocument.RootElement.TryGetProperty("object", out var nestedTarget))
+                throw new InvalidDataException("The annotated release tag has no target object.");
+            // Clone before tagDocument is disposed.
+            target = nestedTarget.Clone();
+        }
+
+        throw new InvalidDataException("The stable release tag has too many nested tag objects.");
+    }
+
     public static Task<string> DownloadAndPrepareAsync(
         LatestBuildInfo build,
         IProgress<string>? progress = null,
@@ -270,7 +384,7 @@ internal static class LatestBuildUpdater
 
         try
         {
-            progress?.Report($"Downloading CI build #{build.RunNumber}…");
+            progress?.Report($"Downloading {build.DisplayVersion}…");
             using var downloadRequest = new HttpRequestMessage(HttpMethod.Get, build.DownloadUrl);
             if (Uri.TryCreate(build.DownloadUrl, UriKind.Absolute, out var downloadUri) &&
                 string.Equals(downloadUri.Host, "api.github.com", StringComparison.OrdinalIgnoreCase) &&
