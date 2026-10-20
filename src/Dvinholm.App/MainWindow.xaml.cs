@@ -166,7 +166,7 @@ public sealed partial class MainWindow : Window
         _updateAvailable = false;
         UpdateButton.Content = "Check update";
         UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
-            $"source: {(UseStableUpdateSource ? "Stable releases" : "CI (main)")}; select Check update.";
+            $"source: {(UseStableUpdateSource ? "Stable" : "Development")}; select Check update.";
     }
 
     private async void UpdateButton_Click(object sender, RoutedEventArgs e)
