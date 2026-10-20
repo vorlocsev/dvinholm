@@ -1423,3 +1423,15 @@ This roadmap separates software/CI verification from physical adapter validation
 - [ ] Validate visible CAN Monitor interaction and CSV export on Windows using a future explicit synthetic-data UI mode or a real J2534 adapter. The existing virtual adapter is a **test fixture**, not a user-facing WinUI device; do not claim a disconnected app can run live monitoring.
 - [ ] A future standalone stage may add a prominently labeled, offline, read-only **Demo CAN Monitor** feed for Windows UI checks without accessing J2534 hardware. Keep demo data isolated from actual ECU/UDS connections.
 - Physical adapter/vehicle validation remains postponed; stable release remains v0.2.1.
+
+## Offline Demo CAN Monitor — 2026-10-20
+
+- [x] [PR #378](https://github.com/vorlocsev/dvinholm/pull/378) merged as `8b8c89c6df18044dd10d3b0d4d85ba8ba46d31ff`, adding **Start demo / Stop demo** for safe offline WinUI CAN Monitor checks. No J2534 adapter or real CAN bus is used by the demo.
+- [x] Deterministic synthetic 11-bit/29-bit rows feed the existing bounded 5000-frame monitor history and UI table on a dispatcher timer. Filter change, shown/RX counters, clear and CSV paths are shared with monitor display.
+- [x] Demo entry requires a disconnected/idle session. Real J2534 connection is disabled while demo runs. On stopping, synthetic history is retained for filter/CSV; initiating genuine J2534 connection clears demo history. The demo timer stops on window close.
+- [x] Demo CSV filenames include `SYNTHETIC` and all rows contain `SYNTHETIC_DEMO` in an explicit source column; real-capture CSV retains its legacy five-column schema.
+- [x] Eight offline unit tests cover deterministic input, 11/29-bit row representation, payload length/hex encoding, time progression, monitor history and software ID filters, demo CSV marking and real CSV backwards compatibility.
+- [x] [PR CI #2868](https://github.com/vorlocsev/dvinholm/actions/runs/39344455511) passed Windows build, tests, packaged app and latest-stable ZIP audit.
+- [ ] Verify post-merge [main CI #2869](https://github.com/vorlocsev/dvinholm/actions/runs/39345037152) separately.
+- [ ] Complete the [eight Windows manual checks](docs/manual-can-demo-monitor-2026-10-20.md) on a main CI build containing `8b8c89c`. Automated tests do not prove the WinUI button and file-picker behavior.
+- [ ] Physical J2534 device and vehicle validation stays deferred. Stable release remains v0.2.1; the demo is a main/CI-only feature for now.
