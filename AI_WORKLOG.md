@@ -2887,3 +2887,9 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - User confirmed persisted synthetic `user.demo.v022.ecm` after CI update/restart: edited name, 11-bit `7E0/7E8`, DIDs `F187,F190`, source note and `isVerified=false` remained. Both built-in synthetic profiles remained available. The saved catalog was not overwritten by replacement of application files.
 - Evidence recorded in successive [PR #383 comments](https://github.com/vorlocsev/dvinholm/pull/383) on the date above; [manual acceptance record](docs/manual-updater-channels-2026-10-20.md). No physical J2534 hardware or vehicle tests.
 - Next proposed stage: prevent confusing replacement with an older stable release as a forward update; commit ancestry must be determined before calling an update a downgrade. Do not claim a safe downgrade flow until implemented and tested.
+
+## Stable cancel and offline UDS example preview (2026-10-20)
+
+- User confirmed Windows CI #2890 after [PR #385](https://github.com/vorlocsev/dvinholm/pull/385): distinct Stable v0.2.2 triggered **Switch to Stable?**; **Cancel** preserved the installed Development build and reset **Check update**. After restarting, the user confirmed CI #2890 and **Up to date**, plus saved `Edited Demo ECM v0.2.2` and both built-in test profiles. Results recorded in PR #385; no real downgrade was installed.
+- CI #2890 initially cancelled its Windows job but attempt 2 completed successfully and published the public CI archive; stable v0.2.2 unchanged. J2534 hardware testing still deferred.
+- In development: one-click **OFFLINE SYNTHETIC UDS SAMPLE** using fictional VIN/F187/DTC values via existing validated UDS display code; offline, clearly separated from real diagnostics and blocked while connected/demo active. Eight new unit tests and Windows acceptance remain to verify.

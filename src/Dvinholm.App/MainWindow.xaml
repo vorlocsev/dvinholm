@@ -147,11 +147,17 @@
         </Grid>
 
         <Border Grid.Row="4" Padding="10" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-            <!-- Keep detailed UDS response bytes readable and selectable without
-                 letting a long reply push the CAN monitor off screen. -->
-            <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                <TextBlock x:Name="StatusText" Text="Disconnected" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
-            </ScrollViewer>
+            <!-- Synthetic UDS example uses existing formatters and never reads an ECU.
+                 Keep long examples scrollable so CAN Monitor remains visible. -->
+            <StackPanel Spacing="6">
+                <Button x:Name="PreviewUdsSampleButton"
+                        Content="Preview UDS example (offline)"
+                        Click="PreviewUdsSample_Click"
+                        HorizontalAlignment="Left"/>
+                <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <TextBlock x:Name="StatusText" Text="Disconnected" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+                </ScrollViewer>
+            </StackPanel>
         </Border>
     </Grid>
 </Window>

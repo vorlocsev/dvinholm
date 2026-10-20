@@ -1459,3 +1459,18 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] User confirmed saved unverified ECU profile `user.demo.v022.ecm` with Name `Edited Demo ECM v0.2.2`, `7E0/7E8`, DID `F187/F190`, source `Revised synthetic test only`, and both built-in test profiles all persisted after replacing files and restarting.
 - [ ] Future update UX: visually distinguish a *downgrade* from an update when Stable resolves to a commit older than the installed Development build, and require explicit user confirmation before replacing files with an older stable release. An SHA mismatch alone does not establish commit ancestry; do not classify direction by run number or SHA lexicographic order.
 - [ ] Verify safe downgrade UX via automated tests and Windows UI without actually downgrading the current installed build; no real J2534 adapter or vehicle validation. Stable remains v0.2.2.
+
+## Stable-replacement Cancel — completed Windows acceptance (2026-10-20)
+
+- [x] [PR #385](https://github.com/vorlocsev/dvinholm/pull/385) merged as `9d0e1f4`. CI #2890 attempt 1 was cancelled, but [attempt 2](https://github.com/vorlocsev/dvinholm/actions/runs/39463465646) successfully completed Windows x86 build, automated tests, publish and stable release audit; public `ci-2890` archive published.
+- [x] User installed Development CI #2890, selected Stable v0.2.2 (`77b6899`) and clicked **Replace files and restart**. The separate **Switch to Stable?** confirmation appeared; **Cancel** closed it without download/replacement and reset **Check update**. No rollback installed.
+- [x] User closed/restarted Dvinholm, verified installed CI #2890 (`9d0e1f4`), saw **Development → Up to date**, and confirmed `Edited Demo ECM v0.2.2` and both standard/extended synthetic profiles persisted. Evidence: consecutive [PR #385 comments](https://github.com/vorlocsev/dvinholm/pull/385).
+- [ ] No actual Stable downgrade/recovery was tested. Future enhancement: assess commit ancestry rather than assuming SHA mismatch means a downgrade.
+
+## Offline UDS example preview — next software-only feature (2026-10-20)
+
+- [ ] Implement clearly labeled **Preview UDS example (offline)** separated from live Read DID/VIN/DTC and from the CAN demo stream; available without hardware while disconnected and idle.
+- [ ] Use deterministic fictional F190 VIN, F187 DID and DTC records through existing read-only formatters; label all values synthetic and avoid any network/CAN/J2534 traffic or manufacturer-specific claims.
+- [ ] Add eight offline unit tests for provenance labeling, VIN, raw bytes, DID ASCII, DTC status, stability and non-interpretation.
+- [ ] Run PR CI, merge only if green, verify main CI and request small, user-confirmed Windows smoke checks. Development-only until a separate stable release.
+- [ ] No real J2534 adapter/vehicle tests in this milestone.
