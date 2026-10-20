@@ -13,8 +13,8 @@
             <Grid ColumnSpacing="10" Margin="0,6,0,0">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
                 <ComboBox x:Name="UpdateSource" Width="145" VerticalAlignment="Center" SelectedIndex="0" SelectionChanged="UpdateSource_SelectionChanged" AutomationProperties.Name="Update source">
-                    <ComboBoxItem Content="CI (main)"/>
-                    <ComboBoxItem Content="Stable releases"/>
+                    <ComboBoxItem Content="Development"/>
+                    <ComboBoxItem Content="Stable"/>
                 </ComboBox>
                 <TextBlock x:Name="UpdateStatusText" Grid.Column="1" Text="Current version: checking…" VerticalAlignment="Center" TextWrapping="Wrap"/>
                 <Button x:Name="UpdateButton" Grid.Column="2" Content="Check update" Click="UpdateButton_Click" MinWidth="170"/>
