@@ -174,9 +174,59 @@ public sealed partial class MainWindow : Window
         if (_updaterBusy)
             return;
 
-        if (_updateAvailable && _latestBuild is not null)
+        if (_updateAvailable && _latestBuild is { } build)
         {
-            await DownloadAndLaunchLatestBuildAsync(_latestBuild);
+            // A Stable release can be older than the currently installed
+            // Development build. Do not assume direction from unequal SHAs:
+            // require explicit confirmation for any Stable replacement.
+            if (LatestBuildUpdater.RequiresStableReplacementConfirmation(
+                UseStableUpdateSource, LatestBuildUpdater.CurrentCommitSha, build))
+            {
+                _updaterBusy = true;
+                UpdateButton.IsEnabled = false;
+                UpdateSource.IsEnabled = false;
+                try
+                {
+                    var dialog = new ContentDialog
+                    {
+                        Title = "Switch to Stable?",
+                        XamlRoot = RootLayout.XamlRoot,
+                        Content = new TextBlock
+                        {
+                            Text = $"You are about to replace the installed build with Stable " +
+                                $"{build.DisplayVersion}. This release may be older than your " +
+                                "current Development build, so newer application features may " +
+                                "be lost. Saved ECU profiles are stored separately. " +
+                                "The application files will be replaced and Dvinholm restarted. " +
+                                "Continue?",
+                            TextWrapping = TextWrapping.Wrap
+                        },
+                        PrimaryButtonText = "Replace files and restart",
+                        CloseButtonText = "Cancel",
+                        DefaultButton = ContentDialogButton.Close
+                    };
+
+                    if (await dialog.ShowAsync() != ContentDialogResult.Primary)
+                    {
+                        // Do not keep an actionable cached Stable offer after Cancel.
+                        _latestBuild = null;
+                        _updateAvailable = false;
+                        UpdateButton.Content = "Check update";
+                        UpdateStatusText.Text =
+                            $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
+                            "Stable replacement cancelled. Select Check update to check again.";
+                        return;
+                    }
+                }
+                finally
+                {
+                    _updaterBusy = false;
+                    UpdateButton.IsEnabled = true;
+                    UpdateSource.IsEnabled = true;
+                }
+            }
+
+            await DownloadAndLaunchLatestBuildAsync(build);
             return;
         }
 

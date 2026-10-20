@@ -94,6 +94,15 @@ internal static class LatestBuildUpdater
         string.IsNullOrWhiteSpace(currentCommitSha) ||
         !string.Equals(currentCommitSha, latestBuild.CommitSha, StringComparison.OrdinalIgnoreCase);
 
+    // A SHA mismatch is not enough to decide whether the selected Stable
+    // version is newer. Confirm any replacement from that channel so a
+    // user cannot accidentally install an older release over Development.
+    internal static bool RequiresStableReplacementConfirmation(
+        bool isStableChannel, string? currentCommitSha, LatestBuildInfo candidate) =>
+        isStableChannel &&
+        candidate.ReleaseTag is not null &&
+        IsUpdateAvailable(currentCommitSha, candidate);
+
     internal static string FormatUpdateStatus(
         string currentDisplayVersion,
         LatestBuildInfo latestBuild,
