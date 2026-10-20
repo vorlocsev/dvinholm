@@ -1134,6 +1134,21 @@ public sealed partial class MainWindow : Window
         return true;
     }
 
+    private void PreviewUdsSample_Click(object sender, RoutedEventArgs e)
+    {
+        // A preview is independent of the live J2534/UDS stack. Keep it
+        // distinct from real diagnostic output and from the CAN demo feed.
+        if (_closing || _connected || _demoTimer is not null ||
+            _udsGate.CurrentCount == 0)
+        {
+            SetStatus("OFFLINE UDS preview requires a disconnected, idle session. " +
+                "Stop the CAN demo and any active diagnostic operation first.");
+            return;
+        }
+
+        SetStatus(UdsOfflineSample.Format());
+    }
+
     private async void ReadDid_Click(object sender, RoutedEventArgs e)
     {
         if (!TryParseDid(out var did)) return;
