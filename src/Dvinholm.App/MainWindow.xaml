@@ -150,10 +150,14 @@
             <!-- Synthetic UDS example uses existing formatters and never reads an ECU.
                  Keep long examples scrollable so CAN Monitor remains visible. -->
             <StackPanel Spacing="6">
-                <Button x:Name="PreviewUdsSampleButton"
-                        Content="Preview UDS example (offline)"
-                        Click="PreviewUdsSample_Click"
-                        HorizontalAlignment="Left"/>
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <Button x:Name="PreviewUdsSampleButton"
+                            Content="Preview UDS example (offline)"
+                            Click="PreviewUdsSample_Click"/>
+                    <Button x:Name="ExportOfflineUdsTxtButton"
+                            Content="Export synthetic UDS TXT"
+                            Click="ExportOfflineUdsTxt_Click"/>
+                </StackPanel>
                 <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <TextBlock x:Name="StatusText" Text="Disconnected" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
                 </ScrollViewer>

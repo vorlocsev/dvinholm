@@ -1478,7 +1478,7 @@ This roadmap separates software/CI verification from physical adapter validation
 
 ## Next planned milestone — optional offline UDS report export (2026-10-21)
 
-- [ ] Design opt-in TXT export of the currently displayed **offline synthetic UDS sample**, with explicit provenance markers and no automatic file writing. Keep the real diagnostic session path independent.
-- [ ] Use a user-selected destination; never silently expose genuine VIN, diagnostic records or profile data to disk or network. Consider a separate privacy confirmation for any later real-data export.
-- [ ] Add hardware-independent regression tests for deterministic output, synthetic provenance and cancellation; then perform Windows UI checks. Do not represent this as implemented yet.
-- [ ] Real adapter/ECU validation stays deferred to later releases.
+- [ ] Implement **Export synthetic UDS TXT** as an explicit user action. Its payload must come **only** from the fixed `UdsOfflineSample` fixture, never live `StatusText`, VIN, DTC or ECU profile state. Save via a user-selected Windows TXT file picker; never write automatically.
+- [ ] Require the same disconnected/idle conditions as UDS preview; recheck after returning from file picker, reject active CAN Demo/UDS and preserve Cancel as a no-write action.
+- [ ] Add eight offline deterministic tests for synthetic provenance, disclaimer, sample integrity, fixed filename, fictional F190/F187/DTC fields and no unsupported diagnostic conclusions. Run PR and post-merge CI; **manual Windows export tests must remain pending until user-confirmed**.
+- [ ] Keep genuine vehicle export out of scope and preserve a privacy review if real-data export is ever added. Stable v0.2.2 unchanged; no J2534/vehicle tests.

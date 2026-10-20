@@ -1134,12 +1134,14 @@ public sealed partial class MainWindow : Window
         return true;
     }
 
+    private bool CanUseOfflineUdsSample() =>
+        !_closing && !_connected && _demoTimer is null && _udsGate.CurrentCount > 0;
+
     private void PreviewUdsSample_Click(object sender, RoutedEventArgs e)
     {
         // A preview is independent of the live J2534/UDS stack. Keep it
         // distinct from real diagnostic output and from the CAN demo feed.
-        if (_closing || _connected || _demoTimer is not null ||
-            _udsGate.CurrentCount == 0)
+        if (!CanUseOfflineUdsSample())
         {
             SetStatus("OFFLINE UDS preview requires a disconnected, idle session. " +
                 "Stop the CAN demo and any active diagnostic operation first.");
@@ -1147,6 +1149,47 @@ public sealed partial class MainWindow : Window
         }
 
         SetStatus(UdsOfflineSample.Format());
+    }
+
+    private async void ExportOfflineUdsTxt_Click(object sender, RoutedEventArgs e)
+    {
+        // Export only the *fixed synthetic fixture*. Do not export StatusText:
+        // it can contain actual VIN, DID or DTC results in a live session.
+        if (!CanUseOfflineUdsSample())
+        {
+            SetStatus("OFFLINE UDS TXT export requires a disconnected, idle session. " +
+                "Stop the CAN demo and any active diagnostic operation first.");
+            return;
+        }
+
+        try
+        {
+            var picker = new FileSavePicker();
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
+            picker.SuggestedFileName = UdsOfflineTextReport.SuggestedFileName;
+            picker.FileTypeChoices.Add("Text", new List<string> { ".txt" });
+
+            var file = await picker.PickSaveFileAsync();
+            if (file is null)
+                return; // Cancel must not create or overwrite any file.
+
+            // UI may have changed while the picker was open. In all cases the
+            // exported text comes from the immutable synthetic fixture.
+            if (!CanUseOfflineUdsSample())
+            {
+                SetStatus("OFFLINE UDS TXT export cancelled: the session is no longer idle.");
+                return;
+            }
+
+            await File.WriteAllTextAsync(file.Path, UdsOfflineTextReport.Build(),
+                new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
+            SetStatus($"SYNTHETIC UDS TXT saved: {file.Name}. No vehicle data was exported.");
+        }
+        catch (Exception)
+        {
+            SetStatus("Synthetic UDS TXT export failed. " +
+                "Check destination permissions and available disk space.");
+        }
     }
 
     private async void ReadDid_Click(object sender, RoutedEventArgs e)
