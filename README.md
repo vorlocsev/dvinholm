@@ -60,6 +60,7 @@ Install the interface drivers and vendor J2534 DLL separately. The application i
 - Discover registered 32-bit J2534 DLLs or enter a DLL path manually.
 - Open and close the J2534 device and connect to CAN at 500, 250, or 125 kbit/s.
 - Live CAN capture, software CAN ID filtering, optional J2534 hardware ID filters, frame-rate/count statistics, and CSV export.
+- **Offline Demo CAN Monitor (CI builds only):** a clearly labeled synthetic CAN feed for Windows UI checks without a J2534 device. It exercises live table updates, bounded history/refilter, count display, Clear, and synthetic-source-tagged CSV export; J2534 and UDS remain disconnected. [Windows demo checklist](docs/manual-can-demo-monitor-2026-10-20.md). Stable v0.2.1 does not contain this feature.
 - Report firmware, vendor DLL, and J2534 API versions when the driver supports `PassThruReadVersion`.
 - Detect optional vendor exports for hardware filters, version queries, and extended error details. Export detection is not a hardware conformance test.
 - Import, validate, search, select, and export JSON ECU profile catalogs. Search supports names, catalog IDs, source notes, CAN IDs and candidate DIDs; a separate filter shows profiles **marked verified by the catalog author**, without implying actual hardware compatibility. Profile details are selectable and scrollable. The catalog starts empty; no unsupported vehicle-specific CAN IDs or DIDs are guessed.

@@ -2852,3 +2852,12 @@ No tests were run during this source audit; this is a coverage review, not a cla
 - Post-merge main [CI #2863](https://github.com/vorlocsev/dvinholm/actions/runs/39342680771) started; final result pending at this checkpoint.
 - Not covered: manual WinUI monitoring and CSV export with injected demo frames, because `VirtualJ2534Adapter` exists only as a test fixture and disconnected Start Monitor remains disabled by design. A dedicated offline demo UI mode is a future enhancement, not a claim about current functionality.
 - Physical J2534 and vehicle checks remain deferred; stable release still v0.2.1.
+
+## Offline CAN Monitor demo — implementation checkpoint (2026-10-20)
+
+- Merged [PR #378](https://github.com/vorlocsev/dvinholm/pull/378) as `8b8c89c6df18044dd10d3b0d4d85ba8ba46d31ff`. Added in-process `CanDemoFrameGenerator` (deterministic synthetic 11-bit and 29-bit CAN rows), a `DispatcherQueueTimer` UI producer and a visually labeled **DEMO** control. No real J2534/UDS/session APIs are invoked by the generator.
+- Real Start monitor and UDS remain gated on a real connected session. Demo is only allowed while disconnected and idle; the app disables Connect while demo is active. Demo capture stops on window close. Stopped demo frames remain visible for CSV and refiltering until Clear or an attempted real connection.
+- `CanMonitorCsv` adds a `source` column carrying `SYNTHETIC_DEMO` for demo exports; normal CAN monitor exports keep `timestamp,id,type,dlc,data` unchanged.
+- Added eight in-process `CanDemoFrameGeneratorTests` covering deterministic samples, DLC/hex, 11/29-bit IDs, timestamp advancement, bounded history/filter integration and both CSV schemas.
+- [CI #2868](https://github.com/vorlocsev/dvinholm/actions/runs/39344455511) passed build/tests/publish and stable release audit on the PR head. Post-merge [main CI #2869](https://github.com/vorlocsev/dvinholm/actions/runs/39345037152) pending at this checkpoint.
+- **Manual WinUI demo behavior is not yet user-tested.** See [Windows smoke checklist](docs/manual-can-demo-monitor-2026-10-20.md), which requires no hardware. The virtual J2534 test fixture remains separate from the demo producer; neither validates real adapter/vehicle hardware. Stable release remains v0.2.1.
