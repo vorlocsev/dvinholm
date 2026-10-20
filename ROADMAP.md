@@ -1469,8 +1469,16 @@ This roadmap separates software/CI verification from physical adapter validation
 
 ## Offline UDS example preview — next software-only feature (2026-10-20)
 
-- [ ] Implement clearly labeled **Preview UDS example (offline)** separated from live Read DID/VIN/DTC and from the CAN demo stream; available without hardware while disconnected and idle.
-- [ ] Use deterministic fictional F190 VIN, F187 DID and DTC records through existing read-only formatters; label all values synthetic and avoid any network/CAN/J2534 traffic or manufacturer-specific claims.
-- [ ] Add eight offline unit tests for provenance labeling, VIN, raw bytes, DID ASCII, DTC status, stability and non-interpretation.
-- [ ] Run PR CI, merge only if green, verify main CI and request small, user-confirmed Windows smoke checks. Development-only until a separate stable release.
-- [ ] No real J2534 adapter/vehicle tests in this milestone.
+- [x] [PR #386](https://github.com/vorlocsev/dvinholm/pull/386) merged as `c86abc5` after successful [PR CI #2892](https://github.com/vorlocsev/dvinholm/actions/runs/39494817764); [post-merge CI #2893](https://github.com/vorlocsev/dvinholm/actions/runs/39495359322) passed and published Windows x86 `ci-2893`.
+- [x] **Preview UDS example (offline)** is separated from live diagnostics and CAN Demo; it is available without hardware when disconnected and idle. No J2534 or live UDS operation is triggered.
+- [x] Deterministic fictional F190 VIN `TEST0000000000ABC`, F187 DID `DEMO-ECM` and DTC `0x123456` / `0x00C0DE` use existing read-only formatters with exact raw bytes, a prominent synthetic disclaimer and no vehicle-specific claims.
+- [x] Eight no-adapter unit tests cover provenance, deterministic data, VIN/raw bytes, unverified DID ASCII/raw bytes, DTC status and avoiding unsupported diagnostic claims; PR and post-merge CI succeeded.
+- [x] **All 8 Windows manual checks user-confirmed on CI #2893** (final full-restart test 2026-10-21): offline access and real-read disabling, synthetic provenance, fictional VIN/raw bytes, F187 preview/raw bytes, DTC statuses, scroll/select with layout preserved, CAN Demo mutual exclusion and post-restart manual-only preview. See [completed checklist](docs/manual-uds-offline-preview-2026-10-20.md) and [PR #386 evidence](https://github.com/vorlocsev/dvinholm/pull/386).
+- [ ] Physical J2534 adapter/vehicle tests remain deferred. Stable v0.2.2 is unchanged and the UDS preview is currently Development-only.
+
+## Next planned milestone — optional offline UDS report export (2026-10-21)
+
+- [ ] Design opt-in TXT export of the currently displayed **offline synthetic UDS sample**, with explicit provenance markers and no automatic file writing. Keep the real diagnostic session path independent.
+- [ ] Use a user-selected destination; never silently expose genuine VIN, diagnostic records or profile data to disk or network. Consider a separate privacy confirmation for any later real-data export.
+- [ ] Add hardware-independent regression tests for deterministic output, synthetic provenance and cancellation; then perform Windows UI checks. Do not represent this as implemented yet.
+- [ ] Real adapter/ECU validation stays deferred to later releases.
