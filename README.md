@@ -10,13 +10,13 @@
 
 <p align="center">
   <a href="https://github.com/vorlocsev/dvinholm/actions/workflows/ci.yml"><img alt="Windows CI" src="https://github.com/vorlocsev/dvinholm/actions/workflows/ci.yml/badge.svg?branch=main"></a>
-  <a href="https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.1"><img alt="Stable v0.2.1" src="https://img.shields.io/badge/stable-v0.2.1-167cc1"></a>
+  <a href="https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.2"><img alt="Stable v0.2.2" src="https://img.shields.io/badge/stable-v0.2.2-167cc1"></a>
   <img alt="Windows x86" src="https://img.shields.io/badge/platform-Windows%20x86-203f60">
   <img alt="UDS read-only" src="https://img.shields.io/badge/UDS-read--only-008b8b">
 </p>
 
 <p align="center">
-  <a href="https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/Dvinholm-Windows-x86.zip"><strong>Download stable release</strong></a>
+  <a href="https://github.com/vorlocsev/dvinholm/releases/download/v0.2.2/Dvinholm-Windows-x86.zip"><strong>Download stable release</strong></a>
   &nbsp;·&nbsp; <a href="https://github.com/vorlocsev/dvinholm/actions">Latest CI builds</a>
   &nbsp;·&nbsp; <a href="docs/USER_GUIDE_RU.md">Руководство (RU)</a>
   &nbsp;·&nbsp; <a href="ROADMAP.md">Roadmap</a>
@@ -28,25 +28,23 @@
 
 ## Quick start
 
-1. [Download **Dvinholm v0.2.1** for Windows x86](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/Dvinholm-Windows-x86.zip) or choose a successful current `main` build from [GitHub Actions](https://github.com/vorlocsev/dvinholm/actions).
+1. [Download **Dvinholm v0.2.2** for Windows x86](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.2/Dvinholm-Windows-x86.zip) or choose a successful current `main` build from [GitHub Actions](https://github.com/vorlocsev/dvinholm/actions).
 2. **Extract the entire ZIP** into a writable local directory; it is a portable build, not an installer.
 3. Run `Dvinholm.App.exe`. A separate .NET runtime is normally not needed for this self-contained build.
 4. For adapter use, install the **32-bit J2534 driver** supplied by the hardware manufacturer, then select the registered DLL or enter its path in Dvinholm.
 5. Start with **passive CAN monitoring** once a compatible adapter and vehicle are available. UDS commands are read-only.
 
-The branded window, taskbar, and executable icon is packaged with v0.2.1. On 2026-10-19, a user confirmed that the icon is visible in the Windows application; individual display locations were not separately specified.
+The branded icon was introduced in v0.2.1 and remains packaged in v0.2.2. A user confirmed it was visible in Windows on 2026-10-19; individual display locations were not separately specified.
 
-## Latest stable release — v0.2.1 (2026-10-19)
+## Latest stable release — v0.2.2 (2026-10-20)
 
-- **Release:** [Dvinholm v0.2.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.1).
-- **Windows x86 portable ZIP:** [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/Dvinholm-Windows-x86.zip). This is not an installer; extract the full archive before launching `Dvinholm.App.exe`.
-- **Archive size:** 67,042,782 bytes. **SHA-256:** `5245d7691482da6434262b5767a0b23ed757df9136fb38b9aed196523a47bf09` — [SHA256SUMS.txt](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.1/SHA256SUMS.txt).
-- **What's new:** branded icon and README, persisted CAN speed, two clearly labeled synthetic ECU profiles, profile-selection fixes, and additional updater/cancellation/rollback regression coverage. See [CHANGELOG.md](CHANGELOG.md).
-- **Validation:** [stable release CI #39184108681](https://github.com/vorlocsev/dvinholm/actions/runs/39184108681) passed Windows build, tests, publish, packaged icon check, release metadata verification, and a separate re-download/SHA-256 check. Release commit: `eb51b998cee3557b661b5cfa9626126ddaea6be4`. Physical adapter/vehicle compatibility is **unverified**.
-- **Windows visual check:** user-confirmed icon visibility in v0.2.1 on 2026-10-19. CI separately verifies packaged icon data; individual titlebar/taskbar/Explorer locations were not reported.
+- **Release:** [Dvinholm v0.2.2](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.2).
+- **Windows x86 portable ZIP:** [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.2/Dvinholm-Windows-x86.zip). It is not an installer; extract the archive before launching `Dvinholm.App.exe`.
+- **Archive size:** 67,058,546 bytes. **SHA-256:** `4ee02321588f0183d88511318734d529d2f74d97a59a5bcd98d7b88f6e0d63a2` — [SHA256SUMS.txt](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.2/SHA256SUMS.txt).
+- **Included:** offline synthetic CAN Monitor demo, ECU profile editing/search and read-only UDS display. **Development / Stable** update selector, Stable-replacement confirmation and the offline UDS example preview appeared in **later Development CI** builds, not this stable v0.2.2.
+- **Validation:** release commit `77b6899`, [main CI #2878](https://github.com/vorlocsev/dvinholm/actions/runs/39369091488) passed. Users confirmed stable Windows launch, offline demo and profile-editing behavior. Real J2534 hardware, ECU and vehicle compatibility remains unverified.
 
-Previous stable release: [Dvinholm v0.2.0](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.0), published 2026-10-17.
-
+Previous stable release: [Dvinholm v0.2.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.1), published 2026-10-19.
 
 ## Supported interfaces
 
