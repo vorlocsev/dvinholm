@@ -195,9 +195,9 @@ The CI pipeline publishes a self-contained x86 application artifact. It is a por
 
 The application is self-contained, so a separate .NET runtime installation is not normally required. Windows and driver requirements still apply. The artifact is intended for evaluation; CI success does not mean the application has been verified with a physical adapter or a specific vehicle.
 
-### Check for and install the latest CI build
+### Choose an update source: CI or stable releases (main builds after v0.2.2)
 
-The application checks GitHub Actions for the newest successful Windows x86 **main-branch** build with a public updater asset. The version row shows the running build's CI number and seven-character commit SHA. When a newer build is available, choose **Replace files and restart**.
+The update row has a source selector: **CI (main)** (the existing default) or **Stable releases**. Click **Check update** after choosing the source. Switching sources invalidates any previous update offer and does **not** silently install a build. With **Stable releases**, the updater resolves the latest published stable GitHub release's tag to a fixed commit and requires the public portable Windows x86 ZIP to have a valid SHA-256 digest. CI mode continues to check the newest successful Windows x86 **main-branch** build with a published updater asset. The version row shows the current build's seven-character commit SHA, and **Replace files and restart** appears only when the selected source's commit differs. **Dvinholm v0.2.2 itself has the original CI-only updater; the two-source UI first appears in later `main` CI builds.**
 
 Updates are selected from successful `push` runs on **main** with a corresponding public updater asset; pull-request and other-branch runs are excluded. Since GitHub Actions artifact ZIP downloads require authentication, successful main-branch CI runs publish the same Windows x86 ZIP as a public GitHub prerelease asset tagged `ci-<run-number>`. The updater downloads that asset anonymously—no GitHub token is stored in the app—and verifies its size and SHA-256 digest when GitHub provides one, checks archive paths, and stages the extracted files before installation.
 

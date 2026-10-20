@@ -153,6 +153,22 @@ public sealed partial class MainWindow : Window
 
     private void SetStatus(string text) => StatusText.Text = text;
 
+    private bool UseStableUpdateSource => UpdateSource.SelectedIndex == 1;
+
+    private void UpdateSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // Source changes invalidate *both* a pending update offer and its download
+        // URL. Never install a CI archive after switching the UI to Stable (or vice versa).
+        if (UpdateButton is null || UpdateStatusText is null || _updaterBusy)
+            return;
+
+        _latestBuild = null;
+        _updateAvailable = false;
+        UpdateButton.Content = "Check update";
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
+            $"source: {(UseStableUpdateSource ? "Stable releases" : "CI (main)")}; select Check update.";
+    }
+
     private async void UpdateButton_Click(object sender, RoutedEventArgs e)
     {
         if (_updaterBusy)
@@ -174,12 +190,17 @@ public sealed partial class MainWindow : Window
 
         _updaterBusy = true;
         UpdateButton.IsEnabled = false;
+        UpdateSource.IsEnabled = false;
         UpdateButton.Content = "Checking…";
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · checking latest successful main-branch CI build…";
+        var stable = UseStableUpdateSource;
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
+            (stable ? "checking latest published stable release…" : "checking latest successful main-branch CI build…");
 
         try
         {
-            var latest = await LatestBuildUpdater.GetLatestSuccessfulBuildAsync();
+            var latest = stable
+                ? await LatestBuildUpdater.GetLatestStableReleaseAsync()
+                : await LatestBuildUpdater.GetLatestSuccessfulBuildAsync();
             _latestBuild = latest;
             var currentSha = LatestBuildUpdater.CurrentCommitSha;
             _updateAvailable = LatestBuildUpdater.IsUpdateAvailable(currentSha, latest);
@@ -194,13 +215,15 @@ public sealed partial class MainWindow : Window
         {
             _latestBuild = null;
             _updateAvailable = false;
-            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Latest CI build: unavailable";
+            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
+                (stable ? "Latest stable release: unavailable" : "Latest CI build: unavailable");
             UpdateButton.Content = "Retry update check";
         }
         finally
         {
             _updaterBusy = false;
             UpdateButton.IsEnabled = true;
+            UpdateSource.IsEnabled = true;
         }
     }
 
@@ -208,6 +231,7 @@ public sealed partial class MainWindow : Window
     {
         _updaterBusy = true;
         UpdateButton.IsEnabled = false;
+        UpdateSource.IsEnabled = false;
         UpdateButton.Content = "Updating…";
         var progress = new Progress<string>(message =>
         {
@@ -247,6 +271,7 @@ public sealed partial class MainWindow : Window
         {
             _updaterBusy = false;
             UpdateButton.IsEnabled = true;
+            UpdateSource.IsEnabled = true;
         }
     }
 
