@@ -108,8 +108,24 @@
                 </Grid>
             </Border>
             <Grid Grid.Row="3">
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-            <Grid ColumnSpacing="10" Margin="0,0,0,10">
+            <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="Auto"/>
+                <RowDefinition Height="*"/>
+            </Grid.RowDefinitions>
+            <Grid Grid.Row="0" ColumnSpacing="10" Margin="0,0,0,8">
+                <Grid.ColumnDefinitions>
+                    <ColumnDefinition Width="Auto"/>
+                    <ColumnDefinition Width="*"/>
+                </Grid.ColumnDefinitions>
+                <Button x:Name="DemoMonitorButton" Content="Start demo"
+                        Click="DemoMonitor_Click"/>
+                <TextBlock x:Name="DemoStatusText" Grid.Column="1"
+                           Text="DEMO — synthetic data, no J2534 connection"
+                           Visibility="Collapsed" TextWrapping="Wrap"
+                           VerticalAlignment="Center"/>
+            </Grid>
+            <Grid Grid.Row="1" ColumnSpacing="10" Margin="0,0,0,10">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="75"/><ColumnDefinition Width="125"/><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/><ColumnDefinition Width="150"/><ColumnDefinition Width="100"/></Grid.ColumnDefinitions>
                 <TextBox x:Name="IdFilter" Header="ID filter (hex)" PlaceholderText="e.g. 7E8" TextChanged="Filter_Changed"/>
                 <Button Grid.Column="1" Content="Clear" Click="Clear_Click" VerticalAlignment="Bottom"/>
@@ -119,7 +135,7 @@
                 <TextBlock x:Name="FrameCountText" Grid.Column="5" VerticalAlignment="Center" Text="0 shown / 0 rx" HorizontalAlignment="Right"/>
                 <TextBlock x:Name="DroppedFrameText" Grid.Column="6" VerticalAlignment="Center" Text="0 dropped" HorizontalAlignment="Right"/>
             </Grid>
-            <ListView x:Name="FramesView" Grid.Row="1" SelectionMode="None">
+            <ListView x:Name="FramesView" Grid.Row="2" SelectionMode="None">
                 <ListView.Header><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="90"/><ColumnDefinition Width="80"/><ColumnDefinition Width="55"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Timestamp (ms)"/><TextBlock Grid.Column="1" Text="ID"/><TextBlock Grid.Column="2" Text="Type"/><TextBlock Grid.Column="3" Text="DLC"/><TextBlock Grid.Column="4" Text="Data"/></Grid></ListView.Header>
                 <ListView.ItemTemplate><DataTemplate><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="90"/><ColumnDefinition Width="80"/><ColumnDefinition Width="55"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Timestamp}"/><TextBlock Grid.Column="1" Text="{Binding Id}" FontFamily="Consolas"/><TextBlock Grid.Column="2" Text="{Binding Type}"/><TextBlock Grid.Column="3" Text="{Binding Dlc}"/><TextBlock Grid.Column="4" Text="{Binding Data}" FontFamily="Consolas"/></Grid></DataTemplate></ListView.ItemTemplate>
             </ListView>
