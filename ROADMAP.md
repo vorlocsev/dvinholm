@@ -1419,9 +1419,9 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Preserve oldest-first ordering and evict rows from the visible list when their underlying history entries expire; count all received frames separately from shown rows. Clear resets captured history, view, count and rate.
 - [x] Added seven offline regression tests including receive injection through the existing `VirtualJ2534Adapter`, filter changes, malformed and zero ID queries, bounded eviction, clear, and invalid-capacity guard.
 - [x] [PR CI #2862](https://github.com/vorlocsev/dvinholm/actions/runs/39342233407) completed successfully (Windows build/test/publish and latest stable release archive audit).
-- [ ] Verify post-merge [main CI #2863](https://github.com/vorlocsev/dvinholm/actions/runs/39342680771) before marking its pipeline successful.
-- [ ] Validate visible CAN Monitor interaction and CSV export on Windows using a future explicit synthetic-data UI mode or a real J2534 adapter. The existing virtual adapter is a **test fixture**, not a user-facing WinUI device; do not claim a disconnected app can run live monitoring.
-- [ ] A future standalone stage may add a prominently labeled, offline, read-only **Demo CAN Monitor** feed for Windows UI checks without accessing J2534 hardware. Keep demo data isolated from actual ECU/UDS connections.
+- [x] Post-merge [main CI #2863](https://github.com/vorlocsev/dvinholm/actions/runs/39342680771) completed successfully.
+- [x] Validated offline **Demo CAN Monitor** frame display, filtering and CSV export manually in Windows without a physical adapter. This checks synthetic UI data only; it does not establish real-bus monitoring or J2534 compatibility.
+- [x] Added a separately labeled, in-process **Demo CAN Monitor** feed in merged PR #378, isolated from actual ECU/UDS and J2534 connections.
 - Physical adapter/vehicle validation remains postponed; stable release remains v0.2.1.
 
 ## Offline Demo CAN Monitor — 2026-10-20
@@ -1432,6 +1432,12 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] Demo CSV filenames include `SYNTHETIC` and all rows contain `SYNTHETIC_DEMO` in an explicit source column; real-capture CSV retains its legacy five-column schema.
 - [x] Eight offline unit tests cover deterministic input, 11/29-bit row representation, payload length/hex encoding, time progression, monitor history and software ID filters, demo CSV marking and real CSV backwards compatibility.
 - [x] [PR CI #2868](https://github.com/vorlocsev/dvinholm/actions/runs/39344455511) passed Windows build, tests, packaged app and latest-stable ZIP audit.
-- [ ] Verify post-merge [main CI #2869](https://github.com/vorlocsev/dvinholm/actions/runs/39345037152) separately.
-- [ ] Complete the [eight Windows manual checks](docs/manual-can-demo-monitor-2026-10-20.md) on a main CI build containing `8b8c89c`. Automated tests do not prove the WinUI button and file-picker behavior.
+- [x] Post-merge [main CI #2869](https://github.com/vorlocsev/dvinholm/actions/runs/39345037152) completed successfully. Documentation PR #379 CI #2871 and main CI #2872 also succeeded.
+- [x] **All eight main Windows Demo CAN Monitor smoke scenarios user-confirmed on 2026-10-20**, including startup, software filters `7E8`/`0`/invalid `ZZZZ`, history replay, tagged filtered CSV via the file picker, Clear, Stop, and default-off after full restart. See [the completed checklist](docs/manual-can-demo-monitor-2026-10-20.md). The exact locally installed CI/SHA and an actual real-bus/CSV capture were not separately verified.
 - [ ] Physical J2534 device and vehicle validation stays deferred. Stable release remains v0.2.1; the demo is a main/CI-only feature for now.
+
+## Demo CAN Monitor — Windows acceptance completed (2026-10-20)
+
+- [x] User manually confirmed eight offline demo UI checks with no J2534 adapter connected; evidence recorded in consecutive [PR #379 conversation comments](https://github.com/vorlocsev/dvinholm/pull/379).
+- [x] [Main CI #2872](https://github.com/vorlocsev/dvinholm/actions/runs/39345796252) passed on `11d112d7b8fbf4353d606a614154574dbf869f96`. Prior PR #378 CI #2868, main CI #2869, and docs CI #2871 also passed.
+- [ ] Remaining scope: exact installed UI Current build label, independent manual confirmation of real-capture CSV schema (automated unit test passed), and real adapter/vehicle behavior. No compatibility claim. Stable release remains v0.2.1; demo is available in newer main CI builds.
