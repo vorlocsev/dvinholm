@@ -1,3 +1,12 @@
+## ECU catalog backup staging integrity — 2026-10-21
+
+- Main CI #2979 for merged PR #401 passed, but a source review found the backup writer trusted `File.Copy` returning without verifying the staged bytes; a silent partial/altered copy could overwrite the previous good `.bak` after a successful primary commit.
+- Added a test-only injectable backup staging delegate, with production still using `File.Copy`. Before `File.Move(..., overwrite:true)`, compare the complete temporary backup with committed primary bytes. On mismatch, no backup promotion; cleanup remains best effort and the committed primary remains valid.
+- Eight offline xUnit cases cover failed/partial/empty/missing/altered backup copy, preserving earlier good backups, primary-commit success despite snapshot errors, and successful retry/recovery. New PR CI and post-merge main CI verification pending.
+- Windows manual checks and physical J2534/ECU/vehicle tests remain deferred. Abrupt updater process termination needs a separate carefully scoped stage; existing updater code catches ordinary exceptions but not process termination. Stable v0.2.2 unchanged.
+
+---
+
 ## Offline ECU profile catalog backup and corruption recovery — 2026-10-21
 
 - Found that an invalid `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json` only generated a startup error with no attempt to recover a previous valid catalog, and a later profile Save could overwrite the damaged file.

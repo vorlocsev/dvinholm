@@ -10,10 +10,12 @@ internal sealed class EcuProfileCatalogStore
 {
     private readonly string _path;
     private readonly Action<string, string> _writeTemporaryFile;
+    private readonly Action<string, string> _copyCommittedCatalogToBackup;
 
     internal EcuProfileCatalogStore(
         string path,
-        Action<string, string>? writeTemporaryFile = null)
+        Action<string, string>? writeTemporaryFile = null,
+        Action<string, string>? copyCommittedCatalogToBackup = null)
     {
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("A profile catalog path is required.", nameof(path));
@@ -23,6 +25,9 @@ internal sealed class EcuProfileCatalogStore
         // while tests can simulate a partial or missing temp write without
         // changing global filesystem permissions or racing background threads.
         _writeTemporaryFile = writeTemporaryFile ?? File.WriteAllText;
+        // Inject only the backup staging operation in offline regression tests.
+        // Normal saves use the same filesystem copy as before.
+        _copyCommittedCatalogToBackup = copyCommittedCatalogToBackup ?? File.Copy;
     }
 
     internal EcuProfileCatalog Load()
@@ -113,7 +118,18 @@ internal sealed class EcuProfileCatalogStore
         var backupTemporaryPath = BackupPath + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
-            File.Copy(_path, backupTemporaryPath);
+            _copyCommittedCatalogToBackup(_path, backupTemporaryPath);
+
+            // A staging API can unexpectedly return after writing no bytes,
+            // fewer bytes, or bytes different from the committed catalog.
+            // Never promote that incomplete snapshot over a valid .bak file.
+            // A comparison is deliberately byte-exact, including metadata
+            // fields that must survive an application update or restart.
+            if (!File.Exists(backupTemporaryPath) ||
+                !File.ReadAllBytes(_path).AsSpan().SequenceEqual(
+                    File.ReadAllBytes(backupTemporaryPath)))
+                throw new IOException("ECU profile backup staging did not match the committed catalog.");
+
             File.Move(backupTemporaryPath, BackupPath, overwrite: true);
         }
         catch (IOException) { /* Primary is committed; keep prior backup. */ }

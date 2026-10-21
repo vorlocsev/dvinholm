@@ -1,3 +1,14 @@
+## Verify ECU catalog backup bytes before promotion — 2026-10-21
+
+- [x] Audited the existing best-effort `ecu-profiles.json.bak` snapshot. A backup copy that **returned successfully but wrote only a prefix or wrong bytes** was promoted unconditionally over the last valid backup; these partial-success scenarios were not covered by prior recovery tests.
+- [x] Compare complete staged backup bytes with the *committed primary* before atomically replacing `.bak`. A missing, empty, truncated or modified staged file is treated as a backup-stage failure, leaving the previous backup untouched and never misreporting a committed primary save as failed.
+- [x] Add a test-only backup copy delegate, independent of the existing primary staging delegate. Production uses unchanged `File.Copy`; tests inject deterministic copy interruptions without filesystem permission changes.
+- [x] Add **eight** offline regression tests: first backup throws, first backup silently missing, truncated second backup, empty second backup, same-length corruption, interrupted second backup, access-denied backup copy, and successful retry plus recovery after primary damage.
+- [ ] Complete PR and post-merge Windows x86 CI before calling the new backup guard verified. No manual UI checks or real J2534/ECU/vehicle testing is performed. The updater's **abrupt process termination during in-place replacement** is a separate remaining risk; its existing exception rollback does not prove crash-time recovery.
+- [ ] Stable v0.2.2 remains unchanged unless a new release is independently verified.
+
+---
+
 ## Backup-assisted recovery of damaged local ECU profile JSON — 2026-10-21
 
 - [x] Audit: startup `LoadSavedProfileCatalog` previously failed for malformed/truncated `ecu-profiles.json`, with no backup recovery. Subsequent profile saves could overwrite the corrupted original, potentially destroying data a user might want to recover manually.
