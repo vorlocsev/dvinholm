@@ -661,6 +661,12 @@ if ($Watch) {{
             Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
             Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
         }}
+        else {{
+            # The helper ended before arming a pending marker, so no app files
+            # were replaced. Clean only abandoned transaction metadata.
+            Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
+        }}
     }}
     catch {{
         # Retain rollback checkpoint and the old build for manual recovery if
