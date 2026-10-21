@@ -592,6 +592,7 @@ internal static class LatestBuildUpdater
         var backup = EscapePowerShellLiteral(Path.GetFullPath(backupDirectory));
         var escapedScript = EscapePowerShellLiteral(Path.GetFullPath(scriptPath));
         return $@"
+param([switch]$Watch, [int]$HelperPid = 0)
 $ErrorActionPreference = 'Stop'
 $source = '{source}'
 $destination = '{destination}'
@@ -599,6 +600,80 @@ $backup = '{backup}'
 $processId = {processId}
 $scriptPath = '{escapedScript}'
 $logPath = Join-Path $env:LOCALAPPDATA 'Dvinholm\update.log'
+# These checkpoint files live outside the installed application and
+# outside the mirrored old-build backup.
+$stateDir = $backup + '.state'
+$guardReady = Join-Path $stateDir 'guard.ready'
+$existingMarker = Join-Path $stateDir 'previous.pending'
+$newMarker = Join-Path $stateDir 'first-install.pending'
+
+if ($Watch) {{
+    # An independent PowerShell process watches the update helper. Unlike a
+    # normal catch block it still runs if that helper is terminated abruptly.
+    try {{
+        if ($HelperPid -le 0) {{ throw 'Update recovery guard received an invalid process ID.' }}
+        New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
+        'ready' | Set-Content -LiteralPath $guardReady -Encoding ASCII
+        try {{
+            if (Get-Process -Id $HelperPid -ErrorAction SilentlyContinue) {{
+                Wait-Process -Id $HelperPid -ErrorAction Stop
+            }}
+        }}
+        catch {{
+            if (Get-Process -Id $HelperPid -ErrorAction SilentlyContinue) {{ throw }}
+        }}
+
+        if (Test-Path -LiteralPath $existingMarker) {{
+            $previousExe = Join-Path $backup 'Dvinholm.App.exe'
+            if (-not (Test-Path -LiteralPath $previousExe)) {{
+                throw 'Recovery backup is missing Dvinholm.App.exe; preserve the checkpoint for inspection.'
+            }}
+            New-Item -ItemType Directory -Path $destination -Force | Out-Null
+            & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $backup $destination /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS
+            if ($LASTEXITCODE -ge 8) {{
+                throw ""Recovery mirror failed with robocopy exit code $LASTEXITCODE.""
+            }}
+            $restoredExe = Join-Path $destination 'Dvinholm.App.exe'
+            if (-not (Test-Path -LiteralPath $restoredExe)) {{
+                throw 'Recovery did not restore Dvinholm.App.exe.'
+            }}
+            $restoredProcess = Start-Process -FilePath $restoredExe -WorkingDirectory $destination -PassThru
+            Start-Sleep -Seconds 5
+            if ($restoredProcess.HasExited) {{
+                throw ""Recovered build exited immediately (exit code $($restoredProcess.ExitCode)).""
+            }}
+            # This checkpoint is cleared only after the restored app is running.
+            Remove-Item -LiteralPath $existingMarker -Force -ErrorAction Stop
+            'Updater helper exited with a pending checkpoint; previous build recovered.' |
+                Add-Content -LiteralPath $logPath
+            Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
+        }}
+        elseif (Test-Path -LiteralPath $newMarker) {{
+            # First install has nothing to roll back. Never leave a partial
+            # destination directory looking like a completed installation.
+            if (Test-Path -LiteralPath $destination) {{
+                Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction Stop
+            }}
+            Remove-Item -LiteralPath $newMarker -Force -ErrorAction Stop
+            'Updater helper exited with a partial first installation; destination removed.' |
+                Add-Content -LiteralPath $logPath
+            Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
+        }}
+    }}
+    catch {{
+        # Retain rollback checkpoint and the old build for manual recovery if
+        # the independent guard itself cannot complete the restore.
+        try {{
+            ('Updater recovery guard failed; checkpoint preserved: ' + ($_ | Out-String)) |
+                Add-Content -LiteralPath $logPath
+        }}
+        catch {{ }}
+    }}
+    exit
+}}
+
 $hadDestination = Test-Path -LiteralPath $destination
 $backupReady = $false
 $replacementStarted = $false
@@ -632,6 +707,28 @@ try {{
         }}
         $backupReady = $true
     }}
+
+    # Arm the external recovery guard *before* the first destructive mirror.
+    # If the guard cannot start and acknowledge readiness, leave the installed
+    # build untouched and fail safely.
+    New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
+    $guardArguments = @(
+        '-NoProfile', '-ExecutionPolicy', 'Bypass',
+        '-WindowStyle', 'Hidden', '-File', ('""' + $scriptPath + '""'),
+        '-Watch', '-HelperPid', [string]$PID
+    )
+    $guardProcess = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList $guardArguments -PassThru -WindowStyle Hidden
+    if ($null -eq $guardProcess) {{ throw 'Could not start the independent update recovery guard.' }}
+    for ($attempt = 0; $attempt -lt 100 -and -not (Test-Path -LiteralPath $guardReady); $attempt++) {{
+        if ($guardProcess.HasExited) {{ throw 'Update recovery guard exited before acknowledging readiness.' }}
+        Start-Sleep -Milliseconds 100
+    }}
+    if (-not (Test-Path -LiteralPath $guardReady)) {{
+        throw 'Update recovery guard did not acknowledge readiness.'
+    }}
+    $pendingMarker = if ($hadDestination) {{ $existingMarker }} else {{ $newMarker }}
+    'pending' | Set-Content -LiteralPath $pendingMarker -Encoding ASCII
+
     New-Item -ItemType Directory -Path $destination -Force | Out-Null
     $replacementStarted = $true
     & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $source $destination /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS
@@ -659,7 +756,10 @@ try {{
             Where-Object {{ $_.FullName -ne $source }} |
             Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
     }}
+    # Startup succeeded: disarm the guard BEFORE deleting the old build.
+    Remove-Item -LiteralPath $pendingMarker -Force -ErrorAction Stop
     Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $source -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue
 }}
@@ -681,7 +781,10 @@ catch {{
             if ($restoredProcess.HasExited) {{
                 throw ""The restored application exited during startup (exit code $($restoredProcess.ExitCode)).""
             }}
+            # Restore is verified running; the guard must not roll it back again.
+            Remove-Item -LiteralPath $existingMarker -Force -ErrorAction Stop
             Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
+            Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
         }}
         catch {{
             $rollbackFailed = $true
@@ -698,6 +801,11 @@ catch {{
             if (Test-Path -LiteralPath $destination) {{
                 throw 'The incomplete destination still exists after cleanup.'
             }}
+            # A clean first-install cleanup can also clear its recovery guard.
+            if (Test-Path -LiteralPath $newMarker) {{
+                Remove-Item -LiteralPath $newMarker -Force -ErrorAction Stop
+            }}
+            Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
             $failure += [Environment]::NewLine + 'The incomplete first-install destination was removed.'
         }}
         catch {{
@@ -709,6 +817,7 @@ catch {{
         # is not usable for rollback, so remove it instead of leaking partial data.
         try {{
             Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction Stop
+            Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
             $failure += [Environment]::NewLine + 'The incomplete update backup was removed because replacement had not started.'
         }}
         catch {{
