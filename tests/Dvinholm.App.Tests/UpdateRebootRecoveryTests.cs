@@ -300,6 +300,94 @@ public sealed class UpdateRebootRecoveryTests : IDisposable
         Assert.False(Directory.Exists(Backup));
     }
 
+
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public void RebootRecovery_InvalidBackupCanBeRepairedAndRetriedWithoutDataLoss(
+        bool nestedAssets, bool sameMetadata, bool obsoleteDirectory)
+    {
+        // Phase 1: a pending checkpoint and an unusable backup must survive
+        // an attempted sign-in recovery, without modifying the installed app.
+        CreateMarker(PreviousMarker);
+        Directory.CreateDirectory(Backup);
+        Directory.CreateDirectory(Destination);
+        var destinationExe = Path.Combine(Destination, "Dvinholm.App.exe");
+        File.WriteAllText(destinationExe, "corrupt-old-build");
+        File.WriteAllText(Path.Combine(Destination, "obsolete.dll"), "bad update");
+        File.WriteAllText(Path.Combine(Backup, "settings.json"), "{\"rate\":125000}");
+        if (obsoleteDirectory)
+        {
+            var extra = Path.Combine(Destination, "Obsolete", "Nested");
+            Directory.CreateDirectory(extra);
+            File.WriteAllText(Path.Combine(extra, "broken.dat"), "partial");
+        }
+        if (nestedAssets)
+        {
+            var assetDir = Path.Combine(Backup, "Assets", "Nested");
+            Directory.CreateDirectory(assetDir);
+            File.WriteAllBytes(Path.Combine(assetDir, "binary.dat"), new byte[] { 0, 255, 7, 200 });
+        }
+        var externalFile = Path.Combine(_root, "untouched-user-file.txt");
+        File.WriteAllText(externalFile, "user data survives both attempts");
+        GenerateScript(mockRecoveredAppStartup: true);
+
+        var initialRecovery = ExecuteResume();
+
+        Assert.Equal(0, initialRecovery.ExitCode);
+        Assert.True(File.Exists(PreviousMarker));
+        Assert.True(Directory.Exists(Backup));
+        Assert.Equal("corrupt-old-build", File.ReadAllText(destinationExe));
+        Assert.True(File.Exists(Path.Combine(Destination, "obsolete.dll")));
+        Assert.Contains("checkpoint preserved",
+            File.ReadAllText(Path.Combine(LocalData, "Dvinholm", "update.log")),
+            StringComparison.OrdinalIgnoreCase);
+
+        // Phase 2: repair only the backup and run the same durable script.
+        // Robocopy, manifest validation and SHA-256 comparisons run for real.
+        var backupExe = Path.Combine(Backup, "Dvinholm.App.exe");
+        File.WriteAllText(backupExe, "trusted-old-build");
+        if (sameMetadata)
+            File.SetLastWriteTimeUtc(destinationExe, File.GetLastWriteTimeUtc(backupExe));
+        static Dictionary<string, byte[]> Snapshot(string folder) =>
+            Directory.GetFiles(folder, "*", SearchOption.AllDirectories)
+                .ToDictionary(path => Path.GetRelativePath(folder, path),
+                    File.ReadAllBytes, StringComparer.OrdinalIgnoreCase);
+        var expected = Snapshot(Backup);
+
+        var retriedRecovery = ExecuteResume();
+
+        Assert.Equal(0, retriedRecovery.ExitCode);
+        var actual = Snapshot(Destination);
+        Assert.Equal(expected.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase),
+            actual.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase));
+        foreach (var (path, bytes) in expected)
+            Assert.Equal(bytes, actual[path]);
+        Assert.False(File.Exists(Path.Combine(Destination, "obsolete.dll")));
+        Assert.False(File.Exists(PreviousMarker));
+        Assert.False(Directory.Exists(Backup));
+        Assert.False(Directory.Exists(State));
+        Assert.Equal("user data survives both attempts", File.ReadAllText(externalFile));
+
+        // Phase 3: repeated sign-in after a committed recovery is idempotent.
+        var afterCommit = Snapshot(Destination);
+        var redundantRecovery = ExecuteResume();
+        Assert.Equal(0, redundantRecovery.ExitCode);
+        var afterRepeat = Snapshot(Destination);
+        Assert.Equal(afterCommit.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase),
+            afterRepeat.Keys.OrderBy(k => k, StringComparer.OrdinalIgnoreCase));
+        foreach (var (path, bytes) in afterCommit)
+            Assert.Equal(bytes, afterRepeat[path]);
+        Assert.False(Directory.Exists(State));
+        Assert.Equal("user data survives both attempts", File.ReadAllText(externalFile));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
