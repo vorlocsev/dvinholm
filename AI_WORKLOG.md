@@ -1,3 +1,12 @@
+## ECU profile persistence failure hardening — 2026-10-21
+
+- Reviewed the persistence boundary used by the in-app ECU profile editor. The store already used same-directory temp/rename, but there was no deterministic way to simulate partial writes in CI and no guard against a staging operation returning with a missing/zero-byte temporary file.
+- Added an internal stage-writer seam to `EcuProfileCatalogStore` (production uses the existing `File.WriteAllText`) and validates staged output before final rename. The edit path uses `EcuProfileEditor.SaveAndPersist` to return a replacement catalog only after persistence; a write failure leaves the old UI catalog eligible to remain selected.
+- Eight new xUnit cases cover partial/missing/empty staging, failed final rename, invalid draft without storage calls, failed editing without any in-memory/on-disk mutation and recovery retry. No OS permission changes or hardware needed.
+- CI verification pending; do not claim manual UI checks or physical J2534/ECU/vehicle compatibility. Stable v0.2.2 remains unchanged.
+
+---
+
 ## ISO-TP channel gate cancellation timing flake — 2026-10-21
 
 - After successful PR #394 CI #2941 and its merge as `cb79f27`, main CI #2942 failed one of 679 tests in `IsoTpChannelProtocolTests.Request_CancellationWhileWaitingForChannelGateIsHonored`. The test already observed `OperationCanceledException` but failed a separate elapsed-time check (< 1s), which measures host scheduler load as well as cancellation.
