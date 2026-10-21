@@ -1,3 +1,13 @@
+## Guarded atomic ECU profile JSON export — Development (2026-10-21)
+
+- [x] Source audit: the ECU profile **Export JSON** handler still used WinRT `FileSavePicker` (which can materialize a 0-byte placeholder) and `File.WriteAllTextAsync` directly on the target, unlike the already hardened synthetic TXT/CAN CSV exports. An interrupted or rejected save could leave an empty or truncated JSON backup.
+- [x] Replace JSON saving with shared Win32 path-only Save As selection, ordinary application-directory guard, and same-directory temporary UTF-8 write + completed-file rename. Keep cancellation a no-write operation, prevent export of an empty catalog, retain existing JSON schema and self-reported verification flags. Never send a CAN/UDS request.
+- [x] Add **eight** deterministic software-only tests for complete JSON round-trip, UTF-8 BOM-free output, overwrite, empty catalog, blocked install root, blocked nested directory with existing file preserved, allowed sibling directory, and invalid destination write failure with no residual temporary file.
+- [ ] Confirm pull-request Windows x86 CI build/tests/package/audit and post-merge main CI before marking validated. **No manual WinUI checks requested for this stage**; do not claim Save As UI was manually exercised.
+- [ ] No new Stable release is implied. Physical J2534 adapter/ECU/vehicle tests remain deferred.
+
+---
+
 ## Create and edit ECU profiles in WinUI — 2026-10-19
 
 - [x] Added a local profile editor for new and existing ECU entries with name, stable ID, 11/29-bit CAN addresses, candidate DID list and required source note.
