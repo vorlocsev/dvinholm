@@ -853,6 +853,7 @@ try {{
     if ($LASTEXITCODE -ge 8) {{
         throw ""Robocopy failed with exit code $LASTEXITCODE.""
     }}
+    EnsureMirroredBytes $source $destination
     $targetExe = Join-Path $destination 'Dvinholm.App.exe'
     if (-not (Test-Path -LiteralPath $targetExe)) {{
         throw 'The updated executable is missing after file replacement.'
