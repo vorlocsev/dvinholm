@@ -9,13 +9,20 @@ namespace Dvinholm.App;
 internal sealed class EcuProfileCatalogStore
 {
     private readonly string _path;
+    private readonly Action<string, string> _writeTemporaryFile;
 
-    internal EcuProfileCatalogStore(string path)
+    internal EcuProfileCatalogStore(
+        string path,
+        Action<string, string>? writeTemporaryFile = null)
     {
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("A profile catalog path is required.", nameof(path));
 
         _path = Path.GetFullPath(path);
+        // Testable staging boundary: real saves always use File.WriteAllText,
+        // while tests can simulate a partial or missing temp write without
+        // changing global filesystem permissions or racing background threads.
+        _writeTemporaryFile = writeTemporaryFile ?? File.WriteAllText;
     }
 
     internal EcuProfileCatalog Load()
@@ -37,7 +44,11 @@ internal sealed class EcuProfileCatalogStore
         var temporaryPath = _path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
-            File.WriteAllText(temporaryPath, catalog.ToJson());
+            _writeTemporaryFile(temporaryPath, catalog.ToJson());
+            // A failed/short staging operation must never replace the last
+            // valid catalog, even if a staging implementation returns early.
+            if (!File.Exists(temporaryPath) || new FileInfo(temporaryPath).Length == 0)
+                throw new IOException("ECU profile catalog staging produced no data.");
             File.Move(temporaryPath, _path, overwrite: true);
         }
         finally
