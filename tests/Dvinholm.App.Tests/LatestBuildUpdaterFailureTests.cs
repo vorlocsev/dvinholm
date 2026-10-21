@@ -420,7 +420,7 @@ public sealed class LatestBuildUpdaterFailureTests
         // directory. Never write a real HKCU startup registry value from that
         // fixture; registration itself is covered by source-order assertions
         // and isolated -RecoverOnLogon execution tests.
-        const startupRegistration =
+        const string startupRegistration =
             "New-ItemProperty -Path $runKey -Name $runName -Value $runCommand -PropertyType String -Force -ErrorAction Stop | Out-Null";
         if (!script.Contains(startupRegistration, StringComparison.Ordinal))
             throw new InvalidOperationException("Expected startup recovery registration was not present.");
