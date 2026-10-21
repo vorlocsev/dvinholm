@@ -1,3 +1,13 @@
+## Full replacement and rollback integration (Development, 2026-10-22)
+
+- [x] Add eight Windows x86 scenarios in `UpdateFullReplacementIntegrationTests`: first install vs existing install, startup accepted vs rejected, flat vs nested binary assets. Use real generated PowerShell and real Robocopy for all backup, forward replacement and rollback operations in disposable directories; substitute only app process launch, watchdog acknowledgement and HKCU registration.
+- [x] Snapshot both builds by relative filenames and complete bytes; assert exact new-tree commit, exact old-tree rollback, removal of obsolete files, removal of failed first installation and preservation of unrelated user data. Check checkpoint/backup cleanup and number of mocked executable launches.
+- [x] Fix direct replacement mirror with Robocopy `/IS /IT` so same-size/same-timestamp files are not incorrectly skipped. Previous rollback mirror already uses these options.
+- [ ] Verify eight new cases and the complete Windows x86 CI pipeline, including build, package and Stable audit. Merge only after green CI and verify the post-merge main run separately.
+- [ ] No real app launch, Windows reboot/logon, physical J2534/ECU or manual WinUI checks are claimed. Stable remains v0.2.2 until a release is explicitly published and validated.
+
+---
+
 ## Byte-exact rollback mirror integration (2026-10-22)
 
 - [x] Add eight Windows x86 PowerShell recovery test variants that execute real Robocopy `/MIR` from a disposable old-build backup, mock only recovered executable launch, and assert exact relative file names and bytes against the pre-recovery snapshot.
