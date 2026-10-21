@@ -1487,6 +1487,14 @@ This roadmap separates software/CI verification from physical adapter validation
 
 ## Next software-only milestone — protect diagnostic exports from the app update directory (2026-10-21)
 
-- [ ] Consider preventing **new** user-generated TXT/CSV reports from being saved in the application installation directory: the in-place updater removes old application files and users should keep reports elsewhere. Preserve user choice of destination outside that tree.
-- [ ] If implemented, use consistent case-insensitive Windows path checks, error reporting and a no-write path for rejected destinations, with 6–8 offline path tests and Windows picker checks.
+- [x] [PR #390](https://github.com/vorlocsev/dvinholm/pull/390) implemented protection against writing TXT/CSV report **contents** into the app installation tree, with main CI #2905 success. However, user subsequently reported an empty file created by the WinRT Save picker before a blocked selection could be validated; the earlier path-only guard is not sufficient to prevent placeholders.
+- [x] Eight offline path tests check ordinary Windows folder comparisons and boundaries. **WinRT picker placeholder defect remained**, so a follow-up is required before declaring blocked save/no-new-file acceptance.
+- [ ] Manually verify rejected paths leave **no files whatsoever**, not merely no report content. Verify cancellation, valid TXT/CSV export, nonzero bytes and no existing report truncation.
 - [ ] Do not conflate safe synthetic export with live ECU diagnostics. Adapter, ECU and vehicle validation remains explicitly deferred; stable v0.2.2 unchanged.
+
+## Fix zero-byte Save picker placeholders (2026-10-21)
+
+- [x] User reported creation of an **empty file** in the report save flow after [PR #390](https://github.com/vorlocsev/dvinholm/pull/390). Microsoft documents that `Windows.Storage.Pickers.FileSavePicker.PickSaveFileAsync` creates a new empty `StorageFile` before app code executes; rejecting a directory afterward left that file in place. Logged in the PR #390 discussion. Do not consider this a successful no-file rejection.
+- [ ] Replace TXT/CSV report save-file picker with native Windows Save As **path selection**, using `OFN_NOTESTFILECREATE`, so path and live-session checks precede creation. Protect existing files using same-folder temp-write + rename, rather than truncating destination directly.
+- [ ] Add eight automated checks for nonempty report writing, replacing existing reports, CSV format, partial-write failure rollback, empty report rejection and filename validation; run PR and post-merge Windows CI.
+- [ ] Re-run 6–8 Windows checks for rejected installation folder (including nested), Cancel, external-folder real TXT/CSV save, existing file preservation and default-off restart. Real J2534 tests remain deferred; stable v0.2.2 is unchanged.
