@@ -2,7 +2,7 @@
 
 - [x] Post-merge [main CI #2942](https://github.com/vorlocsev/dvinholm/actions/runs/39543337851) for [PR #394](https://github.com/vorlocsev/dvinholm/pull/394) failed **1 of 679** xUnit tests. Test `Request_CancellationWhileWaitingForChannelGateIsHonored` received the expected cancellation exception but exceeded an additional 1-second stopwatch bound on the loaded Windows runner. Build and stable release audit passed; no evidence connects this failure to the JSON export implementation.
 - [x] Strengthened the test's deterministic protocol invariants: cancellation must raise `OperationCanceledException`, the blocked first request must still own the gate, and the virtual adapter must have exactly one CAN write. Remove the brittle wall-clock assertion without suppressing actual deadline failures.
-- [ ] Run PR Windows x86 CI and **post-merge** main CI to establish a green baseline. This is a test-only change, not a protocol behavior change; no physical J2534 or manual Windows verification requested.
+- [x] [PR #395](https://github.com/vorlocsev/dvinholm/pull/395) passed [Windows x86 PR CI #2945](https://github.com/vorlocsev/dvinholm/actions/runs/39543923380) and merged as `f2009b2`; post-merge [main CI #2946](https://github.com/vorlocsev/dvinholm/actions/runs/39544351586) also passed build, **all automated tests**, package and stable release audit. Test-only stabilization; no protocol behavior or real hardware test claimed.
 
 ---
 
@@ -11,8 +11,8 @@
 - [x] Source audit: the ECU profile **Export JSON** handler still used WinRT `FileSavePicker` (which can materialize a 0-byte placeholder) and `File.WriteAllTextAsync` directly on the target, unlike the already hardened synthetic TXT/CAN CSV exports. An interrupted or rejected save could leave an empty or truncated JSON backup.
 - [x] Replace JSON saving with shared Win32 path-only Save As selection, ordinary application-directory guard, and same-directory temporary UTF-8 write + completed-file rename. Keep cancellation a no-write operation, prevent export of an empty catalog, retain existing JSON schema and self-reported verification flags. Never send a CAN/UDS request.
 - [x] Add **eight** deterministic software-only tests for complete JSON round-trip, UTF-8 BOM-free output, overwrite, empty catalog, blocked install root, blocked nested directory with existing file preserved, allowed sibling directory, and invalid destination write failure with no residual temporary file.
-- [ ] Confirm pull-request Windows x86 CI build/tests/package/audit and post-merge main CI before marking validated. **No manual WinUI checks requested for this stage**; do not claim Save As UI was manually exercised.
-- [ ] No new Stable release is implied. Physical J2534 adapter/ECU/vehicle tests remain deferred.
+- [x] [PR #394](https://github.com/vorlocsev/dvinholm/pull/394) passed [Windows PR CI #2941](https://github.com/vorlocsev/dvinholm/actions/runs/39542866180) and merged as `cb79f27`. First post-merge main CI #2942 exposed the unrelated scheduler-sensitive ISO-TP test; this was corrected in PR #395, and [main CI #2946](https://github.com/vorlocsev/dvinholm/actions/runs/39544351586) completed successfully. Eight new JSON export tests run automatically. **No manual WinUI checks were requested/performed**; interactive Save As UI remains unverified by these unit tests.
+- [x] No new Stable release published: latest confirmed Stable remains `v0.2.2`. Physical J2534 adapter/ECU/vehicle tests remain deferred; manual WinUI checks are not a gate for this software-only stage.
 
 ---
 
@@ -25,7 +25,7 @@
 - [x] Editor clears search/verification filters and selects the saved profile. UI changes are local, with no J2534 commands sent.
 - [x] Added software-only regression coverage for creation, replacement, invariants, 11/29-bit ranges, DID input, JSON roundtrip and preserving unrelated profiles.
 - [x] [PR #369](https://github.com/vorlocsev/dvinholm/pull/369) passed Windows CI [#39323572877](https://github.com/vorlocsev/dvinholm/actions/runs/39323572877) with **587/587 passing tests**, and merged as `2989b0bb52515123ef27976b6cc83dc5df7df847`. Post-merge [main CI #39324283802](https://github.com/vorlocsev/dvinholm/actions/runs/39324283802) is checked separately.
-- [ ] Manual dialog validation on Windows: [ten-step checklist](docs/manual-ecu-profile-editor-2026-10-19.md), with no adapter. Real adapter/vehicle tests remain deferred.
+- [ ] Optional manual dialog validation on Windows remains **deferred at user request**: [ten-step checklist](docs/manual-ecu-profile-editor-2026-10-19.md) is retained for future reference, but is **not** required to proceed with automated development. No manual passes are claimed. Real adapter/vehicle tests remain deferred.
 
 ---
 ## ECU profile catalog search and provenance — 2026-10-19
