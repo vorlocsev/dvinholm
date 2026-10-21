@@ -1,8 +1,17 @@
+## Retry recovery after an invalid previous build (Development, 2026-10-22)
+
+- [x] Add eight isolated Windows x86 scenarios across nested assets, matching file metadata and obsolete destination directories. The initial sign-in recovery receives a pending `previous.pending` checkpoint and an invalid backup with no executable; it must preserve backup, checkpoint and the still-installed files, recording the failure.
+- [x] Repair the backup executable and retry the **same** generated PowerShell recovery script. Require real Robocopy, SHA-256 and directory-manifest validation to restore exactly the repaired snapshot and delete partial-update files, then remove the checkpoint and backup.
+- [x] Invoke the recovery script a third time after success; verify it is idempotent, with restored bytes and unrelated user data unchanged.
+- [ ] Confirm PR CI Windows x86 build/tests/artifact and Stable audit, merge only if green and verify the post-merge main CI. No real reboot/sign-in, physical J2534 or manual Windows UI test is implied.
+
+---
+
 ## Exact updater directory manifest validation (Development, 2026-10-22)
 
 - [x] Verify relative directory paths, including empty nested folders, in the generated PowerShell `EnsureMirroredBytes` function. A complete file count and matching SHA-256 alone do not prove the destination directory tree matches the staged build.
 - [x] Add eight isolated Windows x86 cases: empty trees, matching files, same-size stale bytes, absent files, extra file, absent empty directory, unexpected empty directory, and apostrophe-containing nested binary paths. Run the actual generated PowerShell verification functions, never the installed app.
-- [ ] Confirm PR Windows x86 CI (build, tests, artifact, Stable audit), merge only after green results, and confirm post-merge main CI. These checks do not simulate a real reboot, installation lock, ECU or J2534 adapter.
+- [x] PR #411 CI #3061 passed 759/759 Windows x86 tests with build/artifact and Stable audit, merged as `cb789ca`. Post-merge main CI #3062 also passed 759/759 with packaging and Stable audit. These checks do not simulate a real reboot, installation lock, ECU or J2534 adapter.
 
 ---
 
