@@ -1,14 +1,14 @@
 # Export destination safety — Windows manual acceptance checklist
 
 **Build:** Development CI #2908 (`ff6e075`), merged PR #391. This fix is not in stable v0.2.2.  
-**Status:** Implementation and Windows CI #2908 passed. **Manual checkpoint 2 passed on 2026-10-21:** user confirmed report refusal in the app installation directory and explicitly confirmed that no new file exists, including a 0-byte placeholder. Other manual checkpoints remain open; the installed build number has not been supplied.  
+**Status:** Implementation and Windows CI #2908 passed. **Manual checkpoints 2 and 3 passed on 2026-10-21:** user confirmed TXT export refusal both in the application directory and its `TestExport` subfolder, without a new file (including zero-byte placeholders). All other manual checkpoints remain open; the installed build number has not been supplied.  
 **Scope:** Protect new TXT/CSV report content from the installed application's directory. No J2534 adapter or vehicle is needed for synthetic checks.
 
 - [ ] 1. Update through **Development** to CI #2908 (`ff6e075`) or a later build containing the same fix. Confirm the ordinary synthetic UDS preview and CAN Monitor demo remain accessible.
 - [x] 2. **User-confirmed 2026-10-21:** tried **Export synthetic UDS TXT** targeting the same directory as `Dvinholm.App.exe`. Expect **Report not saved: choose a folder outside the Dvinholm application directory**, with **NO file created at all**. In older CI #2905 the WinRT Save picker could leave a zero-byte placeholder; this is the regression being fixed.
 > **Confirmed 2026-10-21:** User reported «файл не сохранился» (file was not saved) and, on follow-up about any newly created TXT (including a 0-byte file) beside `Dvinholm.App.exe`, explicitly answered «нет». Thus the main installation-directory TXT rejection/no-placeholder acceptance criterion passed. Exact installed Development CI number was not reported; this does not verify other save paths or CSV.
 
-- [ ] 3. Try exporting a synthetic UDS TXT to a **subfolder** under the application directory. Confirm the same refusal and that **no new zero-byte placeholder** was created there.
+- [x] 3. **User-confirmed 2026-10-21:** exported synthetic UDS TXT to the `TestExport` **subfolder** under the application directory. User answered «да» to the expected result: saving was refused and **no new file appeared, including a zero-byte placeholder**.
 - [ ] 4. Save the same synthetic UDS TXT to a normal external folder such as **Documents**, and confirm that it opens and retains its synthetic warning and fictional F190/F187/DTC values.
 - [ ] 5. Start CAN Monitor **Start demo**, then try **CSV log** targeting the application folder. Confirm writing report content is rejected and the demo keeps running.
 - [ ] 6. Export a demo **CSV log** to Documents. Confirm the CSV has `source` provenance and `SYNTHETIC_DEMO` on rows. Stop demo afterwards.
@@ -17,4 +17,4 @@
 
 **Boundary:** A string-based check of user-selected paths prevents ordinary accidental writes. Earlier Windows.Storage.Pickers.FileSavePicker created a zero-byte placeholder before application validation (user-observed regression). The replacement Win32 Save As dialog is intended to return only a path, without materializing any file first; junctions, hard links and reparse-point aliases remain outside this ordinary path-string guard's security boundary. This is not a substitute for backing up personal reports, and it does not establish physical J2534/ECU/vehicle compatibility.
 
-**Automated evidence (not Windows manual acceptance):** [PR #391](https://github.com/vorlocsev/dvinholm/pull/391), [Windows x86 PR CI #2907](https://github.com/vorlocsev/dvinholm/actions/runs/39536715346) and [post-merge main CI #2908](https://github.com/vorlocsev/dvinholm/actions/runs/39537200998) passed. Checkpoint 2 is user-confirmed; seven other manual checkboxes remain open until observed in the actual application.
+**Automated evidence (not Windows manual acceptance):** [PR #391](https://github.com/vorlocsev/dvinholm/pull/391), [Windows x86 PR CI #2907](https://github.com/vorlocsev/dvinholm/actions/runs/39536715346) and [post-merge main CI #2908](https://github.com/vorlocsev/dvinholm/actions/runs/39537200998) passed. Checkpoints 2 and 3 are user-confirmed; six other manual checkboxes remain open until observed in the actual application.
