@@ -240,6 +240,66 @@ public sealed class UpdateRebootRecoveryTests : IDisposable
         Assert.Equal("saved notes", File.ReadAllText(untouched));
     }
 
+
+    [Theory]
+    [InlineData(false, false, false)]
+    [InlineData(false, false, true)]
+    [InlineData(false, true, false)]
+    [InlineData(false, true, true)]
+    [InlineData(true, false, false)]
+    [InlineData(true, false, true)]
+    [InlineData(true, true, false)]
+    [InlineData(true, true, true)]
+    public void RebootRecovery_MirrorsPreviousBuildExactlyAndRemovesObsoleteFiles(
+        bool nestedFiles, bool binaryBytes, bool obsoleteDirectory)
+    {
+        // Real Windows Robocopy /MIR, real PowerShell recovery mode and a
+        // mock of ONLY the executable launch. Never use an installed app.
+        CreateMarker(PreviousMarker);
+        Directory.CreateDirectory(Backup);
+        Directory.CreateDirectory(Destination);
+        var oldExecutable = Path.Combine(Backup, "Dvinholm.App.exe");
+        File.WriteAllBytes(oldExecutable, binaryBytes
+            ? new byte[] { 0, 1, 255, 2, 254, 3 }
+            : System.Text.Encoding.UTF8.GetBytes("previous executable"));
+        File.WriteAllText(Path.Combine(Backup, "settings.json"), "{\"baud\":125000}");
+        if (nestedFiles)
+        {
+            var nested = Path.Combine(Backup, "Assets", "Nested");
+            Directory.CreateDirectory(nested);
+            File.WriteAllBytes(Path.Combine(nested, "blob.bin"), new byte[] { 0, 255, 17, 33 });
+        }
+        File.WriteAllText(Path.Combine(Destination, "Dvinholm.App.exe"), "partial replacement");
+        File.WriteAllText(Path.Combine(Destination, "obsolete.dll"), "must disappear");
+        if (obsoleteDirectory)
+        {
+            var obsolete = Path.Combine(Destination, "OldBuild", "Unused");
+            Directory.CreateDirectory(obsolete);
+            File.WriteAllText(Path.Combine(obsolete, "leftover.txt"), "must disappear");
+        }
+        var outside = Path.Combine(_root, "user-file.txt");
+        File.WriteAllText(outside, "outside install");
+        static Dictionary<string, byte[]> Snapshot(string directory) =>
+            Directory.GetFiles(directory, "*", SearchOption.AllDirectories)
+                .ToDictionary(file => Path.GetRelativePath(directory, file),
+                    File.ReadAllBytes, StringComparer.OrdinalIgnoreCase);
+        var expected = Snapshot(Backup);
+        GenerateScript(mockRecoveredAppStartup: true);
+
+        var result = ExecuteResume();
+
+        Assert.Equal(0, result.ExitCode);
+        var actual = Snapshot(Destination);
+        Assert.Equal(expected.Keys.OrderBy(key => key, StringComparer.OrdinalIgnoreCase),
+            actual.Keys.OrderBy(key => key, StringComparer.OrdinalIgnoreCase));
+        foreach (var (relativePath, expectedBytes) in expected)
+            Assert.Equal(expectedBytes, actual[relativePath]);
+        Assert.Equal("outside install", File.ReadAllText(outside));
+        Assert.False(File.Exists(PreviousMarker));
+        Assert.False(Directory.Exists(State));
+        Assert.False(Directory.Exists(Backup));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
