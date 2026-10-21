@@ -2,7 +2,7 @@
 
 - After successful PR #394 CI #2941 and its merge as `cb79f27`, main CI #2942 failed one of 679 tests in `IsoTpChannelProtocolTests.Request_CancellationWhileWaitingForChannelGateIsHonored`. The test already observed `OperationCanceledException` but failed a separate elapsed-time check (< 1s), which measures host scheduler load as well as cancellation.
 - No ISO-TP production source change is implicated in the JSON export PR. A focused test-only follow-up substitutes assertions on the actual gate ownership and single frame sent while the second request is cancelled. A 5-second request timeout still ensures a missed cancellation cannot be counted as a pass by the exception type.
-- PR and post-merge CI remain to be verified; no manual tests or hardware tests are requested. Stable v0.2.2 unchanged.
+- [PR #395](https://github.com/vorlocsev/dvinholm/pull/395) passed Windows CI #2945 and merged as `f2009b2`; post-merge main CI #2946 passed all automated checks, Windows package publishing and stable audit. No production ISO-TP behavior changed, no manual or hardware tests were requested. Stable v0.2.2 unchanged.
 
 ---
 
@@ -10,7 +10,7 @@
 
 - Source audit found an uncovered data-loss path in `ExportProfiles_Click`: the legacy WinRT save picker created the target before destination validation; direct `File.WriteAllTextAsync` could truncate an existing JSON profile backup on failure. Unlike the TXT/CSV report paths, JSON export was not guarded against the in-place updater's application directory.
 - Development change: reuse `ReportSavePathPicker`, `ReportExportDestinationGuard`, and `ReportExportFileWriter` for JSON export; add `EcuProfileJsonExport` as a testable data-only coordinator. Respect Cancel/no placeholder, reject empty catalogs and installation-folder paths, and use complete same-directory temporary write before replacing existing JSON.
-- Added eight offline xUnit cases for JSON schema preservation, UTF-8 encoding, overwrite, blocked root and subfolder, sibling path boundary, empty catalog and failed I/O. These are source changes pending PR and Windows CI verification. No manual Windows UI validation is claimed or required for this stage by user request.
+- Added eight offline xUnit cases for JSON schema preservation, UTF-8 encoding, overwrite, blocked root and subfolder, sibling path boundary, empty catalog and failed I/O. [PR #394](https://github.com/vorlocsev/dvinholm/pull/394) passed Windows CI #2941 and merged as `cb79f27`; the first main CI #2942 found an unrelated ISO-TP test scheduling flake, subsequently resolved in PR #395. Main CI #2946 passed. No manual Windows UI validation is claimed or required for this stage by user request.
 - No ECU addressing or verification behavior changed; no J2534 device/vehicle tests are claimed. Stable release v0.2.2 remains untouched.
 
 ---
