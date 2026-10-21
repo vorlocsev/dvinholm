@@ -102,7 +102,7 @@ public sealed class UpdateRebootRecoveryTests : IDisposable
         Assert.True(guardAck > 0 && copied > guardAck);
         Assert.True(registered > copied && checkpoint > registered && mirror > checkpoint);
         Assert.Contains(@"HKCU:\Software\Microsoft\Windows\CurrentVersion\Run", script);
-        Assert.Contains("$recoveryScript + '\" -RecoverOnLogon'", script);
+        Assert.Contains("$quote + $recoveryScript + $quote + ' -RecoverOnLogon'", script);
         Assert.Contains("if ($Watch -or $RecoverOnLogon)", script);
     }
 
