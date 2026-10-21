@@ -613,6 +613,51 @@ $helperIdentity = Join-Path $stateDir 'helper.identity'
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $runName = 'DvinholmRecovery-' + [IO.Path]::GetFileName($backup)
 
+# Robocopy classifies files by size and timestamps. Even with /IS /IT,
+# identical metadata is not proof of identical content. After the mirror,
+# verify every staged file and copy mismatched bytes explicitly. Failure
+# here enters the existing exception rollback path before app startup.
+function GetSha256File {{
+    param([string]$path)
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {{
+        $stream = [System.IO.File]::OpenRead($path)
+        try {{
+            return [System.BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '')
+        }}
+        finally {{ $stream.Dispose() }}
+    }}
+    finally {{ $sha.Dispose() }}
+}}
+
+function EnsureMirroredBytes {{
+    param([string]$expectedRoot, [string]$actualRoot)
+    $expectedFiles = @(Get-ChildItem -LiteralPath $expectedRoot -Recurse -File -Force)
+    $prefixLength = $expectedRoot.TrimEnd('\').Length
+    foreach ($expectedFile in $expectedFiles) {{
+        $relative = $expectedFile.FullName.Substring($prefixLength).TrimStart('\')
+        $actualFile = Join-Path $actualRoot $relative
+        $expectedHash = (GetSha256File $expectedFile.FullName)
+        $actualHash = $null
+        if (Test-Path -LiteralPath $actualFile -PathType Leaf) {{
+            $actualHash = (GetSha256File $actualFile)
+        }}
+        if ($expectedHash -ne $actualHash) {{
+            $actualFolder = Split-Path -Path $actualFile -Parent
+            New-Item -ItemType Directory -Path $actualFolder -Force | Out-Null
+            Copy-Item -LiteralPath $expectedFile.FullName -Destination $actualFile -Force -ErrorAction Stop
+            $actualHash = (GetSha256File $actualFile)
+            if ($expectedHash -ne $actualHash) {{
+                throw ('The mirrored build failed SHA-256 verification: ' + $relative)
+            }}
+        }}
+    }}
+    $actualFiles = @(Get-ChildItem -LiteralPath $actualRoot -Recurse -File -Force)
+    if ($actualFiles.Count -ne $expectedFiles.Count) {{
+        throw 'The mirrored build contains missing or unexpected files.'
+    }}
+}}
+
 function ClearStartupRecovery {{
     try {{
         if (Get-ItemProperty -Path $runKey -Name $runName -ErrorAction SilentlyContinue) {{
@@ -703,6 +748,7 @@ if ($Watch -or $RecoverOnLogon) {{
             if (-not (Test-Path -LiteralPath $restoredExe)) {{
                 throw 'Recovery did not restore Dvinholm.App.exe.'
             }}
+            EnsureMirroredBytes $backup $destination
             $restoredProcess = Start-Process -FilePath $restoredExe -WorkingDirectory $destination -PassThru
             Start-Sleep -Seconds 5
             if ($restoredProcess.HasExited) {{
@@ -817,10 +863,11 @@ try {{
 
     New-Item -ItemType Directory -Path $destination -Force | Out-Null
     $replacementStarted = $true
-    & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $source $destination /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS
+    & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $source $destination /MIR /IS /IT /R:2 /W:1 /NFL /NDL /NJH /NJS
     if ($LASTEXITCODE -ge 8) {{
         throw ""Robocopy failed with exit code $LASTEXITCODE.""
     }}
+    EnsureMirroredBytes $source $destination
     $targetExe = Join-Path $destination 'Dvinholm.App.exe'
     if (-not (Test-Path -LiteralPath $targetExe)) {{
         throw 'The updated executable is missing after file replacement.'
@@ -860,6 +907,7 @@ catch {{
             if (-not (Test-Path -LiteralPath $restoredExe)) {{
                 throw 'Rollback completed without restoring Dvinholm.App.exe.'
             }}
+            EnsureMirroredBytes $backup $destination
             $failure += [Environment]::NewLine + 'The previous build was restored and will be restarted.'
             $restoredProcess = Start-Process -FilePath $restoredExe -WorkingDirectory $destination -PassThru
             Start-Sleep -Seconds 5
