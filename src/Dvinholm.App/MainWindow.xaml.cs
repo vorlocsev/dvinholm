@@ -681,23 +681,32 @@ public sealed partial class MainWindow : Window
             if (file is null) return;
 
             var json = await File.ReadAllTextAsync(file.Path);
-            var imported = EcuProfileCatalog.FromJson(json);
+            // Validate the entire JSON and persist it before touching the
+            // profile selector or any of the currently applied UDS CAN IDs.
+            var imported = EcuProfileCatalogImporter.ImportAndPersist(
+                json, SaveProfileCatalog);
             SetProfileCatalog(imported);
-
-            try
-            {
-                SaveProfileCatalog(imported);
-                SetStatus($"Imported and saved {imported.All.Count} ECU profile(s) from {file.Name}. Select a profile to apply its CAN IDs.");
-            }
-            catch (Exception)
-            {
-                SetStatus($"Imported {imported.All.Count} profile(s), but could not save the local copy. Check folder permissions and available disk space.");
-            }
+            SetStatus($"Imported and saved {imported.All.Count} ECU profile(s) from {file.Name}. Select a profile to apply its CAN IDs.");
+        }
+        catch (InvalidDataException)
+        {
+            SetStatus("Profile import not applied: invalid ECU profile JSON. Existing profiles remain unchanged.");
+        }
+        catch (ArgumentException)
+        {
+            SetStatus("Profile import not applied: invalid ECU profile data. Existing profiles remain unchanged.");
+        }
+        catch (IOException)
+        {
+            SetStatus("Profile import not applied: could not read or save the local catalog. Existing profiles remain unchanged.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            SetStatus("Profile import not applied: access to the selected or local catalog file was denied. Existing profiles remain unchanged.");
         }
         catch (Exception)
         {
-            _loadingProfiles = false;
-            SetStatus("Profile import failed. Check that the selected file is valid JSON and can be read.");
+            SetStatus("Profile import failed without applying the imported catalog. Existing profiles remain unchanged.");
         }
     }
 

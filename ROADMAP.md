@@ -1,3 +1,12 @@
+## Atomic Import JSON — no partial ECU profile activation (2026-10-21)
+
+- [x] Identified a UI state inconsistency: `ImportProfiles_Click` called `SetProfileCatalog(imported)` **before** saving the local JSON. When persistence failed, the imported catalog was visible in memory but would disappear after restart. This also changed the currently selected profile/CAN IDs despite the failed save.
+- [x] Add `EcuProfileCatalogImporter.ImportAndPersist` that validates **the complete JSON** and then persists via the existing atomic `EcuProfileCatalogStore`, returning the replacement catalog only after successful save. Move `SetProfileCatalog` after this commit; on errors, keep existing profiles, selection and active UDS fields untouched. Distinguish validation errors from storage failures in status messages.
+- [x] Add **eight** no-adapter xUnit cases: success with commit-before-return; malformed JSON; invalid CAN ID; case-insensitive duplicate IDs; invalid DID in the second profile; interrupted storage write preserving prior disk and in-memory data; failed first save leaves no file; successful retry after save failure.
+- [ ] Confirm Windows x86 PR CI + post-merge main CI, then mark implementation validated. No manual Windows or real J2534/ECU/vehicle tests are requested or claimed. Latest Stable stays at v0.2.2 until a separately verified release.
+
+---
+
 ## ECU profile save failure and retry safety — software-only (2026-10-21)
 
 - [x] Audited `EcuProfileCatalogStore`: it used a same-directory temporary file and rename already, but had no deterministic injection point for partially written files or a staging callback that returned without producing a valid file. A failed edit was kept out of the UI by ordering, but the save/commit boundary was not directly unit-tested.
