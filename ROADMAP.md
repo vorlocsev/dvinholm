@@ -1,3 +1,13 @@
+## ECU profile save failure and retry safety — software-only (2026-10-21)
+
+- [x] Audited `EcuProfileCatalogStore`: it used a same-directory temporary file and rename already, but had no deterministic injection point for partially written files or a staging callback that returned without producing a valid file. A failed edit was kept out of the UI by ordering, but the save/commit boundary was not directly unit-tested.
+- [x] Guard against staging callbacks that return without a file or leave a zero-byte file, before replacing the existing JSON. Provide an **internal-only staging writer** for deterministic failure simulation; production still writes using `File.WriteAllText` and cleans temporary files in `finally`.
+- [x] Add `EcuProfileEditor.SaveAndPersist`: validate a separate replacement catalog, persist it, and return it for publication only after the store succeeds. Existing validation, JSON schema, `isVerified` semantics and CAN/UDS behavior remain unchanged.
+- [x] Eight deterministic automated regressions: partial stage failure with/without existing file; missing/empty staged file; rename failure retaining target directory; malformed edit skips persistence; storage error preserves current memory and disk; successful retry after failure.
+- [ ] Complete Windows x86 PR CI build/test/package/audit and post-merge main CI before closing this stage. **No manual WinUI test is required or claimed.** Real J2534 adapter, ECU and vehicle testing is deferred; Stable v0.2.2 unchanged.
+
+---
+
 ## Stabilize ISO-TP channel-gate cancellation CI regression (2026-10-21)
 
 - [x] Post-merge [main CI #2942](https://github.com/vorlocsev/dvinholm/actions/runs/39543337851) for [PR #394](https://github.com/vorlocsev/dvinholm/pull/394) failed **1 of 679** xUnit tests. Test `Request_CancellationWhileWaitingForChannelGateIsHonored` received the expected cancellation exception but exceeded an additional 1-second stopwatch bound on the loaded Windows runner. Build and stable release audit passed; no evidence connects this failure to the JSON export implementation.
