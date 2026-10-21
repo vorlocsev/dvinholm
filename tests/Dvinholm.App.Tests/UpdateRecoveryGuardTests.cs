@@ -141,22 +141,28 @@ public sealed class UpdateRecoveryGuardTests : IDisposable
         var removeMarker = script.IndexOf(
             "Remove-Item -LiteralPath $pendingMarker -Force -ErrorAction Stop",
             commit, StringComparison.Ordinal);
-        var removeBackup = script.IndexOf(
-            "Remove-Item -LiteralPath $backup -Recurse",
-            commit, StringComparison.Ordinal);
+        var commitCleanup = script.IndexOf(
+            "FinishRecoveryTransaction", removeMarker, StringComparison.Ordinal);
         var rollback = script.IndexOf(
             "# Restore is verified running; the guard must not roll it back again.",
             StringComparison.Ordinal);
         var rollbackDisarm = script.IndexOf(
             "Remove-Item -LiteralPath $existingMarker -Force -ErrorAction Stop",
             rollback, StringComparison.Ordinal);
-        var rollbackBackup = script.IndexOf(
-            "Remove-Item -LiteralPath $backup -Recurse",
-            rollback, StringComparison.Ordinal);
+        var rollbackCleanup = script.IndexOf(
+            "FinishRecoveryTransaction", rollbackDisarm, StringComparison.Ordinal);
+        var cleanupFunction = script.IndexOf(
+            "function FinishRecoveryTransaction", StringComparison.Ordinal);
+        var unregisterFirst = script.IndexOf(
+            "if (ClearStartupRecovery)", cleanupFunction, StringComparison.Ordinal);
+        var deleteBackupAfterUnregister = script.IndexOf(
+            "Remove-Item -LiteralPath $backup -Recurse", unregisterFirst,
+            StringComparison.Ordinal);
 
-        Assert.True(commit > 0 && removeMarker > commit && removeBackup > removeMarker);
-        Assert.True(rollback > 0 && rollbackDisarm > rollback);
-        Assert.True(rollbackBackup > rollbackDisarm);
+        Assert.True(commit > 0 && removeMarker > commit && commitCleanup > removeMarker);
+        Assert.True(rollback > 0 && rollbackDisarm > rollback && rollbackCleanup > rollbackDisarm);
+        Assert.True(cleanupFunction > 0 && unregisterFirst > cleanupFunction &&
+            deleteBackupAfterUnregister > unregisterFirst);
         Assert.Contains("if ($replacementStarted -and $hadDestination -and $backupReady)", script);
     }
 

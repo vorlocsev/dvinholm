@@ -1,3 +1,13 @@
+## Restart-safe updater recovery at Windows sign-in — 2026-10-22
+
+- PR #404 introduced a separate watcher for abrupt updater helper termination, but the previous model had no process surviving an OS reboot or simultaneous helper/watchdog termination. Pending rollback checkpoints could remain stranded indefinitely.
+- Extended the generated replacement script with `-RecoverOnLogon`. The updater stores a copy of its recovery script in the external `UpdateBackups` transaction state and registers a unique HKCU Run entry after the live guard acknowledges readiness but before any destructive mirror. An unavailable registry or copy operation prevents starting replacement. On the next login, pending old-build restore or partial first-install removal can resume.
+- Helper identity (PID and original start time) prevents a secondary login from restoring over an ongoing update. A unique mutex prevents simultaneous live watchdog and login recovery from mirroring the same destination; an abandoned mutex is reclaimable after a crash. The Run entry must be removed before deleting the persisted recovery script, and retained on recovery failure.
+- Eight deterministic offline Windows x86 tests verify registration order, recovery guard metadata, isolated login invocation on pending/absent checkpoints, safe old-build restoration, invalid backups, active helpers, and unusual Windows paths. The older fully-mocked updater script fixture suppresses real HKCU Run modification; automated tests do not change user startup settings.
+- CI verification pending. **These tests do not prove recovery after actual power loss/reboot or an installed-app crash**. Recovery requires a subsequent user sign-in, intact HKCU Run value and previous-build backup. Manual WinUI and physical J2534/ECU/vehicle tests stay deferred; Stable v0.2.2 untouched.
+
+---
+
 ## Independent update-helper crash guard — 2026-10-21
 
 - Verified main CI #2988 passed on prior Development baseline. Inspected `LatestBuildUpdater.BuildReplacementScript`: existing exception-based rollback could not execute after abrupt termination of the same updater PowerShell process midway through Robocopy `/MIR`.
