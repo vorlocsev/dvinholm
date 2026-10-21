@@ -1181,6 +1181,15 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
+            // Files inside the app's installation tree can be removed by the
+            // in-place updater. Never write report contents to that tree.
+            if (ReportExportDestinationGuard.IsInsideApplicationDirectory(
+                    file.Path, AppContext.BaseDirectory))
+            {
+                SetStatus(ReportExportDestinationGuard.BlockedMessage);
+                return;
+            }
+
             await File.WriteAllTextAsync(file.Path, UdsOfflineTextReport.Build(),
                 new System.Text.UTF8Encoding(encoderShouldEmitUTF8Identifier: false));
             SetStatus($"SYNTHETIC UDS TXT saved: {file.Name}. No vehicle data was exported.");
@@ -1747,6 +1756,15 @@ public sealed partial class MainWindow : Window
 
             var file = await picker.PickSaveFileAsync();
             if (file is null) return;
+
+            // Exported CAN logs also belong outside the application folder.
+            // This applies to both synthetic demo and ordinary CSV captures.
+            if (ReportExportDestinationGuard.IsInsideApplicationDirectory(
+                    file.Path, AppContext.BaseDirectory))
+            {
+                SetStatus(ReportExportDestinationGuard.BlockedMessage);
+                return;
+            }
 
             var lines = CanMonitorCsv.BuildLines(_frames, _demoDataPresent);
             await File.WriteAllLinesAsync(file.Path, lines);
