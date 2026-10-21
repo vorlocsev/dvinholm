@@ -17,6 +17,23 @@ internal sealed record EcuProfileDraft(
 
 internal static class EcuProfileEditor
 {
+    /// <summary>
+    /// Compute a validated replacement without mutating the existing catalog,
+    /// then persist it before returning anything for the WinUI to publish.
+    /// A failed write leaves the old catalog available for an immediate retry.
+    /// </summary>
+    internal static (EcuProfileCatalog Catalog, EcuProfile Profile) SaveAndPersist(
+        EcuProfileCatalog existing,
+        EcuProfileDraft draft,
+        Action<EcuProfileCatalog> persist,
+        string? editingId = null)
+    {
+        ArgumentNullException.ThrowIfNull(persist);
+        var result = Save(existing, draft, editingId);
+        persist(result.Catalog);
+        return result;
+    }
+
     internal static (EcuProfileCatalog Catalog, EcuProfile Profile) Save(
         EcuProfileCatalog existing,
         EcuProfileDraft draft,
