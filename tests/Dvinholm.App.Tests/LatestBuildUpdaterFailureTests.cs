@@ -416,10 +416,22 @@ public sealed class LatestBuildUpdaterFailureTests
         if (!script.Contains(watcherLaunch, StringComparison.Ordinal))
             throw new InvalidOperationException("Expected updater watcher launch was not present in the test script.");
 
+        // The legacy tests run a fully mocked replacement in a temporary
+        // directory. Never write a real HKCU startup registry value from that
+        // fixture; registration itself is covered by source-order assertions
+        // and isolated -RecoverOnLogon execution tests.
+        const startupRegistration =
+            "New-ItemProperty -Path $runKey -Name $runName -Value $runCommand -PropertyType String -Force -ErrorAction Stop | Out-Null";
+        if (!script.Contains(startupRegistration, StringComparison.Ordinal))
+            throw new InvalidOperationException("Expected startup recovery registration was not present.");
+
         return script.Replace(watcherLaunch,
-            "$guardProcess = [pscustomobject]@{ HasExited = $false }\n" +
-            "'ready' | Set-Content -LiteralPath $guardReady -Encoding ASCII",
-            StringComparison.Ordinal);
+                "$guardProcess = [pscustomobject]@{ HasExited = $false }\n" +
+                "'ready' | Set-Content -LiteralPath $guardReady -Encoding ASCII",
+                StringComparison.Ordinal)
+            .Replace(startupRegistration,
+                "# isolated test: HKCU Run registration intentionally suppressed",
+                StringComparison.Ordinal);
     }
 
     private static HttpClient CreateClient(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) =>
