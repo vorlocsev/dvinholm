@@ -817,7 +817,7 @@ try {{
 
     New-Item -ItemType Directory -Path $destination -Force | Out-Null
     $replacementStarted = $true
-    & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $source $destination /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS
+    & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $source $destination /MIR /IS /IT /R:2 /W:1 /NFL /NDL /NJH /NJS
     if ($LASTEXITCODE -ge 8) {{
         throw ""Robocopy failed with exit code $LASTEXITCODE.""
     }}
