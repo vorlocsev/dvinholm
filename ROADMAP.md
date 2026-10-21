@@ -1,9 +1,18 @@
+## Concurrent guard and sign-in recovery mutex (Development, 2026-10-22)
+
+- [x] Add eight genuine **cross-process PowerShell** contention scenarios: first-install checkpoint versus previous-build rollback, flat versus nested assets, second concurrent sign-in versus independent `-Watch` guard. A test-only gate pauses the first process **after** acquiring the real production named mutex and **before** any destructive recovery action.
+- [x] Require the concurrent contender to exit without changing the installed files or pending checkpoint. Release the owning process and assert successful cleanup, byte-exact recovery where applicable, no duplicate executable launch, untouched unrelated user data and idempotent later sign-in.
+- [ ] Confirm complete Windows x86 PR build, test, artifact and Stable audit; merge only on green CI and verify post-merge main CI. Real reboot, UI, J2534 and ECU remain deferred.
+- [x] Previous PR #412 post-merge main CI #3066 passed 767/767 with Windows x86 build and Stable audit.
+
+---
+
 ## Retry recovery after an invalid previous build (Development, 2026-10-22)
 
 - [x] Add eight isolated Windows x86 scenarios across nested assets, matching file metadata and obsolete destination directories. The initial sign-in recovery receives a pending `previous.pending` checkpoint and an invalid backup with no executable; it must preserve backup, checkpoint and the still-installed files, recording the failure.
 - [x] Repair the backup executable and retry the **same** generated PowerShell recovery script. Require real Robocopy, SHA-256 and directory-manifest validation to restore exactly the repaired snapshot and delete partial-update files, then remove the checkpoint and backup.
 - [x] Invoke the recovery script a third time after success; verify it is idempotent, with restored bytes and unrelated user data unchanged.
-- [ ] Confirm PR CI Windows x86 build/tests/artifact and Stable audit, merge only if green and verify the post-merge main CI. No real reboot/sign-in, physical J2534 or manual Windows UI test is implied.
+- [x] PR #412 CI #3065 passed 767/767, merged as `3cc8643`, and post-merge main CI #3066 passed 767/767; Windows x86 build, artifact and Stable audit succeeded. No real reboot/sign-in, physical J2534 or manual Windows UI test was performed.
 
 ---
 
