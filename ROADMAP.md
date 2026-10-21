@@ -1,3 +1,11 @@
+## Byte-exact rollback mirror integration (2026-10-22)
+
+- [x] Add eight Windows x86 PowerShell recovery test variants that execute real Robocopy `/MIR` from a disposable old-build backup, mock only recovered executable launch, and assert exact relative file names and bytes against the pre-recovery snapshot.
+- [x] Exercise binary bytes, nested assets and obsolete directories in every combination; assert recovery checkpoint/backup cleanup and unrelated user-file preservation.
+- [ ] Confirm PR CI Windows build, tests, package, stable audit, then merge and verify main CI. No actual OS reboot/login or real installed app launch is simulated. Physical J2534 remains deferred.
+
+---
+
 ## Updater recovery integration: real file replacement without adapter (planned 2026-10-22)
 
 - [ ] Introduce a disposable-directory integration harness for the generated PowerShell updater, preserving the production recovery script and using only a mock executable launcher. Do not touch the installed Dvinholm directory, real HKCU Run entries, or production update backups.
