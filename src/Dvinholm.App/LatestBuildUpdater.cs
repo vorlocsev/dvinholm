@@ -678,7 +678,15 @@ if ($Watch -or $RecoverOnLogon) {{
         # time. Only one may mirror files or clear the transaction checkpoint.
         $mutexName = 'Local\DvinholmRecovery-' + [IO.Path]::GetFileName($backup)
         $recoveryMutex = New-Object System.Threading.Mutex($false, $mutexName)
-        $haveRecoveryLock = $recoveryMutex.WaitOne(0)
+        try {{
+            $haveRecoveryLock = $recoveryMutex.WaitOne(0)
+        }}
+        catch [System.Threading.AbandonedMutexException] {{
+            # The previous guard may have been killed mid-restore. Windows
+            # grants this mutex to us; retry the pending recovery instead of
+            # mistaking the abandoned lock for a permanent failure.
+            $haveRecoveryLock = $true
+        }}
         if (-not $haveRecoveryLock) {{ exit 0 }}
 
         if (Test-Path -LiteralPath $existingMarker) {{
