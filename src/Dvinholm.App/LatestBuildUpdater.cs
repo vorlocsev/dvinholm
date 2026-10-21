@@ -652,9 +652,29 @@ function EnsureMirroredBytes {{
             }}
         }}
     }}
+    # Files are not the entire install manifest: empty directories can
+    # also be left behind (or missing) after an incomplete mirror. Refuse
+    # to commit a tree whose relative directory names differ.
     $actualFiles = @(Get-ChildItem -LiteralPath $actualRoot -Recurse -File -Force)
     if ($actualFiles.Count -ne $expectedFiles.Count) {{
         throw 'The mirrored build contains missing or unexpected files.'
+    }}
+    $expectedDirectoryNames = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase)
+    $actualDirectoryNames = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase)
+    $expectedPrefix = $expectedRoot.TrimEnd('\').Length
+    $actualPrefix = $actualRoot.TrimEnd('\').Length
+    foreach ($directory in @(Get-ChildItem -LiteralPath $expectedRoot -Recurse -Directory -Force)) {{
+        [void]$expectedDirectoryNames.Add(
+            $directory.FullName.Substring($expectedPrefix).TrimStart('\'))
+    }}
+    foreach ($directory in @(Get-ChildItem -LiteralPath $actualRoot -Recurse -Directory -Force)) {{
+        [void]$actualDirectoryNames.Add(
+            $directory.FullName.Substring($actualPrefix).TrimStart('\'))
+    }}
+    if (-not $expectedDirectoryNames.SetEquals($actualDirectoryNames)) {{
+        throw 'The mirrored build contains missing or unexpected directories.'
     }}
 }}
 
