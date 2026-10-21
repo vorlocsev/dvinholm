@@ -111,7 +111,7 @@ public sealed class UpdateConcurrentRecoveryTests
                         if (primary.IsCompleted)
                         {
                             var earlyExit = await primary;
-                            Assert.Fail("Primary exited before locking: " + earlyExit.Output);
+                            Assert.True(false, "Primary exited before locking: " + earlyExit.Output);
                         }
                         await Task.Delay(25, timeout.Token);
                     }
