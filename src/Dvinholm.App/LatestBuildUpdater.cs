@@ -695,7 +695,7 @@ if ($Watch -or $RecoverOnLogon) {{
                 throw 'Recovery backup is missing Dvinholm.App.exe; preserve the checkpoint for inspection.'
             }}
             New-Item -ItemType Directory -Path $destination -Force | Out-Null
-            & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $backup $destination /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS
+            & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $backup $destination /MIR /IS /IT /R:2 /W:1 /NFL /NDL /NJH /NJS
             if ($LASTEXITCODE -ge 8) {{
                 throw ""Recovery mirror failed with robocopy exit code $LASTEXITCODE.""
             }}
@@ -852,7 +852,7 @@ catch {{
     $failure = ($_ | Out-String)
     if ($replacementStarted -and $hadDestination -and $backupReady) {{
         try {{
-            & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $backup $destination /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS
+            & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $backup $destination /MIR /IS /IT /R:2 /W:1 /NFL /NDL /NJH /NJS
             if ($LASTEXITCODE -ge 8) {{
                 throw ""Rollback copy failed with robocopy exit code $LASTEXITCODE.""
             }}
