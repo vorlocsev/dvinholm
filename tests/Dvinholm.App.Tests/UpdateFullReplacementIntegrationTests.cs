@@ -153,7 +153,11 @@ public sealed class UpdateFullReplacementIntegrationTests
             }
 
             var shouldHaveInstall = !startupFails || !firstInstall;
-            Assert.Equal(shouldHaveInstall, Directory.Exists(destination));
+            var recoveryLogPath = Path.Combine(localAppData, "Dvinholm", "update.log");
+            var recoveryDetails = File.Exists(recoveryLogPath)
+                ? File.ReadAllText(recoveryLogPath) : "(no update.log)";
+            Assert.True(shouldHaveInstall == Directory.Exists(destination),
+                $"Installed directory mismatch (expected {shouldHaveInstall}): {recoveryDetails}");
             if (shouldHaveInstall)
             {
                 var expected = startupFails ? oldFiles! : expectedNew;
@@ -162,7 +166,8 @@ public sealed class UpdateFullReplacementIntegrationTests
                     expected.Keys.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray(),
                     actual.Keys.OrderBy(name => name, StringComparer.OrdinalIgnoreCase).ToArray());
                 foreach (var (name, bytes) in expected)
-                    Assert.Equal(bytes, actual[name]);
+                    Assert.True(bytes.SequenceEqual(actual[name]),
+                        $"Byte mismatch for {name}: {recoveryDetails}");
             }
 
             Assert.Equal("do not modify user data", File.ReadAllText(unrelated));
