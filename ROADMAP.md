@@ -1476,9 +1476,17 @@ This roadmap separates software/CI verification from physical adapter validation
 - [x] **All 8 Windows manual checks user-confirmed on CI #2893** (final full-restart test 2026-10-21): offline access and real-read disabling, synthetic provenance, fictional VIN/raw bytes, F187 preview/raw bytes, DTC statuses, scroll/select with layout preserved, CAN Demo mutual exclusion and post-restart manual-only preview. See [completed checklist](docs/manual-uds-offline-preview-2026-10-20.md) and [PR #386 evidence](https://github.com/vorlocsev/dvinholm/pull/386).
 - [ ] Physical J2534 adapter/vehicle tests remain deferred. Stable v0.2.2 is unchanged and the UDS preview is currently Development-only.
 
-## Next planned milestone — optional offline UDS report export (2026-10-21)
+## Synthetic-only UDS TXT export — completed Windows acceptance (2026-10-21)
 
-- [ ] Implement **Export synthetic UDS TXT** as an explicit user action. Its payload must come **only** from the fixed `UdsOfflineSample` fixture, never live `StatusText`, VIN, DTC or ECU profile state. Save via a user-selected Windows TXT file picker; never write automatically.
-- [ ] Require the same disconnected/idle conditions as UDS preview; recheck after returning from file picker, reject active CAN Demo/UDS and preserve Cancel as a no-write action.
-- [ ] Add eight offline deterministic tests for synthetic provenance, disclaimer, sample integrity, fixed filename, fictional F190/F187/DTC fields and no unsupported diagnostic conclusions. Run PR and post-merge CI; **manual Windows export tests must remain pending until user-confirmed**.
+- [x] Implement **Export synthetic UDS TXT** as an explicit user action. Its payload must come **only** from the fixed `UdsOfflineSample` fixture, never live `StatusText`, VIN, DTC or ECU profile state. Save via a user-selected Windows TXT file picker; never write automatically.
+- [x] Require the same disconnected/idle conditions as UDS preview; recheck after returning from file picker, reject active CAN Demo/UDS and preserve Cancel as a no-write action.
+- [x] Eight offline deterministic unit tests for synthetic provenance, disclaimer, sample integrity, fixed filename, fictional F190/F187/DTC fields and no unsupported diagnostic conclusions. [PR #388](https://github.com/vorlocsev/dvinholm/pull/388) merged as `94ab300`; [main CI #2899](https://github.com/vorlocsev/dvinholm/actions) passed and published Development `ci-2899` Windows x86 ZIP.
+- [x] **All 8 Windows manual TXT export checks user-confirmed** on installed Development CI #2899 (`94ab300`) on **2026-10-21**: button visibility/persisted ECU profiles; native picker and synthetic filename; Cancel/no write; actual selected-folder TXT save; report header/disclaimer; fictional F190/F187/DTC content/raw bytes; block during CAN Demo and resume after Stop; safe default-off restart with saved file preserved and live reads disabled. Evidence: [PR #388 manual checkpoints](https://github.com/vorlocsev/dvinholm/pull/388), [completed checklist](docs/manual-uds-synthetic-txt-export-2026-10-21.md).
 - [ ] Keep genuine vehicle export out of scope and preserve a privacy review if real-data export is ever added. Stable v0.2.2 unchanged; no J2534/vehicle tests.
+
+
+## Next software-only milestone — protect diagnostic exports from the app update directory (2026-10-21)
+
+- [ ] Consider preventing **new** user-generated TXT/CSV reports from being saved in the application installation directory: the in-place updater removes old application files and users should keep reports elsewhere. Preserve user choice of destination outside that tree.
+- [ ] If implemented, use consistent case-insensitive Windows path checks, error reporting and a no-write path for rejected destinations, with 6–8 offline path tests and Windows picker checks.
+- [ ] Do not conflate safe synthetic export with live ECU diagnostics. Adapter, ECU and vehicle validation remains explicitly deferred; stable v0.2.2 unchanged.
