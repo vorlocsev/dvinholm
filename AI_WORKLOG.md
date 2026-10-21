@@ -1,3 +1,11 @@
+## ISO-TP channel gate cancellation timing flake — 2026-10-21
+
+- After successful PR #394 CI #2941 and its merge as `cb79f27`, main CI #2942 failed one of 679 tests in `IsoTpChannelProtocolTests.Request_CancellationWhileWaitingForChannelGateIsHonored`. The test already observed `OperationCanceledException` but failed a separate elapsed-time check (< 1s), which measures host scheduler load as well as cancellation.
+- No ISO-TP production source change is implicated in the JSON export PR. A focused test-only follow-up substitutes assertions on the actual gate ownership and single frame sent while the second request is cancelled. A 5-second request timeout still ensures a missed cancellation cannot be counted as a pass by the exception type.
+- PR and post-merge CI remain to be verified; no manual tests or hardware tests are requested. Stable v0.2.2 unchanged.
+
+---
+
 ## Safe ECU profile JSON export — software-only follow-up (2026-10-21)
 
 - Source audit found an uncovered data-loss path in `ExportProfiles_Click`: the legacy WinRT save picker created the target before destination validation; direct `File.WriteAllTextAsync` could truncate an existing JSON profile backup on failure. Unlike the TXT/CSV report paths, JSON export was not guarded against the in-place updater's application directory.
