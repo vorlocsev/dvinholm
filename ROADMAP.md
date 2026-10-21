@@ -1,3 +1,14 @@
+## Resume interrupted updater recovery at next Windows sign-in — Development (2026-10-22)
+
+- [x] Audit: the PR #404 independent `-Watch` process can restore a build after helper termination only while Windows remains running. After reboot or simultaneous process termination, `previous.pending` / `first-install.pending` could remain stranded with no watcher to handle it.
+- [x] Extend the generated PowerShell helper with a durable `-RecoverOnLogon` mode and a per-update **HKCU Run** value. Copy the recovery script to `UpdateBackups/<transaction>.state/resume.ps1` outside the installation directory, register it **before** writing a pending checkpoint or running destructive Robocopy, and abort before replacement on registration failure. Keep old build and checkpoint until confirmed recovery or confirmed successful startup.
+- [x] Prevent rollback over an update helper still running after a secondary sign-in using a PID-plus-process-start-time identity. Serialize independent guard and sign-in recovery with a per-transaction named mutex; acquire abandoned mutex after a prior crash. Clear the persistent Run entry before removing durable recovery data; failed deregistration retains the script for cleanup at another sign-in.
+- [x] Add **eight** no-adapter Windows x86 tests: durable registration ordering, unique recovery entry and abandoned-mutex behavior, interrupted first install, no-pending cleanup, unusable old-build backup preservation, complete old-build restore (mocking only executable launch), live-helper preservation and quoted apostrophe paths. Legacy full-updater mock scripts explicitly suppress real HKCU registration.
+- [ ] Verify PR Windows x86 CI and post-merge main CI before marking complete. Offline tests **do not** simulate a real OS reboot, actual login or a production install. HKCU Run resumes at **user sign-in**, not before login. A damaged user profile/registry, lost backup or disk failure can still prevent recovery; real-life validation remains future scope.
+- [ ] Stable release remains v0.2.2; no physical J2534/ECU/vehicle or manual WinUI checks claimed.
+
+---
+
 ## Independent updater recovery guard for abruptly terminated helper — Development (2026-10-21)
 
 - [x] Root cause: the updater previously created an old-build backup and used PowerShell `catch` to roll back, but termination of that **same helper process** bypasses `catch` and could strand partially mirrored application files.
