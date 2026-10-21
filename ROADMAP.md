@@ -4,7 +4,7 @@
 - [x] Guard against staging callbacks that return without a file or leave a zero-byte file, before replacing the existing JSON. Provide an **internal-only staging writer** for deterministic failure simulation; production still writes using `File.WriteAllText` and cleans temporary files in `finally`.
 - [x] Add `EcuProfileEditor.SaveAndPersist`: validate a separate replacement catalog, persist it, and return it for publication only after the store succeeds. Existing validation, JSON schema, `isVerified` semantics and CAN/UDS behavior remain unchanged.
 - [x] Eight deterministic automated regressions: partial stage failure with/without existing file; missing/empty staged file; rename failure retaining target directory; malformed edit skips persistence; storage error preserves current memory and disk; successful retry after failure.
-- [ ] Complete Windows x86 PR CI build/test/package/audit and post-merge main CI before closing this stage. **No manual WinUI test is required or claimed.** Real J2534 adapter, ECU and vehicle testing is deferred; Stable v0.2.2 unchanged.
+- [x] [PR #397](https://github.com/vorlocsev/dvinholm/pull/397) merged as `4758931` after successful [Windows PR CI #2955](https://github.com/vorlocsev/dvinholm/actions/runs/39619738972); post-merge [main CI #2956](https://github.com/vorlocsev/dvinholm/actions/runs/39620490799) also passed Windows x86 build, all automated tests, publish and Stable audit. **No manual WinUI validation was performed or claimed.** Physical J2534, ECU and vehicle testing stays deferred. Stable v0.2.2 unchanged.
 
 ---
 
