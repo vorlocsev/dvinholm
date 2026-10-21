@@ -677,7 +677,7 @@ if ($Watch -or $RecoverOnLogon) {{
         # Both the live guard and a login recovery can awaken near the same
         # time. Only one may mirror files or clear the transaction checkpoint.
         $mutexName = 'Local\DvinholmRecovery-' + [IO.Path]::GetFileName($backup)
-        $recoveryMutex = New-Object System.Threading.Mutex($false, $mutexName)
+        $recoveryMutex = [System.Threading.Mutex]::new($false, $mutexName)
         try {{
             $haveRecoveryLock = $recoveryMutex.WaitOne(0)
         }}
