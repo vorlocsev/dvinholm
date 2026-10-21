@@ -1,3 +1,11 @@
+## Stabilize ISO-TP channel-gate cancellation CI regression (2026-10-21)
+
+- [x] Post-merge [main CI #2942](https://github.com/vorlocsev/dvinholm/actions/runs/39543337851) for [PR #394](https://github.com/vorlocsev/dvinholm/pull/394) failed **1 of 679** xUnit tests. Test `Request_CancellationWhileWaitingForChannelGateIsHonored` received the expected cancellation exception but exceeded an additional 1-second stopwatch bound on the loaded Windows runner. Build and stable release audit passed; no evidence connects this failure to the JSON export implementation.
+- [x] Strengthened the test's deterministic protocol invariants: cancellation must raise `OperationCanceledException`, the blocked first request must still own the gate, and the virtual adapter must have exactly one CAN write. Remove the brittle wall-clock assertion without suppressing actual deadline failures.
+- [ ] Run PR Windows x86 CI and **post-merge** main CI to establish a green baseline. This is a test-only change, not a protocol behavior change; no physical J2534 or manual Windows verification requested.
+
+---
+
 ## Guarded atomic ECU profile JSON export — Development (2026-10-21)
 
 - [x] Source audit: the ECU profile **Export JSON** handler still used WinRT `FileSavePicker` (which can materialize a 0-byte placeholder) and `File.WriteAllTextAsync` directly on the target, unlike the already hardened synthetic TXT/CAN CSV exports. An interrupted or rejected save could leave an empty or truncated JSON backup.
