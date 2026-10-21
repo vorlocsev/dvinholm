@@ -613,6 +613,38 @@ $helperIdentity = Join-Path $stateDir 'helper.identity'
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $runName = 'DvinholmRecovery-' + [IO.Path]::GetFileName($backup)
 
+# Robocopy classifies files by size and timestamps. Even with /IS /IT,
+# identical metadata is not proof of identical content. After the mirror,
+# verify every staged file and copy mismatched bytes explicitly. Failure
+# here enters the existing exception rollback path before app startup.
+function EnsureMirroredBytes {{
+    param([string]$expectedRoot, [string]$actualRoot)
+    $expectedFiles = @(Get-ChildItem -LiteralPath $expectedRoot -Recurse -File -Force)
+    $prefixLength = $expectedRoot.TrimEnd('\').Length
+    foreach ($expectedFile in $expectedFiles) {{
+        $relative = $expectedFile.FullName.Substring($prefixLength).TrimStart('\')
+        $actualFile = Join-Path $actualRoot $relative
+        $expectedHash = (Get-FileHash -LiteralPath $expectedFile.FullName -Algorithm SHA256).Hash
+        $actualHash = $null
+        if (Test-Path -LiteralPath $actualFile -PathType Leaf) {{
+            $actualHash = (Get-FileHash -LiteralPath $actualFile -Algorithm SHA256).Hash
+        }}
+        if ($expectedHash -ne $actualHash) {{
+            $actualFolder = Split-Path -Path $actualFile -Parent
+            New-Item -ItemType Directory -Path $actualFolder -Force | Out-Null
+            Copy-Item -LiteralPath $expectedFile.FullName -Destination $actualFile -Force -ErrorAction Stop
+            $actualHash = (Get-FileHash -LiteralPath $actualFile -Algorithm SHA256).Hash
+            if ($expectedHash -ne $actualHash) {{
+                throw ('The mirrored build failed SHA-256 verification: ' + $relative)
+            }}
+        }}
+    }}
+    $actualFiles = @(Get-ChildItem -LiteralPath $actualRoot -Recurse -File -Force)
+    if ($actualFiles.Count -ne $expectedFiles.Count) {{
+        throw 'The mirrored build contains missing or unexpected files.'
+    }}
+}}
+
 function ClearStartupRecovery {{
     try {{
         if (Get-ItemProperty -Path $runKey -Name $runName -ErrorAction SilentlyContinue) {{
