@@ -1,3 +1,13 @@
+## Updater recovery integration: real file replacement without adapter (planned 2026-10-22)
+
+- [ ] Introduce a disposable-directory integration harness for the generated PowerShell updater, preserving the production recovery script and using only a mock executable launcher. Do not touch the installed Dvinholm directory, real HKCU Run entries, or production update backups.
+- [ ] Verify eight end-to-end cases: (1) healthy update and checkpoint cleanup; (2) replacement copy failure and old-build rollback; (3) interrupted helper after partial copy with independent watcher; (4) missing watcher readiness blocks destructive copy; (5) first-install interruption cleans incomplete destination; (6) bad old-build backup is preserved and not launched; (7) simultaneous watcher and logon-recovery ownership is serialized; (8) retry after recovery restores a complete new build.
+- [ ] Verify byte-for-byte directory contents and absence of obsolete files after both successful replacement and rollback; fail tests on leaked registration, lingering processes or unexpected backup deletion.
+- [ ] Run Windows x86 PR CI with all automated tests, package and Stable audit. Merge only after a green run, then verify post-merge main CI. Record exact counts and run links.
+- [ ] Keep actual Windows reboot/logon, manual WinUI and physical J2534/ECU/vehicle tests explicitly deferred. **Do not claim reboot safety based on mock-launcher tests.** Stable remains v0.2.2 until release verification.
+
+---
+
 ## Resume interrupted updater recovery at next Windows sign-in — Development (2026-10-22)
 
 - [x] Audit: the PR #404 independent `-Watch` process can restore a build after helper termination only while Windows remains running. After reboot or simultaneous process termination, `previous.pending` / `first-install.pending` could remain stranded with no watcher to handle it.
