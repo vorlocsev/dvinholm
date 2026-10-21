@@ -580,6 +580,19 @@ internal static class LatestBuildUpdater
         catch (UnauthorizedAccessException) { }
     }
 
+    // Backup leaf names are not globally unique: independent installations
+    // may use the same backup directory name. Derive a durable, case-insensitive
+    // identity from its entire canonical Windows path. A running guard and a
+    // sign-in recovery generated for the same transaction must agree.
+    internal static string RecoveryTransactionId(string backupDirectory)
+    {
+        var normalized = Path.GetFullPath(backupDirectory)
+            .TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar)
+            .ToUpperInvariant();
+        var hash = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(normalized));
+        return Convert.ToHexString(hash)[..24];
+    }
+
     internal static string BuildReplacementScript(
         string stagingDirectory,
         string destinationDirectory,
@@ -591,6 +604,7 @@ internal static class LatestBuildUpdater
         var destination = EscapePowerShellLiteral(Path.GetFullPath(destinationDirectory));
         var backup = EscapePowerShellLiteral(Path.GetFullPath(backupDirectory));
         var escapedScript = EscapePowerShellLiteral(Path.GetFullPath(scriptPath));
+        var recoveryId = RecoveryTransactionId(backupDirectory);
         return $@"
 param([switch]$Watch, [int]$HelperPid = 0, [switch]$RecoverOnLogon)
 $ErrorActionPreference = 'Stop'
@@ -611,7 +625,7 @@ $newMarker = Join-Path $stateDir 'first-install.pending'
 $recoveryScript = Join-Path $stateDir 'resume.ps1'
 $helperIdentity = Join-Path $stateDir 'helper.identity'
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
-$runName = 'DvinholmRecovery-' + [IO.Path]::GetFileName($backup)
+$runName = 'DvinholmRecovery-{recoveryId}'
 
 # Robocopy classifies files by size and timestamps. Even with /IS /IT,
 # identical metadata is not proof of identical content. After the mirror,
@@ -741,7 +755,7 @@ if ($Watch -or $RecoverOnLogon) {{
 
         # Both the live guard and a login recovery can awaken near the same
         # time. Only one may mirror files or clear the transaction checkpoint.
-        $mutexName = 'Local\DvinholmRecovery-' + [IO.Path]::GetFileName($backup)
+        $mutexName = 'Local\DvinholmRecovery-{recoveryId}'
         $recoveryMutex = [System.Threading.Mutex]::new($false, $mutexName)
         try {{
             $haveRecoveryLock = $recoveryMutex.WaitOne(0)
