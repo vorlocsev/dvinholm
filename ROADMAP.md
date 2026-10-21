@@ -1,9 +1,17 @@
+## Exact updater directory manifest validation (Development, 2026-10-22)
+
+- [x] Verify relative directory paths, including empty nested folders, in the generated PowerShell `EnsureMirroredBytes` function. A complete file count and matching SHA-256 alone do not prove the destination directory tree matches the staged build.
+- [x] Add eight isolated Windows x86 cases: empty trees, matching files, same-size stale bytes, absent files, extra file, absent empty directory, unexpected empty directory, and apostrophe-containing nested binary paths. Run the actual generated PowerShell verification functions, never the installed app.
+- [ ] Confirm PR Windows x86 CI (build, tests, artifact, Stable audit), merge only after green results, and confirm post-merge main CI. These checks do not simulate a real reboot, installation lock, ECU or J2534 adapter.
+
+---
+
 ## Full replacement and rollback integration (Development, 2026-10-22)
 
 - [x] Add eight Windows x86 scenarios in `UpdateFullReplacementIntegrationTests`: first install vs existing install, startup accepted vs rejected, flat vs nested binary assets. Use real generated PowerShell and real Robocopy for all backup, forward replacement and rollback operations in disposable directories; substitute only app process launch, watchdog acknowledgement and HKCU registration.
 - [x] Snapshot both builds by relative filenames and complete bytes; assert exact new-tree commit, exact old-tree rollback, removal of obsolete files, removal of failed first installation and preservation of unrelated user data. Check checkpoint/backup cleanup and number of mocked executable launches.
 - [x] Fix direct replacement mirror with Robocopy `/IS /IT` so same-size/same-timestamp files are not incorrectly skipped. Previous rollback mirror already uses these options. CI #3040 found that metadata-based mirroring can still leave stale bytes; verify each staged file with SHA-256 after the mirror, repair mismatches explicitly, then reject unexpected files before starting the new app. CI #3040 reported 748/751 passing because same-metadata files retained old bytes. CI #3046 and #3048 exposed PowerShell test-host cmdlet availability (`Get-FileHash` missing); compute SHA-256 through `System.Security.Cryptography.SHA256` directly for portability. CI #3052 passed 750/751, exposing a byte-mismatched executable after rollback. Apply the same SHA-256 repair/verification to both exception-based rollback and independent sign-in/guard recovery before starting the old build. Next CI still requires full validation.
-- [ ] Verify eight new cases and the complete Windows x86 CI pipeline, including build, package and Stable audit. Merge only after green CI and verify the post-merge main run separately.
+- [x] PR #410 CI #3056: 751/751 passed, Windows x86 build and artifact succeeded, Stable audit green. Merged as `c11a030`; post-merge main CI #3057 passed 751/751 with build/package and Stable audit. Full replacement tests still mock app launch and HKCU registration.
 - [ ] No real app launch, Windows reboot/logon, physical J2534/ECU or manual WinUI checks are claimed. Stable remains v0.2.2 until a release is explicitly published and validated.
 
 ---
