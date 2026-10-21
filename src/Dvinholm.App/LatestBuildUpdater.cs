@@ -804,11 +804,12 @@ try {{
     # BEFORE arming a checkpoint or starting any destructive file replacement.
     # Registration failure aborts the update while the prior build is intact.
     $helperStartTicks = (Get-Process -Id $PID -ErrorAction Stop).StartTime.ToUniversalTime().Ticks
-    "$PID|$helperStartTicks" | Set-Content -LiteralPath $helperIdentity -Encoding ASCII
+    ""$PID|$helperStartTicks"" | Set-Content -LiteralPath $helperIdentity -Encoding ASCII
     Copy-Item -LiteralPath $scriptPath -Destination $recoveryScript -Force -ErrorAction Stop
-    $runCommand = '"' + (Join-Path $PSHOME 'powershell.exe') +
-        '" -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File "' +
-        $recoveryScript + '" -RecoverOnLogon'
+    $quote = [char]34
+    $runCommand = $quote + (Join-Path $PSHOME 'powershell.exe') + $quote +
+        ' -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File ' +
+        $quote + $recoveryScript + $quote + ' -RecoverOnLogon'
     New-ItemProperty -Path $runKey -Name $runName -Value $runCommand -PropertyType String -Force -ErrorAction Stop | Out-Null
 
     $pendingMarker = if ($hadDestination) {{ $existingMarker }} else {{ $newMarker }}
