@@ -748,6 +748,7 @@ if ($Watch -or $RecoverOnLogon) {{
             if (-not (Test-Path -LiteralPath $restoredExe)) {{
                 throw 'Recovery did not restore Dvinholm.App.exe.'
             }}
+            EnsureMirroredBytes $backup $destination
             $restoredProcess = Start-Process -FilePath $restoredExe -WorkingDirectory $destination -PassThru
             Start-Sleep -Seconds 5
             if ($restoredProcess.HasExited) {{
@@ -906,6 +907,7 @@ catch {{
             if (-not (Test-Path -LiteralPath $restoredExe)) {{
                 throw 'Rollback completed without restoring Dvinholm.App.exe.'
             }}
+            EnsureMirroredBytes $backup $destination
             $failure += [Environment]::NewLine + 'The previous build was restored and will be restarted.'
             $restoredProcess = Start-Process -FilePath $restoredExe -WorkingDirectory $destination -PassThru
             Start-Sleep -Seconds 5
