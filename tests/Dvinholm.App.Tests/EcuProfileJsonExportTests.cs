@@ -22,13 +22,16 @@ public sealed class EcuProfileJsonExportTests : IDisposable
         Directory.CreateDirectory(_documentsDirectory);
     }
 
-    private static EcuProfileCatalog Catalog(params EcuProfile[] profiles) =>
-        new(profiles.Length > 0 ? profiles :
-        [
+    private static EcuProfileCatalog Catalog(params EcuProfile[] profiles)
+    {
+        if (profiles.Length > 0)
+            return new EcuProfileCatalog(profiles);
+        return new EcuProfileCatalog([
             new EcuProfile("test.example.ecm", "Example ECM (test only)",
                 0x7E0, 0x7E8, false, [0xF187, 0xF190],
                 "Synthetic test fixture only; not verified for any vehicle.")
         ]);
+    }
 
     private void AssertNoTemporaryExports() =>
         Assert.Empty(Directory.GetFiles(_root, ".dvinholm-report-*.tmp",
