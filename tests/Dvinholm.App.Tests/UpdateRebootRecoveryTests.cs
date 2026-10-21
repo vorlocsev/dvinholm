@@ -111,7 +111,9 @@ public sealed class UpdateRebootRecoveryTests : IDisposable
     {
         var script = GenerateScript();
 
-        Assert.Contains("'DvinholmRecovery-' + [IO.Path]::GetFileName($backup)", script);
+        var recoveryId = LatestBuildUpdater.RecoveryTransactionId(Backup);
+        Assert.Contains($"$runName = 'DvinholmRecovery-{recoveryId}'", script);
+        Assert.Contains($"$mutexName = 'Local\\DvinholmRecovery-{recoveryId}'", script);
         Assert.Contains("Join-Path $stateDir 'resume.ps1'", script);
         Assert.Contains("Join-Path $stateDir 'helper.identity'", script);
         Assert.Contains("StartTime.ToUniversalTime().Ticks", script);
