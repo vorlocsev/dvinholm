@@ -125,7 +125,7 @@ public sealed class EcuProfileCatalogRecoveryTests : IDisposable
         var damagedBytes = new byte[] { 0x5B, 0x7B, 0x00, 0x01, 0x4E };
         File.WriteAllBytes(PrimaryPath, damagedBytes);
 
-        Assert.ThrowsAny<Exception>(() => Store.LoadWithRecovery());
+        Assert.Throws<InvalidDataException>(() => Store.LoadWithRecovery());
 
         Assert.Equal(damagedBytes, File.ReadAllBytes(PrimaryPath));
         Assert.False(File.Exists(BackupPath));
