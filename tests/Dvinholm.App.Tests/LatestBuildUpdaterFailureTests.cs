@@ -402,6 +402,26 @@ public sealed class LatestBuildUpdaterFailureTests
         Assert.DoesNotContain(Path.GetFullPath(backup), script.Replace(Escape(backup), string.Empty, StringComparison.Ordinal));
     }
 
+    /// <summary>
+    /// These older full-replacement PowerShell tests substitute Start-Process
+    /// and Robocopy with deterministic mocks. Mock Start-Process does not launch
+    /// an independent watcher, so provide ONLY the watcher readiness handshake
+    /// inside this test fixture. The separate UpdateRecoveryGuardTests execute
+    /// the real generated -Watch mode in isolated Windows folders.
+    /// </summary>
+    private static string StubWatchdogForLegacyMockUpdaterRuns(string script)
+    {
+        const string watcherLaunch =
+            "$guardProcess = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList $guardArguments -PassThru -WindowStyle Hidden";
+        if (!script.Contains(watcherLaunch, StringComparison.Ordinal))
+            throw new InvalidOperationException("Expected updater watcher launch was not present in the test script.");
+
+        return script.Replace(watcherLaunch,
+            "$guardProcess = [pscustomobject]@{ HasExited = $false }\n" +
+            "'ready' | Set-Content -LiteralPath $guardReady -Encoding ASCII",
+            StringComparison.Ordinal);
+    }
+
     private static HttpClient CreateClient(Func<HttpRequestMessage, HttpResponseMessage> responseFactory) =>
         new(new StubHttpMessageHandler(responseFactory));
 
@@ -651,7 +671,8 @@ function Start-Process {
     return [pscustomobject]@{ HasExited = $false; ExitCode = 0 }
 }
 ";
-            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
+            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine +
+                StubWatchdogForLegacyMockUpdaterRuns(generated));
 
             var powershell = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
@@ -792,7 +813,8 @@ function Start-Process {
     return [pscustomobject]@{ HasExited = $false; ExitCode = 0 }
 }
 ";
-            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
+            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine +
+                StubWatchdogForLegacyMockUpdaterRuns(generated));
 
             var powershell = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
@@ -949,7 +971,8 @@ function Start-Process {
     throw 'The failed first install must not launch an executable.'
 }
 ";
-            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
+            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine +
+                StubWatchdogForLegacyMockUpdaterRuns(generated));
 
             var powershell = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
@@ -1055,7 +1078,8 @@ function Start-Process {
     return [pscustomobject]@{ HasExited = $false; ExitCode = 0 }
 }
 ";
-            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
+            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine +
+                StubWatchdogForLegacyMockUpdaterRuns(generated));
 
             var powershell = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
@@ -1165,7 +1189,8 @@ function Start-Process {
     return [pscustomobject]@{ HasExited = $false; ExitCode = 0 }
 }
 ";
-            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
+            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine +
+                StubWatchdogForLegacyMockUpdaterRuns(generated));
 
             var powershell = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
@@ -1275,7 +1300,8 @@ function Start-Process {
     throw 'The application must not launch when backup creation fails.'
 }
 ";
-            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
+            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine +
+                StubWatchdogForLegacyMockUpdaterRuns(generated));
 
             var powershell = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
@@ -1369,7 +1395,8 @@ function Start-Process {
     throw 'The application must not launch when the old process does not exit.'
 }
 ";
-            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
+            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine +
+                StubWatchdogForLegacyMockUpdaterRuns(generated));
 
             var powershell = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
@@ -1482,7 +1509,8 @@ function Start-Process {
     return [pscustomobject]@{ HasExited = $false; ExitCode = 0 }
 }
 ";
-            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine + generated);
+            await File.WriteAllTextAsync(scriptPath, mocks + Environment.NewLine +
+                StubWatchdogForLegacyMockUpdaterRuns(generated));
 
             var powershell = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),

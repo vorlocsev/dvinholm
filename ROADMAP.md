@@ -1,3 +1,15 @@
+## Independent updater recovery guard for abruptly terminated helper — Development (2026-10-21)
+
+- [x] Root cause: the updater previously created an old-build backup and used PowerShell `catch` to roll back, but termination of that **same helper process** bypasses `catch` and could strand partially mirrored application files.
+- [x] Add an independent `-Watch` PowerShell process that monitors the updater helper's PID. The helper must wait for the guard's `guard.ready` acknowledgement before creating a pending checkpoint and before invoking the destructive Robocopy mirror.
+- [x] Keep `previous.pending` or `first-install.pending` checkpoint files in a separate `.state` directory adjacent to the old-build backup and **outside** the application installation tree. For an unexpected helper exit with a pending checkpoint, attempt to restore the validated old build and restart it; for a first install, remove the incomplete destination.
+- [x] Disarm the pending checkpoint only after the new application stays running or after an exception rollback has successfully restarted the prior build. Preserve the previous backup and marker if the independent guard cannot restore the app; never mistake a cleanup failure for recovery.
+- [x] Add **eight** offline Windows x86 tests for PowerShell parsing, guard-readiness ordering, backup-validation ordering, disarm ordering, absence of checkpoint, incomplete first install, invalid recovery backup and apostrophe-containing Windows paths.
+- [ ] Verify all PR Windows x86 CI build/tests/package/audit and post-merge main CI before closing this milestone. The tests do **not** simulate a live abrupt termination of the running production updater while installing a real application.
+- [ ] **Remaining scope:** power loss, OS restart and simultaneous helper/guard termination can still leave a pending checkpoint; an independently restartable recovery bootstrapper would be needed for a complete reboot-safe update guarantee. No manual WinUI testing or real J2534/ECU/vehicle testing is required or claimed. Stable v0.2.2 remains unchanged.
+
+---
+
 ## Verify ECU catalog backup bytes before promotion — 2026-10-21
 
 - [x] Audited the existing best-effort `ecu-profiles.json.bak` snapshot. A backup copy that **returned successfully but wrote only a prefix or wrong bytes** was promoted unconditionally over the last valid backup; these partial-success scenarios were not covered by prior recovery tests.

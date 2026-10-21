@@ -1,3 +1,12 @@
+## Independent update-helper crash guard — 2026-10-21
+
+- Verified main CI #2988 passed on prior Development baseline. Inspected `LatestBuildUpdater.BuildReplacementScript`: existing exception-based rollback could not execute after abrupt termination of the same updater PowerShell process midway through Robocopy `/MIR`.
+- Added `-Watch -HelperPid` mode to the generated updater script, launched as a second independent PowerShell process. The helper waits for `guard.ready`, then writes a pending rollback checkpoint outside the installed application directory before changing any files. A surviving watchdog attempts to restore and restart the backed-up previous build, or removes an incomplete first-install destination. Successfully committed startup or verified exception rollback removes the marker; a failed restoration preserves marker and backup for inspection.
+- Added eight offline xUnit checks including actual isolated PowerShell `-Watch` execution for incomplete first-install cleanup, missing old executable, no-checkpoint behavior, apostrophe paths and generated script syntax/ordering. No manual Windows UI run, production install, or hardware J2534 test was performed. Await CI to confirm compilation and test results.
+- **Evidence boundary:** watchdog covers unexpected exit of the helper only while the guard and Windows survive. It does not solve power-loss, reboot, or simultaneous process termination. Stable release v0.2.2 remains unchanged.
+
+---
+
 ## ECU catalog backup staging integrity — 2026-10-21
 
 - Main CI #2979 for merged PR #401 passed, but a source review found the backup writer trusted `File.Copy` returning without verifying the staged bytes; a silent partial/altered copy could overwrite the previous good `.bak` after a successful primary commit.
