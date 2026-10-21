@@ -1,3 +1,14 @@
+## Backup-assisted recovery of damaged local ECU profile JSON — 2026-10-21
+
+- [x] Audit: startup `LoadSavedProfileCatalog` previously failed for malformed/truncated `ecu-profiles.json`, with no backup recovery. Subsequent profile saves could overwrite the corrupted original, potentially destroying data a user might want to recover manually.
+- [x] Snapshot successful catalog saves to `ecu-profiles.json.bak` via temporary-file rename, preserving the prior backup if snapshot creation fails. Primary saves remain atomic; backup is best-effort and does not turn a committed save into a false failure.
+- [x] Introduce `LoadWithRecovery`: prefer a valid primary, otherwise load a valid local backup **without modifying** either file, and notify the Windows UI. If both copies are unusable, fail without deleting either. A missing primary remains empty rather than silently restoring an orphan backup.
+- [x] Before any later save replaces a malformed existing primary, archive its actual bytes under a unique `.corrupt-*.json` name. If archiving fails, refuse the save rather than risk deleting the sole damaged original.
+- [x] Add **eight** isolated offline tests: first backup, backup refresh, malformed recovery, truncated recovery, primary precedence over bad backup, both invalid, missing backup, recovery followed by safe archived save.
+- [ ] Confirm Windows x86 PR CI build/tests/package/audit and post-merge main CI. Manual WinUI tests are deliberately deferred and **not** claimed. Real J2534 adapter, ECU and vehicle testing remains deferred; no new Stable release is implied.
+
+---
+
 ## Atomic Import JSON — no partial ECU profile activation (2026-10-21)
 
 - [x] Identified a UI state inconsistency: `ImportProfiles_Click` called `SetProfileCatalog(imported)` **before** saving the local JSON. When persistence failed, the imported catalog was visible in memory but would disappear after restart. This also changed the currently selected profile/CAN IDs despite the failed save.
