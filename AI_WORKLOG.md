@@ -1,3 +1,12 @@
+## Safe ECU profile JSON export — software-only follow-up (2026-10-21)
+
+- Source audit found an uncovered data-loss path in `ExportProfiles_Click`: the legacy WinRT save picker created the target before destination validation; direct `File.WriteAllTextAsync` could truncate an existing JSON profile backup on failure. Unlike the TXT/CSV report paths, JSON export was not guarded against the in-place updater's application directory.
+- Development change: reuse `ReportSavePathPicker`, `ReportExportDestinationGuard`, and `ReportExportFileWriter` for JSON export; add `EcuProfileJsonExport` as a testable data-only coordinator. Respect Cancel/no placeholder, reject empty catalogs and installation-folder paths, and use complete same-directory temporary write before replacing existing JSON.
+- Added eight offline xUnit cases for JSON schema preservation, UTF-8 encoding, overwrite, blocked root and subfolder, sibling path boundary, empty catalog and failed I/O. These are source changes pending PR and Windows CI verification. No manual Windows UI validation is claimed or required for this stage by user request.
+- No ECU addressing or verification behavior changed; no J2534 device/vehicle tests are claimed. Stable release v0.2.2 remains untouched.
+
+---
+
 ## In-app ECU profile create/edit flow — 2026-10-19
 
 - Added immutable `EcuProfileDraft`/`EcuProfileEditor` for validating new and existing local profile values. Supports optional `0x` prefix on CAN IDs and DIDs, 11/29-bit addressing, space/comma/semicolon-separated DID list, duplicate checks and required source note.

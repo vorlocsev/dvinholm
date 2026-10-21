@@ -711,15 +711,22 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            var picker = new FileSavePicker();
-            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
-            picker.SuggestedFileName = "ecu-profiles";
-            picker.FileTypeChoices.Add("JSON", new List<string> { ".json" });
-            var file = await picker.PickSaveFileAsync();
-            if (file is null) return;
+            // WinRT FileSavePicker creates an empty StorageFile before the
+            // destination can be checked, so use the path-only Win32 dialog.
+            var destinationPath = ReportSavePathPicker.PickPath(
+                WindowNative.GetWindowHandle(this), "ecu-profiles", ".json", "JSON");
+            if (destinationPath is null)
+                return; // Cancel must not create or replace anything.
 
-            await File.WriteAllTextAsync(file.Path, _profileCatalog.ToJson());
-            SetStatus($"Exported {_profileCatalog.All.Count} ECU profile(s) to {file.Name}.");
+            await EcuProfileJsonExport.SaveAsync(
+                _profileCatalog, destinationPath, AppContext.BaseDirectory);
+            SetStatus($"Exported {_profileCatalog.All.Count} ECU profile(s) to {Path.GetFileName(destinationPath)}.");
+        }
+        catch (InvalidOperationException ex)
+        {
+            // Empty catalogs and app-directory locations have clear, specific
+            // no-write errors. Other I/O failures use the generic safe text.
+            SetStatus(ex.Message);
         }
         catch (Exception)
         {
