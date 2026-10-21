@@ -1,7 +1,7 @@
 # Export destination safety — Windows manual acceptance checklist
 
 **Build:** Development CI #2908 (`ff6e075`), merged PR #391. This fix is not in stable v0.2.2.  
-**Status:** Implementation and Windows CI #2908 passed. **Manual checkpoints 2–4 passed on 2026-10-21:** user confirmed TXT export refusal both in the application directory and its `TestExport` subfolder without any file, and successful save/open/content verification of synthetic UDS TXT in Documents. Other manual checkpoints remain open; the installed build number has not been supplied.  
+**Status:** Implementation and Windows CI #2908 passed. **Manual checkpoints 2–5 passed on 2026-10-21:** user confirmed blocked TXT saves in the app directory and its subfolder without zero-byte files, valid synthetic TXT output in Documents, and blocked CAN Demo CSV export into the app directory without a new file while Demo kept running. Other manual checkpoints remain open; the installed build number has not been supplied.  
 **Scope:** Protect new TXT/CSV report content from the installed application's directory. No J2534 adapter or vehicle is needed for synthetic checks.
 
 - [ ] 1. Update through **Development** to CI #2908 (`ff6e075`) or a later build containing the same fix. Confirm the ordinary synthetic UDS preview and CAN Monitor demo remain accessible.
@@ -10,11 +10,11 @@
 
 - [x] 3. **User-confirmed 2026-10-21:** exported synthetic UDS TXT to the `TestExport` **subfolder** under the application directory. User answered «да» to the expected result: saving was refused and **no new file appeared, including a zero-byte placeholder**.
 - [x] 4. **User-confirmed 2026-10-21:** saved the synthetic UDS TXT to **Documents** outside the app directory, opened it in Notepad and confirmed the file content is correct, including synthetic report provenance and fictional F190/F187/DTC examples (user: «правильно» in response to the full test prompt).
-- [ ] 5. Start CAN Monitor **Start demo**, then try **CSV log** targeting the application folder. Confirm writing report content is rejected and the demo keeps running.
+- [x] 5. **User-confirmed 2026-10-21:** started CAN Monitor **Start demo**, attempted **CSV log** into the app installation directory. Export was rejected, no empty CSV file appeared, and CAN Demo continued running (user: «да» to the complete expected-result question).
 - [ ] 6. Export a demo **CSV log** to Documents. Confirm the CSV has `source` provenance and `SYNTHETIC_DEMO` on rows. Stop demo afterwards.
 - [ ] 7. Verify ordinary **Cancel** behavior in both Save As dialogs. No new or empty files should be created, and a pre-existing saved TXT/CSV must not be truncated or changed on Cancel or blocked path selection.
 - [ ] 8. Fully restart Dvinholm. Confirm no new files were written automatically inside its installation folder, that ECU profiles persist and existing TXT/CSV in Documents remain available.
 
 **Boundary:** A string-based check of user-selected paths prevents ordinary accidental writes. Earlier Windows.Storage.Pickers.FileSavePicker created a zero-byte placeholder before application validation (user-observed regression). The replacement Win32 Save As dialog is intended to return only a path, without materializing any file first; junctions, hard links and reparse-point aliases remain outside this ordinary path-string guard's security boundary. This is not a substitute for backing up personal reports, and it does not establish physical J2534/ECU/vehicle compatibility.
 
-**Automated evidence (not Windows manual acceptance):** [PR #391](https://github.com/vorlocsev/dvinholm/pull/391), [Windows x86 PR CI #2907](https://github.com/vorlocsev/dvinholm/actions/runs/39536715346) and [post-merge main CI #2908](https://github.com/vorlocsev/dvinholm/actions/runs/39537200998) passed. Checkpoints 2–4 are user-confirmed; five other manual checkboxes remain open until observed in the actual application.
+**Automated evidence (not Windows manual acceptance):** [PR #391](https://github.com/vorlocsev/dvinholm/pull/391), [Windows x86 PR CI #2907](https://github.com/vorlocsev/dvinholm/actions/runs/39536715346) and [post-merge main CI #2908](https://github.com/vorlocsev/dvinholm/actions/runs/39537200998) passed. Checkpoints 2–5 are user-confirmed; four other manual checkboxes (#1 and #6–8) remain open until observed in the actual application.
