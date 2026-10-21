@@ -3,7 +3,7 @@
 - Reviewed the persistence boundary used by the in-app ECU profile editor. The store already used same-directory temp/rename, but there was no deterministic way to simulate partial writes in CI and no guard against a staging operation returning with a missing/zero-byte temporary file.
 - Added an internal stage-writer seam to `EcuProfileCatalogStore` (production uses the existing `File.WriteAllText`) and validates staged output before final rename. The edit path uses `EcuProfileEditor.SaveAndPersist` to return a replacement catalog only after persistence; a write failure leaves the old UI catalog eligible to remain selected.
 - Eight new xUnit cases cover partial/missing/empty staging, failed final rename, invalid draft without storage calls, failed editing without any in-memory/on-disk mutation and recovery retry. No OS permission changes or hardware needed.
-- CI verification pending; do not claim manual UI checks or physical J2534/ECU/vehicle compatibility. Stable v0.2.2 remains unchanged.
+- [PR #397](https://github.com/vorlocsev/dvinholm/pull/397) merged as `4758931` after green PR CI #2955; post-merge [main CI #2956](https://github.com/vorlocsev/dvinholm/actions/runs/39620490799) passed Windows x86 build, all automated tests, package/publish and Stable audit. Eight newly added failure-injection cases passed within the suite. No manual Windows UI or physical J2534/ECU/vehicle validation was performed. Stable v0.2.2 remains unchanged.
 
 ---
 
