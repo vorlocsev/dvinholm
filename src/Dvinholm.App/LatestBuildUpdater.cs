@@ -617,6 +617,19 @@ $runName = 'DvinholmRecovery-' + [IO.Path]::GetFileName($backup)
 # identical metadata is not proof of identical content. After the mirror,
 # verify every staged file and copy mismatched bytes explicitly. Failure
 # here enters the existing exception rollback path before app startup.
+function GetSha256File {{
+    param([string]$path)
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {{
+        $stream = [System.IO.File]::OpenRead($path)
+        try {{
+            return [System.BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-', '')
+        }}
+        finally {{ $stream.Dispose() }}
+    }}
+    finally {{ $sha.Dispose() }}
+}}
+
 function EnsureMirroredBytes {{
     param([string]$expectedRoot, [string]$actualRoot)
     $expectedFiles = @(Get-ChildItem -LiteralPath $expectedRoot -Recurse -File -Force)
@@ -624,16 +637,16 @@ function EnsureMirroredBytes {{
     foreach ($expectedFile in $expectedFiles) {{
         $relative = $expectedFile.FullName.Substring($prefixLength).TrimStart('\')
         $actualFile = Join-Path $actualRoot $relative
-        $expectedHash = (Get-FileHash -LiteralPath $expectedFile.FullName -Algorithm SHA256).Hash
+        $expectedHash = (GetSha256File $expectedFile.FullName)
         $actualHash = $null
         if (Test-Path -LiteralPath $actualFile -PathType Leaf) {{
-            $actualHash = (Get-FileHash -LiteralPath $actualFile -Algorithm SHA256).Hash
+            $actualHash = (GetSha256File $actualFile)
         }}
         if ($expectedHash -ne $actualHash) {{
             $actualFolder = Split-Path -Path $actualFile -Parent
             New-Item -ItemType Directory -Path $actualFolder -Force | Out-Null
             Copy-Item -LiteralPath $expectedFile.FullName -Destination $actualFile -Force -ErrorAction Stop
-            $actualHash = (Get-FileHash -LiteralPath $actualFile -Algorithm SHA256).Hash
+            $actualHash = (GetSha256File $actualFile)
             if ($expectedHash -ne $actualHash) {{
                 throw ('The mirrored build failed SHA-256 verification: ' + $relative)
             }}
