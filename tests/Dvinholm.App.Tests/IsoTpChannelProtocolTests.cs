@@ -422,11 +422,16 @@ public sealed class IsoTpChannelProtocolTests
             Assert.True(writeEntered.Wait(TimeSpan.FromSeconds(2)), "First request did not enter the adapter write.");
 
             using var cancellation = new CancellationTokenSource(TimeSpan.FromMilliseconds(50));
-            var stopwatch = System.Diagnostics.Stopwatch.StartNew();
             Assert.ThrowsAny<OperationCanceledException>(() =>
                 channel.Request(new byte[] { 0x22, 0xF1, 0x91 }, cancellation.Token));
-            Assert.True(stopwatch.Elapsed < TimeSpan.FromSeconds(1),
-                "Cancellation while waiting for the channel gate took too long.");
+
+            // The real guarantee is cancellation *without* a second CAN write
+            // while the first request owns the gate. A one-second stopwatch
+            // bound measures CI thread scheduling and can fail even though
+            // the request was correctly cancelled before the 5-second deadline.
+            Assert.Equal(1, adapter.WriteCount);
+            Assert.False(firstRequest.IsCompleted,
+                "The first request must still own the gate when the second is cancelled.");
         }
         finally
         {
