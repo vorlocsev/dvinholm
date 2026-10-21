@@ -592,7 +592,7 @@ internal static class LatestBuildUpdater
         var backup = EscapePowerShellLiteral(Path.GetFullPath(backupDirectory));
         var escapedScript = EscapePowerShellLiteral(Path.GetFullPath(scriptPath));
         return $@"
-param([switch]$Watch, [int]$HelperPid = 0)
+param([switch]$Watch, [int]$HelperPid = 0, [switch]$RecoverOnLogon)
 $ErrorActionPreference = 'Stop'
 $source = '{source}'
 $destination = '{destination}'
@@ -606,22 +606,80 @@ $stateDir = $backup + '.state'
 $guardReady = Join-Path $stateDir 'guard.ready'
 $existingMarker = Join-Path $stateDir 'previous.pending'
 $newMarker = Join-Path $stateDir 'first-install.pending'
+# The login recovery file and HKCU Run value survive a reboot. They are
+# separate from the directory mirrored by Robocopy and from temporary files.
+$recoveryScript = Join-Path $stateDir 'resume.ps1'
+$helperIdentity = Join-Path $stateDir 'helper.identity'
+$runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
+$runName = 'DvinholmRecovery-' + [IO.Path]::GetFileName($backup)
 
-if ($Watch) {{
+function ClearStartupRecovery {{
+    try {{
+        if (Get-ItemProperty -Path $runKey -Name $runName -ErrorAction SilentlyContinue) {{
+            Remove-ItemProperty -Path $runKey -Name $runName -ErrorAction Stop
+        }}
+        return $true
+    }}
+    catch {{
+        # If removing the auto-start entry fails, retain the recovery script
+        # and checkpoint directory so the next login can retry cleanup.
+        try {{
+            ('Could not unregister updater login recovery: ' + ($_ | Out-String)) |
+                Add-Content -LiteralPath $logPath
+        }} catch {{ }}
+        return $false
+    }}
+}}
+
+function FinishRecoveryTransaction {{
+    if (ClearStartupRecovery) {{
+        Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
+        Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
+    }}
+}}
+
+if ($Watch -or $RecoverOnLogon) {{
     # An independent PowerShell process watches the update helper. Unlike a
     # normal catch block it still runs if that helper is terminated abruptly.
     try {{
-        if ($HelperPid -le 0) {{ throw 'Update recovery guard received an invalid process ID.' }}
-        New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
-        'ready' | Set-Content -LiteralPath $guardReady -Encoding ASCII
-        try {{
-            if (Get-Process -Id $HelperPid -ErrorAction SilentlyContinue) {{
-                Wait-Process -Id $HelperPid -ErrorAction Stop
+        if ($Watch) {{
+            if ($HelperPid -le 0) {{ throw 'Update recovery guard received an invalid process ID.' }}
+            New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
+            'ready' | Set-Content -LiteralPath $guardReady -Encoding ASCII
+            try {{
+                if (Get-Process -Id $HelperPid -ErrorAction SilentlyContinue) {{
+                    Wait-Process -Id $HelperPid -ErrorAction Stop
+                }}
+            }}
+            catch {{
+                if (Get-Process -Id $HelperPid -ErrorAction SilentlyContinue) {{ throw }}
             }}
         }}
-        catch {{
-            if (Get-Process -Id $HelperPid -ErrorAction SilentlyContinue) {{ throw }}
+        elseif (Test-Path -LiteralPath $helperIdentity) {{
+            # Signing in as a second user during an active update is not a
+            # reboot. Do not restore over a helper still running with this PID
+            # AND original process start-time; reused PIDs after reboot differ.
+            $identity = (Get-Content -LiteralPath $helperIdentity -Raw).Trim().Split('|')
+            if ($identity.Length -eq 2) {{
+                $identityPid = 0
+                $identityTicks = [long]0
+                if ([int]::TryParse($identity[0], [ref]$identityPid) -and
+                    [long]::TryParse($identity[1], [ref]$identityTicks)) {{
+                    $activeHelper = Get-Process -Id $identityPid -ErrorAction SilentlyContinue
+                    if ($null -ne $activeHelper -and
+                        $activeHelper.StartTime.ToUniversalTime().Ticks -eq $identityTicks) {{
+                        exit 0
+                    }}
+                }}
+            }}
         }}
+
+        # Both the live guard and a login recovery can awaken near the same
+        # time. Only one may mirror files or clear the transaction checkpoint.
+        $mutexName = 'Local\DvinholmRecovery-' + [IO.Path]::GetFileName($backup)
+        $recoveryMutex = New-Object System.Threading.Mutex($false, $mutexName)
+        $haveRecoveryLock = $recoveryMutex.WaitOne(0)
+        if (-not $haveRecoveryLock) {{ exit 0 }}
 
         if (Test-Path -LiteralPath $existingMarker) {{
             $previousExe = Join-Path $backup 'Dvinholm.App.exe'
@@ -646,8 +704,7 @@ if ($Watch) {{
             Remove-Item -LiteralPath $existingMarker -Force -ErrorAction Stop
             'Updater helper exited with a pending checkpoint; previous build recovered.' |
                 Add-Content -LiteralPath $logPath
-            Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
-            Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
+            FinishRecoveryTransaction
         }}
         elseif (Test-Path -LiteralPath $newMarker) {{
             # First install has nothing to roll back. Never leave a partial
@@ -658,14 +715,12 @@ if ($Watch) {{
             Remove-Item -LiteralPath $newMarker -Force -ErrorAction Stop
             'Updater helper exited with a partial first installation; destination removed.' |
                 Add-Content -LiteralPath $logPath
-            Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
-            Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
+            FinishRecoveryTransaction
         }}
         else {{
             # The helper ended before arming a pending marker, so no app files
             # were replaced. Clean only abandoned transaction metadata.
-            Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
-            Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
+            FinishRecoveryTransaction
         }}
     }}
     catch {{
@@ -676,6 +731,10 @@ if ($Watch) {{
                 Add-Content -LiteralPath $logPath
         }}
         catch {{ }}
+    }}
+    finally {{
+        if ($haveRecoveryLock) {{ $recoveryMutex.ReleaseMutex() }}
+        if ($null -ne $recoveryMutex) {{ $recoveryMutex.Dispose() }}
     }}
     exit
 }}
@@ -732,6 +791,18 @@ try {{
     if (-not (Test-Path -LiteralPath $guardReady)) {{
         throw 'Update recovery guard did not acknowledge readiness.'
     }}
+
+    # Persist a new recovery script and register a per-update HKCU Run value
+    # BEFORE arming a checkpoint or starting any destructive file replacement.
+    # Registration failure aborts the update while the prior build is intact.
+    $helperStartTicks = (Get-Process -Id $PID -ErrorAction Stop).StartTime.ToUniversalTime().Ticks
+    "$PID|$helperStartTicks" | Set-Content -LiteralPath $helperIdentity -Encoding ASCII
+    Copy-Item -LiteralPath $scriptPath -Destination $recoveryScript -Force -ErrorAction Stop
+    $runCommand = '"' + (Join-Path $PSHOME 'powershell.exe') +
+        '" -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File "' +
+        $recoveryScript + '" -RecoverOnLogon'
+    New-ItemProperty -Path $runKey -Name $runName -Value $runCommand -PropertyType String -Force -ErrorAction Stop | Out-Null
+
     $pendingMarker = if ($hadDestination) {{ $existingMarker }} else {{ $newMarker }}
     'pending' | Set-Content -LiteralPath $pendingMarker -Encoding ASCII
 
@@ -764,8 +835,7 @@ try {{
     }}
     # Startup succeeded: disarm the guard BEFORE deleting the old build.
     Remove-Item -LiteralPath $pendingMarker -Force -ErrorAction Stop
-    Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
-    Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
+    FinishRecoveryTransaction
     Remove-Item -LiteralPath $source -Recurse -Force -ErrorAction SilentlyContinue
     Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue
 }}
@@ -789,8 +859,7 @@ catch {{
             }}
             # Restore is verified running; the guard must not roll it back again.
             Remove-Item -LiteralPath $existingMarker -Force -ErrorAction Stop
-            Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction SilentlyContinue
-            Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
+            FinishRecoveryTransaction
         }}
         catch {{
             $rollbackFailed = $true
@@ -811,7 +880,7 @@ catch {{
             if (Test-Path -LiteralPath $newMarker) {{
                 Remove-Item -LiteralPath $newMarker -Force -ErrorAction Stop
             }}
-            Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
+            FinishRecoveryTransaction
             $failure += [Environment]::NewLine + 'The incomplete first-install destination was removed.'
         }}
         catch {{
@@ -822,8 +891,7 @@ catch {{
         # The installed app is still untouched. A failed or incomplete backup
         # is not usable for rollback, so remove it instead of leaking partial data.
         try {{
-            Remove-Item -LiteralPath $backup -Recurse -Force -ErrorAction Stop
-            Remove-Item -LiteralPath $stateDir -Recurse -Force -ErrorAction SilentlyContinue
+            FinishRecoveryTransaction
             $failure += [Environment]::NewLine + 'The incomplete update backup was removed because replacement had not started.'
         }}
         catch {{
