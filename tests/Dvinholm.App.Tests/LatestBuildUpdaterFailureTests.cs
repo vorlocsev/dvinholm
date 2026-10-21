@@ -425,12 +425,23 @@ public sealed class LatestBuildUpdaterFailureTests
         if (!script.Contains(startupRegistration, StringComparison.Ordinal))
             throw new InvalidOperationException("Expected startup recovery registration was not present.");
 
+        const string helperStartIdentity =
+            "$helperStartTicks = (Get-Process -Id $PID -ErrorAction Stop).StartTime.ToUniversalTime().Ticks";
+        if (!script.Contains(helperStartIdentity, StringComparison.Ordinal))
+            throw new InvalidOperationException("Expected helper process start-time metadata was not present.");
+
         return script.Replace(watcherLaunch,
                 "$guardProcess = [pscustomobject]@{ HasExited = $false }\n" +
                 "'ready' | Set-Content -LiteralPath $guardReady -Encoding ASCII",
                 StringComparison.Ordinal)
             .Replace(startupRegistration,
                 "# isolated test: HKCU Run registration intentionally suppressed",
+                StringComparison.Ordinal)
+            .Replace(helperStartIdentity,
+                // Legacy process-race fixtures intentionally mock Get-Process
+                // without StartTime. Keep production process validation strict
+                // and give only those mocked scripts a synthetic identity.
+                "$helperStartTicks = [long]42",
                 StringComparison.Ordinal);
     }
 
