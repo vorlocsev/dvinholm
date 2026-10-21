@@ -540,10 +540,10 @@ public sealed partial class MainWindow : Window
                 var draft = new EcuProfileDraft(
                     idBox.Text, nameBox.Text, requestBox.Text, responseBox.Text,
                     formatBox.SelectedIndex == 1, didBox.Text, sourceBox.Text);
-                var result = EcuProfileEditor.Save(_profileCatalog, draft, editing?.Id);
-                // Persist the replacement catalog FIRST. A failed disk write
-                // must leave the current in-memory profile list untouched.
-                SaveProfileCatalog(result.Catalog);
+                // The coordinator only returns a new catalog after the
+                // complete on-disk save succeeds; never publish an unsaved edit.
+                var result = EcuProfileEditor.SaveAndPersist(
+                    _profileCatalog, draft, SaveProfileCatalog, editing?.Id);
                 savedCatalog = result.Catalog;
                 savedProfile = result.Profile;
                 errorText.Text = string.Empty;
