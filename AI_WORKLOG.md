@@ -2,7 +2,7 @@
 
 - Main CI #2979 for merged PR #401 passed, but a source review found the backup writer trusted `File.Copy` returning without verifying the staged bytes; a silent partial/altered copy could overwrite the previous good `.bak` after a successful primary commit.
 - Added a test-only injectable backup staging delegate, with production still using `File.Copy`. Before `File.Move(..., overwrite:true)`, compare the complete temporary backup with committed primary bytes. On mismatch, no backup promotion; cleanup remains best effort and the committed primary remains valid.
-- Eight offline xUnit cases cover failed/partial/empty/missing/altered backup copy, preserving earlier good backups, primary-commit success despite snapshot errors, and successful retry/recovery. New PR CI and post-merge main CI verification pending.
+- Eight offline xUnit cases cover failed/partial/empty/missing/altered backup copy, preserving earlier good backups, primary-commit success despite snapshot errors, and successful retry/recovery. [PR #402](https://github.com/vorlocsev/dvinholm/pull/402) passed Windows x86 CI #2983, merged as `0cae282`, and post-merge [main CI #2985](https://github.com/vorlocsev/dvinholm/actions/runs/39641711895) also passed the full automated suite, build and publishing. No Windows manual or physical J2534/ECU tests performed.
 - Windows manual checks and physical J2534/ECU/vehicle tests remain deferred. Abrupt updater process termination needs a separate carefully scoped stage; existing updater code catches ordinary exceptions but not process termination. Stable v0.2.2 unchanged.
 
 ---
