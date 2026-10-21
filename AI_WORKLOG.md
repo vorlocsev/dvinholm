@@ -1,3 +1,12 @@
+## Offline ECU profile catalog backup and corruption recovery — 2026-10-21
+
+- Found that an invalid `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json` only generated a startup error with no attempt to recover a previous valid catalog, and a later profile Save could overwrite the damaged file.
+- New local recovery path in `EcuProfileCatalogStore`: after successfully committing the primary JSON, try snapshotting `ecu-profiles.json.bak` using same-directory temporary/rename. A failed backup cannot roll back or misreport the primary save; an older backup, if any, is kept.
+- `LoadWithRecovery` prefers primary; if its JSON fails validation, it reads a validated backup into memory without altering the original. Startup status distinguishes recovered profiles from normal load. If both copies fail, users see the existing error and data is left untouched. When replacing a damaged main later, Save first archives its original bytes to a unique `.corrupt-*.json` sibling.
+- Eight software-only xUnit cases cover initial/refreshed snapshots, damaged/truncated primary, invalid backup, both invalid, unavailable backup, and archival before restoration Save. No manual UI or real J2534/ECU/vehicle tests were performed or requested. CI evidence to follow; Stable v0.2.2 unchanged.
+
+---
+
 ## All-or-nothing ECU profile JSON import (2026-10-21)
 
 - Existing `ImportProfiles_Click` applied imported profiles in-memory and changed the WinUI selection before attempting to save `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json`. A failure could leave an ephemeral imported catalog in the UI while the previous catalog persisted on disk.

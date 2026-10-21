@@ -409,9 +409,13 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            var catalog = new EcuProfileCatalogStore(path).Load();
+            var (catalog, recoveredFromBackup) =
+                new EcuProfileCatalogStore(path).LoadWithRecovery();
             SetProfileCatalog(catalog);
-            SetStatus($"Loaded {catalog.All.Count} saved ECU profile(s).");
+            SetStatus(recoveredFromBackup
+                ? $"Recovered {catalog.All.Count} ECU profile(s) from the local backup. " +
+                  "The damaged original has not been overwritten; the next successful save archives it separately."
+                : $"Loaded {catalog.All.Count} saved ECU profile(s).");
         }
         catch (Exception)
         {
