@@ -243,6 +243,68 @@ public sealed class UpdateRecoveryGuardTests : IDisposable
         Assert.False(Directory.Exists(unusualState));
     }
 
+
+    // Eight isolated, real PowerShell guard executions. These deliberately
+    // exercise the recovery path, not a simulated Windows reboot or real app launch.
+    [Theory]
+    [InlineData(false, false, false, false)]
+    [InlineData(false, true, false, false)]
+    [InlineData(false, false, true, false)]
+    [InlineData(false, true, true, false)]
+    [InlineData(true, false, false, false)]
+    [InlineData(true, true, false, false)]
+    [InlineData(true, false, true, false)]
+    [InlineData(true, true, true, true)]
+    public void InterruptedFirstInstallAndPreCheckpointCleanup_PreserveUnrelatedData(
+        bool interruptedInstall, bool nestedPartialFiles, bool abandonedBackup, bool unusualPath)
+    {
+        var install = unusualPath ? Path.Combine(_root, "O'Neil's app") : Destination;
+        var backup = unusualPath ? Path.Combine(_root, "O'Neil's backup") : Backup;
+        var scriptPath = unusualPath ? Path.Combine(_root, "O'Neil's recovery.ps1") : ScriptPath;
+        var state = backup + ".state";
+        var marker = Path.Combine(state, "first-install.pending");
+        var outside = Path.Combine(_root, "user-data.json");
+        File.WriteAllText(outside, "{\"keep\":true}");
+        Directory.CreateDirectory(install);
+        File.WriteAllText(Path.Combine(install, "existing.txt"), "unchanged before checkpoint");
+        if (nestedPartialFiles)
+        {
+            var nested = Path.Combine(install, "Assets", "nested");
+            Directory.CreateDirectory(nested);
+            File.WriteAllText(Path.Combine(nested, "partial.dat"), "incomplete bytes");
+        }
+        if (abandonedBackup)
+        {
+            Directory.CreateDirectory(backup);
+            File.WriteAllText(Path.Combine(backup, "orphan.dat"), "discard if safe");
+        }
+        if (interruptedInstall)
+        {
+            Directory.CreateDirectory(state);
+            File.WriteAllText(marker, "pending");
+        }
+
+        File.WriteAllText(scriptPath, LatestBuildUpdater.BuildReplacementScript(
+            Source, install, 1234, scriptPath, backup), new UTF8Encoding(false));
+        var run = RunScript(scriptPath, "-Watch", "-HelperPid", "2147483647");
+
+        Assert.True(run.Code == 0, run.Output);
+        Assert.Equal("{\"keep\":true}", File.ReadAllText(outside));
+        if (interruptedInstall)
+            Assert.False(Directory.Exists(install));
+        else
+        {
+            Assert.Equal("unchanged before checkpoint",
+                File.ReadAllText(Path.Combine(install, "existing.txt")));
+            if (nestedPartialFiles)
+                Assert.Equal("incomplete bytes",
+                    File.ReadAllText(Path.Combine(install, "Assets", "nested", "partial.dat")));
+        }
+        Assert.False(File.Exists(marker));
+        Assert.False(Directory.Exists(state));
+        Assert.False(Directory.Exists(backup));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
