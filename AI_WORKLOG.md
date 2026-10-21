@@ -2,7 +2,7 @@
 
 - Existing `ImportProfiles_Click` applied imported profiles in-memory and changed the WinUI selection before attempting to save `%LOCALAPPDATA%\\Dvinholm\\ecu-profiles.json`. A failure could leave an ephemeral imported catalog in the UI while the previous catalog persisted on disk.
 - Added `EcuProfileCatalogImporter.ImportAndPersist`: deserialize/validate all entries, call atomic store persistence, return new catalog for UI activation only after success. Save/read/invalid JSON exceptions leave active profile state untouched. UI status distinguishes invalid data from inaccessible storage; the import JSON schema and author-provided `isVerified` values remain unchanged.
-- Eight deterministic offline regression tests exercise valid commit, invalid JSON/CAN ID/DID/duplicate ID, interruption during staging, first import failing without a file, and successful retry. No manual Windows testing, actual J2534 adapter, ECU or vehicle is involved. Await CI before marking complete.
+- Eight deterministic offline regression tests exercise valid commit, invalid JSON/CAN ID/DID/duplicate ID, interruption during staging, first import failing without a file, and successful retry. [PR #399](https://github.com/vorlocsev/dvinholm/pull/399) passed Windows x86 PR CI #2966, merged as `6a885d6`, and post-merge [main CI #2967](https://github.com/vorlocsev/dvinholm/actions/runs/39625478007) also passed all tests/build/package/stable audit. No manual Windows UI or physical J2534 adapter/ECU/vehicle tests were performed. Stable v0.2.2 unchanged.
 
 ---
 
