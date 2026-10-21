@@ -1,11 +1,13 @@
 # Export destination safety — Windows manual acceptance checklist
 
 **Build:** Development CI #2908 (`ff6e075`), merged PR #391. This fix is not in stable v0.2.2.  
-**Status:** **Regression found by user:** earlier WinRT Save picker created a zero-byte placeholder on rejected destinations. Implementation and Windows CI #2908 passed; real Windows picker/export behavior is still **PENDING user verification**. Do not mark any step complete solely because CI passes.  
+**Status:** Earlier WinRT Save picker created a zero-byte placeholder on rejected destinations. Implementation and Windows CI #2908 passed. User reports that a TXT report was **not saved** when attempting the application directory. Confirmation that no zero-byte placeholder exists (and the exact installed build) is still pending; remaining Windows checks are not complete.  
 **Scope:** Protect new TXT/CSV report content from the installed application's directory. No J2534 adapter or vehicle is needed for synthetic checks.
 
 - [ ] 1. Update through **Development** to CI #2908 (`ff6e075`) or a later build containing the same fix. Confirm the ordinary synthetic UDS preview and CAN Monitor demo remain accessible.
 - [ ] 2. Try **Export synthetic UDS TXT** targeting the same directory as `Dvinholm.App.exe`. Expect **Report not saved: choose a folder outside the Dvinholm application directory**, with **NO file created at all**. In older CI #2905 the WinRT Save picker could leave a zero-byte placeholder; this is the regression being fixed.
+> **Observed 2026-10-21:** User response to the install-folder TXT export test: «файл не сохранился» (file was not saved). The refusal is observed; the user has **not explicitly confirmed** checking the folder for a zero-byte placeholder or reported the current installed Development CI number. Therefore checkpoint 2 remains open until the no-placeholder condition is confirmed.
+
 - [ ] 3. Try exporting a synthetic UDS TXT to a **subfolder** under the application directory. Confirm the same refusal and that **no new zero-byte placeholder** was created there.
 - [ ] 4. Save the same synthetic UDS TXT to a normal external folder such as **Documents**, and confirm that it opens and retains its synthetic warning and fictional F190/F187/DTC values.
 - [ ] 5. Start CAN Monitor **Start demo**, then try **CSV log** targeting the application folder. Confirm writing report content is rejected and the demo keeps running.
