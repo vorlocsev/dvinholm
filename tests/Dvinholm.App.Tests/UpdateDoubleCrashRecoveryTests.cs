@@ -99,16 +99,18 @@ public sealed class UpdateDoubleCrashRecoveryTests
             }
             """;
 
-        script = script.Replace(recoveredLaunch,
+        // Inject the post-mirror checkpoint before replacing the launch
+        // statement, otherwise the original adjacent anchor is already gone.
+        script = script.Replace(mirrorFinished + "\n            $restoredProcess",
+                mirrorFinished + "\n" + afterMutation + "            $restoredProcess",
+                StringComparison.Ordinal)
+            .Replace(recoveredLaunch,
                 "Add-Content -LiteralPath $env:DVINHOLM_TEST_LAUNCH_LOG -Value $restoredExe\n" +
                 "$restoredProcess = [pscustomobject]@{ HasExited = $false }",
                 StringComparison.Ordinal)
             .Replace("Start-Sleep -Seconds 5", "Start-Sleep -Milliseconds 1",
                 StringComparison.Ordinal)
             .Replace(mutexGate, mutexGate + "\n" + afterLock, StringComparison.Ordinal)
-            .Replace(mirrorFinished + "\n            $restoredProcess",
-                mirrorFinished + "\n" + afterMutation + "            $restoredProcess",
-                StringComparison.Ordinal)
             .Replace(firstInstallRemoved, afterMutation + firstInstallRemoved,
                 StringComparison.Ordinal);
         // Both crash gates must be present in the actual recovery path.
