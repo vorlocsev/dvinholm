@@ -139,9 +139,6 @@ foreach ($line in $packageLines) {
 if (-not $foundX86) {
     throw "Missing registered Windows App SDK x86 framework package $requiredPackage."
 }
-Write-Host 'Lite .NET 10 x86 and Windows App SDK x86 prerequisite inspection passed.'
-Write-Host 'This is NOT a WinUI launch test; actual GUI launch and SDK bootstrap remain to verify.'
-
 # Official Microsoft guidance requires VC++ Redistributable for unpackaged
 # Windows App SDK apps. The 14.x runtime family covers VS 2015 and later.
 # Report only the x86 registry record, irrespective of PowerShell bitness.
@@ -170,3 +167,5 @@ if (-not $foundVcX86) {
     throw 'Missing or invalid Microsoft Visual C++ Redistributable x86 (14.x or later). Install the official VC_redist.x86.exe and rerun the check.'
 }
 Write-Host 'Verified registered Microsoft Visual C++ Redistributable x86 (14.x or later).'
+Write-Host 'Lite .NET 10 x86 and Windows App SDK x86 prerequisite inspection passed.'
+Write-Host 'This is NOT a WinUI launch test; actual GUI launch and SDK bootstrap remain to verify.'
