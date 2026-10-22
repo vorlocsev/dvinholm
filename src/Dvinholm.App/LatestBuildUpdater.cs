@@ -768,7 +768,25 @@ if ($Watch -or $RecoverOnLogon) {{
         }}
         if (-not $haveRecoveryLock) {{ exit 0 }}
 
-        if (Test-Path -LiteralPath $existingMarker) {{
+        # Never infer a recovery mode from conflicting or damaged checkpoint
+        # files. Both markers are mutually exclusive; an invalid marker must
+        # preserve the backup and destination for inspection or a safe retry.
+        $hasPreviousMarker = Test-Path -LiteralPath $existingMarker
+        $hasFirstMarker = Test-Path -LiteralPath $newMarker
+        if ($hasPreviousMarker -and $hasFirstMarker) {{
+            throw 'Recovery checkpoint is ambiguous: both pending markers exist.'
+        }}
+        if ($hasPreviousMarker -or $hasFirstMarker) {{
+            $activeMarker = if ($hasPreviousMarker) {{ $existingMarker }} else {{ $newMarker }}
+            if (-not (Test-Path -LiteralPath $activeMarker -PathType Leaf)) {{
+                throw 'Recovery checkpoint is not a regular file.'
+            }}
+            $markerValue = [string](Get-Content -LiteralPath $activeMarker -Raw -ErrorAction Stop)
+            if ($markerValue.Trim() -cne 'pending') {{
+                throw 'Recovery checkpoint has invalid contents; preserve it for inspection.'
+            }}
+        }}
+        if ($hasPreviousMarker) {{
             $previousExe = Join-Path $backup 'Dvinholm.App.exe'
             if (-not (Test-Path -LiteralPath $previousExe)) {{
                 throw 'Recovery backup is missing Dvinholm.App.exe; preserve the checkpoint for inspection.'
@@ -794,7 +812,7 @@ if ($Watch -or $RecoverOnLogon) {{
                 Add-Content -LiteralPath $logPath
             FinishRecoveryTransaction
         }}
-        elseif (Test-Path -LiteralPath $newMarker) {{
+        elseif ($hasFirstMarker) {{
             # First install has nothing to roll back. Never leave a partial
             # destination directory looking like a completed installation.
             if (Test-Path -LiteralPath $destination) {{

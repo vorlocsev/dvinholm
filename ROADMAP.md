@@ -1,9 +1,18 @@
+## Fail-closed recovery checkpoint validation (Development, 2026-10-22)
+
+- [x] Validate mutually exclusive previous-build and first-install checkpoint markers **under the recovery mutex** before any destructive action. Require a regular file containing exactly `pending` after whitespace trimming. Corrupt, empty, binary, or conflicting markers fail closed, log the error and preserve backup, installed files, and checkpoints for inspection.
+- [x] Add eight Windows x86 real PowerShell `-RecoverOnLogon` integration cases: four damaged-control states (garbage, empty, binary, both markers) for both previous-build rollback and incomplete first install. Verify no modification on failure, repair checkpoint, then verify correct byte-exact rollback or cleanup and no user data loss.
+- [ ] Require complete green PR CI with Windows x86 build, all tests, package and Stable audit. Merge only after green and independently verify post-merge main CI. Real Windows reboot, installed app startup, manual UI and physical J2534 remain deferred.
+- [x] Previous PR #416 merged as `7e72277`; post-merge main CI #3093 passed 799/799, Windows x86 packaging and Stable audit.
+
+---
+
 ## Repeated recovery crashes and durable checkpoints (Development, 2026-10-22)
 
 - [x] Add eight isolated x86 Windows PowerShell scenarios spanning first-install vs existing install, flat vs nested binary assets, and watcher vs sign-in recovery after a second crash.
 - [x] Force-kill the first owner after the real named mutex has been acquired and before any file mutation. Start another independent PowerShell process, allow real Robocopy/cleanup to execute, and force-kill it *after* restoring/deleting files but before the checkpoint is disarmed. Confirm marker and backup survive both crashes.
 - [x] Start a third independent process: it must finish the recovery safely, restore byte-for-byte old build or remove partial first install, clean backup/checkpoint, preserve unrelated data, and launch the mocked recovered executable no more than once. Repeat recovery to prove idempotence.
-- [ ] Confirm PR CI build, test, artifact, Stable audit, merge only after green, and confirm post-merge main CI. First CI #3086: 791/799 tests passed; eight new cases failed because test-only PowerShell injection assumed LF rather than Windows CRLF. Test-script line endings normalized in follow-up commit; CI rerun pending. Real reboot/login, real app startup, UI and physical J2534 remain deferred.
+- [x] PR #416 passed CI #3092 (799/799), merged as `7e72277`; post-merge main CI #3093 also passed 799/799 with Windows x86 package and Stable audit. Earlier test-instrumentation failures (#3086/#3088/#3090) were fixed before merge. Real reboot/login, real app startup, UI and physical J2534 remain deferred.
 - [x] Previous PR #415 merged as `14b1038`. Post-merge main CI #3083 passed Windows x86 build/package, Stable audit and **791/791** automated tests.
 
 ---

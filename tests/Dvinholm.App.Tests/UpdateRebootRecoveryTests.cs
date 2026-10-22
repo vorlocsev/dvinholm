@@ -390,6 +390,97 @@ public sealed class UpdateRebootRecoveryTests : IDisposable
         Assert.Equal("user data survives both attempts", File.ReadAllText(externalFile));
     }
 
+
+    [Theory]
+    [InlineData(false, "garbage")]
+    [InlineData(false, "empty")]
+    [InlineData(false, "binary")]
+    [InlineData(false, "both")]
+    [InlineData(true, "garbage")]
+    [InlineData(true, "empty")]
+    [InlineData(true, "binary")]
+    [InlineData(true, "both")]
+    public void RebootRecovery_RejectsCorruptOrAmbiguousCheckpointUntilRepaired(
+        bool firstInstall, string damage)
+    {
+        // Run the production -RecoverOnLogon script, Robocopy and checksum
+        // checks in disposable directories. Only old-app launch is mocked.
+        var activeMarker = firstInstall ? FirstMarker : PreviousMarker;
+        var otherMarker = firstInstall ? PreviousMarker : FirstMarker;
+        CreateMarker(activeMarker);
+        Directory.CreateDirectory(Backup);
+        Directory.CreateDirectory(Destination);
+        var partial = Path.Combine(Destination, "partial.dll");
+        File.WriteAllBytes(partial, new byte[] { 0, 255, 37, 1 });
+        var unrelated = Path.Combine(_root, "notes.txt");
+        File.WriteAllText(unrelated, "must survive invalid checkpoint");
+        File.WriteAllText(Path.Combine(Backup, "Dvinholm.App.exe"), "trusted old app");
+        File.WriteAllBytes(Path.Combine(Backup, "settings.bin"), new byte[] { 1, 0, 255 });
+
+        switch (damage)
+        {
+            case "garbage":
+                File.WriteAllText(activeMarker, "ready-but-not-committed");
+                break;
+            case "empty":
+                File.WriteAllText(activeMarker, string.Empty);
+                break;
+            case "binary":
+                File.WriteAllBytes(activeMarker, new byte[] { 0, 255, 1 });
+                break;
+            case "both":
+                CreateMarker(otherMarker);
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(damage));
+        }
+
+        var originalMarker = File.ReadAllBytes(activeMarker);
+        var originalPartial = File.ReadAllBytes(partial);
+        var originalExe = File.ReadAllBytes(Path.Combine(Backup, "Dvinholm.App.exe"));
+        var originalSettings = File.ReadAllBytes(Path.Combine(Backup, "settings.bin"));
+        GenerateScript(mockRecoveredAppStartup: true);
+
+        var rejected = ExecuteResume();
+
+        // A bad control file must never trigger replacement, first-install
+        // deletion, checkpoint disarming, or backup deletion.
+        Assert.Equal(0, rejected.ExitCode);
+        Assert.True(File.Exists(activeMarker));
+        Assert.Equal(originalMarker, File.ReadAllBytes(activeMarker));
+        if (damage == "both")
+            Assert.True(File.Exists(otherMarker));
+        Assert.Equal(originalPartial, File.ReadAllBytes(partial));
+        Assert.Equal(originalExe, File.ReadAllBytes(Path.Combine(Backup, "Dvinholm.App.exe")));
+        Assert.Equal(originalSettings, File.ReadAllBytes(Path.Combine(Backup, "settings.bin")));
+        Assert.Equal("must survive invalid checkpoint", File.ReadAllText(unrelated));
+        Assert.Contains("checkpoint preserved",
+            File.ReadAllText(Path.Combine(LocalData, "Dvinholm", "update.log")),
+            StringComparison.OrdinalIgnoreCase);
+
+        // Once the checkpoint is manually repaired, the same durable script
+        // must recover normally without requiring a new installation.
+        if (damage == "both")
+            File.Delete(otherMarker);
+        else
+            File.WriteAllText(activeMarker, "pending");
+        var recovered = ExecuteResume();
+
+        Assert.Equal(0, recovered.ExitCode);
+        Assert.False(File.Exists(activeMarker));
+        Assert.False(Directory.Exists(State));
+        Assert.False(Directory.Exists(Backup));
+        if (firstInstall)
+            Assert.False(Directory.Exists(Destination));
+        else
+        {
+            Assert.False(File.Exists(partial));
+            Assert.Equal(originalExe, File.ReadAllBytes(Path.Combine(Destination, "Dvinholm.App.exe")));
+            Assert.Equal(originalSettings, File.ReadAllBytes(Path.Combine(Destination, "settings.bin")));
+        }
+        Assert.Equal("must survive invalid checkpoint", File.ReadAllText(unrelated));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
