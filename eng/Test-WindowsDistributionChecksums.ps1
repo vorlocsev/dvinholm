@@ -10,6 +10,21 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
+# Windows PowerShell 5.1 on minimal test hosts may not expose Get-FileHash.
+# Use the built-in .NET Framework SHA-256 implementation without modules.
+function Get-Sha256Hex {
+    param([Parameter(Mandatory)][string]$Path)
+    $stream = [IO.File]::OpenRead($Path)
+    $hasher = [Security.Cryptography.SHA256]::Create()
+    try {
+        $digest = $hasher.ComputeHash($stream)
+        return ([BitConverter]::ToString($digest) -replace '-', '').ToLowerInvariant()
+    }
+    finally {
+        $hasher.Dispose()
+        $stream.Dispose()
+    }
+}
 $root = (Resolve-Path -LiteralPath $Directory -ErrorAction Stop).Path
 if (-not (Test-Path -LiteralPath $root -PathType Container)) {
     throw "Distribution directory does not exist: $root"
@@ -26,7 +41,7 @@ if ($Generate) {
         if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
             throw "Missing distribution ZIP: $name"
         }
-        $hash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash.ToLowerInvariant()
+        $hash = Get-Sha256Hex -Path $path
         $hashes += "$hash  $name"
     }
     [IO.File]::WriteAllLines($manifest, [string[]]$hashes, [Text.Encoding]::ASCII)
@@ -58,7 +73,7 @@ foreach ($record in $records) {
     if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
         throw "Missing distribution ZIP: $name"
     }
-    $actualHash = (Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash
+    $actualHash = Get-Sha256Hex -Path $path
     if ($actualHash -ine $expectedHash) {
         throw "SHA-256 mismatch for $name. Download or packaging output is corrupt."
     }
