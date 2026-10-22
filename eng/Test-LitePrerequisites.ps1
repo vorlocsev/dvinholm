@@ -10,7 +10,8 @@ param(
     [Parameter(Mandatory)][ValidatePattern('^\d+\.\d+$')][string]$WindowsAppSdkLine,
     [string]$RuntimeListFile,
     [string]$AppSdkPackageListFile,
-    [string]$VcRedistStateFile
+    [string]$VcRedistStateFile,
+    [ValidateSet('X86','X64','Arm64')][string]$FixtureHostArchitecture = 'X64'
 )
 
 $ErrorActionPreference = 'Stop'
@@ -85,8 +86,8 @@ else {
     $runtimeLines = @(& $dotnetExe --list-runtimes 2>&1)
     if ($LASTEXITCODE -ne 0) { throw 'Failed to inspect installed .NET x86 runtimes.' }
     $packageLines = @(
-        Get-AppxPackage -Name "Microsoft.WindowsAppRuntime.$WindowsAppSdkLine" -ErrorAction Stop |
-            ForEach-Object { "$($_.Name)|$($_.Architecture)" }
+        Get-AppxPackage -Name '*AppRuntime*' -ErrorAction Stop |
+            ForEach-Object { "$($_.Name)|$($_.Architecture)|$($_.Version)" }
     )
 
     # Read both registry views because 32-bit and 64-bit installers can place
@@ -128,17 +129,56 @@ foreach ($reference in $references) {
     }
 }
 
-$requiredPackage = "Microsoft.WindowsAppRuntime.$WindowsAppSdkLine"
-$foundX86 = $false
+# SDK 2.5.1 Stable uses Microsoft.WindowsAppRuntime.2 (major only).
+$sdkMajor = [int]($WindowsAppSdkLine.Split('.')[0])
+$minimumSdkVersion = [Version]("$WindowsAppSdkLine.0.0")
+if ($fixtureMode) {
+    $hostArchitecture = $FixtureHostArchitecture
+}
+else {
+    if ($PSBoundParameters.ContainsKey('FixtureHostArchitecture')) {
+        throw 'FixtureHostArchitecture is only allowed with three fixture files.'
+    }
+    $hostArchitecture = [System.Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
+}
+if ($hostArchitecture -notin @('X86','X64','Arm64')) {
+    throw "Unsupported host architecture $hostArchitecture."
+}
+$packages = @()
 foreach ($line in $packageLines) {
-    $parts = ([string]$line).Trim() -split '\|', 2
-    if ($parts.Count -eq 2 -and $parts[0] -eq $requiredPackage -and $parts[1] -eq 'X86') {
-        $foundX86 = $true
+    $parts = ([string]$line).Trim() -split '\|', 3
+    if ($parts.Count -ne 3) { continue }
+    try { $version = [Version]$parts[2] } catch { continue }
+    $packages += [pscustomobject]@{
+        Name = $parts[0].Trim()
+        Architecture = $parts[1].Trim()
+        Version = $version
     }
 }
-if (-not $foundX86) {
-    throw "Missing registered Windows App SDK x86 framework package $requiredPackage."
+function Assert-SdkPackage {
+    param([string]$Name,[string]$Architecture,[Version]$MinimumVersion)
+    $matching = @($packages | Where-Object {
+        $_.Name -eq $Name -and $_.Architecture -eq $Architecture -and
+        ($null -eq $MinimumVersion -or $_.Version -ge $MinimumVersion)
+    })
+    if ($matching.Count -eq 0) {
+        throw "Missing Windows App SDK package $Name for $Architecture, minimum version $MinimumVersion."
+    }
 }
+Assert-SdkPackage -Name "Microsoft.WindowsAppRuntime.$sdkMajor" -Architecture 'X86' -MinimumVersion $minimumSdkVersion
+Assert-SdkPackage -Name "MicrosoftCorporationII.WinAppRuntime.Main.$sdkMajor" -Architecture $hostArchitecture -MinimumVersion $minimumSdkVersion
+Assert-SdkPackage -Name 'MicrosoftCorporationII.WinAppRuntime.Singleton' -Architecture $hostArchitecture
+$ddlm = @($packages | Where-Object {
+    $m = [regex]::Match($_.Name,'^Microsoft\.WinAppRuntime\.DDLM\.(\d+\.\d+\.\d+\.\d+)-x8$')
+    $m.Success -and $_.Architecture -eq 'X86' -and
+    [Version]$m.Groups[1].Value -ge $minimumSdkVersion -and
+    $_.Version -ge $minimumSdkVersion
+})
+if ($ddlm.Count -eq 0) {
+    throw "Missing Windows App SDK DDLM x86 package matching release $WindowsAppSdkLine."
+}
+Write-Host "Verified Framework x86, Main/Singleton $hostArchitecture and DDLM x86."
+
 # Official Microsoft guidance requires VC++ Redistributable for unpackaged
 # Windows App SDK apps. The 14.x runtime family covers VS 2015 and later.
 # Report only the x86 registry record, irrespective of PowerShell bitness.

@@ -1,10 +1,21 @@
+## Lite Windows App SDK complete runtime inventory (Development, 2026-10-22)
+
+- [x] Fix stable 2.5.1 framework naming: use Microsoft.WindowsAppRuntime.2 instead of the incorrect Microsoft.WindowsAppRuntime.2.5.
+- [x] Check Framework x86, Main and Singleton for host OS architecture, and matching DDLM x86. Check 2.5+ version where applicable using current-user registered AppX packages.
+- [x] Add eight PowerShell 5.1 inventory tests: valid x64/x86 hosts, missing Framework/Main/Singleton/DDLM, wrong DDLM architecture, outdated Main. Upgrade all existing 16 mock scenarios to complete and realistic AppX package fixtures.
+- [x] Document package naming and architecture differences. Inventory check does not install components or prove GUI startup.
+- [ ] Confirm CI #3162 and new PR CI **871/871**, x86 publish/ZIP extraction and Stable audit; merge only on green and confirm post-merge main.
+- [ ] Real interactive Lite WinUI startup and physical J2534 testing remain deferred. Stable v0.2.2, Portable updater and trimming/AOT unchanged.
+
+---
+
 ## Lite Visual C++ x86 runtime diagnostics (Development, 2026-10-22)
 
 - [x] Extend the existing read-only Lite prerequisite checker to inspect the x86 Microsoft Visual C++ Redistributable registration (VS 2015+ family), across both Windows registry views, and reject missing, disabled or inconsistent registrations. Never confuse an x64-only runtime with x86.
 - [x] Require a **third explicit x86 VC fixture** when synthetic .NET/Windows App SDK inputs are used, so no test silently combines fake packages with the actual host registry.
 - [x] Add eight PowerShell 5.1 fixture regressions: two valid VC 14.x records, no x86 registration, Installed=0, older VC 12, malformed Major, missing Version and contradictory Version/Major.
 - [x] Keep this as non-mutating diagnostics, not installation, full SDK bootstrap testing or a real GUI launch.
-- [ ] Check PR CI full suite (expected **863**), Windows x86 build/Portable+Lite ZIP extraction and Stable audit; merge only when fully green; then confirm main CI.
+- [x] PR #425 CI #3161 passed **863/863**, Windows x86 build, both ZIP/extraction gates and Stable audit; merged as `8d7ed93`. Post-merge main CI #3162 remained pending when this stage started.
 - [ ] Install prerequisites and verify actual Lite WinUI startup on a Windows machine; physical J2534 hardware stays deferred.
 - [x] Preserve Portable updater behavior, published Stable v0.2.2 and PublishTrimmed/PublishAot disabled.
 
