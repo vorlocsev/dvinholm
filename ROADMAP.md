@@ -1,3 +1,13 @@
+## Lite Windows App SDK Singleton minimum-version verification (Development, 2026-10-23)
+
+- [x] Require a compatible registered Windows App SDK Singleton version, not just its package name and host architecture. Singleton's MSIX major encodes `8000 + SDK major`, so SDK 2.5 requires version >= `8002.5.0.0` and later backward-compatible Singleton versions are accepted.
+- [x] Add eight synthetic Windows PowerShell 5.1 prerequisite cases: valid 8002.5 and newer 8003; reject missing, old SDK minor, old SDK major, wrong CPU architecture, malformed package version and preview-only package naming.
+- [x] Document required package-version scheme and limitations: fixture results are SIMULATED, not a real GUI launch or SDK bootstrap.
+- [ ] Verify PR CI expected **919/919**, Windows x86, both extracted ZIPs, simulated Lite preflight and Stable audit. Merge only on green, independently verify main CI.
+- [ ] Real interactive WinUI Lite launch and physical J2534 tests deferred; Stable v0.2.2, Portable updater and trimming/AOT unchanged.
+
+---
+
 ## Lite .NET roll-forward readiness accuracy (Development, 2026-10-22)
 
 - [x] Fix false positives when Lite runtimeconfig uses Disable or LatestPatch: inspect runtimeOptions/framework rollForward before accepting installed .NET 10 x86 runtimes.
@@ -6,7 +16,7 @@
 - [x] Document conservative behavior and distinction between simulated readiness and interactive GUI launch. Stable v0.2.2, Portable updater and trimming/AOT remain unchanged.
 - [x] PR CI #3190 passed **911/911**, Windows x86 build, Portable/Lite extracted ZIP and Stable audit on `cc4e1c8`. Concurrent push CI #3189 failed **910/911**, solely because the PowerShell subprocess of `WindowsLiteRuntimeConfigContractTests` exceeded its 20-second fixture timeout. No product assertion failed.
 - [x] Raise Windows PowerShell subprocess timeouts for nine distribution/Lite fixture classes from 20/25 seconds to 60 seconds; keep negative assertions and actual application behavior unchanged.
-- [ ] Verify this PR head independently at **911/911** with x86 build, extraction, Lite simulated preflight and Stable audit; merge only on green then confirm post-merge main.
+- [x] PR #431 CI #3191 and #3192 independently passed **911/911** with Windows x86 build, Portable/Lite extracted ZIP gates and Stable audit; merged as `0805d4f`. Main CI #3193 independently passed **911/911**, Portable **62,247,637 bytes**, Lite **10,358,566 bytes**, and Stable audit.
 - [ ] Real Lite GUI startup and physical J2534 tests remain deferred.
 
 ---
