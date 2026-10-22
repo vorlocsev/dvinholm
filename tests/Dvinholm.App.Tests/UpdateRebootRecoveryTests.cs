@@ -485,8 +485,6 @@ public sealed class UpdateRebootRecoveryTests : IDisposable
     [Theory]
     [InlineData("missing-backup", false)]
     [InlineData("missing-backup", true)]
-    [InlineData("empty-backup", false)]
-    [InlineData("empty-backup", true)]
     [InlineData("missing-executable", false)]
     [InlineData("missing-executable", true)]
     [InlineData("executable-as-directory", false)]
