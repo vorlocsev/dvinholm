@@ -69,6 +69,7 @@ jobs:
           # Verify the archive BEFORE computing SHA or publishing a Stable release.
           ./eng/Package-WindowsDistribution.ps1 -Flavor Portable -PublishDirectory artifacts/app -ZipPath artifacts/Dvinholm-Windows-x86.zip
           ./eng/Test-WindowsDistribution.ps1 -Flavor Portable -ZipPath artifacts/Dvinholm-Windows-x86.zip
+          ./eng/Test-WindowsDistributionExtraction.ps1 -Flavor Portable -ZipPath artifacts/Dvinholm-Windows-x86.zip
           $hash = (Get-FileHash artifacts/Dvinholm-Windows-x86.zip -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  Dvinholm-Windows-x86.zip" | Set-Content -Path artifacts/SHA256SUMS.txt -Encoding ascii
           Write-Host "SHA-256: $hash"
