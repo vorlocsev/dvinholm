@@ -50,8 +50,15 @@ jobs:
           global-json-file: global.json
           architecture: x64
 
-      - name: Publish
-        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:Version=0.2.2 -p:InformationalVersion=0.2.2+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app
+      # Stage 1: keep fully standalone x86 WinUI, without linker trimming.
+      # Do not bundle PDBs in distributed releases; CI test diagnostics remain in TRX.
+      - name: Publish Portable
+        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=false -p:PublishAot=false -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.2 -p:InformationalVersion=0.2.2+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app
+
+      # Stage 2: an optional framework-dependent distribution, not used by
+      # the automatic updater. Requires preinstalled .NET x86 and WinAppSDK.
+      - name: Publish Lite
+        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained false --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=false -p:PublishTrimmed=false -p:PublishAot=false -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.2 -p:InformationalVersion=0.2.2+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app-lite
 
       - name: Verify branded Windows icon is published
         shell: pwsh
@@ -73,16 +80,33 @@ jobs:
           }
           Write-Host "Verified $count embedded icon sizes and packaged Dvinholm.App.exe."
 
-      - name: Package public updater asset
-        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+      - name: Package Portable and Lite (exclude debug tools)
         shell: pwsh
-        run: Compress-Archive -Path artifacts/app/* -DestinationPath artifacts/Dvinholm-Windows-x86.zip -CompressionLevel Optimal
+        run: |
+          ./eng/Package-WindowsDistribution.ps1 -Flavor Portable -PublishDirectory artifacts/app -ZipPath artifacts/Dvinholm-Windows-x86.zip
+          ./eng/Package-WindowsDistribution.ps1 -Flavor Lite -PublishDirectory artifacts/app-lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
+          ./eng/Test-WindowsDistribution.ps1 -Flavor Portable -ZipPath artifacts/Dvinholm-Windows-x86.zip
+          ./eng/Test-WindowsDistribution.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
+          $portable = (Get-Item -LiteralPath artifacts/Dvinholm-Windows-x86.zip).Length
+          $lite = (Get-Item -LiteralPath artifacts/Dvinholm-Windows-x86-Lite.zip).Length
+          if ($lite -ge $portable) { throw "Lite must be smaller than Portable: $lite >= $portable" }
+          $report = "| Variant | Compressed bytes | MiB |`n|---|---:|---:|`n"
+          $report += "| Portable | $portable | $([math]::Round($portable / 1MB, 2)) |`n"
+          $report += "| Lite | $lite | $([math]::Round($lite / 1MB, 2)) |`n"
+          $report += "Trimming: **disabled**. Both ZIPs: debugging files excluded.`n"
+          $report | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
       - name: Upload CI artifact
         uses: actions/upload-artifact@v7
         with:
           name: Dvinholm-Windows-x86
           path: artifacts/app
+
+      - name: Upload Lite artifact
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-Windows-x86-Lite
+          path: artifacts/app-lite
 
       # Actions artifact ZIP downloads require authentication. Publish the same
       # payload as a public prerelease asset so the installed app can update
@@ -93,7 +117,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86.zip" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Dvinholm CI #${{ github.run_number }}" --notes "Automated Windows x86 CI build from commit ${{ github.sha }}. This prerelease is intended for the in-app updater."
+          gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86.zip" "artifacts/Dvinholm-Windows-x86-Lite.zip" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Dvinholm CI #${{ github.run_number }}" --notes "Automated Windows x86 CI build from commit ${{ github.sha }}. Portable is updater-compatible; Lite is an experimental framework-dependent variant requiring x86 runtime prerequisites."
 
   audit-latest-stable-release:
     runs-on: ubuntu-latest
