@@ -32,7 +32,7 @@ jobs:
       - name: Parse Windows PowerShell 5.1 distribution scripts
         shell: powershell
         run: |
-          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1')) {
+          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Test-WindowsDistributionChecksums.ps1')) {
             $tokens = $null
             $syntaxErrors = $null
             [System.Management.Automation.Language.Parser]::ParseFile(
@@ -108,6 +108,8 @@ jobs:
           ./eng/Test-WindowsDistribution.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
           ./eng/Test-WindowsDistributionExtraction.ps1 -Flavor Portable -ZipPath artifacts/Dvinholm-Windows-x86.zip
           ./eng/Test-WindowsDistributionExtraction.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip -SimulatedLiteHost
+          ./eng/Test-WindowsDistributionChecksums.ps1 -Directory artifacts -Generate
+          ./eng/Test-WindowsDistributionChecksums.ps1 -Directory artifacts
           $portable = (Get-Item -LiteralPath artifacts/Dvinholm-Windows-x86.zip).Length
           $lite = (Get-Item -LiteralPath artifacts/Dvinholm-Windows-x86-Lite.zip).Length
           if ($lite -ge $portable) { throw "Lite must be smaller than Portable: $lite >= $portable" }
@@ -129,6 +131,12 @@ jobs:
           name: Dvinholm-Windows-x86-Lite
           path: artifacts/app-lite
 
+      - name: Upload Development ZIP checksums
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-Distribution-Checksums
+          path: artifacts/SHA256SUMS.txt
+
       # Actions artifact ZIP downloads require authentication. Publish the same
       # payload as a public prerelease asset so the installed app can update
       # anonymously, without embedding a personal access token.
@@ -138,7 +146,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86.zip" "artifacts/Dvinholm-Windows-x86-Lite.zip" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Dvinholm CI #${{ github.run_number }}" --notes "Automated Windows x86 CI build from commit ${{ github.sha }}. Portable is updater-compatible; Lite is an experimental framework-dependent variant requiring x86 runtime prerequisites."
+          gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86.zip" "artifacts/Dvinholm-Windows-x86-Lite.zip" "artifacts/SHA256SUMS.txt" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Dvinholm CI #${{ github.run_number }}" --notes "Automated Windows x86 CI build from commit ${{ github.sha }}. Portable is updater-compatible; Lite is an experimental framework-dependent variant requiring x86 runtime prerequisites."
 
   audit-latest-stable-release:
     runs-on: ubuntu-latest
