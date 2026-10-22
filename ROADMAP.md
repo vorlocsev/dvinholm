@@ -4,7 +4,9 @@
 - [x] Support default/Minor, LatestMinor, LatestPatch and Disable for .NET 10; reject Major/LatestMajor and applyPatches=false conservatively until explicitly verified.
 - [x] Add eight Windows PowerShell 5.1 simulated host tests for default patch readiness, Minor, LatestPatch (success and rejection), Disable (success and rejection), invalid policy and applyPatches=false.
 - [x] Document conservative behavior and distinction between simulated readiness and interactive GUI launch. Stable v0.2.2, Portable updater and trimming/AOT remain unchanged.
-- [ ] Verify PR CI **911/911** with x86 build, extraction, Lite simulated preflight and Stable audit; merge only on green and verify post-merge main.
+- [x] PR CI #3190 passed **911/911**, Windows x86 build, Portable/Lite extracted ZIP and Stable audit on `cc4e1c8`. Concurrent push CI #3189 failed **910/911**, solely because the PowerShell subprocess of `WindowsLiteRuntimeConfigContractTests` exceeded its 20-second fixture timeout. No product assertion failed.
+- [x] Raise Windows PowerShell subprocess timeouts for nine distribution/Lite fixture classes from 20/25 seconds to 60 seconds; keep negative assertions and actual application behavior unchanged.
+- [ ] Verify this PR head independently at **911/911** with x86 build, extraction, Lite simulated preflight and Stable audit; merge only on green then confirm post-merge main.
 - [ ] Real Lite GUI startup and physical J2534 tests remain deferred.
 
 ---

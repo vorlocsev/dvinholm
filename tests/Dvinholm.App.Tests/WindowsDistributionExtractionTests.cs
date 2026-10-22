@@ -95,7 +95,7 @@ public sealed class WindowsDistributionExtractionTests
                 ?? throw new InvalidOperationException("Could not start x86 ZIP smoke.");
             var stdout = process.StandardOutput.ReadToEndAsync();
             var stderr = process.StandardError.ReadToEndAsync();
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             await process.WaitForExitAsync(timeout.Token);
             var output = await stdout + await stderr;
             if (valid)
