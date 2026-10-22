@@ -3,8 +3,8 @@
 - [x] Harden the common Stable/CI distribution ZIP gate against path traversal, absolute paths, dot segments, control characters and case-insensitive path collisions before extraction. These are important on Windows even if a ZIP tool produced the entries on another platform.
 - [x] Validate Lite's `runtimeconfig.json` contains a framework-dependent .NET 10 runtime reference in addition to requiring that the Lite ZIP does **not** bundle CoreCLR/hostfxr. Keep Portable bundling both native runtime components and preserve existing updater asset naming.
 - [x] Add eight Windows PowerShell integration cases that run the actual distribution ZIP preflight against isolated harmless archives: valid Portable, valid Lite, traversal, case-colliding duplicate path, invalid Lite runtime reference, leaked PDB, leaked debugger and missing Portable hostfxr. Required safety tests run alongside the normal application suite in CI.
-- [ ] Confirm complete PR CI Windows x86 tests/build/Portable+Lite packaging and Stable audit, then merge on green and confirm independent post-merge main CI. This is archive validation, **not** a clean-Windows WinUI runtime/desktop smoke test or physical J2534 validation.
-- [x] Prior PR #421 CI #3133 passed **831/831**, with clean Portable **62,247,587 bytes** and Lite **10,358,538 bytes**, and was merged as `66d8255`. Post-merge main CI #3134 is undergoing independent verification.
+- [ ] Confirm complete PR CI Windows x86 tests/build/Portable+Lite packaging and Stable audit, then merge on green and confirm independent post-merge main CI. First PR CI #3138 passed 837/839: two positive PowerShell 5.1 ZIP tests exposed a missing `System.IO.Compression.FileSystem` assembly import; fixed before rerun. This is archive validation, **not** a clean-Windows WinUI runtime/desktop smoke test or physical J2534 validation.
+- [x] Prior PR #421 CI #3133 passed **831/831** with Portable **62,247,587 bytes** and Lite **10,358,538 bytes**, merged as `66d8255`. Post-merge main CI #3134 passed 831/831, built both ZIPs (Portable **62,247,551 bytes**, Lite **10,358,516 bytes**) and passed Stable audit.
 
 ---
 
