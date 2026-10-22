@@ -3,8 +3,8 @@
 - [x] Add eight isolated x86 Windows PowerShell scenarios spanning first-install vs existing install, flat vs nested binary assets, and watcher vs sign-in recovery after a second crash.
 - [x] Force-kill the first owner after the real named mutex has been acquired and before any file mutation. Start another independent PowerShell process, allow real Robocopy/cleanup to execute, and force-kill it *after* restoring/deleting files but before the checkpoint is disarmed. Confirm marker and backup survive both crashes.
 - [x] Start a third independent process: it must finish the recovery safely, restore byte-for-byte old build or remove partial first install, clean backup/checkpoint, preserve unrelated data, and launch the mocked recovered executable no more than once. Repeat recovery to prove idempotence.
-- [ ] Confirm PR CI build, test, artifact, Stable audit, merge only after green, and confirm post-merge main CI. Real reboot/login, real app startup, UI and physical J2534 remain deferred.
-- [x] Previous PR #415 merged as `14b1038`. Post-merge main CI #3083 status: _pending confirmation during development of this PR_.
+- [ ] Confirm PR CI build, test, artifact, Stable audit, merge only after green, and confirm post-merge main CI. First CI #3086: 791/799 tests passed; eight new cases failed because test-only PowerShell injection assumed LF rather than Windows CRLF. Test-script line endings normalized in follow-up commit; CI rerun pending. Real reboot/login, real app startup, UI and physical J2534 remain deferred.
+- [x] Previous PR #415 merged as `14b1038`. Post-merge main CI #3083 passed Windows x86 build/package, Stable audit and **791/791** automated tests.
 
 ---
 
