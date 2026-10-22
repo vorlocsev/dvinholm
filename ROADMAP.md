@@ -1,9 +1,18 @@
+## Recovery after a killed Windows mutex owner (Development, 2026-10-22)
+
+- [x] Add eight isolated Windows x86 crash simulations across previous-build rollback / incomplete first install, flat / nested binary assets, and independent `-Watch` / `-RecoverOnLogon` retries.
+- [x] Start an actual Windows PowerShell process with the production named recovery mutex, pause after lock acquisition but before changing any checkpoint, then forcibly terminate that process. Verify the checkpoint and backup remain intact, the next process takes the abandoned mutex and safely completes Robocopy + SHA-256 recovery, and a later sign-in is idempotent with at most one recovered app launch.
+- [ ] Require green PR CI build, all tests, Windows x86 artifact and Stable audit. Merge only after success and independently confirm post-merge main CI. No real reboot, installed app launch, UI or physical J2534/ECU test is claimed.
+- [x] PR #414 merged as `a3accbf`; main CI #3078 passed 783/783 tests, Windows x86 build/package and Stable audit.
+
+---
+
 ## Recovery isolation across independent installs (Development, 2026-10-22)
 
 - [x] Generate a stable 24-hex-character SHA-256 identity from the normalized, case-insensitive **full backup path**, replacing the old backup-folder basename as both the Windows named-mutex suffix and HKCU Run recovery-entry suffix. This prevents collisions between distinct transactions that happen to share a backup directory name, without breaking locking between the guard and sign-in recovery for the same backup.
 - [x] Add eight Windows x86 real cross-process integration scenarios for different installations with identical backup leaf names: first-install vs previous-build checkpoint in each installation, with plain or apostrophe-containing paths. Hold installation A's real mutex after acquisition, verify B completes independently, then release A and verify byte-exact restores/cleanup, one launch per restored old build and preserved unrelated user files.
 - [x] Preserve case-insensitive identity stability in the generator and update the old script-identity assertion.
-- [ ] Require green PR CI Windows x86 build, all tests, artifact and Stable audit; merge then confirm a separate green main CI. Physical J2534, actual reboot/login and installed GUI remain deferred.
+- [x] PR #414 CI #3077 passed 783/783, merged as `a3accbf`, post-merge main CI #3078 passed 783/783 with Windows x86 packaging and Stable audit. Physical J2534, actual reboot/login and installed GUI remain deferred.
 - [x] Previous PR #413 CI #3070 passed 775/775 and merged as `70b6939`. Post-merge main CI #3071 passed 775/775 including Windows x86 packaging and Stable audit.
 
 ---
