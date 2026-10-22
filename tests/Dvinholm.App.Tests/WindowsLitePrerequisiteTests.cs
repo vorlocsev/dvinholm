@@ -53,6 +53,8 @@ public sealed class WindowsLitePrerequisiteTests
             };
             var packages = Path.Combine(folder, "packages.txt");
             File.WriteAllText(packages, package, Encoding.UTF8);
+            var vcState = Path.Combine(folder, "vc-x86.txt");
+            File.WriteAllText(vcState, "1|14|v14.40.33816.0\n", Encoding.UTF8);
 
             var shell = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
@@ -70,7 +72,8 @@ public sealed class WindowsLitePrerequisiteTests
                 "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass",
                 "-File", FindScript(), "-LiteDirectory", folder,
                 "-WindowsAppSdkLine", "2.5",
-                "-RuntimeListFile", runtimes, "-AppSdkPackageListFile", packages })
+                "-RuntimeListFile", runtimes, "-AppSdkPackageListFile", packages,
+                "-VcRedistStateFile", vcState })
                 start.ArgumentList.Add(arg);
 
             using var process = Process.Start(start)
