@@ -34,6 +34,17 @@ official Microsoft VC_redist.x86.exe. It rejects missing Main/Singleton/DDLM and
 (runtimes, SDK package list and x86 VC state) must be provided **together**
 for regressions; test mode is always marked SIMULATED INPUT.
 
+CI also runs a Lite ZIP integration gate against the **actual extracted**
+Lite distribution, using synthetic x64 host metadata (x86 .NET 10 Desktop,
+Windows App SDK Framework/DDLM and Visual C++ Redistributable; x64
+Main/Singleton). The invocation is explicitly marked SIMULATED INPUT. It
+does not examine an actual computer or start the GUI. Reproduce the CI gate:
+
+    .\eng\Test-WindowsDistributionExtraction.ps1 -Flavor Lite -ZipPath 'artifacts\Dvinholm-Windows-x86-Lite.zip' -SimulatedLiteHost
+
+The flag is rejected for Portable. For a real Windows host, use the normal
+Test-LitePrerequisites.ps1 without any fixture arguments.
+
 The tool does not install packages or launch WinUI. Passing the inspection
 cannot confirm package health, runtime bootstrapping or whether the GUI opens. Install official prerequisites,
 then test the extracted Lite Dvinholm.App.exe interactively on Windows.
