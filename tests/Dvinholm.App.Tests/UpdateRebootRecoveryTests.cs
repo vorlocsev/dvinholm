@@ -94,7 +94,7 @@ public sealed class UpdateRebootRecoveryTests : IDisposable
         var registered = script.IndexOf(
             "New-ItemProperty -Path $runKey -Name $runName", copied, StringComparison.Ordinal);
         var checkpoint = script.IndexOf(
-            "'pending' | Set-Content -LiteralPath $pendingMarker", registered,
+            "$markerFormat | Set-Content -LiteralPath $pendingMarker", registered,
             StringComparison.Ordinal);
         var mirror = script.IndexOf(
             "$replacementStarted = $true", checkpoint, StringComparison.Ordinal);
