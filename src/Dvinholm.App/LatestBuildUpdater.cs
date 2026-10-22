@@ -735,21 +735,28 @@ if ($Watch -or $RecoverOnLogon) {{
             }}
         }}
         elseif (Test-Path -LiteralPath $helperIdentity) {{
-            # Signing in as a second user during an active update is not a
-            # reboot. Do not restore over a helper still running with this PID
-            # AND original process start-time; reused PIDs after reboot differ.
-            $identity = (Get-Content -LiteralPath $helperIdentity -Raw).Trim().Split('|')
-            if ($identity.Length -eq 2) {{
-                $identityPid = 0
-                $identityTicks = [long]0
-                if ([int]::TryParse($identity[0], [ref]$identityPid) -and
-                    [long]::TryParse($identity[1], [ref]$identityTicks)) {{
-                    $activeHelper = Get-Process -Id $identityPid -ErrorAction SilentlyContinue
-                    if ($null -ne $activeHelper -and
-                        $activeHelper.StartTime.ToUniversalTime().Ticks -eq $identityTicks) {{
-                        exit 0
-                    }}
-                }}
+            # A corrupted identity might conceal an active updater helper.
+            # Preserve the checkpoint rather than restoring over that helper.
+            if (-not (Test-Path -LiteralPath $helperIdentity -PathType Leaf)) {{
+                throw 'Recovery helper identity is not a regular file; checkpoint preserved.'
+            }}
+            $identityText = (Get-Content -LiteralPath $helperIdentity -Raw -ErrorAction Stop).Trim()
+            if ($identityText -cnotmatch '^[0-9]+[|][0-9]+$') {{
+                throw 'Recovery helper identity is malformed; checkpoint preserved.'
+            }}
+            $identity = $identityText.Split('|')
+            $identityPid = 0
+            $identityTicks = [long]0
+            if (-not [int]::TryParse($identity[0], [ref]$identityPid) -or
+                -not [long]::TryParse($identity[1], [ref]$identityTicks) -or
+                $identityPid -le 0 -or $identityTicks -le 0) {{
+                throw 'Recovery helper identity is invalid; checkpoint preserved.'
+            }}
+            # A reused PID after reboot differs by process start time.
+            $activeHelper = Get-Process -Id $identityPid -ErrorAction SilentlyContinue
+            if ($null -ne $activeHelper -and
+                $activeHelper.StartTime.ToUniversalTime().Ticks -eq $identityTicks) {{
+                exit 0
             }}
         }}
 
@@ -904,6 +911,10 @@ try {{
     $helperStartTicks = (Get-Process -Id $PID -ErrorAction Stop).StartTime.ToUniversalTime().Ticks
     ""$PID|$helperStartTicks"" | Set-Content -LiteralPath $helperIdentity -Encoding ASCII
     Copy-Item -LiteralPath $scriptPath -Destination $recoveryScript -Force -ErrorAction Stop
+    # Verify the durable login helper before arming the pending checkpoint.
+    if ((GetSha256File $scriptPath) -ne (GetSha256File $recoveryScript)) {{
+        throw 'Recovery script copy failed SHA-256 verification.'
+    }}
     $quote = [char]34
     $runCommand = $quote + (Join-Path $PSHOME 'powershell.exe') + $quote +
         ' -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File ' +

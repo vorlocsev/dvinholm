@@ -1,8 +1,18 @@
+## Recovery service-file resilience (Development, 2026-10-22)
+
+- [x] Treat an existing malformed, truncated, non-file or invalid `helper.identity` as unsafe during sign-in recovery. Preserve the pending checkpoint, backup and installed tree instead of assuming a live helper has stopped. A *missing* identity remains acceptable for recovery after a reboot.
+- [x] Verify the copied `resume.ps1` against the original updater helper using SHA-256 **before** registering sign-in recovery or arming a pending checkpoint. If the durable script copy differs, abort the update before touching the installation.
+- [x] Add eight Windows x86 PowerShell integration cases: previous-build rollback vs incomplete first install, each with missing/corrupt `helper.identity` and missing/corrupt `resume.ps1`. For damaged identity, require a fail-closed sign-in, then repair and retry. For unavailable durable script, demonstrate that sign-in cannot execute it and the independent live `-Watch` guard can finish recovery from its intact helper script. Preserve unrelated files and verify idempotence.
+- [ ] Confirm PR CI build, all tests, package and Stable audit; merge only after green and independently verify post-merge main CI. **A missing/corrupt `resume.ps1` with no surviving watcher still requires manual repair**: no claim is made that a reboot can execute a missing script. Physical J2534 and manual UI tests remain deferred.
+- [x] PR #417 merged as `4a0f0a9`; post-merge main CI #3098 passed 807/807, Windows x86 build/package and Stable audit.
+
+---
+
 ## Fail-closed recovery checkpoint validation (Development, 2026-10-22)
 
 - [x] Validate mutually exclusive previous-build and first-install checkpoint markers **under the recovery mutex** before any destructive action. Require a regular file containing exactly `pending` after whitespace trimming. Corrupt, empty, binary, or conflicting markers fail closed, log the error and preserve backup, installed files, and checkpoints for inspection.
 - [x] Add eight Windows x86 real PowerShell `-RecoverOnLogon` integration cases: four damaged-control states (garbage, empty, binary, both markers) for both previous-build rollback and incomplete first install. Verify no modification on failure, repair checkpoint, then verify correct byte-exact rollback or cleanup and no user data loss.
-- [ ] Require complete green PR CI with Windows x86 build, all tests, package and Stable audit. Merge only after green and independently verify post-merge main CI. Real Windows reboot, installed app startup, manual UI and physical J2534 remain deferred.
+- [x] PR #417 CI #3097 passed 807/807, merged as `4a0f0a9`; post-merge main CI #3098 passed 807/807 with Windows x86 packaging and Stable audit. Real Windows reboot, installed app startup, manual UI and physical J2534 remain deferred.
 - [x] Previous PR #416 merged as `7e72277`; post-merge main CI #3093 passed 799/799, Windows x86 packaging and Stable audit.
 
 ---
