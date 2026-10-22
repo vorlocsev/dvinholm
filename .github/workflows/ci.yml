@@ -32,7 +32,7 @@ jobs:
       - name: Parse Windows PowerShell 5.1 distribution scripts
         shell: powershell
         run: |
-          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Test-WindowsDistributionChecksums.ps1')) {
+          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
             $tokens = $null
             $syntaxErrors = $null
             [System.Management.Automation.Language.Parser]::ParseFile(
@@ -147,6 +147,23 @@ jobs:
         shell: pwsh
         run: |
           gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86.zip" "artifacts/Dvinholm-Windows-x86-Lite.zip" "artifacts/SHA256SUMS.txt" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Dvinholm CI #${{ github.run_number }}" --notes "Automated Windows x86 CI build from commit ${{ github.sha }}. Portable is updater-compatible; Lite is an experimental framework-dependent variant requiring x86 runtime prerequisites."
+
+      # Re-download release assets and validate that GitHub stored the exact
+      # three expected files matching our checksums and commit.
+      - name: Verify uploaded Development release assets
+        if: github.event_name == 'push' && github.ref == 'refs/heads/main'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $downloadDir = Join-Path $env:RUNNER_TEMP 'dvinholm-published-assets'
+          New-Item -ItemType Directory -Path $downloadDir -Force | Out-Null
+          gh release download "ci-${{ github.run_number }}" --repo "${{ github.repository }}" --dir $downloadDir
+          if ($LASTEXITCODE -ne 0) { throw 'Failed downloading published CI assets.' }
+          $meta = Join-Path $downloadDir 'release.json'
+          gh api "repos/${{ github.repository }}/releases/tags/ci-${{ github.run_number }}" | Out-File -LiteralPath $meta -Encoding utf8
+          if ($LASTEXITCODE -ne 0) { throw 'Failed retrieving published CI metadata.' }
+          ./eng/Test-PublishedDevelopmentRelease.ps1 -ReleaseMetadataFile $meta -Directory $downloadDir -ExpectedTag "ci-${{ github.run_number }}" -ExpectedCommit "${{ github.sha }}"
 
   audit-latest-stable-release:
     runs-on: ubuntu-latest
