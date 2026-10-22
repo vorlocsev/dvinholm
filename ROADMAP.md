@@ -1,9 +1,19 @@
+## Development Portable/Lite SHA-256 distribution manifest (Development, 2026-10-23)
+
+- [x] Generate the exact two-file `SHA256SUMS.txt` only after packaging/ZIP extraction; independently verify hashes in CI; ship it with both public Development prerelease ZIPs and as a CI artifact.
+- [x] Add eight synthetic Windows PowerShell 5.1 checks: valid manifest, missing Lite ZIP, mutated Portable/Lite, missing manifest, duplicate entry, invalid digest and path traversal.
+- [x] Document manual checksum verification and distinguish integrity checks from digital-signature authenticity. No application runtime or update selection changes.
+- [ ] Verify PR CI expected **927/927**, Windows x86 build, Portable/Lite ZIP smoke, manifest verification, upload artifacts and Stable audit. Merge only on green and separately confirm main CI.
+- [ ] Actual Lite WinUI startup and physical J2534 tests deferred; Stable v0.2.2 and trimming/AOT unchanged.
+
+---
+
 ## Lite Windows App SDK Singleton minimum-version verification (Development, 2026-10-23)
 
 - [x] Require a compatible registered Windows App SDK Singleton version, not just its package name and host architecture. Singleton's MSIX major encodes `8000 + SDK major`, so SDK 2.5 requires version >= `8002.5.0.0` and later backward-compatible Singleton versions are accepted.
 - [x] Add eight synthetic Windows PowerShell 5.1 prerequisite cases: valid 8002.5 and newer 8003; reject missing, old SDK minor, old SDK major, wrong CPU architecture, malformed package version and preview-only package naming.
 - [x] Document required package-version scheme and limitations: fixture results are SIMULATED, not a real GUI launch or SDK bootstrap.
-- [ ] Verify PR CI expected **919/919**, Windows x86, both extracted ZIPs, simulated Lite preflight and Stable audit. Merge only on green, independently verify main CI.
+- [x] PR #432 CI #3194 and #3195 passed **919/919**, Windows x86, both extracted ZIPs, simulated Lite preflight and Stable audit; merged as `5e009fe`. Independent main CI #3196 passed **919/919**, Portable **62,247,574 bytes**, Lite **10,358,545 bytes**, and Stable audit.
 - [ ] Real interactive WinUI Lite launch and physical J2534 tests deferred; Stable v0.2.2, Portable updater and trimming/AOT unchanged.
 
 ---

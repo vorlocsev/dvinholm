@@ -77,6 +77,26 @@ https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/deploy-unpackaged
 https://github.com/microsoft/WindowsAppSDK/blob/main/specs/Deployment/MSIXPackages.md
 https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
 
+## Development ZIP SHA-256 verification
+
+Development CI generates `SHA256SUMS.txt` only **after** both final Portable
+and Lite archives have passed packaging/extraction checks. The file contains
+two exact SHA-256 entries and is published alongside both ZIPs on the public
+`ci-N` prerelease. It is also uploaded as a separate GitHub Actions artifact.
+The updater remains Portable-only and does not change.
+
+To verify both downloaded archives without launching WinUI, put
+`SHA256SUMS.txt`, `Dvinholm-Windows-x86.zip` and
+`Dvinholm-Windows-x86-Lite.zip` in one directory, then run:
+
+    .\eng\Test-WindowsDistributionChecksums.ps1 -Directory 'C:\Dvinholm-Downloads'
+
+The checker rejects missing archives, altered bytes, malformed or duplicate
+entries, unknown names and directory traversal. Regenerate checksums only in
+a trusted packaging workflow using `-Generate`. SHA-256 detects corruption
+relative to the manifest; it is **not** a digital signature and cannot prove
+publisher authenticity if an attacker replaces both archives and manifest.
+
 ## Distribution rules
 
 The application is published for `win-x86` without Trimming or Native AOT. The self-contained Portable output stays complete, including native WinUI resources and .NET runtime files. Never delete arbitrary DLLs, JSON, PRI, MUI, WinMD, or locale folders to reduce the ZIP size.
