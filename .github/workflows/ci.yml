@@ -27,6 +27,25 @@ jobs:
       - name: Verify .NET SDK
         run: dotnet --version
 
+      # Fail fast if a Windows PowerShell 5.1 packaging or Lite script has a
+      # parse error. A malformed preflight must never be masked by negative tests.
+      - name: Parse Windows PowerShell 5.1 distribution scripts
+        shell: powershell
+        run: |
+          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1')) {
+            $tokens = $null
+            $syntaxErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path -LiteralPath $path).Path, [ref]$tokens, [ref]$syntaxErrors) | Out-Null
+            if (@($syntaxErrors).Count -gt 0) {
+              foreach ($syntaxError in $syntaxErrors) {
+                Write-Host "::error file=$path,line=$($syntaxError.Extent.StartLineNumber)::$($syntaxError.Message)"
+              }
+              throw "PowerShell 5.1 syntax failed for $path"
+            }
+            Write-Host "PowerShell 5.1 syntax valid: $path"
+          }
+
       - name: Restore
         run: dotnet restore Dvinholm.sln
 
