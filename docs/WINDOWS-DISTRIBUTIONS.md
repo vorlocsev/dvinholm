@@ -9,6 +9,30 @@ Dvinholm is a WinUI 3 Windows **x86** application. The main distribution remains
 
 Lite is **not** an independent stable release just because CI publishes a prerelease artifact. Install prerequisites before launching Lite on Windows. It uses the same application and J2534 backend, but its Windows App SDK bootstrap/runtime dependencies still need a real Windows launch smoke test. Never mix Portable and Lite DLLs in the same installation folder.
 
+## Lite host prerequisite inspection (Development)
+
+Extract the experimental Lite ZIP into its own directory. For the current
+Windows App SDK NuGet reference 2.5.1, run the following in Windows PowerShell
+5.1 from a repository checkout (adjust the Lite folder):
+
+    .\eng\Test-LitePrerequisites.ps1 -LiteDirectory 'C:\Dvinholm-Lite' -WindowsAppSdkLine '2.5'
+
+The read-only tool examines the actual Lite runtimeconfig file, queries the
+x86 dotnet installation for .NET 10 Desktop/shared runtimes, and checks for
+a current-user registered x86 Microsoft.WindowsAppRuntime.2.5 framework package.
+It rejects x64-only packages and mismatched SDK lines. An optional pair of
+fixture files exists for regression tests, always marked SIMULATED INPUT.
+
+The tool does not install packages or launch WinUI. Microsoft Visual C++
+Redistributable x86 may also be necessary for an unpackaged app. Passing the
+inspection cannot confirm the entire Windows App SDK runtime package set,
+runtime bootstrapping or whether the GUI opens. Install official prerequisites,
+then test the extracted Lite Dvinholm.App.exe interactively on Windows.
+Never combine Portable and Lite files in one folder.
+
+Microsoft guidance:
+https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/deploy-unpackaged-apps
+
 ## Distribution rules
 
 The application is published for `win-x86` without Trimming or Native AOT. The self-contained Portable output stays complete, including native WinUI resources and .NET runtime files. Never delete arbitrary DLLs, JSON, PRI, MUI, WinMD, or locale folders to reduce the ZIP size.

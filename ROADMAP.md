@@ -1,3 +1,14 @@
+## Lite host prerequisite diagnostics (Development, 2026-10-22)
+
+- [x] Add a read-only Windows PowerShell 5.1 check for .NET 10 x86 Desktop/shared frameworks and matching current-user x86 Windows App SDK framework package using the extracted Lite runtimeconfig; never install packages or launch WinUI.
+- [x] Eight synthetic regression scenarios: valid host metadata; missing and malformed manifest; bundled CoreCLR; .NET 9 only; absent x86 Desktop runtime; wrong SDK release line; x64-only SDK framework package.
+- [x] Document the real-host inspection command and explicit SIMULATED INPUT fixture marker; no claim of real UI, bootstrapper, Visual C++ or J2534 coverage.
+- [ ] Confirm this PR CI full suite, Windows x86 build, both ZIP extraction checks and Stable audit. Merge only on green; then independently validate main CI. Post-merge #3154 was still running when this stage began.
+- [ ] Manually launch Lite in an interactive Windows session with .NET 10 Desktop Runtime x86, Windows App SDK runtime and Visual C++ x86 installed; record outcome separately.
+- [x] Preserve Portable updater behavior, disabled trimming/AOT and unchanged published Stable v0.2.2.
+
+---
+
 ## Extracted Windows x86 distribution smoke (Development, 2026-10-22)
 
 - [x] Validate **after actual ZIP extraction into a disposable directory** that Portable and Lite each contain the WinUI application executable, managed app DLL, dependency/runtime manifests and icon, and that the Windows executable is a genuine **x86 PE image (machine 0x014C)** rather than an x64 apphost renamed as x86.
