@@ -685,7 +685,7 @@ function AssertBackupTreeManifest {{
         throw 'Recovery backup SHA-256 manifest is missing; checkpoint preserved.'
     }}
     $expected = (Get-Content -LiteralPath $backupManifest -Raw -ErrorAction Stop).Trim()
-    if ($expected -cnotmatch '^[0-9A-F]{64}$') {{
+    if ($expected -cnotmatch '^[0-9A-F]{{64}}$') {{
         throw 'Recovery backup SHA-256 manifest is invalid; checkpoint preserved.'
     }}
     if ($expected -cne (GetBackupTreeHash $backup)) {{
