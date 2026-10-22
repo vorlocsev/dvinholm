@@ -103,7 +103,7 @@ public sealed class UpdateRecoveryGuardTests : IDisposable
         var acknowledge = script.IndexOf(
             "if (-not (Test-Path -LiteralPath $guardReady))", start, StringComparison.Ordinal);
         var createCheckpoint = script.IndexOf(
-            "'pending' | Set-Content -LiteralPath $pendingMarker", start, StringComparison.Ordinal);
+            "$markerFormat | Set-Content -LiteralPath $pendingMarker", start, StringComparison.Ordinal);
         var replace = script.IndexOf(
             "$replacementStarted = $true", start, StringComparison.Ordinal);
 
@@ -128,7 +128,7 @@ public sealed class UpdateRecoveryGuardTests : IDisposable
         var backupReady = script.IndexOf("$backupReady = $true", StringComparison.Ordinal);
         var guardStart = script.IndexOf("$guardArguments = @(", StringComparison.Ordinal);
         var checkpoint = script.IndexOf(
-            "'pending' | Set-Content -LiteralPath $pendingMarker", StringComparison.Ordinal);
+            "$markerFormat | Set-Content -LiteralPath $pendingMarker", StringComparison.Ordinal);
 
         Assert.True(backupVerified > 0);
         Assert.True(nonemptyBackupVerified > backupVerified);

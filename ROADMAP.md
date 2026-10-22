@@ -1,8 +1,18 @@
+## Full-backup SHA-256 manifest for new recovery checkpoints (Development, 2026-10-22)
+
+- [x] Write `backup.sha256` **outside** the mirrored backup using a canonical SHA-256 digest of every file's relative path and bytes plus the directory paths (including empty directories). Create it from the actual old-build backup **before** starting a destructive replacement; verify the manifest immediately when it is written.
+- [x] Mark new *previous-build* recovery checkpoints as `pending-v2`, requiring complete backup-tree digest verification **before** the first Robocopy rollback, in either independent guard/login recovery or updater exception rollback. Preserve backup, destination and checkpoint when missing/altered data is detected. Recognize legacy `pending` checkpoints from earlier releases without requiring a manifest; these legacy checkpoints do not gain a retroactive hash guarantee.
+- [x] Eight Windows x86 end-to-end tests: changed previous executable, changed binary settings, deleted file, added file, deleted empty directory, extra directory, deleted manifest and malformed manifest. Create the trusted digest through the actual generated PowerShell functions, verify non-destructive refusal, repair data/manifest and verify byte-exact recovery using real Robocopy.
+- [ ] Confirm PR CI build/823+8 tests/Windows x86 package/Stable audit, merge only after all green, and independently validate post-merge main CI. The digest is **not a signature**: it protects against accidental corruption, not an adversary able to rewrite both backup and manifest. Real reboot, WinUI and physical J2534 remain deferred.
+- [x] Prior PR #419 merged as `2ee8b50`, main CI #3114 passed **823/823** tests, Windows x86 packaging and Stable audit.
+
+---
+
 ## Backup executable preflight and repairable recovery (Development, 2026-10-22)
 
 - [x] Reject missing/non-file/zero-byte `Dvinholm.App.exe` in a pending previous-build backup **before** Robocopy can replace or remove any installed files. Keep the pending checkpoint and backup available for inspection or repair. Also reject an invalid backup executable during initial updater backup creation, before arming a checkpoint or replacing any files.
 - [x] Add eight isolated Windows PowerShell regression checks: absent backup directory, missing backup executable with remaining settings, backup executable path replaced by a directory, and empty (zero-byte) executable, each with flat or nested partial destination. Assert no mutation on failure, retained checkpoint and user data, then repair backup and verify exact restored bytes, obsolete-file removal and checkpoint cleanup.
-- [ ] Confirm all Windows x86 CI tests/build/artifact and Stable audit, merge only on success, then confirm post-merge main CI. A nonempty executable is **not proof that arbitrary backup files are untampered**; future work should consider a trusted pre-update digest manifest. Physical J2534, actual reboot and manual WinUI checks remain deferred.
+- [x] PR #419 CI #3113 passed 823/823 and merged as `2ee8b50`; main CI #3114 also passed 823/823, Windows x86 packaging and Stable audit. Nonempty executables alone do not verify other bytes; the following full-tree digest stage addresses accidental corruption. Physical J2534, actual reboot and manual WinUI checks remain deferred.
 - [x] Previous PR #418 merged as `ce05ae8`; post-merge main CI #3106 passed 815/815, Windows x86 packaging and Stable audit.
 
 ---

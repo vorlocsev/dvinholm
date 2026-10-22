@@ -624,6 +624,7 @@ $newMarker = Join-Path $stateDir 'first-install.pending'
 # separate from the directory mirrored by Robocopy and from temporary files.
 $recoveryScript = Join-Path $stateDir 'resume.ps1'
 $helperIdentity = Join-Path $stateDir 'helper.identity'
+$backupManifest = Join-Path $stateDir 'backup.sha256'
 $runKey = 'HKCU:\Software\Microsoft\Windows\CurrentVersion\Run'
 $runName = 'DvinholmRecovery-{recoveryId}'
 
@@ -642,6 +643,54 @@ function GetSha256File {{
         finally {{ $stream.Dispose() }}
     }}
     finally {{ $sha.Dispose() }}
+}}
+
+# New 'pending-v2' checkpoints bind the backup to a full-tree digest.
+# Older 'pending' checkpoints retain their legacy recovery behavior.
+function GetBackupTreeHash {{
+    param([string]$root)
+    if (-not (Test-Path -LiteralPath $root -PathType Container)) {{
+        throw 'Recovery backup directory is unavailable; checkpoint preserved.'
+    }}
+    $entries = [System.Collections.Generic.List[string]]::new()
+    $prefix = $root.TrimEnd('\').Length
+    foreach ($directory in @(Get-ChildItem -LiteralPath $root -Recurse -Directory -Force -ErrorAction Stop)) {{
+        $relative = $directory.FullName.Substring($prefix).TrimStart('\')
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($relative))
+        [void]$entries.Add('D:' + $encoded)
+    }}
+    foreach ($file in @(Get-ChildItem -LiteralPath $root -Recurse -File -Force -ErrorAction Stop)) {{
+        $relative = $file.FullName.Substring($prefix).TrimStart('\')
+        $encoded = [Convert]::ToBase64String([Text.Encoding]::UTF8.GetBytes($relative))
+        [void]$entries.Add('F:' + $encoded + ':' + (GetSha256File $file.FullName))
+    }}
+    $entries.Sort([System.StringComparer]::Ordinal)
+    $canonical = [string]::Join([string][char]10, $entries.ToArray())
+    $sha = [System.Security.Cryptography.SHA256]::Create()
+    try {{
+        return [BitConverter]::ToString(
+            $sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($canonical))).Replace('-', '')
+    }}
+    finally {{ $sha.Dispose() }}
+}}
+
+function WriteBackupTreeManifest {{
+    $digest = GetBackupTreeHash $backup
+    $digest | Set-Content -LiteralPath $backupManifest -Encoding ASCII -ErrorAction Stop
+    AssertBackupTreeManifest
+}}
+
+function AssertBackupTreeManifest {{
+    if (-not (Test-Path -LiteralPath $backupManifest -PathType Leaf)) {{
+        throw 'Recovery backup SHA-256 manifest is missing; checkpoint preserved.'
+    }}
+    $expected = (Get-Content -LiteralPath $backupManifest -Raw -ErrorAction Stop).Trim()
+    if ($expected -cnotmatch '^[0-9A-F]{{64}}$') {{
+        throw 'Recovery backup SHA-256 manifest is invalid; checkpoint preserved.'
+    }}
+    if ($expected -cne (GetBackupTreeHash $backup)) {{
+        throw 'Recovery backup SHA-256 integrity mismatch; checkpoint preserved.'
+    }}
 }}
 
 function EnsureMirroredBytes {{
@@ -789,7 +838,9 @@ if ($Watch -or $RecoverOnLogon) {{
                 throw 'Recovery checkpoint is not a regular file.'
             }}
             $markerValue = [string](Get-Content -LiteralPath $activeMarker -Raw -ErrorAction Stop)
-            if ($markerValue.Trim() -cne 'pending') {{
+            $checkpointFormat = $markerValue.Trim()
+            if ($checkpointFormat -cne 'pending' -and
+                (-not $hasPreviousMarker -or $checkpointFormat -cne 'pending-v2')) {{
                 throw 'Recovery checkpoint has invalid contents; preserve it for inspection.'
             }}
         }}
@@ -803,6 +854,9 @@ if ($Watch -or $RecoverOnLogon) {{
             $backupExeInfo = Get-Item -LiteralPath $previousExe -ErrorAction Stop
             if ($backupExeInfo.Length -le 0) {{
                 throw 'Recovery backup Dvinholm.App.exe is empty; checkpoint preserved.'
+            }}
+            if ($checkpointFormat -ceq 'pending-v2') {{
+                AssertBackupTreeManifest
             }}
             New-Item -ItemType Directory -Path $destination -Force | Out-Null
             & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $backup $destination /MIR /IS /IT /R:2 /W:1 /NFL /NDL /NJH /NJS
@@ -893,6 +947,9 @@ try {{
         if ((Get-Item -LiteralPath $backedUpExe -ErrorAction Stop).Length -le 0) {{
             throw 'The backup executable is empty; replacement was not started.'
         }}
+        # Save the trusted old-build tree digest before arming any checkpoint.
+        New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
+        WriteBackupTreeManifest
         $backupReady = $true
     }}
 
@@ -932,7 +989,8 @@ try {{
     New-ItemProperty -Path $runKey -Name $runName -Value $runCommand -PropertyType String -Force -ErrorAction Stop | Out-Null
 
     $pendingMarker = if ($hadDestination) {{ $existingMarker }} else {{ $newMarker }}
-    'pending' | Set-Content -LiteralPath $pendingMarker -Encoding ASCII
+    $markerFormat = if ($hadDestination) {{ 'pending-v2' }} else {{ 'pending' }}
+    $markerFormat | Set-Content -LiteralPath $pendingMarker -Encoding ASCII
 
     New-Item -ItemType Directory -Path $destination -Force | Out-Null
     $replacementStarted = $true
@@ -972,6 +1030,8 @@ catch {{
     $failure = ($_ | Out-String)
     if ($replacementStarted -and $hadDestination -and $backupReady) {{
         try {{
+            # Do not mirror corrupted backup bytes during exception rollback.
+            AssertBackupTreeManifest
             & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $backup $destination /MIR /IS /IT /R:2 /W:1 /NFL /NDL /NJH /NJS
             if ($LASTEXITCODE -ge 8) {{
                 throw ""Rollback copy failed with robocopy exit code $LASTEXITCODE.""

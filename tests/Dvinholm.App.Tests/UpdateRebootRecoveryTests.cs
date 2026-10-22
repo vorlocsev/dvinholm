@@ -94,7 +94,7 @@ public sealed class UpdateRebootRecoveryTests : IDisposable
         var registered = script.IndexOf(
             "New-ItemProperty -Path $runKey -Name $runName", copied, StringComparison.Ordinal);
         var checkpoint = script.IndexOf(
-            "'pending' | Set-Content -LiteralPath $pendingMarker", registered,
+            "$markerFormat | Set-Content -LiteralPath $pendingMarker", registered,
             StringComparison.Ordinal);
         var mirror = script.IndexOf(
             "$replacementStarted = $true", checkpoint, StringComparison.Ordinal);
@@ -578,6 +578,151 @@ public sealed class UpdateRebootRecoveryTests : IDisposable
             Assert.Equal(bytes, actual[name]);
         Assert.False(File.Exists(partiallyInstalled));
         Assert.Equal("never touch my files", File.ReadAllText(unrelated));
+    }
+
+
+    [Theory]
+    [InlineData("modified-executable")]
+    [InlineData("modified-settings")]
+    [InlineData("deleted-settings")]
+    [InlineData("added-file")]
+    [InlineData("deleted-empty-folder")]
+    [InlineData("added-empty-folder")]
+    [InlineData("missing-manifest")]
+    [InlineData("corrupt-manifest")]
+    public void RebootRecovery_V2ManifestRejectsDamagedBackupAndAllowsRepair(
+        string damage)
+    {
+        // Generate the actual production checksum function, and execute it
+        // in a separate Windows PowerShell process to write the trusted digest.
+        // The digest is NOT created by duplicating the algorithm in this test.
+        CreateMarker(PreviousMarker);
+        File.WriteAllText(PreviousMarker, "pending-v2");
+        Directory.CreateDirectory(Backup);
+        Directory.CreateDirectory(Destination);
+        var trustedExe = Path.Combine(Backup, "Dvinholm.App.exe");
+        var settings = Path.Combine(Backup, "settings.bin");
+        var emptyFolder = Path.Combine(Backup, "Assets", "empty");
+        var extraFolder = Path.Combine(Backup, "unexpected", "empty");
+        var rogue = Path.Combine(Backup, "injected.dat");
+        var manifest = Path.Combine(State, "backup.sha256");
+        var userData = Path.Combine(_root, "my-user-data.txt");
+        File.WriteAllText(userData, "preserve unrelated user file");
+        File.WriteAllBytes(trustedExe, Encoding.UTF8.GetBytes("trusted-old-executable"));
+        File.WriteAllBytes(settings, new byte[] { 0, 255, 17, 33 });
+        Directory.CreateDirectory(emptyFolder);
+        File.WriteAllBytes(Path.Combine(Destination, "partial.dll"),
+            new byte[] { 254, 0, 7 });
+        var originalExe = File.ReadAllBytes(trustedExe);
+        var originalSettings = File.ReadAllBytes(settings);
+        var originalPartial = File.ReadAllBytes(Path.Combine(Destination, "partial.dll"));
+
+        var generated = GenerateScript(mockRecoveredAppStartup: true);
+        const string checksumStart = "function GetSha256File {";
+        const string mirrorStart = "function EnsureMirroredBytes {";
+        var first = generated.IndexOf(checksumStart, StringComparison.Ordinal);
+        var last = generated.IndexOf(mirrorStart, first, StringComparison.Ordinal);
+        Assert.True(first >= 0 && last > first,
+            "Production PowerShell backup checksum functions are absent.");
+        static string Quote(string path) =>
+            "'" + path.Replace("'", "''", StringComparison.Ordinal) + "'";
+        var setup = Path.Combine(_root, "write-backup-manifest.ps1");
+        File.WriteAllText(setup,
+            "$ErrorActionPreference = 'Stop'\n" +
+            "$backup = " + Quote(Backup) + "\n" +
+            "$backupManifest = " + Quote(manifest) + "\n" +
+            generated[first..last] + "\nWriteBackupTreeManifest\n", new UTF8Encoding(false));
+        var powerShell = Path.Combine(
+            Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+            "System32", "WindowsPowerShell", "v1.0", "powershell.exe");
+        var psi = new ProcessStartInfo
+        {
+            FileName = powerShell,
+            WorkingDirectory = _root,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardError = true,
+            RedirectStandardOutput = true
+        };
+        foreach (var arg in new[]
+                 { "-NoProfile", "-NonInteractive", "-ExecutionPolicy", "Bypass", "-File", setup })
+            psi.ArgumentList.Add(arg);
+        using (var proc = Process.Start(psi)
+            ?? throw new InvalidOperationException("Could not run manifest creator."))
+        {
+            Assert.True(proc.WaitForExit(30000), "Manifest creator timed out.");
+            Assert.True(proc.ExitCode == 0,
+                "Could not write manifest: " + proc.StandardError.ReadToEnd());
+        }
+        var originalManifest = File.ReadAllBytes(manifest);
+        Assert.Equal(64, Encoding.ASCII.GetString(originalManifest).Trim().Length);
+
+        switch (damage)
+        {
+            case "modified-executable":
+                File.WriteAllBytes(trustedExe, Encoding.UTF8.GetBytes("damaged-old-executable"));
+                break;
+            case "modified-settings":
+                File.WriteAllBytes(settings, new byte[] { 0, 255, 17, 34 });
+                break;
+            case "deleted-settings":
+                File.Delete(settings);
+                break;
+            case "added-file":
+                File.WriteAllText(rogue, "untrusted extra");
+                break;
+            case "deleted-empty-folder":
+                Directory.Delete(emptyFolder);
+                break;
+            case "added-empty-folder":
+                Directory.CreateDirectory(extraFolder);
+                break;
+            case "missing-manifest":
+                File.Delete(manifest);
+                break;
+            case "corrupt-manifest":
+                File.WriteAllText(manifest, "untrusted digest");
+                break;
+            default:
+                throw new ArgumentOutOfRangeException(nameof(damage));
+        }
+
+        var rejected = ExecuteResume();
+        Assert.Equal(0, rejected.ExitCode);
+        Assert.True(File.Exists(PreviousMarker));
+        Assert.Equal("pending-v2", File.ReadAllText(PreviousMarker).Trim());
+        Assert.Equal(originalPartial, File.ReadAllBytes(
+            Path.Combine(Destination, "partial.dll")));
+        Assert.Equal("preserve unrelated user file", File.ReadAllText(userData));
+        Assert.True(Directory.Exists(State));
+        Assert.Contains("checkpoint preserved",
+            File.ReadAllText(Path.Combine(LocalData, "Dvinholm", "update.log")),
+            StringComparison.OrdinalIgnoreCase);
+
+        // Repair all backup bytes and the manifest and retry the original
+        // recovery script, without creating a new transaction.
+        Directory.CreateDirectory(Backup);
+        File.WriteAllBytes(trustedExe, originalExe);
+        File.WriteAllBytes(settings, originalSettings);
+        if (File.Exists(rogue))
+            File.Delete(rogue);
+        if (Directory.Exists(extraFolder))
+            Directory.Delete(Path.Combine(Backup, "unexpected"), recursive: true);
+        Directory.CreateDirectory(emptyFolder);
+        File.WriteAllBytes(manifest, originalManifest);
+
+        var retried = ExecuteResume();
+        Assert.Equal(0, retried.ExitCode);
+        Assert.False(File.Exists(PreviousMarker));
+        Assert.False(Directory.Exists(Backup));
+        Assert.False(Directory.Exists(State));
+        Assert.Equal(originalExe, File.ReadAllBytes(
+            Path.Combine(Destination, "Dvinholm.App.exe")));
+        Assert.Equal(originalSettings, File.ReadAllBytes(
+            Path.Combine(Destination, "settings.bin")));
+        Assert.True(Directory.Exists(Path.Combine(Destination, "Assets", "empty")));
+        Assert.False(File.Exists(Path.Combine(Destination, "partial.dll")));
+        Assert.Equal("preserve unrelated user file", File.ReadAllText(userData));
     }
 
     public void Dispose()
