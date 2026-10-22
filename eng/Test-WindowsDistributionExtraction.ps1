@@ -89,9 +89,8 @@ try {
     if ($Flavor -eq 'Lite' -and $SimulatedLiteHost) {
         # CI checks the ACTUAL unpacked Lite runtimeconfig against an
         # explicitly simulated x64 host. Never query or mutate host packages.
-        # The fixture inventory below models WinAppSDK 2.5 specifically.
-        # Fail closed if the project's PackageReference changes so CI cannot
-        # silently pass on a build using a different SDK line.
+        # The simulated host inventory models Windows App SDK 2.5.
+        # Detect project version changes rather than silently testing old SDK fixtures.
         $projectPath = if (-not [string]::IsNullOrWhiteSpace($SdkProjectFile)) {
             $SdkProjectFile
         } else {
@@ -107,55 +106,12 @@ try {
             throw 'Expected exactly one Microsoft.WindowsAppSDK PackageReference with an explicit version.'
         }
         $sdkVersion = [string]$sdkReferences[0].GetAttribute('Version')
-        if ($sdkVersion -notmatch '^(\d+)\.(\d+)\.\d+(?:\.\d+)?
-        $fixtureDirectory = Join-Path ([IO.Path]::GetTempPath()) (
-            'dvinholm-lite-fixtures-' + [Guid]::NewGuid().ToString('N'))
-        $null = New-Item -ItemType Directory -Path $fixtureDirectory
-        $runtimeFixture = Join-Path $fixtureDirectory 'x86-runtimes.txt'
-        $packageFixture = Join-Path $fixtureDirectory 'windows-app-sdk.txt'
-        $vcFixture = Join-Path $fixtureDirectory 'vc-x86.txt'
-        [IO.File]::WriteAllLines($runtimeFixture, [string[]]@(
-            'Microsoft.NETCore.App 10.0.2 [C:\x86-dotnet\shared\Microsoft.NETCore.App]',
-            'Microsoft.WindowsDesktop.App 10.0.2 [C:\x86-dotnet\shared\Microsoft.WindowsDesktop.App]'
-        ))
-        [IO.File]::WriteAllLines($packageFixture, [string[]]@(
-            'Microsoft.WindowsAppRuntime.2|X86|2.5.1.0',
-            'MicrosoftCorporationII.WinAppRuntime.Main.2|X64|2.5.1.0',
-            'MicrosoftCorporationII.WinAppRuntime.Singleton|X64|8002.5.1.0',
-            'Microsoft.WinAppRuntime.DDLM.2.5.1.0-x8|X86|2.5.1.0'
-        ))
-        [IO.File]::WriteAllLines($vcFixture, [string[]]@('1|14|v14.40.33816.0'))
-        $prerequisiteArguments = @{
-            LiteDirectory = $folder
-            WindowsAppSdkLine = $sdkLine
-            RuntimeListFile = $runtimeFixture
-            AppSdkPackageListFile = $packageFixture
-            VcRedistStateFile = $vcFixture
-            FixtureHostArchitecture = 'X64'
-        }
-        & (Join-Path $PSScriptRoot 'Test-LitePrerequisites.ps1') @prerequisiteArguments
-        if (-not $?) {
-            throw 'Simulated prerequisite check failed for extracted Lite payload.'
-        }
-        Write-Host 'Verified real Lite ZIP metadata against SIMULATED x64 host only. No WinUI launch.'
-    }
-
-    Write-Host "Verified extracted $Flavor x86 PE, WinUI app payload and runtime contract."
-}
-finally {
-    if ($null -ne $fixtureDirectory -and (Test-Path -LiteralPath $fixtureDirectory)) {
-        Remove-Item -LiteralPath $fixtureDirectory -Recurse -Force
-    }
-    if (Test-Path -LiteralPath $folder) {
-        Remove-Item -LiteralPath $folder -Recurse -Force
-    }
-}
-) {
+        if ($sdkVersion -notmatch '^(\d+)\.(\d+)\.\d+(?:\.\d+)?$') {
             throw "Invalid or unpinned Microsoft.WindowsAppSDK project version: $sdkVersion"
         }
         $sdkLine = "$($Matches[1]).$($Matches[2])"
         if ($sdkLine -ne '2.5') {
-            throw "Lite simulated runtime inventory models SDK 2.5, but project requires $sdkVersion. Update the fixture and prerequisite gate before upgrading."
+            throw "Lite simulated inventory models SDK 2.5, but project requires $sdkVersion. Update fixture before upgrading."
         }
         Write-Host "Verified simulated-host Windows App SDK contract: project $sdkVersion, runtime line $sdkLine."
 
@@ -178,7 +134,7 @@ finally {
         [IO.File]::WriteAllLines($vcFixture, [string[]]@('1|14|v14.40.33816.0'))
         $prerequisiteArguments = @{
             LiteDirectory = $folder
-            WindowsAppSdkLine = '2.5'
+            WindowsAppSdkLine = $sdkLine
             RuntimeListFile = $runtimeFixture
             AppSdkPackageListFile = $packageFixture
             VcRedistStateFile = $vcFixture
