@@ -34,6 +34,13 @@ Singleton (MicrosoftCorporationII.WinAppRuntime.Singleton), and DDLM x86
 (Microsoft.WinAppRuntime.DDLM.2.5.*-x8). Stable 2.x uses the major version
 in Framework/Main names, not the SDK minor version. On x64 Windows,
 Main/Singleton are x64 while this app needs x86 Framework/DDLM.
+The Singleton has a special version scheme: its MSIX version major is
+**8000 + the SDK major** (for SDK 2.5, minimum `8002.5.0.0`).
+The preflight rejects absent, obsolete, invalid, or wrong-architecture
+Singleton registrations; newer Singleton releases remain accepted because
+one Singleton is shared across SDK releases. This is a registration check,
+not a proof that the package can initialize successfully.
+
 The check compares versions with the SDK 2.5 requirement where relevant,
 and **Microsoft Visual C++ Redistributable x86** (VS 2015+ family, registry
 key under HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86).

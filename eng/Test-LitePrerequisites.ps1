@@ -180,7 +180,12 @@ foreach ($reference in $references) {
 
 # SDK 2.5.1 Stable uses Microsoft.WindowsAppRuntime.2 (major only).
 $sdkMajor = [int]($WindowsAppSdkLine.Split('.')[0])
+$sdkMinor = [int]($WindowsAppSdkLine.Split('.')[1])
 $minimumSdkVersion = [Version]("$WindowsAppSdkLine.0.0")
+# Singleton is one backwards-compatible package across App SDK releases.
+# For App SDK 2.x it encodes SDK major+8000 as its MSIX version major.
+# Checking only name/architecture would falsely accept an older Singleton.
+$minimumSingletonVersion = [Version]("{0}.{1}.0.0" -f (8000 + $sdkMajor), $sdkMinor)
 if ($fixtureMode) {
     $hostArchitecture = $FixtureHostArchitecture
 }
@@ -216,7 +221,7 @@ function Assert-SdkPackage {
 }
 Assert-SdkPackage -Name "Microsoft.WindowsAppRuntime.$sdkMajor" -Architecture 'X86' -MinimumVersion $minimumSdkVersion
 Assert-SdkPackage -Name "MicrosoftCorporationII.WinAppRuntime.Main.$sdkMajor" -Architecture $hostArchitecture -MinimumVersion $minimumSdkVersion
-Assert-SdkPackage -Name 'MicrosoftCorporationII.WinAppRuntime.Singleton' -Architecture $hostArchitecture
+Assert-SdkPackage -Name 'MicrosoftCorporationII.WinAppRuntime.Singleton' -Architecture $hostArchitecture -MinimumVersion $minimumSingletonVersion
 $ddlm = @($packages | Where-Object {
     $m = [regex]::Match($_.Name,'^Microsoft\.WinAppRuntime\.DDLM\.(\d+\.\d+\.\d+\.\d+)-x8$')
     $m.Success -and $_.Architecture -eq 'X86' -and
