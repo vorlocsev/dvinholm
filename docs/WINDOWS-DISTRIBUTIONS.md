@@ -20,7 +20,14 @@ Windows App SDK NuGet reference 2.5.1, run the following in Windows PowerShell
 The read-only tool validates **every** declared Lite runtimeconfig .NET shared
 framework before querying the x86 dotnet installation for .NET 10
 Desktop/shared runtimes. Unknown, duplicate, malformed or non-10.x .NET
-framework declarations fail closed. It also checks for
+framework declarations fail closed. .NET host roll-forward rules are
+honored conservatively: default/Minor, LatestMinor, LatestPatch, and
+Disable require compatible installed x86 versions. LatestPatch never crosses
+minor versions and Disable requires an exact version. Major/LatestMajor and
+applyPatches=false fail closed until separately supported, preventing an
+incorrect ready-to-launch verdict. This preflight does not override
+DOTNET_ROLL_FORWARD environment settings or actually launch the .NET host.
+It also checks for
 all four current-user Windows App SDK runtime packages: Framework x86
 (Microsoft.WindowsAppRuntime.2), Main (MicrosoftCorporationII.WinAppRuntime.Main.2),
 Singleton (MicrosoftCorporationII.WinAppRuntime.Singleton), and DDLM x86

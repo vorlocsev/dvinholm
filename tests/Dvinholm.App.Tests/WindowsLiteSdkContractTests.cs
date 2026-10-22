@@ -84,7 +84,7 @@ public sealed class WindowsLiteSdkContractTests
                 ?? throw new InvalidOperationException("Could not launch the Lite SDK contract check.");
             var stdout = process.StandardOutput.ReadToEndAsync();
             var stderr = process.StandardError.ReadToEndAsync();
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(25));
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             await process.WaitForExitAsync(timeout.Token);
             var output = await stdout + await stderr;
             if (expectedSuccess)

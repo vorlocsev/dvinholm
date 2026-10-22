@@ -1,9 +1,23 @@
+## Lite .NET roll-forward readiness accuracy (Development, 2026-10-22)
+
+- [x] Fix false positives when Lite runtimeconfig uses Disable or LatestPatch: inspect runtimeOptions/framework rollForward before accepting installed .NET 10 x86 runtimes.
+- [x] Support default/Minor, LatestMinor, LatestPatch and Disable for .NET 10; reject Major/LatestMajor and applyPatches=false conservatively until explicitly verified.
+- [x] Add eight Windows PowerShell 5.1 simulated host tests for default patch readiness, Minor, LatestPatch (success and rejection), Disable (success and rejection), invalid policy and applyPatches=false.
+- [x] Document conservative behavior and distinction between simulated readiness and interactive GUI launch. Stable v0.2.2, Portable updater and trimming/AOT remain unchanged.
+- [x] PR CI #3190 passed **911/911**, Windows x86 build, Portable/Lite extracted ZIP and Stable audit on `cc4e1c8`. Concurrent push CI #3189 failed **910/911**, solely because the PowerShell subprocess of `WindowsLiteRuntimeConfigContractTests` exceeded its 20-second fixture timeout. No product assertion failed.
+- [x] Raise Windows PowerShell subprocess timeouts for nine distribution/Lite fixture classes from 20/25 seconds to 60 seconds; keep negative assertions and actual application behavior unchanged.
+- [ ] Verify this PR head independently at **911/911** with x86 build, extraction, Lite simulated preflight and Stable audit; merge only on green then confirm post-merge main.
+- [ ] Real Lite GUI startup and physical J2534 tests remain deferred.
+
+---
+
 ## Windows fixture cleanup stability across Lite and packaging tests (Development, 2026-10-22)
 
 - [x] Centralize bounded, best-effort Windows test-directory cleanup (60 attempts, 200 ms delay), retrying sharing-related IOException/UnauthorizedAccessException. Log a warning if a locked disposable directory cannot be removed; never turn a passing production assertion into a teardown-only failure.
 - [x] Replace duplicated teardown loops in eight Windows distribution/Lite integration test classes and the updater's existing manifest test. Preserve all preflight/WinUI/J2534 test assertions.
 - [x] Add eight deterministic regressions: missing directory, empty/nested contents, transient IO and access-denied locks, persistent IO and access-denied locks, unexpected exception propagation.
-- [ ] Verify PR CI expected **903/903**, Windows x86, Portable/Lite extracted ZIP, Lite simulated-host validation and Stable audit. Merge only on full green, then verify main CI.
+- [x] PR #430 CI #3184 passed **903/903**, Windows x86, Portable/Lite extracted ZIP, Lite simulated-host validation and Stable audit; merged as `040c1eb`.
+- [x] Main CI #3185 independently passed **903/903** with Portable **62,247,567 bytes**, Lite **10,358,528 bytes**, and Stable audit.
 - [ ] Lite interactive Windows startup and real J2534 deferred. Portable updater behavior and Stable v0.2.2 unchanged; trimming/AOT disabled.
 
 ---

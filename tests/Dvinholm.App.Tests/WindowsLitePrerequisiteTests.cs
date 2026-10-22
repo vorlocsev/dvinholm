@@ -85,7 +85,7 @@ public sealed class WindowsLitePrerequisiteTests
                 ?? throw new InvalidOperationException("Cannot launch PowerShell prereq checker.");
             var stdout = process.StandardOutput.ReadToEndAsync();
             var stderr = process.StandardError.ReadToEndAsync();
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
             await process.WaitForExitAsync(timeout.Token);
             var output = await stdout + await stderr;
             if (success)
