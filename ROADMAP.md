@@ -1,8 +1,18 @@
+## Repeated recovery crashes and durable checkpoints (Development, 2026-10-22)
+
+- [x] Add eight isolated x86 Windows PowerShell scenarios spanning first-install vs existing install, flat vs nested binary assets, and watcher vs sign-in recovery after a second crash.
+- [x] Force-kill the first owner after the real named mutex has been acquired and before any file mutation. Start another independent PowerShell process, allow real Robocopy/cleanup to execute, and force-kill it *after* restoring/deleting files but before the checkpoint is disarmed. Confirm marker and backup survive both crashes.
+- [x] Start a third independent process: it must finish the recovery safely, restore byte-for-byte old build or remove partial first install, clean backup/checkpoint, preserve unrelated data, and launch the mocked recovered executable no more than once. Repeat recovery to prove idempotence.
+- [ ] Confirm PR CI build, test, artifact, Stable audit, merge only after green, and confirm post-merge main CI. First CI #3086: 791/799 tests passed; eight new cases failed because test-only PowerShell injection assumed LF rather than Windows CRLF. Test-script line endings normalized in follow-up commit; CI rerun pending. Real reboot/login, real app startup, UI and physical J2534 remain deferred.
+- [x] Previous PR #415 merged as `14b1038`. Post-merge main CI #3083 passed Windows x86 build/package, Stable audit and **791/791** automated tests.
+
+---
+
 ## Recovery after a killed Windows mutex owner (Development, 2026-10-22)
 
 - [x] Add eight isolated Windows x86 crash simulations across previous-build rollback / incomplete first install, flat / nested binary assets, and independent `-Watch` / `-RecoverOnLogon` retries.
 - [x] Start an actual Windows PowerShell process with the production named recovery mutex, pause after lock acquisition but before changing any checkpoint, then forcibly terminate that process. Verify the checkpoint and backup remain intact, the next process takes the abandoned mutex and safely completes Robocopy + SHA-256 recovery, and a later sign-in is idempotent with at most one recovered app launch.
-- [ ] Require green PR CI build, all tests, Windows x86 artifact and Stable audit. Merge only after success and independently confirm post-merge main CI. No real reboot, installed app launch, UI or physical J2534/ECU test is claimed.
+- [x] PR #415 CI #3082 passed 791/791 and merged as `14b1038`. Post-merge main CI #3083 outcome is tracked in the stage above; no real reboot, installed app launch, UI or physical J2534/ECU test is claimed.
 - [x] PR #414 merged as `a3accbf`; main CI #3078 passed 783/783 tests, Windows x86 build/package and Stable audit.
 
 ---
