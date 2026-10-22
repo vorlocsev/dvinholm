@@ -108,7 +108,7 @@ public sealed class UpdateAbandonedMutexTests
                 while (!File.Exists(signal))
                 {
                     Assert.False(owner.HasExited,
-                        $"First recovery exited before acquiring its mutex: {owner.ExitCode}");
+                        "First recovery exited before acquiring its mutex.");
                     await Task.Delay(25, timeout.Token);
                 }
             }
