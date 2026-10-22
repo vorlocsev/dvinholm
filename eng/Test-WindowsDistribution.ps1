@@ -8,6 +8,25 @@ $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression
 $zip = [IO.Compression.ZipFile]::OpenRead([IO.Path]::GetFullPath($ZipPath))
 try {
+    # The built-in updater extracts archives under a fixed installation
+    # directory. Validate *all* entries, not only application files.
+    $seen = [System.Collections.Generic.HashSet[string]]::new(
+        [System.StringComparer]::OrdinalIgnoreCase)
+    foreach ($entry in $zip.Entries) {
+        $name = $entry.FullName.Replace('\', '/')
+        if ([string]::IsNullOrEmpty($name) -or
+            $name.StartsWith('/') -or
+            $name -match '^[A-Za-z]:' -or
+            $name -match '(^|/)\.\.?(?=/|$)' -or
+            $name -match '//' -or
+            $name -match '[\x00-\x1F]') {
+            throw "$Flavor ZIP contains an unsafe archive path: $name"
+        }
+        $canonicalName = $name.TrimEnd('/')
+        if (-not $seen.Add($canonicalName)) {
+            throw "$Flavor ZIP contains conflicting archive entries: $name"
+        }
+    }
     $paths = @($zip.Entries | Where-Object { -not [string]::IsNullOrEmpty($_.Name) } |
         ForEach-Object { $_.FullName.Replace('\', '/') })
     if ($paths -notcontains 'Dvinholm.App.exe') {
@@ -41,6 +60,24 @@ try {
         }
     } elseif ($hasCoreClr -or $hasHostFxr) {
         throw 'Lite unexpectedly bundles .NET runtime: publish must be framework-dependent.'
+    } else {
+        # Merely removing coreclr.dll does not make a runnable Lite build:
+        # a framework-dependent .NET 10 runtimeconfig must name its host.
+        $runtimeEntry = $zip.GetEntry('Dvinholm.App.runtimeconfig.json')
+        $reader = [System.IO.StreamReader]::new($runtimeEntry.Open())
+        try { $runtimeJson = $reader.ReadToEnd() } finally { $reader.Dispose() }
+        try { $runtime = $runtimeJson | ConvertFrom-Json -ErrorAction Stop }
+        catch { throw 'Lite has an unreadable .NET runtimeconfig.json.' }
+        $frameworks = @($runtime.runtimeOptions.framework) +
+            @($runtime.runtimeOptions.frameworks)
+        $compatible = @($frameworks | Where-Object {
+            $null -ne $_ -and
+            $_.name -in @('Microsoft.NETCore.App', 'Microsoft.WindowsDesktop.App') -and
+            $_.version -match '^10\.'
+        })
+        if ($compatible.Count -eq 0) {
+            throw 'Lite must reference a .NET 10 x86-compatible shared runtime.'
+        }
     }
     Write-Host "Verified clean $Flavor ZIP: $($paths.Count) files; bundled .NET: $hasCoreClr"
 }
