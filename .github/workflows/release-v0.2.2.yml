@@ -48,7 +48,7 @@ jobs:
           architecture: x64
 
       - name: Publish
-        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:Version=0.2.2 -p:InformationalVersion=0.2.2+${{ github.sha }} --output artifacts/app
+        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=false -p:PublishAot=false -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.2 -p:InformationalVersion=0.2.2+${{ github.sha }} --output artifacts/app
 
       - name: Verify packaged Dvinholm icon
         shell: pwsh
@@ -65,7 +65,10 @@ jobs:
         shell: pwsh
         run: |
           New-Item -ItemType Directory -Force artifacts | Out-Null
-          Compress-Archive -Path artifacts/app/* -DestinationPath artifacts/Dvinholm-Windows-x86.zip -CompressionLevel Optimal
+          # Mandatory clean-room staging excludes PDBs, dumps, debugger tools.
+          # Verify the archive BEFORE computing SHA or publishing a Stable release.
+          ./eng/Package-WindowsDistribution.ps1 -Flavor Portable -PublishDirectory artifacts/app -ZipPath artifacts/Dvinholm-Windows-x86.zip
+          ./eng/Test-WindowsDistribution.ps1 -Flavor Portable -ZipPath artifacts/Dvinholm-Windows-x86.zip
           $hash = (Get-FileHash artifacts/Dvinholm-Windows-x86.zip -Algorithm SHA256).Hash.ToLowerInvariant()
           "$hash  Dvinholm-Windows-x86.zip" | Set-Content -Path artifacts/SHA256SUMS.txt -Encoding ascii
           Write-Host "SHA-256: $hash"
