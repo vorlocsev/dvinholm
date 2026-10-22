@@ -162,18 +162,16 @@ foreach ($reference in $references) {
         if ($_.Name -ne $reference.name -or $_.Version.Major -ne 10) {
             return $false
         }
-        switch ($policy) {
-            'Disable' {
-                return $_.Version -eq $minimum
-            }
-            'LatestPatch' {
-                return ($_.Version.Minor -eq $minimum.Minor -and
-                    $_.Version -ge $minimum)
-            }
-            default {
-                return $_.Version -ge $minimum
-            }
+        # Do not use switch here: PowerShell overwrites $_ with the
+        # switched policy string, losing the installed runtime object.
+        if ($policy -eq 'Disable') {
+            return $_.Version -eq $minimum
         }
+        if ($policy -eq 'LatestPatch') {
+            return ($_.Version.Minor -eq $minimum.Minor -and
+                $_.Version -ge $minimum)
+        }
+        return $_.Version -ge $minimum
     })
     if ($compatible.Count -eq 0) {
         throw "Missing .NET 10 x86 shared runtime $($reference.name) for requested $minimum with rollForward=$policy."
