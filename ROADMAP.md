@@ -1,9 +1,21 @@
+## Lite Visual C++ x86 runtime diagnostics (Development, 2026-10-22)
+
+- [x] Extend the existing read-only Lite prerequisite checker to inspect the x86 Microsoft Visual C++ Redistributable registration (VS 2015+ family), across both Windows registry views, and reject missing, disabled or inconsistent registrations. Never confuse an x64-only runtime with x86.
+- [x] Require a **third explicit x86 VC fixture** when synthetic .NET/Windows App SDK inputs are used, so no test silently combines fake packages with the actual host registry.
+- [x] Add eight PowerShell 5.1 fixture regressions: two valid VC 14.x records, no x86 registration, Installed=0, older VC 12, malformed Major, missing Version and contradictory Version/Major.
+- [x] Keep this as non-mutating diagnostics, not installation, full SDK bootstrap testing or a real GUI launch.
+- [ ] Check PR CI full suite (expected **863**), Windows x86 build/Portable+Lite ZIP extraction and Stable audit; merge only when fully green; then confirm main CI.
+- [ ] Install prerequisites and verify actual Lite WinUI startup on a Windows machine; physical J2534 hardware stays deferred.
+- [x] Preserve Portable updater behavior, published Stable v0.2.2 and PublishTrimmed/PublishAot disabled.
+
+---
+
 ## Lite host prerequisite diagnostics (Development, 2026-10-22)
 
 - [x] Add a read-only Windows PowerShell 5.1 check for .NET 10 x86 Desktop/shared frameworks and matching current-user x86 Windows App SDK framework package using the extracted Lite runtimeconfig; never install packages or launch WinUI.
 - [x] Eight synthetic regression scenarios: valid host metadata; missing and malformed manifest; bundled CoreCLR; .NET 9 only; absent x86 Desktop runtime; wrong SDK release line; x64-only SDK framework package.
 - [x] Document the real-host inspection command and explicit SIMULATED INPUT fixture marker; no claim of real UI, bootstrapper, Visual C++ or J2534 coverage.
-- [ ] Confirm this PR CI full suite, Windows x86 build, both ZIP extraction checks and Stable audit. Merge only on green; then independently validate main CI. Post-merge #3154 was still running when this stage began.
+- [x] PR #424 CI #3156 passed **855/855**, Windows x86 build, Portable + Lite ZIP/extraction checks and Stable audit; merged as `aff4e59`. Post-merge main CI #3157 independently passed **855/855**, Windows x86 build/package (Portable **62,247,592 bytes**, Lite **10,358,569 bytes**) and Stable audit.
 - [ ] Manually launch Lite in an interactive Windows session with .NET 10 Desktop Runtime x86, Windows App SDK runtime and Visual C++ x86 installed; record outcome separately.
 - [x] Preserve Portable updater behavior, disabled trimming/AOT and unchanged published Stable v0.2.2.
 
