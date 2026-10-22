@@ -3,7 +3,8 @@
 - [x] Generate the exact two-file `SHA256SUMS.txt` only after packaging/ZIP extraction; independently verify hashes in CI; ship it with both public Development prerelease ZIPs and as a CI artifact.
 - [x] Add eight synthetic Windows PowerShell 5.1 checks: valid manifest, missing Lite ZIP, mutated Portable/Lite, missing manifest, duplicate entry, invalid digest and path traversal.
 - [x] Document manual checksum verification and distinguish integrity checks from digital-signature authenticity. No application runtime or update selection changes.
-- [ ] Verify PR CI expected **927/927**, Windows x86 build, Portable/Lite ZIP smoke, manifest verification, upload artifacts and Stable audit. Merge only on green and separately confirm main CI.
+- [x] PR CI #3197 and #3198 both failed **919/927** because `Get-FileHash` was unavailable in the Windows PowerShell 5.1 test host; all eight new checksum cases were blocked. Replace hashing with built-in .NET SHA256 over read-only file streams without external modules.
+- [ ] Verify new PR head **927/927**, Windows x86 build, Portable/Lite ZIP smoke, checksum manifest generation+verification, upload artifacts and Stable audit. Merge only on full green, then independently confirm main.
 - [ ] Actual Lite WinUI startup and physical J2534 tests deferred; Stable v0.2.2 and trimming/AOT unchanged.
 
 ---
