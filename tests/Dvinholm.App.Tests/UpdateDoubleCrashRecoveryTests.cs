@@ -68,8 +68,11 @@ public sealed class UpdateDoubleCrashRecoveryTests
             expected = Snapshot(backup);
         }
 
+        // Git checkout uses CRLF on Windows; normalize the *test copy* so
+        // injection anchors match regardless of the checkout line endings.
         var script = LatestBuildUpdater.BuildReplacementScript(
-            Path.Combine(root, "staging"), destination, -1, scriptPath, backup);
+            Path.Combine(root, "staging"), destination, -1, scriptPath, backup)
+            .Replace("\r\n", "\n", StringComparison.Ordinal);
         const string mutexGate = "if (-not $haveRecoveryLock) { exit 0 }";
         const string recoveredLaunch =
             "$restoredProcess = Start-Process -FilePath $restoredExe -WorkingDirectory $destination -PassThru";
