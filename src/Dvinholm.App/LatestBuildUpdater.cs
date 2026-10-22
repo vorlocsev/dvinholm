@@ -895,6 +895,11 @@ try {{
     $helperStartTicks = (Get-Process -Id $PID -ErrorAction Stop).StartTime.ToUniversalTime().Ticks
     ""$PID|$helperStartTicks"" | Set-Content -LiteralPath $helperIdentity -Encoding ASCII
     Copy-Item -LiteralPath $scriptPath -Destination $recoveryScript -Force -ErrorAction Stop
+    # Register sign-in recovery only after the durable script is byte-for-byte
+    # identical to the helper. An incomplete copy must not arm the checkpoint.
+    if ((GetSha256File $scriptPath) -ne (GetSha256File $recoveryScript)) {{
+        throw 'Recovery script copy failed SHA-256 verification.'
+    }}
     $quote = [char]34
     $runCommand = $quote + (Join-Path $PSHOME 'powershell.exe') + $quote +
         ' -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File ' +
