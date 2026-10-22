@@ -86,15 +86,7 @@ public sealed class WindowsLiteVCRedistTests
         }
         finally
         {
-            for (var attempt = 0; Directory.Exists(root); attempt++)
-            {
-                try { Directory.Delete(root, recursive: true); }
-                catch (IOException) when (attempt < 19) { await Task.Delay(100); }
-                catch (UnauthorizedAccessException) when (attempt < 19)
-                {
-                    await Task.Delay(100);
-                }
-            }
+            await WindowsTestFixtureCleanup.RemoveBestEffortAsync(root);
         }
     }
 
