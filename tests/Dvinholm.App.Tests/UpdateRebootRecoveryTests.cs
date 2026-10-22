@@ -481,6 +481,107 @@ public sealed class UpdateRebootRecoveryTests : IDisposable
         Assert.Equal("must survive invalid checkpoint", File.ReadAllText(unrelated));
     }
 
+
+    [Theory]
+    [InlineData("missing-backup", false)]
+    [InlineData("missing-backup", true)]
+    [InlineData("empty-backup", false)]
+    [InlineData("empty-backup", true)]
+    [InlineData("missing-executable", false)]
+    [InlineData("missing-executable", true)]
+    [InlineData("executable-as-directory", false)]
+    [InlineData("executable-as-directory", true)]
+    [InlineData("zero-byte-executable", false)]
+    [InlineData("zero-byte-executable", true)]
+    public void RebootRecovery_InvalidBackupExecutablePreservesFilesUntilRepaired(
+        string damage, bool nestedFiles)
+    {
+        // The real sign-in recovery uses Robocopy and SHA-256 in disposable
+        // directories. No production installed app or actual J2534 is touched.
+        CreateMarker(PreviousMarker);
+        Directory.CreateDirectory(Destination);
+        var partiallyInstalled = Path.Combine(Destination, "partial-update.dat");
+        File.WriteAllBytes(partiallyInstalled, new byte[] { 0, 255, 9, 254 });
+        if (nestedFiles)
+        {
+            var nested = Path.Combine(Destination, "Incomplete", "Nested");
+            Directory.CreateDirectory(nested);
+            File.WriteAllText(Path.Combine(nested, "stale.txt"), "partial");
+        }
+
+        var backupExe = Path.Combine(Backup, "Dvinholm.App.exe");
+        if (damage != "missing-backup")
+            Directory.CreateDirectory(Backup);
+        if (damage == "missing-executable")
+            File.WriteAllText(Path.Combine(Backup, "settings.json"), "{\"rate\":125000}");
+        else if (damage == "executable-as-directory")
+            Directory.CreateDirectory(backupExe);
+        else if (damage == "zero-byte-executable")
+            File.WriteAllBytes(backupExe, Array.Empty<byte>());
+
+        var unrelated = Path.Combine(_root, "user-data.txt");
+        File.WriteAllText(unrelated, "never touch my files");
+
+        static Dictionary<string, byte[]> Files(string folder) =>
+            Directory.Exists(folder)
+                ? Directory.GetFiles(folder, "*", SearchOption.AllDirectories)
+                    .ToDictionary(p => Path.GetRelativePath(folder, p), File.ReadAllBytes,
+                        StringComparer.OrdinalIgnoreCase)
+                : new Dictionary<string, byte[]>(StringComparer.OrdinalIgnoreCase);
+
+        var originalInstalled = Files(Destination);
+        var originalBackup = Files(Backup);
+        GenerateScript(mockRecoveredAppStartup: true);
+
+        var rejected = ExecuteResume();
+
+        Assert.Equal(0, rejected.ExitCode);
+        Assert.True(File.Exists(PreviousMarker));
+        Assert.Equal(originalInstalled.Keys.OrderBy(p => p, StringComparer.OrdinalIgnoreCase),
+            Files(Destination).Keys.OrderBy(p => p, StringComparer.OrdinalIgnoreCase));
+        foreach (var (name, bytes) in originalInstalled)
+            Assert.Equal(bytes, Files(Destination)[name]);
+        Assert.Equal(originalBackup.Keys.OrderBy(p => p, StringComparer.OrdinalIgnoreCase),
+            Files(Backup).Keys.OrderBy(p => p, StringComparer.OrdinalIgnoreCase));
+        foreach (var (name, bytes) in originalBackup)
+            Assert.Equal(bytes, Files(Backup)[name]);
+        Assert.Equal("never touch my files", File.ReadAllText(unrelated));
+        Assert.Contains("checkpoint preserved",
+            File.ReadAllText(Path.Combine(LocalData, "Dvinholm", "update.log")),
+            StringComparison.OrdinalIgnoreCase);
+
+        // Repair only the backup. Its new binary and nested assets become the
+        // exact expected installation on retry.
+        if (Directory.Exists(backupExe))
+            Directory.Delete(backupExe, recursive: true);
+        Directory.CreateDirectory(Backup);
+        File.WriteAllText(backupExe, "trusted previous executable");
+        File.WriteAllBytes(Path.Combine(Backup, "driver.bin"),
+            new byte[] { 4, 0, 255, 11 });
+        if (nestedFiles)
+        {
+            var assets = Path.Combine(Backup, "Assets", "Nested");
+            Directory.CreateDirectory(assets);
+            File.WriteAllBytes(Path.Combine(assets, "can.dat"),
+                new byte[] { 0, 1, 255, 3 });
+        }
+
+        var expected = Files(Backup);
+        var retried = ExecuteResume();
+
+        Assert.Equal(0, retried.ExitCode);
+        Assert.False(File.Exists(PreviousMarker));
+        Assert.False(Directory.Exists(Backup));
+        Assert.False(Directory.Exists(State));
+        var actual = Files(Destination);
+        Assert.Equal(expected.Keys.OrderBy(p => p, StringComparer.OrdinalIgnoreCase),
+            actual.Keys.OrderBy(p => p, StringComparer.OrdinalIgnoreCase));
+        foreach (var (name, bytes) in expected)
+            Assert.Equal(bytes, actual[name]);
+        Assert.False(File.Exists(partiallyInstalled));
+        Assert.Equal("never touch my files", File.ReadAllText(unrelated));
+    }
+
     public void Dispose()
     {
         if (Directory.Exists(_root))
