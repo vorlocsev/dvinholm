@@ -50,10 +50,11 @@ public sealed class WindowsLiteRollForwardTests
                 "disable-exact" => "10.0.0",
                 _ => "10.0.2"
             };
+            var desktopVersion = scenario == "disable-exact" ? "10.0.0" : "10.0.2";
             var runtimePath = Path.Combine(dir, "runtime-list.txt");
             File.WriteAllText(runtimePath,
                 $"Microsoft.NETCore.App {installed} [C:\\dotnet-x86\\shared\\Microsoft.NETCore.App]\n" +
-                $"Microsoft.WindowsDesktop.App 10.0.2 [C:\\dotnet-x86\\shared\\Microsoft.WindowsDesktop.App]\n",
+                $"Microsoft.WindowsDesktop.App {desktopVersion} [C:\\dotnet-x86\\shared\\Microsoft.WindowsDesktop.App]\n",
                 Encoding.UTF8);
             var sdkPath = Path.Combine(dir, "sdk-packages.txt");
             File.WriteAllText(sdkPath,
