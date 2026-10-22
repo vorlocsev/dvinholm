@@ -1,3 +1,14 @@
+## Extracted Windows x86 distribution smoke (Development, 2026-10-22)
+
+- [x] Validate **after actual ZIP extraction into a disposable directory** that Portable and Lite each contain the WinUI application executable, managed app DLL, dependency/runtime manifests and icon, and that the Windows executable is a genuine **x86 PE image (machine 0x014C)** rather than an x64 apphost renamed as x86.
+- [x] Confirm Portable extraction retains its bundled CoreCLR/hostfxr and Lite extraction requires .NET 10 in `runtimeconfig.json` but carries no bundled .NET runtime. Run the existing safe-ZIP preflight *before* extracting.
+- [x] Add eight real Windows PowerShell smoke regressions: valid Portable, valid Lite, x64 Portable, x64 Lite, corrupted PE signature, missing app DLL, missing `.deps.json`, and missing icon. All use synthetic disposable archives; no WinUI UI or J2534 is launched.
+- [x] Make extraction preflight mandatory for both distributions in CI and for future Portable Stable release packaging **before checksum and publication**. Keep Stable v0.2.2 unchanged; do not claim a full GUI smoke test.
+- [ ] Confirm all PR CI Windows x86 tests/build/Portable+Lite packaging and Stable audit, merge only after green, then verify post-merge main CI. Actual Lite GUI launch on clean Windows with x86 .NET 10 Desktop Runtime and compatible Windows App SDK remains deferred.
+- [x] Prior PR #422 CI #3144 passed **839/839** and merged as `9364750`. Main CI #3145 also passed **839/839**, Windows x86 build, both ZIPs (Portable 62,247,631 bytes; Lite 10,358,585 bytes) and Stable audit.
+
+---
+
 ## Portable/Lite ZIP security and runtime contract regression tests (Development, 2026-10-22)
 
 - [x] Harden the common Stable/CI distribution ZIP gate against path traversal, absolute paths, dot segments, control characters and case-insensitive path collisions before extraction. These are important on Windows even if a ZIP tool produced the entries on another platform.
