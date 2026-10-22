@@ -6,6 +6,9 @@ param(
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression
+# ZipFile lives in FileSystem on stock Windows PowerShell 5.1 (.NET Framework).
+# PowerShell 7 loads it automatically, but Stable preflight supports both.
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zip = [IO.Compression.ZipFile]::OpenRead([IO.Path]::GetFullPath($ZipPath))
 try {
     # The built-in updater extracts archives under a fixed installation
