@@ -6,10 +6,15 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][ValidateSet('Portable','Lite')][string]$Flavor,
-    [Parameter(Mandatory)][string]$ZipPath
+    [Parameter(Mandatory)][string]$ZipPath,
+    [switch]$SimulatedLiteHost
 )
 
 $ErrorActionPreference = 'Stop'
+if ($SimulatedLiteHost -and $Flavor -ne 'Lite') {
+    throw 'SimulatedLiteHost is valid only for the Lite distribution.'
+}
+$fixtureDirectory = $null
 $zipFile = (Resolve-Path -LiteralPath $ZipPath -ErrorAction Stop).Path
 $preflight = Join-Path $PSScriptRoot 'Test-WindowsDistribution.ps1'
 & $preflight -Flavor $Flavor -ZipPath $zipFile
@@ -76,9 +81,48 @@ try {
         }
     }
 
+
+    if ($Flavor -eq 'Lite' -and $SimulatedLiteHost) {
+        # CI checks the ACTUAL unpacked Lite runtimeconfig against an
+        # explicitly simulated x64 host. Never query or mutate host packages.
+        $fixtureDirectory = Join-Path ([IO.Path]::GetTempPath()) (
+            'dvinholm-lite-fixtures-' + [Guid]::NewGuid().ToString('N'))
+        $null = New-Item -ItemType Directory -Path $fixtureDirectory
+        $runtimeFixture = Join-Path $fixtureDirectory 'x86-runtimes.txt'
+        $packageFixture = Join-Path $fixtureDirectory 'windows-app-sdk.txt'
+        $vcFixture = Join-Path $fixtureDirectory 'vc-x86.txt'
+        [IO.File]::WriteAllLines($runtimeFixture, [string[]]@(
+            'Microsoft.NETCore.App 10.0.2 [C:\x86-dotnet\shared\Microsoft.NETCore.App]',
+            'Microsoft.WindowsDesktop.App 10.0.2 [C:\x86-dotnet\shared\Microsoft.WindowsDesktop.App]'
+        ))
+        [IO.File]::WriteAllLines($packageFixture, [string[]]@(
+            'Microsoft.WindowsAppRuntime.2|X86|2.5.1.0',
+            'MicrosoftCorporationII.WinAppRuntime.Main.2|X64|2.5.1.0',
+            'MicrosoftCorporationII.WinAppRuntime.Singleton|X64|8002.5.1.0',
+            'Microsoft.WinAppRuntime.DDLM.2.5.1.0-x8|X86|2.5.1.0'
+        ))
+        [IO.File]::WriteAllLines($vcFixture, [string[]]@('1|14|v14.40.33816.0'))
+        $prerequisiteArguments = @{
+            LiteDirectory = $folder
+            WindowsAppSdkLine = '2.5'
+            RuntimeListFile = $runtimeFixture
+            AppSdkPackageListFile = $packageFixture
+            VcRedistStateFile = $vcFixture
+            FixtureHostArchitecture = 'X64'
+        }
+        & (Join-Path $PSScriptRoot 'Test-LitePrerequisites.ps1') @prerequisiteArguments
+        if (-not $?) {
+            throw 'Simulated prerequisite check failed for extracted Lite payload.'
+        }
+        Write-Host 'Verified real Lite ZIP metadata against SIMULATED x64 host only. No WinUI launch.'
+    }
+
     Write-Host "Verified extracted $Flavor x86 PE, WinUI app payload and runtime contract."
 }
 finally {
+    if ($null -ne $fixtureDirectory -and (Test-Path -LiteralPath $fixtureDirectory)) {
+        Remove-Item -LiteralPath $fixtureDirectory -Recurse -Force
+    }
     if (Test-Path -LiteralPath $folder) {
         Remove-Item -LiteralPath $folder -Recurse -Force
     }

@@ -1,10 +1,21 @@
+## Extracted Lite ZIP simulated-host prerequisite integration (Development, 2026-10-22)
+
+- [x] Add an explicit Lite-only SimulatedLiteHost option to the real ZIP extraction gate, exercising the Lite prerequisite inspector on the extracted runtimeconfig with temporary x64-host synthetic fixtures (x86 .NET 10 Desktop, Framework/DDLM, Visual C++ x86 and x64 Main/Singleton).
+- [x] Wire this mode into CI after Lite packaging/extraction. Mark results SIMULATED INPUT; it does not query host packages, install runtimes or launch WinUI.
+- [x] Add eight synthetic archive integration cases: valid Core and Desktop Lite manifests; invalid .NET 9, missing framework, embedded CoreCLR, x64 executable, malformed manifest, and invalid Portable simulated mode.
+- [x] Document reproduction instructions and distinction between simulated host verification and real host readiness.
+- [ ] Verify PR CI expected 879/879, x86 builds and Portable/Lite ZIP checks plus Stable audit, then merge on green and verify independent main CI.
+- [ ] Interactive Windows Lite GUI launch and physical J2534 tests still deferred. Portable updater, Stable v0.2.2 and trimming/AOT unchanged.
+
+---
+
 ## Lite Windows App SDK complete runtime inventory (Development, 2026-10-22)
 
 - [x] Fix stable 2.5.1 framework naming: use Microsoft.WindowsAppRuntime.2 instead of the incorrect Microsoft.WindowsAppRuntime.2.5.
 - [x] Check Framework x86, Main and Singleton for host OS architecture, and matching DDLM x86. Check 2.5+ version where applicable using current-user registered AppX packages.
 - [x] Add eight PowerShell 5.1 inventory tests: valid x64/x86 hosts, missing Framework/Main/Singleton/DDLM, wrong DDLM architecture, outdated Main. Upgrade all existing 16 mock scenarios to complete and realistic AppX package fixtures.
 - [x] Document package naming and architecture differences. Inventory check does not install components or prove GUI startup.
-- [ ] Confirm CI #3162 and new PR CI **871/871**, x86 publish/ZIP extraction and Stable audit; merge only on green and confirm post-merge main.
+- [x] PR #426 CI #3165 passed 871/871, Windows x86 build, Portable/Lite extraction and Stable audit; merged as b47ba18. Main CI #3166 independently passed 871/871, Portable 62,247,665 bytes, Lite 10,358,618 bytes and Stable audit.
 - [ ] Real interactive Lite WinUI startup and physical J2534 testing remain deferred. Stable v0.2.2, Portable updater and trimming/AOT unchanged.
 
 ---
