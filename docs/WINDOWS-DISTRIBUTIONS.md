@@ -84,6 +84,11 @@ and Lite archives have passed packaging/extraction checks. The file contains
 two exact SHA-256 entries and is published alongside both ZIPs on the public
 `ci-N` prerelease. It is also uploaded as a separate GitHub Actions artifact.
 The updater remains Portable-only and does not change.
+After each successful `main` release upload, CI downloads the **published**
+three assets again and verifies release tag, exact commit, prerelease status,
+three asset names/sizes and both SHA-256 hashes. This checks the actual
+GitHub Releases uploads rather than just the local packaging directory.
+It does not establish publisher authenticity or enable the Lite updater.
 
 To verify both downloaded archives without launching WinUI, put
 `SHA256SUMS.txt`, `Dvinholm-Windows-x86.zip` and

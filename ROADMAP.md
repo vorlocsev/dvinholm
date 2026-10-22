@@ -1,10 +1,20 @@
+## Development public release post-upload verification (2026-10-23)
+
+- [x] Verify GitHub Releases downloaded Portable ZIP, Lite ZIP and SHA256SUMS.txt after publication on main; require expected prerelease tag, exact main SHA, exactly three named assets, and matching published/downloaded byte sizes.
+- [x] Verify the downloaded ZIPs against downloaded SHA256SUMS.txt using the existing strict PowerShell 5.1 verifier. This checks bytes after upload, not just local packaging.
+- [x] Eight synthetic metadata/asset tests: valid, wrong tag, wrong commit, stable instead of prerelease, missing asset, duplicate asset, size mismatch and same-size payload corruption.
+- [ ] Verify PR CI expected **935/935** with Windows x86 build, Portable/Lite smoke and Stable audit, merge only on green; then separately confirm main CI passes actual GitHub asset re-download audit.
+- [ ] Real Lite GUI launch and physical J2534 tests remain deferred. Stable v0.2.2, Portable updater and trimming/AOT unchanged.
+
+---
+
 ## Development Portable/Lite SHA-256 distribution manifest (Development, 2026-10-23)
 
 - [x] Generate the exact two-file `SHA256SUMS.txt` only after packaging/ZIP extraction; independently verify hashes in CI; ship it with both public Development prerelease ZIPs and as a CI artifact.
 - [x] Add eight synthetic Windows PowerShell 5.1 checks: valid manifest, missing Lite ZIP, mutated Portable/Lite, missing manifest, duplicate entry, invalid digest and path traversal.
 - [x] Document manual checksum verification and distinguish integrity checks from digital-signature authenticity. No application runtime or update selection changes.
 - [x] PR CI #3197 and #3198 both failed **919/927** because `Get-FileHash` was unavailable in the Windows PowerShell 5.1 test host; all eight new checksum cases were blocked. Replace hashing with built-in .NET SHA256 over read-only file streams without external modules.
-- [ ] Verify new PR head **927/927**, Windows x86 build, Portable/Lite ZIP smoke, checksum manifest generation+verification, upload artifacts and Stable audit. Merge only on full green, then independently confirm main.
+- [x] PR #433 CI #3201 passed **927/927**, Windows x86 build, Portable/Lite extracted ZIP, SHA-256 verification and Stable audit; merged as `59d06f5`. Main CI #3202 independently passed **927/927** with Portable **62,247,606 bytes**, Lite **10,358,559 bytes**; verified public prerelease `ci-3202` has all three expected assets.
 - [ ] Actual Lite WinUI startup and physical J2534 tests deferred; Stable v0.2.2 and trimming/AOT unchanged.
 
 ---
