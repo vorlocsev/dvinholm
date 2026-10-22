@@ -135,13 +135,48 @@ foreach ($line in $runtimeLines) {
         $installed += [pscustomobject]@{ Name = $Matches[1]; Version = [Version]$Matches[2] }
     }
 }
+# The presence of a higher version is NOT sufficient under all .NET
+# rollForward modes: Disable demands exact; LatestPatch forbids minor roll.
+# Reject policies that cannot be safely modeled rather than false-certify.
+if ($null -ne $options.applyPatches -and $options.applyPatches -eq $false) {
+    throw 'Lite preflight cannot certify runtimeconfig applyPatches=false; use default patch servicing.'
+}
 foreach ($reference in $references) {
+    if ($null -ne $reference.applyPatches -and $reference.applyPatches -eq $false) {
+        throw "Lite preflight cannot certify applyPatches=false for $($reference.name)."
+    }
+
     $minimum = [Version]([string]$reference.version)
+    $policy = 'Minor'
+    if ($null -ne $options.rollForward) {
+        $policy = [string]$options.rollForward
+    }
+    if ($null -ne $reference.rollForward) {
+        $policy = [string]$reference.rollForward
+    }
+    if ($policy -notin @('Minor', 'LatestMinor', 'LatestPatch', 'Disable')) {
+        throw "Lite preflight cannot certify .NET rollForward '$policy' for $($reference.name)."
+    }
+
     $compatible = @($installed | Where-Object {
-        $_.Name -eq $reference.name -and $_.Version.Major -eq 10 -and $_.Version -ge $minimum
+        if ($_.Name -ne $reference.name -or $_.Version.Major -ne 10) {
+            return $false
+        }
+        switch ($policy) {
+            'Disable' {
+                return $_.Version -eq $minimum
+            }
+            'LatestPatch' {
+                return ($_.Version.Minor -eq $minimum.Minor -and
+                    $_.Version -ge $minimum)
+            }
+            default {
+                return $_.Version -ge $minimum
+            }
+        }
     })
     if ($compatible.Count -eq 0) {
-        throw "Missing .NET 10 x86 shared runtime $($reference.name) >= $minimum."
+        throw "Missing .NET 10 x86 shared runtime $($reference.name) for requested $minimum with rollForward=$policy."
     }
 }
 
