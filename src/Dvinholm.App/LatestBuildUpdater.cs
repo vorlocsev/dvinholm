@@ -795,8 +795,14 @@ if ($Watch -or $RecoverOnLogon) {{
         }}
         if ($hasPreviousMarker) {{
             $previousExe = Join-Path $backup 'Dvinholm.App.exe'
-            if (-not (Test-Path -LiteralPath $previousExe)) {{
-                throw 'Recovery backup is missing Dvinholm.App.exe; preserve the checkpoint for inspection.'
+            # Reject missing, directory-shaped or truncated backup executables
+            # BEFORE Robocopy can delete/overwrite the installed files.
+            if (-not (Test-Path -LiteralPath $previousExe -PathType Leaf)) {{
+                throw 'Recovery backup is missing a regular Dvinholm.App.exe file; checkpoint preserved.'
+            }}
+            $backupExeInfo = Get-Item -LiteralPath $previousExe -ErrorAction Stop
+            if ($backupExeInfo.Length -le 0) {{
+                throw 'Recovery backup Dvinholm.App.exe is empty; checkpoint preserved.'
             }}
             New-Item -ItemType Directory -Path $destination -Force | Out-Null
             & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $backup $destination /MIR /IS /IT /R:2 /W:1 /NFL /NDL /NJH /NJS
@@ -880,8 +886,12 @@ try {{
         if ($LASTEXITCODE -ge 8) {{
             throw ""Could not back up the current build (robocopy exit code $LASTEXITCODE).""
         }}
-        if (-not (Test-Path -LiteralPath (Join-Path $backup 'Dvinholm.App.exe'))) {{
-            throw 'The backup does not contain Dvinholm.App.exe; replacement was not started.'
+        $backedUpExe = Join-Path $backup 'Dvinholm.App.exe'
+        if (-not (Test-Path -LiteralPath $backedUpExe -PathType Leaf)) {{
+            throw 'The backup does not contain a regular Dvinholm.App.exe file; replacement was not started.'
+        }}
+        if ((Get-Item -LiteralPath $backedUpExe -ErrorAction Stop).Length -le 0) {{
+            throw 'The backup executable is empty; replacement was not started.'
         }}
         $backupReady = $true
     }}
