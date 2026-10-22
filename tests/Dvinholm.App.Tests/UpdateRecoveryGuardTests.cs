@@ -120,7 +120,10 @@ public sealed class UpdateRecoveryGuardTests : IDisposable
     {
         var script = GenerateScript();
         var backupVerified = script.IndexOf(
-            "if (-not (Test-Path -LiteralPath (Join-Path $backup 'Dvinholm.App.exe')))",
+            "if (-not (Test-Path -LiteralPath $backedUpExe -PathType Leaf))",
+            StringComparison.Ordinal);
+        var nonemptyBackupVerified = script.IndexOf(
+            "if ((Get-Item -LiteralPath $backedUpExe -ErrorAction Stop).Length -le 0)",
             StringComparison.Ordinal);
         var backupReady = script.IndexOf("$backupReady = $true", StringComparison.Ordinal);
         var guardStart = script.IndexOf("$guardArguments = @(", StringComparison.Ordinal);
@@ -128,7 +131,8 @@ public sealed class UpdateRecoveryGuardTests : IDisposable
             "'pending' | Set-Content -LiteralPath $pendingMarker", StringComparison.Ordinal);
 
         Assert.True(backupVerified > 0);
-        Assert.True(backupReady > backupVerified);
+        Assert.True(nonemptyBackupVerified > backupVerified);
+        Assert.True(backupReady > nonemptyBackupVerified);
         Assert.True(guardStart > backupReady);
         Assert.True(checkpoint > guardStart);
     }
