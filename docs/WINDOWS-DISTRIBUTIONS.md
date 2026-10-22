@@ -19,24 +19,29 @@ Windows App SDK NuGet reference 2.5.1, run the following in Windows PowerShell
 
 The read-only tool examines the actual Lite runtimeconfig file, queries the
 x86 dotnet installation for .NET 10 Desktop/shared runtimes, and checks for
-a current-user registered x86 Microsoft.WindowsAppRuntime.2.5 framework package,
+all four current-user Windows App SDK runtime packages: Framework x86
+(Microsoft.WindowsAppRuntime.2), Main (MicrosoftCorporationII.WinAppRuntime.Main.2),
+Singleton (MicrosoftCorporationII.WinAppRuntime.Singleton), and DDLM x86
+(Microsoft.WinAppRuntime.DDLM.2.5.*-x8). Stable 2.x uses the major version
+in Framework/Main names, not the SDK minor version. On x64 Windows,
+Main/Singleton are x64 while this app needs x86 Framework/DDLM.
+The check compares versions with the SDK 2.5 requirement where relevant,
 and **Microsoft Visual C++ Redistributable x86** (VS 2015+ family, registry
 key under HKLM\SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86).
 It inspects **both Windows registry views** for the x86 key and does not
 mistake an x64-only redist for an x86 installation. If missing, install the
-official Microsoft VC_redist.x86.exe. It rejects x64-only Windows App SDK
-packages and mismatched SDK lines. Three optional fixture files
+official Microsoft VC_redist.x86.exe. It rejects missing Main/Singleton/DDLM and incorrectly architected or old packages. Three optional fixture files
 (runtimes, SDK package list and x86 VC state) must be provided **together**
 for regressions; test mode is always marked SIMULATED INPUT.
 
 The tool does not install packages or launch WinUI. Passing the inspection
-cannot confirm the entire Windows App SDK runtime package set,
-runtime bootstrapping or whether the GUI opens. Install official prerequisites,
+cannot confirm package health, runtime bootstrapping or whether the GUI opens. Install official prerequisites,
 then test the extracted Lite Dvinholm.App.exe interactively on Windows.
 Never combine Portable and Lite files in one folder.
 
 Microsoft guidance:
 https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/deploy-unpackaged-apps
+https://github.com/microsoft/WindowsAppSDK/blob/main/specs/Deployment/MSIXPackages.md
 https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist
 
 ## Distribution rules

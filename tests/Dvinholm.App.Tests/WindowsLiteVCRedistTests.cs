@@ -37,7 +37,11 @@ public sealed class WindowsLiteVCRedistTests
                 "Microsoft.WindowsDesktop.App 10.0.2 [C:\\dotnet-x86\\shared\\Microsoft.WindowsDesktop.App]\n",
                 Encoding.UTF8);
             var appSdk = Path.Combine(root, "appsdk.txt");
-            File.WriteAllText(appSdk, "Microsoft.WindowsAppRuntime.2.5|X86\n", Encoding.UTF8);
+            File.WriteAllText(appSdk,
+                "Microsoft.WindowsAppRuntime.2|X86|2.5.1.0\n" +
+                "MicrosoftCorporationII.WinAppRuntime.Main.2|X64|2.5.1.0\n" +
+                "MicrosoftCorporationII.WinAppRuntime.Singleton|X64|8002.5.1.0\n" +
+                "Microsoft.WinAppRuntime.DDLM.2.5.1.0-x8|X86|2.5.1.0\n", Encoding.UTF8);
             var vc = Path.Combine(root, "vc-x86.txt");
             File.WriteAllText(vc, record + "\n", Encoding.UTF8);
 

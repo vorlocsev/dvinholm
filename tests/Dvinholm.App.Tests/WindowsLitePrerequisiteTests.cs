@@ -45,12 +45,17 @@ public sealed class WindowsLitePrerequisiteTests
             var runtimes = Path.Combine(folder, "runtimes.txt");
             File.WriteAllText(runtimes, installed, Encoding.UTF8);
 
-            var package = scenario switch
-            {
-                "wrong-appsdk-line" => "Microsoft.WindowsAppRuntime.2.4|X86\n",
-                "appsdk-x64-only" => "Microsoft.WindowsAppRuntime.2.5|X64\n",
-                _ => "Microsoft.WindowsAppRuntime.2.5|X86\n"
-            };
+            var package =
+                "Microsoft.WindowsAppRuntime.2|X86|2.5.1.0\n" +
+                "MicrosoftCorporationII.WinAppRuntime.Main.2|X64|2.5.1.0\n" +
+                "MicrosoftCorporationII.WinAppRuntime.Singleton|X64|8002.5.1.0\n" +
+                "Microsoft.WinAppRuntime.DDLM.2.5.1.0-x8|X86|2.5.1.0\n";
+            if (scenario == "wrong-appsdk-line")
+                package = package.Replace("Microsoft.WindowsAppRuntime.2|X86|2.5.1.0",
+                    "Microsoft.WindowsAppRuntime.2|X86|2.4.0.0");
+            if (scenario == "appsdk-x64-only")
+                package = package.Replace("Microsoft.WindowsAppRuntime.2|X86|2.5.1.0",
+                    "Microsoft.WindowsAppRuntime.2|X64|2.5.1.0");
             var packages = Path.Combine(folder, "packages.txt");
             File.WriteAllText(packages, package, Encoding.UTF8);
             var vcState = Path.Combine(folder, "vc-x86.txt");
