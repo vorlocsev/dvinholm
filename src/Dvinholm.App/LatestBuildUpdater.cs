@@ -735,21 +735,323 @@ if ($Watch -or $RecoverOnLogon) {{
             }}
         }}
         elseif (Test-Path -LiteralPath $helperIdentity) {{
+            # A truncated or corrupted identity might conceal a live helper.
+            # Fail closed: keep both the backup and pending checkpoint so a
+            # second sign-in never restores over an update still in progress.
+            if (-not (Test-Path -LiteralPath $helperIdentity -PathType Leaf)) {{
+                throw 'Recovery helper identity is not a regular file; checkpoint preserved.'
+            }}
+            $identityText = (Get-Content -LiteralPath $helperIdentity -Raw -ErrorAction Stop).Trim()
+            if ($identityText -cnotmatch '^[0-9]+[|][0-9]+
+
+        # Both the live guard and a login recovery can awaken near the same
+        # time. Only one may mirror files or clear the transaction checkpoint.
+        $mutexName = 'Local\DvinholmRecovery-{recoveryId}'
+        $recoveryMutex = [System.Threading.Mutex]::new($false, $mutexName)
+        try {{
+            $haveRecoveryLock = $recoveryMutex.WaitOne(0)
+        }}
+        catch [System.Threading.AbandonedMutexException] {{
+            # The previous guard may have been killed mid-restore. Windows
+            # grants this mutex to us; retry the pending recovery instead of
+            # mistaking the abandoned lock for a permanent failure.
+            $haveRecoveryLock = $true
+        }}
+        if (-not $haveRecoveryLock) {{ exit 0 }}
+
+        # Never infer a recovery mode from conflicting or damaged checkpoint
+        # files. Both markers are mutually exclusive; an invalid marker must
+        # preserve the backup and destination for inspection or a safe retry.
+        $hasPreviousMarker = Test-Path -LiteralPath $existingMarker
+        $hasFirstMarker = Test-Path -LiteralPath $newMarker
+        if ($hasPreviousMarker -and $hasFirstMarker) {{
+            throw 'Recovery checkpoint is ambiguous: both pending markers exist.'
+        }}
+        if ($hasPreviousMarker -or $hasFirstMarker) {{
+            $activeMarker = if ($hasPreviousMarker) {{ $existingMarker }} else {{ $newMarker }}
+            if (-not (Test-Path -LiteralPath $activeMarker -PathType Leaf)) {{
+                throw 'Recovery checkpoint is not a regular file.'
+            }}
+            $markerValue = [string](Get-Content -LiteralPath $activeMarker -Raw -ErrorAction Stop)
+            if ($markerValue.Trim() -cne 'pending') {{
+                throw 'Recovery checkpoint has invalid contents; preserve it for inspection.'
+            }}
+        }}
+        if ($hasPreviousMarker) {{
+            $previousExe = Join-Path $backup 'Dvinholm.App.exe'
+            if (-not (Test-Path -LiteralPath $previousExe)) {{
+                throw 'Recovery backup is missing Dvinholm.App.exe; preserve the checkpoint for inspection.'
+            }}
+            New-Item -ItemType Directory -Path $destination -Force | Out-Null
+            & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $backup $destination /MIR /IS /IT /R:2 /W:1 /NFL /NDL /NJH /NJS
+            if ($LASTEXITCODE -ge 8) {{
+                throw ""Recovery mirror failed with robocopy exit code $LASTEXITCODE.""
+            }}
+            $restoredExe = Join-Path $destination 'Dvinholm.App.exe'
+            if (-not (Test-Path -LiteralPath $restoredExe)) {{
+                throw 'Recovery did not restore Dvinholm.App.exe.'
+            }}
+            EnsureMirroredBytes $backup $destination
+            $restoredProcess = Start-Process -FilePath $restoredExe -WorkingDirectory $destination -PassThru
+            Start-Sleep -Seconds 5
+            if ($restoredProcess.HasExited) {{
+                throw ""Recovered build exited immediately (exit code $($restoredProcess.ExitCode)).""
+            }}
+            # This checkpoint is cleared only after the restored app is running.
+            Remove-Item -LiteralPath $existingMarker -Force -ErrorAction Stop
+            'Updater helper exited with a pending checkpoint; previous build recovered.' |
+                Add-Content -LiteralPath $logPath
+            FinishRecoveryTransaction
+        }}
+        elseif ($hasFirstMarker) {{
+            # First install has nothing to roll back. Never leave a partial
+            # destination directory looking like a completed installation.
+            if (Test-Path -LiteralPath $destination) {{
+                Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction Stop
+            }}
+            Remove-Item -LiteralPath $newMarker -Force -ErrorAction Stop
+            'Updater helper exited with a partial first installation; destination removed.' |
+                Add-Content -LiteralPath $logPath
+            FinishRecoveryTransaction
+        }}
+        else {{
+            # The helper ended before arming a pending marker, so no app files
+            # were replaced. Clean only abandoned transaction metadata.
+            FinishRecoveryTransaction
+        }}
+    }}
+    catch {{
+        # Retain rollback checkpoint and the old build for manual recovery if
+        # the independent guard itself cannot complete the restore.
+        try {{
+            ('Updater recovery guard failed; checkpoint preserved: ' + ($_ | Out-String)) |
+                Add-Content -LiteralPath $logPath
+        }}
+        catch {{ }}
+    }}
+    finally {{
+        if ($haveRecoveryLock) {{ $recoveryMutex.ReleaseMutex() }}
+        if ($null -ne $recoveryMutex) {{ $recoveryMutex.Dispose() }}
+    }}
+    exit
+}}
+
+$hadDestination = Test-Path -LiteralPath $destination
+$backupReady = $false
+$replacementStarted = $false
+$rollbackFailed = $false
+try {{
+    if (Get-Process -Id $processId -ErrorAction SilentlyContinue) {{
+        # Do not let a hung app process block the updater helper indefinitely.
+        try {{
+            Wait-Process -Id $processId -Timeout 60 -ErrorAction Stop
+        }}
+        catch {{
+            # The app may exit between Get-Process and Wait-Process. Continue only
+            # if it is now gone; if it still exists, preserve the timeout/error.
+            if (Get-Process -Id $processId -ErrorAction SilentlyContinue) {{
+                throw
+            }}
+        }}
+    }}
+    Start-Sleep -Milliseconds 400
+    if (-not (Test-Path -LiteralPath (Join-Path $source 'Dvinholm.App.exe'))) {{
+        throw 'The staged update is missing Dvinholm.App.exe.'
+    }}
+    if ($hadDestination) {{
+        New-Item -ItemType Directory -Path $backup -Force | Out-Null
+        & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $destination $backup /MIR /R:2 /W:1 /NFL /NDL /NJH /NJS
+        if ($LASTEXITCODE -ge 8) {{
+            throw ""Could not back up the current build (robocopy exit code $LASTEXITCODE).""
+        }}
+        if (-not (Test-Path -LiteralPath (Join-Path $backup 'Dvinholm.App.exe'))) {{
+            throw 'The backup does not contain Dvinholm.App.exe; replacement was not started.'
+        }}
+        $backupReady = $true
+    }}
+
+    # Arm the external recovery guard *before* the first destructive mirror.
+    # If the guard cannot start and acknowledge readiness, leave the installed
+    # build untouched and fail safely.
+    New-Item -ItemType Directory -Path $stateDir -Force | Out-Null
+    $guardArguments = @(
+        '-NoProfile', '-ExecutionPolicy', 'Bypass',
+        '-WindowStyle', 'Hidden', '-File', ('""' + $scriptPath + '""'),
+        '-Watch', '-HelperPid', [string]$PID
+    )
+    $guardProcess = Start-Process -FilePath (Join-Path $PSHOME 'powershell.exe') -ArgumentList $guardArguments -PassThru -WindowStyle Hidden
+    if ($null -eq $guardProcess) {{ throw 'Could not start the independent update recovery guard.' }}
+    for ($attempt = 0; $attempt -lt 100 -and -not (Test-Path -LiteralPath $guardReady); $attempt++) {{
+        if ($guardProcess.HasExited) {{ throw 'Update recovery guard exited before acknowledging readiness.' }}
+        Start-Sleep -Milliseconds 100
+    }}
+    if (-not (Test-Path -LiteralPath $guardReady)) {{
+        throw 'Update recovery guard did not acknowledge readiness.'
+    }}
+
+    # Persist a new recovery script and register a per-update HKCU Run value
+    # BEFORE arming a checkpoint or starting any destructive file replacement.
+    # Registration failure aborts the update while the prior build is intact.
+    $helperStartTicks = (Get-Process -Id $PID -ErrorAction Stop).StartTime.ToUniversalTime().Ticks
+    ""$PID|$helperStartTicks"" | Set-Content -LiteralPath $helperIdentity -Encoding ASCII
+    Copy-Item -LiteralPath $scriptPath -Destination $recoveryScript -Force -ErrorAction Stop
+    $quote = [char]34
+    $runCommand = $quote + (Join-Path $PSHOME 'powershell.exe') + $quote +
+        ' -NoProfile -NonInteractive -ExecutionPolicy Bypass -WindowStyle Hidden -File ' +
+        $quote + $recoveryScript + $quote + ' -RecoverOnLogon'
+    New-ItemProperty -Path $runKey -Name $runName -Value $runCommand -PropertyType String -Force -ErrorAction Stop | Out-Null
+
+    $pendingMarker = if ($hadDestination) {{ $existingMarker }} else {{ $newMarker }}
+    'pending' | Set-Content -LiteralPath $pendingMarker -Encoding ASCII
+
+    New-Item -ItemType Directory -Path $destination -Force | Out-Null
+    $replacementStarted = $true
+    & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $source $destination /MIR /IS /IT /R:2 /W:1 /NFL /NDL /NJH /NJS
+    if ($LASTEXITCODE -ge 8) {{
+        throw ""Robocopy failed with exit code $LASTEXITCODE.""
+    }}
+    EnsureMirroredBytes $source $destination
+    $targetExe = Join-Path $destination 'Dvinholm.App.exe'
+    if (-not (Test-Path -LiteralPath $targetExe)) {{
+        throw 'The updated executable is missing after file replacement.'
+    }}
+    $updatedProcess = Start-Process -FilePath $targetExe -WorkingDirectory $destination -PassThru
+    Start-Sleep -Seconds 5
+    if ($updatedProcess.HasExited) {{
+        throw ""The updated application exited during startup (exit code $($updatedProcess.ExitCode)).""
+    }}
+    $oldBuilds = Join-Path $env:LOCALAPPDATA 'Dvinholm\Builds'
+    if (Test-Path -LiteralPath $oldBuilds) {{
+        Get-ChildItem -LiteralPath $oldBuilds -Directory |
+            Where-Object {{ $_.FullName -ne $destination }} |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    }}
+    $stagingRoot = Join-Path $env:LOCALAPPDATA 'Dvinholm\UpdateStaging'
+    if (Test-Path -LiteralPath $stagingRoot) {{
+        Get-ChildItem -LiteralPath $stagingRoot -Directory |
+            Where-Object {{ $_.FullName -ne $source }} |
+            Remove-Item -Recurse -Force -ErrorAction SilentlyContinue
+    }}
+    # Startup succeeded: disarm the guard BEFORE deleting the old build.
+    Remove-Item -LiteralPath $pendingMarker -Force -ErrorAction Stop
+    FinishRecoveryTransaction
+    Remove-Item -LiteralPath $source -Recurse -Force -ErrorAction SilentlyContinue
+    Remove-Item -LiteralPath $scriptPath -Force -ErrorAction SilentlyContinue
+}}
+catch {{
+    $failure = ($_ | Out-String)
+    if ($replacementStarted -and $hadDestination -and $backupReady) {{
+        try {{
+            & (Join-Path $env:SystemRoot 'System32\robocopy.exe') $backup $destination /MIR /IS /IT /R:2 /W:1 /NFL /NDL /NJH /NJS
+            if ($LASTEXITCODE -ge 8) {{
+                throw ""Rollback copy failed with robocopy exit code $LASTEXITCODE.""
+            }}
+            $restoredExe = Join-Path $destination 'Dvinholm.App.exe'
+            if (-not (Test-Path -LiteralPath $restoredExe)) {{
+                throw 'Rollback completed without restoring Dvinholm.App.exe.'
+            }}
+            EnsureMirroredBytes $backup $destination
+            $failure += [Environment]::NewLine + 'The previous build was restored and will be restarted.'
+            $restoredProcess = Start-Process -FilePath $restoredExe -WorkingDirectory $destination -PassThru
+            Start-Sleep -Seconds 5
+            if ($restoredProcess.HasExited) {{
+                throw ""The restored application exited during startup (exit code $($restoredProcess.ExitCode)).""
+            }}
+            # Restore is verified running; the guard must not roll it back again.
+            Remove-Item -LiteralPath $existingMarker -Force -ErrorAction Stop
+            FinishRecoveryTransaction
+        }}
+        catch {{
+            $rollbackFailed = $true
+            $failure += [Environment]::NewLine + 'Rollback failed: ' + ($_ | Out-String)
+        }}
+    }}
+    elseif ($replacementStarted -and -not $hadDestination) {{
+        # A first install has no previous build to restore. Remove any partial
+        # destination so a failed copy cannot leave a seemingly installed app.
+        try {{
+            if (Test-Path -LiteralPath $destination) {{
+                Remove-Item -LiteralPath $destination -Recurse -Force -ErrorAction Stop
+            }}
+            if (Test-Path -LiteralPath $destination) {{
+                throw 'The incomplete destination still exists after cleanup.'
+            }}
+            # A clean first-install cleanup can also clear its recovery guard.
+            if (Test-Path -LiteralPath $newMarker) {{
+                Remove-Item -LiteralPath $newMarker -Force -ErrorAction Stop
+            }}
+            FinishRecoveryTransaction
+            $failure += [Environment]::NewLine + 'The incomplete first-install destination was removed.'
+        }}
+        catch {{
+            $failure += [Environment]::NewLine + 'Could not remove the incomplete first-install destination: ' + ($_ | Out-String)
+        }}
+    }}
+    elseif (-not $replacementStarted -and (Test-Path -LiteralPath $backup)) {{
+        # The installed app is still untouched. A failed or incomplete backup
+        # is not usable for rollback, so remove it instead of leaking partial data.
+        try {{
+            FinishRecoveryTransaction
+            $failure += [Environment]::NewLine + 'The incomplete update backup was removed because replacement had not started.'
+        }}
+        catch {{
+            $failure += [Environment]::NewLine + 'Could not remove the incomplete update backup: ' + ($_ | Out-String)
+        }}
+    }}
+    if (-not $rollbackFailed) {{
+        try {{
+            if (Test-Path -LiteralPath $source) {{
+                Remove-Item -LiteralPath $source -Recurse -Force -ErrorAction Stop
+            }}
+        }}
+        catch {{
+            $failure += [Environment]::NewLine + 'Could not remove failed update staging directory: ' + ($_ | Out-String)
+        }}
+    }}
+    try {{
+        if (Test-Path -LiteralPath $scriptPath) {{
+            Remove-Item -LiteralPath $scriptPath -Force -ErrorAction Stop
+        }}
+    }}
+    catch {{
+        $failure += [Environment]::NewLine + 'Could not remove update helper script: ' + ($_ | Out-String)
+    }}
+    $failure | Set-Content -LiteralPath $logPath -Encoding UTF8
+    Start-Process -FilePath 'notepad.exe' -ArgumentList @($logPath)
+}}
+";
+    }
+
+    private static string EscapePowerShellLiteral(string value) => value.Replace("'", "''");
+
+    private static string ReadString(JsonElement element, string property) =>
+        element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.String
+            ? value.GetString() ?? string.Empty
+            : string.Empty;
+
+    private static long ReadInt64(JsonElement element, string property) =>
+        element.TryGetProperty(property, out var value) && value.TryGetInt64(out var result) ? result : 0;
+
+    private static bool ReadBoolean(JsonElement element, string property) =>
+        element.TryGetProperty(property, out var value) && value.ValueKind == JsonValueKind.True;
+}
+) {{
+                throw 'Recovery helper identity is malformed; checkpoint preserved.'
+            }}
+            $identity = $identityText.Split('|')
+            $identityPid = 0
+            $identityTicks = [long]0
+            if (-not [int]::TryParse($identity[0], [ref]$identityPid) -or
+                -not [long]::TryParse($identity[1], [ref]$identityTicks) -or
+                $identityPid -le 0 -or $identityTicks -le 0) {{
+                throw 'Recovery helper identity is invalid; checkpoint preserved.'
+            }}
             # Signing in as a second user during an active update is not a
-            # reboot. Do not restore over a helper still running with this PID
-            # AND original process start-time; reused PIDs after reboot differ.
-            $identity = (Get-Content -LiteralPath $helperIdentity -Raw).Trim().Split('|')
-            if ($identity.Length -eq 2) {{
-                $identityPid = 0
-                $identityTicks = [long]0
-                if ([int]::TryParse($identity[0], [ref]$identityPid) -and
-                    [long]::TryParse($identity[1], [ref]$identityTicks)) {{
-                    $activeHelper = Get-Process -Id $identityPid -ErrorAction SilentlyContinue
-                    if ($null -ne $activeHelper -and
-                        $activeHelper.StartTime.ToUniversalTime().Ticks -eq $identityTicks) {{
-                        exit 0
-                    }}
-                }}
+            # reboot. A reused PID after reboot has a different start time.
+            $activeHelper = Get-Process -Id $identityPid -ErrorAction SilentlyContinue
+            if ($null -ne $activeHelper -and
+                $activeHelper.StartTime.ToUniversalTime().Ticks -eq $identityTicks) {{
+                exit 0
             }}
         }}
 
