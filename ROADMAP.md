@@ -4,6 +4,7 @@
 - [x] Allow patch updates within the modeled 2.5.x SDK line, but fail closed on 2.4/2.6/3.x so the simulation cannot silently certify an unmodeled Windows App SDK runtime. Pass the validated project-derived SDK line to the prerequisite checker.
 - [x] Add eight isolated Windows PowerShell 5.1 integration tests: SDK 2.5.1 and 2.5.2 pass, 2.4.0/2.6.0/3.0.0 blocked, and missing/duplicate/malformed SDK references rejected.
 - [x] CI's existing real Lite ZIP extraction gate uses the actual repo project by default. Tests may supply a synthetic project via SdkProjectFile only with explicit SimulatedLiteHost; no system packages or GUI processes touched.
+- [x] Repair PowerShell 5.1 syntax after PR CI #3171 exposed six failures (881/887 passed). Add an early Windows PowerShell 5.1 parser gate for Lite prerequisite and ZIP distribution scripts, before restore/build/test.
 - [ ] Verify PR CI **887/887**, x86 build, Portable/Lite ZIP checks and Stable audit. Merge only on full green, then independently confirm main CI.
 - [ ] Real interactive Lite GUI startup and physical J2534 tests deferred. Trimming/AOT disabled, Portable updater and Stable v0.2.2 unchanged.
 
