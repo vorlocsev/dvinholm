@@ -37,20 +37,36 @@ if ((Test-Path -LiteralPath (Join-Path $root 'coreclr.dll')) -or
     throw 'Selected directory contains bundled .NET files; use Lite, not Portable.'
 }
 
-$options = (Get-Content -LiteralPath $manifest -Raw | ConvertFrom-Json -ErrorAction Stop).runtimeOptions
+$options = (Get-Content -LiteralPath $manifest -Raw |
+    ConvertFrom-Json -ErrorAction Stop).runtimeOptions
+if ($null -eq $options) {
+    throw 'Lite runtimeconfig.json does not have runtimeOptions.'
+}
 $references = @()
 if ($null -ne $options.framework) { $references += $options.framework }
 if ($null -ne $options.frameworks) { $references += @($options.frameworks) }
-$references = @($references | Where-Object {
-    $null -ne $_ -and $_.name -in @('Microsoft.NETCore.App', 'Microsoft.WindowsDesktop.App')
-})
+$references = @($references | Where-Object { $null -ne $_ })
 if ($references.Count -eq 0) {
-    throw 'Lite runtimeconfig.json has no recognized .NET shared framework reference.'
+    throw 'Lite runtimeconfig.json has no .NET shared framework reference.'
 }
+
+# Never silently discard an unknown shared framework and claim readiness.
+$seenFrameworks = [System.Collections.Generic.HashSet[string]]::new(
+    [StringComparer]::OrdinalIgnoreCase)
 foreach ($reference in $references) {
-    if ([string]$reference.version -notmatch '^10\.') {
-        throw "Lite requires .NET 10, but runtimeconfig requests $($reference.version)."
+    $name = [string]$reference.name
+    if ($name -notin @('Microsoft.NETCore.App', 'Microsoft.WindowsDesktop.App')) {
+        throw "Lite runtimeconfig contains an unsupported shared framework: $name."
     }
+    if (-not $seenFrameworks.Add($name)) {
+        throw "Lite runtimeconfig has a duplicate shared framework: $name."
+    }
+    $versionString = [string]$reference.version
+    if ($versionString -notmatch '^10\.\d+\.\d+$') {
+        throw "Lite requires a valid .NET 10 shared framework version for $name, got '$versionString'."
+    }
+    try { $null = [Version]$versionString }
+    catch { throw "Lite shared framework version is invalid: $versionString." }
 }
 
 # Explicitly inspect Desktop x86 even when runtimeconfig references Core only.

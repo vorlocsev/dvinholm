@@ -17,8 +17,10 @@ Windows App SDK NuGet reference 2.5.1, run the following in Windows PowerShell
 
     .\eng\Test-LitePrerequisites.ps1 -LiteDirectory 'C:\Dvinholm-Lite' -WindowsAppSdkLine '2.5'
 
-The read-only tool examines the actual Lite runtimeconfig file, queries the
-x86 dotnet installation for .NET 10 Desktop/shared runtimes, and checks for
+The read-only tool validates **every** declared Lite runtimeconfig .NET shared
+framework before querying the x86 dotnet installation for .NET 10
+Desktop/shared runtimes. Unknown, duplicate, malformed or non-10.x .NET
+framework declarations fail closed. It also checks for
 all four current-user Windows App SDK runtime packages: Framework x86
 (Microsoft.WindowsAppRuntime.2), Main (MicrosoftCorporationII.WinAppRuntime.Main.2),
 Singleton (MicrosoftCorporationII.WinAppRuntime.Singleton), and DDLM x86
