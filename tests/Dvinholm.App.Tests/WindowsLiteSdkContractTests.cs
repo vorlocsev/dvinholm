@@ -99,12 +99,7 @@ public sealed class WindowsLiteSdkContractTests
         }
         finally
         {
-            for (var retry = 0; Directory.Exists(temp); retry++)
-            {
-                try { Directory.Delete(temp, recursive: true); }
-                catch (IOException) when (retry < 19) { await Task.Delay(100); }
-                catch (UnauthorizedAccessException) when (retry < 19) { await Task.Delay(100); }
-            }
+            await WindowsTestFixtureCleanup.RemoveBestEffortAsync(temp);
         }
     }
 

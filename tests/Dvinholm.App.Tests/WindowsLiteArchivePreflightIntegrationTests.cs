@@ -100,13 +100,7 @@ public sealed class WindowsLiteArchivePreflightIntegrationTests
         }
         finally
         {
-            for (var retry = 0; Directory.Exists(root); retry++)
-            {
-                try { Directory.Delete(root, recursive: true); }
-                catch (IOException) when (retry < 19) { await Task.Delay(100); }
-                catch (UnauthorizedAccessException) when (retry < 19)
-                { await Task.Delay(100); }
-            }
+            await WindowsTestFixtureCleanup.RemoveBestEffortAsync(root);
         }
     }
 

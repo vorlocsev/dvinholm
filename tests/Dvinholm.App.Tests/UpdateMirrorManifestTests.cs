@@ -130,28 +130,7 @@ public sealed class UpdateMirrorManifestTests
         }
         finally
         {
-            // Windows Defender and filesystem indexers can briefly hold freshly
-            // created test files after the PowerShell child has exited.
-            // Cleanup is best-effort; the test assertions above determine
-            // success or failure, not a transient teardown-only file lock.
-            for (var attempt = 0; Directory.Exists(root) && attempt < 60; attempt++)
-            {
-                try { Directory.Delete(root, recursive: true); }
-                catch (IOException ex)
-                {
-                    if (attempt == 59)
-                        Console.Error.WriteLine($"Test fixture cleanup deferred due to file lock: {ex.Message}");
-                    else
-                        await Task.Delay(200);
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    if (attempt == 59)
-                        Console.Error.WriteLine($"Test fixture cleanup deferred due to access lock: {ex.Message}");
-                    else
-                        await Task.Delay(200);
-                }
-            }
+            await WindowsTestFixtureCleanup.RemoveBestEffortAsync(root);
         }
     }
 }

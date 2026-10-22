@@ -1,10 +1,21 @@
+## Windows fixture cleanup stability across Lite and packaging tests (Development, 2026-10-22)
+
+- [x] Centralize bounded, best-effort Windows test-directory cleanup (60 attempts, 200 ms delay), retrying sharing-related IOException/UnauthorizedAccessException. Log a warning if a locked disposable directory cannot be removed; never turn a passing production assertion into a teardown-only failure.
+- [x] Replace duplicated teardown loops in eight Windows distribution/Lite integration test classes and the updater's existing manifest test. Preserve all preflight/WinUI/J2534 test assertions.
+- [x] Add eight deterministic regressions: missing directory, empty/nested contents, transient IO and access-denied locks, persistent IO and access-denied locks, unexpected exception propagation.
+- [ ] Verify PR CI expected **903/903**, Windows x86, Portable/Lite extracted ZIP, Lite simulated-host validation and Stable audit. Merge only on full green, then verify main CI.
+- [ ] Lite interactive Windows startup and real J2534 deferred. Portable updater behavior and Stable v0.2.2 unchanged; trimming/AOT disabled.
+
+---
+
 ## Strict Lite runtimeconfig framework contract (Development, 2026-10-22)
 
 - [x] Validate every shared-framework declaration before any host checks; reject unsupported framework names, duplicate names, missing/malformed versions and .NET major other than 10.
 - [x] Preserve valid .NET 10 Core-only and Core+Desktop manifests and the implicit x86 Desktop prerequisite where it is not explicitly referenced.
 - [x] Add eight synthetic Windows PowerShell 5.1 regressions: valid Core-only, valid Core+Desktop, unsupported extra framework, Desktop .NET 9, duplicate Core, duplicate across framework/frameworks, malformed version and missing version.
 - [x] Continue CI integration against actual extracted Lite ZIP via explicitly simulated host. No runtime installation or WinUI startup.
-- [ ] Confirm PR CI expected **895/895**, Windows x86 publish, Portable/Lite extraction/Stable audit, merge only on full green; verify main CI separately.
+- [x] PR #429 CI #3181 passed **895/895**, Windows x86 publish, Portable/Lite extracted archives and Stable audit, merged as `321ab89`.
+- [ ] Main CI #3182 failed **894/895**, solely due to teardown IOException in `WindowsLiteAppSdkInventoryTests` after Windows locked a disposable fixture directory; other 894 test assertions passed. Address in next CI reliability PR.
 - [ ] Real interactive Lite launch and physical J2534 testing deferred. Portable updater/Stable v0.2.2 unchanged, trimming/AOT disabled.
 
 ---

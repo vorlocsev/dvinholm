@@ -98,20 +98,7 @@ public sealed class WindowsLiteRuntimeConfigContractTests
         }
         finally
         {
-            for (var retry = 0; Directory.Exists(root) && retry < 40; retry++)
-            {
-                try { Directory.Delete(root, recursive: true); }
-                catch (IOException ex)
-                {
-                    if (retry == 39) Console.Error.WriteLine(ex.Message);
-                    else await Task.Delay(150);
-                }
-                catch (UnauthorizedAccessException ex)
-                {
-                    if (retry == 39) Console.Error.WriteLine(ex.Message);
-                    else await Task.Delay(150);
-                }
-            }
+            await WindowsTestFixtureCleanup.RemoveBestEffortAsync(root);
         }
     }
 
