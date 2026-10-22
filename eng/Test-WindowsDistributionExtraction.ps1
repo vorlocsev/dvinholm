@@ -7,12 +7,16 @@
 param(
     [Parameter(Mandatory)][ValidateSet('Portable','Lite')][string]$Flavor,
     [Parameter(Mandatory)][string]$ZipPath,
-    [switch]$SimulatedLiteHost
+    [switch]$SimulatedLiteHost,
+    [string]$SdkProjectFile
 )
 
 $ErrorActionPreference = 'Stop'
 if ($SimulatedLiteHost -and $Flavor -ne 'Lite') {
     throw 'SimulatedLiteHost is valid only for the Lite distribution.'
+}
+if (-not $SimulatedLiteHost -and -not [string]::IsNullOrWhiteSpace($SdkProjectFile)) {
+    throw 'SdkProjectFile is only supported in the simulated Lite host gate.'
 }
 $fixtureDirectory = $null
 $zipFile = (Resolve-Path -LiteralPath $ZipPath -ErrorAction Stop).Path
@@ -85,6 +89,32 @@ try {
     if ($Flavor -eq 'Lite' -and $SimulatedLiteHost) {
         # CI checks the ACTUAL unpacked Lite runtimeconfig against an
         # explicitly simulated x64 host. Never query or mutate host packages.
+        # The simulated host inventory models Windows App SDK 2.5.
+        # Detect project version changes rather than silently testing old SDK fixtures.
+        $projectPath = if (-not [string]::IsNullOrWhiteSpace($SdkProjectFile)) {
+            $SdkProjectFile
+        } else {
+            Join-Path (Split-Path -Parent $PSScriptRoot) 'src\Dvinholm.App\Dvinholm.App.csproj'
+        }
+        if (-not (Test-Path -LiteralPath $projectPath -PathType Leaf)) {
+            throw "Cannot inspect project Windows App SDK version: $projectPath"
+        }
+        [xml]$projectXml = Get-Content -LiteralPath $projectPath -Raw -ErrorAction Stop
+        $sdkReferences = @($projectXml.SelectNodes(
+            '//PackageReference[@Include="Microsoft.WindowsAppSDK"]'))
+        if ($sdkReferences.Count -ne 1) {
+            throw 'Expected exactly one Microsoft.WindowsAppSDK PackageReference with an explicit version.'
+        }
+        $sdkVersion = [string]$sdkReferences[0].GetAttribute('Version')
+        if ($sdkVersion -notmatch '^(\d+)\.(\d+)\.\d+(?:\.\d+)?$') {
+            throw "Invalid or unpinned Microsoft.WindowsAppSDK project version: $sdkVersion"
+        }
+        $sdkLine = "$($Matches[1]).$($Matches[2])"
+        if ($sdkLine -ne '2.5') {
+            throw "Lite simulated inventory models SDK 2.5, but project requires $sdkVersion. Update fixture before upgrading."
+        }
+        Write-Host "Verified simulated-host Windows App SDK contract: project $sdkVersion, runtime line $sdkLine."
+
         $fixtureDirectory = Join-Path ([IO.Path]::GetTempPath()) (
             'dvinholm-lite-fixtures-' + [Guid]::NewGuid().ToString('N'))
         $null = New-Item -ItemType Directory -Path $fixtureDirectory
@@ -104,7 +134,7 @@ try {
         [IO.File]::WriteAllLines($vcFixture, [string[]]@('1|14|v14.40.33816.0'))
         $prerequisiteArguments = @{
             LiteDirectory = $folder
-            WindowsAppSdkLine = '2.5'
+            WindowsAppSdkLine = $sdkLine
             RuntimeListFile = $runtimeFixture
             AppSdkPackageListFile = $packageFixture
             VcRedistStateFile = $vcFixture

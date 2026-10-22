@@ -1,10 +1,22 @@
+## Guard against Windows App SDK version drift in simulated Lite CI (Development, 2026-10-22)
+
+- [x] Read the actual project's pinned Microsoft.WindowsAppSDK PackageReference before evaluating Lite's simulated host prerequisites; detect absent, duplicate, malformed or unsupported SDK versions.
+- [x] Allow patch updates within the modeled 2.5.x SDK line, but fail closed on 2.4/2.6/3.x so the simulation cannot silently certify an unmodeled Windows App SDK runtime. Pass the validated project-derived SDK line to the prerequisite checker.
+- [x] Add eight isolated Windows PowerShell 5.1 integration tests: SDK 2.5.1 and 2.5.2 pass, 2.4.0/2.6.0/3.0.0 blocked, and missing/duplicate/malformed SDK references rejected.
+- [x] CI's existing real Lite ZIP extraction gate uses the actual repo project by default. Tests may supply a synthetic project via SdkProjectFile only with explicit SimulatedLiteHost; no system packages or GUI processes touched.
+- [x] Repair PowerShell 5.1 syntax after PR CI #3171 exposed six failures (881/887 passed). Add an early Windows PowerShell 5.1 parser gate for Lite prerequisite and ZIP distribution scripts, before restore/build/test.
+- [ ] Verify PR CI **887/887**, x86 build, Portable/Lite ZIP checks and Stable audit. Merge only on full green, then independently confirm main CI.
+- [ ] Real interactive Lite GUI startup and physical J2534 tests deferred. Trimming/AOT disabled, Portable updater and Stable v0.2.2 unchanged.
+
+---
+
 ## Extracted Lite ZIP simulated-host prerequisite integration (Development, 2026-10-22)
 
 - [x] Add an explicit Lite-only SimulatedLiteHost option to the real ZIP extraction gate, exercising the Lite prerequisite inspector on the extracted runtimeconfig with temporary x64-host synthetic fixtures (x86 .NET 10 Desktop, Framework/DDLM, Visual C++ x86 and x64 Main/Singleton).
 - [x] Wire this mode into CI after Lite packaging/extraction. Mark results SIMULATED INPUT; it does not query host packages, install runtimes or launch WinUI.
 - [x] Add eight synthetic archive integration cases: valid Core and Desktop Lite manifests; invalid .NET 9, missing framework, embedded CoreCLR, x64 executable, malformed manifest, and invalid Portable simulated mode.
 - [x] Document reproduction instructions and distinction between simulated host verification and real host readiness.
-- [ ] Verify PR CI expected 879/879, x86 builds and Portable/Lite ZIP checks plus Stable audit, then merge on green and verify independent main CI.
+- [x] PR #427 CI #3168 passed **879/879**, Windows x86 build, both ZIP extraction checks, simulated Lite host preflight and Stable audit; merged as `7a20b80`. Post-merge main CI #3169 independently passed **879/879** (Portable **62,247,592 bytes**, Lite **10,358,535 bytes**) and Stable audit.
 - [ ] Interactive Windows Lite GUI launch and physical J2534 tests still deferred. Portable updater, Stable v0.2.2 and trimming/AOT unchanged.
 
 ---

@@ -42,6 +42,12 @@ does not examine an actual computer or start the GUI. Reproduce the CI gate:
 
     .\eng\Test-WindowsDistributionExtraction.ps1 -Flavor Lite -ZipPath 'artifacts\Dvinholm-Windows-x86-Lite.zip' -SimulatedLiteHost
 
+This gate checks the project's exact Microsoft.WindowsAppSDK PackageReference
+before creating 2.5 fixtures. A future SDK minor/major bump intentionally
+fails CI until the fixture inventory is updated to match. A patched 2.5.x
+NuGet version remains compatible with the modeled SDK 2.5 line.
+For isolated regression tests, -SdkProjectFile can specify a synthetic
+project file, but only together with -SimulatedLiteHost.
 The flag is rejected for Portable. For a real Windows host, use the normal
 Test-LitePrerequisites.ps1 without any fixture arguments.
 
