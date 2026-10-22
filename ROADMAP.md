@@ -1,3 +1,13 @@
+## Portable/Lite ZIP security and runtime contract regression tests (Development, 2026-10-22)
+
+- [x] Harden the common Stable/CI distribution ZIP gate against path traversal, absolute paths, dot segments, control characters and case-insensitive path collisions before extraction. These are important on Windows even if a ZIP tool produced the entries on another platform.
+- [x] Validate Lite's `runtimeconfig.json` contains a framework-dependent .NET 10 runtime reference in addition to requiring that the Lite ZIP does **not** bundle CoreCLR/hostfxr. Keep Portable bundling both native runtime components and preserve existing updater asset naming.
+- [x] Add eight Windows PowerShell integration cases that run the actual distribution ZIP preflight against isolated harmless archives: valid Portable, valid Lite, traversal, case-colliding duplicate path, invalid Lite runtime reference, leaked PDB, leaked debugger and missing Portable hostfxr. Required safety tests run alongside the normal application suite in CI.
+- [ ] Confirm complete PR CI Windows x86 tests/build/Portable+Lite packaging and Stable audit, then merge on green and confirm independent post-merge main CI. First PR CI #3138 passed 837/839: two positive PowerShell 5.1 ZIP tests exposed a missing `System.IO.Compression.FileSystem` assembly import; fixed before rerun. This is archive validation, **not** a clean-Windows WinUI runtime/desktop smoke test or physical J2534 validation.
+- [x] Prior PR #421 CI #3133 passed **831/831** with Portable **62,247,587 bytes** and Lite **10,358,538 bytes**, merged as `66d8255`. Post-merge main CI #3134 passed 831/831, built both ZIPs (Portable **62,247,551 bytes**, Lite **10,358,516 bytes**) and passed Stable audit.
+
+---
+
 ## Portable ZIP optimization and experimental Lite distribution (Development, 2026-10-22)
 
 - [x] Preserve the Windows x86 **Portable self-contained** distribution and existing updater asset name. Optimize its ZIP using strong Deflate compression when 7-Zip is available; fall back to .NET ZIP otherwise.
@@ -6,7 +16,7 @@
 - [x] Explicitly keep `PublishTrimmed=false`, `PublishAot=false` for both. Trimming needs dedicated WinUI 3/XAML/COM compatibility evaluation; no trimming in main.
 - [x] Packaging gates validate executable, icon, runtimeconfig/deps files, no debugging byproducts or tools, Portable self-contained .NET runtime, Lite framework-dependency, and a strictly smaller Lite ZIP. CI prints actual sizes to its summary.
 - [x] Stable release workflow applies the same clean ZIP gate **before computing SHA-256 and uploading**; debug tools are excluded from future Stable archives. Historical Stable v0.2.2 is unchanged.
-- [ ] Confirm PR CI Windows x86 full tests/build/Portable+Lite packaging and Stable audit, measure actual compressed sizes, and merge only when green. Confirm post-merge main CI separately. **Lite GUI launch on clean Windows with required runtimes** and real J2534 remain deferred.
+- [x] PR #421 CI #3133 passed 831/831 with Portable (62,247,587 bytes) and Lite (10,358,538 bytes), and merged as `66d8255`. Post-merge main CI #3134 is tracked in the next stage. **Lite GUI launch on clean Windows with required runtimes** and real J2534 remain deferred.
 
 ---
 
