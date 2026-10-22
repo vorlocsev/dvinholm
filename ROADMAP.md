@@ -5,7 +5,7 @@
 - [x] Add eight real Windows PowerShell smoke regressions: valid Portable, valid Lite, x64 Portable, x64 Lite, corrupted PE signature, missing app DLL, missing `.deps.json`, and missing icon. All use synthetic disposable archives; no WinUI UI or J2534 is launched.
 - [x] Make extraction preflight mandatory for both distributions in CI and for future Portable Stable release packaging **before checksum and publication**. Keep Stable v0.2.2 unchanged; do not claim a full GUI smoke test.
 - [ ] Confirm all PR CI Windows x86 tests/build/Portable+Lite packaging and Stable audit, merge only after green, then verify post-merge main CI. Actual Lite GUI launch on clean Windows with x86 .NET 10 Desktop Runtime and compatible Windows App SDK remains deferred.
-- [x] Prior PR #422 CI #3144 passed **839/839**, merged as `9364750`; post-merge main CI #3145 is being verified separately.
+- [x] Prior PR #422 CI #3144 passed **839/839** and merged as `9364750`. Main CI #3145 also passed **839/839**, Windows x86 build, both ZIPs (Portable 62,247,631 bytes; Lite 10,358,585 bytes) and Stable audit.
 
 ---
 
