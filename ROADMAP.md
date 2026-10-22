@@ -1,9 +1,18 @@
+## Backup executable preflight and repairable recovery (Development, 2026-10-22)
+
+- [x] Reject missing/non-file/zero-byte `Dvinholm.App.exe` in a pending previous-build backup **before** Robocopy can replace or remove any installed files. Keep the pending checkpoint and backup available for inspection or repair. Also reject an invalid backup executable during initial updater backup creation, before arming a checkpoint or replacing any files.
+- [x] Add eight isolated Windows PowerShell regression checks: absent backup directory, missing backup executable with remaining settings, backup executable path replaced by a directory, and empty (zero-byte) executable, each with flat or nested partial destination. Assert no mutation on failure, retained checkpoint and user data, then repair backup and verify exact restored bytes, obsolete-file removal and checkpoint cleanup.
+- [ ] Confirm all Windows x86 CI tests/build/artifact and Stable audit, merge only on success, then confirm post-merge main CI. A nonempty executable is **not proof that arbitrary backup files are untampered**; future work should consider a trusted pre-update digest manifest. Physical J2534, actual reboot and manual WinUI checks remain deferred.
+- [x] Previous PR #418 merged as `ce05ae8`; post-merge main CI #3106 passed 815/815, Windows x86 packaging and Stable audit.
+
+---
+
 ## Recovery service-file resilience (Development, 2026-10-22)
 
 - [x] Treat an existing malformed, truncated, non-file or invalid `helper.identity` as unsafe during sign-in recovery. Preserve the pending checkpoint, backup and installed tree instead of assuming a live helper has stopped. A *missing* identity remains acceptable for recovery after a reboot.
 - [x] Verify the copied `resume.ps1` against the original updater helper using SHA-256 **before** registering sign-in recovery or arming a pending checkpoint. If the durable script copy differs, abort the update before touching the installation.
 - [x] Add eight Windows x86 PowerShell integration cases: previous-build rollback vs incomplete first install, each with missing/corrupt `helper.identity` and missing/corrupt `resume.ps1`. For damaged identity, require a fail-closed sign-in, then repair and retry. For unavailable durable script, demonstrate that sign-in cannot execute it and the independent live `-Watch` guard can finish recovery from its intact helper script. Preserve unrelated files and verify idempotence.
-- [ ] Confirm PR CI build, all tests, package and Stable audit; merge only after green and independently verify post-merge main CI. **A missing/corrupt `resume.ps1` with no surviving watcher still requires manual repair**: no claim is made that a reboot can execute a missing script. Physical J2534 and manual UI tests remain deferred.
+- [x] PR #418 CI #3105 passed 815/815, merged as `ce05ae8`; post-merge main CI #3106 also passed 815/815 with Windows x86 package and Stable audit. **A missing/corrupt `resume.ps1` without a surviving watcher still requires manual repair.** Physical J2534 and manual UI tests remain deferred.
 - [x] PR #417 merged as `4a0f0a9`; post-merge main CI #3098 passed 807/807, Windows x86 build/package and Stable audit.
 
 ---
