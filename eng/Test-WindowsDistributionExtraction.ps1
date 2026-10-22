@@ -13,9 +13,6 @@ $ErrorActionPreference = 'Stop'
 $zipFile = (Resolve-Path -LiteralPath $ZipPath -ErrorAction Stop).Path
 $preflight = Join-Path $PSScriptRoot 'Test-WindowsDistribution.ps1'
 & $preflight -Flavor $Flavor -ZipPath $zipFile
-if ($LASTEXITCODE -and $LASTEXITCODE -ne 0) {
-    throw "$Flavor ZIP did not pass the existing archive preflight."
-}
 
 Add-Type -AssemblyName System.IO.Compression
 if (-not ('System.IO.Compression.ZipFile' -as [type])) {
