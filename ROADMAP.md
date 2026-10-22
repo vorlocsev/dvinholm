@@ -1,3 +1,15 @@
+## Portable ZIP optimization and experimental Lite distribution (Development, 2026-10-22)
+
+- [x] Preserve the Windows x86 **Portable self-contained** distribution and existing updater asset name. Optimize its ZIP using strong Deflate compression when 7-Zip is available; fall back to .NET ZIP otherwise.
+- [x] Exclude PDBs, crash dumps, trace/coverage outputs and named debug utilities from the **distribution ZIP**. Keep necessary .NET/WinUI native binaries and XAML resources; do not blindly strip dependencies.
+- [x] Publish a separate Windows x86 **Lite framework-dependent** variant that requires preinstalled .NET 10 Desktop Runtime x86 plus Windows App SDK runtime. Upload separately from Portable and keep the in-app updater bound to Portable. Do not claim Lite is usable without prerequisite installation and a Windows launch smoke test.
+- [x] Explicitly keep `PublishTrimmed=false`, `PublishAot=false` for both. Trimming needs dedicated WinUI 3/XAML/COM compatibility evaluation; no trimming in main.
+- [x] Packaging gates validate executable, icon, runtimeconfig/deps files, no debugging byproducts or tools, Portable self-contained .NET runtime, Lite framework-dependency, and a strictly smaller Lite ZIP. CI prints actual sizes to its summary.
+- [x] Stable release workflow applies the same clean ZIP gate **before computing SHA-256 and uploading**; debug tools are excluded from future Stable archives. Historical Stable v0.2.2 is unchanged.
+- [ ] Confirm PR CI Windows x86 full tests/build/Portable+Lite packaging and Stable audit, measure actual compressed sizes, and merge only when green. Confirm post-merge main CI separately. **Lite GUI launch on clean Windows with required runtimes** and real J2534 remain deferred.
+
+---
+
 ## Full-backup SHA-256 manifest for new recovery checkpoints (Development, 2026-10-22)
 
 - [x] Write `backup.sha256` **outside** the mirrored backup using a canonical SHA-256 digest of every file's relative path and bytes plus the directory paths (including empty directories). Create it from the actual old-build backup **before** starting a destructive replacement; verify the manifest immediately when it is written.
