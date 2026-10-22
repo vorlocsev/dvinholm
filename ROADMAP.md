@@ -1,8 +1,18 @@
+## Recovery isolation across independent installs (Development, 2026-10-22)
+
+- [x] Generate a stable 24-hex-character SHA-256 identity from the normalized, case-insensitive **full backup path**, replacing the old backup-folder basename as both the Windows named-mutex suffix and HKCU Run recovery-entry suffix. This prevents collisions between distinct transactions that happen to share a backup directory name, without breaking locking between the guard and sign-in recovery for the same backup.
+- [x] Add eight Windows x86 real cross-process integration scenarios for different installations with identical backup leaf names: first-install vs previous-build checkpoint in each installation, with plain or apostrophe-containing paths. Hold installation A's real mutex after acquisition, verify B completes independently, then release A and verify byte-exact restores/cleanup, one launch per restored old build and preserved unrelated user files.
+- [x] Preserve case-insensitive identity stability in the generator and update the old script-identity assertion.
+- [ ] Require green PR CI Windows x86 build, all tests, artifact and Stable audit; merge then confirm a separate green main CI. Physical J2534, actual reboot/login and installed GUI remain deferred.
+- [x] Previous PR #413 CI #3070 passed 775/775 and merged as `70b6939`. Post-merge main CI #3071 passed 775/775 including Windows x86 packaging and Stable audit.
+
+---
+
 ## Concurrent guard and sign-in recovery mutex (Development, 2026-10-22)
 
 - [x] Add eight genuine **cross-process PowerShell** contention scenarios: first-install checkpoint versus previous-build rollback, flat versus nested assets, second concurrent sign-in versus independent `-Watch` guard. A test-only gate pauses the first process **after** acquiring the real production named mutex and **before** any destructive recovery action.
 - [x] Require the concurrent contender to exit without changing the installed files or pending checkpoint. Release the owning process and assert successful cleanup, byte-exact recovery where applicable, no duplicate executable launch, untouched unrelated user data and idempotent later sign-in.
-- [ ] Confirm complete Windows x86 PR build, test, artifact and Stable audit; merge only on green CI and verify post-merge main CI. Real reboot, UI, J2534 and ECU remain deferred.
+- [x] PR #413 CI #3070 passed 775/775, merged as `70b6939`; main CI #3071 passed 775/775 with Windows x86 packaging and Stable audit. Real reboot, UI, J2534 and ECU remain deferred.
 - [x] Previous PR #412 post-merge main CI #3066 passed 767/767 with Windows x86 build and Stable audit.
 
 ---
