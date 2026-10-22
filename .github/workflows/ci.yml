@@ -87,6 +87,8 @@ jobs:
           ./eng/Package-WindowsDistribution.ps1 -Flavor Lite -PublishDirectory artifacts/app-lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
           ./eng/Test-WindowsDistribution.ps1 -Flavor Portable -ZipPath artifacts/Dvinholm-Windows-x86.zip
           ./eng/Test-WindowsDistribution.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
+          ./eng/Test-WindowsDistributionExtraction.ps1 -Flavor Portable -ZipPath artifacts/Dvinholm-Windows-x86.zip
+          ./eng/Test-WindowsDistributionExtraction.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
           $portable = (Get-Item -LiteralPath artifacts/Dvinholm-Windows-x86.zip).Length
           $lite = (Get-Item -LiteralPath artifacts/Dvinholm-Windows-x86-Lite.zip).Length
           if ($lite -ge $portable) { throw "Lite must be smaller than Portable: $lite >= $portable" }
