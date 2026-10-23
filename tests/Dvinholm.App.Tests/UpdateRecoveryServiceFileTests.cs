@@ -194,7 +194,10 @@ public sealed class UpdateRecoveryServiceFileTests
             ?? throw new InvalidOperationException("Could not start PowerShell service-file test.");
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(35));
+        // Recovery can wait for Windows PowerShell and Robocopy under CI load.
+        // Keep a finite deadline without failing legitimate recovery work
+        // solely because the runner was temporarily contended.
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(120));
         await process.WaitForExitAsync(timeout.Token);
         return (process.ExitCode, await stdout + await stderr);
     }

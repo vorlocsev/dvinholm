@@ -4,7 +4,9 @@
 - [x] Fail closed for missing/unsupported/malformed GitHub digests, not-uploaded asset state, incorrect ZIP/manifest API digests, and coherent replacement of a ZIP plus a regenerated manifest.
 - [x] Add eight deterministic Windows PowerShell 5.1 regressions, retaining the previous eight public release metadata scenarios (total 16).
 - [x] Preserve stream-based .NET SHA256 hashing, public asset checks, Stable v0.2.2 and Portable updater; no trimming/AOT.
-- [ ] Verify PR CI expected **943/943**, both ZIPs, Stable audit; merge only on green and independently confirm postmerge main GitHub Releases re-download audit.
+- [x] PR CI #3207 passed **943/943**, Portable/Lite extracted ZIP, SHA-256 manifest and Stable audit. Concurrent CI #3206 failed **942/943** on the pre-existing Windows recovery test `ServiceFileFailure_PreservesRecoveryAndAllowsSafeRetry(false, damaged-resume)`: a PowerShell/Robocopy process exceeded the 35-second test-only timeout under runner contention.
+- [x] Retain the real recovery assertions and increase the recovery PowerShell subprocess's bounded test deadline to 120 seconds, without changing production scripts.
+- [ ] Verify the corrected PR head **943/943**, Portable/Lite extracted ZIP, and Stable audit. Merge only on green and independently confirm postmerge main GitHub Releases re-download audit.
 - [ ] No real WinUI Lite start or physical J2534 test claimed.
 
 ---
