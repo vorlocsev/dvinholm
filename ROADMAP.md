@@ -1,9 +1,22 @@
+## Lite self-check CMD safety and incomplete-folder handling (Development, 2026-10-23)
+
+- [x] Pin the bundled CMD launcher to Windows-owned System32 PowerShell; do not execute a same-name binary through PATH or the extraction/current directory.
+- [x] Reject missing Lite EXE, runtimeconfig or bundled inspector before invoking the checker; preserve distinct nonzero diagnostics, inspector exit code, and read-only behavior.
+- [x] Add opt-in `DVINHOLM_LITE_NO_PAUSE=1` for scripted use, keeping the interactive prompt by default.
+- [x] Add eight Windows CMD integration fixtures: paths with spaces, other working directory, three missing payload components, propagated inspector error, PowerShell PATH hijack attempt, and scripted mode.
+- [x] PR CI #3221 failed **962/967** due to an actual CMD quoting problem: `-LiteDirectory "%~dp0"` ends with a backslash, which can escape a closing quote when passed to PowerShell and swallow the following SDK argument. Missing-file assertions passed.
+- [x] Use `-LiteDirectory "%~dp0."` so the argument ends with a dot, and normalize the directory path in the regression assertions.
+- [ ] Verify corrected PR CI expected **967/967**, Windows x86, Lite bundle ZIP contract, Portable/Lite extraction/checksums and Stable audit; merge on green, then confirm main CI.
+- [ ] Real Lite WinUI GUI launch and physical J2534 remain deferred; Stable v0.2.2, Portable updater and trimming/AOT unchanged.
+
+---
+
 ## Lite standalone prerequisite self-check in ZIP (Development, 2026-10-23)
 
 - [x] Bundle source-matched PowerShell checker and read-only one-click Windows CMD launcher in Lite ZIP root. Portable ZIP remains free of Lite helpers.
 - [x] Enforce exact checker content and correct ZIP placement using eight Windows PowerShell 5.1 regression fixtures and a packaging gate.
 - [x] Original PR #436 CI #3211 and #3212 passed **951/951**; merge with the already-integrated PR #437 preserves both changes in the same branch.
-- [ ] Verify integrated PR head expected **959/959** tests, final ZIPs and checksums, Stable audit; merge on green then verify postmerge main CI and public Development prerelease.
+- [x] Integrated PR #436 merged as `a53dd20` after 959/959; independent main CI #3219 passed **959/959**, final Portable/Lite ZIP extraction, SHA-256 checks, Stable audit and downloaded public `ci-3219` release assets.
 - [ ] Real Lite WinUI interactive startup and physical J2534 tests remain deferred; Stable v0.2.2 and trimming/AOT unchanged.
 
 ---
