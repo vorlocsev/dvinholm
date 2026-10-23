@@ -94,6 +94,7 @@ public sealed class WindowsLiteMsixLtscManifestContractTests
                         ProcessorArchitecture="x86" Version="0.2.2.0" />
               <Dependencies>
                 <TargetDeviceFamily Name="{{family}}" MinVersion="{{minOs}}" MaxVersionTested="10.0.26100.0" />
+                <PackageDependency Name="Microsoft.WindowsAppRuntime.2" MinVersion="2.5.1.0" Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US" />
               </Dependencies>
               <Applications>
                 <Application Id="App" Executable="Dvinholm.App.exe" EntryPoint="{{entryPoint}}" />
@@ -104,6 +105,8 @@ public sealed class WindowsLiteMsixLtscManifestContractTests
             """;
         using var archive = ZipFile.Open(path, ZipArchiveMode.Create);
         Write(archive, "AppxManifest.xml", manifest);
+        Write(archive, "Dvinholm.App.runtimeconfig.json",
+            """{"runtimeOptions":{"framework":{"name":"Microsoft.NETCore.App","version":"10.0.0"}}}""");
         var exe = scenario == "nested-only-executable"
             ? "payload/Dvinholm.App.exe" : "Dvinholm.App.exe";
         Write(archive, exe, "Synthetic placeholder, never executed.");
