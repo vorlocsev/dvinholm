@@ -1,9 +1,19 @@
+## Store-less Windows 11 LTSC Lite MSIX dependency inventory (Development, 2026-10-23)
+
+- [x] Add read-only offline MSIX prerequisite inspection: parse the built package for declared .NET 10 and Microsoft.WindowsAppRuntime.2 dependency, compare with host x86 .NET Desktop/Core and current-user registered x86 Windows App SDK Framework.
+- [x] Keep fixtures explicit (both text files or neither), no user secrets, no package downloads, no certificate changes, no AppX installs, no WinUI launch and no physical J2534 interaction.
+- [x] Add eight Windows PowerShell 5.1 integration fixtures and enforce syntax parse in the experimental MSIX CI.
+- [ ] Require Windows x86 1007/1007, real unsigned MSIX build, Portable/Lite extracted ZIPs and Stable audit before merging. Then verify main CI independently.
+- [ ] Signed trusted MSIX and actual Store-less Windows 11 LTSC installation/startup tests are unverified. Stable v0.2.2, Portable updater and trimming/AOT remain unchanged.
+
+---
+
 ## Lite MSIX Framework dependency and .NET 10 contract (Development, 2026-10-23)
 
 - [x] Inspect actual unsigned CI MSIX #9, not only the source manifest: it declares Microsoft.WindowsAppRuntime.2 min 2.5.1.0 with Microsoft publisher, and has root .NET 10 runtimeconfig; no AppxSignature.p7x.
 - [x] Add checks 15–20 to fail closed if the generated package loses or changes Framework dependency identity/version/publisher, the root .NET runtimeconfig or the unsigned-only designation.
 - [x] Add eight synthetic Windows PowerShell 5.1 archive tests covering valid package and seven wrong-dependency/runtime/signature variants; no installation, signing or GUI launch.
-- [ ] CI target: 999/999 tests, actual unsigned x86 MSIX validator, Portable/Lite ZIPs and Stable audit. Merge only after all green, then independently verify new main CI.
+- [x] PR #444 CI #3254 passed 999/999, actual MSIX #15 passed, Portable/Lite ZIP checks and Stable audit passed; merged as 38ce8db. Independent main CI #3255 is pending verification.
 - [ ] For Windows LTSC without Store: trusted MSIX signing, official offline Windows App SDK dependency provisioning, .NET 10 x86 and real first-run test are still required. Physical J2534 testing deferred; Stable v0.2.2 and trimming/AOT unchanged.
 
 ---

@@ -45,6 +45,39 @@ normally until signed with a trusted publisher certificate. The Portable file
 replacement updater is disabled in MSIX builds; Windows handles package updates
 through a separately configured signed distribution channel.
 
+## Store-less LTSC MSIX read-only dependency inspection (Development)
+
+From a repository checkout, inspect the **actual unsigned Development MSIX** on
+the intended Windows machine, without downloading, installing, registering, or
+running any package:
+
+    powershell.exe -NoProfile -File .\eng\Test-LiteMsixOfflinePrerequisites.ps1 -PackagePath 'C:\Downloads\Dvinholm-Lite-x86-UNSIGNED.msix'
+
+This checks only the declared package Framework dependency
+(`Microsoft.WindowsAppRuntime.2`, minimum 2.5.1.0, expected Microsoft
+publisher), the root .NET 10 runtimeconfig, installed **x86**
+`Microsoft.NETCore.App` plus `Microsoft.WindowsDesktop.App` runtimes, and
+the current user's registered x86 Windows App SDK Framework package.
+It uses the x86 `dotnet.exe` host and does not mistake x64-only or older
+frameworks for suitable dependencies. Run without test fixture parameters on
+a real Windows host.
+
+For CI, both `-RuntimeListFile` and `-FrameworkPackageListFile` must be
+provided together; the checker prints **SIMULATED INPUT**, so successful
+fixtures never claim verification of an actual computer. Eight simulated
+Windows x86 cases cover valid inputs, absent/old .NET, missing Desktop,
+absent/wrong-architecture/old Windows App SDK, and partial fixture rejection.
+
+**Passing this read-only inspection does not mean an unsigned MSIX can
+be installed.** Signing with a certificate trusted by Windows, offline
+dependency availability and provisioning, possible VCLibs requirements,
+successful package registration, and real interactive WinUI startup remain
+separate, unverified gates. Never bypass Windows trust controls or treat a
+synthetic fixture as a machine readiness test. Physical J2534 testing is
+deferred. Official guidance:
+https://learn.microsoft.com/en-us/windows/msix/package/signing-package-overview
+https://learn.microsoft.com/en-us/windows/msix/msix-troubleshooting-guide
+
 ## Lite host prerequisite inspection (Development)
 
 Extract Lite into its **own directory** and double-click
