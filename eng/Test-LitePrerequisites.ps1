@@ -158,16 +158,23 @@ foreach ($reference in $references) {
         throw "Lite preflight cannot certify .NET rollForward '$policy' for $($reference.name)."
     }
 
-    $compatible = @($installed | Where-Object {
-        if ($_.Name -ne $reference.name -or $_.Version.Major -ne 10) {
-            return $false
-        }
+    $available = @($installed | Where-Object {
+        $_.Name -eq $reference.name -and $_.Version.Major -eq 10
+    })
+    # .NET's default Minor policy uses LatestPatch if the requested minor
+    # line is already installed. An older patch in that line must NOT
+    # silently roll to the next minor, even if a newer minor is present.
+    $requestedMinorPresent = @($available | Where-Object {
+        $_.Version.Minor -eq $minimum.Minor
+    }).Count -gt 0
+    $compatible = @($available | Where-Object {
         # Do not use switch here: PowerShell overwrites $_ with the
         # switched policy string, losing the installed runtime object.
         if ($policy -eq 'Disable') {
             return $_.Version -eq $minimum
         }
-        if ($policy -eq 'LatestPatch') {
+        if ($policy -eq 'LatestPatch' -or
+            ($policy -eq 'Minor' -and $requestedMinorPresent)) {
             return ($_.Version.Minor -eq $minimum.Minor -and
                 $_.Version -ge $minimum)
         }
