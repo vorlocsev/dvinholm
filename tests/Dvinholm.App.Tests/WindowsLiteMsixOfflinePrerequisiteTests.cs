@@ -19,6 +19,14 @@ public sealed class WindowsLiteMsixOfflinePrerequisiteTests
     [InlineData("appsdk-x64-only", false, "Microsoft.WindowsAppRuntime.2")]
     [InlineData("appsdk-too-old", false, "Microsoft.WindowsAppRuntime.2")]
     [InlineData("partial-fixtures", false, "Provide both fixture files")]
+    [InlineData("wrong-identity", false, "Package identity")]
+    [InlineData("package-x64", false, "Package identity")]
+    [InlineData("sdk-wrong-publisher", false, "publisher does not match")]
+    [InlineData("sdk-min-too-old", false, "older than 2.5.1.0")]
+    [InlineData("runtimeconfig-net9", false, "valid .NET 10")]
+    [InlineData("runtimeconfig-rollforward-major", false, "supports only default")]
+    [InlineData("runtimeconfig-missing", false, "missing package-root")]
+    [InlineData("runtimeconfig-patch-too-new", false, "Microsoft.NETCore.App")]
     public async Task OfflineInspector_IsFailClosed(
         string scenario, bool expectedSuccess, string expectedText)
     {
@@ -31,7 +39,7 @@ public sealed class WindowsLiteMsixOfflinePrerequisiteTests
             var packagePath = Path.Combine(root, "fixture.msix");
             using (var archive = ZipFile.Open(packagePath, ZipArchiveMode.Create))
             {
-                Write(archive, "AppxManifest.xml", """
+                var manifest = """
                     <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10">
                       <Identity Name="Dvinholm.Lite" Publisher="CN=Dvinholm Development"
                                 ProcessorArchitecture="x86" Version="0.2.2.0" />
@@ -41,9 +49,34 @@ public sealed class WindowsLiteMsixOfflinePrerequisiteTests
                           Publisher="CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US"/>
                       </Dependencies>
                     </Package>
-                    """);
-                Write(archive, "Dvinholm.App.runtimeconfig.json",
-                    """{"runtimeOptions":{"framework":{"name":"Microsoft.NETCore.App","version":"10.0.0"}}}""");
+                    """;
+                if (scenario == "wrong-identity")
+                    manifest = manifest.Replace("Name=\"Dvinholm.Lite\"",
+                        "Name=\"Dvinholm.Invalid\"");
+                if (scenario == "package-x64")
+                    manifest = manifest.Replace("ProcessorArchitecture=\"x86\"",
+                        "ProcessorArchitecture=\"x64\"");
+                if (scenario == "sdk-wrong-publisher")
+                    manifest = manifest.Replace("Publisher=\"CN=Microsoft Corporation,",
+                        "Publisher=\"CN=Unknown Corporation,");
+                if (scenario == "sdk-min-too-old")
+                    manifest = manifest.Replace("MinVersion=\"2.5.1.0\"",
+                        "MinVersion=\"2.4.0.0\"");
+                Write(archive, "AppxManifest.xml", manifest);
+                if (scenario != "runtimeconfig-missing")
+                {
+                    var runtimeConfig = """
+                        {"runtimeOptions":{"framework":{"name":"Microsoft.NETCore.App","version":"10.0.0"}}}
+                        """;
+                    if (scenario == "runtimeconfig-net9")
+                        runtimeConfig = runtimeConfig.Replace("10.0.0", "9.0.0");
+                    if (scenario == "runtimeconfig-patch-too-new")
+                        runtimeConfig = runtimeConfig.Replace("10.0.0", "10.0.3");
+                    if (scenario == "runtimeconfig-rollforward-major")
+                        runtimeConfig = runtimeConfig.Replace("\"runtimeOptions\":{",
+                            "\"runtimeOptions\":{\"rollForward\":\"Major\",");
+                    Write(archive, "Dvinholm.App.runtimeconfig.json", runtimeConfig);
+                }
             }
             var runtimeLines =
                 "Microsoft.NETCore.App 10.0.2 [C:\\dotnet-x86\\shared\\Microsoft.NETCore.App]\n" +
