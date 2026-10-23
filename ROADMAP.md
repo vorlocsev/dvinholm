@@ -1,10 +1,19 @@
+## Lite MSIX rejection-regression coverage (Development, 2026-10-23)
+
+- [x] Add eight Windows PowerShell 5.1 regression fixtures to prove the existing MSIX validator rejects every invalid-package contract: missing manifest, x64 identity, wrong package name, wrong executable, missing executable, bundled runtime, missing logo and debug payload.
+- [x] Generate only synthetic ZIP/MSIX archives in isolated temp folders; do not install, sign or launch WinUI.
+- [ ] Confirm Windows x86 test suite (+8 regressions), Portable/Lite distribution ZIP and Stable audit on PR CI; independently confirm postmerge main CI.
+- [ ] Actual unsigned MSIX CI stays separate and experimental; trusted signing and real installation on Store-less LTSC are not validated. Physical J2534 testing remains deferred, trimming/AOT off.
+
+---
+
 ## Tiny framework-dependent Lite MSIX (2026-10-23)
 
 - [x] Add opt-in x86 MSIX mode with no bundled .NET 10 or WinAppSDK runtime. Existing Portable and Lite ZIP builds unchanged.
 - [x] Generate five tiny branded PNG assets from Dvinholm.ico at CI build time; no added checked-in binary logos.
 - [x] Add eight package smoke checks: manifest, x86, package identity, app entry, EXE, missing bundled runtimes, visual assets, and debug artifact exclusion.
 - [x] Disable Portable in-place update UI for MSIX mode.
-- [ ] Verify Windows MSIX CI actual package and size; MSIX remains unsigned test-only until trusted code signing and real install checks.
+- [x] Experimental MSIX CI #6 passed actual x86 unsigned package build, eight MSIX smoke checks, artifact upload; **11,316,543 bytes**. This remains unsigned test-only, not an installable Stable release.
 - [ ] Validate runtime dependency acquisition on real Windows, especially Store-less LTSC. MSIX cannot guarantee .NET auto-download; no real J2534 testing claimed.
 - [ ] Stable v0.2.2, Portable updater and trimming/AOT unaffected.
 
