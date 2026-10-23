@@ -73,7 +73,11 @@ until alternate signing identities have been tested separately. This does
 not validate a digital signature on the MSIX, verify Windows trust, or
 require the certificate private key. Eight additional temporary public
 certificate fixtures cover weak RSA, stronger RSA, SHA-1, SHA-384/512 and
-ECDSA variants. The check still requires a correct publisher and DER file.
+ECDSA variants.
+The SHA-1 rejection fixture uses synthetic DER with two SHA-1 signature-
+algorithm OIDs, since .NET 10 deliberately refuses to generate a new
+SHA-1 certificate. Its signature is not valid; the fixture exercises
+metadata rejection only, never cryptographic signature validation. The check still requires a correct publisher and DER file.
 
 The certificate parser now requires **byte-for-byte DER equality** between the
 provided public .cer file and the decoded X.509 certificate. It therefore

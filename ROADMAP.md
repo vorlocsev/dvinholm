@@ -1,7 +1,7 @@
 ## Public MSIX certificate crypto-profile checks (Development, 2026-10-24)
 
 - [x] Restrict pre-sign public certificate to RSA >=2048-bit public keys and SHA-256/384/512 with RSA PKCS#1 certificate signature. Fail closed for SHA-1 and untested ECDSA variants.
-- [x] Add eight Windows x86 tests: RSA 1024 rejection, RSA 3072/4096 success, SHA-1 rejection, SHA-384/512 success and ECDSA P-256/P-384 rejection.
+- [x] Add eight Windows x86 tests: RSA 1024 rejection, RSA 3072/4096 success, SHA-1 rejection, SHA-384/512 success and ECDSA P-256/P-384 rejection. The SHA-1 case uses a deliberately synthetic DER OID replacement because .NET 10 cannot issue SHA-1 certificates; this tests pre-sign metadata only.
 - [x] Keep private-key material in memory in synthetic tests; only ephemeral public DER files go to isolated test temp directories; no CI signing or local trust modification.
 - [ ] Require full Windows x86 CI 1047/1047, real unsigned Lite MSIX workflow, Portable/Lite ZIP and SHA-256 plus Stable audit. Merge only after all green and verify postmerge main CI.
 - [ ] Do not treat read-only metadata validation as a signed or trusted MSIX. Stable v0.2.2, Portable updates, trimming/AOT, real LTSC install and physical J2534 unchanged.

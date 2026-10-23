@@ -79,7 +79,6 @@ public sealed class WindowsLiteMsixSigningCertificatePreflightTests
                 ? "CN=Unexpected Publisher" : "CN=Dvinholm Development";
             var digest = scenario switch
             {
-                "sha1-rsa" => HashAlgorithmName.SHA1,
                 "sha384-rsa" or "ecdsa-p384" => HashAlgorithmName.SHA384,
                 "sha512-rsa" => HashAlgorithmName.SHA512,
                 _ => HashAlgorithmName.SHA256
@@ -122,6 +121,8 @@ public sealed class WindowsLiteMsixSigningCertificatePreflightTests
             if (scenario != "missing-certificate")
             {
                 byte[] publicDer = cert.Export(X509ContentType.Cert);
+                if (scenario == "sha1-rsa")
+                    publicDer = WithSyntheticSha1SignatureAlgorithm(publicDer);
                 if (scenario == "non-der-pem")
                     publicDer = Encoding.ASCII.GetBytes(
                         "-----BEGIN CERTIFICATE-----\n" +
@@ -166,6 +167,29 @@ public sealed class WindowsLiteMsixSigningCertificatePreflightTests
             Assert.Contains(expectedMessage, output);
         }
         finally { await WindowsTestFixtureCleanup.RemoveBestEffortAsync(root); }
+    }
+
+    // CertificateRequest in .NET 10 refuses SHA-1 when creating a test
+    // certificate. Change only both equal-length signature-algorithm OIDs
+    // in a DER-encoded SHA-256 test certificate, so the read-only metadata
+    // preflight can reject SHA-1. This deliberately invalidates its actual
+    // signature and is NOT a fixture for verifying cryptographic signatures.
+    private static byte[] WithSyntheticSha1SignatureAlgorithm(byte[] original)
+    {
+        ReadOnlySpan<byte> sha256RsaOid =
+            [0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0B];
+        var result = (byte[])original.Clone();
+        var matches = 0;
+        for (var i = 0; i <= result.Length - sha256RsaOid.Length; i++)
+        {
+            if (!result.AsSpan(i, sha256RsaOid.Length).SequenceEqual(sha256RsaOid))
+                continue;
+            result[i + sha256RsaOid.Length - 1] = 0x05; // sha1WithRSAEncryption
+            matches++;
+            i += sha256RsaOid.Length - 1;
+        }
+        Assert.Equal(2, matches); // tbsCertificate and outer signatureAlgorithm
+        return result;
     }
 
     private static string FindScript()
