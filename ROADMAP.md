@@ -1,9 +1,19 @@
+## Lite MSIX offline multi-framework .NET readiness accuracy (Development, 2026-10-23)
+
+- [x] Parse both runtimeOptions.framework and runtimeOptions.frameworks, rejecting unknown, duplicate and invalid .NET 10 shared frameworks rather than silently dropping them.
+- [x] Honor independent minimum x86 Desktop/Core versions and per-reference rollForward/applyPatches; only conservatively certified Minor with patch servicing is accepted.
+- [x] Add eight Windows PowerShell 5.1 simulated host regressions: dual valid, Desktop/Core patch floors, unknown, duplicate, missing Core, per-reference Disable and applyPatches=false.
+- [ ] Require Windows x86 1023/1023, real unsigned x86 MSIX, Portable/Lite ZIP integrity and Stable audit. Merge only on green; confirm main CI independently.
+- [ ] No signed MSIX deployment, real LTSC host installation, GUI startup or physical J2534 tested. Stable v0.2.2, Portable updater, trimming/AOT unchanged.
+
+---
+
 ## Lite MSIX actual-package offline CI gate (Development, 2026-10-23)
 
 - [x] Run read-only simulated x86 host dependency inspection against the **actual unsigned MSIX built in CI** after the 20 existing archive checks, before artifact upload.
 - [x] Use disposable PowerShell 5.1 synthetic fixture inventory in an isolated temporary directory with guaranteed cleanup. Explicit SIMULATED/NOT INSTALL-READY messaging; never install, sign, register, download dependencies or launch WinUI.
 - [x] Extend Windows x86 regression coverage by eight invalid package/runtimeconfig scenarios: wrong identity, x64 package, SDK publisher, old SDK minimum, .NET 9, Major roll-forward, missing runtimeconfig and insufficient runtime patch.
-- [ ] Require CI expected 1015/1015, actual MSIX gate and Portable/Lite ZIP+checksums+Stable audit green; merge only then and confirm independent main CI.
+- [x] PR #446 CI #3260 passed 1015/1015, actual unsigned MSIX #21 passed real-package simulated-host gate, Portable/Lite ZIP checksums and Stable audit passed; merged as 9fbb5bb. Independent postmerge main CI remains to verify.
 - [ ] Signed MSIX trust chain and actual offline LTSC install/runtime provision/GUI startup still untested. Stable v0.2.2, trimming/AOT and physical J2534 test deferral unchanged.
 
 ---
@@ -13,7 +23,7 @@
 - [x] Add read-only offline MSIX prerequisite inspection: parse the built package for declared .NET 10 and Microsoft.WindowsAppRuntime.2 dependency, compare with host x86 .NET Desktop/Core and current-user registered x86 Windows App SDK Framework.
 - [x] Keep fixtures explicit (both text files or neither), no user secrets, no package downloads, no certificate changes, no AppX installs, no WinUI launch and no physical J2534 interaction.
 - [x] Add eight Windows PowerShell 5.1 integration fixtures and enforce syntax parse in the experimental MSIX CI.
-- [x] PR #445 CI #3257 passed 1007/1007; experimental MSIX #18, Portable/Lite ZIP extraction/checksums and Stable audit passed; merged as b41698c. Independent main CI requires confirmation.
+- [x] PR #445 CI #3257 passed 1007/1007; experimental MSIX #18, Portable/Lite ZIP extraction/checksums and Stable audit passed; merged as b41698c. Independent main CI #3258 passed.
 - [ ] Signed trusted MSIX and actual Store-less Windows 11 LTSC installation/startup tests are unverified. Stable v0.2.2, Portable updater and trimming/AOT remain unchanged.
 
 ---
