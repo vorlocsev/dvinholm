@@ -1,9 +1,19 @@
+## Public MSIX certificate crypto-profile checks (Development, 2026-10-24)
+
+- [x] Restrict pre-sign public certificate to RSA >=2048-bit public keys and SHA-256/384/512 with RSA PKCS#1 certificate signature. Fail closed for SHA-1 and untested ECDSA variants.
+- [x] Add eight Windows x86 tests: RSA 1024 rejection, RSA 3072/4096 success, SHA-1 rejection, SHA-384/512 success and ECDSA P-256/P-384 rejection.
+- [x] Keep private-key material in memory in synthetic tests; only ephemeral public DER files go to isolated test temp directories; no CI signing or local trust modification.
+- [ ] Require full Windows x86 CI 1047/1047, real unsigned Lite MSIX workflow, Portable/Lite ZIP and SHA-256 plus Stable audit. Merge only after all green and verify postmerge main CI.
+- [ ] Do not treat read-only metadata validation as a signed or trusted MSIX. Stable v0.2.2, Portable updates, trimming/AOT, real LTSC install and physical J2534 unchanged.
+
+---
+
 ## Lite MSIX public DER certificate strictness (Development, 2026-10-24)
 
 - [x] Require exact raw public DER .cer byte equality against the X.509 certificate encoding; reject PEM, wrapped certificates, extra trailing data and non-.cer extensions before claiming signing metadata suitability.
 - [x] Add eight Windows x86 test fixtures: PEM encoding, DER trailing bytes, wrong extension, missing EKU, multiple EKUs, missing KeyUsage, missing BasicConstraints and wrong MSIX package identity.
 - [x] Keep offline pre-sign inspection read-only, never create PFX/private-key files, trust store mutation, signed installer, real LTSC launch or real J2534 access.
-- [ ] Require Windows x86 CI 1039/1039, real unsigned MSIX workflow, Portable/Lite ZIP SHA256 and Stable audit. Merge only after green and inspect postmerge main CI.
+- [x] PR #450 CI #3272 passed 1039/1039, actual unsigned MSIX #31 passed, Portable/Lite ZIP and SHA-256 plus Stable audit succeeded. Merged as 5492877; independent main CI to verify.
 - [ ] Trusted signing, official offline dependencies and real LTSC package installation remain unverified; Stable v0.2.2 and trimming/AOT unchanged.
 
 ---

@@ -29,6 +29,14 @@ public sealed class WindowsLiteMsixSigningCertificatePreflightTests
     [InlineData("missing-keyusage", false, "must declare digitalSignature")]
     [InlineData("missing-basicconstraints", false, "end-entity signing certificate")]
     [InlineData("wrong-msix-identity", false, "MSIX identity is not exactly")]
+    [InlineData("rsa-1024", false, "RSA key size at least 2048")]
+    [InlineData("rsa-3072", true, "PRE-SIGN CHECK ONLY")]
+    [InlineData("rsa-4096", true, "PRE-SIGN CHECK ONLY")]
+    [InlineData("sha1-rsa", false, "requires SHA-2 RSA signature")]
+    [InlineData("sha384-rsa", true, "PRE-SIGN CHECK ONLY")]
+    [InlineData("sha512-rsa", true, "PRE-SIGN CHECK ONLY")]
+    [InlineData("ecdsa-p256", false, "must use RSA public key")]
+    [InlineData("ecdsa-p384", false, "must use RSA public key")]
     public async Task PublicCertificatePreflight_RejectsUnusableCertificates(
         string scenario, bool success, string expectedMessage)
     {
@@ -54,11 +62,33 @@ public sealed class WindowsLiteMsixSigningCertificatePreflightTests
                 writer.Write(manifest);
             }
 
-            using var rsa = RSA.Create(2048);
+            var useEcdsa = scenario.StartsWith("ecdsa-", StringComparison.Ordinal);
+            var rsaBits = scenario switch
+            {
+                "rsa-1024" => 1024,
+                "rsa-3072" => 3072,
+                "rsa-4096" => 4096,
+                _ => 2048
+            };
+            using RSA? rsa = useEcdsa ? null : RSA.Create(rsaBits);
+            using ECDsa? ecdsa = useEcdsa
+                ? ECDsa.Create(scenario == "ecdsa-p384"
+                    ? ECCurve.NamedCurves.nistP384 : ECCurve.NamedCurves.nistP256)
+                : null;
             var subject = scenario == "publisher-mismatch"
                 ? "CN=Unexpected Publisher" : "CN=Dvinholm Development";
-            var req = new CertificateRequest(new X500DistinguishedName(subject),
-                rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            var digest = scenario switch
+            {
+                "sha1-rsa" => HashAlgorithmName.SHA1,
+                "sha384-rsa" or "ecdsa-p384" => HashAlgorithmName.SHA384,
+                "sha512-rsa" => HashAlgorithmName.SHA512,
+                _ => HashAlgorithmName.SHA256
+            };
+            var req = useEcdsa
+                ? new CertificateRequest(new X500DistinguishedName(subject),
+                    ecdsa!, digest)
+                : new CertificateRequest(new X500DistinguishedName(subject),
+                    rsa!, digest, RSASignaturePadding.Pkcs1);
             var usages = scenario == "wrong-key-usage"
                 ? X509KeyUsageFlags.KeyEncipherment
                 : X509KeyUsageFlags.DigitalSignature;
