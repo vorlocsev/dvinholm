@@ -62,8 +62,15 @@ or installs dependencies:
 Checks: exact Dvinholm.Lite x86 package identity and certificate Subject
 matching the MSIX manifest Publisher, current validity, explicit *only*
 code-signing EKU, digital-signature KeyUsage, and non-CA BasicConstraints.
-Eight Windows test cases generate only ephemeral local test certificates, export
+Sixteen Windows test cases generate only ephemeral local test certificates, export
 **public .cer data**, and ensure known wrong inputs fail.
+
+The certificate parser now requires **byte-for-byte DER equality** between the
+provided public .cer file and the decoded X.509 certificate. It therefore
+rejects PEM encoding, container wrappers and trailing bytes rather than merely
+checking the filename extension. Eight additional synthetic Windows tests
+cover wrong encoding/extension, missing or excessive EKU, missing key usage,
+missing basic constraints and invalid MSIX identity.
 
 **Passing this is NOT proof of a trusted certificate or a valid signed
 MSIX.** You must separately perform signing with secure key management,

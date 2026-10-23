@@ -1,6 +1,6 @@
 #requires -Version 5.1
 <#
-Read-only PRE-SIGN inspection of public DER/PEM? No: DER .cer only.
+Read-only PRE-SIGN inspection of an exact raw public DER .cer only.
 Checks MSIX manifest Publisher matches a public X.509 code-signing
 certificate, without loading a private key, signing a file, trusting a
 certificate, or installing any package. Does NOT verify trust or signature.
@@ -45,6 +45,15 @@ try {
 try {
     if ($cert.HasPrivateKey) {
         throw 'Public certificate unexpectedly contains a private key.'
+    }
+    # Extension alone is not sufficient: X509Certificate2 may load a wrapper,
+    # a container or appended data while returning only the public cert as
+    # RawData. Require an exact DER certificate and no trailing bytes.
+    [byte[]]$fileBytes = [IO.File]::ReadAllBytes($certificateFile)
+    [byte[]]$derBytes = $cert.RawData
+    if ($fileBytes.Length -ne $derBytes.Length -or
+        [Convert]::ToBase64String($fileBytes) -cne [Convert]::ToBase64String($derBytes)) {
+        throw 'Public certificate must contain exact raw DER .cer bytes without wrapper or trailing data.'
     }
     if (-not [string]::Equals($cert.Subject, $publisher, [StringComparison]::Ordinal)) {
         throw "Certificate Subject does not exactly match MSIX Publisher."
