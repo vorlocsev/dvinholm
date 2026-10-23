@@ -10,6 +10,7 @@ on:
       - "eng/Test-LiteMsixOfflinePrerequisites.ps1"
       - "eng/Test-LiteMsixSimulatedHost.ps1"
       - "eng/Test-LiteMsixSigningCertificate.ps1"
+      - "eng/Test-LiteMsixSdkUnpack.ps1"
       - ".github/workflows/lite-msix.yml"
   pull_request:
   workflow_dispatch:
@@ -32,7 +33,7 @@ jobs:
       - name: Parse build scripts with Windows PowerShell 5.1
         shell: powershell
         run: |
-          foreach ($path in @('eng/New-MsixVisualAssets.ps1','eng/Test-LiteMsix.ps1','eng/Test-LiteMsixOfflinePrerequisites.ps1','eng/Test-LiteMsixSimulatedHost.ps1','eng/Test-LiteMsixSigningCertificate.ps1')) {
+          foreach ($path in @('eng/New-MsixVisualAssets.ps1','eng/Test-LiteMsix.ps1','eng/Test-LiteMsixOfflinePrerequisites.ps1','eng/Test-LiteMsixSimulatedHost.ps1','eng/Test-LiteMsixSigningCertificate.ps1','eng/Test-LiteMsixSdkUnpack.ps1')) {
             $tokens = $null; $errors = $null
             [Management.Automation.Language.Parser]::ParseFile((Resolve-Path $path).Path,[ref]$tokens,[ref]$errors) | Out-Null
             if (@($errors).Count -gt 0) { throw "PowerShell syntax error: $path $errors" }
@@ -63,6 +64,7 @@ jobs:
           if ($packages.Count -ne 1) { throw "Expected one app MSIX (excluding SDK dependency packages); found $($packages.Count)." }
           ./eng/Test-LiteMsix.ps1 -PackagePath $packages[0].FullName
           ./eng/Test-LiteMsixSimulatedHost.ps1 -PackagePath $packages[0].FullName
+          ./eng/Test-LiteMsixSdkUnpack.ps1 -PackagePath $packages[0].FullName
           $size = $packages[0].Length
           Write-Host "Tiny framework-dependent MSIX: $size bytes."
           if ($size -ge 20MB) { throw 'MSIX exceeds 20 MiB: check for accidentally bundled runtimes.' }

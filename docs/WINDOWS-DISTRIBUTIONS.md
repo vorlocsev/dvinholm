@@ -45,6 +45,26 @@ normally until signed with a trusted publisher certificate. The Portable file
 replacement updater is disabled in MSIX builds; Windows handles package updates
 through a separately configured signed distribution channel.
 
+## Windows SDK unpack gate for actual unsigned MSIX (Development)
+
+The experimental Tiny Lite MSIX workflow now passes the **actual generated
+MSIX** to the installed Windows SDK `MakeAppx.exe unpack` tool before artifact
+upload, in addition to its existing archive checks. The script
+`eng/Test-LiteMsixSdkUnpack.ps1` finds a compatible local Windows SDK tool,
+extracts into a unique temporary directory and cleans up even on failure.
+
+Eight independent checks verify: (1) SDK unpack tool availability;
+(2) successful extraction; (3) x86 Lite manifest identity and development
+Publisher; (4) package-root x86 PE executable; (5) .NET 10 runtimeconfig;
+(6) the five branded assets; (7) exclusion of debug files and bundled runtime
+DLLs; and (8) unsigned-only status. This supplements but **does not replace**
+static MSIX validation and simulated runtime prerequisites.
+
+**Successful unpack is not successful installation.** No signing/trust validation,
+AppX registration, dependency provisioning, Windows LTSC interactive start or
+physical J2534 test occurs. CI must not delete or alter installed application
+files or certificate stores.
+
 ## Public signing certificate preflight (Development; not signing)
 
 The CI MSIX is intentionally **unsigned**. An actual Store-less installation
