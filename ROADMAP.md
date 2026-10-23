@@ -1,9 +1,19 @@
+## Lite MSIX public DER certificate strictness (Development, 2026-10-24)
+
+- [x] Require exact raw public DER .cer byte equality against the X.509 certificate encoding; reject PEM, wrapped certificates, extra trailing data and non-.cer extensions before claiming signing metadata suitability.
+- [x] Add eight Windows x86 test fixtures: PEM encoding, DER trailing bytes, wrong extension, missing EKU, multiple EKUs, missing KeyUsage, missing BasicConstraints and wrong MSIX package identity.
+- [x] Keep offline pre-sign inspection read-only, never create PFX/private-key files, trust store mutation, signed installer, real LTSC launch or real J2534 access.
+- [ ] Require Windows x86 CI 1039/1039, real unsigned MSIX workflow, Portable/Lite ZIP SHA256 and Stable audit. Merge only after green and inspect postmerge main CI.
+- [ ] Trusted signing, official offline dependencies and real LTSC package installation remain unverified; Stable v0.2.2 and trimming/AOT unchanged.
+
+---
+
 ## Public MSIX code-signing certificate preflight (Development, 2026-10-24)
 
 - [x] Add read-only Windows PowerShell 5.1 public DER .cer preflight. Require certificate subject exactly matching the built Lite MSIX Publisher, code-signing-only EKU, DigitalSignature KeyUsage, non-CA certificate and current dates. Never request/import/export private keys or change trusted stores.
 - [x] Add eight Windows x86 xUnit fixtures with disposable in-memory ephemeral RSA certificates (one valid, seven invalid certificate cases); publicly exported .cer only and no trust-store mutation. Keep development MSIX unsigned.
 - [x] Enforce Windows PowerShell 5.1 syntax parse in experimental MSIX workflow, without creating signing secrets, issuing test certs in CI packaging or installing the package.
-- [ ] Require Windows x86 CI 1031/1031, actual unsigned Lite MSIX workflow, Portable/Lite checksums/extraction and Stable audit green. Merge only then, verify postmerge main CI.
+- [x] PR #449 CI #3269 passed 1031/1031, MSIX #28 succeeded, Portable/Lite ZIP SHA256 and Stable audit passed; merged as 204aa75. Postmerge main CI requires independent verification.
 - [ ] Real trusted signing, offline dependency provisioning, LTSC installation, WinUI GUI startup and physical J2534 remain unverified; Stable v0.2.2, Portable updater and trimming/AOT unchanged.
 
 ---

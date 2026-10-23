@@ -2,6 +2,7 @@ using System.Diagnostics;
 using System.IO.Compression;
 using System.Security.Cryptography;
 using System.Security.Cryptography.X509Certificates;
+using System.Text;
 
 namespace Dvinholm.App.Tests;
 
@@ -20,6 +21,14 @@ public sealed class WindowsLiteMsixSigningCertificatePreflightTests
     [InlineData("expired", false, "expired")]
     [InlineData("not-yet-valid", false, "not yet valid")]
     [InlineData("ca-certificate", false, "not a CA")]
+    [InlineData("non-der-pem", false, "DER .cer")]
+    [InlineData("der-trailing-bytes", false, "DER .cer")]
+    [InlineData("wrong-extension", false, "Use only a public DER .cer")]
+    [InlineData("missing-eku", false, "must declare code-signing EKU")]
+    [InlineData("multiple-eku", false, "code-signing EKU only")]
+    [InlineData("missing-keyusage", false, "must declare digitalSignature")]
+    [InlineData("missing-basicconstraints", false, "end-entity signing certificate")]
+    [InlineData("wrong-msix-identity", false, "MSIX identity is not exactly")]
     public async Task PublicCertificatePreflight_RejectsUnusableCertificates(
         string scenario, bool success, string expectedMessage)
     {
@@ -32,12 +41,18 @@ public sealed class WindowsLiteMsixSigningCertificatePreflightTests
             var packagePath = Path.Combine(root, "fixture.msix");
             using (var archive = ZipFile.Open(packagePath, ZipArchiveMode.Create))
             using (var writer = new StreamWriter(archive.CreateEntry("AppxManifest.xml").Open()))
-                writer.Write("""
+            {
+                var manifest = """
                     <Package xmlns="http://schemas.microsoft.com/appx/manifest/foundation/windows10">
                       <Identity Name="Dvinholm.Lite" Publisher="CN=Dvinholm Development"
                                 ProcessorArchitecture="x86" Version="0.2.2.0" />
                     </Package>
-                    """);
+                    """;
+                if (scenario == "wrong-msix-identity")
+                    manifest = manifest.Replace("Name=\"Dvinholm.Lite\"",
+                        "Name=\"Another.Package\"");
+                writer.Write(manifest);
+            }
 
             using var rsa = RSA.Create(2048);
             var subject = scenario == "publisher-mismatch"
@@ -47,29 +62,45 @@ public sealed class WindowsLiteMsixSigningCertificatePreflightTests
             var usages = scenario == "wrong-key-usage"
                 ? X509KeyUsageFlags.KeyEncipherment
                 : X509KeyUsageFlags.DigitalSignature;
-            req.CertificateExtensions.Add(
-                new X509KeyUsageExtension(usages, critical: true));
+            if (scenario != "missing-keyusage")
+                req.CertificateExtensions.Add(
+                    new X509KeyUsageExtension(usages, critical: true));
             var enhancedUsages = new OidCollection
             {
                 new Oid(scenario == "wrong-eku"
                     ? "1.3.6.1.5.5.7.3.2" : "1.3.6.1.5.5.7.3.3")
             };
-            req.CertificateExtensions.Add(
-                new X509EnhancedKeyUsageExtension(enhancedUsages, critical: true));
-            req.CertificateExtensions.Add(
-                new X509BasicConstraintsExtension(
-                    certificateAuthority: scenario == "ca-certificate",
-                    hasPathLengthConstraint: false, pathLengthConstraint: 0,
-                    critical: true));
+            if (scenario == "multiple-eku")
+                enhancedUsages.Add(new Oid("1.3.6.1.5.5.7.3.2"));
+            if (scenario != "missing-eku")
+                req.CertificateExtensions.Add(
+                    new X509EnhancedKeyUsageExtension(enhancedUsages, critical: true));
+            if (scenario != "missing-basicconstraints")
+                req.CertificateExtensions.Add(
+                    new X509BasicConstraintsExtension(
+                        certificateAuthority: scenario == "ca-certificate",
+                        hasPathLengthConstraint: false, pathLengthConstraint: 0,
+                        critical: true));
             var now = DateTimeOffset.UtcNow;
             var from = scenario == "expired" ? now.AddDays(-5)
                 : scenario == "not-yet-valid" ? now.AddDays(2) : now.AddDays(-1);
             var until = scenario == "expired" ? now.AddDays(-1)
                 : scenario == "not-yet-valid" ? now.AddDays(5) : now.AddDays(5);
             using var cert = req.CreateSelfSigned(from, until);
-            var certPath = Path.Combine(root, "public.cer");
+            var certPath = Path.Combine(root, scenario == "wrong-extension"
+                ? "public.pem" : "public.cer");
             if (scenario != "missing-certificate")
-                File.WriteAllBytes(certPath, cert.Export(X509ContentType.Cert));
+            {
+                byte[] publicDer = cert.Export(X509ContentType.Cert);
+                if (scenario == "non-der-pem")
+                    publicDer = Encoding.ASCII.GetBytes(
+                        "-----BEGIN CERTIFICATE-----\n" +
+                        Convert.ToBase64String(publicDer, Base64FormattingOptions.InsertLineBreaks) +
+                        "\n-----END CERTIFICATE-----\n");
+                if (scenario == "der-trailing-bytes")
+                    publicDer = publicDer.Concat(new byte[] { 0x01, 0x02 }).ToArray();
+                File.WriteAllBytes(certPath, publicDer);
+            }
 
             var shell = Path.Combine(Environment.GetFolderPath(
                 Environment.SpecialFolder.Windows), "System32", "WindowsPowerShell",
