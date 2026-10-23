@@ -1,3 +1,13 @@
+## Lite standalone prerequisite self-check in ZIP (Development, 2026-10-23)
+
+- [x] Copy source-matched PowerShell prerequisite checker and one-click Windows CMD launcher into Lite archive root, so checking x86 .NET, Windows App SDK and VC++ needs no repository checkout.
+- [x] Leave Portable free of Lite-only helpers; CI validates exact bundled script bytes against checked-in source and rejects missing, nested or altered helpers.
+- [x] Add eight Windows PowerShell 5.1 fixture regressions and document launch, read-only behavior and remaining real WinUI testing limitation.
+- [ ] Verify PR CI expected **951/951**, Windows x86, ZIP smoke, bundled checker gate, SHA-256 and Stable audit; merge only after green and separately confirm main CI and public release.
+- [ ] Physical J2534 and interactive Lite GUI tests remain deferred. Stable v0.2.2, Portable updater and trimming/AOT unchanged.
+
+---
+
 ## GitHub asset SHA-256 digest cross-check (Development, 2026-10-23)
 
 - [x] Compare all three downloaded public Development assets against GitHub Releases API `assets[].digest` (`sha256:...`), independently of the separately published `SHA256SUMS.txt`.
@@ -6,7 +16,7 @@
 - [x] Preserve stream-based .NET SHA256 hashing, public asset checks, Stable v0.2.2 and Portable updater; no trimming/AOT.
 - [x] PR CI #3207 passed **943/943**, Portable/Lite extracted ZIP, SHA-256 manifest and Stable audit. Concurrent CI #3206 failed **942/943** on the pre-existing Windows recovery test `ServiceFileFailure_PreservesRecoveryAndAllowsSafeRetry(false, damaged-resume)`: a PowerShell/Robocopy process exceeded the 35-second test-only timeout under runner contention.
 - [x] Retain the real recovery assertions and increase the recovery PowerShell subprocess's bounded test deadline to 120 seconds, without changing production scripts.
-- [ ] Verify the corrected PR head **943/943**, Portable/Lite extracted ZIP, and Stable audit. Merge only on green and independently confirm postmerge main GitHub Releases re-download audit.
+- [x] Corrected PR #435 CI #3208 and #3209 passed **943/943** with Portable/Lite extracted ZIPs and Stable audit; merged as `ab9a8df`. Main CI #3210 independently passed **943/943**, public Development re-download audit and independent GitHub API SHA-256 digest for all three assets.
 - [ ] No real WinUI Lite start or physical J2534 test claimed.
 
 ---

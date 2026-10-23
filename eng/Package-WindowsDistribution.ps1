@@ -28,6 +28,13 @@ New-Item -ItemType Directory -Path $temp -Force | Out-Null
 try {
     Get-ChildItem -LiteralPath $source -Force | Copy-Item -Destination $temp -Recurse -Force
 
+    # Package a read-only prerequisite checker in Lite itself. Its source is
+    # pinned to this repository and copied only after publishing the app.
+    if ($Flavor -eq 'Lite') {
+        Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Test-LitePrerequisites.ps1') -Destination (Join-Path $temp 'Check-Lite-Prerequisites.ps1') -Force
+        Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Check-Lite-Prerequisites.cmd') -Destination (Join-Path $temp 'Check-Lite-Prerequisites.cmd') -Force
+    }
+
     # PDBs and diagnostic helpers are not required to run a Release build.
     # Do not remove arbitrary DLL, EXE, .json, .pri or resource files here.
     $debugExtensions = @('.pdb', '.mdb', '.dbg', '.ilk', '.iobj', '.ipch',
