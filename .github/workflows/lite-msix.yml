@@ -56,8 +56,8 @@ jobs:
       - name: Validate package and size
         shell: powershell
         run: |
-          $packages = @(Get-ChildItem 'artifacts/msix' -Recurse -File -Filter '*.msix' -ErrorAction SilentlyContinue)
-          if ($packages.Count -ne 1) { throw "Expected one MSIX under artifacts/msix; found $($packages.Count)." }
+          $packages = @(Get-ChildItem 'artifacts/msix' -Recurse -File -Filter 'Dvinholm.App_*_x86.msix' -ErrorAction SilentlyContinue | Where-Object { $_.FullName -notmatch '[\\/]Dependencies[\\/]' })
+          if ($packages.Count -ne 1) { throw "Expected one app MSIX (excluding SDK dependency packages); found $($packages.Count)." }
           ./eng/Test-LiteMsix.ps1 -PackagePath $packages[0].FullName
           $size = $packages[0].Length
           Write-Host "Tiny framework-dependent MSIX: $size bytes."
