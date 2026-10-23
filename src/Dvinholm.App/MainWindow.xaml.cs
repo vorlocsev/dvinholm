@@ -177,6 +177,10 @@ public sealed partial class MainWindow : Window
 
     private async void UpdateButton_Click(object sender, RoutedEventArgs e)
     {
+#if DVINHOLM_MSIX
+        // Even if the UI re-enables this control, never write MSIX-managed files.
+        return;
+#endif
         if (_updaterBusy)
             return;
 
