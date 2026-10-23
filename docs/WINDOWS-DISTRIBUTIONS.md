@@ -34,8 +34,13 @@ framework before querying the x86 dotnet installation for .NET 10
 Desktop/shared runtimes. Unknown, duplicate, malformed or non-10.x .NET
 framework declarations fail closed. .NET host roll-forward rules are
 honored conservatively: default/Minor, LatestMinor, LatestPatch, and
-Disable require compatible installed x86 versions. LatestPatch never crosses
-minor versions and Disable requires an exact version. Major/LatestMajor and
+Disable require compatible installed x86 versions. For the default `Minor`
+policy, if the requested minor line is already installed, its available patch
+must meet the requested minimum: even a newer installed minor cannot silently
+substitute for an insufficient patch in the requested line. If the requested
+minor is absent, moving to a higher minor within .NET 10 is supported.
+`LatestMinor` can choose a newer minor, `LatestPatch` never crosses minor
+versions, and `Disable` requires an exact version. Major/LatestMajor and
 applyPatches=false fail closed until separately supported, preventing an
 incorrect ready-to-launch verdict. This preflight does not override
 DOTNET_ROLL_FORWARD environment settings or actually launch the .NET host.
