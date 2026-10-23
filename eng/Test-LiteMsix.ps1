@@ -51,5 +51,38 @@ try {
  if(-not ($entries -ccontains 'Dvinholm.App.exe')) {
    throw 'MSIX check 14: main executable must be at package root'
  }
+ # A packaged, framework-dependent WinUI app must declare a Framework
+ # package dependency; Store-less Windows may not download it for the user.
+ # Intentionally pin metadata to Microsoft.WindowsAppSDK 2.5.1 until a future
+ # SDK upgrade updates this contract and its offline deployment guidance.
+ $sdkDeps=@($doc.SelectNodes('/a:Package/a:Dependencies/a:PackageDependency',$ns))
+ if($sdkDeps.Count -ne 1 -or $sdkDeps[0].GetAttribute('Name') -ne 'Microsoft.WindowsAppRuntime.2') {
+   throw 'MSIX check 15: expected exactly one Windows App SDK framework dependency'
+ }
+ if($sdkDeps[0].GetAttribute('MinVersion') -ne '2.5.1.0') {
+   throw 'MSIX check 16: unexpected Windows App SDK minimum version'
+ }
+ if($sdkDeps[0].GetAttribute('Publisher') -ne 'CN=Microsoft Corporation, O=Microsoft Corporation, L=Redmond, S=Washington, C=US') {
+   throw 'MSIX check 17: unexpected Windows App SDK dependency publisher'
+ }
+ $config=$archive.GetEntry('Dvinholm.App.runtimeconfig.json')
+ if(-not $config) { throw 'MSIX check 18: .NET runtimeconfig missing from package root' }
+ $configStream=$config.Open()
+ try {
+   $configReader=New-Object IO.StreamReader($configStream)
+   try {
+     $runtimeConfig=$configReader.ReadToEnd() | ConvertFrom-Json -ErrorAction Stop
+   } catch {
+     throw 'MSIX check 19: .NET runtimeconfig invalid JSON'
+   } finally { $configReader.Dispose() }
+ } finally { $configStream.Dispose() }
+ $framework=$runtimeConfig.runtimeOptions.framework
+ if($null -eq $framework -or $framework.name -ne 'Microsoft.NETCore.App' -or
+     [string]$framework.version -notmatch '^10\.[0-9]+\.[0-9]+$') {
+   throw 'MSIX check 19: expected .NET 10 shared runtime framework'
+ }
+ if($entries -ccontains 'AppxSignature.p7x') {
+   throw 'MSIX check 20: signed payload in UNSIGNED test-only artifact'
+ }
  Write-Host 'All Lite MSIX checks passed. This is an UNSIGNED test package.'
 } finally { $archive.Dispose() }

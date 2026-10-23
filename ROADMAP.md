@@ -1,8 +1,18 @@
+## Lite MSIX Framework dependency and .NET 10 contract (Development, 2026-10-23)
+
+- [x] Inspect actual unsigned CI MSIX #9, not only the source manifest: it declares Microsoft.WindowsAppRuntime.2 min 2.5.1.0 with Microsoft publisher, and has root .NET 10 runtimeconfig; no AppxSignature.p7x.
+- [x] Add checks 15–20 to fail closed if the generated package loses or changes Framework dependency identity/version/publisher, the root .NET runtimeconfig or the unsigned-only designation.
+- [x] Add eight synthetic Windows PowerShell 5.1 archive tests covering valid package and seven wrong-dependency/runtime/signature variants; no installation, signing or GUI launch.
+- [ ] CI target: 999/999 tests, actual unsigned x86 MSIX validator, Portable/Lite ZIPs and Stable audit. Merge only after all green, then independently verify new main CI.
+- [ ] For Windows LTSC without Store: trusted MSIX signing, official offline Windows App SDK dependency provisioning, .NET 10 x86 and real first-run test are still required. Physical J2534 testing deferred; Stable v0.2.2 and trimming/AOT unchanged.
+
+---
+
 ## Lite MSIX Windows 11 LTSC manifest hardening (Development, 2026-10-23)
 
 - [x] Extend static MSIX validator with six fail-closed identity/host contracts (checks 9–14): expected unsigned Development publisher, exactly one Windows.Desktop target, Windows minimum in supported range through 26100, runFullTrust, one full-trust App entry, root EXE.
 - [x] Add eight PowerShell 5.1 Windows x86 archive fixtures: one valid package and seven invalid publisher/Windows target/full-trust/entrypoint/package-path cases; no signing, install, network or GUI launch.
-- [ ] Verify PR CI Windows x86 991/991 and separate real unsigned MSIX package build; confirm Portable/Lite ZIP extraction, SHA-256 and Stable audit. Independently confirm postmerge main CI before marking complete.
+- [x] PR #443 CI #3247 passed 991/991; actual unsigned MSIX #9 passed, Portable/Lite ZIP checks and Stable audit passed. PR #443 merged as b1addca; independent postmerge main CI remains to confirm.
 - [ ] Actual signing, dependency installation and GUI start on Windows 11 LTSC without Microsoft Store remain untested; physical J2534 is deferred. No trimming/AOT or Stable release update.
 
 ---
@@ -11,7 +21,7 @@
 
 - [x] Add eight Windows PowerShell 5.1 regression fixtures to prove the existing MSIX validator rejects every invalid-package contract: missing manifest, x64 identity, wrong package name, wrong executable, missing executable, bundled runtime, missing logo and debug payload.
 - [x] Generate only synthetic ZIP/MSIX archives in isolated temp folders; do not install, sign or launch WinUI.
-- [ ] Confirm Windows x86 test suite (+8 regressions), Portable/Lite distribution ZIP and Stable audit on PR CI; independently confirm postmerge main CI.
+- [x] PR #442 CI #3241 passed 983/983, Portable/Lite ZIP and Stable audit; merged as 54d5493; postmerge main CI #3242 passed.
 - [ ] Actual unsigned MSIX CI stays separate and experimental; trusted signing and real installation on Store-less LTSC are not validated. Physical J2534 testing remains deferred, trimming/AOT off.
 
 ---
