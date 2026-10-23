@@ -78,9 +78,7 @@ try {
  } finally { $configStream.Dispose() }
  $framework=$runtimeConfig.runtimeOptions.framework
  if($null -eq $framework -or $framework.name -ne 'Microsoft.NETCore.App' -or
-     [string]$framework.version -notmatch '^10\.[0-9]+\.[0-9]+
-} finally { $archive.Dispose() }
-) {
+     [string]$framework.version -notmatch '^10\.[0-9]+\.[0-9]+$') {
    throw 'MSIX check 19: expected .NET 10 shared runtime framework'
  }
  if($entries -ccontains 'AppxSignature.p7x') {
