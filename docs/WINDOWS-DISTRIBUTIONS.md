@@ -14,12 +14,24 @@ Lite is **not** an independent stable release just because CI publishes a prerel
 A dedicated x86 MSIX build excludes both **.NET 10 Desktop Runtime** and
 **Windows App SDK runtime** using `SelfContained=false` and
 `WindowsAppSDKSelfContained=false`. It has no trimming or AOT.
+The validator also confirms that the **generated** MSIX (not just the source
+manifest) declares exactly one `Microsoft.WindowsAppRuntime.2` Framework
+package dependency, with minimum version `2.5.1.0` and the expected Microsoft
+publisher. It checks the package-root `Dvinholm.App.runtimeconfig.json`
+references the .NET 10 shared runtime, and rejects unexpected MSIX signature
+payloads while this CI artifact is labeled unsigned. These values are tied to
+the pinned Windows App SDK 2.5.1; upgrade them intentionally together.
+
+Official packaged-app architecture and offline installation guidance:
+https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/deployment-architecture
+https://learn.microsoft.com/en-us/windows/msix/package/signing-package-overview
+
 The installed Windows host must provide .NET 10 Desktop Runtime **x86**;
 Windows App SDK framework packages may be resolved by the Store on supported
 Windows, but MSIX does **not** guarantee automatic installation of .NET.
 Windows LTSC IoT without Store may need all prerequisites installed manually.
 
-The separate `lite-msix.yml` CI validates 14 MSIX archive contracts and
+The separate `lite-msix.yml` CI validates 20 MSIX archive contracts and
 refuses packages that bundle .NET or WinUI runtimes. Metadata checks also
 require the expected development publisher, exactly one Windows.Desktop target
 family with a minimum Windows version compatible with Windows 11 LTSC 26100,
