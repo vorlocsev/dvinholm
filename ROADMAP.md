@@ -1,9 +1,19 @@
+## Windows SDK MakeAppx extracted-package checks (Development, 2026-10-24)
+
+- [x] Add a read-only Windows SDK MakeAppx unpack gate on the **actual freshly built unsigned x86 MSIX** inside experimental CI, with guaranteed disposable-temp cleanup.
+- [x] Eight checks: locate Windows SDK, unpack cleanly, root Lite x86 identity/publisher, binary PE x86, .NET 10 runtimeconfig, five branded assets, no bundled runtimes/debug payload and no signing payload.
+- [x] Keep static checks plus synthetic host-inventory gate. Never sign/install/register certificates/packages, provision runtimes, launch WinUI or access physical J2534.
+- [ ] Require experimental MSIX pipeline gate and Windows CI 1047/1047, Portable/Lite integrity/SHA-256 and Stable audit; merge only after green and check independent main CI.
+- [ ] Trusted signing, Store-less Windows LTSC dependency provisioning/installation, WinUI startup and adapter tests still unverified. Stable v0.2.2, Portable updater, trimming/AOT unchanged.
+
+---
+
 ## Public MSIX certificate crypto-profile checks (Development, 2026-10-24)
 
 - [x] Restrict pre-sign public certificate to RSA >=2048-bit public keys and SHA-256/384/512 with RSA PKCS#1 certificate signature. Fail closed for SHA-1 and untested ECDSA variants.
 - [x] Add eight Windows x86 tests: RSA 1024 rejection, RSA 3072/4096 success, SHA-1 rejection, SHA-384/512 success and ECDSA P-256/P-384 rejection. The SHA-1 case uses a deliberately synthetic DER OID replacement because .NET 10 cannot issue SHA-1 certificates; this tests pre-sign metadata only.
 - [x] Keep private-key material in memory in synthetic tests; only ephemeral public DER files go to isolated test temp directories; no CI signing or local trust modification.
-- [ ] Require full Windows x86 CI 1047/1047, real unsigned Lite MSIX workflow, Portable/Lite ZIP and SHA-256 plus Stable audit. Merge only after all green and verify postmerge main CI.
+- [x] PR #451 final CI #3277 passed 1047/1047, Portable/Lite ZIP SHA-256 and Stable audit; unsigned experimental MSIX #35 passed. Merged as 60f9489. Independent main CI to confirm.
 - [ ] Do not treat read-only metadata validation as a signed or trusted MSIX. Stable v0.2.2, Portable updates, trimming/AOT, real LTSC install and physical J2534 unchanged.
 
 ---
