@@ -45,6 +45,39 @@ normally until signed with a trusted publisher certificate. The Portable file
 replacement updater is disabled in MSIX builds; Windows handles package updates
 through a separately configured signed distribution channel.
 
+## Public signing certificate preflight (Development; not signing)
+
+The CI MSIX is intentionally **unsigned**. An actual Store-less installation
+requires a signed package whose certificate matches the identity Publisher,
+and whose signing chain the destination Windows computer trusts. A development
+self-signed certificate is only suitable for controlled testing, never an
+unattended Stable distribution.
+
+This **read-only** preflight takes a **public DER `.cer`** and a development
+MSIX; it never requests a PFX/private key, writes trust stores, signs a package
+or installs dependencies:
+
+    powershell.exe -NoProfile -File .\eng\Test-LiteMsixSigningCertificate.ps1 -PackagePath 'C:\Downloads\Dvinholm-Lite-x86-UNSIGNED.msix' -CertificatePath 'C:\Certificates\Dvinholm-public.cer'
+
+Checks: exact Dvinholm.Lite x86 package identity and certificate Subject
+matching the MSIX manifest Publisher, current validity, explicit *only*
+code-signing EKU, digital-signature KeyUsage, and non-CA BasicConstraints.
+Eight Windows test cases generate only ephemeral local test certificates, export
+**public .cer data**, and ensure known wrong inputs fail.
+
+**Passing this is NOT proof of a trusted certificate or a valid signed
+MSIX.** You must separately perform signing with secure key management,
+verify the signed package and Windows machine trust, provide official offline
+Windows App SDK x86 framework/runtime and .NET 10 x86 prerequisites, and
+launch on an actual LTSC machine. Do not check private keys into the repo or
+turn off Windows signing enforcement. The manifest development Publisher may
+need to change for a production certificate, as an identity migration rather
+than silently reusing the development package name.
+
+Official references:
+https://learn.microsoft.com/en-us/windows/msix/package/signing-package-overview
+https://learn.microsoft.com/en-us/windows/msix/package/sign-msix-package-guide
+
 ## Store-less LTSC MSIX read-only dependency inspection (Development)
 
 From a repository checkout, inspect the **actual unsigned Development MSIX** on
