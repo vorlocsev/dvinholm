@@ -9,6 +9,23 @@ Dvinholm is a WinUI 3 Windows **x86** application. The main distribution remains
 
 Lite is **not** an independent stable release just because CI publishes a prerelease artifact. Install prerequisites before launching Lite on Windows. It uses the same application and J2534 backend, but its Windows App SDK bootstrap/runtime dependencies still need a real Windows launch smoke test. Never mix Portable and Lite DLLs in the same installation folder.
 
+## Minimal Lite MSIX (experimental)
+
+A dedicated x86 MSIX build excludes both **.NET 10 Desktop Runtime** and
+**Windows App SDK runtime** using `SelfContained=false` and
+`WindowsAppSDKSelfContained=false`. It has no trimming or AOT.
+The installed Windows host must provide .NET 10 Desktop Runtime **x86**;
+Windows App SDK framework packages may be resolved by the Store on supported
+Windows, but MSIX does **not** guarantee automatic installation of .NET.
+Windows LTSC IoT without Store may need all prerequisites installed manually.
+
+The separate `lite-msix.yml` CI validates eight MSIX archive contracts and
+refuses packages that bundle .NET or WinUI runtimes. The development artifact
+is **UNSIGNED and test-only**, not a one-click installer. It cannot be deployed
+normally until signed with a trusted publisher certificate. The Portable file
+replacement updater is disabled in MSIX builds; Windows handles package updates
+through a separately configured signed distribution channel.
+
 ## Lite host prerequisite inspection (Development)
 
 Extract Lite into its **own directory** and double-click
