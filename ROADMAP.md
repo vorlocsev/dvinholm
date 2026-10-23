@@ -1,3 +1,12 @@
+## Lite MSIX Windows 11 LTSC manifest hardening (Development, 2026-10-23)
+
+- [x] Extend static MSIX validator with six fail-closed identity/host contracts (checks 9–14): expected unsigned Development publisher, exactly one Windows.Desktop target, Windows minimum in supported range through 26100, runFullTrust, one full-trust App entry, root EXE.
+- [x] Add eight PowerShell 5.1 Windows x86 archive fixtures: one valid package and seven invalid publisher/Windows target/full-trust/entrypoint/package-path cases; no signing, install, network or GUI launch.
+- [ ] Verify PR CI Windows x86 991/991 and separate real unsigned MSIX package build; confirm Portable/Lite ZIP extraction, SHA-256 and Stable audit. Independently confirm postmerge main CI before marking complete.
+- [ ] Actual signing, dependency installation and GUI start on Windows 11 LTSC without Microsoft Store remain untested; physical J2534 is deferred. No trimming/AOT or Stable release update.
+
+---
+
 ## Lite MSIX rejection-regression coverage (Development, 2026-10-23)
 
 - [x] Add eight Windows PowerShell 5.1 regression fixtures to prove the existing MSIX validator rejects every invalid-package contract: missing manifest, x64 identity, wrong package name, wrong executable, missing executable, bundled runtime, missing logo and debug payload.
