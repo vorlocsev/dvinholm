@@ -119,23 +119,31 @@ jobs:
           $report += "Trimming: **disabled**. Both ZIPs: debugging files excluded.`n"
           $report | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
+      # Upload the exact final ZIP files that were already extracted and
+      # SHA-256 verified above. Uploading app/ or app-lite/ instead creates
+      # different downloads and wastes CI artifact storage/bandwidth.
       - name: Upload CI artifact
         uses: actions/upload-artifact@v7
         with:
           name: Dvinholm-Windows-x86
-          path: artifacts/app
+          path: artifacts/Dvinholm-Windows-x86.zip
+          if-no-files-found: error
+          compression-level: 0
 
       - name: Upload Lite artifact
         uses: actions/upload-artifact@v7
         with:
           name: Dvinholm-Windows-x86-Lite
-          path: artifacts/app-lite
+          path: artifacts/Dvinholm-Windows-x86-Lite.zip
+          if-no-files-found: error
+          compression-level: 0
 
       - name: Upload Development ZIP checksums
         uses: actions/upload-artifact@v7
         with:
           name: Dvinholm-Distribution-Checksums
           path: artifacts/SHA256SUMS.txt
+          if-no-files-found: error
 
       # Actions artifact ZIP downloads require authentication. Publish the same
       # payload as a public prerelease asset so the installed app can update
