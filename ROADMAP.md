@@ -2,7 +2,7 @@
 
 - [x] Add a deterministic single-entry lowercase SHA-256 manifest bound to Dvinholm-Lite-x86-UNSIGNED.msix in experimental CI, generated and verified after package validation and before artifact upload.
 - [x] Upload .msix and .msix.sha256 together. Reject missing files, tampered package bytes, invalid or uppercase hash, wrong filename and additional entries.
-- [x] Eight Windows x86 tests cover valid, tampered, missing package, missing manifest, substituted name, uppercase digest, extra line and malformed digest.
+- [x] Eight Windows x86 tests cover valid, tampered, missing package, missing manifest, substituted name, uppercase digest, extra line and malformed digest. CI #3282/#3283 exposed that Windows x86 PowerShell does not provide Get-FileHash; use streaming .NET SHA256 instead, preserving the same manifest format and all eight checks.
 - [ ] Require Windows CI 1055/1055 and Portable/Lite ZIP verification + Stable audit, plus unsigned MSIX MakeAppx and checksum gate; merge only when green and check postmerge main CI.
 - [ ] Digest is integrity-only, NOT signed or trusted distribution. LTSC installation, GUI launch and physical J2534 remain untested; Stable v0.2.2, Portable updater and trimming/AOT unchanged.
 

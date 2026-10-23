@@ -22,7 +22,17 @@ $package = (Resolve-Path -LiteralPath $PackagePath -ErrorAction Stop).Path
 if (-not (Test-Path -LiteralPath $package -PathType Leaf)) {
     throw 'MSIX checksum: package is not a file.'
 }
-$hash = (Get-FileHash -LiteralPath $package -Algorithm SHA256).Hash.ToLowerInvariant()
+# The Windows x86 test host can omit the Get-FileHash cmdlet. Use .NET
+# SHA256 over a bounded file stream, equally on Windows PowerShell 5.1 x86/x64.
+$algorithm = [Security.Cryptography.SHA256]::Create()
+$stream = [IO.File]::OpenRead($package)
+try {
+    $digest = $algorithm.ComputeHash($stream)
+    $hash = [BitConverter]::ToString($digest).Replace('-', '').ToLowerInvariant()
+} finally {
+    $stream.Dispose()
+    $algorithm.Dispose()
+}
 if ($hash -cnotmatch '^[0-9a-f]{64}$') {
     throw 'MSIX checksum: computed SHA-256 digest is invalid.'
 }

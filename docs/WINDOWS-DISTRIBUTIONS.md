@@ -60,6 +60,8 @@ After extracting both files into one folder, run from a repository checkout:
 
     powershell.exe -NoProfile -File .\eng\Test-LiteMsixSha256.ps1 -PackagePath 'Dvinholm-Lite-x86-UNSIGNED.msix' -ChecksumPath 'Dvinholm-Lite-x86-UNSIGNED.msix.sha256' -Mode Verify
 
+The checksum tool computes SHA-256 using .NET cryptography and does not depend on the Get-FileHash cmdlet, which may be missing in x86 Windows PowerShell 5.1 test hosts.
+
 This checksum detects accidental corruption, **not publisher authenticity**.
 An adversary can replace both package and checksum. Trusted MSIX signing,
 runtime dependency provisioning, LTSC install and GUI launch are unverified.
