@@ -86,7 +86,11 @@ two exact SHA-256 entries and is published alongside both ZIPs on the public
 The updater remains Portable-only and does not change.
 After each successful `main` release upload, CI downloads the **published**
 three assets again and verifies release tag, exact commit, prerelease status,
-three asset names/sizes and both SHA-256 hashes. This checks the actual
+three asset names/sizes and both SHA-256 hashes. The post-upload audit also
+checks each asset's GitHub API `state=uploaded` and server-generated
+`digest=sha256:...` for all three files, including the checksum manifest.
+That catches coherent replacement of a ZIP plus a rewritten SHA256SUMS.txt,
+which a manifest-only check cannot detect. This checks the actual
 GitHub Releases uploads rather than just the local packaging directory.
 It does not establish publisher authenticity or enable the Lite updater.
 

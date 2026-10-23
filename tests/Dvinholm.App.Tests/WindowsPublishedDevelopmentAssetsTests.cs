@@ -6,7 +6,7 @@ using System.Text.Json;
 namespace Dvinholm.App.Tests;
 
 /// <summary>
-/// Eight fixture-only release audit scenarios. No GitHub calls, package
+/// Sixteen fixture-only release audit scenarios. No GitHub calls, package
 /// installation, WinUI launch or physical J2534 device is involved.
 /// </summary>
 public sealed class WindowsPublishedDevelopmentAssetsTests
@@ -20,6 +20,14 @@ public sealed class WindowsPublishedDevelopmentAssetsTests
     [InlineData("duplicate-asset", false, "Duplicate release asset")]
     [InlineData("size-mismatch", false, "Published asset size mismatch")]
     [InlineData("corrupt-content", false, "SHA-256 mismatch")]
+    [InlineData("bad-digest-portable", false, "GitHub asset SHA-256 mismatch")]
+    [InlineData("bad-digest-lite", false, "GitHub asset SHA-256 mismatch")]
+    [InlineData("bad-digest-manifest", false, "GitHub asset SHA-256 mismatch")]
+    [InlineData("missing-api-digest", false, "Missing or unsupported GitHub asset SHA-256 digest")]
+    [InlineData("unsupported-api-digest", false, "Missing or unsupported GitHub asset SHA-256 digest")]
+    [InlineData("malformed-api-digest", false, "Missing or unsupported GitHub asset SHA-256 digest")]
+    [InlineData("not-uploaded", false, "GitHub release asset is not uploaded")]
+    [InlineData("replaced-pair", false, "GitHub asset SHA-256 mismatch")]
     public async Task ReleaseAudit_ValidatesMetadataAndDownloadedBytes(
         string scenario, bool expectedSuccess, string failureText)
     {
@@ -53,6 +61,20 @@ public sealed class WindowsPublishedDevelopmentAssetsTests
             if (scenario == "size-mismatch")
                 assets[1] = (lite, assets[1].Size + 1);
 
+            string DigestFromApi(string name)
+            {
+                if (scenario == "missing-api-digest" && name == portable) return "";
+                if (scenario == "unsupported-api-digest" && name == portable)
+                    return "sha512:" + Hash(name);
+                if (scenario == "malformed-api-digest" && name == portable)
+                    return "sha256:" + new string('z', 64);
+                if ((scenario == "bad-digest-portable" && name == portable) ||
+                    (scenario == "bad-digest-lite" && name == lite) ||
+                    (scenario == "bad-digest-manifest" && name == sums))
+                    return "sha256:" + new string('0', 64);
+                return "sha256:" + Hash(name);
+            }
+
             var metadata = new
             {
                 tag_name = scenario == "wrong-tag" ? "ci-999" : "ci-3202",
@@ -60,12 +82,28 @@ public sealed class WindowsPublishedDevelopmentAssetsTests
                     "0000000000000000000000000000000000000000" : commit,
                 prerelease = scenario != "not-prerelease",
                 draft = false,
-                assets = assets.Select(a => new { name = a.Name, size = a.Size }).ToArray()
+                assets = assets.Select(a => new
+                {
+                    name = a.Name, size = a.Size,
+                    state = scenario == "not-uploaded" && a.Name == lite
+                        ? "starter" : "uploaded",
+                    digest = DigestFromApi(a.Name)
+                }).ToArray()
             };
             var jsonFile = Path.Combine(root, "release.json");
             File.WriteAllText(jsonFile, JsonSerializer.Serialize(metadata));
-            if (scenario == "corrupt-content")
+            if (scenario is "corrupt-content" or "replaced-pair")
+            {
                 File.WriteAllBytes(Path.Combine(root, lite), [10, 11, 12, 13]);
+                if (scenario == "replaced-pair")
+                {
+                    // Attacker replaces ZIP and recomputes SHA256SUMS, while
+                    // sizes stay unchanged: manifest-only checks would pass.
+                    File.WriteAllLines(Path.Combine(root, sums), [
+                        $"{Hash(portable)}  {portable}", $"{Hash(lite)}  {lite}"
+                    ], Encoding.ASCII);
+                }
+            }
 
             var powershell = Path.Combine(
                 Environment.GetFolderPath(Environment.SpecialFolder.Windows),
