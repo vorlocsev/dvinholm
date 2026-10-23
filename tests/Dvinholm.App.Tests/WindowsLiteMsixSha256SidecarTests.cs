@@ -31,7 +31,7 @@ public sealed class WindowsLiteMsixSha256SidecarTests
             var checksum = package + ".sha256";
             File.WriteAllBytes(package, Encoding.UTF8.GetBytes("Synthetic unsigned package bytes."));
             var write = await RunScriptAsync(root, package, checksum, "Write");
-            Assert.Equal(0, write.ExitCode);
+            Assert.True(write.ExitCode == 0, $"Sidecar writer exited {write.ExitCode}: {write.Output}");
             Assert.Contains("wrote SHA-256 sidecar", write.Output);
 
             switch (scenario)
