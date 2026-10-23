@@ -56,18 +56,43 @@ if ($sdkMinimum -lt [Version]'2.5.1.0') {
     throw 'Windows App SDK package dependency is older than 2.5.1.0.'
 }
 $runtime = $config.runtimeOptions
-if (-not $runtime -or -not $runtime.framework -or
-    $runtime.framework.name -ne 'Microsoft.NETCore.App') {
+# Verify every declaration; do not silently accept an unrelated framework
+# or apply the NETCore minimum to an independently pinned Desktop reference.
+if (-not $runtime) { throw 'Lite MSIX runtimeconfig lacks the expected Microsoft.NETCore.App framework.' }
+$references = @()
+if ($null -ne $runtime.framework) { $references += $runtime.framework }
+if ($null -ne $runtime.frameworks) { $references += @($runtime.frameworks) }
+if ($references.Count -eq 0) {
     throw 'Lite MSIX runtimeconfig lacks the expected Microsoft.NETCore.App framework.'
 }
-$runtimeVersionText = [string]$runtime.framework.version
-if ($runtimeVersionText -notmatch '^10[.][0-9]+[.][0-9]+$') {
-    throw 'Lite MSIX does not request a valid .NET 10 runtime version.'
+$seen = [System.Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+$requiredMinimum = @{}
+foreach ($reference in $references) {
+    $name = [string]$reference.name
+    if ($name -notin @('Microsoft.NETCore.App','Microsoft.WindowsDesktop.App')) {
+        throw "Lite MSIX runtimeconfig contains unsupported framework: $name."
+    }
+    if (-not $seen.Add($name)) {
+        throw "Lite MSIX runtimeconfig has duplicate framework: $name."
+    }
+    $versionText = [string]$reference.version
+    if ($versionText -notmatch '^10[.][0-9]+[.][0-9]+$') {
+        throw "Lite MSIX does not request a valid .NET 10 runtime version for $name."
+    }
+    $policy = if ($null -ne $reference.rollForward) { [string]$reference.rollForward } elseif ($null -ne $runtime.rollForward) { [string]$runtime.rollForward } else { 'Minor' }
+    if ($policy -ne 'Minor' -or $runtime.applyPatches -eq $false -or
+        $reference.applyPatches -eq $false) {
+        throw "Offline inspector supports only default .NET Minor roll-forward with patch servicing for $name."
+    }
+    $requiredMinimum[$name] = [Version]$versionText
 }
-$minimumNet = [Version]$runtimeVersionText
-$policy = if ($runtime.rollForward) { [string]$runtime.rollForward } else { 'Minor' }
-if ($policy -ne 'Minor' -or $runtime.applyPatches -eq $false) {
-    throw 'Offline inspector supports only default .NET Minor roll-forward with patch servicing.'
+if (-not $requiredMinimum.ContainsKey('Microsoft.NETCore.App')) {
+    throw 'Lite MSIX runtimeconfig lacks the expected Microsoft.NETCore.App framework.'
+}
+# WindowsDesktop.App is mandatory for WinUI even when .NET lists only Core
+# in runtimeconfig: use the Core minimum as the conservative fallback.
+if (-not $requiredMinimum.ContainsKey('Microsoft.WindowsDesktop.App')) {
+    $requiredMinimum['Microsoft.WindowsDesktop.App'] = $requiredMinimum['Microsoft.NETCore.App']
 }
 if ($simulated) {
     Write-Host 'SIMULATED INPUT: fixture results do not validate this Windows machine.'
@@ -106,6 +131,7 @@ foreach ($line in $runtimeLines) {
     }
 }
 foreach ($frameworkName in @('Microsoft.NETCore.App','Microsoft.WindowsDesktop.App')) {
+    $minimumNet = $requiredMinimum[$frameworkName]
     $available = @($installedRuntimes | Where-Object {
         $_.Name -eq $frameworkName -and $_.Version.Major -eq 10
     })

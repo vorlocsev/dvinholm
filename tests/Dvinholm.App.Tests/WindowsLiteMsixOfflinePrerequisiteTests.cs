@@ -27,6 +27,14 @@ public sealed class WindowsLiteMsixOfflinePrerequisiteTests
     [InlineData("runtimeconfig-rollforward-major", false, "supports only default")]
     [InlineData("runtimeconfig-missing", false, "missing package-root")]
     [InlineData("runtimeconfig-patch-too-new", false, "Microsoft.NETCore.App")]
+    [InlineData("frameworks-both-valid", true, "SIMULATED INPUT")]
+    [InlineData("frameworks-desktop-patch-too-new", false, "Microsoft.WindowsDesktop.App")]
+    [InlineData("frameworks-core-patch-too-new", false, "Microsoft.NETCore.App")]
+    [InlineData("frameworks-unknown-name", false, "unsupported framework")]
+    [InlineData("frameworks-duplicate", false, "duplicate framework")]
+    [InlineData("frameworks-missing-core", false, "Microsoft.NETCore.App")]
+    [InlineData("frameworks-reference-rollforward", false, "supports only default")]
+    [InlineData("frameworks-reference-applypatches", false, "supports only default")]
     public async Task OfflineInspector_IsFailClosed(
         string scenario, bool expectedSuccess, string expectedText)
     {
@@ -75,6 +83,40 @@ public sealed class WindowsLiteMsixOfflinePrerequisiteTests
                     if (scenario == "runtimeconfig-rollforward-major")
                         runtimeConfig = runtimeConfig.Replace("\"runtimeOptions\":{",
                             "\"runtimeOptions\":{\"rollForward\":\"Major\",");
+                    if (scenario.StartsWith("frameworks-", StringComparison.Ordinal))
+                    {
+                        runtimeConfig = """
+                            {"runtimeOptions":{"frameworks":[
+                              {"name":"Microsoft.NETCore.App","version":"10.0.0"},
+                              {"name":"Microsoft.WindowsDesktop.App","version":"10.0.0"}
+                            ]}}
+                            """;
+                        if (scenario == "frameworks-desktop-patch-too-new")
+                            runtimeConfig = runtimeConfig.Replace(
+                                "\"Microsoft.WindowsDesktop.App\",\"version\":\"10.0.0\"",
+                                "\"Microsoft.WindowsDesktop.App\",\"version\":\"10.0.3\"");
+                        if (scenario == "frameworks-core-patch-too-new")
+                            runtimeConfig = runtimeConfig.Replace(
+                                "\"Microsoft.NETCore.App\",\"version\":\"10.0.0\"",
+                                "\"Microsoft.NETCore.App\",\"version\":\"10.0.3\"");
+                        if (scenario == "frameworks-unknown-name")
+                            runtimeConfig = runtimeConfig.Replace(
+                                "Microsoft.WindowsDesktop.App", "Unsupported.Framework");
+                        if (scenario == "frameworks-duplicate")
+                            runtimeConfig = runtimeConfig.Replace(
+                                "Microsoft.WindowsDesktop.App", "Microsoft.NETCore.App");
+                        if (scenario == "frameworks-missing-core")
+                            runtimeConfig = runtimeConfig.Replace(
+                                "{\"name\":\"Microsoft.NETCore.App\",\"version\":\"10.0.0\"},", "");
+                        if (scenario == "frameworks-reference-rollforward")
+                            runtimeConfig = runtimeConfig.Replace(
+                                "\"Microsoft.NETCore.App\",\"version\":\"10.0.0\"",
+                                "\"Microsoft.NETCore.App\",\"version\":\"10.0.0\",\"rollForward\":\"Disable\"");
+                        if (scenario == "frameworks-reference-applypatches")
+                            runtimeConfig = runtimeConfig.Replace(
+                                "\"Microsoft.NETCore.App\",\"version\":\"10.0.0\"",
+                                "\"Microsoft.NETCore.App\",\"version\":\"10.0.0\",\"applyPatches\":false");
+                    }
                     Write(archive, "Dvinholm.App.runtimeconfig.json", runtimeConfig);
                 }
             }

@@ -68,6 +68,15 @@ fixtures never claim verification of an actual computer. Eight simulated
 Windows x86 cases cover valid inputs, absent/old .NET, missing Desktop,
 absent/wrong-architecture/old Windows App SDK, and partial fixture rejection.
 
+The offline inspector now reads **every** shared framework reference in both
+`runtimeOptions.framework` and `runtimeOptions.frameworks`. It rejects
+unknown/duplicate frameworks and unsupported per-framework roll-forward or
+`applyPatches=false`, and applies independent minimum x86 versions for
+`Microsoft.NETCore.App` and `Microsoft.WindowsDesktop.App`. If the
+runtimeconfig declares only Core, the Desktop check uses the Core minimum.
+Eight synthetic Windows x86 regression cases protect these rules. This
+remains read-only and is not proof of package installability.
+
 The experimental MSIX workflow now runs
 `eng/Test-LiteMsixSimulatedHost.ps1` on the **real freshly built x86 MSIX**.
 The gate creates disposable synthetic host-inventory files (x86 .NET
