@@ -1,3 +1,15 @@
+## Tiny framework-dependent Lite MSIX (2026-10-23)
+
+- [x] Add opt-in x86 MSIX mode with no bundled .NET 10 or WinAppSDK runtime. Existing Portable and Lite ZIP builds unchanged.
+- [x] Generate five tiny branded PNG assets from Dvinholm.ico at CI build time; no added checked-in binary logos.
+- [x] Add eight package smoke checks: manifest, x86, package identity, app entry, EXE, missing bundled runtimes, visual assets, and debug artifact exclusion.
+- [x] Disable Portable in-place update UI for MSIX mode.
+- [ ] Verify Windows MSIX CI actual package and size; MSIX remains unsigned test-only until trusted code signing and real install checks.
+- [ ] Validate runtime dependency acquisition on real Windows, especially Store-less LTSC. MSIX cannot guarantee .NET auto-download; no real J2534 testing claimed.
+- [ ] Stable v0.2.2, Portable updater and trimming/AOT unaffected.
+
+---
+
 ## Lite default .NET Minor roll-forward correctness (Development, 2026-10-23)
 
 - [x] Fix the default `Minor` policy: if any runtime from the requested minor line is installed, require a qualifying patch in that minor. Do not accept a different, newer minor merely because the present patch is too old.

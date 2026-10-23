@@ -57,7 +57,13 @@ public sealed partial class MainWindow : Window
         EcusView.ItemsSource = _ecus;
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · select Check update to look for a new build."; 
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · select Check update to look for a new build.";
+#if DVINHOLM_MSIX
+        // WindowsApps files are managed by MSIX, not Portable's updater.
+        UpdateButton.IsEnabled = false;
+        UpdateSource.IsEnabled = false;
+        UpdateStatusText.Text = "Lite MSIX: use package updates. Portable updater disabled.";
+#endif 
         _session.ReadError += ex => DispatcherQueue.TryEnqueue(() =>
         {
             var detail = J2534Native.SanitizeDriverDiagnostic(ex.Message);
@@ -171,6 +177,10 @@ public sealed partial class MainWindow : Window
 
     private async void UpdateButton_Click(object sender, RoutedEventArgs e)
     {
+#if DVINHOLM_MSIX
+        // Even if the UI re-enables this control, never write MSIX-managed files.
+        return;
+#endif
         if (_updaterBusy)
             return;
 
