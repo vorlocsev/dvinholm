@@ -16,8 +16,13 @@ Extract Lite into its **own directory** and double-click
 The launcher invokes its bundled, read-only PowerShell checker. It reports
 whether the x86 .NET 10 Desktop Runtime, Windows App SDK 2.5 packages,
 and Visual C++ x86 prerequisites appear installed. It does not download,
-install or change software, nor start WinUI. The command uses a process-local
-PowerShell execution-policy override and preserves a nonzero failure exit code.
+install or change software, nor start WinUI. The launcher invokes Windows PowerShell from the Windows System32 directory,
+not from the extraction folder or PATH. It first verifies that the Lite EXE,
+runtimeconfig and checker script are present together. The command uses a
+process-local PowerShell execution-policy override, preserves the inspector's
+nonzero failure exit code and provides distinct errors for missing files.
+For scripted use, set `DVINHOLM_LITE_NO_PAUSE=1` to suppress the final
+key-press prompt; double-click launches still pause by default.
 
 Developers can still use the source script from a repository checkout
 (including synthetic Windows host fixtures):
