@@ -68,6 +68,16 @@ fixtures never claim verification of an actual computer. Eight simulated
 Windows x86 cases cover valid inputs, absent/old .NET, missing Desktop,
 absent/wrong-architecture/old Windows App SDK, and partial fixture rejection.
 
+The experimental MSIX workflow now runs
+`eng/Test-LiteMsixSimulatedHost.ps1` on the **real freshly built x86 MSIX**.
+The gate creates disposable synthetic host-inventory files (x86 .NET
+10.0.2 Desktop/Core and Windows App SDK Framework 2.5.1), invokes the
+read-only inspector, and removes the inventory even on failure. A subsequent
+SDK/runtime-version change will fail the gate until its requirements are
+reviewed; this is not an installed-machine test. Additional negative
+Windows tests cover wrong MSIX identity/architecture/publisher/version
+and missing or incompatible .NET runtimeconfig.
+
 **Passing this read-only inspection does not mean an unsigned MSIX can
 be installed.** Signing with a certificate trusted by Windows, offline
 dependency availability and provisioning, possible VCLibs requirements,
