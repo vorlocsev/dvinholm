@@ -1,9 +1,19 @@
+## Public MSIX code-signing certificate preflight (Development, 2026-10-24)
+
+- [x] Add read-only Windows PowerShell 5.1 public DER .cer preflight. Require certificate subject exactly matching the built Lite MSIX Publisher, code-signing-only EKU, DigitalSignature KeyUsage, non-CA certificate and current dates. Never request/import/export private keys or change trusted stores.
+- [x] Add eight Windows x86 xUnit fixtures with disposable in-memory ephemeral RSA certificates (one valid, seven invalid certificate cases); publicly exported .cer only and no trust-store mutation. Keep development MSIX unsigned.
+- [x] Enforce Windows PowerShell 5.1 syntax parse in experimental MSIX workflow, without creating signing secrets, issuing test certs in CI packaging or installing the package.
+- [ ] Require Windows x86 CI 1031/1031, actual unsigned Lite MSIX workflow, Portable/Lite checksums/extraction and Stable audit green. Merge only then, verify postmerge main CI.
+- [ ] Real trusted signing, offline dependency provisioning, LTSC installation, WinUI GUI startup and physical J2534 remain unverified; Stable v0.2.2, Portable updater and trimming/AOT unchanged.
+
+---
+
 ## Recovery subprocess CI checkpoint stability (Development, 2026-10-23)
 
 - [x] Investigate CI #3263 failure for PR #447: 1/1023 failed when a Windows PowerShell recovery subprocess did not reach the mandatory after-lock signal within the test-only 20-second deadline; same SHA passed full CI #3262 with 1023/1023 and MSIX #24 green.
 - [x] Keep all **eight** double-crash matrix combinations and original file-integrity, mutex ownership, rollback, marker, idempotence and exact-once launch assertions. No test skipped and no production updater changes.
 - [x] Permit 60 seconds for first/second crash checkpoint creation, 30 seconds for killed subprocess reaping and 120 seconds for real recovery/Robocopy subprocess completion; report PID, phase, exit state and bound rather than a bare cancellation on a missing checkpoint.
-- [ ] Run Windows x86 1023/1023 on PR, Portable/Lite ZIP integrity and Stable audit. Merge only after green; check new main CI independently.
+- [x] PR #448 CI #3266 passed Windows x86 1023/1023, Portable/Lite ZIP checksums and Stable audit; experimental MSIX #26 passed. Merged as 441434c; independent postmerge CI #3267 was running at the time of this update.
 - [ ] Live Windows UI/LTSC deployment, signed MSIX and physical J2534 tests remain deferred. Stable v0.2.2, runtime packaging, Portable updater, trimming and AOT unchanged.
 
 ---
