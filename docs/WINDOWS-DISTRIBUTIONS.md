@@ -11,9 +11,16 @@ Lite is **not** an independent stable release just because CI publishes a prerel
 
 ## Lite host prerequisite inspection (Development)
 
-Extract the experimental Lite ZIP into its own directory. For the current
-Windows App SDK NuGet reference 2.5.1, run the following in Windows PowerShell
-5.1 from a repository checkout (adjust the Lite folder):
+Extract Lite into its **own directory** and double-click
+`Check-Lite-Prerequisites.cmd` next to `Dvinholm.App.exe`.
+The launcher invokes its bundled, read-only PowerShell checker. It reports
+whether the x86 .NET 10 Desktop Runtime, Windows App SDK 2.5 packages,
+and Visual C++ x86 prerequisites appear installed. It does not download,
+install or change software, nor start WinUI. The command uses a process-local
+PowerShell execution-policy override and preserves a nonzero failure exit code.
+
+Developers can still use the source script from a repository checkout
+(including synthetic Windows host fixtures):
 
     .\eng\Test-LitePrerequisites.ps1 -LiteDirectory 'C:\Dvinholm-Lite' -WindowsAppSdkLine '2.5'
 

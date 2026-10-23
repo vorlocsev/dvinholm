@@ -1,10 +1,20 @@
+## Lite standalone prerequisite self-check in ZIP (Development, 2026-10-23)
+
+- [x] Bundle source-matched PowerShell checker and read-only one-click Windows CMD launcher in Lite ZIP root. Portable ZIP remains free of Lite helpers.
+- [x] Enforce exact checker content and correct ZIP placement using eight Windows PowerShell 5.1 regression fixtures and a packaging gate.
+- [x] Original PR #436 CI #3211 and #3212 passed **951/951**; merge with the already-integrated PR #437 preserves both changes in the same branch.
+- [ ] Verify integrated PR head expected **959/959** tests, final ZIPs and checksums, Stable audit; merge on green then verify postmerge main CI and public Development prerelease.
+- [ ] Real Lite WinUI interactive startup and physical J2534 tests remain deferred; Stable v0.2.2 and trimming/AOT unchanged.
+
+---
+
 ## Exact verified Development ZIPs as GitHub Actions artifacts (2026-10-23)
 
 - [x] Upload the already-packaged and SHA-256-verified final Portable and Lite ZIPs, not the uncompressed `app/` and `app-lite/` publish directories.
 - [x] Require all three upload paths (Portable ZIP, Lite ZIP, SHA256SUMS.txt) to exist, fail closed on missing files, avoid re-compressing finalized ZIPs using upload-artifact `compression-level: 0`.
 - [x] Add eight deterministic CI contract regressions covering correct files, raw folder fallback, invalid checksum path, skipped missing-file guard, redundant compression, missing packaging gate and release-asset drift.
 - [x] Public prerelease assets and Portable updater are unchanged; GitHub Actions users extract the outer Actions download once to obtain the inner final ZIP.
-- [ ] Verify PR CI expected **951/951**, ZIP extraction/checksums, Stable audit; merge only on full green and verify main Actions artifacts contain exact inner ZIP files.
+- [x] PR #437 CI #3214 and #3215 passed **951/951**, Windows x86, ZIP extraction/checksums, Stable audit; merged. Independent main CI #3216 passed **951/951** and uploaded final Portable/Lite ZIPs and checksum manifest as Actions artifacts.
 - [ ] No live Lite WinUI launch or physical J2534 tests; Stable v0.2.2 and trimming/AOT untouched.
 
 ---

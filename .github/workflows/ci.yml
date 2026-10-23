@@ -32,7 +32,7 @@ jobs:
       - name: Parse Windows PowerShell 5.1 distribution scripts
         shell: powershell
         run: |
-          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
+          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Test-LiteBundledPreflight.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
             $tokens = $null
             $syntaxErrors = $null
             [System.Management.Automation.Language.Parser]::ParseFile(
@@ -108,6 +108,8 @@ jobs:
           ./eng/Test-WindowsDistribution.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
           ./eng/Test-WindowsDistributionExtraction.ps1 -Flavor Portable -ZipPath artifacts/Dvinholm-Windows-x86.zip
           ./eng/Test-WindowsDistributionExtraction.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip -SimulatedLiteHost
+          ./eng/Test-LiteBundledPreflight.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
+          ./eng/Test-LiteBundledPreflight.ps1 -Flavor Portable -ZipPath artifacts/Dvinholm-Windows-x86.zip
           ./eng/Test-WindowsDistributionChecksums.ps1 -Directory artifacts -Generate
           ./eng/Test-WindowsDistributionChecksums.ps1 -Directory artifacts
           $portable = (Get-Item -LiteralPath artifacts/Dvinholm-Windows-x86.zip).Length
