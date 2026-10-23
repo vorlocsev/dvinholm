@@ -25,5 +25,31 @@ try {
    if(@($entries | Where-Object { $_ -like "*/$asset" }).Count -eq 0) { throw "MSIX check 7: missing $asset" }
  }
  if(@($entries | Where-Object { $_ -match '\.(pdb|dmp|binlog|trx)$' }).Count -gt 0) { throw 'MSIX check 8: debug payload found' }
- Write-Host 'All eight Lite MSIX checks passed. This is an UNSIGNED test package.'
+ # Check that the opt-in unsigned prototype remains eligible for Windows 11 LTSC
+ # and uses the expected full-trust desktop identity. These are metadata
+ # checks only: no signature, runtime availability, or installation is tested.
+ if($identity.GetAttribute('Publisher') -ne 'CN=Dvinholm Development') {
+   throw 'MSIX check 9: unexpected development publisher'
+ }
+ $families=@($doc.SelectNodes('/a:Package/a:Dependencies/a:TargetDeviceFamily',$ns))
+ if($families.Count -ne 1 -or $families[0].GetAttribute('Name') -ne 'Windows.Desktop') {
+   throw 'MSIX check 10: expected one Windows.Desktop target family'
+ }
+ $osText=$families[0].GetAttribute('MinVersion')
+ try { $osMinimum=[Version]$osText }
+ catch { throw 'MSIX check 11: invalid minimum Windows version' }
+ if($osMinimum -gt [Version]'10.0.26100.0' -or $osMinimum -lt [Version]'10.0.17763.0') {
+   throw 'MSIX check 11: minimum Windows version outside supported range'
+ }
+ $fullTrust=$doc.SelectSingleNode('/*[local-name()="Package"]/*[local-name()="Capabilities"]/*[local-name()="Capability" and @Name="runFullTrust"]')
+ if($null -eq $fullTrust) { throw 'MSIX check 12: missing runFullTrust capability' }
+ $applications=@($doc.SelectNodes('/a:Package/a:Applications/a:Application',$ns))
+ if($applications.Count -ne 1 -or $applications[0].GetAttribute('Id') -ne 'App' -or
+     $applications[0].GetAttribute('EntryPoint') -ne 'Windows.FullTrustApplication') {
+   throw 'MSIX check 13: invalid full-trust app registration'
+ }
+ if(-not ($entries -ccontains 'Dvinholm.App.exe')) {
+   throw 'MSIX check 14: main executable must be at package root'
+ }
+ Write-Host 'All Lite MSIX checks passed. This is an UNSIGNED test package.'
 } finally { $archive.Dispose() }

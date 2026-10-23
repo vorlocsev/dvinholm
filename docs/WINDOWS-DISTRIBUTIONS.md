@@ -19,8 +19,15 @@ Windows App SDK framework packages may be resolved by the Store on supported
 Windows, but MSIX does **not** guarantee automatic installation of .NET.
 Windows LTSC IoT without Store may need all prerequisites installed manually.
 
-The separate `lite-msix.yml` CI validates eight MSIX archive contracts and
-refuses packages that bundle .NET or WinUI runtimes. The development artifact
+The separate `lite-msix.yml` CI validates 14 MSIX archive contracts and
+refuses packages that bundle .NET or WinUI runtimes. Metadata checks also
+require the expected development publisher, exactly one Windows.Desktop target
+family with a minimum Windows version compatible with Windows 11 LTSC 26100,
+`runFullTrust`, a single full-trust application registration, and the
+Dvinholm executable at the MSIX root. Eight Windows x86 fixture scenarios
+cover these checks (including a valid synthetic package). This is a static
+archive inspection, not proof of real Windows installation, Store access,
+correct Windows App SDK provisioning, or launch readiness. The development artifact
 is **UNSIGNED and test-only**, not a one-click installer. It cannot be deployed
 normally until signed with a trusted publisher certificate. The Portable file
 replacement updater is disabled in MSIX builds; Windows handles package updates
