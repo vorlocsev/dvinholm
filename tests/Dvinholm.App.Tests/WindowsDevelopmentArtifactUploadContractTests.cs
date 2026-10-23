@@ -19,7 +19,9 @@ public sealed class WindowsDevelopmentArtifactUploadContractTests
     public void Workflow_UploadsOnlyFinalVerifiedReleaseBytes(
         string scenario, bool expectedValid)
     {
-        var workflow = File.ReadAllText(FindWorkflow());
+        // Checkout on Windows may use CRLF even when Git stores LF.
+        var workflow = File.ReadAllText(FindWorkflow())
+            .Replace("\r\n", "\n", StringComparison.Ordinal);
         workflow = scenario switch
         {
             "portable-raw-folder" => workflow.Replace(
