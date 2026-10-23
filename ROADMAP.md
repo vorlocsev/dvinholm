@@ -1,10 +1,21 @@
 ## Lite standalone prerequisite self-check in ZIP (Development, 2026-10-23)
 
-- [x] Copy source-matched PowerShell prerequisite checker and one-click Windows CMD launcher into Lite archive root, so checking x86 .NET, Windows App SDK and VC++ needs no repository checkout.
-- [x] Leave Portable free of Lite-only helpers; CI validates exact bundled script bytes against checked-in source and rejects missing, nested or altered helpers.
-- [x] Add eight Windows PowerShell 5.1 fixture regressions and document launch, read-only behavior and remaining real WinUI testing limitation.
-- [ ] Verify PR CI expected **951/951**, Windows x86, ZIP smoke, bundled checker gate, SHA-256 and Stable audit; merge only after green and separately confirm main CI and public release.
-- [ ] Physical J2534 and interactive Lite GUI tests remain deferred. Stable v0.2.2, Portable updater and trimming/AOT unchanged.
+- [x] Bundle source-matched PowerShell checker and read-only one-click Windows CMD launcher in Lite ZIP root. Portable ZIP remains free of Lite helpers.
+- [x] Enforce exact checker content and correct ZIP placement using eight Windows PowerShell 5.1 regression fixtures and a packaging gate.
+- [x] Original PR #436 CI #3211 and #3212 passed **951/951**; merge with the already-integrated PR #437 preserves both changes in the same branch.
+- [ ] Verify integrated PR head expected **959/959** tests, final ZIPs and checksums, Stable audit; merge on green then verify postmerge main CI and public Development prerelease.
+- [ ] Real Lite WinUI interactive startup and physical J2534 tests remain deferred; Stable v0.2.2 and trimming/AOT unchanged.
+
+---
+
+## Exact verified Development ZIPs as GitHub Actions artifacts (2026-10-23)
+
+- [x] Upload the already-packaged and SHA-256-verified final Portable and Lite ZIPs, not the uncompressed `app/` and `app-lite/` publish directories.
+- [x] Require all three upload paths (Portable ZIP, Lite ZIP, SHA256SUMS.txt) to exist, fail closed on missing files, avoid re-compressing finalized ZIPs using upload-artifact `compression-level: 0`.
+- [x] Add eight deterministic CI contract regressions covering correct files, raw folder fallback, invalid checksum path, skipped missing-file guard, redundant compression, missing packaging gate and release-asset drift.
+- [x] Public prerelease assets and Portable updater are unchanged; GitHub Actions users extract the outer Actions download once to obtain the inner final ZIP.
+- [x] PR #437 CI #3214 and #3215 passed **951/951**, Windows x86, ZIP extraction/checksums, Stable audit; merged. Independent main CI #3216 passed **951/951** and uploaded final Portable/Lite ZIPs and checksum manifest as Actions artifacts.
+- [ ] No live Lite WinUI launch or physical J2534 tests; Stable v0.2.2 and trimming/AOT untouched.
 
 ---
 
@@ -16,7 +27,7 @@
 - [x] Preserve stream-based .NET SHA256 hashing, public asset checks, Stable v0.2.2 and Portable updater; no trimming/AOT.
 - [x] PR CI #3207 passed **943/943**, Portable/Lite extracted ZIP, SHA-256 manifest and Stable audit. Concurrent CI #3206 failed **942/943** on the pre-existing Windows recovery test `ServiceFileFailure_PreservesRecoveryAndAllowsSafeRetry(false, damaged-resume)`: a PowerShell/Robocopy process exceeded the 35-second test-only timeout under runner contention.
 - [x] Retain the real recovery assertions and increase the recovery PowerShell subprocess's bounded test deadline to 120 seconds, without changing production scripts.
-- [x] Corrected PR #435 CI #3208 and #3209 passed **943/943** with Portable/Lite extracted ZIPs and Stable audit; merged as `ab9a8df`. Main CI #3210 independently passed **943/943**, public Development re-download audit and independent GitHub API SHA-256 digest for all three assets.
+- [x] PR #435 corrected CI #3208 and #3209 passed **943/943**, both Portable/Lite extracted ZIPs and Stable audit; merged as `ab9a8df`. Independent main CI #3210 passed **943/943**, public release post-upload audit verified all three files, SHA256SUMS and GitHub API asset digests.
 - [ ] No real WinUI Lite start or physical J2534 test claimed.
 
 ---

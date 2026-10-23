@@ -117,6 +117,17 @@ publisher authenticity if an attacker replaces both archives and manifest.
 
 The application is published for `win-x86` without Trimming or Native AOT. The self-contained Portable output stays complete, including native WinUI resources and .NET runtime files. Never delete arbitrary DLLs, JSON, PRI, MUI, WinMD, or locale folders to reduce the ZIP size.
 
+The GitHub Actions artifacts for Development now contain the **same final,
+verified ZIP files** as the public `ci-N` prerelease, rather than a separate
+archive of uncompressed publish folders. GitHub Actions wraps artifacts in its
+own download ZIP, so extract that wrapper once to obtain
+`Dvinholm-Windows-x86.zip` or `Dvinholm-Windows-x86-Lite.zip`.
+The standalone `Dvinholm-Distribution-Checksums` artifact contains
+`SHA256SUMS.txt`; the hashes apply to the **inner final ZIPs**. Missing files
+fail the workflow and the already-compressed ZIPs are uploaded with compression
+disabled to avoid wasted CI time. The public prerelease files need no extra
+wrapper extraction.
+
 Both downloads are packaged by `eng/Package-WindowsDistribution.ps1`. It omits only debugging byproducts (PDB, dumps, tracing/coverage files) and explicit debugger utilities. High ZIP Deflate compression is used when 7-Zip is available, with `Compress-Archive -CompressionLevel Optimal` as a compatible fallback. These are ordinary ZIP archives compatible with the built-in Dvinholm updater.
 
 `eng/Test-WindowsDistribution.ps1` is a required packaging gate. It checks executable and icon, runtime manifests, no debugger payload, and verifies Portable has bundled .NET and Lite does **not**. CI also requires Lite ZIP to be smaller than Portable ZIP and writes the size comparison to the job summary. These tests do not replace a Windows launch test, especially for Lite.
