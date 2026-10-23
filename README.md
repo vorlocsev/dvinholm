@@ -34,6 +34,31 @@
 4. For adapter use, install the **32-bit J2534 driver** supplied by the hardware manufacturer, then select the registered DLL or enter its path in Dvinholm.
 5. Start with **passive CAN monitoring** once a compatible adapter and vehicle are available. UDS commands are read-only.
 
+### Experimental Lite Development build
+
+The separate [Development prereleases](https://github.com/vorlocsev/dvinholm/releases) include
+`Dvinholm-Windows-x86-Lite.zip` for Windows x86 systems with compatible
+**.NET 10 Desktop Runtime x86**, Windows App SDK 2.5 runtime packages and
+Visual C++ x86 runtime already installed. Lite is not the Stable build,
+does **not** support the in-app updater, and must be extracted into a
+separate folder rather than placed over Portable.
+
+1. Download the Lite ZIP and `SHA256SUMS.txt` from the **same** `ci-N` prerelease.
+   GitHub Actions artifacts contain an outer download wrapper, whereas the
+   prerelease lists the ready-to-extract ZIPs directly.
+2. Extract the entire Lite ZIP, then run `Check-Lite-Prerequisites.cmd`
+   beside `Dvinholm.App.exe`. The read-only check reports missing
+   prerequisites and does not install anything or launch the app.
+3. If prerequisites are satisfied, launch `Dvinholm.App.exe`. The CI
+   preflight uses simulated Windows-host fixtures: **a real interactive Lite
+   launch has not yet been verified**.
+4. Never mix Lite and Portable files. The physical J2534 adapter tests
+   remain deferred.
+
+The [Windows distributions guide](docs/WINDOWS-DISTRIBUTIONS.md) explains
+dependency checks and SHA-256 verification. Use Portable for the default
+supported distribution.
+
 The branded icon was introduced in v0.2.1 and remains packaged in v0.2.2. A user confirmed it was visible in Windows on 2026-10-19; individual display locations were not separately specified.
 
 ## Latest stable release — v0.2.2 (2026-10-20)

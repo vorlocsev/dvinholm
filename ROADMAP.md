@@ -1,3 +1,12 @@
+## Lite user-facing onboarding and release-channel clarity (2026-10-23)
+
+- [x] Explain Lite's experimental framework-dependent requirements, bundled read-only one-click prerequisite checker and independent extraction directory in the README.
+- [x] Distinguish ready-to-extract Development prerelease ZIPs from outer GitHub Actions artifact wrappers; include matching SHA256SUMS.txt and updater limitations.
+- [x] Record successful PR #438 postmerge CI #3224 in ROADMAP; do not claim real WinUI launch or physical J2534 verification.
+- [ ] Confirm README/documentation-only CI, then merge. Stable v0.2.2, updater, trimming/AOT and binaries are unchanged.
+
+---
+
 ## Lite self-check CMD safety and incomplete-folder handling (Development, 2026-10-23)
 
 - [x] Pin the bundled CMD launcher to Windows-owned System32 PowerShell; do not execute a same-name binary through PATH or the extraction/current directory.
@@ -6,7 +15,7 @@
 - [x] Add eight Windows CMD integration fixtures: paths with spaces, other working directory, three missing payload components, propagated inspector error, PowerShell PATH hijack attempt, and scripted mode.
 - [x] PR CI #3221 failed **962/967** due to an actual CMD quoting problem: `-LiteDirectory "%~dp0"` ends with a backslash, which can escape a closing quote when passed to PowerShell and swallow the following SDK argument. Missing-file assertions passed.
 - [x] Use `-LiteDirectory "%~dp0."` so the argument ends with a dot, and normalize the directory path in the regression assertions.
-- [ ] Verify corrected PR CI expected **967/967**, Windows x86, Lite bundle ZIP contract, Portable/Lite extraction/checksums and Stable audit; merge on green, then confirm main CI.
+- [x] PR #438 merged as `2dfaf0b`; independent main CI #3224 passed with Windows x86 build, Lite bundle ZIP contract, Portable/Lite extraction/checksums, Stable audit and post-upload Development release verification.
 - [ ] Real Lite WinUI GUI launch and physical J2534 remain deferred; Stable v0.2.2, Portable updater and trimming/AOT unchanged.
 
 ---
