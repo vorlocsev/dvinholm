@@ -1,9 +1,19 @@
+## Lite default .NET Minor roll-forward correctness (Development, 2026-10-23)
+
+- [x] Fix the default `Minor` policy: if any runtime from the requested minor line is installed, require a qualifying patch in that minor. Do not accept a different, newer minor merely because the present patch is too old.
+- [x] Preserve fallback to a newer minor when the requested minor is absent, along with existing `LatestMinor`, `LatestPatch`, `Disable` behavior and fail-closed unsupported policies.
+- [x] Extend the Windows PowerShell 5.1 simulated-host roll-forward test matrix by eight cases (16 total): equal patch, later patch, absent requested minor, old patch plus newer minor, old patch alone, compatible and newer minors, LatestMinor exception, LatestPatch non-exception.
+- [ ] Verify PR CI expected **975/975** on Windows x86, Portable/Lite ZIP extraction, Development digest audit where applicable and Stable audit. Merge only on full green; verify independent main CI.
+- [ ] Real Lite GUI launch and physical J2534 testing remain deferred; Portable updater, Stable v0.2.2 and trimming/AOT untouched.
+
+---
+
 ## Lite user-facing onboarding and release-channel clarity (2026-10-23)
 
 - [x] Explain Lite's experimental framework-dependent requirements, bundled read-only one-click prerequisite checker and independent extraction directory in the README.
 - [x] Distinguish ready-to-extract Development prerelease ZIPs from outer GitHub Actions artifact wrappers; include matching SHA256SUMS.txt and updater limitations.
 - [x] Record successful PR #438 postmerge CI #3224 in ROADMAP; do not claim real WinUI launch or physical J2534 verification.
-- [ ] Confirm README/documentation-only CI, then merge. Stable v0.2.2, updater, trimming/AOT and binaries are unchanged.
+- [x] README-only PR #439 merged as `ef4f0d0`; independent main CI #3227 passed **967/967** with Portable/Lite extracted ZIP checks, Stable audit and post-upload Development digest audit. Stable v0.2.2, updater, trimming/AOT and binaries unchanged.
 
 ---
 

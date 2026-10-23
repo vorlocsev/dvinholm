@@ -4,7 +4,7 @@ using System.Text;
 namespace Dvinholm.App.Tests;
 
 /// <summary>
-/// Eight deterministic .NET 10 roll-forward fixture checks. The Windows host
+/// Sixteen deterministic .NET 10 roll-forward fixture checks. The Windows host
 /// is not inspected and WinUI is not launched.
 /// </summary>
 public sealed class WindowsLiteRollForwardTests
@@ -18,6 +18,14 @@ public sealed class WindowsLiteRollForwardTests
     [InlineData("disable-patch-mismatch", false, "Missing .NET 10 x86 shared runtime")]
     [InlineData("unknown-policy", false, "cannot certify .NET rollForward")]
     [InlineData("patches-disabled", false, "cannot certify runtimeconfig applyPatches=false")]
+    [InlineData("minor-equal", true, "")]
+    [InlineData("minor-later-patch", true, "")]
+    [InlineData("minor-next-minor-alone", true, "")]
+    [InlineData("minor-oldpatch-next-minor", false, "Missing .NET 10 x86 shared runtime")]
+    [InlineData("minor-oldpatch-only", false, "Missing .NET 10 x86 shared runtime")]
+    [InlineData("minor-compatible-and-next", true, "")]
+    [InlineData("latestminor-oldpatch-next", true, "")]
+    [InlineData("latestpatch-next-only", false, "Missing .NET 10 x86 shared runtime")]
     public async Task Preflight_RespectsDeclaredRollForwardPolicy(
         string scenario, bool shouldPass, string expectedError)
     {
@@ -29,8 +37,13 @@ public sealed class WindowsLiteRollForwardTests
         {
             var rollForward = scenario switch
             {
-                "minor-higher-minor" => "\"rollForward\":\"Minor\",",
-                "latest-patch" or "latest-patch-wrong-minor" =>
+                "minor-higher-minor" or "minor-equal" or "minor-later-patch" or
+                "minor-next-minor-alone" or "minor-oldpatch-next-minor" or
+                "minor-oldpatch-only" or "minor-compatible-and-next" =>
+                    "\"rollForward\":\"Minor\",",
+                "latestminor-oldpatch-next" => "\"rollForward\":\"LatestMinor\",",
+                "latest-patch" or "latest-patch-wrong-minor" or
+                "latestpatch-next-only" =>
                     "\"rollForward\":\"LatestPatch\",",
                 "disable-exact" or "disable-patch-mismatch" =>
                     "\"rollForward\":\"Disable\",",
@@ -39,21 +52,35 @@ public sealed class WindowsLiteRollForwardTests
             };
             var applyPatches = scenario == "patches-disabled" ?
                 "\"applyPatches\":false," : "";
+            var requestedVersion = scenario is
+                "minor-equal" or "minor-later-patch" or
+                "minor-next-minor-alone" or "minor-oldpatch-next-minor" or
+                "minor-oldpatch-only" or "minor-compatible-and-next" or
+                "latestminor-oldpatch-next" or "latestpatch-next-only"
+                ? "10.0.2" : "10.0.0";
             File.WriteAllText(Path.Combine(dir, "Dvinholm.App.runtimeconfig.json"),
                 "{\"runtimeOptions\":{" + rollForward + applyPatches +
-                "\"framework\":{\"name\":\"Microsoft.NETCore.App\",\"version\":\"10.0.0\"}}}");
+                "\"framework\":{\"name\":\"Microsoft.NETCore.App\",\"version\":\"" +
+                requestedVersion + "\"}}}");
 
             var installed = scenario switch
             {
-                "minor-higher-minor" or "latest-patch-wrong-minor" =>
-                    "10.1.0",
+                "minor-higher-minor" or "latest-patch-wrong-minor" or
+                "minor-next-minor-alone" or "latestpatch-next-only" => "10.1.0",
+                "minor-oldpatch-next-minor" or "latestminor-oldpatch-next" =>
+                    "10.0.1;10.1.0",
+                "minor-compatible-and-next" => "10.0.2;10.1.0",
+                "minor-oldpatch-only" => "10.0.1",
+                "minor-later-patch" => "10.0.9",
                 "disable-exact" => "10.0.0",
                 _ => "10.0.2"
             };
             var desktopVersion = scenario == "disable-exact" ? "10.0.0" : "10.0.2";
             var runtimePath = Path.Combine(dir, "runtime-list.txt");
+            var coreLines = string.Join("", installed.Split(';').Select(version =>
+                $"Microsoft.NETCore.App {version} [C:\\dotnet-x86\\shared\\Microsoft.NETCore.App]\n"));
             File.WriteAllText(runtimePath,
-                $"Microsoft.NETCore.App {installed} [C:\\dotnet-x86\\shared\\Microsoft.NETCore.App]\n" +
+                coreLines +
                 $"Microsoft.WindowsDesktop.App {desktopVersion} [C:\\dotnet-x86\\shared\\Microsoft.WindowsDesktop.App]\n",
                 Encoding.UTF8);
             var sdkPath = Path.Combine(dir, "sdk-packages.txt");
