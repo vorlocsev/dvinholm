@@ -4,7 +4,9 @@
 - [x] Reject missing Lite EXE, runtimeconfig or bundled inspector before invoking the checker; preserve distinct nonzero diagnostics, inspector exit code, and read-only behavior.
 - [x] Add opt-in `DVINHOLM_LITE_NO_PAUSE=1` for scripted use, keeping the interactive prompt by default.
 - [x] Add eight Windows CMD integration fixtures: paths with spaces, other working directory, three missing payload components, propagated inspector error, PowerShell PATH hijack attempt, and scripted mode.
-- [ ] Verify PR CI expected **967/967**, Windows x86, Lite bundle ZIP contract, Portable/Lite extraction/checksums, Stable audit; merge on green, then confirm main CI.
+- [x] PR CI #3221 failed **962/967** due to an actual CMD quoting problem: `-LiteDirectory "%~dp0"` ends with a backslash, which can escape a closing quote when passed to PowerShell and swallow the following SDK argument. Missing-file assertions passed.
+- [x] Use `-LiteDirectory "%~dp0."` so the argument ends with a dot, and normalize the directory path in the regression assertions.
+- [ ] Verify corrected PR CI expected **967/967**, Windows x86, Lite bundle ZIP contract, Portable/Lite extraction/checksums and Stable audit; merge on green, then confirm main CI.
 - [ ] Real Lite WinUI GUI launch and physical J2534 remain deferred; Stable v0.2.2, Portable updater and trimming/AOT unchanged.
 
 ---

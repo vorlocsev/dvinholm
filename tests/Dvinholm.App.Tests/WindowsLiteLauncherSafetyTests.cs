@@ -98,7 +98,8 @@ public sealed class WindowsLiteLauncherSafetyTests
                 Assert.True(File.Exists(invocation), output);
                 var args = File.ReadAllLines(invocation);
                 Assert.Equal(2, args.Length);
-                Assert.Equal(lite.TrimEnd('\\'), args[0].TrimEnd('\\'),
+                Assert.Equal(Path.GetFullPath(lite).TrimEnd('\\'),
+                    Path.GetFullPath(args[0]).TrimEnd('\\'),
                     StringComparer.OrdinalIgnoreCase);
                 Assert.Equal("2.5", args[1]);
                 if (expectedCode != 0)

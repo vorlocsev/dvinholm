@@ -4,6 +4,8 @@ echo Dvinholm Lite prerequisite inspection
 echo No software will be installed or changed.
 echo.
 
+rem The directory argument ends in dot, not backslash: Windows native quoting
+rem otherwise may escape the closing quote and lose later parameters.
 rem Use the Windows-owned interpreter, never an executable from PATH or
 rem the current working directory. Verify the extracted app is complete.
 set "DvinholmLiteExitCode=0"
@@ -28,7 +30,7 @@ if not exist "%DvinholmPowerShell%" (
     set "DvinholmLiteExitCode=13"
     goto :finish
 )
-"%DvinholmPowerShell%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%~dp0Check-Lite-Prerequisites.ps1" -LiteDirectory "%~dp0" -WindowsAppSdkLine "2.5"
+"%DvinholmPowerShell%" -NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "%~dp0Check-Lite-Prerequisites.ps1" -LiteDirectory "%~dp0." -WindowsAppSdkLine "2.5"
 set "DvinholmLiteExitCode=%ERRORLEVEL%"
 
 :finish
