@@ -65,6 +65,20 @@ code-signing EKU, digital-signature KeyUsage, and non-CA BasicConstraints.
 Sixteen Windows test cases generate only ephemeral local test certificates, export
 **public .cer data**, and ensure known wrong inputs fail.
 
+The public-certificate preflight now uses an intentionally conservative
+cryptographic profile: **RSA public keys of at least 2048 bits**, with an
+X.509 certificate signature using RSA PKCS#1 and SHA-256, SHA-384 or SHA-512.
+It rejects SHA-1 and ECDSA certificates for this **development-only** path
+until alternate signing identities have been tested separately. This does
+not validate a digital signature on the MSIX, verify Windows trust, or
+require the certificate private key. Eight additional temporary public
+certificate fixtures cover weak RSA, stronger RSA, SHA-1, SHA-384/512 and
+ECDSA variants.
+The SHA-1 rejection fixture uses synthetic DER with two SHA-1 signature-
+algorithm OIDs, since .NET 10 deliberately refuses to generate a new
+SHA-1 certificate. Its signature is not valid; the fixture exercises
+metadata rejection only, never cryptographic signature validation. The check still requires a correct publisher and DER file.
+
 The certificate parser now requires **byte-for-byte DER equality** between the
 provided public .cer file and the decoded X.509 certificate. It therefore
 rejects PEM encoding, container wrappers and trailing bytes rather than merely

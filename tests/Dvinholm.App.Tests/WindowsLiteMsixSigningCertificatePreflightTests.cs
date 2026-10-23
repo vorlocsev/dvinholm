@@ -29,6 +29,14 @@ public sealed class WindowsLiteMsixSigningCertificatePreflightTests
     [InlineData("missing-keyusage", false, "must declare digitalSignature")]
     [InlineData("missing-basicconstraints", false, "end-entity signing certificate")]
     [InlineData("wrong-msix-identity", false, "MSIX identity is not exactly")]
+    [InlineData("rsa-1024", false, "RSA key size at least 2048")]
+    [InlineData("rsa-3072", true, "PRE-SIGN CHECK ONLY")]
+    [InlineData("rsa-4096", true, "PRE-SIGN CHECK ONLY")]
+    [InlineData("sha1-rsa", false, "requires SHA-2 RSA signature")]
+    [InlineData("sha384-rsa", true, "PRE-SIGN CHECK ONLY")]
+    [InlineData("sha512-rsa", true, "PRE-SIGN CHECK ONLY")]
+    [InlineData("ecdsa-p256", false, "must use RSA public key")]
+    [InlineData("ecdsa-p384", false, "must use RSA public key")]
     public async Task PublicCertificatePreflight_RejectsUnusableCertificates(
         string scenario, bool success, string expectedMessage)
     {
@@ -54,11 +62,32 @@ public sealed class WindowsLiteMsixSigningCertificatePreflightTests
                 writer.Write(manifest);
             }
 
-            using var rsa = RSA.Create(2048);
+            var useEcdsa = scenario.StartsWith("ecdsa-", StringComparison.Ordinal);
+            var rsaBits = scenario switch
+            {
+                "rsa-1024" => 1024,
+                "rsa-3072" => 3072,
+                "rsa-4096" => 4096,
+                _ => 2048
+            };
+            using RSA? rsa = useEcdsa ? null : RSA.Create(rsaBits);
+            using ECDsa? ecdsa = useEcdsa
+                ? ECDsa.Create(scenario == "ecdsa-p384"
+                    ? ECCurve.NamedCurves.nistP384 : ECCurve.NamedCurves.nistP256)
+                : null;
             var subject = scenario == "publisher-mismatch"
                 ? "CN=Unexpected Publisher" : "CN=Dvinholm Development";
-            var req = new CertificateRequest(new X500DistinguishedName(subject),
-                rsa, HashAlgorithmName.SHA256, RSASignaturePadding.Pkcs1);
+            var digest = scenario switch
+            {
+                "sha384-rsa" or "ecdsa-p384" => HashAlgorithmName.SHA384,
+                "sha512-rsa" => HashAlgorithmName.SHA512,
+                _ => HashAlgorithmName.SHA256
+            };
+            var req = useEcdsa
+                ? new CertificateRequest(new X500DistinguishedName(subject),
+                    ecdsa!, digest)
+                : new CertificateRequest(new X500DistinguishedName(subject),
+                    rsa!, digest, RSASignaturePadding.Pkcs1);
             var usages = scenario == "wrong-key-usage"
                 ? X509KeyUsageFlags.KeyEncipherment
                 : X509KeyUsageFlags.DigitalSignature;
@@ -92,6 +121,8 @@ public sealed class WindowsLiteMsixSigningCertificatePreflightTests
             if (scenario != "missing-certificate")
             {
                 byte[] publicDer = cert.Export(X509ContentType.Cert);
+                if (scenario == "sha1-rsa")
+                    publicDer = WithSyntheticSha1SignatureAlgorithm(publicDer);
                 if (scenario == "non-der-pem")
                     publicDer = Encoding.ASCII.GetBytes(
                         "-----BEGIN CERTIFICATE-----\n" +
@@ -136,6 +167,29 @@ public sealed class WindowsLiteMsixSigningCertificatePreflightTests
             Assert.Contains(expectedMessage, output);
         }
         finally { await WindowsTestFixtureCleanup.RemoveBestEffortAsync(root); }
+    }
+
+    // CertificateRequest in .NET 10 refuses SHA-1 when creating a test
+    // certificate. Change only both equal-length signature-algorithm OIDs
+    // in a DER-encoded SHA-256 test certificate, so the read-only metadata
+    // preflight can reject SHA-1. This deliberately invalidates its actual
+    // signature and is NOT a fixture for verifying cryptographic signatures.
+    private static byte[] WithSyntheticSha1SignatureAlgorithm(byte[] original)
+    {
+        ReadOnlySpan<byte> sha256RsaOid =
+            [0x06, 0x09, 0x2A, 0x86, 0x48, 0x86, 0xF7, 0x0D, 0x01, 0x01, 0x0B];
+        var result = (byte[])original.Clone();
+        var matches = 0;
+        for (var i = 0; i <= result.Length - sha256RsaOid.Length; i++)
+        {
+            if (!result.AsSpan(i, sha256RsaOid.Length).SequenceEqual(sha256RsaOid))
+                continue;
+            result[i + sha256RsaOid.Length - 1] = 0x05; // sha1WithRSAEncryption
+            matches++;
+            i += sha256RsaOid.Length - 1;
+        }
+        Assert.Equal(2, matches); // tbsCertificate and outer signatureAlgorithm
+        return result;
     }
 
     private static string FindScript()

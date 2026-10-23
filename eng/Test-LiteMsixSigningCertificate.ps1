@@ -55,6 +55,28 @@ try {
         [Convert]::ToBase64String($fileBytes) -cne [Convert]::ToBase64String($derBytes)) {
         throw 'Public certificate must contain exact raw DER .cer bytes without wrapper or trailing data.'
     }
+    # Deliberately narrow pre-sign cryptographic profile. Windows signing
+    # may allow more algorithms, but this development gate only certifies
+    # RSA >=2048 and SHA-2 RSA/PKCS#1 certificate signatures.
+    if ($cert.PublicKey.Oid.Value -ne '1.2.840.113549.1.1.1') {
+        throw 'Public signing certificate must use RSA public key.'
+    }
+    $rsaPublic = [Security.Cryptography.X509Certificates.RSACertificateExtensions]::GetRSAPublicKey($cert)
+    try {
+        if ($null -eq $rsaPublic -or $rsaPublic.KeySize -lt 2048) {
+            throw 'Public signing certificate must have RSA key size at least 2048 bits.'
+        }
+    } finally {
+        if ($null -ne $rsaPublic) { $rsaPublic.Dispose() }
+    }
+    $allowedSignatures = @(
+        '1.2.840.113549.1.1.11' # sha256WithRSAEncryption
+        '1.2.840.113549.1.1.12' # sha384WithRSAEncryption
+        '1.2.840.113549.1.1.13' # sha512WithRSAEncryption
+    )
+    if ($cert.SignatureAlgorithm.Value -notin $allowedSignatures) {
+        throw 'Public signing certificate requires SHA-2 RSA signature (SHA-256/384/512).'
+    }
     if (-not [string]::Equals($cert.Subject, $publisher, [StringComparison]::Ordinal)) {
         throw "Certificate Subject does not exactly match MSIX Publisher."
     }
