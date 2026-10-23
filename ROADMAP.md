@@ -1,9 +1,18 @@
+## Recovery subprocess CI checkpoint stability (Development, 2026-10-23)
+
+- [x] Investigate CI #3263 failure for PR #447: 1/1023 failed when a Windows PowerShell recovery subprocess did not reach the mandatory after-lock signal within the test-only 20-second deadline; same SHA passed full CI #3262 with 1023/1023 and MSIX #24 green.
+- [x] Keep all **eight** double-crash matrix combinations and original file-integrity, mutex ownership, rollback, marker, idempotence and exact-once launch assertions. No test skipped and no production updater changes.
+- [x] Permit 60 seconds for first/second crash checkpoint creation, 30 seconds for killed subprocess reaping and 120 seconds for real recovery/Robocopy subprocess completion; report PID, phase, exit state and bound rather than a bare cancellation on a missing checkpoint.
+- [ ] Run Windows x86 1023/1023 on PR, Portable/Lite ZIP integrity and Stable audit. Merge only after green; check new main CI independently.
+- [ ] Live Windows UI/LTSC deployment, signed MSIX and physical J2534 tests remain deferred. Stable v0.2.2, runtime packaging, Portable updater, trimming and AOT unchanged.
+
+---
 ## Lite MSIX offline multi-framework .NET readiness accuracy (Development, 2026-10-23)
 
 - [x] Parse both runtimeOptions.framework and runtimeOptions.frameworks, rejecting unknown, duplicate and invalid .NET 10 shared frameworks rather than silently dropping them.
 - [x] Honor independent minimum x86 Desktop/Core versions and per-reference rollForward/applyPatches; only conservatively certified Minor with patch servicing is accepted.
 - [x] Add eight Windows PowerShell 5.1 simulated host regressions: dual valid, Desktop/Core patch floors, unknown, duplicate, missing Core, per-reference Disable and applyPatches=false.
-- [ ] Require Windows x86 1023/1023, real unsigned x86 MSIX, Portable/Lite ZIP integrity and Stable audit. Merge only on green; confirm main CI independently.
+- [x] PR #447 CI #3262 passed 1023/1023, unsigned MSIX #24 passed, Portable/Lite ZIP checksums and Stable audit passed. Same SHA CI #3263 first attempt had 1 unrelated 20-second recovery checkpoint timeout; rerun requested. PR #447 merged as 96a0d43; independent main CI to confirm.
 - [ ] No signed MSIX deployment, real LTSC host installation, GUI startup or physical J2534 tested. Stable v0.2.2, Portable updater, trimming/AOT unchanged.
 
 ---

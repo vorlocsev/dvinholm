@@ -200,12 +200,25 @@ public sealed class UpdateDoubleCrashRecoveryTests
             asWatch, crashPhase, signal);
         try
         {
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(20));
-            while (!File.Exists(signal))
+            // The checkpoint is still mandatory. A saturated Windows CI host
+            // can take longer than 20 seconds to initialize PowerShell and
+            // obtain a process-local named mutex. Do not fail with a generic
+            // TaskCanceledException before the recovery script even runs.
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+            try
             {
-                Assert.False(owner.HasExited,
-                    $"Recovery process exited before test gate {crashPhase}.");
-                await Task.Delay(25, timeout.Token);
+                while (!File.Exists(signal))
+                {
+                    Assert.False(owner.HasExited,
+                        $"Recovery process {owner.Id} exited before test gate {crashPhase}.");
+                    await Task.Delay(25, timeout.Token);
+                }
+            }
+            catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+            {
+                throw new TimeoutException(
+                    $"Recovery process {owner.Id} did not reach mandatory gate " +
+                    $"'{crashPhase}' within 60 seconds (exited={owner.HasExited}).");
             }
         }
         finally
@@ -213,7 +226,7 @@ public sealed class UpdateDoubleCrashRecoveryTests
             if (!owner.HasExited)
             {
                 owner.Kill(entireProcessTree: true);
-                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(15));
+                using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
                 await owner.WaitForExitAsync(timeout.Token);
             }
         }
@@ -262,7 +275,8 @@ public sealed class UpdateDoubleCrashRecoveryTests
             asWatch, "", "");
         var stdout = process.StandardOutput.ReadToEndAsync();
         var stderr = process.StandardError.ReadToEndAsync();
-        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(30));
+        // Bounded but tolerant of Windows Robocopy and PowerShell runner contention.
+        using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(120));
         await process.WaitForExitAsync(timeout.Token);
         return (process.ExitCode, await stdout + await stderr);
     }
