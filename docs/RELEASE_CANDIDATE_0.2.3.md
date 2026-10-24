@@ -25,3 +25,5 @@ this preparation. Never mix a Lite runtime tree into a Portable installation.
 - Windows x86 development test profile executes tests. The packaged Stable app is built separately with `DvinholmDevelopmentFeatures=false`, trimming/AOT disabled and exactly `0.2.3+SHA.stable` metadata.
 - Eight ZIP/DLL audit gates run before upload and after Actions roundtrip. For an explicitly approved publish run, create a GitHub DRAFT release, download and revalidate assets, and only then make it public.
 - This workflow has not been dispatched for publication. Existing v0.2.2 must stay available; no MSIX signing or physical J2534 tests are involved.
+
+- CI repair: normalize Windows CRLF in workflow tests, restore win-x86 runtime dependencies after switching SDK architecture, and keep release-dispatch inputs in environment variables rather than interpolating into PowerShell source. Refuse release if remote main moves after authorization.

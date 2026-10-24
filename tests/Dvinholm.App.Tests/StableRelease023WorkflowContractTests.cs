@@ -10,7 +10,7 @@ public sealed class StableRelease023WorkflowContractTests
         for (DirectoryInfo? d = new(AppContext.BaseDirectory); d is not null; d = d.Parent)
         {
             var path = Path.Combine(d.FullName, ".github", "workflows", "release-v0.2.3.yml");
-            if (File.Exists(path)) return File.ReadAllText(path);
+            if (File.Exists(path)) return File.ReadAllText(path).Replace("\r\n", "\n", StringComparison.Ordinal);
         }
         throw new FileNotFoundException("Release workflow not found.");
     }
@@ -66,6 +66,8 @@ public sealed class StableRelease023WorkflowContractTests
         Assert.Contains("-p:PublishTrimmed=false", source);
         Assert.Contains("-p:PublishAot=false", source);
         Assert.Contains("-p:Version=0.2.3", source);
+        Assert.DoesNotContain("--no-restore -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --logger", source);
+        Assert.DoesNotContain("dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore", source);
     }
 
     [Fact]
