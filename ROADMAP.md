@@ -1,9 +1,20 @@
+## CAN Monitor multi-ID software filter (Development, 2026-10-24)
+
+- [x] Support a bounded list of up to 16 exact hexadecimal CAN IDs in the existing software-only monitor filter, including 0x prefixes, case-insensitive hex and optional surrounding whitespace. Keep single-ID and blank-filter behavior.
+- [x] Fail closed on invalid/empty members or oversized queries; preserve chronological rows, buffered hidden frames and RX totals. Parse once per view refresh to avoid repeated per-row query parsing.
+- [x] Keep J2534 hardware filters single-ID-only; provide a clear UI message for comma-separated requests, and show 7E0,7E8 in the software filter placeholder. Update RU user guide.
+- [x] Add eight no-hardware Windows x86 tests covering legacy syntax, request/response order, mixed 11-/29-bit IDs, duplicates, malformed members, blank segments, query limit and virtual J2534 receive without TX.
+- [ ] Require Windows CI 1079/1079, Portable/Lite ZIP SHA-256, Stable audit, experimental unsigned MSIX and postmerge main CI before considering the stage complete.
+- [ ] Physical J2534, WinUI manual acceptance, new Stable release, updater, trimming/AOT remain deferred/unchanged.
+
+---
+
 ## Safe CAN Monitor CSV field encoding (Development, 2026-10-24)
 
 - [x] Escape delimiter commas, embedded double quotes, and CR/LF inside any display text field while preserving the historical five-column CAN capture and six-column SYNTHETIC_DEMO schemas.
 - [x] Neutralize spreadsheet formula operators in unexpectedly supplied text, including leading whitespace, without altering valid CAN hex/11-bit/29-bit values. Render typed timestamp and DLC in invariant decimal.
 - [x] Add eight synthetic Windows x86 tests: real capture, demo marker, comma, quotes, multiline, formula ID, whitespace-prefixed formula, empty/null inputs. No hardware or UI automation.
-- [ ] Require full CI Windows x86 1071/1071, Portable/Lite ZIP integrity and SHA-256, Stable audit, and unchanged experimental MSIX; merge only after green and verify postmerge main CI.
+- [x] PR #455 CI #3292/#3293 passed 1071/1071, Portable/Lite ZIP SHA-256, Stable audit and experimental MSIX #49/#50. Merged as 206d136; postmerge main CI #3294 and MSIX #51 both succeeded.
 - [ ] Manual Windows UI and real J2534 vehicle tests remain deferred. Stable v0.2.2, updater and trimming/AOT unchanged.
 
 ---

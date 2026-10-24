@@ -131,7 +131,7 @@
             </Grid>
             <Grid Grid.Row="1" ColumnSpacing="10" Margin="0,0,0,10">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="75"/><ColumnDefinition Width="125"/><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/><ColumnDefinition Width="150"/><ColumnDefinition Width="100"/></Grid.ColumnDefinitions>
-                <TextBox x:Name="IdFilter" Header="ID filter (hex)" PlaceholderText="e.g. 7E8" TextChanged="Filter_Changed"/>
+                <TextBox x:Name="IdFilter" Header="ID filter (hex)" PlaceholderText="7E0,7E8" TextChanged="Filter_Changed"/>
                 <Button Grid.Column="1" Content="Clear" Click="Clear_Click" VerticalAlignment="Bottom"/>
                 <Button x:Name="HardwareFilterButton" Grid.Column="2" Content="Apply HW filter" Click="HardwareFilter_Click" VerticalAlignment="Bottom" IsEnabled="False"/>
                 <Button Grid.Column="3" Content="CSV log" Click="Csv_Click" VerticalAlignment="Bottom"/>
