@@ -1,9 +1,19 @@
+## Uploaded experimental MSIX artifact roundtrip integrity (Development, 2026-10-24)
+
+- [x] Download the just-uploaded unsigned MSIX test artifact from GitHub Actions into an isolated folder and verify it against the original CI-built package.
+- [x] Reject anything other than exactly Dvinholm-Lite-x86-UNSIGNED.msix and matching .msix.sha256 at the artifact root; no extra files or nested directories; hash comparison to original output and strict sidecar verification.
+- [x] Eight Windows x86 synthetic fixture scenarios: valid, empty, missing MSIX, missing checksum, extra file, nested folder, modified package, modified sidecar. Use Windows PowerShell 5.1 and .NET SHA-256 without Get-FileHash.
+- [ ] Require Windows x86 CI 1063/1063, Portable/Lite ZIP SHA-256 and Stable audit, experimental MSIX upload/download roundtrip. Merge only after green and verify postmerge main CI.
+- [ ] No trusted signing, AppX install or runtime provisioning, LTSC WinUI launch or physical J2534 performed. Stable v0.2.2, Portable updater, trimming/AOT unchanged.
+
+---
+
 ## Experimental unsigned MSIX SHA-256 manifest (Development, 2026-10-24)
 
 - [x] Add a deterministic single-entry lowercase SHA-256 manifest bound to Dvinholm-Lite-x86-UNSIGNED.msix in experimental CI, generated and verified after package validation and before artifact upload.
 - [x] Upload .msix and .msix.sha256 together. Reject missing files, tampered package bytes, invalid or uppercase hash, wrong filename and additional entries.
 - [x] Eight Windows x86 tests cover valid, tampered, missing package, missing manifest, substituted name, uppercase digest, extra line and malformed digest. CI #3282/#3283 exposed that Windows x86 PowerShell does not provide Get-FileHash; use streaming .NET SHA256 instead, preserving the same manifest format and all eight checks.
-- [ ] Require Windows CI 1055/1055 and Portable/Lite ZIP verification + Stable audit, plus unsigned MSIX MakeAppx and checksum gate; merge only when green and check postmerge main CI.
+- [x] PR #453 CI #3287 passed 1055/1055, Portable/Lite SHA-256, Stable audit and unsigned MSIX #44 with MakeAppx and sidecar verification. Merged as 810803d; postmerge main CI pending independent confirmation.
 - [ ] Digest is integrity-only, NOT signed or trusted distribution. LTSC installation, GUI launch and physical J2534 remain untested; Stable v0.2.2, Portable updater and trimming/AOT unchanged.
 
 ---

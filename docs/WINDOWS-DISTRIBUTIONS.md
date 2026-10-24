@@ -45,6 +45,24 @@ normally until signed with a trusted publisher certificate. The Portable file
 replacement updater is disabled in MSIX builds; Windows handles package updates
 through a separately configured signed distribution channel.
 
+## Roundtrip verification of GitHub Actions MSIX artifacts (Development)
+
+The experimental MSIX workflow now **uploads and downloads** its own
+Tiny-Lite-MSIX-UNSIGNED-TEST-ONLY artifact, using actions/download-artifact@v7
+in a new directory. The read-only verifier
+eng/Test-LiteMsixDownloadedArtifact.ps1 requires exactly two root files:
+Dvinholm-Lite-x86-UNSIGNED.msix and its .sha256 companion. It rejects
+unexpected files or nested directories, checks that the downloaded MSIX
+hash matches the **pre-upload build output**, and independently verifies the
+strict sidecar digest. Eight Windows x86 simulated-file regression cases
+cover missing/extra files and altered package or checksum.
+
+Unlike verifying only the checksum beside the upload, this detects corruption
+or accidental file substitution **between build output and downloaded
+Actions artifact**. It does not prove authenticity against an attacker with
+access to both build and CI, nor signed MSIX package trust, Store-less LTSC
+installation or GUI startup. The test fixtures contain no production keys.
+
 ## Experimental unsigned MSIX SHA-256 sidecar (Development)
 
 The Tiny-Lite-MSIX-UNSIGNED-TEST-ONLY Actions artifact now contains two
