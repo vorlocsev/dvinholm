@@ -2,12 +2,10 @@
 
 ## [0.2.3] — Unreleased (candidate preparation)
 
-- Stable Release now excludes synthetic demo buttons, handlers and fixture generators; Development explicitly opts in, existing saved user profiles remain untouched.
-
-- CAN Monitor adds bounded multi-ID software filtering without changing J2534 hardware filter behavior.
-- CSV export handles delimiters, quotes, multiline cells and unexpected spreadsheet formulas.
-- Additional Portable/Lite SHA-256, updater regression and experimental unsigned MSIX verification; trimming/AOT disabled.
-- Release-candidate Windows validation is pending; no physical J2534 support is claimed.
+- Stable omits synthetic test/demo controls, handlers, fixture generators and synthetic CSV branch. Development explicitly opts in and retains the offline tools.
+- CAN Monitor adds multi-ID software filtering (up to 16 IDs) and safe CSV quoting/formula neutralization.
+- Portable 0.2.3 RC gets eight archive/binary gates, exact-commit metadata, checksum sidecar and post-download verification.
+- Portable/Lite trimming and AOT stay disabled. No 0.2.3 Stable published yet; physical J2534 and manual Windows acceptance deferred.
 
 
 ## [0.2.2] — 2026-10-20

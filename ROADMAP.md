@@ -1,22 +1,10 @@
-## Stable without test/demo functionality (2026-10-24)
+## Stable / Development isolation and v0.2.3 Portable RC (2026-10-24)
 
-- [x] Default Release fails closed with DvinholmDevelopmentFeatures=false. Development CI, virtual tests and unsigned experimental MSIX explicitly opt in.
-- [x] Stable XAML contains no test buttons: Add test profiles, Start demo, Preview UDS example (offline), Export synthetic UDS TXT. Only an explicit Development build injects these controls.
-- [x] Compile out fixture classes CanDemoFrameGenerator, UdsOfflineSample, UdsOfflineTextReport and all corresponding event handlers from Stable. Real VIN/DID/DTC, CAN Monitor, profile editor/import/export and CSV remain enabled.
-- [x] Extend v0.2.3 RC gate 6 to inspect the real packaged DLL and reject eight synthetic handler/type names while requiring VIN/DID/DTC handlers.
-- [x] Add eight Development regression tests for accessible smoke-test actions (test assembly explicitly receives the build flag), and maintain eight RC gates on the actual Stable candidate. Production CSV is always the ordinary five-column schema and omits SYNTHETIC_DEMO.
-- [ ] Require 1087/1087 CI tests, Portable/Lite ZIP SHA-256, Stable audit, MSIX, RC artifact checks and postmerge main CI. Confirm UI omissions on Windows LTSC manually.
-- [ ] Do not mutate saved test profiles or published Stable v0.2.2. Hardware J2534/vehicle testing remains deferred.
-
----
-
-## v0.2.3 Portable release candidate (Development, 2026-10-24)
-
-- [x] Stage a dedicated NON-PUBLISHING v0.2.3 Windows x86 Portable candidate workflow. Use version and commit-specific RC metadata without changing main Development or published Stable v0.2.2 semantics.
-- [x] Check eight actual candidate properties: filenames, size, strict SHA-256, safe ZIP layout, isolated x86 PE extraction, managed DLL, assembly version, embedded informational SHA. Re-download and recheck the Actions artifact.
-- [x] Draft release notes, changelog and eight-gate acceptance checklist. No Stable tag/branch/release creation or signing.
-- [ ] Require full PR CI, candidate RC workflow, postmerge main CI. Obtain user-confirmed Windows 11 LTSC startup/demo/filter/CSV and 0.2.2 updater acceptance before authorized Stable publication.
-- [ ] Physical J2534/ECU tests deferred; trimming/AOT, Portable updater, Stable v0.2.2 unchanged.
+- [x] Merge resolution preserves PR #458 production UI safeguards while replacing hidden demo XAML placeholders and inert Release handlers with compile-time feature separation. Release defaults to `DvinholmDevelopmentFeatures=false`; Development CI and virtual regression tests opt in explicitly.
+- [x] Stable Release omits Add test profiles, Start demo, Preview UDS example, Export synthetic UDS TXT, generator classes and synthetic CSV branch; existing user profiles and real VIN/DID/DTC, CAN Monitor and CSV remain.
+- [x] Build a dedicated nonpublishing 0.2.3 Windows x86 Portable candidate workflow with eight checks: exact ZIP names, size, strict SHA-256, safe ZIP layout, extraction/x86, absence of synthetic DLL metadata, 0.2.3 assembly version, and exact commit informational version. Re-download the Actions artifact and revalidate unchanged bytes.
+- [ ] PR CI and RC workflow must pass after conflict resolution; confirm 1095 tests (1087 baseline + 8 Development surface tests), Stable audit, Portable/Lite checks and experimental MSIX, then postmerge main CI.
+- [ ] Manual Windows 11 LTSC Stable startup/filter/CSV, saved profiles and updater from 0.2.2 acceptance deferred; physical J2534/ECU deferred to later releases. Stable v0.2.2 remains published. No 0.2.3 Stable tag, release or signing until separately approved.
 
 ---
 
@@ -26,7 +14,7 @@
 - [x] Fail closed on invalid/empty members or oversized queries; preserve chronological rows, buffered hidden frames and RX totals. Parse once per view refresh to avoid repeated per-row query parsing.
 - [x] Keep J2534 hardware filters single-ID-only; provide a clear UI message for comma-separated requests, and show 7E0,7E8 in the software filter placeholder. Update RU user guide.
 - [x] Add eight no-hardware Windows x86 tests covering legacy syntax, request/response order, mixed 11-/29-bit IDs, duplicates, malformed members, blank segments, query limit and virtual J2534 receive without TX.
-- [x] PR #456 CI #3297/#3298 passed 1079/1079, Portable/Lite SHA-256, Stable audit and experimental MSIX #54. Merged as daf2ed5. Main CI #3299 pending; MSIX #55 passed.
+- [ ] Require Windows CI 1079/1079, Portable/Lite ZIP SHA-256, Stable audit, experimental unsigned MSIX and postmerge main CI before considering the stage complete.
 - [ ] Physical J2534, WinUI manual acceptance, new Stable release, updater, trimming/AOT remain deferred/unchanged.
 
 ---

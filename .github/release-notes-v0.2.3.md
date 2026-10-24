@@ -20,9 +20,10 @@ This file prepares the next Stable release. It is not release approval.
 - Candidate exact commit Windows x86 CI tests and clean Portable/Lite ZIPs.
 - Dedicated actual 0.2.3 self-contained RC build checks eight binary/archive
   gates, downloads own Actions artifact and rechecks checksum/embedded version.
-- Manual Windows 11 LTSC Portable startup, close/restart, offline Demo CAN,
-  comma-list filtering, CSV export, profile persistence and update-from-0.2.2
-  behavior remain pending.
+- Manual Windows 11 LTSC Stable Portable startup, close/restart, absence of
+  demo/test commands, comma-list filtering, real CSV export, profile
+  persistence and update-from-0.2.2 behavior remain pending.
+- Separate Development-only offline CAN demo acceptance remains pending.
 - After explicit release approval, use a separately reviewed versioned
   Stable workflow with re-download, SHA-256 and release metadata audit.
 
