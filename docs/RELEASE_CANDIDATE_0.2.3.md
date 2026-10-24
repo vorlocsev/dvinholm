@@ -41,3 +41,7 @@ The separate `tests/Dvinholm.Stable.Tests` project runs eight Windows x86 smoke 
 ## Windows offline acceptance kit
 
 Download Dvinholm-v0.2.3-STAGED-NOT-PUBLISHED and Dvinholm-v0.2.3-WINDOWS-ACCEPTANCE-KIT from the same exact-commit staging run. Follow docs/WINDOWS_ACCEPTANCE_0.2.3.md to verify SHA-256, exact binary version and extract to a safe isolated folder. No WinUI launch or installed update is performed by the helper.
+
+## Genuine v0.2.2 / staged v0.2.3 archive rehearsal (next PR)
+
+The staging job downloads the already-published v0.2.2 ZIP and SHA256SUMS, checks the exact v0.2.3 candidate and tests eight disposable file-replacement/rollback gates using real executable/runtime bytes. It verifies obsolete-file removal and protects a profile fixture outside the installation directory. This is an offline mirroring rehearsal, not a real installed updater run or WinUI UI acceptance.

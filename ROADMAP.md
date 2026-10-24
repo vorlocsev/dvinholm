@@ -1,9 +1,27 @@
+## Stable v0.2.3 legacy v0.2.2 debug-file compatibility (2026-10-24)
+
+- [x] CI #3333/#3334, RC #17 and MSIX #75 passed on PR #464; staging #10 found that already-published v0.2.2 contains `Dvinholm.App.pdb` and `createdump.exe`.
+- [x] With user permission, allow precisely those two pre-existing legacy debug entries in the read-only published-v0.2.2 archive comparison. Continue full SHA-256, layout, x86 runtime and version validation. Keep v0.2.3 staging/production ZIP debug exclusions unchanged by default.
+- [ ] Re-run all eight real-archive upgrade and rollback gates and confirm branch CI/staging before PR #464 is merged.
+
+---
+
+## Stable 0.2.3 real-archive upgrade rehearsal (2026-10-24)
+
+- [x] Postmerge PR #463 main CI #3332 and automatic Stable staging #9 passed at 7ab2e1f. All eight acceptance-kit negative/positive gates passed.
+- [x] Download actual published v0.2.2 Portable ZIP and SHA256SUMS from the tagged GitHub release, and compare against actual staged v0.2.3, both validated against exact SHA256 and version metadata.
+- [x] Use disposable Windows directories and Robocopy mirrors to rehearse v0.2.2 payload backup, full v0.2.3 replacement, removal of obsolete files, unchanged external user data and byte-exact rollback; eight script gates.
+- [ ] Confirm branch CI and 0.2.3 Stable staging PR tests, then postmerge main CI and staging. This is not an interactive WinUI launch or a true updater-network test.
+- [ ] Manual Windows 11 LTSC acceptance and explicit publication approval are still required. Live 0.2.2 to 0.2.3 Stable-channel update is a postpublication smoke test. Physical J2534 remains deferred.
+
+---
+
 ## Stable v0.2.3 acceptance kit safety regressions (2026-10-24)
 
 - [x] PR #462 merged as `12de888`, main CI #3329, Stable staging #7 and RC #15 all succeeded.
 - [x] Add eight Windows PowerShell 5.1 fail-closed scenarios using the real staged Stable 0.2.3 ZIP: valid extraction, existing target, invalid SHA, different valid SHA, corrupted checksum, missing checksum, unexpected extra file, and missing destination parent.
 - [x] Keep tests in the **nonpublishing staging** job, with a contract test requiring the safety runner before any manual publication job.
-- [ ] Confirm PR CI and Stable staging; merge only when green, then confirm postmerge main CI/staging/RC.
+- [x] PR #463 CI #3330/#3331, Stable staging #8, RC #16 and MSIX #74 passed; merged as 7ab2e1f. Main CI #3332 and staging #9 passed.
 - [ ] User Windows 11 LTSC interactive startup and offline profiles/CSV/speed acceptance remain pending. Only then request approval to publish; live 0.2.2-to-0.2.3 updater check follows public release.
 
 ---

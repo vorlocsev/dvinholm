@@ -8,6 +8,7 @@ on:
       - "eng/Test-ReleaseCandidate023.ps1"
       - "eng/Prepare-StableAcceptance023.ps1"
       - "eng/Test-StableAcceptance023Safety.ps1"
+      - "eng/Test-RealStableUpgrade023.ps1"
       - "docs/WINDOWS_ACCEPTANCE_0.2.3.md"
       - "eng/Package-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistribution.ps1"
@@ -21,6 +22,7 @@ on:
       - "eng/Test-ReleaseCandidate023.ps1"
       - "eng/Prepare-StableAcceptance023.ps1"
       - "eng/Test-StableAcceptance023Safety.ps1"
+      - "eng/Test-RealStableUpgrade023.ps1"
       - "docs/WINDOWS_ACCEPTANCE_0.2.3.md"
       - "eng/Package-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistribution.ps1"
@@ -165,6 +167,20 @@ jobs:
         shell: powershell
         run: |
           ./eng/Test-StableAcceptance023Safety.ps1 -ArchiveDirectory artifacts/stable-v023-roundtrip -ExpectedCommit '${{ github.sha }}'
+
+      - name: Download real published v0.2.2 Portable and SHA manifest (read-only)
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path artifacts/previous-stable-v022 -Force | Out-Null
+          gh release download v0.2.2 --repo '${{ github.repository }}' --dir artifacts/previous-stable-v022 --pattern 'Dvinholm-Windows-x86.zip' --pattern 'SHA256SUMS.txt'
+          if ($LASTEXITCODE -ne 0) { throw 'Cannot download published v0.2.2 for offline upgrade rehearsal.' }
+
+      - name: Rehearse real v0.2.2 to staged v0.2.3 byte-exact mirror and rollback
+        shell: powershell
+        run: |
+          ./eng/Test-RealStableUpgrade023.ps1 -PreviousArchiveDirectory artifacts/previous-stable-v022 -CandidateArchiveDirectory artifacts/stable-v023-roundtrip -ExpectedCommit '${{ github.sha }}'
 
       - name: Upload read-only Windows acceptance kit
         uses: actions/upload-artifact@v7
