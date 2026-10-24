@@ -48,8 +48,23 @@ internal sealed class CanMonitorHistory
         return _recent.Count > _capacity ? _recent.Dequeue() : null;
     }
 
-    internal IReadOnlyList<CanMonitorRow> Filter(string? query) =>
-        _recent.Where(row => MatchesCanIdFilter(query, row.Id)).ToArray();
+    // A bounded explicit list prevents accidental work from enormous pasted
+    // queries. This is only a software view filter, never a J2534 filter.
+    internal const int MaxSoftwareFilterIds = 16;
+
+    internal IReadOnlyList<CanMonitorRow> Filter(string? query)
+    {
+        // Parse once per UI refresh, not for every buffered CAN frame.
+        if (!TryParseFilter(query, out var ids))
+            return Array.Empty<CanMonitorRow>();
+
+        return ids is null
+            ? _recent.ToArray()
+            : _recent.Where(row =>
+                uint.TryParse(row.Id, NumberStyles.HexNumber,
+                    CultureInfo.InvariantCulture, out var id) &&
+                ids.Contains(id)).ToArray();
+    }
 
     internal void Clear()
     {
@@ -59,18 +74,44 @@ internal sealed class CanMonitorHistory
 
     internal static bool MatchesCanIdFilter(string? query, string frameId)
     {
-        query = (query ?? string.Empty).Trim();
-        if (query.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-            query = query[2..];
-        if (query.Length == 0)
+        if (!TryParseFilter(query, out var ids))
+            return false;
+        if (ids is null)
             return true;
 
-        // A numerical zero is a real CAN ID, not a wildcard. Keep the
-        // existing software-filter semantics for 11-bit and 29-bit frames.
-        return uint.TryParse(query, NumberStyles.HexNumber,
-                   CultureInfo.InvariantCulture, out var wanted) &&
-               uint.TryParse(frameId, NumberStyles.HexNumber,
+        // Compare numbers so 11-bit 7E8 and 29-bit 000007E8 retain
+        // the historical numeric-filter semantics.
+        return uint.TryParse(frameId, NumberStyles.HexNumber,
                    CultureInfo.InvariantCulture, out var actual) &&
-               wanted == actual;
+               ids.Contains(actual);
+    }
+
+    private static bool TryParseFilter(string? query, out HashSet<uint>? ids)
+    {
+        ids = null;
+        var text = (query ?? string.Empty).Trim();
+        if (text.Length == 0)
+            return true;
+
+        var segments = text.Split(',');
+        if (segments.Length > MaxSoftwareFilterIds)
+            return false;
+
+        var parsed = new HashSet<uint>();
+        foreach (var segment in segments)
+        {
+            var value = segment.Trim();
+            if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                value = value[2..];
+            if (value.Length == 0 ||
+                !uint.TryParse(value, NumberStyles.HexNumber,
+                    CultureInfo.InvariantCulture, out var id))
+                return false;
+
+            parsed.Add(id);
+        }
+
+        ids = parsed;
+        return true;
     }
 }

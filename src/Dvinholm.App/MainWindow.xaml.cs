@@ -1659,6 +1659,14 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        // A multi-ID query is a display filter only. J2534 hardware filters
+        // are deliberately restricted to one exact arbitration identifier.
+        if (IdFilter.Text.Contains(','))
+        {
+            SetStatus("Hardware filter requires one CAN ID; comma-separated IDs are software-only.");
+            return;
+        }
+
         var extended = CanIdFormat.SelectedIndex == 1;
         if (!TryParseCanId(IdFilter.Text, extended, out var id, out var parseError))
         {
