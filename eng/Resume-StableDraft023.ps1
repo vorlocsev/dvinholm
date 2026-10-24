@@ -21,7 +21,7 @@ if (-not (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'Test-ReleaseCandidate
 foreach ($runId in @(40082040984, 40082040981)) {
     $runJson = & gh api "repos/$Repository/actions/runs/$runId"
     if ($LASTEXITCODE -ne 0) { throw "Cannot authenticate CI run $runId." }
-    $run = $runJson | ConvertFrom-Json
+    $run = ConvertFrom-Json -InputObject ([string]::Join([Environment]::NewLine, [string[]]$runJson))
     if ($run.head_sha -cne $approved -or $run.conclusion -cne 'success' -or $run.status -cne 'completed') {
         throw "Approved candidate CI run $runId is not green on the exact commit."
     }
@@ -30,7 +30,8 @@ Write-Host 'Verified original CI #3347 and Stable staging #18.'
 # Unlike GET release-by-tag, authenticated LIST includes unpublished drafts.
 $listJson = & gh api "repos/$Repository/releases?per_page=100"
 if ($LASTEXITCODE -ne 0) { throw 'Cannot list releases.' }
-$matches = @($listJson | ConvertFrom-Json | Where-Object { $_.tag_name -ceq 'v0.2.3' })
+$releases = ConvertFrom-Json -InputObject ([string]::Join([Environment]::NewLine, [string[]]$listJson))
+$matches = @($releases | Where-Object { $_.tag_name -ceq 'v0.2.3' })
 if ($matches.Count -ne 1) { throw "Expected one v0.2.3 draft; found $($matches.Count)." }
 $draft = $matches[0]
 if (-not $draft.draft -or $draft.prerelease -or $draft.target_commitish -cne $approved -or $draft.name -cne 'Dvinholm 0.2.3') {
@@ -69,13 +70,13 @@ try {
     }
     $updatedJson = & gh api --method PATCH -F draft=false "repos/$Repository/releases/$($draft.id)"
     if ($LASTEXITCODE -ne 0) { throw 'GitHub rejected draft publication.' }
-    $updated = $updatedJson | ConvertFrom-Json
+    $updated = ConvertFrom-Json -InputObject ([string]::Join([Environment]::NewLine, [string[]]$updatedJson))
     if ($updated.draft -or $updated.prerelease -or $updated.tag_name -cne 'v0.2.3' -or $updated.target_commitish -cne $approved -or $updated.id -ne $draft.id) {
         throw 'Unexpected metadata after publication.'
     }
     $liveJson = & gh api "repos/$Repository/releases/$($draft.id)"
     if ($LASTEXITCODE -ne 0) { throw 'Cannot audit published release.' }
-    $live = $liveJson | ConvertFrom-Json
+    $live = ConvertFrom-Json -InputObject ([string]::Join([Environment]::NewLine, [string[]]$liveJson))
     if ($live.draft -or $live.prerelease -or $live.tag_name -cne 'v0.2.3' -or $live.target_commitish -cne $approved -or @($live.assets).Count -ne 2) {
         throw 'Published release metadata audit failed.'
     }
