@@ -1,3 +1,13 @@
+## Production UI cleanup: synthetic/demo commands (2026-10-24)
+
+- [x] Hide **Add test profiles**, **Start demo** and **Preview UDS example / Export synthetic UDS TXT** by default in XAML. Only local Debug builds expose these controls; all Release builds (Development, RC, Stable and experimental MSIX) hide them.
+- [x] Preserve real J2534 CAN Monitor, normal ECU profile creation/import/export, actual UDS diagnostics, and real CSV logging. No existing ECU profile files are deleted.
+- [x] Exclude the synthetic CAN generator, offline UDS sample and synthetic TXT report from the compiled Release app. Keep linked copies solely in the isolated Release test assembly. UI handlers have Debug-only bodies and inert Release stubs.
+- [x] Add eight release contract tests: absence of three fixture types from the app assembly, default-hidden demo/test UI, Debug-only handlers and preservation of production diagnostics.
+- [ ] Require 1087/1087 Windows x86 Release tests, Portable/Lite ZIP SHA-256, Stable audit, and experimental MSIX; real WinUI acceptance remains manual. The test and demo feature sources stay available for local Debug builds.
+
+---
+
 ## CAN Monitor multi-ID software filter (Development, 2026-10-24)
 
 - [x] Support a bounded list of up to 16 exact hexadecimal CAN IDs in the existing software-only monitor filter, including 0x prefixes, case-insensitive hex and optional surrounding whitespace. Keep single-ID and blank-filter behavior.

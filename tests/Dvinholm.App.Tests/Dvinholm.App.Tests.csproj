@@ -17,6 +17,12 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- Release app excludes fixtures; tests compile isolated source copies. -->
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <Compile Include="..\..\src\Dvinholm.App\CanDemoFrameGenerator.cs" Link="Fixtures\CanDemoFrameGenerator.cs" />
+    <Compile Include="..\..\src\Dvinholm.App\UdsOfflineSample.cs" Link="Fixtures\UdsOfflineSample.cs" />
+    <Compile Include="..\..\src\Dvinholm.App\UdsOfflineTextReport.cs" Link="Fixtures\UdsOfflineTextReport.cs" />
+  </ItemGroup>
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dvinholm.App\Dvinholm.App.csproj" />
   </ItemGroup>

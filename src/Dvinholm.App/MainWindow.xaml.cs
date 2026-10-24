@@ -43,6 +43,14 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+#if DEBUG
+        // Test-only controls are opt-in for local Debug builds.
+        AddTestProfilesButton.Visibility = Visibility.Visible;
+        DemoMonitorPanel.Visibility = Visibility.Visible;
+        OfflineUdsSamplePanel.Visibility = Visibility.Visible;
+#endif
+        // Release and RC binaries always keep synthetic/demo UI hidden.
+
         LoadSavedBaudRate();
         BaudRate.SelectionChanged += BaudRate_SelectionChanged;
         DllPath.Text = LoadSavedDllPath();
@@ -633,6 +641,7 @@ public sealed partial class MainWindow : Window
 
     private void AddTestProfiles_Click(object sender, RoutedEventArgs e)
     {
+#if DEBUG
         const string standardId = "dvinholm-test-standard-11bit";
         const string extendedId = "dvinholm-test-extended-29bit";
 
@@ -682,6 +691,7 @@ public sealed partial class MainWindow : Window
         {
             SetStatus("Test profiles were not saved. Check the local Dvinholm folder permissions and available disk space.");
         }
+#endif
     }
 
     private async void ImportProfiles_Click(object sender, RoutedEventArgs e)
@@ -1169,6 +1179,7 @@ public sealed partial class MainWindow : Window
 
     private void PreviewUdsSample_Click(object sender, RoutedEventArgs e)
     {
+#if DEBUG
         // A preview is independent of the live J2534/UDS stack. Keep it
         // distinct from real diagnostic output and from the CAN demo feed.
         if (!CanUseOfflineUdsSample())
@@ -1179,10 +1190,12 @@ public sealed partial class MainWindow : Window
         }
 
         SetStatus(UdsOfflineSample.Format());
+#endif
     }
 
     private async void ExportOfflineUdsTxt_Click(object sender, RoutedEventArgs e)
     {
+#if DEBUG
         // Export only the *fixed synthetic fixture*. Do not export StatusText:
         // it can contain actual VIN, DID or DTC results in a live session.
         if (!CanUseOfflineUdsSample())
@@ -1230,6 +1243,7 @@ public sealed partial class MainWindow : Window
             SetStatus("Synthetic UDS TXT export failed. " +
                 "Check destination permissions and available disk space.");
         }
+#endif
     }
 
     private async void ReadDid_Click(object sender, RoutedEventArgs e)
@@ -1718,6 +1732,7 @@ public sealed partial class MainWindow : Window
 
     private void DemoMonitor_Click(object sender, RoutedEventArgs e)
     {
+#if DEBUG
         if (_demoTimer is not null)
         {
             StopDemoMonitor();
@@ -1754,22 +1769,30 @@ public sealed partial class MainWindow : Window
         timer.Start();
         EmitDemoFrames(); // Make the first batch visible immediately.
         SetStatus("DEMO ONLY: synthetic CAN frames. J2534 and diagnostics are not connected.");
+#endif
     }
 
-    private void DemoTimer_Tick(DispatcherQueueTimer sender, object args) =>
+    private void DemoTimer_Tick(DispatcherQueueTimer sender, object args)
+    {
+#if DEBUG
         EmitDemoFrames();
+#endif
+    }
 
     private void EmitDemoFrames()
     {
+#if DEBUG
         if (_demoTimer is null || _closing)
             return;
 
         foreach (var row in CanDemoFrameGenerator.CreateBatch(_demoTick++))
             AddFrame(row);
+#endif
     }
 
     private void StopDemoMonitor()
     {
+#if DEBUG
         var timer = _demoTimer;
         _demoTimer = null;
         if (timer is null)
@@ -1782,6 +1805,7 @@ public sealed partial class MainWindow : Window
             DemoStatusText.Text = "DEMO DATA — synthetic frames retained for filtering/CSV.";
         if (!_closing && !_connected && _connectTask is not { IsCompleted: false })
             ConnectButton.IsEnabled = true;
+#endif
     }
 
     private async void Csv_Click(object sender, RoutedEventArgs e)

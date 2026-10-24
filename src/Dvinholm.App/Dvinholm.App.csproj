@@ -37,6 +37,12 @@
     <AppxManifest Include="Package.appxmanifest" />
     <Content Include="Assets\Msix*.png" />
   </ItemGroup>
+  <!-- Synthetic fixtures are absent from production Release assemblies. -->
+  <ItemGroup Condition="'$(Configuration)' == 'Release'">
+    <Compile Remove="CanDemoFrameGenerator.cs" />
+    <Compile Remove="UdsOfflineSample.cs" />
+    <Compile Remove="UdsOfflineTextReport.cs" />
+  </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />
   </ItemGroup>
