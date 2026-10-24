@@ -7,6 +7,7 @@ on:
       - ".github/workflows/release-v0.2.3.yml"
       - "eng/Test-ReleaseCandidate023.ps1"
       - "eng/Prepare-StableAcceptance023.ps1"
+      - "START-ACCEPTANCE.cmd"
       - "eng/Test-StableAcceptance023Safety.ps1"
       - "eng/Test-RealStableUpgrade023.ps1"
       - "docs/WINDOWS_ACCEPTANCE_0.2.3.md"
@@ -21,6 +22,7 @@ on:
       - ".github/workflows/release-v0.2.3.yml"
       - "eng/Test-ReleaseCandidate023.ps1"
       - "eng/Prepare-StableAcceptance023.ps1"
+      - "START-ACCEPTANCE.cmd"
       - "eng/Test-StableAcceptance023Safety.ps1"
       - "eng/Test-RealStableUpgrade023.ps1"
       - "docs/WINDOWS_ACCEPTANCE_0.2.3.md"
@@ -182,11 +184,42 @@ jobs:
         run: |
           ./eng/Test-RealStableUpgrade023.ps1 -PreviousArchiveDirectory artifacts/previous-stable-v022 -CandidateArchiveDirectory artifacts/stable-v023-roundtrip -ExpectedCommit '${{ github.sha }}'
 
+      - name: Write exact-build provenance for Windows acceptance kit
+        shell: powershell
+        run: |
+          [IO.File]::WriteAllText((Join-Path (Get-Location).Path 'BUILD_COMMIT.txt'), '${{ github.sha }}' + [Environment]::NewLine, [Text.Encoding]::ASCII)
+
+      - name: Dry-run one-click acceptance launcher against downloaded ZIP
+        shell: powershell
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP 'Dvinholm-023-click-test'
+          $kit = Join-Path $root 'kit'
+          $candidate = Join-Path $root 'candidate'
+          New-Item -ItemType Directory -Path $kit, $candidate -Force | Out-Null
+          Copy-Item -LiteralPath eng -Destination (Join-Path $kit 'eng') -Recurse
+          Copy-Item -LiteralPath START-ACCEPTANCE.cmd -Destination $kit
+          Copy-Item -LiteralPath BUILD_COMMIT.txt -Destination $kit
+          Copy-Item -LiteralPath artifacts/stable-v023-roundtrip/Dvinholm-Windows-x86.zip -Destination $candidate
+          Copy-Item -LiteralPath artifacts/stable-v023-roundtrip/SHA256SUMS.txt -Destination $candidate
+          Push-Location $kit
+          try {
+            & cmd.exe /d /c 'START-ACCEPTANCE.cmd --prepare-only'
+            if ($LASTEXITCODE -ne 0) { throw "Offline launcher failed with exit code $LASTEXITCODE." }
+          } finally { Pop-Location }
+          $testDir = Join-Path $root 'Dvinholm-023-acceptance'
+          if (-not (Test-Path -LiteralPath (Join-Path $testDir 'Dvinholm.App.exe') -PathType Leaf) -or
+              -not (Test-Path -LiteralPath (Join-Path $testDir 'ACCEPTANCE-0.2.3.txt') -PathType Leaf)) {
+            throw 'One-click kit did not produce verified offline acceptance files.'
+          }
+          Remove-Item -LiteralPath $root -Recurse -Force
+
       - name: Upload read-only Windows acceptance kit
         uses: actions/upload-artifact@v7
         with:
           name: Dvinholm-v0.2.3-WINDOWS-ACCEPTANCE-KIT
           path: |
+            START-ACCEPTANCE.cmd
+            BUILD_COMMIT.txt
             eng/Prepare-StableAcceptance023.ps1
             eng/Test-ReleaseCandidate023.ps1
             eng/Test-WindowsDistribution.ps1

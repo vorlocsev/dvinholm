@@ -90,6 +90,9 @@ public sealed class StableRelease023WorkflowContractTests
         Assert.Contains("Test eight acceptance-kit safety cases on real staged ZIP", source);
         Assert.Contains("Test-RealStableUpgrade023.ps1", source);
         Assert.Contains("gh release download v0.2.2", source);
+        Assert.Contains("START-ACCEPTANCE.cmd", source);
+        Assert.Contains("BUILD_COMMIT.txt", source);
+        Assert.Contains("Dry-run one-click acceptance launcher against downloaded ZIP", source);
         Assert.Contains("Rehearse real v0.2.2 to staged v0.2.3 byte-exact mirror and rollback", source);
         Assert.True(source.IndexOf("Test-StableAcceptance023Safety.ps1 -ArchiveDirectory", StringComparison.Ordinal)
             < source.IndexOf("\n  publish:", StringComparison.Ordinal));
