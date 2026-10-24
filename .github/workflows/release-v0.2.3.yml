@@ -6,6 +6,7 @@ on:
       - ".github/workflows/release-v0.2.3.yml"
       - "eng/Test-ReleaseCandidate023.ps1"
       - "tests/Dvinholm.App.Tests/StableRelease023WorkflowContractTests.cs"
+      - "tests/Dvinholm.Stable.Tests/**"
   workflow_dispatch:
     inputs:
       mode:
@@ -82,6 +83,11 @@ jobs:
 
       - name: Run offline regression tests
         run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --logger "trx;LogFileName=stable023-results.trx"
+
+      # The production assembly is compiled separately with all demo/test
+      # feature flags OFF. No GUI or J2534 hardware is needed for these tests.
+      - name: Test actual Stable feature profile (eight offline smoke gates)
+        run: dotnet test tests/Dvinholm.Stable.Tests/Dvinholm.Stable.Tests.csproj --configuration Release -p:Platform=x86 -p:DvinholmDevelopmentFeatures=false --logger "trx;LogFileName=stable-profile-results.trx"
 
       - name: Set up .NET x64 to publish
         uses: actions/setup-dotnet@v6
