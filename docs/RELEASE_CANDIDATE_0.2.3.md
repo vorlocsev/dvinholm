@@ -20,7 +20,7 @@ this preparation. Never mix a Lite runtime tree into a Portable installation.
 
 ## Stable v0.2.3 manual release gate (prepared, NOT APPROVED)
 
-- New workflow `release-v0.2.3.yml` supports validation on PR and manual dry-run; neither publishes.
+- `release-v0.2.3.yml` validates relevant PRs and automatically stages **nonpublished** production ZIPs after relevant `main` pushes. A manual `dry-run` is also staging-only. Neither event can publish.
 - Publication is enabled only by a manual dispatch on `main`, exact current 40-character SHA and explicit `APPROVE-DVINHOLM-V0.2.3` authorization. Do not start publish mode until manual LTSC and updater acceptance is confirmed and the user authorizes the version.
 - Windows x86 development test profile executes tests. The packaged Stable app is built separately with `DvinholmDevelopmentFeatures=false`, trimming/AOT disabled and exactly `0.2.3+SHA.stable` metadata.
 - Eight ZIP/DLL audit gates run before upload and after Actions roundtrip. For an explicitly approved publish run, create a GitHub DRAFT release, download and revalidate assets, and only then make it public.
@@ -31,3 +31,9 @@ this preparation. Never mix a Lite runtime tree into a Portable installation.
 ## Automated production-mode acceptance (next PR)
 
 The separate `tests/Dvinholm.Stable.Tests` project runs eight Windows x86 smoke tests on the actual `DvinholmDevelopmentFeatures=false` compilation. Both default CI and Stable staging execute it, independent of Development-only fixture tests. It verifies removal of synthetic types and handlers while retaining production controls, real read-only UDS methods, CSV and multi-ID filter logic. This is a headless regression check, not evidence of a WinUI launch, the installed 0.2.2 updater, real LTSC OS or J2534 hardware.
+
+## Continuous Stable staging without release (PR #461)
+
+- On relevant application, distribution-script or test changes in `main`, the protected, read-only validation job compiles real Release x86 with developer features disabled, runs eight production smoke checks and existing offline regressions, then stages Portable ZIP with SHA-256 and confirms artifact download integrity.
+- `publish` remains conditioned solely on an explicitly approved `workflow_dispatch` on `main` with the exact SHA. A push or pull request cannot create a tag or release, including a draft.
+- Staged GitHub Actions artifacts are **TEST-ONLY**, not public GitHub Releases or updater targets. Never claim the manual Windows 11 LTSC GUI/installed-update acceptance gates have passed due to a successful stage.

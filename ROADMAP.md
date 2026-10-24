@@ -1,9 +1,19 @@
+## Stable 0.2.3 automatically staged verification (2026-10-24)
+
+- [x] PR #460 merged as `49379fe`, postmerge main CI #3323 and RC #11 both passed. Development 1103/1103 plus production-only 8/8 x86 smoke tests are independently covered.
+- [x] Stage verified Stable v0.2.3 x86 Portable ZIP automatically for relevant `main` pushes and PRs, alongside the manual validation mode. Require strict SHA-256 and downloaded GitHub Actions artifact roundtrip.
+- [x] Confine any actual release creation to manual `workflow_dispatch` with exact main SHA, explicit approval, downloaded draft audit and restricted write permission.
+- [ ] Require CI on this PR, postmerge main staging workflow (including 1103+8 tests and eight ZIP/DLL checks) before marking the stage verified.
+- [ ] Interactive Windows 11 LTSC GUI, persisted profiles, 0.2.2→0.2.3 updater acceptance, and explicit publish authorization remain pending; physical J2534 postponed.
+
+---
+
 ## Stable 0.2.3 headless production smoke (2026-10-24)
 
 - [x] Postmerge PR #459 at main `2d39303`: CI #3320 and Portable RC #9 both succeeded; latest published Stable remains v0.2.2.
 - [x] Add an independent Windows x86 xUnit smoke project compiled with `DvinholmDevelopmentFeatures=false`, with eight production-only assertions for missing demo types/handlers, retained real VIN/DID/DTC/CAN/profile UI, regular CSV and multi-ID software filter.
 - [x] Execute the production-mode test project in ordinary CI and 0.2.3 staged Stable validation, without WinUI launch or physical J2534.
-- [ ] Require PR CI and postmerge main CI success, including all eight new production smoke checks, Portable/Lite ZIP and checksum validation and Stable audit.
+- [x] PR #460 CI #3321/#3322, Stable validation #3, RC #10, MSIX #71 passed; merged as 49379fe. Main CI #3323 and RC #11 passed with production smoke checks.
 - [ ] Windows 11 LTSC interactive start/restart and updater acceptance remain unverified. Stable v0.2.3 must not be published without explicit authorization.
 
 ---

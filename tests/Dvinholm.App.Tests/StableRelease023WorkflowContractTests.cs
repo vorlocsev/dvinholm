@@ -2,7 +2,7 @@ using System.Text.RegularExpressions;
 
 namespace Dvinholm.App.Tests;
 
-/// <summary>Eight guardrails for the optional, manual-only v0.2.3 publication pipeline.</summary>
+/// <summary>Eight guardrails for automated v0.2.3 staging and manual-only publication.</summary>
 public sealed class StableRelease023WorkflowContractTests
 {
     private static string Workflow()
@@ -16,11 +16,19 @@ public sealed class StableRelease023WorkflowContractTests
     }
 
     [Fact]
-    public void NoPushOrBranchCreationPublicationTrigger()
+    public void OnlyMainPushCanStageAndOnlyManualDispatchCanPublish()
     {
         var source = Workflow();
-        Assert.DoesNotMatch(new Regex(@"(?m)^  (?:push|create):"), source);
+        Assert.DoesNotMatch(new Regex(@"(?m)^  create:"), source);
+        Assert.Contains("  push:\n    branches: [\"main\"]", source);
         Assert.Contains("pull_request:", source);
+        var publishIndex = source.IndexOf("\n  publish:", StringComparison.Ordinal);
+        Assert.True(publishIndex > 0);
+        Assert.Contains("github.event_name == 'push' && github.ref == 'refs/heads/main'",
+            source[..publishIndex]);
+        Assert.Contains("github.event_name == 'workflow_dispatch'",
+            source[publishIndex..]);
+        Assert.DoesNotContain("github.event_name == 'push'", source[publishIndex..]);
     }
 
     [Fact]
