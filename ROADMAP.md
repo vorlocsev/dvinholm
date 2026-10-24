@@ -1,3 +1,13 @@
+## Development 0.2.4 UDS negative-response framing (2026-10-25)
+
+- [x] Main CI #3393, Stable staging #37, RC #38 and MSIX #98 succeeded after CAN Monitor PR #473 merged as `c292b6b`.
+- [x] Require exactly three bytes for UDS negative responses (`7F SID NRC`); padded/malformed `responsePending` (`0x78`) must fail visibly instead of being silently treated as an interim response.
+- [x] Retain correct handling of valid 3-byte `0x78`, other-service filtering, and structured negative-response error codes.
+- [x] Add eight offline UDS regression checks, including malformed response followed by successful DID read over virtual J2534 with no real adapter.
+- [ ] Confirm all PR checks and postmerge main CI before marking integration complete. Stable v0.2.3 remains published; physical J2534 and interactive Windows updater tests remain pending.
+
+---
+
 ## Development 0.2.4 CAN Monitor arbitration ID boundary (2026-10-25)
 
 - [x] Main CI #3387, Stable staging #35, RC #36 and MSIX #95 succeeded after PR #472.
