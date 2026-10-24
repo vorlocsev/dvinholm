@@ -1,3 +1,13 @@
+## Stable v0.2.3 manual release pipeline preparation (2026-10-24)
+
+- [x] Prepare a workflow with validation-only PR and default dry-run behavior. No release on push, PR or branch creation.
+- [x] Gate actual Stable publication on explicit manual dispatch, current main SHA and authorization; validate binary, DRAFT assets and downloaded SHA-256 before public release.
+- [x] Require real production DLL to exclude synthetic handlers/generators and retain VIN/DID/DTC. No trimming/AOT or physical J2534.
+- [ ] Wait for postmerge main CI #3315, RC #6 and MSIX #68. Verify this PR's CI and eight workflow contract tests before merge.
+- [ ] Require Windows 11 LTSC manual app startup, multi-ID filter/CSV, profile persistence and v0.2.2 updater acceptance, plus explicit user approval, before dispatching publish mode.
+
+---
+
 ## Stable / Development isolation and v0.2.3 Portable RC (2026-10-24)
 
 - [x] Merge resolution preserves PR #458 production UI safeguards while replacing hidden demo XAML placeholders and inert Release handlers with compile-time feature separation. Release defaults to `DvinholmDevelopmentFeatures=false`; Development CI and virtual regression tests opt in explicitly.

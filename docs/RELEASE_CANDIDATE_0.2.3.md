@@ -17,3 +17,11 @@ Actions test artifact, not an update target, installer, or GitHub release.
 Strictly no branch named release/v0.2.3, tag v0.2.3, Stable release
 publication, MSIX signing/trust mutation, or physical J2534 testing during
 this preparation. Never mix a Lite runtime tree into a Portable installation.
+
+## Stable v0.2.3 manual release gate (prepared, NOT APPROVED)
+
+- New workflow `release-v0.2.3.yml` supports validation on PR and manual dry-run; neither publishes.
+- Publication is enabled only by a manual dispatch on `main`, exact current 40-character SHA and explicit `APPROVE-DVINHOLM-V0.2.3` authorization. Do not start publish mode until manual LTSC and updater acceptance is confirmed and the user authorizes the version.
+- Windows x86 development test profile executes tests. The packaged Stable app is built separately with `DvinholmDevelopmentFeatures=false`, trimming/AOT disabled and exactly `0.2.3+SHA.stable` metadata.
+- Eight ZIP/DLL audit gates run before upload and after Actions roundtrip. For an explicitly approved publish run, create a GitHub DRAFT release, download and revalidate assets, and only then make it public.
+- This workflow has not been dispatched for publication. Existing v0.2.2 must stay available; no MSIX signing or physical J2534 tests are involved.
