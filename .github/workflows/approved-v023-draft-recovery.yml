@@ -1,0 +1,41 @@
+name: Dvinholm 0.2.3 one-time approved draft publication
+
+# One-time recovery for the explicit owner approval in October 2026.
+# Only the FIRST main push after the approved 91ecc34 candidate qualifies.
+# Never creates or rewrites release assets, never publishes any later commit.
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/approved-v023-draft-recovery.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  publish-original-approved-draft:
+    if: ${{ github.event_name == 'push' && github.ref == 'refs/heads/main' && github.event.before == '91ecc343608c931eb033523e3db6012a6c5dbd58' }}
+    runs-on: windows-latest
+    timeout-minutes: 35
+    permissions:
+      contents: write
+      actions: read
+    concurrency:
+      group: dvinholm-v023-original-draft-publication
+      cancel-in-progress: false
+    steps:
+      - name: Checkout isolated, audited resume script
+        uses: actions/checkout@v7
+
+      - name: Verify only the pre-existing approved candidate and publish draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: powershell
+        run: |
+          ./eng/Resume-StableDraft023.ps1 -Repository '${{ github.repository }}' -ExpectedCommit '91ecc343608c931eb033523e3db6012a6c5dbd58' -Publish
+
+      - name: Record immutable release validation
+        if: ${{ success() }}
+        shell: pwsh
+        run: |
+          'v0.2.3 pre-approved Stable draft resumed and verified from original 91ecc34 bytes.' | Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
