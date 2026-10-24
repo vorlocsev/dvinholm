@@ -20,6 +20,7 @@ This file prepares the next Stable release. It is not release approval.
 - Candidate exact commit Windows x86 CI tests and clean Portable/Lite ZIPs.
 - Dedicated actual 0.2.3 self-contained RC build checks eight binary/archive
   gates, downloads own Actions artifact and rechecks checksum/embedded version.
+- Automatic real-archive v0.2.2-to-v0.2.3 file mirror/rollback rehearsal runs on Windows in a disposable directory; this is not the installed updater or network flow.
 - Manual Windows 11 LTSC Stable Portable startup, close/restart, absence of
   demo/test commands, comma-list filtering, real CSV export, profile
   persistence and update-from-0.2.2 behavior remain pending.
