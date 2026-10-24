@@ -47,7 +47,7 @@ jobs:
       - name: Publish self-contained 0.2.3 Portable Windows x86 RC
         shell: pwsh
         run: |
-          dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --runtime win-x86 --self-contained true -p:Platform=x86 -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=false -p:PublishAot=false -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.3 -p:InformationalVersion=0.2.3+${{ github.sha }}.rc --output artifacts/app-rc
+          dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --runtime win-x86 --self-contained true -p:Platform=x86 -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=false -p:PublishAot=false -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.3 -p:InformationalVersion=0.2.3+${{ github.sha }}.rc -p:IncludeSourceRevisionInInformationalVersion=false --output artifacts/app-rc
           if ($LASTEXITCODE -ne 0) { throw "RC publish failed: $LASTEXITCODE" }
 
       - name: Package and verify exact 0.2.3 candidate
