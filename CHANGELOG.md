@@ -1,5 +1,12 @@
 # Changelog
 
+## [0.2.4] — Unreleased (Development only)
+
+- Advance Windows x86 Portable and experimental Lite Development CI assembly and informational versions to 0.2.4, retaining CI run number and 40-character SHA for the in-app updater.
+- Keep published Stable v0.2.3, its release tag, portable ZIP and SHA-256 manifest unchanged; this is not a Stable v0.2.4 publication.
+- Correct Russian first-launch download instructions to link the current Stable v0.2.3 ZIP; preserve Development-only synthetic controls.
+- Add eight offline cross-channel version/identity regression checks. Hardware tests and actual installed 0.2.2→0.2.3 updater GUI smoke remain deferred.
+
 ## [0.2.3] — 2026-10-24
 
 - Stable omits synthetic test/demo controls, handlers, fixture generators and synthetic CSV branch. Development explicitly opts in and retains the offline tools.

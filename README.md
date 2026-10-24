@@ -28,6 +28,8 @@
 
 ## Quick start
 
+**Version channels:** the published, supported Stable remains **v0.2.3**. New `main` Development CI ZIPs identify as **0.2.4** (unreleased, experimental); a green CI does not publish Stable 0.2.4. Development explicitly retains offline demo/test functions while Stable v0.2.3 excludes them.
+
 1. [Download **Dvinholm v0.2.3** for Windows x86](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.3/Dvinholm-Windows-x86.zip) or choose a successful current `main` build from [GitHub Actions](https://github.com/vorlocsev/dvinholm/actions).
 2. **Extract the entire ZIP** into a writable local directory; it is a portable build, not an installer.
 3. Run `Dvinholm.App.exe`. A separate .NET runtime is normally not needed for this self-contained build.
