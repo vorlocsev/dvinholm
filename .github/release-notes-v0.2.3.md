@@ -1,34 +1,31 @@
-# Dvinholm v0.2.3 — DRAFT NOTES, NOT PUBLISHED
+# Dvinholm v0.2.3
 
-This file prepares the next Stable release. It is not release approval.
+Stable Windows x86 release. The Portable candidate was checked on Windows 11 LTSC, and the release assets were verified against the approved build.
 
-## Since v0.2.2
-- **Stable cleanup:** Start demo, Add test profiles, Preview UDS example (offline), and Export synthetic UDS TXT are omitted from production UI and compiled event handlers; synthetic fixture generators are also removed. Development retains those controls for offline testing. Existing stored profiles are preserved.
-- CAN Monitor software display filter supports up to 16 comma-separated
-  exact CAN IDs (e.g. 7E0,7E8,18DAF110), retaining filtered history;
-  J2534 hardware filtering remains single-ID only.
-- CAN Monitor CSV safely quotes comma/quote/newline text, neutralizes
-  formula-like unexpected cells and retains ordinary five-column CSV in Stable; synthetic CSV exists only in Development.
-- Portable Windows x86 keeps bundled .NET/Windows App SDK and updater
-  compatibility; optional Lite ZIP remains framework-dependent.
-- Both ZIPs exclude debugger files and retain trimming/AOT disabled.
-- Experimental unsigned Lite MSIX gained stricter independent MakeAppx
-  unpack, SHA-256 and Actions upload/download verification; it remains
-  a test-only artifact, NOT an install-ready signed package.
+## Changes since v0.2.2
 
-## Verification before publishing
-- Candidate exact commit Windows x86 CI tests and clean Portable/Lite ZIPs.
-- Dedicated actual 0.2.3 self-contained RC build checks eight binary/archive
-  gates, downloads own Actions artifact and rechecks checksum/embedded version.
-- Automatic real-archive v0.2.2-to-v0.2.3 file mirror/rollback rehearsal runs on Windows in a disposable directory; this is not the installed updater or network flow.
-- Manual Windows 11 LTSC Stable Portable startup, close/restart, absence of
-  demo/test commands, comma-list filtering, real CSV export, profile
-  persistence and update-from-0.2.2 behavior remain pending.
-- Separate Development-only offline CAN demo acceptance remains pending.
-- A separate v0.2.3 Stable workflow **automatically stages but never publishes** a clean binary for relevant main changes, with eight ZIP/DLL checks and SHA-256 re-download. Publishing is a different manually authorized action bound to an exact main SHA; the release remains draft until downloaded assets pass validation.
+- Removed synthetic and test-only controls from Stable, including Start Demo, Add Test Profiles, preview UDS examples and synthetic export functions. Development retains offline test functions.
+- CAN Monitor supports a software display filter containing up to 16 exact comma-separated CAN IDs (for example `7E0,7E8`). J2534 hardware filtering remains single-ID.
+- CAN Monitor CSV export safely escapes text and protects against formula injection while retaining the five-column Stable format.
+- Preserves imported ECU profiles, CAN baud-rate preferences and existing data during normal use.
+- Kept the Windows x86 self-contained Portable runtime. Trimming and AOT remain disabled.
+- Improved archive checks, isolated Windows acceptance testing, and offline update/rollback regression coverage.
+
+## Distribution
+
+- **Dvinholm-Windows-x86.zip:** Portable Stable Windows x86 with bundled runtime.
+- **SHA256SUMS.txt:** SHA-256 for the Portable ZIP.
+
+The optional Lite package is a separate framework-dependent build. The experimental unsigned MSIX is not a signed Stable installer.
+
+## Verification
+
+- 1111/1111 application tests and 8/8 production-profile tests passed on the approved candidate.
+- The staged ZIP passed eight archive/assembly/commit checks and eight acceptance-kit safety checks.
+- Actual published v0.2.2 and staged v0.2.3 archive bytes were used in eight isolated forward-replacement and byte-for-byte rollback tests.
+- Windows 11 LTSC app operation was confirmed by the tester. The acceptance copy's settings remain separate from installed 0.2.2 data.
+- A real installed update from published v0.2.2 to published v0.2.3 can be checked only after the release is available.
 
 ## Boundaries
-No physical J2534 adapter, vendor driver, ECU or vehicle compatibility has
-been demonstrated; hardware validation remains for later versions. Read-only
-UDS commands only. No code signing or Stable 0.2.3 distribution yet.
-Dvinholm is not affiliated with or endorsed by Volvo Cars.
+
+Real J2534 hardware, vendor drivers, live vehicle/ECU interoperability, and flash/programming operations are not validated in this release. Read-only UDS and CAN diagnostics remain subject to adapter and ECU support. Dvinholm is not affiliated with or endorsed by Volvo Cars.
