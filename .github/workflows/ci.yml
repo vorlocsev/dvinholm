@@ -77,12 +77,12 @@ jobs:
       # Stage 1: keep fully standalone x86 WinUI, without linker trimming.
       # Do not bundle PDBs in distributed releases; CI test diagnostics remain in TRX.
       - name: Publish Portable
-        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=false -p:PublishAot=false -p:DvinholmDevelopmentFeatures=true -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.2 -p:InformationalVersion=0.2.2+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app
+        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=false -p:PublishAot=false -p:DvinholmDevelopmentFeatures=true -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.4 -p:InformationalVersion=0.2.4+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app
 
       # Stage 2: an optional framework-dependent distribution, not used by
       # the automatic updater. Requires preinstalled .NET x86 and WinAppSDK.
       - name: Publish Lite
-        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained false --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=false -p:PublishTrimmed=false -p:PublishAot=false -p:DvinholmDevelopmentFeatures=true -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.2 -p:InformationalVersion=0.2.2+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app-lite
+        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained false --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=false -p:PublishTrimmed=false -p:PublishAot=false -p:DvinholmDevelopmentFeatures=true -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.4 -p:InformationalVersion=0.2.4+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app-lite
 
       - name: Verify branded Windows icon is published
         shell: pwsh

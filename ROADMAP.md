@@ -1,3 +1,14 @@
+## Next Development milestone: 0.2.4 (unreleased)
+
+- [x] Main CI #3377, Stable staging #33 and public Stable network audit #6 passed at `4923c81` after PR #471.
+- [x] Set the Development project and CI Portable/Lite binary versions to **0.2.4** without changing the published **Stable v0.2.3** release or immutable tag.
+- [x] Update the Windows first-launch Russian guide, README and changelog to distinguish published Stable from the 0.2.4 Development stream.
+- [x] Add eight offline regression checks for version identity, release safeguards and correct public download guidance.
+- [ ] Confirm branch CI, merge after green and verify the resulting 0.2.4 Development artifact on `main`.
+- [ ] Next 0.2.4 work stages: updater/UI reliability, CAN Monitor stability, ISO-TP/UDS correctness, profiles and versioned update behavior, with 6–8 checks per stage. No 0.2.4 Stable tag/release without explicit approval. Physical J2534 tests remain deferred.
+
+---
+
 ## Live GitHub Stable lookup and download audit (2026-10-25)
 
 - [x] PR #470 merged as `8b5978c`; main CI #3372, staging #31 and published-artifact audit #4 all passed.

@@ -4,7 +4,8 @@
     <TargetFramework>net10.0-windows10.0.19041.0</TargetFramework>
     <TargetPlatformMinVersion>10.0.17763.0</TargetPlatformMinVersion>
     <RootNamespace>Dvinholm.App</RootNamespace>
-    <Version>0.2.2</Version>
+    <!-- Main/Development targets the next milestone. Published Stable v0.2.3 remains immutable. -->
+    <Version>0.2.4</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\Dvinholm.ico</ApplicationIcon>
     <Platforms>x86</Platforms>
