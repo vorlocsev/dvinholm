@@ -1,0 +1,186 @@
+name: Stable v0.2.3 (gated manual release)
+
+on:
+  pull_request:
+    paths:
+      - ".github/workflows/release-v0.2.3.yml"
+      - "eng/Test-ReleaseCandidate023.ps1"
+      - "tests/Dvinholm.App.Tests/StableRelease023WorkflowContractTests.cs"
+  workflow_dispatch:
+    inputs:
+      mode:
+        description: "Stage only (default) or explicitly publish Stable v0.2.3"
+        type: choice
+        required: true
+        default: dry-run
+        options:
+          - dry-run
+          - publish
+      approved_sha:
+        description: "Exact current main commit SHA (40 lowercase hex digits)"
+        required: true
+        type: string
+      authorization:
+        description: "For publish only, type APPROVE-DVINHOLM-V0.2.3"
+        required: false
+        type: string
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dvinholm-stable-v023-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  validate:
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') }}
+    runs-on: windows-latest
+    timeout-minutes: 90
+    steps:
+      - name: Checkout exact workflow commit
+        uses: actions/checkout@v7
+
+      - name: Require explicit main SHA and release approval before any work
+        env:
+          DVINHOLM_APPROVED_SHA: ${{ inputs.approved_sha }}
+          DVINHOLM_MODE: ${{ inputs.mode }}
+          DVINHOLM_AUTHORIZATION: ${{ inputs.authorization }}
+        shell: pwsh
+        run: |
+          $sha = '${{ github.sha }}'
+          if ($sha -cnotmatch '^[0-9a-f]{40}$') { throw 'Invalid commit SHA.' }
+          if ('${{ github.event_name }}' -eq 'workflow_dispatch') {
+            if ('${{ github.ref }}' -cne 'refs/heads/main') { throw 'Only main can stage/publish Stable.' }
+            if ($env:DVINHOLM_APPROVED_SHA -cne $sha) { throw 'Approved SHA does not equal checked-out main SHA.' }
+            if ($env:DVINHOLM_MODE -eq 'publish' -and $env:DVINHOLM_AUTHORIZATION -cne 'APPROVE-DVINHOLM-V0.2.3') {
+              throw 'Stable v0.2.3 was not explicitly authorized.'
+            }
+          }
+          else {
+            # Pull requests are a validation-only surface, irrespective of inputs.
+            if ($env:DVINHOLM_MODE -eq 'publish') { throw 'A PR cannot publish a release.' }
+          }
+          Write-Host 'Exact commit validated. Release is NOT authorized by a passing CI check.'
+
+      - name: Set up .NET x64
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Restore
+        run: dotnet restore Dvinholm.sln
+
+      - name: Build Development test profile
+        run: dotnet build Dvinholm.sln --configuration Release --no-restore -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true
+
+      - name: Set up .NET x86 test host
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.401'
+          architecture: x86
+
+      - name: Run offline regression tests
+        run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --logger "trx;LogFileName=stable023-results.trx"
+
+      - name: Set up .NET x64 to publish
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          architecture: x64
+
+      - name: Publish clean self-contained Stable profile
+        shell: pwsh
+        run: |
+          dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --self-contained true --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=true -p:DvinholmDevelopmentFeatures=false -p:PublishTrimmed=false -p:PublishAot=false -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.3 -p:InformationalVersion=0.2.3+${{ github.sha }}.stable -p:IncludeSourceRevisionInInformationalVersion=false --output artifacts/app-stable
+          if ($LASTEXITCODE -ne 0) { throw 'Stable publish failed.' }
+
+      - name: Package and verify eight Stable binary/archive gates
+        shell: powershell
+        run: |
+          New-Item -ItemType Directory -Path artifacts/stable-v023 -Force | Out-Null
+          ./eng/Package-WindowsDistribution.ps1 -Flavor Portable -PublishDirectory artifacts/app-stable -ZipPath artifacts/stable-v023/Dvinholm-Windows-x86.zip
+          ./eng/Test-ReleaseCandidate023.ps1 -ArchiveDirectory artifacts/stable-v023 -ExpectedCommit '${{ github.sha }}' -Channel stable -GenerateChecksum
+          ./eng/Test-ReleaseCandidate023.ps1 -ArchiveDirectory artifacts/stable-v023 -ExpectedCommit '${{ github.sha }}' -Channel stable
+
+      - name: Upload verified staging artifact (not a release)
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-v0.2.3-STAGED-NOT-PUBLISHED
+          path: |
+            artifacts/stable-v023/Dvinholm-Windows-x86.zip
+            artifacts/stable-v023/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Download actual staging artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: Dvinholm-v0.2.3-STAGED-NOT-PUBLISHED
+          path: artifacts/stable-v023-roundtrip
+
+      - name: Revalidate downloaded bytes without rewriting SHA manifest
+        shell: powershell
+        run: |
+          ./eng/Test-ReleaseCandidate023.ps1 -ArchiveDirectory artifacts/stable-v023-roundtrip -ExpectedCommit '${{ github.sha }}' -Channel stable
+          'Stable v0.2.3 staged, 8 gates and roundtrip passed. Not published by validation job.' | Out-File $env:GITHUB_STEP_SUMMARY -Append
+
+  publish:
+    # No tag/release is created on PR, branch push or normal workflow dispatch.
+    # Requires explicit publish mode, exact main SHA and literal authorization.
+    if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.mode == 'publish' && inputs.authorization == 'APPROVE-DVINHOLM-V0.2.3' }}
+    needs: validate
+    runs-on: windows-latest
+    timeout-minutes: 25
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout same approved main commit
+        uses: actions/checkout@v7
+
+      - name: Download the independently validated staging artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: Dvinholm-v0.2.3-STAGED-NOT-PUBLISHED
+          path: artifacts/stable-v023-approved
+
+      - name: Final identity and ZIP validation
+        env:
+          DVINHOLM_APPROVED_SHA: ${{ inputs.approved_sha }}
+        shell: powershell
+        run: |
+          if ($env:DVINHOLM_APPROVED_SHA -cne '${{ github.sha }}') { throw 'Commit changed before release.' }
+          $remoteMain = ((git ls-remote --exit-code origin refs/heads/main) -split '\s+')[0]
+          if ($LASTEXITCODE -ne 0 -or $remoteMain -cne '${{ github.sha }}') { throw 'Main moved since approval; refusing release.' }
+          ./eng/Test-ReleaseCandidate023.ps1 -ArchiveDirectory artifacts/stable-v023-approved -ExpectedCommit '${{ github.sha }}' -Channel stable
+
+      - name: Create DRAFT release only and verify downloaded draft assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release view v0.2.3 --repo '${{ github.repository }}' *> $null
+          if ($LASTEXITCODE -eq 0) { throw 'Stable v0.2.3 already exists; refusing duplicate publication.' }
+          gh release view v0.2.2 --repo '${{ github.repository }}' --json tagName | Out-Null
+          if ($LASTEXITCODE -ne 0) { throw 'Expected previous Stable v0.2.2 is missing.' }
+          gh release create v0.2.3 'artifacts/stable-v023-approved/Dvinholm-Windows-x86.zip' 'artifacts/stable-v023-approved/SHA256SUMS.txt' --repo '${{ github.repository }}' --target '${{ github.sha }}' --draft --title 'Dvinholm 0.2.3' --notes-file '.github/release-notes-v0.2.3.md'
+          if ($LASTEXITCODE -ne 0) { throw 'Draft release creation failed.' }
+          $draft = gh api 'repos/${{ github.repository }}/releases/tags/v0.2.3' | ConvertFrom-Json
+          if (-not $draft.draft -or $draft.prerelease -or $draft.target_commitish -cne '${{ github.sha }}') { throw 'Draft metadata invalid; leaving draft unpublished.' }
+          if (@($draft.assets).Count -ne 2) { throw 'Draft assets count invalid; leaving draft unpublished.' }
+          New-Item -ItemType Directory -Path artifacts/stable-v023-draft -Force | Out-Null
+          gh release download v0.2.3 --repo '${{ github.repository }}' --dir artifacts/stable-v023-draft
+          if ($LASTEXITCODE -ne 0) { throw 'Draft download failed; leaving draft unpublished.' }
+          ./eng/Test-ReleaseCandidate023.ps1 -ArchiveDirectory artifacts/stable-v023-draft -ExpectedCommit '${{ github.sha }}' -Channel stable
+          if ($LASTEXITCODE -ne 0) { throw 'Draft binary audit failed; leaving draft unpublished.' }
+
+      - name: Publish reviewed draft only after byte-for-byte validation
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          gh release edit v0.2.3 --repo '${{ github.repository }}' --draft=false
+          if ($LASTEXITCODE -ne 0) { throw 'Draft remained unpublished.' }
+          $live = gh api 'repos/${{ github.repository }}/releases/tags/v0.2.3' | ConvertFrom-Json
+          if ($live.draft -or $live.prerelease -or $live.target_commitish -cne '${{ github.sha }}') { throw 'Published Stable metadata mismatch.' }
+          'Stable 0.2.3 explicitly authorized, SHA and published metadata verified.' | Out-File $env:GITHUB_STEP_SUMMARY -Append

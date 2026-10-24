@@ -9,7 +9,8 @@ Never signs, installs, starts WinUI or publishes a GitHub release.
 param(
     [Parameter(Mandatory)][string]$ArchiveDirectory,
     [Parameter(Mandatory)][string]$ExpectedCommit,
-    [switch]$GenerateChecksum
+    [switch]$GenerateChecksum,
+    [ValidateSet('rc', 'stable')][string]$Channel = 'rc'
 )
 $ErrorActionPreference = 'Stop'
 if ($ExpectedCommit -cnotmatch '^[0-9a-f]{40}$') {
@@ -132,7 +133,7 @@ try {
     Write-Host 'RC gate 7/8: compiled AssemblyVersion is 0.2.3.'
 
     $productVersion = [Diagnostics.FileVersionInfo]::GetVersionInfo($dll).ProductVersion
-    $expected = "0.2.3+$ExpectedCommit.rc"
+    $expected = "0.2.3+$ExpectedCommit.$Channel"
     if ($productVersion -cne $expected) {
         throw "RC gate 8/8: informational version mismatch ($productVersion versus $expected)."
     }

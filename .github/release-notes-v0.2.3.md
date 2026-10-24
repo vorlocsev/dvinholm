@@ -8,7 +8,7 @@ This file prepares the next Stable release. It is not release approval.
   exact CAN IDs (e.g. 7E0,7E8,18DAF110), retaining filtered history;
   J2534 hardware filtering remains single-ID only.
 - CAN Monitor CSV safely quotes comma/quote/newline text, neutralizes
-  formula-like unexpected cells and retains existing real/demo CSV schemas.
+  formula-like unexpected cells and retains ordinary five-column CSV in Stable; synthetic CSV exists only in Development.
 - Portable Windows x86 keeps bundled .NET/Windows App SDK and updater
   compatibility; optional Lite ZIP remains framework-dependent.
 - Both ZIPs exclude debugger files and retain trimming/AOT disabled.
@@ -24,8 +24,7 @@ This file prepares the next Stable release. It is not release approval.
   demo/test commands, comma-list filtering, real CSV export, profile
   persistence and update-from-0.2.2 behavior remain pending.
 - Separate Development-only offline CAN demo acceptance remains pending.
-- After explicit release approval, use a separately reviewed versioned
-  Stable workflow with re-download, SHA-256 and release metadata audit.
+- A separate manual-only v0.2.3 Stable workflow stages a clean binary with eight checks and SHA-256 re-download. Publishing requires explicit release authorization and an exact main SHA; the release remains draft until downloaded assets pass validation.
 
 ## Boundaries
 No physical J2534 adapter, vendor driver, ECU or vehicle compatibility has
