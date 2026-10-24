@@ -1,3 +1,13 @@
+## Stable v0.2.3 isolated acceptance app-data protection (2026-10-24)
+
+- [x] Postmerge PR #465 main CI #3344 and staged Stable #16 passed on f45064d. One-click no-GUI launcher dry-run succeeded.
+- [x] Identify a missed test-copy risk: profile catalog, CAN rate and J2534 DLL settings normally share %LOCALAPPDATA%\Dvinholm with installed v0.2.2.
+- [x] Add verified-receipt-based app-data isolation for an extracted acceptance copy, including direct EXE relaunch; block installed-update and hardware connect commands during offline acceptance.
+- [x] Add eight fail-closed regression checks for production path, override, direct restart, missing receipt, normal-user-path misuse, arbitrary path, relative path and whitespace path.
+- [ ] Confirm all branch and main CI/staging checks. Manual Windows 11 LTSC interactive acceptance still required before requesting publication authorization.
+
+---
+
 ## Stable v0.2.3 one-click Windows LTSC test kit (2026-10-24)
 
 - [x] Main PR #464 commit `72dac8b` passed CI #3339, Stable staging #13 and RC #20; actual 0.2.2-to-0.2.3 ZIP rehearsal 8/8.
