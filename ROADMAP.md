@@ -1,9 +1,19 @@
+## Stable v0.2.3 acceptance kit safety regressions (2026-10-24)
+
+- [x] PR #462 merged as `12de888`, main CI #3329, Stable staging #7 and RC #15 all succeeded.
+- [x] Add eight Windows PowerShell 5.1 fail-closed scenarios using the real staged Stable 0.2.3 ZIP: valid extraction, existing target, invalid SHA, different valid SHA, corrupted checksum, missing checksum, unexpected extra file, and missing destination parent.
+- [x] Keep tests in the **nonpublishing staging** job, with a contract test requiring the safety runner before any manual publication job.
+- [ ] Confirm PR CI and Stable staging; merge only when green, then confirm postmerge main CI/staging/RC.
+- [ ] User Windows 11 LTSC interactive startup and offline profiles/CSV/speed acceptance remain pending. Only then request approval to publish; live 0.2.2-to-0.2.3 updater check follows public release.
+
+---
+
 ## Stable v0.2.3 Windows LTSC acceptance kit (2026-10-24)
 
 - [x] Postmerge PR #461 main CI #3326, Stable staging #5 and Portable RC #13 succeeded on fa919f9.
 - [x] Add a Windows PowerShell 5.1 acceptance kit that checks real staged ZIP and exact main SHA, refuses to overwrite existing installations, extracts to an isolated folder, and writes eight manual offline GUI checks.
 - [x] Package the read-only verifier and guide separately from the executable ZIP; CI checks an actual isolated extraction and receipt of its report without GUI launch.
-- [ ] Confirm this PR's branch CI, staging and postmerge main CI/staging.
+- [x] PR #462 CI #3327/#3328, Stable staging #6, RC #14, MSIX #73 succeeded. Merged as 12de888; main CI #3329, Stable staging #7 and RC #15 also succeeded.
 - [ ] Confirm real Windows 11 LTSC launch/restart and offline profile, CSV and CAN speed behavior; do not claim GUI acceptance from Windows runner extraction.
 - [ ] Perform real v0.2.2 to 0.2.3 Stable update smoke after publication. Offline updater replacement/rollback already tested in CI; physical J2534 deferred.
 

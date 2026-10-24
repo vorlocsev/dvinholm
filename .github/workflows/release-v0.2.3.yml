@@ -7,6 +7,7 @@ on:
       - ".github/workflows/release-v0.2.3.yml"
       - "eng/Test-ReleaseCandidate023.ps1"
       - "eng/Prepare-StableAcceptance023.ps1"
+      - "eng/Test-StableAcceptance023Safety.ps1"
       - "docs/WINDOWS_ACCEPTANCE_0.2.3.md"
       - "eng/Package-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistribution.ps1"
@@ -19,6 +20,7 @@ on:
       - ".github/workflows/release-v0.2.3.yml"
       - "eng/Test-ReleaseCandidate023.ps1"
       - "eng/Prepare-StableAcceptance023.ps1"
+      - "eng/Test-StableAcceptance023Safety.ps1"
       - "docs/WINDOWS_ACCEPTANCE_0.2.3.md"
       - "eng/Package-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistribution.ps1"
@@ -158,6 +160,11 @@ jobs:
           if (-not (Test-Path -LiteralPath (Join-Path $destination 'ACCEPTANCE-0.2.3.txt') -PathType Leaf)) { throw 'Acceptance report missing.' }
           if (-not (Test-Path -LiteralPath (Join-Path $destination 'Dvinholm.App.exe') -PathType Leaf)) { throw 'Application missing.' }
           Remove-Item -LiteralPath $destination -Recurse -Force
+
+      - name: Test eight acceptance-kit safety cases on real staged ZIP
+        shell: powershell
+        run: |
+          ./eng/Test-StableAcceptance023Safety.ps1 -ArchiveDirectory artifacts/stable-v023-roundtrip -ExpectedCommit '${{ github.sha }}'
 
       - name: Upload read-only Windows acceptance kit
         uses: actions/upload-artifact@v7

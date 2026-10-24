@@ -33,3 +33,7 @@ on disposable offline fixtures. Treat an actual installed update as a
 **post-publication** smoke check unless an authorized private rollout exists.
 
 The separate unsigned experimental MSIX is not an installer for Stable.
+
+## Automatic acceptance-kit safety tests
+
+The staging workflow additionally checks the **real** staged ZIP in eight scenarios: valid isolated extraction/report, refusal to overwrite an existing folder, rejection of invalid or mismatched SHA, tampered or missing checksum, extra artifact files, and missing destination parent. These tests never open WinUI and cannot replace actual Windows 11 LTSC manual acceptance.
