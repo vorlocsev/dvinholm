@@ -86,6 +86,10 @@ public sealed class StableRelease023WorkflowContractTests
         Assert.Contains("actions/download-artifact@v7", source);
         Assert.Contains("-Channel stable", source);
         Assert.Contains("needs: validate", source);
+        Assert.Contains("Test-StableAcceptance023Safety.ps1", source);
+        Assert.Contains("Test eight acceptance-kit safety cases on real staged ZIP", source);
+        Assert.True(source.IndexOf("Test-StableAcceptance023Safety.ps1 -ArchiveDirectory", StringComparison.Ordinal)
+            < source.IndexOf("\n  publish:", StringComparison.Ordinal));
     }
 
     [Fact]
