@@ -1,7 +1,8 @@
 #requires -Version 5.1
 <#
 Rehearse file replacement and rollback using REAL v0.2.2 release bytes and
-the exact unpublished v0.2.3 staged Portable bytes. This is a disposable
+the exact verified v0.2.3 Portable bytes (staged or publicly released).
+This is a disposable
 file-mirror integration check, not the actual updater process/WinUI GUI.
 No installed apps, user profiles, registry, tags or releases are modified.
 #>
