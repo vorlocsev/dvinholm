@@ -51,9 +51,14 @@ if (-not ('System.IO.Compression.ZipFile' -as [type])) {
 
 function Mirror([string]$from, [string]$to) {
     & robocopy $from $to /MIR /R:0 /W:0 /NFL /NDL /NP /NJH /NJS | Out-Null
-    if ($LASTEXITCODE -ge 8) {
-        throw "Robocopy failed (code $LASTEXITCODE) from $from to $to."
+    $robocopyStatus = $LASTEXITCODE
+    if ($robocopyStatus -ge 8 -or $robocopyStatus -lt 0) {
+        throw "Robocopy failed (code $robocopyStatus) from $from to $to."
     }
+    # Robocopy 0..7 reports success, including file copies (code 1).
+    # GitHub Actions Windows PowerShell wrapper otherwise returns the
+    # leftover nonzero native exit code even when every test succeeded.
+    $global:LASTEXITCODE = 0
 }
 
 function Snapshot([string]$dir) {
