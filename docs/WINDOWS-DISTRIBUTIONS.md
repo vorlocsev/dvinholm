@@ -45,6 +45,27 @@ normally until signed with a trusted publisher certificate. The Portable file
 replacement updater is disabled in MSIX builds; Windows handles package updates
 through a separately configured signed distribution channel.
 
+## Experimental unsigned MSIX SHA-256 sidecar (Development)
+
+The Tiny-Lite-MSIX-UNSIGNED-TEST-ONLY Actions artifact now contains two
+files: Dvinholm-Lite-x86-UNSIGNED.msix and its single-entry
+Dvinholm-Lite-x86-UNSIGNED.msix.sha256 checksum. Windows PowerShell 5.1
+eng/Test-LiteMsixSha256.ps1 generates and checks the lowercase SHA-256 digest
+bound to that exact unsigned filename after the real package has passed
+MakeAppx and static validation. Eight Windows x86 regression tests cover
+valid digest, changed package bytes, missing package/manifest, wrong filename,
+uppercase or malformed digest, and an extra manifest entry.
+
+After extracting both files into one folder, run from a repository checkout:
+
+    powershell.exe -NoProfile -File .\eng\Test-LiteMsixSha256.ps1 -PackagePath 'Dvinholm-Lite-x86-UNSIGNED.msix' -ChecksumPath 'Dvinholm-Lite-x86-UNSIGNED.msix.sha256' -Mode Verify
+
+The checksum tool computes SHA-256 using .NET cryptography and does not depend on the Get-FileHash cmdlet, which may be missing in x86 Windows PowerShell 5.1 test hosts.
+
+This checksum detects accidental corruption, **not publisher authenticity**.
+An adversary can replace both package and checksum. Trusted MSIX signing,
+runtime dependency provisioning, LTSC install and GUI launch are unverified.
+
 ## Windows SDK unpack gate for actual unsigned MSIX (Development)
 
 The experimental Tiny Lite MSIX workflow now passes the **actual generated

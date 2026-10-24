@@ -1,9 +1,19 @@
+## Experimental unsigned MSIX SHA-256 manifest (Development, 2026-10-24)
+
+- [x] Add a deterministic single-entry lowercase SHA-256 manifest bound to Dvinholm-Lite-x86-UNSIGNED.msix in experimental CI, generated and verified after package validation and before artifact upload.
+- [x] Upload .msix and .msix.sha256 together. Reject missing files, tampered package bytes, invalid or uppercase hash, wrong filename and additional entries.
+- [x] Eight Windows x86 tests cover valid, tampered, missing package, missing manifest, substituted name, uppercase digest, extra line and malformed digest. CI #3282/#3283 exposed that Windows x86 PowerShell does not provide Get-FileHash; use streaming .NET SHA256 instead, preserving the same manifest format and all eight checks.
+- [ ] Require Windows CI 1055/1055 and Portable/Lite ZIP verification + Stable audit, plus unsigned MSIX MakeAppx and checksum gate; merge only when green and check postmerge main CI.
+- [ ] Digest is integrity-only, NOT signed or trusted distribution. LTSC installation, GUI launch and physical J2534 remain untested; Stable v0.2.2, Portable updater and trimming/AOT unchanged.
+
+---
+
 ## Windows SDK MakeAppx extracted-package checks (Development, 2026-10-24)
 
 - [x] Add a read-only Windows SDK MakeAppx unpack gate on the **actual freshly built unsigned x86 MSIX** inside experimental CI, with guaranteed disposable-temp cleanup.
 - [x] Eight checks: locate Windows SDK, unpack cleanly, root Lite x86 identity/publisher, binary PE x86, .NET 10 runtimeconfig, five branded assets, no bundled runtimes/debug payload and no signing payload.
 - [x] Keep static checks plus synthetic host-inventory gate. Never sign/install/register certificates/packages, provision runtimes, launch WinUI or access physical J2534.
-- [ ] Require experimental MSIX pipeline gate and Windows CI 1047/1047, Portable/Lite integrity/SHA-256 and Stable audit; merge only after green and check independent main CI.
+- [x] PR #452 CI #3280 passed 1047/1047, Portable/Lite SHA-256 and Stable audit; experimental MSIX #38 passed all eight Windows SDK MakeAppx checks. Merged as a47131d; independent main CI to confirm.
 - [ ] Trusted signing, Store-less Windows LTSC dependency provisioning/installation, WinUI startup and adapter tests still unverified. Stable v0.2.2, Portable updater, trimming/AOT unchanged.
 
 ---
