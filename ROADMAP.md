@@ -1,9 +1,19 @@
+## Stable 0.2.3 headless production smoke (2026-10-24)
+
+- [x] Postmerge PR #459 at main `2d39303`: CI #3320 and Portable RC #9 both succeeded; latest published Stable remains v0.2.2.
+- [x] Add an independent Windows x86 xUnit smoke project compiled with `DvinholmDevelopmentFeatures=false`, with eight production-only assertions for missing demo types/handlers, retained real VIN/DID/DTC/CAN/profile UI, regular CSV and multi-ID software filter.
+- [x] Execute the production-mode test project in ordinary CI and 0.2.3 staged Stable validation, without WinUI launch or physical J2534.
+- [ ] Require PR CI and postmerge main CI success, including all eight new production smoke checks, Portable/Lite ZIP and checksum validation and Stable audit.
+- [ ] Windows 11 LTSC interactive start/restart and updater acceptance remain unverified. Stable v0.2.3 must not be published without explicit authorization.
+
+---
+
 ## Stable v0.2.3 manual release pipeline preparation (2026-10-24)
 
 - [x] Prepare a workflow with validation-only PR and default dry-run behavior. No release on push, PR or branch creation.
 - [x] Gate actual Stable publication on explicit manual dispatch, current main SHA and authorization; validate binary, DRAFT assets and downloaded SHA-256 before public release.
 - [x] Require real production DLL to exclude synthetic handlers/generators and retain VIN/DID/DTC. No trimming/AOT or physical J2534.
-- [ ] Wait for postmerge main CI #3315, RC #6 and MSIX #68. Verify this PR's CI and eight workflow contract tests before merge.
+- [x] PR #459 CI #3318/#3319, Stable validation #2, Portable RC #8 and MSIX #70 succeeded. Squash merged as 2d39303; main CI #3320 and RC #9 subsequently succeeded.
 - [ ] Require Windows 11 LTSC manual app startup, multi-ID filter/CSV, profile persistence and v0.2.2 updater acceptance, plus explicit user approval, before dispatching publish mode.
 
 ---
@@ -13,7 +23,7 @@
 - [x] Merge resolution preserves PR #458 production UI safeguards while replacing hidden demo XAML placeholders and inert Release handlers with compile-time feature separation. Release defaults to `DvinholmDevelopmentFeatures=false`; Development CI and virtual regression tests opt in explicitly.
 - [x] Stable Release omits Add test profiles, Start demo, Preview UDS example, Export synthetic UDS TXT, generator classes and synthetic CSV branch; existing user profiles and real VIN/DID/DTC, CAN Monitor and CSV remain.
 - [x] Build a dedicated nonpublishing 0.2.3 Windows x86 Portable candidate workflow with eight checks: exact ZIP names, size, strict SHA-256, safe ZIP layout, extraction/x86, absence of synthetic DLL metadata, 0.2.3 assembly version, and exact commit informational version. Re-download the Actions artifact and revalidate unchanged bytes.
-- [ ] PR CI and RC workflow must pass after conflict resolution; confirm 1095 tests (1087 baseline + 8 Development surface tests), Stable audit, Portable/Lite checks and experimental MSIX, then postmerge main CI.
+- [x] PR #457 checks passed, merged as 3ee0459; postmerge CI #3315, RC #6 and MSIX #68 succeeded. Later CI #3320 and RC #9 succeeded after PR #459.
 - [ ] Manual Windows 11 LTSC Stable startup/filter/CSV, saved profiles and updater from 0.2.2 acceptance deferred; physical J2534/ECU deferred to later releases. Stable v0.2.2 remains published. No 0.2.3 Stable tag, release or signing until separately approved.
 
 ---

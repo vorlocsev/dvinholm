@@ -5,11 +5,11 @@ Actions test artifact, not an update target, installer, or GitHub release.
 
 | Gate | Required evidence | Status |
 | --- | --- | --- |
-| 1 | Exact-commit Windows x86 CI green; all tests and Stable audit | Pending final candidate CI |
-| 2 | Candidate-only Portable produced from 0.2.3 version override | Pending actual RC workflow |
-| 3 | Eight RC checks: exact files, bounded ZIP size, SHA256, ZIP safety, isolated x86 extraction, actual DLL, assembly version, informational commit SHA | Pending actual RC run |
-| 4 | GitHub Actions download of candidate and revalidation without modifying SHA manifest | Pending roundtrip |
-| 5 | Development Portable/Lite ZIP checks and disabled trimming/AOT | Pending exact-head CI |
+| 1 | Exact-commit Windows x86 CI green; all tests and Stable audit | Pass on main CI #3320 |
+| 2 | Candidate-only Portable produced from 0.2.3 version override | Pass on main RC #9 |
+| 3 | Eight RC checks: exact files, bounded ZIP size, SHA256, ZIP safety, isolated x86 extraction, actual DLL, assembly version, informational commit SHA | Pass on main RC #9 |
+| 4 | GitHub Actions download of candidate and revalidation without modifying SHA manifest | Pass on main RC #9 |
+| 5 | Development Portable/Lite ZIP checks and disabled trimming/AOT | Pass on main CI #3320 |
 | 6 | Manual Stable-profile Windows 11 LTSC startup/close/relaunch, correct disconnected status, all test/demo buttons absent | Pending |
 | 7 | Manual Stable CAN multi-ID filter 7E0,7E8, ordinary CSV and profile persistence (offline demo separately checked in Development) | Pending |
 | 8 | Manual installed-0.2.2 updater/rollback behavior, finalized notes, authorized publish and published-asset audit | Pending |
@@ -27,3 +27,7 @@ this preparation. Never mix a Lite runtime tree into a Portable installation.
 - This workflow has not been dispatched for publication. Existing v0.2.2 must stay available; no MSIX signing or physical J2534 tests are involved.
 
 - CI repair: normalize Windows CRLF in workflow tests, restore win-x86 runtime dependencies after switching SDK architecture, and keep release-dispatch inputs in environment variables rather than interpolating into PowerShell source. Refuse release if remote main moves after authorization.
+
+## Automated production-mode acceptance (next PR)
+
+The separate `tests/Dvinholm.Stable.Tests` project runs eight Windows x86 smoke tests on the actual `DvinholmDevelopmentFeatures=false` compilation. Both default CI and Stable staging execute it, independent of Development-only fixture tests. It verifies removal of synthetic types and handlers while retaining production controls, real read-only UDS methods, CSV and multi-ID filter logic. This is a headless regression check, not evidence of a WinUI launch, the installed 0.2.2 updater, real LTSC OS or J2534 hardware.
