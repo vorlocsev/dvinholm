@@ -1,8 +1,18 @@
+## Stable v0.2.3 one-click Windows LTSC test kit (2026-10-24)
+
+- [x] Main PR #464 commit `72dac8b` passed CI #3339, Stable staging #13 and RC #20; actual 0.2.2-to-0.2.3 ZIP rehearsal 8/8.
+- [x] Bundle a double-click START-ACCEPTANCE.cmd and workflow-generated exact-commit BUILD_COMMIT.txt alongside the existing read-only offline verification scripts.
+- [x] Runner adds a no-GUI --prepare-only test with the real staged ZIP, proving the new entry point verifies and extracts safely before humans start the Windows app.
+- [ ] Pass new PR branch/staging checks and postmerge CI on main; kit must remain separate from updater/release targets.
+- [ ] Actual Windows 11 LTSC human GUI verification remains required before asking the user for release approval. Installed Stable updater to v0.2.3 is a post-publication smoke test.
+
+---
+
 ## Stable v0.2.3 legacy v0.2.2 debug-file compatibility (2026-10-24)
 
 - [x] CI #3333/#3334, RC #17 and MSIX #75 passed on PR #464; staging #10 found that already-published v0.2.2 contains `Dvinholm.App.pdb` and `createdump.exe`.
 - [x] With user permission, allow precisely those two pre-existing legacy debug entries in the read-only published-v0.2.2 archive comparison. Continue full SHA-256, layout, x86 runtime and version validation. Keep v0.2.3 staging/production ZIP debug exclusions unchanged by default.
-- [ ] Re-run all eight real-archive upgrade and rollback gates and confirm branch CI/staging before PR #464 is merged.
+- [x] PR #464 CI #3337/#3338, staging #12, RC #19 and MSIX #77 all passed; merged as 72dac8b. Main CI #3339, staging #13 and RC #20 all passed.
 
 ---
 
