@@ -1,11 +1,13 @@
 # Changelog
 
-## [0.2.3] — Unreleased (candidate preparation)
+## [0.2.3] — 2026-10-24
 
 - Stable omits synthetic test/demo controls, handlers, fixture generators and synthetic CSV branch. Development explicitly opts in and retains the offline tools.
 - CAN Monitor adds multi-ID software filtering (up to 16 IDs) and safe CSV quoting/formula neutralization.
 - Portable 0.2.3 RC gets eight archive/binary gates, exact-commit metadata, checksum sidecar and post-download verification.
-- Portable/Lite trimming and AOT stay disabled. No 0.2.3 Stable published yet; physical J2534 and manual Windows acceptance deferred.
+- Portable/Lite trimming and AOT remain disabled. Stable v0.2.3 ships the verified Windows x86 self-contained Portable ZIP; optional Lite and unsigned MSIX remain experimental CI artifacts.
+- Confirmed 1111/1111 application and 8/8 production-profile tests, eight Stable archive checks, SHA-256 verification, disposable v0.2.2-to-v0.2.3 replacement/rollback, and user-observed Windows 11 LTSC offline application operation.
+- Published release tag targets approved commit `91ecc34` and provides the exact ZIP and SHA256SUMS.txt. The in-place update from an installed v0.2.2 remains a post-release manual smoke test, while real J2534 hardware validation is deferred.
 
 
 ## [0.2.2] — 2026-10-20
