@@ -1,0 +1,76 @@
+name: Published Stable 0.2.2 to 0.2.3 offline upgrade audit
+
+on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/postrelease-upgrade-v023.yml"
+      - "eng/Test-RealStableUpgrade023.ps1"
+      - "tests/Dvinholm.App.Tests/PublishedStableUpgrade023WorkflowTests.cs"
+  pull_request:
+    paths:
+      - ".github/workflows/postrelease-upgrade-v023.yml"
+      - "eng/Test-RealStableUpgrade023.ps1"
+      - "tests/Dvinholm.App.Tests/PublishedStableUpgrade023WorkflowTests.cs"
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  audit-published-upgrade:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - name: Checkout read-only offline verifiers
+        uses: actions/checkout@v7
+
+      - name: Verify published release identity and checksum pin
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          $release = gh api repos/vorlocsev/dvinholm/releases/tags/v0.2.3 | ConvertFrom-Json
+          if ($LASTEXITCODE -ne 0 -or $null -eq $release) { throw 'Published v0.2.3 metadata unavailable.' }
+          if ($release.draft -or $release.prerelease -or $release.tag_name -cne 'v0.2.3' -or
+              $release.target_commitish -cne '91ecc343608c931eb033523e3db6012a6c5dbd58') {
+            throw 'Published v0.2.3 identity or approval commit differs.'
+          }
+          $assets = @($release.assets)
+          if ($assets.Count -ne 2 -or
+              @($assets | Where-Object { @('Dvinholm-Windows-x86.zip', 'SHA256SUMS.txt') -cnotcontains $_.name }).Count -gt 0) {
+            throw 'Unexpected published v0.2.3 assets.'
+          }
+          $zipAsset = @($assets | Where-Object { $_.name -ceq 'Dvinholm-Windows-x86.zip' })[0]
+          if ($zipAsset.size -ne 62245250 -or $zipAsset.digest -cne 'sha256:fae05958bf1ca4ef92f915508b66da5acb85b4c975c6eb84a950cb8da707ed44') {
+            throw 'Published v0.2.3 ZIP digest or byte size changed.'
+          }
+          Write-Host 'Published v0.2.3 tag target, ZIP size and immutable GitHub SHA-256 confirmed.'
+
+      - name: Download actual published v0.2.2 and v0.2.3 assets
+        env:
+          GH_TOKEN: ${{ github.token }}
+        shell: pwsh
+        run: |
+          New-Item -ItemType Directory -Path artifacts/published-v022, artifacts/published-v023 -Force | Out-Null
+          gh release download v0.2.2 --repo vorlocsev/dvinholm --dir artifacts/published-v022 --pattern 'Dvinholm-Windows-x86.zip' --pattern 'SHA256SUMS.txt'
+          if ($LASTEXITCODE -ne 0) { throw 'Published v0.2.2 download failed.' }
+          gh release download v0.2.3 --repo vorlocsev/dvinholm --dir artifacts/published-v023 --pattern 'Dvinholm-Windows-x86.zip' --pattern 'SHA256SUMS.txt'
+          if ($LASTEXITCODE -ne 0) { throw 'Published v0.2.3 download failed.' }
+
+      - name: Verify downloaded published ZIP SHA-256 independently
+        shell: powershell
+        run: |
+          $actual = (Get-FileHash -LiteralPath artifacts/published-v023/Dvinholm-Windows-x86.zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          if ($actual -cne 'fae05958bf1ca4ef92f915508b66da5acb85b4c975c6eb84a950cb8da707ed44') {
+            throw 'Downloaded public v0.2.3 ZIP differs from approved release digest.'
+          }
+          Write-Host 'Downloaded original published Stable 0.2.3 ZIP matches pinned SHA-256.'
+
+      - name: Eight disposable published v0.2.2 to v0.2.3 mirror and rollback gates
+        shell: powershell
+        run: |
+          ./eng/Test-RealStableUpgrade023.ps1 -PreviousArchiveDirectory artifacts/published-v022 -CandidateArchiveDirectory artifacts/published-v023 -ExpectedCommit '91ecc343608c931eb033523e3db6012a6c5dbd58'
+          if (-not $?) { throw 'Published-to-published offline update rehearsal failed.' }
+          'Eight offline gates passed on the original public v0.2.2 and v0.2.3 ZIP files. No installed application, live updater, GUI or real J2534 touched.' |
+            Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
