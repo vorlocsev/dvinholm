@@ -1,10 +1,20 @@
+## v0.2.3 Portable release candidate (Development, 2026-10-24)
+
+- [x] Stage a dedicated NON-PUBLISHING v0.2.3 Windows x86 Portable candidate workflow. Use version and commit-specific RC metadata without changing main Development or published Stable v0.2.2 semantics.
+- [x] Check eight actual candidate properties: filenames, size, strict SHA-256, safe ZIP layout, isolated x86 PE extraction, managed DLL, assembly version, embedded informational SHA. Re-download and recheck the Actions artifact.
+- [x] Draft release notes, changelog and eight-gate acceptance checklist. No Stable tag/branch/release creation or signing.
+- [ ] Require full PR CI, candidate RC workflow, postmerge main CI. Obtain user-confirmed Windows 11 LTSC startup/demo/filter/CSV and 0.2.2 updater acceptance before authorized Stable publication.
+- [ ] Physical J2534/ECU tests deferred; trimming/AOT, Portable updater, Stable v0.2.2 unchanged.
+
+---
+
 ## CAN Monitor multi-ID software filter (Development, 2026-10-24)
 
 - [x] Support a bounded list of up to 16 exact hexadecimal CAN IDs in the existing software-only monitor filter, including 0x prefixes, case-insensitive hex and optional surrounding whitespace. Keep single-ID and blank-filter behavior.
 - [x] Fail closed on invalid/empty members or oversized queries; preserve chronological rows, buffered hidden frames and RX totals. Parse once per view refresh to avoid repeated per-row query parsing.
 - [x] Keep J2534 hardware filters single-ID-only; provide a clear UI message for comma-separated requests, and show 7E0,7E8 in the software filter placeholder. Update RU user guide.
 - [x] Add eight no-hardware Windows x86 tests covering legacy syntax, request/response order, mixed 11-/29-bit IDs, duplicates, malformed members, blank segments, query limit and virtual J2534 receive without TX.
-- [ ] Require Windows CI 1079/1079, Portable/Lite ZIP SHA-256, Stable audit, experimental unsigned MSIX and postmerge main CI before considering the stage complete.
+- [x] PR #456 CI #3297/#3298 passed 1079/1079, Portable/Lite SHA-256, Stable audit and experimental MSIX #54. Merged as daf2ed5. Main CI #3299 pending; MSIX #55 passed.
 - [ ] Physical J2534, WinUI manual acceptance, new Stable release, updater, trimming/AOT remain deferred/unchanged.
 
 ---

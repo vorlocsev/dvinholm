@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3] — Unreleased (candidate preparation)
+
+- CAN Monitor adds bounded multi-ID software filtering without changing J2534 hardware filter behavior.
+- CSV export handles delimiters, quotes, multiline cells and unexpected spreadsheet formulas.
+- Additional Portable/Lite SHA-256, updater regression and experimental unsigned MSIX verification; trimming/AOT disabled.
+- Release-candidate Windows validation is pending; no physical J2534 support is claimed.
+
+
 ## [0.2.2] — 2026-10-20
 
 ### Added
