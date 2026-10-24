@@ -1,10 +1,10 @@
-## Production UI cleanup: synthetic/demo commands (2026-10-24)
+## Stable / Development isolation and v0.2.3 Portable RC (2026-10-24)
 
-- [x] Hide **Add test profiles**, **Start demo** and **Preview UDS example / Export synthetic UDS TXT** by default in XAML. Only local Debug builds expose these controls; all Release builds (Development, RC, Stable and experimental MSIX) hide them.
-- [x] Preserve real J2534 CAN Monitor, normal ECU profile creation/import/export, actual UDS diagnostics, and real CSV logging. No existing ECU profile files are deleted.
-- [x] Exclude the synthetic CAN generator, offline UDS sample and synthetic TXT report from the compiled Release app. Keep linked copies solely in the isolated Release test assembly. UI handlers have Debug-only bodies and inert Release stubs.
-- [x] Add eight release contract tests: absence of three fixture types from the app assembly, default-hidden demo/test UI, Debug-only handlers and preservation of production diagnostics.
-- [ ] Require 1087/1087 Windows x86 Release tests, Portable/Lite ZIP SHA-256, Stable audit, and experimental MSIX; real WinUI acceptance remains manual. The test and demo feature sources stay available for local Debug builds.
+- [x] Merge resolution preserves PR #458 production UI safeguards while replacing hidden demo XAML placeholders and inert Release handlers with compile-time feature separation. Release defaults to `DvinholmDevelopmentFeatures=false`; Development CI and virtual regression tests opt in explicitly.
+- [x] Stable Release omits Add test profiles, Start demo, Preview UDS example, Export synthetic UDS TXT, generator classes and synthetic CSV branch; existing user profiles and real VIN/DID/DTC, CAN Monitor and CSV remain.
+- [x] Build a dedicated nonpublishing 0.2.3 Windows x86 Portable candidate workflow with eight checks: exact ZIP names, size, strict SHA-256, safe ZIP layout, extraction/x86, absence of synthetic DLL metadata, 0.2.3 assembly version, and exact commit informational version. Re-download the Actions artifact and revalidate unchanged bytes.
+- [ ] PR CI and RC workflow must pass after conflict resolution; confirm 1095 tests (1087 baseline + 8 Development surface tests), Stable audit, Portable/Lite checks and experimental MSIX, then postmerge main CI.
+- [ ] Manual Windows 11 LTSC Stable startup/filter/CSV, saved profiles and updater from 0.2.2 acceptance deferred; physical J2534/ECU deferred to later releases. Stable v0.2.2 remains published. No 0.2.3 Stable tag, release or signing until separately approved.
 
 ---
 

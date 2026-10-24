@@ -1,8 +1,9 @@
-using System.Text.RegularExpressions;
+using System.Reflection;
 using System.Xml.Linq;
 
 namespace Dvinholm.App.Tests;
 
+/// <summary>Production XAML and compiled binary must not expose synthetic controls.</summary>
 public sealed class ReleaseDemoFeatureExclusionTests
 {
     private static string Root()
@@ -13,92 +14,97 @@ public sealed class ReleaseDemoFeatureExclusionTests
         throw new DirectoryNotFoundException("Dvinholm source checkout not found.");
     }
 
+    private static string Xaml() => File.ReadAllText(Path.Combine(Root(), "src", "Dvinholm.App", "MainWindow.xaml"));
     private static XElement Control(string name)
     {
-        var doc = XDocument.Load(Path.Combine(Root(), "src", "Dvinholm.App", "MainWindow.xaml"));
+        var document = XDocument.Load(Path.Combine(Root(), "src", "Dvinholm.App", "MainWindow.xaml"));
         XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
-        return doc.Descendants().Single(e => (string?)e.Attribute(x + "Name") == name);
+        return document.Descendants().Single(e => (string?)e.Attribute(x + "Name") == name);
     }
 
     [Fact]
     public void ProductionAssembly_ExcludesSyntheticCanGenerator()
     {
-        var t = typeof(MainWindow).Assembly.GetType("Dvinholm.App.CanDemoFrameGenerator");
-#if DEBUG
-        Assert.NotNull(t);
+        var type = typeof(MainWindow).Assembly.GetType("Dvinholm.App.CanDemoFrameGenerator");
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        Assert.NotNull(type);
 #else
-        Assert.Null(t);
+        Assert.Null(type);
 #endif
     }
 
     [Fact]
     public void ProductionAssembly_ExcludesOfflineUdsSample()
     {
-        var t = typeof(MainWindow).Assembly.GetType("Dvinholm.App.UdsOfflineSample");
-#if DEBUG
-        Assert.NotNull(t);
+        var type = typeof(MainWindow).Assembly.GetType("Dvinholm.App.UdsOfflineSample");
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        Assert.NotNull(type);
 #else
-        Assert.Null(t);
+        Assert.Null(type);
 #endif
     }
 
     [Fact]
     public void ProductionAssembly_ExcludesSyntheticTxtReport()
     {
-        var t = typeof(MainWindow).Assembly.GetType("Dvinholm.App.UdsOfflineTextReport");
-#if DEBUG
-        Assert.NotNull(t);
+        var type = typeof(MainWindow).Assembly.GetType("Dvinholm.App.UdsOfflineTextReport");
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        Assert.NotNull(type);
 #else
-        Assert.Null(t);
+        Assert.Null(type);
 #endif
     }
 
     [Fact]
-    public void TestProfileButton_DefaultsToInvisible()
+    public void StaticXaml_HasNoTestProfileButton()
     {
-        Assert.Equal("Collapsed", (string?)Control("AddTestProfilesButton").Attribute("Visibility"));
+        Assert.DoesNotContain("Add test profiles", Xaml());
+        Assert.DoesNotContain("AddTestProfiles_Click", Xaml());
     }
 
     [Fact]
-    public void DemoCanPanel_DefaultsToInvisible()
+    public void StaticXaml_HasNoDemoMonitorPanel()
     {
-        Assert.Equal("Collapsed", (string?)Control("DemoMonitorPanel").Attribute("Visibility"));
-        Assert.NotNull(Control("DemoMonitorButton"));
+        Assert.DoesNotContain("Start demo", Xaml());
+        Assert.DoesNotContain("DemoMonitor_Click", Xaml());
+        Assert.NotNull(Control("FramesView"));
     }
 
     [Fact]
-    public void OfflineUdsPreviewAndTxtPanel_DefaultsToInvisible()
+    public void StaticXaml_HasNoOfflineUdsDemoPanel()
     {
-        Assert.Equal("Collapsed", (string?)Control("OfflineUdsSamplePanel").Attribute("Visibility"));
-        Assert.NotNull(Control("PreviewUdsSampleButton"));
-        Assert.NotNull(Control("ExportOfflineUdsTxtButton"));
+        Assert.DoesNotContain("Preview UDS example (offline)", Xaml());
+        Assert.DoesNotContain("Export synthetic UDS TXT", Xaml());
+        Assert.NotNull(Control("ReadVinButton"));
     }
 
     [Fact]
-    public void DemoHandlers_HaveOnlyDebugBodies()
+    public void DeveloperHandlers_AreCompiledOnlyWithFeatureOptIn()
     {
-        var code = File.ReadAllText(Path.Combine(Root(), "src", "Dvinholm.App", "MainWindow.xaml.cs"));
-        foreach (var name in new[] { "AddTestProfiles_Click", "PreviewUdsSample_Click",
-                     "ExportOfflineUdsTxt_Click", "DemoMonitor_Click",
-                     "DemoTimer_Tick", "EmitDemoFrames", "StopDemoMonitor" })
+        var type = typeof(MainWindow);
+        var flags = BindingFlags.Instance | BindingFlags.NonPublic;
+        foreach (var handler in new[] { "InitializeDevelopmentControls", "AddTestProfiles_Click",
+            "PreviewUdsSample_Click", "ExportOfflineUdsTxt_Click", "DemoMonitor_Click",
+            "DemoTimer_Tick", "EmitDemoFrames", "StopDemoMonitor", "ClearDemoData" })
         {
-            var declaration = Regex.Match(code,
-                @"private\s+(?:async\s+)?void\s+" + Regex.Escape(name) + @"\s*\(");
-            Assert.True(declaration.Success, name + " declaration missing");
-            var next = code.IndexOf("\n    private ", declaration.Index + declaration.Length);
-            var method = code[declaration.Index..(next < 0 ? code.Length : next)];
-            Assert.Contains("#if DEBUG", method);
-            Assert.Contains("#endif", method);
+            var method = type.GetMethod(handler, flags);
+#if DVINHOLM_DEVELOPMENT_FEATURES
+            Assert.NotNull(method);
+#else
+            Assert.Null(method);
+#endif
         }
     }
 
     [Fact]
-    public void RealDiagnosticsAndUserProfiles_StillPresent()
+    public void RealDiagnosticsAndUserProfiles_RemainAvailable()
     {
         Assert.NotNull(Control("ConnectButton"));
         Assert.NotNull(Control("StartButton"));
         Assert.NotNull(Control("CreateProfileButton"));
         Assert.NotNull(Control("EditProfileButton"));
+        Assert.NotNull(Control("ReadDidButton"));
+        Assert.NotNull(Control("ReadDtcButton"));
         var document = XDocument.Load(Path.Combine(Root(), "src", "Dvinholm.App", "MainWindow.xaml"));
         foreach (var handler in new[] { "Csv_Click", "ImportProfiles_Click", "ExportProfiles_Click" })
             Assert.Contains(document.Descendants(), e => (string?)e.Attribute("Click") == handler);

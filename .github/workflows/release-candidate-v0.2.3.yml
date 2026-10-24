@@ -1,0 +1,82 @@
+name: Dvinholm 0.2.3 RC (validation only)
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/release-candidate-v0.2.3.yml"
+      - "eng/Test-ReleaseCandidate023.ps1"
+      - "eng/Package-WindowsDistribution.ps1"
+      - "eng/Test-WindowsDistribution.ps1"
+      - "eng/Test-WindowsDistributionExtraction.ps1"
+      - "src/Dvinholm.App/**"
+      - ".github/release-notes-v0.2.3.md"
+      - "docs/RELEASE_CANDIDATE_0.2.3.md"
+  workflow_dispatch:
+
+# No tag/release creation, signing, installation, or elevated permissions.
+permissions:
+  contents: read
+
+jobs:
+  portable-rc:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout exact commit
+        uses: actions/checkout@v7
+
+      - name: Setup .NET
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Parse Windows PowerShell 5.1 RC verifier
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          [Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'eng/Test-ReleaseCandidate023.ps1').Path,
+            [ref]$tokens, [ref]$errors) | Out-Null
+          if (@($errors).Count -ne 0) { throw "RC script syntax errors: $errors" }
+
+      - name: Restore
+        run: dotnet restore Dvinholm.sln
+
+      - name: Publish self-contained 0.2.3 Portable Windows x86 RC
+        shell: pwsh
+        run: |
+          dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --runtime win-x86 --self-contained true -p:Platform=x86 -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=false -p:PublishAot=false -p:DvinholmDevelopmentFeatures=false -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.3 -p:InformationalVersion=0.2.3+${{ github.sha }}.rc -p:IncludeSourceRevisionInInformationalVersion=false --output artifacts/app-rc
+          if ($LASTEXITCODE -ne 0) { throw "RC publish failed: $LASTEXITCODE" }
+
+      - name: Package and verify exact 0.2.3 candidate
+        shell: powershell
+        run: |
+          $folder = 'artifacts/rc-v0.2.3'
+          New-Item -ItemType Directory -Path $folder -Force | Out-Null
+          ./eng/Package-WindowsDistribution.ps1 -Flavor Portable -PublishDirectory artifacts/app-rc -ZipPath "$folder/Dvinholm-Windows-x86.zip"
+          ./eng/Test-ReleaseCandidate023.ps1 -ArchiveDirectory $folder -ExpectedCommit '${{ github.sha }}' -GenerateChecksum
+          ./eng/Test-ReleaseCandidate023.ps1 -ArchiveDirectory $folder -ExpectedCommit '${{ github.sha }}'
+
+      - name: Upload unsigned test-only RC files
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-v0.2.3-RC-TEST-ONLY
+          path: |
+            artifacts/rc-v0.2.3/Dvinholm-Windows-x86.zip
+            artifacts/rc-v0.2.3/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Download actual GitHub Actions RC artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: Dvinholm-v0.2.3-RC-TEST-ONLY
+          path: artifacts/rc-v0.2.3-downloaded
+
+      - name: Verify downloaded bytes and embedded version
+        shell: powershell
+        run: |
+          ./eng/Test-ReleaseCandidate023.ps1 -ArchiveDirectory 'artifacts/rc-v0.2.3-downloaded' -ExpectedCommit '${{ github.sha }}'
+          "0.2.3 RC: ZIP SHA-256 and embedded SHA verified after download. NOT PUBLISHED." | Out-File $env:GITHUB_STEP_SUMMARY -Append

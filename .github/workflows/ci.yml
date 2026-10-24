@@ -50,7 +50,7 @@ jobs:
         run: dotnet restore Dvinholm.sln
 
       - name: Build
-        run: dotnet build Dvinholm.sln --configuration Release --no-restore -p:Platform=x86
+        run: dotnet build Dvinholm.sln --configuration Release --no-restore -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true
 
       # The app and its referenced assembly are x86. Install the matching x86
       # .NET SDK so tests run with an x86 test host instead of mixing architectures.
@@ -61,7 +61,7 @@ jobs:
           architecture: x86
 
       - name: Test
-        run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release -p:Platform=x86 --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --logger "trx;LogFileName=test-results.trx"
 
       - name: Setup .NET x64 for publish
         uses: actions/setup-dotnet@v6
@@ -72,12 +72,12 @@ jobs:
       # Stage 1: keep fully standalone x86 WinUI, without linker trimming.
       # Do not bundle PDBs in distributed releases; CI test diagnostics remain in TRX.
       - name: Publish Portable
-        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=false -p:PublishAot=false -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.2 -p:InformationalVersion=0.2.2+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app
+        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained true --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=false -p:PublishAot=false -p:DvinholmDevelopmentFeatures=true -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.2 -p:InformationalVersion=0.2.2+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app
 
       # Stage 2: an optional framework-dependent distribution, not used by
       # the automatic updater. Requires preinstalled .NET x86 and WinAppSDK.
       - name: Publish Lite
-        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained false --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=false -p:PublishTrimmed=false -p:PublishAot=false -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.2 -p:InformationalVersion=0.2.2+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app-lite
+        run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained false --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=false -p:PublishTrimmed=false -p:PublishAot=false -p:DvinholmDevelopmentFeatures=true -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.2 -p:InformationalVersion=0.2.2+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app-lite
 
       - name: Verify branded Windows icon is published
         shell: pwsh

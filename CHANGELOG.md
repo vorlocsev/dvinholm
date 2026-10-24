@@ -1,5 +1,13 @@
 # Changelog
 
+## [0.2.3] — Unreleased (candidate preparation)
+
+- Stable omits synthetic test/demo controls, handlers, fixture generators and synthetic CSV branch. Development explicitly opts in and retains the offline tools.
+- CAN Monitor adds multi-ID software filtering (up to 16 IDs) and safe CSV quoting/formula neutralization.
+- Portable 0.2.3 RC gets eight archive/binary gates, exact-commit metadata, checksum sidecar and post-download verification.
+- Portable/Lite trimming and AOT stay disabled. No 0.2.3 Stable published yet; physical J2534 and manual Windows acceptance deferred.
+
+
 ## [0.2.2] — 2026-10-20
 
 ### Added

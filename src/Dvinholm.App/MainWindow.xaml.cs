@@ -18,9 +18,13 @@ public sealed partial class MainWindow : Window
     private Task? _monitorTask;
     private CanRxDispatcher.Subscription? _monitorSubscription;
     private bool _connected;
+#if DVINHOLM_DEVELOPMENT_FEATURES
     private DispatcherQueueTimer? _demoTimer;
     private uint _demoTick;
     private bool _demoDataPresent;
+    private Button _demoMonitorButton = null!;
+    private TextBlock _demoStatusText = null!;
+#endif
     private Task? _disconnectTask;
     private Task? _connectTask;
     private bool _closing;
@@ -43,14 +47,9 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
-#if DEBUG
-        // Test-only controls are opt-in for local Debug builds.
-        AddTestProfilesButton.Visibility = Visibility.Visible;
-        DemoMonitorPanel.Visibility = Visibility.Visible;
-        OfflineUdsSamplePanel.Visibility = Visibility.Visible;
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        InitializeDevelopmentControls();
 #endif
-        // Release and RC binaries always keep synthetic/demo UI hidden.
-
         LoadSavedBaudRate();
         BaudRate.SelectionChanged += BaudRate_SelectionChanged;
         DllPath.Text = LoadSavedDllPath();
@@ -82,7 +81,9 @@ public sealed partial class MainWindow : Window
         Closed += (_, _) =>
         {
             _closing = true;
+#if DVINHOLM_DEVELOPMENT_FEATURES
             StopDemoMonitor();
+#endif
 
             // Request cancellation synchronously, then perform all waits away
             // from the UI thread. RunUdsOperationAsync releases _udsGate from
@@ -639,9 +640,45 @@ public sealed partial class MainWindow : Window
         SetStatus($"Saved ECU profile '{savedProfile.Name}' as unverified. No diagnostic request was sent.");
     }
 
+#if DVINHOLM_DEVELOPMENT_FEATURES
+    private void InitializeDevelopmentControls()
+    {
+        var addTestProfiles = new Button { Content = "Add test profiles" };
+        addTestProfiles.Click += AddTestProfiles_Click;
+        ProfileActionsPanel.Children.Insert(2, addTestProfiles);
+
+        _demoMonitorButton = new Button { Content = "Start demo" };
+        _demoMonitorButton.Click += DemoMonitor_Click;
+        Grid.SetColumn(_demoMonitorButton, 0);
+        DeveloperMonitorHost.Children.Add(_demoMonitorButton);
+
+        _demoStatusText = new TextBlock
+        {
+            Text = "DEMO — synthetic data, no J2534 connection",
+            TextWrapping = TextWrapping.Wrap,
+            VerticalAlignment = VerticalAlignment.Center,
+            Visibility = Visibility.Collapsed
+        };
+        Grid.SetColumn(_demoStatusText, 1);
+        DeveloperMonitorHost.Children.Add(_demoStatusText);
+        DeveloperMonitorHost.Visibility = Visibility.Visible;
+
+        var offlinePanel = new StackPanel
+        {
+            Orientation = Orientation.Horizontal,
+            Spacing = 8
+        };
+        var previewUds = new Button { Content = "Preview UDS example (offline)" };
+        previewUds.Click += PreviewUdsSample_Click;
+        offlinePanel.Children.Add(previewUds);
+        var exportSynthetic = new Button { Content = "Export synthetic UDS TXT" };
+        exportSynthetic.Click += ExportOfflineUdsTxt_Click;
+        offlinePanel.Children.Add(exportSynthetic);
+        StatusPanel.Children.Insert(0, offlinePanel);
+    }
+
     private void AddTestProfiles_Click(object sender, RoutedEventArgs e)
     {
-#if DEBUG
         const string standardId = "dvinholm-test-standard-11bit";
         const string extendedId = "dvinholm-test-extended-29bit";
 
@@ -691,9 +728,9 @@ public sealed partial class MainWindow : Window
         {
             SetStatus("Test profiles were not saved. Check the local Dvinholm folder permissions and available disk space.");
         }
-#endif
     }
 
+#endif
     private async void ImportProfiles_Click(object sender, RoutedEventArgs e)
     {
         try
@@ -1174,12 +1211,12 @@ public sealed partial class MainWindow : Window
         return true;
     }
 
+#if DVINHOLM_DEVELOPMENT_FEATURES
     private bool CanUseOfflineUdsSample() =>
         !_closing && !_connected && _demoTimer is null && _udsGate.CurrentCount > 0;
 
     private void PreviewUdsSample_Click(object sender, RoutedEventArgs e)
     {
-#if DEBUG
         // A preview is independent of the live J2534/UDS stack. Keep it
         // distinct from real diagnostic output and from the CAN demo feed.
         if (!CanUseOfflineUdsSample())
@@ -1190,12 +1227,10 @@ public sealed partial class MainWindow : Window
         }
 
         SetStatus(UdsOfflineSample.Format());
-#endif
     }
 
     private async void ExportOfflineUdsTxt_Click(object sender, RoutedEventArgs e)
     {
-#if DEBUG
         // Export only the *fixed synthetic fixture*. Do not export StatusText:
         // it can contain actual VIN, DID or DTC results in a live session.
         if (!CanUseOfflineUdsSample())
@@ -1243,9 +1278,9 @@ public sealed partial class MainWindow : Window
             SetStatus("Synthetic UDS TXT export failed. " +
                 "Check destination permissions and available disk space.");
         }
-#endif
     }
 
+#endif
     private async void ReadDid_Click(object sender, RoutedEventArgs e)
     {
         if (!TryParseDid(out var did)) return;
@@ -1356,13 +1391,14 @@ public sealed partial class MainWindow : Window
 
     private async void Connect_Click(object sender, RoutedEventArgs e)
     {
-        // Demo never touches the real adapter. Do not allow either path to
-        // transition into the other while its frame source is running.
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        // Never connect a real J2534 session while a synthetic demo is active.
         if (_demoTimer is not null)
         {
             SetStatus("Stop the offline CAN demo before connecting a J2534 adapter.");
             return;
         }
+#endif
 
         if (_connected)
         {
@@ -1430,7 +1466,9 @@ public sealed partial class MainWindow : Window
                 _disconnectTask = null;
                 HardwareFilterButton.IsEnabled = _connected;
                 ConnectButton.IsEnabled = true;
-                DemoMonitorButton.IsEnabled = !_connected && !_closing;
+#if DVINHOLM_DEVELOPMENT_FEATURES
+                _demoMonitorButton.IsEnabled = !_connected && !_closing;
+#endif
             }
             return;
         }
@@ -1448,12 +1486,14 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+#if DVINHOLM_DEVELOPMENT_FEATURES
         // Never combine previously generated demo rows with real CAN capture.
         if (_demoDataPresent)
             ClearDemoData();
+        _demoMonitorButton.IsEnabled = false;
+#endif
 
         var dllPath = DllPath.Text.Trim();
-        DemoMonitorButton.IsEnabled = false;
         ConnectButton.IsEnabled = false;
         StartButton.IsEnabled = false;
         SetUdsEnabled(false);
@@ -1504,7 +1544,9 @@ public sealed partial class MainWindow : Window
             if (!_closing)
             {
                 ConnectButton.IsEnabled = true;
-                DemoMonitorButton.IsEnabled = !_connected;
+#if DVINHOLM_DEVELOPMENT_FEATURES
+                _demoMonitorButton.IsEnabled = !_connected;
+#endif
             }
         }
     }
@@ -1514,7 +1556,10 @@ public sealed partial class MainWindow : Window
 
     private void StartMonitor()
     {
-        if (!_connected || _demoTimer is not null) return;
+        if (!_connected) return;
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        if (_demoTimer is not null) return;
+#endif
 
         // A cancelled monitor may still be unwinding from a native adapter call.
         // Never start a second reader until the previous task has actually ended.
@@ -1713,26 +1758,32 @@ public sealed partial class MainWindow : Window
         UpdateFrameCountText();
     }
 
+#if DVINHOLM_DEVELOPMENT_FEATURES
     private void ClearDemoData()
     {
         // A stopped demo keeps its data for CSV until explicitly cleared or
         // the user begins a genuine J2534 connection.
         ResetMonitorView();
         _demoDataPresent = false;
-        DemoStatusText.Visibility = Visibility.Collapsed;
+        _demoStatusText.Visibility = Visibility.Collapsed;
     }
 
+#endif
     private void Clear_Click(object sender, RoutedEventArgs e)
     {
+#if DVINHOLM_DEVELOPMENT_FEATURES
         if (_demoTimer is null && _demoDataPresent)
+        {
             ClearDemoData();
-        else
-            ResetMonitorView();
+            return;
+        }
+#endif
+        ResetMonitorView();
     }
 
+#if DVINHOLM_DEVELOPMENT_FEATURES
     private void DemoMonitor_Click(object sender, RoutedEventArgs e)
     {
-#if DEBUG
         if (_demoTimer is not null)
         {
             StopDemoMonitor();
@@ -1755,9 +1806,9 @@ public sealed partial class MainWindow : Window
         IdFilter.Text = string.Empty;
         _demoDataPresent = true;
         _demoTick = 0;
-        DemoStatusText.Text = "DEMO ACTIVE — synthetic CAN frames only; no adapter or vehicle.";
-        DemoStatusText.Visibility = Visibility.Visible;
-        DemoMonitorButton.Content = "Stop demo";
+        _demoStatusText.Text = "DEMO ACTIVE — synthetic CAN frames only; no adapter or vehicle.";
+        _demoStatusText.Visibility = Visibility.Visible;
+        _demoMonitorButton.Content = "Stop demo";
         ConnectButton.IsEnabled = false;
         DroppedFrameText.Text = "0 dropped";
 
@@ -1769,30 +1820,22 @@ public sealed partial class MainWindow : Window
         timer.Start();
         EmitDemoFrames(); // Make the first batch visible immediately.
         SetStatus("DEMO ONLY: synthetic CAN frames. J2534 and diagnostics are not connected.");
-#endif
     }
 
-    private void DemoTimer_Tick(DispatcherQueueTimer sender, object args)
-    {
-#if DEBUG
+    private void DemoTimer_Tick(DispatcherQueueTimer sender, object args) =>
         EmitDemoFrames();
-#endif
-    }
 
     private void EmitDemoFrames()
     {
-#if DEBUG
         if (_demoTimer is null || _closing)
             return;
 
         foreach (var row in CanDemoFrameGenerator.CreateBatch(_demoTick++))
             AddFrame(row);
-#endif
     }
 
     private void StopDemoMonitor()
     {
-#if DEBUG
         var timer = _demoTimer;
         _demoTimer = null;
         if (timer is null)
@@ -1800,26 +1843,32 @@ public sealed partial class MainWindow : Window
 
         timer.Stop();
         timer.Tick -= DemoTimer_Tick;
-        DemoMonitorButton.Content = "Start demo";
+        _demoMonitorButton.Content = "Start demo";
         if (_demoDataPresent)
-            DemoStatusText.Text = "DEMO DATA — synthetic frames retained for filtering/CSV.";
+            _demoStatusText.Text = "DEMO DATA — synthetic frames retained for filtering/CSV.";
         if (!_closing && !_connected && _connectTask is not { IsCompleted: false })
             ConnectButton.IsEnabled = true;
-#endif
     }
 
+#endif
     private async void Csv_Click(object sender, RoutedEventArgs e)
     {
         try
         {
+#if DVINHOLM_DEVELOPMENT_FEATURES
+            var name = _demoDataPresent ? "can-demo-SYNTHETIC" : "can-log";
+            var synthetic = _demoDataPresent;
+#else
+            const string name = "can-log";
+            const bool synthetic = false;
+#endif
             var destinationPath = ReportSavePathPicker.PickPath(
                 WindowNative.GetWindowHandle(this),
-                _demoDataPresent ? "can-demo-SYNTHETIC" : "can-log",
-                ".csv", "CSV");
+                name, ".csv", "CSV");
             if (destinationPath is null) return;
 
             // Exported CAN logs also belong outside the application folder.
-            // This applies to both synthetic demo and ordinary CSV captures.
+            // Guard exported CAN captures in both production and Development.
             if (ReportExportDestinationGuard.IsInsideApplicationDirectory(
                     destinationPath, AppContext.BaseDirectory))
             {
@@ -1827,11 +1876,15 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
-            var lines = CanMonitorCsv.BuildLines(_frames, _demoDataPresent);
+            var lines = CanMonitorCsv.BuildLines(_frames, synthetic);
             await ReportExportFileWriter.WriteLinesAsync(destinationPath, lines);
-            SetStatus(_demoDataPresent
+#if DVINHOLM_DEVELOPMENT_FEATURES
+            SetStatus(synthetic
                 ? $"SYNTHETIC DEMO CSV saved: {Path.GetFileName(destinationPath)}."
                 : $"CSV saved: {Path.GetFileName(destinationPath)}.");
+#else
+            SetStatus($"CSV saved: {Path.GetFileName(destinationPath)}.");
+#endif
         }
         catch (Exception)
         {
