@@ -1,9 +1,20 @@
+## Stable v0.2.3 Windows LTSC acceptance kit (2026-10-24)
+
+- [x] Postmerge PR #461 main CI #3326, Stable staging #5 and Portable RC #13 succeeded on fa919f9.
+- [x] Add a Windows PowerShell 5.1 acceptance kit that checks real staged ZIP and exact main SHA, refuses to overwrite existing installations, extracts to an isolated folder, and writes eight manual offline GUI checks.
+- [x] Package the read-only verifier and guide separately from the executable ZIP; CI checks an actual isolated extraction and receipt of its report without GUI launch.
+- [ ] Confirm this PR's branch CI, staging and postmerge main CI/staging.
+- [ ] Confirm real Windows 11 LTSC launch/restart and offline profile, CSV and CAN speed behavior; do not claim GUI acceptance from Windows runner extraction.
+- [ ] Perform real v0.2.2 to 0.2.3 Stable update smoke after publication. Offline updater replacement/rollback already tested in CI; physical J2534 deferred.
+
+---
+
 ## Stable 0.2.3 automatically staged verification (2026-10-24)
 
 - [x] PR #460 merged as `49379fe`, postmerge main CI #3323 and RC #11 both passed. Development 1103/1103 plus production-only 8/8 x86 smoke tests are independently covered.
 - [x] Stage verified Stable v0.2.3 x86 Portable ZIP automatically for relevant `main` pushes and PRs, alongside the manual validation mode. Require strict SHA-256 and downloaded GitHub Actions artifact roundtrip.
 - [x] Confine any actual release creation to manual `workflow_dispatch` with exact main SHA, explicit approval, downloaded draft audit and restricted write permission.
-- [ ] Require CI on this PR, postmerge main staging workflow (including 1103+8 tests and eight ZIP/DLL checks) before marking the stage verified.
+- [x] PR #461 CI #3324/#3325, staging #4, RC #12 and MSIX #72 passed. Main CI #3326, staging #5 and RC #13 passed after merge.
 - [ ] Interactive Windows 11 LTSC GUI, persisted profiles, 0.2.2→0.2.3 updater acceptance, and explicit publish authorization remain pending; physical J2534 postponed.
 
 ---

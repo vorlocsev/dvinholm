@@ -6,6 +6,8 @@ on:
     paths:
       - ".github/workflows/release-v0.2.3.yml"
       - "eng/Test-ReleaseCandidate023.ps1"
+      - "eng/Prepare-StableAcceptance023.ps1"
+      - "docs/WINDOWS_ACCEPTANCE_0.2.3.md"
       - "eng/Package-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistributionExtraction.ps1"
@@ -16,6 +18,8 @@ on:
     paths:
       - ".github/workflows/release-v0.2.3.yml"
       - "eng/Test-ReleaseCandidate023.ps1"
+      - "eng/Prepare-StableAcceptance023.ps1"
+      - "docs/WINDOWS_ACCEPTANCE_0.2.3.md"
       - "eng/Package-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistributionExtraction.ps1"
@@ -145,6 +149,27 @@ jobs:
         run: |
           ./eng/Test-ReleaseCandidate023.ps1 -ArchiveDirectory artifacts/stable-v023-roundtrip -ExpectedCommit '${{ github.sha }}' -Channel stable
           'Stable v0.2.3 staged, 8 gates and roundtrip passed. Not published by validation job.' | Out-File $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Verify Windows acceptance-kit isolated extraction (no GUI)
+        shell: powershell
+        run: |
+          $destination = Join-Path $env:RUNNER_TEMP 'dvinholm-stable023-acceptance'
+          ./eng/Prepare-StableAcceptance023.ps1 -ArchiveDirectory artifacts/stable-v023-roundtrip -ExpectedCommit '${{ github.sha }}' -DestinationDirectory $destination
+          if (-not (Test-Path -LiteralPath (Join-Path $destination 'ACCEPTANCE-0.2.3.txt') -PathType Leaf)) { throw 'Acceptance report missing.' }
+          if (-not (Test-Path -LiteralPath (Join-Path $destination 'Dvinholm.App.exe') -PathType Leaf)) { throw 'Application missing.' }
+          Remove-Item -LiteralPath $destination -Recurse -Force
+
+      - name: Upload read-only Windows acceptance kit
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-v0.2.3-WINDOWS-ACCEPTANCE-KIT
+          path: |
+            eng/Prepare-StableAcceptance023.ps1
+            eng/Test-ReleaseCandidate023.ps1
+            eng/Test-WindowsDistribution.ps1
+            eng/Test-WindowsDistributionExtraction.ps1
+            docs/WINDOWS_ACCEPTANCE_0.2.3.md
+          if-no-files-found: error
 
   publish:
     # No tag/release is created on PR, main push, or dry-run dispatch.
