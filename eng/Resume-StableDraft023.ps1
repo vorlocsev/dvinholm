@@ -68,7 +68,15 @@ try {
         Write-Host 'Read-only verification succeeded. Draft remains unpublished.'
         return
     }
-    $updatedJson = & gh api --method PATCH -F draft=false "repos/$Repository/releases/$($draft.id)"
+    $notesPath = Join-Path (Split-Path -Parent $PSScriptRoot) '.github/release-notes-v0.2.3.md'
+    if (-not (Test-Path -LiteralPath $notesPath -PathType Leaf)) {
+        throw 'Missing publication-ready release notes.'
+    }
+    $notes = [IO.File]::ReadAllText($notesPath)
+    if ($notes -match 'DRAFT NOTES|NOT PUBLISHED' -or $notes -notmatch 'Windows 11 LTSC') {
+        throw 'Publication notes contain draft markers or are incomplete.'
+    }
+    $updatedJson = & gh api --method PATCH -F draft=false -f "body=$notes" "repos/$Repository/releases/$($draft.id)"
     if ($LASTEXITCODE -ne 0) { throw 'GitHub rejected draft publication.' }
     $updated = ConvertFrom-Json -InputObject ([string]::Join([Environment]::NewLine, [string[]]$updatedJson))
     if ($updated.draft -or $updated.prerelease -or $updated.tag_name -cne 'v0.2.3' -or $updated.target_commitish -cne $approved -or $updated.id -ne $draft.id) {
@@ -77,7 +85,7 @@ try {
     $liveJson = & gh api "repos/$Repository/releases/$($draft.id)"
     if ($LASTEXITCODE -ne 0) { throw 'Cannot audit published release.' }
     $live = ConvertFrom-Json -InputObject ([string]::Join([Environment]::NewLine, [string[]]$liveJson))
-    if ($live.draft -or $live.prerelease -or $live.tag_name -cne 'v0.2.3' -or $live.target_commitish -cne $approved -or @($live.assets).Count -ne 2) {
+    if ($live.draft -or $live.prerelease -or $live.tag_name -cne 'v0.2.3' -or $live.target_commitish -cne $approved -or @($live.assets).Count -ne 2 -or $live.body -match 'DRAFT NOTES|NOT PUBLISHED') {
         throw 'Published release metadata audit failed.'
     }
     foreach ($asset in $assets) {
