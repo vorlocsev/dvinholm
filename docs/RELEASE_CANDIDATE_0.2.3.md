@@ -5,14 +5,14 @@ Actions test artifact, not an update target, installer, or GitHub release.
 
 | Gate | Required evidence | Status |
 | --- | --- | --- |
-| 1 | Exact-commit Windows x86 CI green; all tests and Stable audit | Pass on main CI #3320 |
-| 2 | Candidate-only Portable produced from 0.2.3 version override | Pass on main RC #9 |
-| 3 | Eight RC checks: exact files, bounded ZIP size, SHA256, ZIP safety, isolated x86 extraction, actual DLL, assembly version, informational commit SHA | Pass on main RC #9 |
-| 4 | GitHub Actions download of candidate and revalidation without modifying SHA manifest | Pass on main RC #9 |
-| 5 | Development Portable/Lite ZIP checks and disabled trimming/AOT | Pass on main CI #3320 |
+| 1 | Exact-commit Windows x86 CI green; all tests and Stable audit | Pass on main CI #3326 |
+| 2 | Candidate-only Portable produced from 0.2.3 version override | Pass on main RC #13 |
+| 3 | Eight RC checks: exact files, bounded ZIP size, SHA256, ZIP safety, isolated x86 extraction, actual DLL, assembly version, informational commit SHA | Pass on main RC #13 |
+| 4 | GitHub Actions download of candidate and revalidation without modifying SHA manifest | Pass on main RC #13 |
+| 5 | Development Portable/Lite ZIP checks and disabled trimming/AOT | Pass on main CI #3326 |
 | 6 | Manual Stable-profile Windows 11 LTSC startup/close/relaunch, correct disconnected status, all test/demo buttons absent | Pending |
 | 7 | Manual Stable CAN multi-ID filter 7E0,7E8, ordinary CSV and profile persistence (offline demo separately checked in Development) | Pending |
-| 8 | Manual installed-0.2.2 updater/rollback behavior, finalized notes, authorized publish and published-asset audit | Pending |
+| 8 | Offline updater replacement/rollback in CI; live v0.2.2 to v0.2.3 update only after publication | CI done, post-publication smoke pending |
 
 Strictly no branch named release/v0.2.3, tag v0.2.3, Stable release
 publication, MSIX signing/trust mutation, or physical J2534 testing during
@@ -37,3 +37,7 @@ The separate `tests/Dvinholm.Stable.Tests` project runs eight Windows x86 smoke 
 - On relevant application, distribution-script or test changes in `main`, the protected, read-only validation job compiles real Release x86 with developer features disabled, runs eight production smoke checks and existing offline regressions, then stages Portable ZIP with SHA-256 and confirms artifact download integrity.
 - `publish` remains conditioned solely on an explicitly approved `workflow_dispatch` on `main` with the exact SHA. A push or pull request cannot create a tag or release, including a draft.
 - Staged GitHub Actions artifacts are **TEST-ONLY**, not public GitHub Releases or updater targets. Never claim the manual Windows 11 LTSC GUI/installed-update acceptance gates have passed due to a successful stage.
+
+## Windows offline acceptance kit
+
+Download Dvinholm-v0.2.3-STAGED-NOT-PUBLISHED and Dvinholm-v0.2.3-WINDOWS-ACCEPTANCE-KIT from the same exact-commit staging run. Follow docs/WINDOWS_ACCEPTANCE_0.2.3.md to verify SHA-256, exact binary version and extract to a safe isolated folder. No WinUI launch or installed update is performed by the helper.
