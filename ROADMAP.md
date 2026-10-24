@@ -1,3 +1,13 @@
+## Development 0.2.4 CAN Monitor arbitration ID boundary (2026-10-25)
+
+- [x] Main CI #3387, Stable staging #35, RC #36 and MSIX #95 succeeded after PR #472.
+- [x] Fix the software CAN-ID filter to reject hexadecimal identifiers outside the 29-bit arbitration range (`0x00000000` through `0x1FFFFFFF`), whether entered alone or mixed with valid comma-separated IDs.
+- [x] Apply the same numeric validation when matching buffered CAN rows and preserve historical numeric 11/29-bit matching and empty-query wildcard behavior.
+- [x] Add eight offline checks, including both range boundaries, invalid multi-ID fail-closed handling, unchanged buffered history, and virtual-J2534 receive-only operation.
+- [ ] Verify PR and postmerge main CI before marking integration complete. Stable v0.2.3 binaries are unchanged; physical J2534 tests are still deferred.
+
+---
+
 ## Next Development milestone: 0.2.4 (unreleased)
 
 - [x] Main CI #3377, Stable staging #33 and public Stable network audit #6 passed at `4923c81` after PR #471.
