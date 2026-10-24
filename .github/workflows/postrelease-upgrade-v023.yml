@@ -7,11 +7,13 @@ on:
       - ".github/workflows/postrelease-upgrade-v023.yml"
       - "eng/Test-RealStableUpgrade023.ps1"
       - "tests/Dvinholm.App.Tests/PublishedStableUpgrade023WorkflowTests.cs"
+      - "tests/Dvinholm.App.Tests/PublishedStableUpdaterHelperIntegrationTests.cs"
   pull_request:
     paths:
       - ".github/workflows/postrelease-upgrade-v023.yml"
       - "eng/Test-RealStableUpgrade023.ps1"
       - "tests/Dvinholm.App.Tests/PublishedStableUpgrade023WorkflowTests.cs"
+      - "tests/Dvinholm.App.Tests/PublishedStableUpdaterHelperIntegrationTests.cs"
   workflow_dispatch:
 
 permissions:
@@ -73,4 +75,30 @@ jobs:
           ./eng/Test-RealStableUpgrade023.ps1 -PreviousArchiveDirectory artifacts/published-v022 -CandidateArchiveDirectory artifacts/published-v023 -ExpectedCommit '91ecc343608c931eb033523e3db6012a6c5dbd58'
           if (-not $?) { throw 'Published-to-published offline update rehearsal failed.' }
           'Eight offline gates passed on the original public v0.2.2 and v0.2.3 ZIP files. No installed application, live updater, GUI or real J2534 touched.' |
+            Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Set up pinned .NET SDK and x86 test host for real updater helper
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Install x86 .NET 10 test host
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.401'
+          architecture: x86
+
+      - name: Run production updater helper against real published ZIP payloads
+        shell: pwsh
+        env:
+          DVINHOLM_PUBLIC_V022_ZIP: ${{ github.workspace }}\\artifacts\\published-v022\\Dvinholm-Windows-x86.zip
+          DVINHOLM_PUBLIC_V023_ZIP: ${{ github.workspace }}\\artifacts\\published-v023\\Dvinholm-Windows-x86.zip
+        run: |
+          if (-not (Test-Path -LiteralPath $env:DVINHOLM_PUBLIC_V022_ZIP) -or
+              -not (Test-Path -LiteralPath $env:DVINHOLM_PUBLIC_V023_ZIP)) {
+            throw 'Both downloaded public ZIPs are mandatory for the integration test.'
+          }
+          dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --filter FullyQualifiedName~PublishedStableUpdaterHelperIntegrationTests --logger "trx;LogFileName=published-updater-helper.trx"
+          if ($LASTEXITCODE -ne 0) { throw 'Real published payload updater helper regression failed.' }
+          'The original updater replacement helper passed success and forced-startup-failure rollback on published v0.2.2 and v0.2.3 ZIP contents. Watcher, GUI launches and HKCU Run registration were mocked. Actual installed-app updater smoke remains pending.' |
             Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append

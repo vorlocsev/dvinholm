@@ -1,10 +1,20 @@
+## Published Stable 0.2.3 production-updater helper regression (2026-10-24)
+
+- [x] PR #469 merged as `80b0563`: main CI #3367, staging #29, read-only published ZIP audit #2 succeeded.
+- [x] Add a dedicated Windows x86 integration fixture that extracts **published** v0.2.2 and v0.2.3 ZIPs and runs the **actual generated replacement helper** on a disposable v0.2.2 tree, both for new-app startup success and forced startup failure/rollback.
+- [x] Cover eight observable checks: separate public inputs, original version identity, baseline hashes, isolated user data, forward-byte identity, rollback-byte identity, stale-file cleanup/restoration, unchanged ECU profile and CAN speed.
+- [x] Stub only GUI/process starts, independent guard startup and HKCU Run key manipulation. Keep original backup/Robocopy/recovery logic active. No real app installation is touched.
+- [ ] Confirm PR and postmerge Windows CI. Interactive Stable-channel 0.2.2 to 0.2.3 updater **remains unverified** without an actual Windows user run; J2534 hardware tests still postponed.
+
+---
+
 ## Stable v0.2.3 public-to-public archive upgrade audit (2026-10-24)
 
 - [x] Main CI #3361 and staging #27 passed after post-release documentation PR #468 merged as `9a45f76`.
 - [x] Add a separate **read-only, automatically triggered Windows GitHub Actions audit** which downloads the actual published v0.2.2 and v0.2.3 Portable ZIPs with strict checksum manifests.
 - [x] Pin the approved published v0.2.3 release target `91ecc34`, exact 62,245,250-byte ZIP and SHA-256 `fae05958bf1ca4ef92f915508b66da5acb85b4c975c6eb84a950cb8da707ed44`.
 - [x] Reuse eight disposable Windows mirror/backup/rollback gates and add eight workflow contract tests. No app installations, GUI runs or release modifications.
-- [ ] Verify this PR's CI and published-artifact integration job, merge only after green, and confirm postmerge main runs.
+- [x] PR #469 CI #3366 and staging #28 passed; merged as `80b0563`. Main CI #3367, staging #29 and the published ZIP audit #2 succeeded.
 - [ ] Still requires **actual installed v0.2.2 -> published v0.2.3** updater smoke on Windows 11 LTSC. Offline mirror checks cannot verify the interactive updater, physical J2534 or vehicle.
 
 ---
