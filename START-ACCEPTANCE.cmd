@@ -33,6 +33,14 @@ if /I "%~1"=="--prepare-only" (
   echo PASS: verified offline extraction only; no GUI was launched.
   exit /b 0
 )
+rem The app also detects ACCEPTANCE-0.2.3.txt on direct EXE restart.
+rem Never let its settings, profiles or CAN speed write to installed v0.2.2.
+set "DVINHOLM_ACCEPTANCE_DATA_DIR=%OUTPUT%\acceptance-user-data"
+if not exist "%DVINHOLM_ACCEPTANCE_DATA_DIR%" mkdir "%DVINHOLM_ACCEPTANCE_DATA_DIR%"
+if errorlevel 1 (
+  echo ERROR: Cannot create separate acceptance settings folder. Refusing startup.
+  exit /b 1
+)
 echo Verified 0.2.3 Portable ZIP. Attempting to open ONLY the separate test copy.
 echo A launched process is NOT proof of working WinUI. Inspect the window yourself.
 pushd "%OUTPUT%"

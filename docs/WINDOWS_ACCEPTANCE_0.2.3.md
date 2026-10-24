@@ -19,6 +19,13 @@ human Windows testing. The double-click launcher starts **only the newly extract
    only to the new sibling Dvinholm-023-acceptance folder. After verification
    it launches the **test copy**, then opens ACCEPTANCE-0.2.3.txt in Notepad.
 
+The test copy now uses its own `acceptance-user-data` directory inside
+`Dvinholm-023-acceptance` for ECU profiles, CAN baud rate and J2534 DLL path.
+The receipt keeps that isolation active when the EXE is relaunched directly.
+While acceptance mode is active, hardware connection and built-in update
+actions are disabled. The installed v0.2.2 data in
+`%LOCALAPPDATA%\Dvinholm` is not used or modified by the test copy.
+
 The user must still observe the window and tick the manual checklist: a
 process launch is **not** proof that WinUI rendered successfully. The batch
 file does not overwrite the installed 0.2.2 application, register auto-run,

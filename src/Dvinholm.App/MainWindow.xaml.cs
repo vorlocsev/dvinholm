@@ -71,6 +71,16 @@ public sealed partial class MainWindow : Window
         UpdateSource.IsEnabled = false;
         UpdateStatusText.Text = "Lite MSIX: use package updates. Portable updater disabled.";
 #endif 
+        if (DvinholmUserDataDirectory.IsAcceptanceLaunch)
+        {
+            // This is a verified disposable copy, not the installed app.
+            // Keep private profile/speed/DLL settings and prevent updates
+            // or a real adapter session during an offline GUI acceptance.
+            UpdateButton.IsEnabled = false;
+            UpdateSource.IsEnabled = false;
+            ConnectButton.IsEnabled = false;
+            UpdateStatusText.Text = "Offline acceptance copy: updates and hardware connections disabled; user data isolated.";
+        }
         _session.ReadError += ex => DispatcherQueue.TryEnqueue(() =>
         {
             var detail = J2534Native.SanitizeDriverDiagnostic(ex.Message);
@@ -186,6 +196,8 @@ public sealed partial class MainWindow : Window
 
     private async void UpdateButton_Click(object sender, RoutedEventArgs e)
     {
+        if (DvinholmUserDataDirectory.IsAcceptanceLaunch)
+            return; // Never replace a verified offline acceptance copy or installed app.
 #if DVINHOLM_MSIX
         // Even if the UI re-enables this control, never write MSIX-managed files.
         return;
@@ -318,8 +330,7 @@ public sealed partial class MainWindow : Window
         {
             var detail = FormatSafeException(ex, "Unexpected update error.");
             var logPath = Path.Combine(
-                Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-                "Dvinholm",
+                DvinholmUserDataDirectory.Current,
                 "update.log");
             try
             {
@@ -346,8 +357,7 @@ public sealed partial class MainWindow : Window
 
 
     private static string ProfileCatalogPath => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "Dvinholm",
+        DvinholmUserDataDirectory.Current,
         "ecu-profiles.json");
 
     private void SetProfileCatalog(EcuProfileCatalog catalog)
@@ -858,8 +868,7 @@ public sealed partial class MainWindow : Window
 
 
     private static string CanBaudRateSettingsFile => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "Dvinholm",
+        DvinholmUserDataDirectory.Current,
         "can-baud-rate.txt");
 
     private void LoadSavedBaudRate()
@@ -911,8 +920,7 @@ public sealed partial class MainWindow : Window
     }
 
     private static string DllPathSettingsFile => Path.Combine(
-        Environment.GetFolderPath(Environment.SpecialFolder.LocalApplicationData),
-        "Dvinholm",
+        DvinholmUserDataDirectory.Current,
         "j2534-dll-path.txt");
 
     private static string LoadSavedDllPath()
@@ -1391,6 +1399,11 @@ public sealed partial class MainWindow : Window
 
     private async void Connect_Click(object sender, RoutedEventArgs e)
     {
+        if (DvinholmUserDataDirectory.IsAcceptanceLaunch)
+        {
+            SetStatus("Offline acceptance mode: J2534 connections are disabled.");
+            return;
+        }
 #if DVINHOLM_DEVELOPMENT_FEATURES
         // Never connect a real J2534 session while a synthetic demo is active.
         if (_demoTimer is not null)

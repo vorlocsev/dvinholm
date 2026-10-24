@@ -201,6 +201,11 @@ jobs:
           Copy-Item -LiteralPath BUILD_COMMIT.txt -Destination $kit
           Copy-Item -LiteralPath artifacts/stable-v023-roundtrip/Dvinholm-Windows-x86.zip -Destination $candidate
           Copy-Item -LiteralPath artifacts/stable-v023-roundtrip/SHA256SUMS.txt -Destination $candidate
+          $launcherSource = [IO.File]::ReadAllText((Join-Path $kit 'START-ACCEPTANCE.cmd'))
+          if (-not $launcherSource.Contains('DVINHOLM_ACCEPTANCE_DATA_DIR') -or
+              -not $launcherSource.Contains('acceptance-user-data')) {
+            throw 'One-click acceptance launcher must explicitly isolate profile and CAN settings.'
+          }
           Push-Location $kit
           try {
             & cmd.exe /d /c 'START-ACCEPTANCE.cmd --prepare-only'
