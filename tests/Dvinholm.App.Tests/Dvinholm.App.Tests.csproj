@@ -6,6 +6,8 @@
     <Nullable>enable</Nullable>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ImplicitUsings>enable</ImplicitUsings>
+    <!-- CI passes the same opt-in flag to tests and app; Stable keeps it false. -->
+    <DefineConstants Condition="'$(DvinholmDevelopmentFeatures)' == 'true'">$(DefineConstants);DVINHOLM_DEVELOPMENT_FEATURES</DefineConstants>
   </PropertyGroup>
 
   <ItemGroup>

@@ -14,12 +14,17 @@ internal static class CanMonitorCsv
     {
         ArgumentNullException.ThrowIfNull(frames);
 
+#if DVINHOLM_DEVELOPMENT_FEATURES
         var lines = new List<string>
         {
             syntheticDemo
                 ? "timestamp,id,type,dlc,data,source"
                 : "timestamp,id,type,dlc,data"
         };
+#else
+        // Production has no synthetic CSV variant at all.
+        var lines = new List<string> { "timestamp,id,type,dlc,data" };
+#endif
 
         foreach (var frame in frames)
         {
@@ -32,7 +37,11 @@ internal static class CanMonitorCsv
                 CsvCell(frame.Type),
                 frame.Dlc.ToString(CultureInfo.InvariantCulture),
                 CsvCell(frame.Data, alwaysQuote: true));
+#if DVINHOLM_DEVELOPMENT_FEATURES
             lines.Add(syntheticDemo ? line + ",SYNTHETIC_DEMO" : line);
+#else
+            lines.Add(line);
+#endif
         }
 
         return lines;

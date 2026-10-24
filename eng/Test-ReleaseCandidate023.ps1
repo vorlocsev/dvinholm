@@ -110,7 +110,8 @@ try {
     foreach ($name in @(
         'CanDemoFrameGenerator', 'UdsOfflineSample', 'UdsOfflineTextReport',
         'AddTestProfiles_Click', 'PreviewUdsSample_Click',
-        'ExportOfflineUdsTxt_Click', 'DemoMonitor_Click', 'EmitDemoFrames'
+        'ExportOfflineUdsTxt_Click', 'DemoMonitor_Click', 'EmitDemoFrames',
+        'SYNTHETIC_DEMO'
     )) {
         if ($metadata.Contains($name)) {
             throw "RC gate 6/8: Development-only code in Stable binary: $name"

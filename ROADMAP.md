@@ -4,7 +4,7 @@
 - [x] Stable XAML contains no test buttons: Add test profiles, Start demo, Preview UDS example (offline), Export synthetic UDS TXT. Only an explicit Development build injects these controls.
 - [x] Compile out fixture classes CanDemoFrameGenerator, UdsOfflineSample, UdsOfflineTextReport and all corresponding event handlers from Stable. Real VIN/DID/DTC, CAN Monitor, profile editor/import/export and CSV remain enabled.
 - [x] Extend v0.2.3 RC gate 6 to inspect the real packaged DLL and reject eight synthetic handler/type names while requiring VIN/DID/DTC handlers.
-- [x] Add eight Development regression tests for accessible smoke-test actions, and maintain eight RC gates on the actual Stable candidate.
+- [x] Add eight Development regression tests for accessible smoke-test actions (test assembly explicitly receives the build flag), and maintain eight RC gates on the actual Stable candidate. Production CSV is always the ordinary five-column schema and omits SYNTHETIC_DEMO.
 - [ ] Require 1087/1087 CI tests, Portable/Lite ZIP SHA-256, Stable audit, MSIX, RC artifact checks and postmerge main CI. Confirm UI omissions on Windows LTSC manually.
 - [ ] Do not mutate saved test profiles or published Stable v0.2.2. Hardware J2534/vehicle testing remains deferred.
 
