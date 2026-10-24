@@ -45,6 +45,19 @@ normally until signed with a trusted publisher certificate. The Portable file
 replacement updater is disabled in MSIX builds; Windows handles package updates
 through a separately configured signed distribution channel.
 
+## CAN Monitor CSV safety (Development)
+
+The CAN Monitor CSV writer preserves the existing five-field capture
+schema (timestamp, id, type, dlc, quoted data) and adds the sixth
+SYNTHETIC_DEMO source field only for explicitly synthetic demonstrations.
+Display text now escapes commas, double quotes and line breaks to keep
+each frame in its intended CSV columns. Unexpected spreadsheet formula
+prefixes in textual fields are neutralized with a leading apostrophe
+before CSV quoting. Numeric timestamp and DLC use invariant decimal.
+Eight automated tests cover compatibility and malformed display text.
+This is a CSV formatting hardening measure and does not claim any
+physical adapter or ECU testing.
+
 ## Roundtrip verification of GitHub Actions MSIX artifacts (Development)
 
 The experimental MSIX workflow now **uploads and downloads** its own

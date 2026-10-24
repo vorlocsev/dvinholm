@@ -1,9 +1,19 @@
+## Safe CAN Monitor CSV field encoding (Development, 2026-10-24)
+
+- [x] Escape delimiter commas, embedded double quotes, and CR/LF inside any display text field while preserving the historical five-column CAN capture and six-column SYNTHETIC_DEMO schemas.
+- [x] Neutralize spreadsheet formula operators in unexpectedly supplied text, including leading whitespace, without altering valid CAN hex/11-bit/29-bit values. Render typed timestamp and DLC in invariant decimal.
+- [x] Add eight synthetic Windows x86 tests: real capture, demo marker, comma, quotes, multiline, formula ID, whitespace-prefixed formula, empty/null inputs. No hardware or UI automation.
+- [ ] Require full CI Windows x86 1071/1071, Portable/Lite ZIP integrity and SHA-256, Stable audit, and unchanged experimental MSIX; merge only after green and verify postmerge main CI.
+- [ ] Manual Windows UI and real J2534 vehicle tests remain deferred. Stable v0.2.2, updater and trimming/AOT unchanged.
+
+---
+
 ## Uploaded experimental MSIX artifact roundtrip integrity (Development, 2026-10-24)
 
 - [x] Download the just-uploaded unsigned MSIX test artifact from GitHub Actions into an isolated folder and verify it against the original CI-built package.
 - [x] Reject anything other than exactly Dvinholm-Lite-x86-UNSIGNED.msix and matching .msix.sha256 at the artifact root; no extra files or nested directories; hash comparison to original output and strict sidecar verification.
 - [x] Eight Windows x86 synthetic fixture scenarios: valid, empty, missing MSIX, missing checksum, extra file, nested folder, modified package, modified sidecar. Use Windows PowerShell 5.1 and .NET SHA-256 without Get-FileHash.
-- [ ] Require Windows x86 CI 1063/1063, Portable/Lite ZIP SHA-256 and Stable audit, experimental MSIX upload/download roundtrip. Merge only after green and verify postmerge main CI.
+- [x] PR #454 passed CI #3290 1063/1063, Portable/Lite SHA-256, Stable audit, experimental MSIX #47 roundtrip, and merged as 848be14; main CI #3291 and MSIX #48 both passed.
 - [ ] No trusted signing, AppX install or runtime provisioning, LTSC WinUI launch or physical J2534 performed. Stable v0.2.2, Portable updater, trimming/AOT unchanged.
 
 ---
