@@ -1,10 +1,19 @@
+## Live GitHub Stable lookup and download audit (2026-10-25)
+
+- [x] PR #470 merged as `8b5978c`; main CI #3372, staging #31 and published-artifact audit #4 all passed.
+- [x] Add an opt-in Windows GitHub Actions network test using the **production** `GetLatestStableReleaseAsync` and `DownloadAndPrepareAsync` against the actual public v0.2.3 GitHub release.
+- [x] Eight checks cover immutable tag commit, public v0.2.3, asset SHA-256 and size, download endpoint, streamed binary/extraction, version 0.2.3, no acceptance-only receipt and removal of temporary staging.
+- [ ] Confirm live CI test and all PR checks before merging. No GUI, actual installed-app update or physical J2534 tests are implied by successful automation.
+
+---
+
 ## Published Stable 0.2.3 production-updater helper regression (2026-10-24)
 
 - [x] PR #469 merged as `80b0563`: main CI #3367, staging #29, read-only published ZIP audit #2 succeeded.
 - [x] Add a dedicated Windows x86 integration fixture that extracts **published** v0.2.2 and v0.2.3 ZIPs and runs the **actual generated replacement helper** on a disposable v0.2.2 tree, both for new-app startup success and forced startup failure/rollback.
 - [x] Cover eight observable checks: separate public inputs, original version identity, baseline hashes, isolated user data, forward-byte identity, rollback-byte identity, stale-file cleanup/restoration, unchanged ECU profile and CAN speed.
 - [x] Stub only GUI/process starts, independent guard startup and HKCU Run key manipulation. Keep original backup/Robocopy/recovery logic active. No real app installation is touched.
-- [ ] Confirm PR and postmerge Windows CI. Interactive Stable-channel 0.2.2 to 0.2.3 updater **remains unverified** without an actual Windows user run; J2534 hardware tests still postponed.
+- [x] PR #470 CI #3371, staging #30 and 2/2 production helper tests passed; merged as `8b5978c`. Main CI #3372, staging #31 and audit #4 succeeded. Interactive installed-app updater **remains unverified**; physical J2534 testing remains postponed.
 
 ---
 
