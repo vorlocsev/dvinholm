@@ -97,7 +97,7 @@
                                 Click="CreateProfile_Click"/>
                         <Button x:Name="EditProfileButton" Content="Edit selected"
                                 Click="EditProfile_Click" IsEnabled="False"/>
-                        <Button Content="Add test profiles" Click="AddTestProfiles_Click"/>
+                        <Button x:Name="AddTestProfilesButton" Content="Add test profiles" Click="AddTestProfiles_Click" Visibility="Collapsed"/>
                         <Button Content="Import JSON" Click="ImportProfiles_Click"/>
                         <Button Content="Export JSON" Click="ExportProfiles_Click"/>
                     </StackPanel>
@@ -117,7 +117,7 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Grid Grid.Row="0" ColumnSpacing="10" Margin="0,0,0,8">
+            <Grid x:Name="DemoMonitorPanel" Grid.Row="0" ColumnSpacing="10" Margin="0,0,0,8" Visibility="Collapsed">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
@@ -150,7 +150,7 @@
             <!-- Synthetic UDS example uses existing formatters and never reads an ECU.
                  Keep long examples scrollable so CAN Monitor remains visible. -->
             <StackPanel Spacing="6">
-                <StackPanel Orientation="Horizontal" Spacing="8">
+                <StackPanel x:Name="OfflineUdsSamplePanel" Orientation="Horizontal" Spacing="8" Visibility="Collapsed">
                     <Button x:Name="PreviewUdsSampleButton"
                             Content="Preview UDS example (offline)"
                             Click="PreviewUdsSample_Click"/>

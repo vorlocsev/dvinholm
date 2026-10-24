@@ -43,6 +43,14 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+#if DEBUG
+        // Test-only controls are opt-in for local Debug builds.
+        AddTestProfilesButton.Visibility = Visibility.Visible;
+        DemoMonitorPanel.Visibility = Visibility.Visible;
+        OfflineUdsSamplePanel.Visibility = Visibility.Visible;
+#endif
+        // Release and RC binaries always keep synthetic/demo UI hidden.
+
         LoadSavedBaudRate();
         BaudRate.SelectionChanged += BaudRate_SelectionChanged;
         DllPath.Text = LoadSavedDllPath();
