@@ -104,7 +104,24 @@ try {
             $inputStream.Dispose()
         }
     } finally { $archive.Dispose() }
-    Write-Host 'RC gate 6/8: actual root application DLL extracted safely.'
+    # Inspect the real packaged Release DLL for forbidden synthetic metadata.
+    # Production excludes both fixture types and their UI event handlers.
+    $metadata = [Text.Encoding]::UTF8.GetString([IO.File]::ReadAllBytes($dll))
+    foreach ($name in @(
+        'CanDemoFrameGenerator', 'UdsOfflineSample', 'UdsOfflineTextReport',
+        'AddTestProfiles_Click', 'PreviewUdsSample_Click',
+        'ExportOfflineUdsTxt_Click', 'DemoMonitor_Click', 'EmitDemoFrames'
+    )) {
+        if ($metadata.Contains($name)) {
+            throw "RC gate 6/8: Development-only code in Stable binary: $name"
+        }
+    }
+    foreach ($name in @('ReadVin_Click', 'ReadDid_Click', 'ReadDtc_Click')) {
+        if (-not $metadata.Contains($name)) {
+            throw "RC gate 6/8: live read-only diagnostic handler missing: $name"
+        }
+    }
+    Write-Host 'RC gate 6/8: Stable DLL excludes demo/test code but retains VIN/DID/DTC handlers.'
 
     $assemblyName = [Reflection.AssemblyName]::GetAssemblyName($dll)
     if ($assemblyName.Name -cne 'Dvinholm.App' -or

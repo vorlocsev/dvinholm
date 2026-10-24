@@ -56,7 +56,7 @@ jobs:
           $out = Join-Path $pwd 'artifacts\msix'
           New-Item -ItemType Directory -Path $out -Force | Out-Null
           $appxDir = $out.Replace('\','/') + '/'
-          & $msbuild 'src/Dvinholm.App/Dvinholm.App.csproj' '/restore' '/t:Rebuild' '/p:Configuration=Release' '/p:Platform=x86' '/p:RuntimeIdentifier=win-x86' '/p:DvinholmMsix=true' '/p:SelfContained=false' '/p:WindowsAppSDKSelfContained=false' '/p:GenerateAppxPackageOnBuild=true' '/p:AppxBundle=Never' '/p:AppxPackageSigningEnabled=false' '/p:PublishTrimmed=false' '/p:PublishAot=false' '/p:DebugType=none' '/p:DebugSymbols=false' ("/p:AppxPackageDir=" + $appxDir)
+          & $msbuild 'src/Dvinholm.App/Dvinholm.App.csproj' '/restore' '/t:Rebuild' '/p:Configuration=Release' '/p:Platform=x86' '/p:RuntimeIdentifier=win-x86' '/p:DvinholmMsix=true' '/p:DvinholmDevelopmentFeatures=true' '/p:SelfContained=false' '/p:WindowsAppSDKSelfContained=false' '/p:GenerateAppxPackageOnBuild=true' '/p:AppxBundle=Never' '/p:AppxPackageSigningEnabled=false' '/p:PublishTrimmed=false' '/p:PublishAot=false' '/p:DebugType=none' '/p:DebugSymbols=false' ("/p:AppxPackageDir=" + $appxDir)
           if ($LASTEXITCODE -ne 0) { throw "MSIX packaging failed with $LASTEXITCODE." }
 
       - name: Validate package and size

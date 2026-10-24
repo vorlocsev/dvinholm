@@ -9,6 +9,25 @@ Dvinholm is a WinUI 3 Windows **x86** application. The main distribution remains
 
 Lite is **not** an independent stable release just because CI publishes a prerelease artifact. Install prerequisites before launching Lite on Windows. It uses the same application and J2534 backend, but its Windows App SDK bootstrap/runtime dependencies still need a real Windows launch smoke test. Never mix Portable and Lite DLLs in the same installation folder.
 
+## Release/Stable build profile
+
+Since the planned **v0.2.3** Stable candidate, normal Release builds default
+to `DvinholmDevelopmentFeatures=false`, so **Start demo**, **Add test
+profiles**, **Preview UDS example (offline)** and **Export synthetic UDS
+TXT** are absent from the production interface and compiled handlers.
+The generator classes `CanDemoFrameGenerator`, `UdsOfflineSample` and
+`UdsOfflineTextReport` are not compiled into Stable binaries. This is
+a build-time separation, not merely a disabled-button state.
+
+Development CI, synthetic regression tests and unsigned experimental MSIX
+explicitly opt in with `DvinholmDevelopmentFeatures=true`. The v0.2.3
+candidate uses false and validates its real packaged DLL for excluded
+fixture symbols. VIN/DID/DTC reads, real CAN Monitor, profile editing,
+import/export and ordinary CSV remain available.
+
+No saved ECU profiles are deleted, including data previously generated
+through Development. Existing published Stable v0.2.2 is unchanged.
+
 ## Minimal Lite MSIX (experimental)
 
 A dedicated x86 MSIX build excludes both **.NET 10 Desktop Runtime** and

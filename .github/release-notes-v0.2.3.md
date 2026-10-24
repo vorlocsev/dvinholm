@@ -3,6 +3,7 @@
 This file prepares the next Stable release. It is not release approval.
 
 ## Since v0.2.2
+- **Stable cleanup:** Start demo, Add test profiles, Preview UDS example (offline), and Export synthetic UDS TXT are omitted from production UI and compiled event handlers; synthetic fixture generators are also removed. Development retains those controls for offline testing. Existing stored profiles are preserved.
 - CAN Monitor software display filter supports up to 16 comma-separated
   exact CAN IDs (e.g. 7E0,7E8,18DAF110), retaining filtered history;
   J2534 hardware filtering remains single-ID only.

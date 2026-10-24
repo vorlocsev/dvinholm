@@ -92,12 +92,11 @@
                                   Unchecked="MarkedVerifiedOnly_Changed"
                                   VerticalAlignment="Bottom"/>
                     </Grid>
-                    <StackPanel Grid.Row="1" Orientation="Horizontal" Spacing="8">
+                    <StackPanel x:Name="ProfileActionsPanel" Grid.Row="1" Orientation="Horizontal" Spacing="8">
                         <Button x:Name="CreateProfileButton" Content="New profile"
                                 Click="CreateProfile_Click"/>
                         <Button x:Name="EditProfileButton" Content="Edit selected"
                                 Click="EditProfile_Click" IsEnabled="False"/>
-                        <Button Content="Add test profiles" Click="AddTestProfiles_Click"/>
                         <Button Content="Import JSON" Click="ImportProfiles_Click"/>
                         <Button Content="Export JSON" Click="ExportProfiles_Click"/>
                     </StackPanel>
@@ -117,17 +116,12 @@
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
             </Grid.RowDefinitions>
-            <Grid Grid.Row="0" ColumnSpacing="10" Margin="0,0,0,8">
+            <!-- Populated solely by the opt-in Development build. -->
+            <Grid x:Name="DeveloperMonitorHost" Grid.Row="0" ColumnSpacing="10" Margin="0,0,0,8" Visibility="Collapsed">
                 <Grid.ColumnDefinitions>
                     <ColumnDefinition Width="Auto"/>
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
-                <Button x:Name="DemoMonitorButton" Content="Start demo"
-                        Click="DemoMonitor_Click"/>
-                <TextBlock x:Name="DemoStatusText" Grid.Column="1"
-                           Text="DEMO — synthetic data, no J2534 connection"
-                           Visibility="Collapsed" TextWrapping="Wrap"
-                           VerticalAlignment="Center"/>
             </Grid>
             <Grid Grid.Row="1" ColumnSpacing="10" Margin="0,0,0,10">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="75"/><ColumnDefinition Width="125"/><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/><ColumnDefinition Width="150"/><ColumnDefinition Width="100"/></Grid.ColumnDefinitions>
@@ -147,17 +141,7 @@
         </Grid>
 
         <Border Grid.Row="4" Padding="10" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-            <!-- Synthetic UDS example uses existing formatters and never reads an ECU.
-                 Keep long examples scrollable so CAN Monitor remains visible. -->
-            <StackPanel Spacing="6">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <Button x:Name="PreviewUdsSampleButton"
-                            Content="Preview UDS example (offline)"
-                            Click="PreviewUdsSample_Click"/>
-                    <Button x:Name="ExportOfflineUdsTxtButton"
-                            Content="Export synthetic UDS TXT"
-                            Click="ExportOfflineUdsTxt_Click"/>
-                </StackPanel>
+            <StackPanel x:Name="StatusPanel" Spacing="6">
                 <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <TextBlock x:Name="StatusText" Text="Disconnected" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
                 </ScrollViewer>

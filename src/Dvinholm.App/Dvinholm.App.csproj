@@ -15,6 +15,10 @@
     <!-- Keep WinUI/XAML/COM safe from unvalidated linker removal. -->
     <PublishTrimmed>false</PublishTrimmed>
     <PublishAot>false</PublishAot>
+    <!-- Stable Release defaults to no developer tools. Development must opt in explicitly. -->
+    <DvinholmDevelopmentFeatures Condition="'$(DvinholmDevelopmentFeatures)' == '' and '$(Configuration)' == 'Debug'">true</DvinholmDevelopmentFeatures>
+    <DvinholmDevelopmentFeatures Condition="'$(DvinholmDevelopmentFeatures)' == ''">false</DvinholmDevelopmentFeatures>
+    <DefineConstants Condition="'$(DvinholmDevelopmentFeatures)' == 'true'">$(DefineConstants);DVINHOLM_DEVELOPMENT_FEATURES</DefineConstants>
     <UseWinUI>true</UseWinUI>
     <EnableMsixTooling>true</EnableMsixTooling>
     <WindowsPackageType>None</WindowsPackageType>
@@ -36,6 +40,12 @@
   <ItemGroup Condition="'$(DvinholmMsix)' == 'true'">
     <AppxManifest Include="Package.appxmanifest" />
     <Content Include="Assets\Msix*.png" />
+  </ItemGroup>
+  <!-- Do not ship synthetic generators/report fixtures in any default Release build. -->
+  <ItemGroup Condition="'$(DvinholmDevelopmentFeatures)' != 'true'">
+    <Compile Remove="CanDemoFrameGenerator.cs" />
+    <Compile Remove="UdsOfflineSample.cs" />
+    <Compile Remove="UdsOfflineTextReport.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />

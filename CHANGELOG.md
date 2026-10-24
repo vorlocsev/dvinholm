@@ -2,6 +2,8 @@
 
 ## [0.2.3] — Unreleased (candidate preparation)
 
+- Stable Release now excludes synthetic demo buttons, handlers and fixture generators; Development explicitly opts in, existing saved user profiles remain untouched.
+
 - CAN Monitor adds bounded multi-ID software filtering without changing J2534 hardware filter behavior.
 - CSV export handles delimiters, quotes, multiline cells and unexpected spreadsheet formulas.
 - Additional Portable/Lite SHA-256, updater regression and experimental unsigned MSIX verification; trimming/AOT disabled.
