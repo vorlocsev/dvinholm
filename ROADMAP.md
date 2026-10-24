@@ -1,3 +1,14 @@
+## Stable v0.2.3 public-to-public archive upgrade audit (2026-10-24)
+
+- [x] Main CI #3361 and staging #27 passed after post-release documentation PR #468 merged as `9a45f76`.
+- [x] Add a separate **read-only, automatically triggered Windows GitHub Actions audit** which downloads the actual published v0.2.2 and v0.2.3 Portable ZIPs with strict checksum manifests.
+- [x] Pin the approved published v0.2.3 release target `91ecc34`, exact 62,245,250-byte ZIP and SHA-256 `fae05958bf1ca4ef92f915508b66da5acb85b4c975c6eb84a950cb8da707ed44`.
+- [x] Reuse eight disposable Windows mirror/backup/rollback gates and add eight workflow contract tests. No app installations, GUI runs or release modifications.
+- [ ] Verify this PR's CI and published-artifact integration job, merge only after green, and confirm postmerge main runs.
+- [ ] Still requires **actual installed v0.2.2 -> published v0.2.3** updater smoke on Windows 11 LTSC. Offline mirror checks cannot verify the interactive updater, physical J2534 or vehicle.
+
+---
+
 ## Stable v0.2.3 published and next steps (2026-10-24)
 
 - [x] User confirmed actual Windows 11 LTSC offline application operation for the isolated Stable 0.2.3 candidate, built at `91ecc343608c931eb033523e3db6012a6c5dbd58`.
@@ -6,7 +17,7 @@
 - [x] Stable 0.2.3 excludes synthetic/demo commands; Development retains them. Production tests and offline update/rollback checks passed.
 - [ ] Perform actual **installed** 0.2.2 -> published 0.2.3 updater smoke on Windows and verify catalog/speed persistence, unchanged user data, clear status and rollback behavior when applicable.
 - [ ] Prepare a later milestone with 6-8 checks per stage. Physical J2534/vehicle tests remain postponed; never infer adapter compatibility from CI.
-- [ ] Confirm postrelease README, CHANGELOG and RU guide references to official 0.2.3. No new Stable release without explicit approval.
+- [x] Postrelease README, CHANGELOG and RU guide references corrected to public 0.2.3 in PR #468. No new Stable release without explicit approval.
 
 ---
 
