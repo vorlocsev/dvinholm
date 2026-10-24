@@ -40,9 +40,9 @@ Write-Host 'PASS 2/8: published v0.2.2 ZIP SHA-256 verified.'
 & (Join-Path $PSScriptRoot 'Test-ReleaseCandidate023.ps1') -ArchiveDirectory $newDir -ExpectedCommit $ExpectedCommit -Channel stable
 if (-not $?) { throw 'Gate 3/8: candidate validation failed.' }
 Write-Host 'PASS 3/8: exact v0.2.3 Stable ZIP checksum, binary and commit verified.'
-& (Join-Path $PSScriptRoot 'Test-WindowsDistribution.ps1') -Flavor Portable -ZipPath (Join-Path $oldDir 'Dvinholm-Windows-x86.zip')
+& (Join-Path $PSScriptRoot 'Test-WindowsDistribution.ps1') -Flavor Portable -ZipPath (Join-Path $oldDir 'Dvinholm-Windows-x86.zip') -AllowLegacyV022DebugFiles
 if (-not $?) { throw 'Gate 4/8: v0.2.2 ZIP layout unsafe.' }
-Write-Host 'PASS 4/8: published old Portable ZIP layout checked.'
+Write-Host 'PASS 4/8: published old Portable ZIP layout checked (two historic debug files permitted).'
 
 Add-Type -AssemblyName System.IO.Compression
 if (-not ('System.IO.Compression.ZipFile' -as [type])) {

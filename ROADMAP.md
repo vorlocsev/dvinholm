@@ -1,3 +1,11 @@
+## Stable v0.2.3 legacy v0.2.2 debug-file compatibility (2026-10-24)
+
+- [x] CI #3333/#3334, RC #17 and MSIX #75 passed on PR #464; staging #10 found that already-published v0.2.2 contains `Dvinholm.App.pdb` and `createdump.exe`.
+- [x] With user permission, allow precisely those two pre-existing legacy debug entries in the read-only published-v0.2.2 archive comparison. Continue full SHA-256, layout, x86 runtime and version validation. Keep v0.2.3 staging/production ZIP debug exclusions unchanged by default.
+- [ ] Re-run all eight real-archive upgrade and rollback gates and confirm branch CI/staging before PR #464 is merged.
+
+---
+
 ## Stable 0.2.3 real-archive upgrade rehearsal (2026-10-24)
 
 - [x] Postmerge PR #463 main CI #3332 and automatic Stable staging #9 passed at 7ab2e1f. All eight acceptance-kit negative/positive gates passed.

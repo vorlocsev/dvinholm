@@ -2,7 +2,8 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][ValidateSet('Portable', 'Lite')][string]$Flavor,
-    [Parameter(Mandatory)][string]$ZipPath
+    [Parameter(Mandatory)][string]$ZipPath,
+    [switch]$AllowLegacyV022DebugFiles
 )
 $ErrorActionPreference = 'Stop'
 Add-Type -AssemblyName System.IO.Compression
@@ -53,8 +54,23 @@ try {
         $_ -match $debugExtension -or
         [IO.Path]::GetFileName($_) -match $debugExecutables
     })
-    if ($debugFiles.Count -ne 0) {
-        throw "$Flavor ZIP includes debugging byproducts/tools: $($debugFiles -join ', ')"
+    # v0.2.2 was already published before the strict no-debug Stable rule.
+    # Only the two specifically known historic entries may bypass this gate,
+    # and only for an explicitly opted-in Portable archive comparison.
+    if ($AllowLegacyV022DebugFiles -and $Flavor -ne 'Portable') {
+        throw 'Legacy debug-file compatibility is only valid for Portable.'
+    }
+    $knownV022 = @('Dvinholm.App.pdb', 'createdump.exe')
+    $unexpectedDebug = if ($AllowLegacyV022DebugFiles) {
+        @($debugFiles | Where-Object { $knownV022 -cnotcontains $_ })
+    } else {
+        @($debugFiles)
+    }
+    if ($unexpectedDebug.Count -ne 0) {
+        throw "$Flavor ZIP includes debugging byproducts/tools: $($unexpectedDebug -join ', ')"
+    }
+    if ($debugFiles.Count -gt 0 -and $AllowLegacyV022DebugFiles) {
+        Write-Host "Previously published v0.2.2: allowed known legacy debug files: $($debugFiles -join ', ')"
     }
 
     $hasCoreClr = $paths -contains 'coreclr.dll'
