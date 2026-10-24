@@ -24,7 +24,7 @@ This file prepares the next Stable release. It is not release approval.
   demo/test commands, comma-list filtering, real CSV export, profile
   persistence and update-from-0.2.2 behavior remain pending.
 - Separate Development-only offline CAN demo acceptance remains pending.
-- A separate manual-only v0.2.3 Stable workflow stages a clean binary with eight checks and SHA-256 re-download. Publishing requires explicit release authorization and an exact main SHA; the release remains draft until downloaded assets pass validation.
+- A separate v0.2.3 Stable workflow **automatically stages but never publishes** a clean binary for relevant main changes, with eight ZIP/DLL checks and SHA-256 re-download. Publishing is a different manually authorized action bound to an exact main SHA; the release remains draft until downloaded assets pass validation.
 
 ## Boundaries
 No physical J2534 adapter, vendor driver, ECU or vehicle compatibility has

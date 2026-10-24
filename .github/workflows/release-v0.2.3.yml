@@ -1,11 +1,26 @@
-name: Stable v0.2.3 (gated manual release)
+name: Stable v0.2.3 (automated staging, manual publish)
 
 on:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/release-v0.2.3.yml"
+      - "eng/Test-ReleaseCandidate023.ps1"
+      - "eng/Package-WindowsDistribution.ps1"
+      - "eng/Test-WindowsDistribution.ps1"
+      - "eng/Test-WindowsDistributionExtraction.ps1"
+      - "src/Dvinholm.App/**"
+      - "tests/Dvinholm.App.Tests/**"
+      - "tests/Dvinholm.Stable.Tests/**"
   pull_request:
     paths:
       - ".github/workflows/release-v0.2.3.yml"
       - "eng/Test-ReleaseCandidate023.ps1"
-      - "tests/Dvinholm.App.Tests/StableRelease023WorkflowContractTests.cs"
+      - "eng/Package-WindowsDistribution.ps1"
+      - "eng/Test-WindowsDistribution.ps1"
+      - "eng/Test-WindowsDistributionExtraction.ps1"
+      - "src/Dvinholm.App/**"
+      - "tests/Dvinholm.App.Tests/**"
       - "tests/Dvinholm.Stable.Tests/**"
   workflow_dispatch:
     inputs:
@@ -35,7 +50,7 @@ concurrency:
 
 jobs:
   validate:
-    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') }}
+    if: ${{ github.event_name == 'pull_request' || (github.event_name == 'push' && github.ref == 'refs/heads/main') || (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main') }}
     runs-on: windows-latest
     timeout-minutes: 90
     steps:
@@ -59,8 +74,8 @@ jobs:
             }
           }
           else {
-            # Pull requests are a validation-only surface, irrespective of inputs.
-            if ($env:DVINHOLM_MODE -eq 'publish') { throw 'A PR cannot publish a release.' }
+            # Pull requests and main pushes are staging-only, irrespective of inputs.
+            if ($env:DVINHOLM_MODE -eq 'publish') { throw 'A PR or push cannot publish a release.' }
           }
           Write-Host 'Exact commit validated. Release is NOT authorized by a passing CI check.'
 
@@ -132,7 +147,7 @@ jobs:
           'Stable v0.2.3 staged, 8 gates and roundtrip passed. Not published by validation job.' | Out-File $env:GITHUB_STEP_SUMMARY -Append
 
   publish:
-    # No tag/release is created on PR, branch push or normal workflow dispatch.
+    # No tag/release is created on PR, main push, or dry-run dispatch.
     # Requires explicit publish mode, exact main SHA and literal authorization.
     if: ${{ github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main' && inputs.mode == 'publish' && inputs.authorization == 'APPROVE-DVINHOLM-V0.2.3' }}
     needs: validate
