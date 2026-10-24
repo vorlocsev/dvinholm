@@ -51,6 +51,7 @@ internal sealed class CanMonitorHistory
     // A bounded explicit list prevents accidental work from enormous pasted
     // queries. This is only a software view filter, never a J2534 filter.
     internal const int MaxSoftwareFilterIds = 16;
+    private const uint MaxExtendedCanId = 0x1FFFFFFFu;
 
     internal IReadOnlyList<CanMonitorRow> Filter(string? query)
     {
@@ -61,9 +62,7 @@ internal sealed class CanMonitorHistory
         return ids is null
             ? _recent.ToArray()
             : _recent.Where(row =>
-                uint.TryParse(row.Id, NumberStyles.HexNumber,
-                    CultureInfo.InvariantCulture, out var id) &&
-                ids.Contains(id)).ToArray();
+                TryParseCanId(row.Id, out var id) && ids.Contains(id)).ToArray();
     }
 
     internal void Clear()
@@ -81,10 +80,14 @@ internal sealed class CanMonitorHistory
 
         // Compare numbers so 11-bit 7E8 and 29-bit 000007E8 retain
         // the historical numeric-filter semantics.
-        return uint.TryParse(frameId, NumberStyles.HexNumber,
-                   CultureInfo.InvariantCulture, out var actual) &&
-               ids.Contains(actual);
+        return TryParseCanId(frameId, out var actual) && ids.Contains(actual);
     }
+
+    // The software filter accepts CAN arbitration IDs, not arbitrary uints.
+    // Numeric matching between 11-bit and 29-bit frames is intentional.
+    private static bool TryParseCanId(string value, out uint id) =>
+        uint.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out id) &&
+        id <= MaxExtendedCanId;
 
     private static bool TryParseFilter(string? query, out HashSet<uint>? ids)
     {
@@ -103,9 +106,7 @@ internal sealed class CanMonitorHistory
             var value = segment.Trim();
             if (value.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
                 value = value[2..];
-            if (value.Length == 0 ||
-                !uint.TryParse(value, NumberStyles.HexNumber,
-                    CultureInfo.InvariantCulture, out var id))
+            if (value.Length == 0 || !TryParseCanId(value, out var id))
                 return false;
 
             parsed.Add(id);
