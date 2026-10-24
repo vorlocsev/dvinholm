@@ -11,7 +11,7 @@ Lite is **not** an independent stable release just because CI publishes a prerel
 
 ## Release/Stable build profile
 
-Since the planned **v0.2.3** Stable candidate, normal Release builds default
+Since published **v0.2.3**, normal Release builds default
 to `DvinholmDevelopmentFeatures=false`, so **Start demo**, **Add test
 profiles**, **Preview UDS example (offline)** and **Export synthetic UDS
 TXT** are absent from the production interface and compiled handlers.
@@ -20,13 +20,13 @@ The generator classes `CanDemoFrameGenerator`, `UdsOfflineSample` and
 a build-time separation, not merely a disabled-button state.
 
 Development CI, synthetic regression tests and unsigned experimental MSIX
-explicitly opt in with `DvinholmDevelopmentFeatures=true`. The v0.2.3
-candidate uses false and validates its real packaged DLL for excluded
+explicitly opt in with `DvinholmDevelopmentFeatures=true`. The published v0.2.3
+uses false and validates its real packaged DLL for excluded
 fixture symbols. VIN/DID/DTC reads, real CAN Monitor, profile editing,
 import/export and ordinary CSV remain available.
 
 No saved ECU profiles are deleted, including data previously generated
-through Development. Existing published Stable v0.2.2 is unchanged.
+through Development. Historical Stable v0.2.2 remains available separately.
 
 ## Minimal Lite MSIX (experimental)
 
@@ -379,6 +379,6 @@ Both downloads are packaged by `eng/Package-WindowsDistribution.ps1`. It omits o
 
 **Before any future Stable release is uploaded**, verify its final ZIP with `Test-WindowsDistribution.ps1`. Debugging symbols and tools are excluded from the Stable download, while CI retains test diagnostics. Release checksum (`SHA256SUMS.txt`) must be calculated **after** cleaning and compressing the final ZIP, so the checksum identifies exactly the published artifact.
 
-The historical Stable release v0.2.2 is unchanged. New distribution changes and experimental Lite artifacts are CI outputs until a later stable release is explicitly prepared, tested and published.
+Stable v0.2.3 was published on 2026-10-24 with the audited self-contained Windows x86 Portable ZIP and SHA256SUMS.txt; the release tag points to `91ecc34`. The historical v0.2.2 release remains available. Lite ZIP and unsigned MSIX artifacts are still experimental Development outputs, not Stable.
 
 Official Windows App SDK deployment guidance: https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/deploy-overview

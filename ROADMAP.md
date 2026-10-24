@@ -1,10 +1,22 @@
+## Stable v0.2.3 published and next steps (2026-10-24)
+
+- [x] User confirmed actual Windows 11 LTSC offline application operation for the isolated Stable 0.2.3 candidate, built at `91ecc343608c931eb033523e3db6012a6c5dbd58`.
+- [x] GitHub published v0.2.3 release ID `422666589` via the one-time authorized recovery workflow after PR #467 merged as `da135af`; the exact candidate ZIP and SHA256SUMS.txt were independently checked.
+- [x] Public release/tag confirmed: `v0.2.3` -> `91ecc34`. Portable ZIP is 62,245,250 bytes with SHA-256 `fae05958bf1ca4ef92f915508b66da5acb85b4c975c6eb84a950cb8da707ed44`.
+- [x] Stable 0.2.3 excludes synthetic/demo commands; Development retains them. Production tests and offline update/rollback checks passed.
+- [ ] Perform actual **installed** 0.2.2 -> published 0.2.3 updater smoke on Windows and verify catalog/speed persistence, unchanged user data, clear status and rollback behavior when applicable.
+- [ ] Prepare a later milestone with 6-8 checks per stage. Physical J2534/vehicle tests remain postponed; never infer adapter compatibility from CI.
+- [ ] Confirm postrelease README, CHANGELOG and RU guide references to official 0.2.3. No new Stable release without explicit approval.
+
+---
+
 ## Stable 0.2.3 interrupted draft recovery (2026-10-24)
 
 - [x] Release dispatch #19 on user-approved commit `91ecc34` completed all 1111 application / eight Stable / eight package safety and rollback validations but failed in `publish` after creating the draft.
 - [x] Verified existing GitHub draft ID `422666589`, `draft=true`, target `91ecc343608c931eb033523e3db6012a6c5dbd58`, and exactly two GitHub SHA-256-addressed uploaded assets. Public release/tag URL is unavailable until publication.
 - [x] Add one-time `resume-draft` flow to verify original successful CI/staging, fetch and SHA-256-verify both real draft uploads, run full 0.2.3 binary/commit checks, and publish only that approved existing draft. No duplicate creation, no copy replacement.
-- [ ] Confirm PR CI and merge only after green. Because GitHub workflow dispatch needs an authorized user action, trigger `resume-draft` manually with the original approved candidate SHA; then verify release metadata and both public files.
-- [ ] Do not claim v0.2.3 publicly released until the GitHub draft becomes published and release/tag URL works.
+- [x] PR #467 merged to main as `da135af`; user-authorized one-time recovery published the existing draft successfully, verified the exact assets and preserved target SHA `91ecc34`.
+- [x] v0.2.3 public release and tag are live; GitHub Release is no longer a draft and contains exactly the two SHA-verified assets.
 
 ---
 
