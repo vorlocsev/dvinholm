@@ -8,12 +8,14 @@ on:
       - "eng/Test-RealStableUpgrade023.ps1"
       - "tests/Dvinholm.App.Tests/PublishedStableUpgrade023WorkflowTests.cs"
       - "tests/Dvinholm.App.Tests/PublishedStableUpdaterHelperIntegrationTests.cs"
+      - "tests/Dvinholm.App.Tests/PublishedStable023LiveDownloadTests.cs"
   pull_request:
     paths:
       - ".github/workflows/postrelease-upgrade-v023.yml"
       - "eng/Test-RealStableUpgrade023.ps1"
       - "tests/Dvinholm.App.Tests/PublishedStableUpgrade023WorkflowTests.cs"
       - "tests/Dvinholm.App.Tests/PublishedStableUpdaterHelperIntegrationTests.cs"
+      - "tests/Dvinholm.App.Tests/PublishedStable023LiveDownloadTests.cs"
   workflow_dispatch:
 
 permissions:
@@ -101,4 +103,14 @@ jobs:
           dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --filter FullyQualifiedName~PublishedStableUpdaterHelperIntegrationTests --logger "trx;LogFileName=published-updater-helper.trx"
           if ($LASTEXITCODE -ne 0) { throw 'Real published payload updater helper regression failed.' }
           'The original updater replacement helper passed success and forced-startup-failure rollback on published v0.2.2 and v0.2.3 ZIP contents. Watcher, GUI launches and HKCU Run registration were mocked. Actual installed-app updater smoke remains pending.' |
+            Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
+      - name: Live GitHub Stable lookup and production updater ZIP download and extraction
+        shell: pwsh
+        env:
+          DVINHOLM_LIVE_STABLE_DOWNLOAD: '1'
+        run: |
+          if ($env:GITHUB_ACTIONS -ne 'true') { throw 'Live Stable audit runs only on a disposable CI runner.' }
+          dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --filter FullyQualifiedName~PublishedStable023LiveDownloadTests --logger "trx;LogFileName=stable023-live-download.trx"
+          if ($LASTEXITCODE -ne 0) { throw 'Live public GitHub release lookup/download/staging failed.' }
+          'Read-only network audit: resolved the real Stable v0.2.3 Git tag and tested production GitHub download, SHA-256 validation and ZIP extraction. No application was launched or installed.' |
             Out-File -FilePath $env:GITHUB_STEP_SUMMARY -Append
