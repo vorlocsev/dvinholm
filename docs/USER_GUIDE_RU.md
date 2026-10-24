@@ -22,7 +22,7 @@ Dvinholm — переносимое **Windows x86**-приложение для 
 
 ## 1. Первый запуск — без адаптера
 
-1. Скачайте [стабильный ZIP v0.2.1](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.1).
+1. Скачайте [официальный Stable v0.2.3 ZIP для Windows x86](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.3/Dvinholm-Windows-x86.zip). Для экспериментальных функций отдельно доступны Development CI-сборки 0.2.4 из `main`; они **не являются** выпуском Stable.
 2. **Полностью распакуйте** архив в отдельную папку, например `C:\Dvinholm`. Не запускайте программу внутри ZIP.
 3. Откройте `Dvinholm.App.exe`.
 4. Проверьте наличие значка Dvinholm, кнопки **Check update**, раздела **ECU profiles** и поля **CAN speed**.
