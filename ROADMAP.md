@@ -1,3 +1,13 @@
+## Stable 0.2.3 interrupted draft recovery (2026-10-24)
+
+- [x] Release dispatch #19 on user-approved commit `91ecc34` completed all 1111 application / eight Stable / eight package safety and rollback validations but failed in `publish` after creating the draft.
+- [x] Verified existing GitHub draft ID `422666589`, `draft=true`, target `91ecc343608c931eb033523e3db6012a6c5dbd58`, and exactly two GitHub SHA-256-addressed uploaded assets. Public release/tag URL is unavailable until publication.
+- [x] Add one-time `resume-draft` flow to verify original successful CI/staging, fetch and SHA-256-verify both real draft uploads, run full 0.2.3 binary/commit checks, and publish only that approved existing draft. No duplicate creation, no copy replacement.
+- [ ] Confirm PR CI and merge only after green. Because GitHub workflow dispatch needs an authorized user action, trigger `resume-draft` manually with the original approved candidate SHA; then verify release metadata and both public files.
+- [ ] Do not claim v0.2.3 publicly released until the GitHub draft becomes published and release/tag URL works.
+
+---
+
 ## Stable v0.2.3 isolated acceptance app-data protection (2026-10-24)
 
 - [x] Postmerge PR #465 main CI #3344 and staged Stable #16 passed on f45064d. One-click no-GUI launcher dry-run succeeded.

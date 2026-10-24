@@ -99,6 +99,22 @@ public sealed class StableRelease023WorkflowContractTests
     }
 
     [Fact]
+    public void ResumeExistingDraftRequiresPreviouslyApprovedCandidateAndByteAudit()
+    {
+        var source = Workflow();
+        Assert.Contains("resume-draft", source);
+        Assert.Contains("inputs.mode != 'resume-draft'", source);
+        Assert.Contains("inputs.mode == 'resume-draft'", source);
+        Assert.Contains("APPROVE-DVINHOLM-V0.2.3", source);
+        Assert.Contains("91ecc343608c931eb033523e3db6012a6c5dbd58", source);
+        Assert.Contains("actions: read", source);
+        Assert.Contains("Resume-StableDraft023.ps1", source);
+        Assert.Contains("Parse draft-resume PowerShell script (never publish in CI)", source);
+        Assert.Contains("Verify existing draft bytes then publish only exact approved candidate", source);
+        Assert.Contains("-Publish", source);
+    }
+
+    [Fact]
     public void ReleaseStartsAsDraftAndBecomesPublicAfterAudit()
     {
         var source = Workflow();
