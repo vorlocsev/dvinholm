@@ -1,9 +1,19 @@
+## Development 0.2.4 passive UDS ReadDTC response framing (2026-10-25)
+
+- [x] Reject positive ReadDTCInformation `0x59/0x02` passive ECU candidates without the mandatory status-availability mask or with an incomplete four-byte DTC record.
+- [x] Validate ISO-TP declared UDS payload length for both Single Frames and First Frames; ignore legal CAN padding beyond declared Single Frame payload.
+- [x] Preserve positive responses for other subfunctions/services and valid negative responses. Passive discovery remains receive-only.
+- [x] Add eight offline regressions, including a virtual J2534 scan that ignores malformed ReadDTC traffic and sends no CAN messages.
+- [ ] Require green branch Development CI, staging, RC and experimental MSIX; merge and verify postmerge `main` only after success. Stable v0.2.3 publication unchanged; physical J2534 and Windows GUI updater smoke remain deferred.
+
+---
+
 ## Development 0.2.4 passive UDS ReadDID minimum payload (2026-10-25)
 
 - [x] Reject passive discovery candidates whose positive UDS ReadDataByIdentifier response `0x62` does not contain both bytes of the returned DID.
 - [x] Keep valid `0x62` Single/First Frame responses, declared ISO-TP length despite CAN padding, other valid positive response types and strictly framed negative responses.
 - [x] Add eight offline regressions, including a virtual J2534 receive-only scan proving invalid `0x62` responses cannot generate ECU candidates or transmit CAN frames.
-- [ ] Verify PR branch CI, Stable staging, RC and MSIX. Merge only after green and confirm postmerge `main`. Stable v0.2.3 remains published and unchanged; real adapters and installed Windows GUI updater smoke remain deferred.
+- [x] PR #482 merged as `1542516`; CI #3437, staging #54, RC #55 and MSIX #124 passed. Postmerge main CI #3438, staging #55, RC #56 and MSIX #125 are running; confirm results separately. Stable v0.2.3 remains unchanged; real adapters and installed Windows GUI updater smoke remain deferred.
 
 ---
 
