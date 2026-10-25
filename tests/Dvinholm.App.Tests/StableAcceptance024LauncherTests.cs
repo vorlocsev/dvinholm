@@ -109,6 +109,13 @@ public sealed class StableAcceptance024LauncherTests
         Assert.Contains("artifacts/stable024-downloaded", workflow);
         Assert.Contains("One-click Stable 0.2.4 acceptance", workflow);
         Assert.Contains("START-STABLE-ACCEPTANCE-024.cmd --prepare-only", workflow);
+        // The standalone Lite verifier checks the actual Windows App SDK line
+        // using the original project file relative to the kit's eng directory.
+        // Missing this file failed the very first real one-click staging CI.
+        Assert.Contains("src/Dvinholm.App/Dvinholm.App.csproj", workflow);
+        Assert.Contains("$sourceProject = 'src/Dvinholm.App/Dvinholm.App.csproj'", workflow);
+        Assert.Contains("Join-Path $kit 'src/Dvinholm.App'", workflow);
+        Assert.Contains("Copy-Item -LiteralPath $sourceProject -Destination $kitProjectDirectory", workflow);
         Assert.Contains("destination already exists", workflow);
         Assert.Contains("Dvinholm-v0.2.4-STABLE-WINDOWS-ACCEPTANCE-KIT", workflow);
         Assert.Contains("contents: read", workflow);
