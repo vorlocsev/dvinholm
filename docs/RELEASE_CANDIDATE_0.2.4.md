@@ -35,6 +35,14 @@ The workflow performs eight ZIP/binary gates independently for each flavor, chec
 
 A green staging workflow **does not** approve 0.2.4 for publication and is **not** evidence of Windows GUI compatibility, a real installed Lite host or a physical J2534. The eight interactive Windows LTSC checkpoints below remain pending. Before any future Stable 0.2.4 publication, a separate version-specific user-data-isolated acceptance, update migration review and explicit user authorization are required.
 
+## Published Stable 0.2.3 to staged 0.2.4 offline upgrade rehearsal
+
+Before contemplating a 0.2.4 release, the read-only dual-flavor staging workflow now also downloads the **actual published v0.2.3 Portable**. It checks GitHub's release metadata, requires the original committed release identity `91ecc343608c931eb033523e3db6012a6c5dbd58`, verifies the published ZIP/manifest independently and compares against the downloaded 0.2.4 Stable-channel candidate.
+
+The `eng/Test-RealStableUpgrade024.ps1` integration test runs eight gates: exact release/candidate file sets, published 0.2.3 checksum and product identity, both staged ZIP hashes, staged 0.2.4 exact-commit production identity, old/new compiled assembly versions, byte-exact old-install backup, forward replacement with obsolete-file cleanup and preserved synthetic settings, and byte-exact rollback to the previous installation with settings still unchanged. All mirroring happens under a new disposable temporary directory using extracted real ZIP bytes. It **never** runs the app, accesses an installed Dvinholm directory, calls J2534 or writes a GitHub release.
+
+This verifies a **file replacement/rollback simulation only**. It does not demonstrate that the real in-app updater works, that a user's actual profile migrations behave correctly, or that WinUI launches. Those manual checks remain separate requirements before release approval.
+
 ## Remaining eight manual Windows acceptance checkpoints
 
 These **have not been performed** on 0.2.4. Do not mark complete from CI.
