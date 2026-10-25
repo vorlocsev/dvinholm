@@ -1,3 +1,14 @@
+## Development 0.2.4 | ручная Windows-приёмка и проверка реального updater helper (2026-10-26)
+
+- [x] **Подтверждено пользователем 8/8 без ошибок**: изолированный Stable-channel Portable 0.2.4 с SHA `a9e61883a413d4afaebb86fb468987c904250092` на Windows 11 LTSC. Все восемь пунктов GUI по `ACCEPTANCE-0.2.4.txt` сообщены успешными. Источник: прямой ответ пользователя 26.10.2026, не результат headless CI. Подробности: `docs/MANUAL_STABLE_0.2.4_WINDOWS_ACCEPTANCE.md`.
+- [x] Post-merge main `a9e6188`: CI #3567, Stable staging #16 (со скачанными Portable/Lite, SHA256, однокликовой подготовкой, upgrade/rollback, HOLD evidence), Portable RC #31, Lite RC #18 и Stable 0.2.3 staging #96 прошли. Исходная опубликованная Stable v0.2.3 не изменена.
+- [x] Добавлен этап изолированного запуска **production replacement helper** против *реального опубликованного* ZIP 0.2.3 и *скачанного и SHA-проверенного* staged ZIP 0.2.4: оба пути (успешная замена и принудительная неудача запуска с rollback), восемь утверждений по резервной копии/старым файлам/байтам профилей/CAN. Watcher, HKCU Run и запуск GUI заменены тестовыми заглушками, исполняется настоящий механизм файлового обновления. Без установки приложения на компьютер пользователя и публикации release.
+- [ ] Подтвердить все CI и отдельный Stage 0.2.4 с новым helper integration, после чего merge PR и проверить main; **проверка восьми пунктов на исходном SHA не должна автоматически считаться проверкой новой версии SHA**.
+- [ ] Проверить встроенное обновление *на установленной копии* из публичной Stable 0.2.3 в 0.2.4 в контролируемом режиме, когда новая Stable будет доступна после отдельного разрешения. До этого нельзя заявлять, что такая процедура проведена.
+- [ ] Публикация Stable 0.2.4 остаётся **HOLD** до прямого разрешения. Физический J2534/ECU/автомобиль отложены на будущие версии.
+
+---
+
 ## Development 0.2.4 pre-release evidence and HOLD decision packet (2026-10-25)
 
 - [x] Add `eng/Write-StableReadiness024.ps1` to read the **original downloaded** Portable/Lite ZIPs and canonical two-line SHA256SUMS, verify exact lowercase candidate commit and both SHA-256 hashes without regenerating them, collect byte sizes and refuse overwriting any existing report.
