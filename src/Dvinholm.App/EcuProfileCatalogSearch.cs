@@ -15,13 +15,17 @@ internal static class EcuProfileCatalogSearch
         ArgumentNullException.ThrowIfNull(catalog);
 
         var query = (searchText ?? string.Empty).Trim();
-        // Accept the common 0x prefix for CAN IDs and DID hexadecimal text.
-        if (query.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
-            query = query[2..];
+        // Only treat 0x as a numeric prefix when at least one hexadecimal
+        // digit follows it. The unmodified text must still be searched in
+        // profile metadata: "0x" by itself is not an empty/wildcard query.
+        var hexQuery = query.StartsWith("0x", StringComparison.OrdinalIgnoreCase) &&
+                       query.Length > 2 && query[2..].All(char.IsAsciiHexDigit)
+            ? query[2..]
+            : query;
 
         return catalog.All
             .Where(profile => (!markedVerifiedOnly || profile.IsVerified)
-                && (query.Length == 0 || Matches(profile, query)))
+                && (query.Length == 0 || Matches(profile, query, hexQuery)))
             .ToArray();
     }
 
@@ -42,7 +46,7 @@ internal static class EcuProfileCatalogSearch
                Environment.NewLine + "Verification is self-reported by the catalog; hardware and ECU compatibility have not been established. A listed DID may be unsupported.";
     }
 
-    private static bool Matches(EcuProfile profile, string query)
+    private static bool Matches(EcuProfile profile, string query, string hexQuery)
     {
         if (profile.Id.Contains(query, StringComparison.OrdinalIgnoreCase) ||
             profile.Name.Contains(query, StringComparison.OrdinalIgnoreCase) ||
@@ -52,11 +56,11 @@ internal static class EcuProfileCatalogSearch
         // Match what the ECU details actually display. Hexadecimal searches
         // are supported for both standard and extended CAN addressing.
         var width = profile.IsExtended ? "X8" : "X3";
-        if (profile.RequestId.ToString(width).Contains(query, StringComparison.OrdinalIgnoreCase) ||
-            profile.ResponseId.ToString(width).Contains(query, StringComparison.OrdinalIgnoreCase))
+        if (profile.RequestId.ToString(width).Contains(hexQuery, StringComparison.OrdinalIgnoreCase) ||
+            profile.ResponseId.ToString(width).Contains(hexQuery, StringComparison.OrdinalIgnoreCase))
             return true;
 
         return profile.ReadableDataIdentifiers.Any(did =>
-            did.ToString("X4").Contains(query, StringComparison.OrdinalIgnoreCase));
+            did.ToString("X4").Contains(hexQuery, StringComparison.OrdinalIgnoreCase));
     }
 }
