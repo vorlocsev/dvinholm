@@ -9,13 +9,19 @@ public sealed class CanBaudRateStore
 
     private static readonly HashSet<uint> SupportedBaudRates = [500000, 250000, 125000];
     private readonly string _path;
+    private readonly Action<string, string> _writeTemporaryFile;
 
-    public CanBaudRateStore(string path)
+    public CanBaudRateStore(string path, Action<string, string>? writeTemporaryFile = null)
     {
         if (string.IsNullOrWhiteSpace(path))
             throw new ArgumentException("A settings file path is required.", nameof(path));
 
         _path = path;
+        // Normal saves remain UTF-8 without BOM. An injectable staging writer
+        // makes incomplete-write failure paths testable without a J2534 device.
+        _writeTemporaryFile = writeTemporaryFile ??
+            ((temporaryPath, text) =>
+                File.WriteAllText(temporaryPath, text, new System.Text.UTF8Encoding(false)));
     }
 
     public uint Load()
@@ -41,8 +47,16 @@ public sealed class CanBaudRateStore
         var temporaryPath = _path + $".{Guid.NewGuid():N}.tmp";
         try
         {
-            File.WriteAllText(temporaryPath, baudRate.ToString(System.Globalization.CultureInfo.InvariantCulture),
-                new System.Text.UTF8Encoding(false));
+            var expectedText = baudRate.ToString(System.Globalization.CultureInfo.InvariantCulture);
+            _writeTemporaryFile(temporaryPath, expectedText);
+
+            // A staging write can return without error despite writing a
+            // truncated value or even a different supported speed. Verify
+            // the exact setting before replacing the last known-good file.
+            if (!File.Exists(temporaryPath) ||
+                !string.Equals(File.ReadAllText(temporaryPath), expectedText, StringComparison.Ordinal))
+                throw new IOException("CAN baud-rate staging did not match the intended value.");
+
             File.Move(temporaryPath, _path, overwrite: true);
         }
         finally
