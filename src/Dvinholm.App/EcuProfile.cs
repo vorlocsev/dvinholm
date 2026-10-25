@@ -179,6 +179,19 @@ internal sealed class EcuProfileCatalog
             var document = documents[index]
                 ?? throw new InvalidDataException($"Profile entry at index {index} is null.");
 
+            // A profile imported from JSON must remain editable through the
+            // same WinUI editor as a newly created profile. Reject overlong
+            // metadata and DID lists rather than storing uneditable entries.
+            // The editor checks trimmed text and limits candidates to 128.
+            if ((document.Id ?? string.Empty).Trim().Length > 120)
+                throw new InvalidDataException($"Profile at index {index} exceeds the 120-character ID limit.");
+            if ((document.Name ?? string.Empty).Trim().Length > 160)
+                throw new InvalidDataException($"Profile at index {index} exceeds the 160-character name limit.");
+            if ((document.Source ?? string.Empty).Trim().Length > 2000)
+                throw new InvalidDataException($"Profile at index {index} exceeds the 2000-character source limit.");
+            if (document.ReadableDataIdentifiers is { Length: > 128 })
+                throw new InvalidDataException($"Profile at index {index} exceeds the 128 candidate DID limit.");
+
             if (!TryParseCanId(document.RequestId, out var requestId))
                 throw new InvalidDataException($"Profile '{document.Id}' has an invalid hexadecimal requestId.");
             if (!TryParseCanId(document.ResponseId, out var responseId))
