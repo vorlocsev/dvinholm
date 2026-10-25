@@ -203,6 +203,23 @@ internal sealed class UdsEcuDiscovery
             if (sid == 0x62 && iso.Data.Length < 3)
                 return false;
 
+            // ReadDTCInformation (0x19/0x02) replies carry 0x59, subfunction
+            // 0x02, a DTC-status availability mask, then zero or more
+            // four-byte records (three-byte DTC + status). During passive
+            // discovery, check the declared transport length so malformed
+            // messages cannot masquerade as ECU responders. A First Frame
+            // contains only the beginning of that message; use its announced
+            // total length rather than the first six data bytes.
+            if (sid == 0x59 && iso.Data[1] == 0x02)
+            {
+                var declaredLength = iso.Type == IsoTpFrameType.SingleFrame
+                    ? iso.Data.Length
+                    : ((frame.Data[0] & 0x0F) << 8) | frame.Data[1];
+
+                if (declaredLength < 3 || (declaredLength - 3) % 4 != 0)
+                    return false;
+            }
+
             responseService = sid;
             return true;
         }
