@@ -47,7 +47,19 @@ This verifies a **file replacement/rollback simulation only**. It does not demon
 
 The read-only dual-flavor staging workflow produces the separate `Dvinholm-v0.2.4-STABLE-WINDOWS-ACCEPTANCE-KIT` artifact **after** rechecking the actual staged ZIPs. This kit is **not interchangeable** with the earlier Portable `rc`-channel kit. It validates the `stable` channel and both ZIPs using the exact commit; it creates no GitHub release.
 
-Download **both artifacts from the same successful 0.2.4 Stable staging workflow run**. Extract the three-file `Dvinholm-v0.2.4-STAGED-NOT-PUBLISHED` artifact into a `candidate` directory, and the acceptance kit into a sibling `kit` directory. With Windows PowerShell in their common parent, execute:
+Download **both artifacts from the same successful 0.2.4 Stable staging workflow run**. Extract the three-file `Dvinholm-v0.2.4-STAGED-NOT-PUBLISHED` artifact into a `candidate` directory, and the acceptance kit into a sibling `kit` directory. The kit now contains **`START-STABLE-ACCEPTANCE-024.cmd`**. After extracting the two artifacts into sibling `kit` and `candidate` directories, double-click the CMD file inside `kit`. It strictly validates the **entire** SHA receipt, audits both downloaded ZIPs and their shared checksum, creates a new private Portable copy, checks its receipt and user-data directory, then attempts to start **only that verified isolated EXE**. A launch attempt is not a completed Windows GUI test.
+
+For verification and extraction **without** launching WinUI, run this from the `kit` directory:
+
+```cmd
+START-STABLE-ACCEPTANCE-024.cmd --prepare-only
+```
+
+The complete kit also includes `src/Dvinholm.App/Dvinholm.App.csproj`, retained solely so the Lite **simulated-host** preflight can validate the exact pinned Windows App SDK version. Keep this file in its original relative path beneath `kit` when extracting the downloaded Actions artifact; moving only the `.cmd` or `eng` folder makes the independent Lite audit fail closed.
+
+The launcher rejects unknown arguments, tampered/multiline build receipts, missing ZIPs and any previously existing `Dvinholm-024-stable-acceptance` destination. Running it again intentionally refuses to overwrite the folder. After a successful prepare-only run, launch `Dvinholm-024-stable-acceptance\Dvinholm.App.exe` directly for manual testing; its acceptance receipt keeps settings isolated.
+
+Alternatively, with Windows PowerShell in the common parent, the underlying preparation can still be run explicitly:
 
 ```powershell
 $commit = (Get-Content -LiteralPath '.\kit\BUILD_COMMIT_024_STABLE.txt' -Raw).Trim()

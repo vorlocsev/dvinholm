@@ -1,10 +1,21 @@
+## Development 0.2.4 one-click Stable Windows acceptance (2026-10-25)
+
+- [x] Add `START-STABLE-ACCEPTANCE-024.cmd` to the read-only Stable-channel kit with strict argument handling and a separate `--prepare-only` mode. Do not expand untrusted SHA receipt text inside CMD.
+- [x] `eng/Start-StableAcceptance024.ps1` reads and validates the **whole** original `BUILD_COMMIT_024_STABLE.txt` against exactly 40 lowercase hexadecimal characters and optional single final LF/CRLF; rejects unknown inputs or existing destination, invokes full two-flavor checksum and Stable metadata audit, then verifies private receipt/settings and isolated EXE before optional WinUI launch.
+- [x] Eight deterministic offline launcher/CI boundary tests. The nonpublishing Stable 0.2.4 workflow dry-runs the **downloaded** two-ZIP artifact through the real CMD with a tampered receipt, valid prepare-only and expected no-overwrite retry; resets expected negative native exit statuses and never opens the GUI.
+- [x] Include the CMD and its PowerShell entrypoint in the versioned Stable acceptance kit; document double-click and prepare-only flows, and keep RC-channel kit unchanged.
+- [x] Diagnose first one-click staging #9: the ordinary Portable/Lite ZIP, hash, migration and isolated extraction gates passed, but the standalone kit lacked `src/Dvinholm.App/Dvinholm.App.csproj`, required to verify the pinned Windows App SDK line during simulated Lite preflight. Add this exact source to both the shipped acceptance kit and actual downloaded-ZIP CI rehearsal, with a regression source contract; do not bypass the validation.
+- [ ] Require green updated-branch Development CI, full dual-flavor staging including downloaded-artifact one-click rehearsal, Portable/Lite RC, v0.2.3 staging/RC and MSIX before merge; then verify postmerge main. Eight actual Windows 11 LTSC GUI checks and real J2534 remain deferred, **no Stable 0.2.4 publication without explicit approval**.
+
+---
+
 ## Development 0.2.4 private Stable-channel Windows acceptance (2026-10-25)
 
 - [x] Create `Prepare-StableAcceptance024.ps1` for **three-file** downloaded Stable 0.2.4 staging: exactly Portable/Lite ZIPs and original two-entry SHA256SUMS, strict commit SHA, independent eight-gate archive and compiled production metadata checks for both with `-Channel stable`.
 - [x] Extract only verified Portable into a **new** directory with a v0.2.4 acceptance receipt and private ECU/CAN/J2534 settings path; use atomic same-parent rename and refuse overwriting an existing destination. No installed app, updater, GUI or hardware is ever launched by CI.
 - [x] Add eight offline acceptance isolation contracts, a downloaded-real-ZIP CI rehearsal including expected no-overwrite rejection, and a read-only Stable Windows acceptance kit with exact `BUILD_COMMIT_024_STABLE.txt` and all verification prerequisites.
 - [x] Document how to download both artifacts from the **same** successful staging run and manually launch the isolated Stable-channel Portable test copy. RC-channel acceptance kits remain separate.
-- [ ] Require green Development CI, combined Stable 0.2.4 staging with new private acceptance gate, both RC pipelines, v0.2.3 staging/RC and MSIX before merge. Then verify postmerge main. **All eight interactive Windows LTSC GUI tasks remain unperformed**, as do physical J2534/installed-app updater tests. No 0.2.4 public release without explicit approval.
+- [x] PR #495 merged as `c0b01f0` after CI #3543, Stable 0.2.4 staging #7, Portable RC #22, Lite RC #9, v0.2.3 staging #87/RC #82 and MSIX #158 passed. Postmerge main CI #3544, staging #8, Portable #23, Lite #10 and staging v0.2.3 #88 started; check final results separately. **All eight interactive Windows LTSC GUI tasks remain unperformed**, as do physical J2534/installed-app updater tests. Stable 0.2.4 release still requires explicit user authorization.
 
 ---
 
