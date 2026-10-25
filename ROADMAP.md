@@ -1,9 +1,18 @@
+## Development 0.2.4 report export staged-content integrity (2026-10-25)
+
+- [x] Verify all staged UTF-8 TXT/CSV bytes against the intended report before replacing an existing report. A nonempty temporary file is insufficient protection if a staging writer returned after truncating or silently altering content.
+- [x] Preserve same-directory atomic replacement, UTF-8 without BOM, platform-native CSV line endings, cleanup of temporary files and compatibility with the existing `WriteAtomicallyAsync` test hook.
+- [x] Add eight deterministic offline checks: Unicode TXT, exact CSV, truncated output, equal-length modified output, absent/empty stage, interrupted write and successful retry.
+- [ ] Require green branch Development CI, staging, RC and MSIX before merge; independently verify postmerge `main`. Stable v0.2.3 publication unchanged; physical J2534 and Windows installed GUI updater remain deferred.
+
+---
+
 ## Development 0.2.4 CAN baud-rate settings staged-write integrity (2026-10-25)
 
 - [x] Validate full temporary file contents before replacing the preferred CAN baud-rate setting. Even a different supported speed can be an unintended silent staging write and must fail rather than overwrite the user's choice.
 - [x] Keep existing valid rates (500/250/125 kbit/s), invariant-culture numeric encoding, same-directory unique temp files, UTF-8 without BOM, atomic replacement and cleanup on failure.
 - [x] Add eight deterministic offline regressions: truncated output, changed but valid rate, appended newline, missing stage, empty first stage, interrupted write, successful retry and legacy temp collision without data loss.
-- [ ] Check branch CI, Stable staging, RC and MSIX, then merge if green and verify postmerge `main`. Stable v0.2.3 publication remains unchanged; physical J2534 and installed Windows GUI updater smoke tests remain deferred.
+- [x] PR #486 merged as `20566c0` after CI #3457, staging #62, RC #63 and MSIX #136 passed. Postmerge main CI #3458, staging #63, RC #64 and MSIX #137 started; verify final results separately. Stable v0.2.3 remains unchanged; physical J2534 and Windows GUI updater tests remain deferred.
 
 ---
 
@@ -12,7 +21,7 @@
 - [x] Save the preferred J2534 DLL path via a uniquely named same-directory temporary file, avoiding collisions with stale fixed-name `.tmp` files and overlapping saves.
 - [x] Compare the complete staged path with the intended value before replacement, preserving prior settings if a writer silently truncates or changes the data. Clean temporary files even when staging or final replacement fails.
 - [x] Add eight offline persistence regressions for nested UTF-8 paths, old temp collisions, interrupted/short/altered writes, missing temp, failed destination replace and retry/clearing. No adapter access.
-- [x] PR #485 merged as `cb6a1f2` after CI #3452, staging #60, RC #61 and MSIX #133 all passed. Postmerge CI #3453, staging #61, RC #62 and MSIX #134 are running; confirm final conclusions separately. Stable v0.2.3 unchanged; physical J2534 and interactive Windows GUI updater checks remain deferred.
+- [x] PR #485 merged as `cb6a1f2`; postmerge main CI #3453, staging #61, RC #62 and MSIX #134 all passed. Stable v0.2.3 unchanged; physical J2534 and interactive Windows GUI updater checks remain deferred.
 
 ---
 
