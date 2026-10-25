@@ -106,11 +106,11 @@ try {
     }
     function Assert-Same([hashtable]$actual, [hashtable]$expected, [string]$phase) {
         if ($actual.Count -ne $expected.Count) {
-            throw "$phase: file count differs ($($actual.Count) vs $($expected.Count))."
+            throw "${phase}: file count differs ($($actual.Count) vs $($expected.Count))."
         }
         foreach ($name in $expected.Keys) {
             if (-not $actual.ContainsKey($name) -or $actual[$name] -cne $expected[$name]) {
-                throw "$phase: missing or altered file $name."
+                throw "${phase}: missing or altered file $name."
             }
         }
     }
