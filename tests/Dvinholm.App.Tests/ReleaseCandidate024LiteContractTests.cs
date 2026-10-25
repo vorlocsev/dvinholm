@@ -63,7 +63,7 @@ public sealed class ReleaseCandidate024LiteContractTests
         Assert.Contains("Test-WindowsDistributionExtraction.ps1", content);
         Assert.Contains("-SimulatedLiteHost", content);
         Assert.Contains("SIMULATED host", content);
-        Assert.Contains("does NOT", content);
+        Assert.Contains("NOT an actual Windows readiness", content);
     }
 
     [Fact]
