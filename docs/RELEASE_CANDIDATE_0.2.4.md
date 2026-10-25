@@ -80,18 +80,20 @@ The report always says **Release decision: HOLD** and carries all eight Windows 
 
 The candidate report reflects the GitHub Actions run and commit that generated it. Download the report and both related artifacts from the **same successful workflow run**, and use those exact matched archives when performing any human acceptance. A new source commit needs a new staging run and new evidence report.
 
-## Remaining eight manual Windows acceptance checkpoints
+## Manual Windows 11 LTSC acceptance, confirmed by user for a9e6188
 
-These **have not been performed** on 0.2.4. Do not mark complete from CI.
+On **26 October 2026**, after being explicitly asked whether all eight acceptance checks passed, the user confirmed **«без ошибок»** (no errors). This is **user-reported evidence** for the isolated, Stage #16 Stable candidate at exact SHA `a9e61883a413d4afaebb86fb468987c904250092`, **not an observation by CI**, and cannot be automatically carried forward to new SHA builds. The record is `docs/MANUAL_STABLE_0.2.4_WINDOWS_ACCEPTANCE.md`.
 
-- [ ] Launch a candidate on Windows 11 LTSC in an isolated test environment, without changing the installed application's data.
-- [ ] Confirm actual window title/version and branded icon.
-- [ ] Confirm no demo/test/preview UDS controls in production.
-- [ ] Check J2534 device discovery while disconnected; live actions remain disabled.
-- [ ] Verify CAN speed selection, save, restart and reload.
-- [ ] Verify user profile JSON import/export/edit/search and restart persistence.
-- [ ] Verify CAN Monitor layout, filtering and nonempty CSV export without actual adapter.
-- [ ] Test update channel UI, cancel/error handling, and unchanged user data; never perform an unapproved downgrade.
+- [x] Launch the isolated candidate on Windows 11 LTSC, without changing installed data.
+- [x] Check actual window title/version and branded icon.
+- [x] Check demo/test/preview UDS controls absent in production.
+- [x] Check disconnected J2534 discovery and disabled live actions.
+- [x] Check CAN speed save, restart and reload.
+- [x] Check ECU profile JSON import/export/edit/search and restart persistence.
+- [x] Check CAN Monitor layout, filtering and offline CSV export.
+- [x] Check update channel UI, cancel/error behavior and unchanged user data, without an unapproved downgrade.
+
+**Separate blocker remains:** The installed application has **not** yet been tested updating itself from published Stable 0.2.3 to public Stable 0.2.4. The default Stable channel points to publicly released versions, and 0.2.4 has not been published. The next safe stage exercises the actual updater's file-replacement helper with the two genuine ZIPs in disposable Windows CI folders, forcing both successful replacement and rollback; it **does not** act on the user's installation, start the GUI or publish 0.2.4. Hardware J2534 tests remain postponed. Publication requires the user's explicit approval.
 
 ## Prepare a verified isolated copy for human acceptance
 
