@@ -1,9 +1,18 @@
+## Development 0.2.4 published v0.2.3 to staged 0.2.4 upgrade rehearsal (2026-10-25)
+
+- [x] Extend read-only dual-flavor Stable staging to download **actual published** v0.2.3 Portable assets and require its exact original `91ecc343608c931eb033523e3db6012a6c5dbd58` release commit, published/non-prerelease metadata and two expected assets.
+- [x] Implement eight-gate `Test-RealStableUpgrade024.ps1`: old/new flat file sets, published v0.2.3 ZIP identity, unchanged combined 0.2.4 SHA hashes, exact 0.2.4 Stable Portable identity, compiled version direction, byte-perfect old-install backup, complete staged upgrade with obsolete-file cleanup and independent settings preservation, byte-perfect rollback with settings preserved.
+- [x] Use extracted **real release and staged ZIP bytes** only in disposable directories; no app launches, installed updates, registry changes or release writes. Add eight deterministic offline source-contract tests and document that this rehearsal is **not** a real in-app updater or GUI acceptance.
+- [ ] Confirm Development CI, new dual-flavor staging with offline upgrade simulation, Lite/Portable RC, v0.2.3 validation/staging and experimental MSIX; merge only after green, then verify `main`. Eight real Windows GUI checks and physical J2534 tests remain deferred; Stable 0.2.4 publication requires explicit authorization.
+
+---
+
 ## Development 0.2.4 unified dual-flavor Stable staging (2026-10-25)
 
 - [x] Add read-only `stable-staging-v0.2.4.yml`: publish production-only Windows x86 Portable (bundled runtime) **and** Lite (framework-dependent) from the same commit with `Version=0.2.4`, `0.2.4+SHA.stable`, debug tools excluded and trimming/AOT disabled.
 - [x] Run eight actual ZIP/binary gates for each flavor independently, prove Lite is smaller, generate one canonical two-entry `SHA256SUMS.txt`, and require it to match both independently audited single-flavor manifests.
 - [x] Upload exactly two ZIPs plus checksum as `Dvinholm-v0.2.4-STAGED-NOT-PUBLISHED`, download actual GitHub Actions bytes and rerun all eight gates per flavor from the **original downloaded SHA lines** without recomputing or modifying a hash. Add eight offline source-level contracts and document the distinction between staging and release authorization.
-- [ ] Require green branch CI, two-flavor Stable staging, Lite RC, Portable RC, old 0.2.3 staging/RC and MSIX before merge. Verify postmerge main. **All eight Windows LTSC GUI acceptance steps remain unperformed**, as does physical J2534 testing. Stable 0.2.4 still requires explicit user approval; do not change published v0.2.3.
+- [x] PR #493 merged as `6344bf0` after CI #3520, dual-flavor staging #1, Portable RC #16, Lite RC #3, staging v0.2.3 #81, legacy RC #78 and MSIX #154 all passed. Postmerge main CI #3521, dual-flavor staging #2, Portable RC #17, Lite RC #4 and v0.2.3 staging #82 running; confirm final results separately. **All eight Windows LTSC GUI checks remain unperformed**, as does physical J2534 testing. Stable 0.2.4 requires explicit user approval; published v0.2.3 unchanged.
 
 ---
 
