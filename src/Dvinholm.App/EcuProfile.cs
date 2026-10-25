@@ -188,8 +188,7 @@ internal sealed class EcuProfileCatalog
             var seenDids = new HashSet<ushort>();
             foreach (var value in document.ReadableDataIdentifiers ?? Array.Empty<string>())
             {
-                if (!ushort.TryParse(value, System.Globalization.NumberStyles.HexNumber,
-                        System.Globalization.CultureInfo.InvariantCulture, out var did))
+                if (!TryParseDid(value, out var did))
                     throw new InvalidDataException($"Profile '{document.Id}' has an invalid hexadecimal DID '{value}'.");
 
                 // The editor rejects duplicate DID entries; imported JSON must
@@ -231,9 +230,27 @@ internal sealed class EcuProfileCatalog
         }
     }
 
+    // The profile editor accepts an optional 0x prefix. Imported JSON uses
+    // the same hexadecimal spelling rules, while exported JSON stays
+    // canonical (without prefixes) for backwards compatibility.
+    private static string? NormalizeHex(string? text)
+    {
+        if (text is null)
+            return null;
+
+        var value = text.Trim();
+        return value.StartsWith("0x", StringComparison.OrdinalIgnoreCase)
+            ? value[2..]
+            : value;
+    }
+
     private static bool TryParseCanId(string? text, out uint id) =>
-        uint.TryParse(text, System.Globalization.NumberStyles.HexNumber,
+        uint.TryParse(NormalizeHex(text), System.Globalization.NumberStyles.HexNumber,
             System.Globalization.CultureInfo.InvariantCulture, out id);
+
+    private static bool TryParseDid(string? text, out ushort did) =>
+        ushort.TryParse(NormalizeHex(text), System.Globalization.NumberStyles.HexNumber,
+            System.Globalization.CultureInfo.InvariantCulture, out did);
 
     private sealed class ProfileDocument
     {
