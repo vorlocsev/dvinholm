@@ -55,6 +55,8 @@ For verification and extraction **without** launching WinUI, run this from the `
 START-STABLE-ACCEPTANCE-024.cmd --prepare-only
 ```
 
+The complete kit also includes `src/Dvinholm.App/Dvinholm.App.csproj`, retained solely so the Lite **simulated-host** preflight can validate the exact pinned Windows App SDK version. Keep this file in its original relative path beneath `kit` when extracting the downloaded Actions artifact; moving only the `.cmd` or `eng` folder makes the independent Lite audit fail closed.
+
 The launcher rejects unknown arguments, tampered/multiline build receipts, missing ZIPs and any previously existing `Dvinholm-024-stable-acceptance` destination. Running it again intentionally refuses to overwrite the folder. After a successful prepare-only run, launch `Dvinholm-024-stable-acceptance\Dvinholm.App.exe` directly for manual testing; its acceptance receipt keeps settings isolated.
 
 Alternatively, with Windows PowerShell in the common parent, the underlying preparation can still be run explicitly:
