@@ -1,10 +1,20 @@
+## Development 0.2.4 UDS cross-service malformed NRC correlation (2026-10-25)
+
+- [x] PR #475 merged as `034721c`; postmerge main CI #3403, Stable staging #41, RC #42 and MSIX #104 succeeded.
+- [x] Tighten UDS cross-service correlation: ignore only complete three-byte `7F SID NRC` messages for another service. Do not suppress malformed two-byte or padded negatives and replace a useful framing exception with a timeout.
+- [x] Preserve valid other-service NRC/pending filtering, same-service NRC parsing and unrelated positive-response filtering.
+- [x] Add eight deterministic offline regressions, including malformed cross-service NRC then successful next DID read over virtual J2534.
+- [ ] Confirm new PR checks and postmerge CI before closing this stage. Stable v0.2.3 release remains untouched; real adapter and installed-app updater GUI smoke remain deferred.
+
+---
+
 ## Development 0.2.4 passive UDS discovery NRC framing (2026-10-25)
 
 - [x] Postmerge PR #474 checks completed successfully: main CI #3398, Stable staging #39, RC #40 and experimental MSIX #101 on `601ecab`.
 - [x] Accept passive ECU candidates only for exact three-byte ISO-TP Single Frame UDS negative responses (`7F SID NRC`). Reject truncated, overlong and First Frame negative prefixes rather than misidentifying ECU responders.
 - [x] Preserve valid NRC 0x78/0x31 handling, legal Classic CAN padding outside the declared Single Frame payload and normal positive-response discovery.
 - [x] Add eight read-only offline tests, including a virtual-J2534 passive scan verifying malformed NRC traffic is ignored and no CAN transmissions occur.
-- [ ] Confirm PR checks, merge and postmerge main CI before closing this Development stage. Stable v0.2.3 remains unchanged; physical J2534 and installed-app GUI updater smoke stay deferred.
+- [x] PR #475 merged as `034721c`; main CI #3403, staging #41, RC #42 and MSIX #104 passed. Stable v0.2.3 unchanged; physical J2534 and installed-app GUI updater smoke stay deferred.
 
 ---
 
