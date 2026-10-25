@@ -1,9 +1,18 @@
+## Development 0.2.4 ECU profile JSON editor-compatible limits (2026-10-25)
+
+- [x] Enforce the same metadata length limits on JSON imports as the ECU profile editor: ID up to 120, name up to 160 and source up to 2000 trimmed characters.
+- [x] Reject more than 128 candidate DIDs in any imported profile, without changing the valid 128-DID boundary or existing duplicate DID checks.
+- [x] Add eight deterministic offline tests for metadata boundaries, 128/129-DID boundary and preventing persistence when a later profile is invalid.
+- [ ] Verify Development branch CI, Stable staging, RC and experimental MSIX; merge after green and confirm postmerge `main`. Stable v0.2.3 remains published and unchanged; real adapter and installed-app GUI updater testing remain deferred.
+
+---
+
 ## Development 0.2.4 hexadecimal profile JSON import compatibility (2026-10-25)
 
 - [x] Accept optional `0x`/`0X` prefix for imported CAN request/response IDs and candidate DIDs, consistent with the existing profile editor. Preserve canonical prefix-free export.
 - [x] Keep 11-bit/29-bit arbitration limits, 16-bit DID bounds, malformed/multiple prefix rejection and numeric duplicate DID detection unchanged.
 - [x] Add eight deterministic offline regression checks, including mixed-case prefixes, round-trip, malformed prefixes, out-of-range values, and no persistence on duplicate DID.
-- [ ] Verify branch CI, staging, RC and experimental MSIX; merge after green, then verify postmerge `main`. Stable v0.2.3 stays published; physical J2534 and interactive updater tests deferred.
+- [x] PR #479 merged as `80bb483`; branch CI #3422, Stable staging #48, RC #49 and MSIX #115 passed. Postmerge CI #3423, staging #49, RC #50 and MSIX #116 started; confirm their results separately. Stable v0.2.3 unchanged; physical J2534 and interactive updater tests deferred.
 
 ---
 
@@ -12,7 +21,7 @@
 - [x] Reject repeated candidate DIDs in imported ECU JSON instead of silently deduplicating when converting to `IReadOnlySet<ushort>`. Compare parsed numeric DIDs so hexadecimal case and leading zeros cannot hide repetition.
 - [x] Keep distinct DIDs, empty/null lists and the same DID in **different** ECU profiles valid; preserve normal JSON round-trips.
 - [x] Add eight deterministic offline regressions, including rejection in a later profile and no persistence callback on invalid import.
-- [x] PR #478 merged as `2f64b62` after CI #3417, Stable staging #46, RC #47 and MSIX #112 passed. Postmerge main CI #3418, staging #47, RC #48 and MSIX #113 started; verify conclusions separately. Stable v0.2.3 unchanged; real J2534 deferred.
+- [x] PR #478 merged as `2f64b62`; postmerge main CI #3418, staging #47, RC #48 and MSIX #113 all passed. Stable v0.2.3 unchanged; real J2534 deferred.
 
 ---
 
