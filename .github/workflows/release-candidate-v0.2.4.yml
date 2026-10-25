@@ -130,7 +130,9 @@ jobs:
           $root = Join-Path $env:RUNNER_TEMP ('Dvinholm-024-click-' + [Guid]::NewGuid().ToString('N'))
           $kit = Join-Path $root 'kit'
           $candidate = Join-Path $root 'candidate'
-          New-Item -ItemType Directory -Path $kit, (Join-Path $kit 'eng'), $candidate -Force | Out-Null
+          New-Item -ItemType Directory -Path $kit -Force | Out-Null
+          New-Item -ItemType Directory -Path (Join-Path $kit 'eng') -Force | Out-Null
+          New-Item -ItemType Directory -Path $candidate -Force | Out-Null
           try {
             Copy-Item -LiteralPath 'START-ACCEPTANCE-024.cmd' -Destination $kit
             Copy-Item -LiteralPath 'BUILD_COMMIT_024.txt' -Destination $kit
