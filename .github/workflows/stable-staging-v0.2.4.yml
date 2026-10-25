@@ -52,7 +52,13 @@ jobs:
             $errors = $null
             [Management.Automation.Language.Parser]::ParseFile(
               (Resolve-Path -LiteralPath $script).Path, [ref]$tokens, [ref]$errors) | Out-Null
-            if (@($errors).Count -gt 0) { throw "PowerShell 5.1 syntax failure in $script" }
+            if (@($errors).Count -gt 0) {
+              foreach ($problem in $errors) {
+                Write-Host ("::error file={0},line={1}::{2}" -f $script,
+                  $problem.Extent.StartLineNumber, $problem.Message)
+              }
+              throw "PowerShell 5.1 syntax failure in $script"
+            }
           }
 
       - name: Restore application solution
