@@ -19,6 +19,17 @@
     </PackageReference>
   </ItemGroup>
 
+  <!-- Production-only CI compiles the same updater integration fixture against
+       the Stable assembly (DevelopmentFeatures=false). Remove ONLY test sources
+       that require intentionally excluded development/demo app types. Ordinary
+       Development CI still compiles and runs all these tests with true. -->
+  <ItemGroup Condition="'$(DvinholmDevelopmentFeatures)' != 'true'">
+    <Compile Remove="CanDemoFrameGeneratorTests.cs" />
+    <Compile Remove="UdsOfflineSampleTests.cs" />
+    <Compile Remove="UdsOfflineTextReportTests.cs" />
+    <Compile Remove="ReportExportFileWriterTests.cs" />
+  </ItemGroup>
+
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dvinholm.App\Dvinholm.App.csproj" />
   </ItemGroup>
