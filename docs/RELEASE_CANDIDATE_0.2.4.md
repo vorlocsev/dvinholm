@@ -39,7 +39,7 @@ Download the **two artifacts from the SAME successful RC 0.2.4 workflow run**:
 
 The kit also includes **`START-ACCEPTANCE-024.cmd`**. Its `BUILD_COMMIT_024.txt` must contain exactly a 40-character **lowercase hexadecimal SHA** followed by at most one final LF/CRLF. Malformed, multi-line, uppercase, extra-whitespace or shell-metacharacter values are refused *before* the launcher passes any input into another CMD or PowerShell invocation. Eight negative Windows CI checks exercise the real launcher against invalid provenance without a GUI or vehicle adapter.
 
-The acceptance kit  Once the two artifacts are extracted into sibling `kit` and `candidate` folders, double-click the file in `kit`. It verifies the exact commit and SHA-256, extracts to a fresh `Dvinholm-024-acceptance` folder, checks the receipt and private data folder, then **attempts to launch only that isolated EXE** and opens its checklist in Notepad. No installer is run; a successful launch command does **not** prove that the GUI works.
+Once the two artifacts are extracted into sibling `kit` and `candidate` folders, double-click the file in `kit`. It verifies the exact commit and SHA-256, extracts to a fresh `Dvinholm-024-acceptance` folder, checks the receipt and private data folder, then **attempts to launch only that isolated EXE** and opens its checklist in Notepad. No installer is run; a successful launch command does **not** prove that the GUI works.
 
 To verify and extract without launching WinUI, run the launcher in the `kit` folder with `--prepare-only`:
 
