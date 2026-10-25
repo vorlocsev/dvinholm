@@ -1,10 +1,19 @@
+## Development 0.2.4 one-click RC provenance hardening (2026-10-25)
+
+- [x] Reject untrusted `BUILD_COMMIT_024.txt` contents *before* expanding the value in a CMD invocation. Require exactly 40 lowercase hexadecimal SHA characters plus an optional single terminal newline, no trailing text, injected quotes, control sequences, leading spaces or multi-line values.
+- [x] Execute eight negative Windows offline cases in `eng/Test-Rc024LauncherProvenance.ps1`: blank SHA, short, long, uppercase, nonhex, leading spaces, multi-line trailer and benign shell-metacharacter injection attempt. Assert rejection happens at the SHA guard, before extraction or GUI launch; check no side-effect marker or existing settings are touched.
+- [x] Extend the RC v0.2.4 workflow with syntax preflight and executable negative tests, and update the launcher source contracts to require validation *before* `set /p`. Preserve normal same-run `--prepare-only` acceptance, ZIP/hash checks and no-overwrite behavior.
+- [ ] Require green CI, RC v0.2.4 including the real downloaded ZIP dry-run, v0.2.3 staging/RC and MSIX before merge; then confirm postmerge `main`. Published Stable v0.2.3 remains unchanged. Eight manual Windows 11 LTSC GUI checks and real J2534 remain deferred; Stable v0.2.4 publication requires explicit approval.
+
+---
+
 ## Development 0.2.4 one-click isolated Windows RC acceptance (2026-10-25)
 
 - [x] Add `START-ACCEPTANCE-024.cmd` to the separate read-only RC 0.2.4 acceptance kit. It requires the exact run's `BUILD_COMMIT_024.txt` and downloaded `Dvinholm-Windows-x86.zip` plus `SHA256SUMS.txt`; it refuses missing inputs, unknown arguments and any existing target directory.
 - [x] `--prepare-only` verifies and extracts an isolated test copy with its v0.2.4 acceptance receipt, settings folder and EXE but **never launches WinUI**. Double-click/manual mode attempts to launch only the verified isolated copy after all checks, with the private data environment variable and a human checklist.
 - [x] Add eight offline launcher contract tests. On Windows CI, dry-run the actual bundled batch against **downloaded** RC bytes; confirm a valid isolated extraction, then reject a second attempt rather than overwrite the existing copy. Bundle CMD and exact-SHA receipt preparation scripts together for one-click Windows testing.
 - [x] Diagnose RC #7 failure: verified downloaded ZIP extraction succeeded and the second run correctly refused to overwrite it. Its expected nonzero cmd.exe exit code leaked into the enclosing Windows PowerShell step. Clear that code only after verifying the expected refusal; add a regression test without weakening the no-overwrite guard.
-- [ ] Require green updated-branch Development CI, RC 0.2.4 including the real CMD dry-run and kit upload, legacy Stable staging/RC and MSIX before merge; verify postmerge main. Human Windows LTSC GUI checks, installed updater smoke and physical J2534 remain unperformed. Published Stable v0.2.3 unchanged; do not publish 0.2.4 without explicit approval.
+- [x] PR #490 merged as `b2925fa` after CI #3497, v0.2.4 RC #10, staging #75, v0.2.3 RC #75 and MSIX #151 all passed. Postmerge main CI #3498, v0.2.4 RC #11 and staging #76 started; check conclusions separately. Human Windows LTSC GUI checks, installed updater smoke and physical J2534 remain unperformed. Published Stable v0.2.3 unchanged; do not publish 0.2.4 without explicit approval.
 
 ---
 
