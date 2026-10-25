@@ -16,8 +16,17 @@ internal static class DvinholmUserDataDirectory
     internal const string Rc024AcceptanceReceipt = "ACCEPTANCE-0.2.4.txt";
 
     private static bool HasAcceptanceReceipt =>
-        File.Exists(Path.Combine(AppContext.BaseDirectory, AcceptanceReceipt)) ||
-        File.Exists(Path.Combine(AppContext.BaseDirectory, Rc024AcceptanceReceipt));
+        HasAcceptanceReceiptInDirectory(AppContext.BaseDirectory);
+
+    // Explicitly testable receipt detection keeps the historical v0.2.3
+    // acceptance fixture working and makes v0.2.4 direct-launch behavior
+    // deterministic without launching a GUI during CI.
+    internal static bool HasAcceptanceReceiptInDirectory(string applicationDirectory)
+    {
+        ArgumentException.ThrowIfNullOrWhiteSpace(applicationDirectory);
+        return File.Exists(Path.Combine(applicationDirectory, AcceptanceReceipt)) ||
+               File.Exists(Path.Combine(applicationDirectory, Rc024AcceptanceReceipt));
+    }
 
     internal static bool IsAcceptanceLaunch =>
         HasAcceptanceReceipt || Environment.GetEnvironmentVariable(AcceptanceVariable) is not null;
