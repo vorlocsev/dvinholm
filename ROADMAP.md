@@ -1,9 +1,19 @@
+## Development 0.2.4 first standalone validation-only RC (2026-10-25)
+
+- [x] Add a separate `release-candidate-v0.2.4.yml` workflow which produces only an unsigned, uninstalled Windows x86 Portable RC artifact (ZIP + SHA256SUMS), with `contents: read`, no GitHub release/tag write permissions or publication steps.
+- [x] Publish the application for offline RC validation with `DvinholmDevelopmentFeatures=false`, `PublishTrimmed=false`, version 0.2.4, commit-bound `rc` metadata, no debug files; run eight production-only assembly smoke checks.
+- [x] Add `Test-ReleaseCandidate024.ps1` with eight byte-level guards for candidate identity, file set, size, SHA-256, safe ZIP, isolated x86 extraction, no demo code, AssemblyVersion and commit-bound product version. Run audit before and after GitHub Actions artifact upload/download.
+- [x] Add eight offline workflow/RC-contract tests and `docs/RELEASE_CANDIDATE_0.2.4.md` with explicitly **unperformed** interactive Windows smoke checklist and instructions not to touch a live installation without separate data isolation.
+- [ ] Confirm Development CI, v0.2.3 nonpublishing staging, new v0.2.4 RC and MSIX CI; merge only after green and check main. Next: 0.2.4 isolated Windows acceptance, reviewed Stable packaging and explicit user publication approval. Real J2534 testing remains deferred; published v0.2.3 unchanged.
+
+---
+
 ## Development 0.2.4 report export staged-content integrity (2026-10-25)
 
 - [x] Verify all staged UTF-8 TXT/CSV bytes against the intended report before replacing an existing report. A nonempty temporary file is insufficient protection if a staging writer returned after truncating or silently altering content.
 - [x] Preserve same-directory atomic replacement, UTF-8 without BOM, platform-native CSV line endings, cleanup of temporary files and compatibility with the existing `WriteAtomicallyAsync` test hook.
 - [x] Add eight deterministic offline checks: Unicode TXT, exact CSV, truncated output, equal-length modified output, absent/empty stage, interrupted write and successful retry.
-- [ ] Require green branch Development CI, staging, RC and MSIX before merge; independently verify postmerge `main`. Stable v0.2.3 publication unchanged; physical J2534 and Windows installed GUI updater remain deferred.
+- [x] PR #487 merged as `b946ac2` after CI #3462, staging #64, RC #65 and MSIX #139 all passed. Postmerge main CI #3463, staging #65, RC #66 and MSIX #140 started; verify conclusions separately. Stable v0.2.3 unchanged; physical J2534 and Windows installed GUI updater remain deferred.
 
 ---
 
@@ -12,7 +22,7 @@
 - [x] Validate full temporary file contents before replacing the preferred CAN baud-rate setting. Even a different supported speed can be an unintended silent staging write and must fail rather than overwrite the user's choice.
 - [x] Keep existing valid rates (500/250/125 kbit/s), invariant-culture numeric encoding, same-directory unique temp files, UTF-8 without BOM, atomic replacement and cleanup on failure.
 - [x] Add eight deterministic offline regressions: truncated output, changed but valid rate, appended newline, missing stage, empty first stage, interrupted write, successful retry and legacy temp collision without data loss.
-- [x] PR #486 merged as `20566c0` after CI #3457, staging #62, RC #63 and MSIX #136 passed. Postmerge main CI #3458, staging #63, RC #64 and MSIX #137 started; verify final results separately. Stable v0.2.3 remains unchanged; physical J2534 and Windows GUI updater tests remain deferred.
+- [x] PR #486 merged as `20566c0`; postmerge main CI #3458, staging #63, RC #64 and MSIX #137 all passed. Stable v0.2.3 remains unchanged; physical J2534 and Windows GUI updater tests remain deferred.
 
 ---
 
