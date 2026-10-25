@@ -196,6 +196,13 @@ internal sealed class UdsEcuDiscovery
             if (iso.Data.Length < 2)
                 return false;
 
+            // ReadDataByIdentifier (0x22) returns 0x62 followed by BOTH
+            // bytes of the requested DID, even if no value bytes follow.
+            // An incomplete DID must not produce a false passive ECU hit.
+            // The same check covers both Single and First Frames.
+            if (sid == 0x62 && iso.Data.Length < 3)
+                return false;
+
             responseService = sid;
             return true;
         }

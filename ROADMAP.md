@@ -1,9 +1,18 @@
+## Development 0.2.4 passive UDS ReadDID minimum payload (2026-10-25)
+
+- [x] Reject passive discovery candidates whose positive UDS ReadDataByIdentifier response `0x62` does not contain both bytes of the returned DID.
+- [x] Keep valid `0x62` Single/First Frame responses, declared ISO-TP length despite CAN padding, other valid positive response types and strictly framed negative responses.
+- [x] Add eight offline regressions, including a virtual J2534 receive-only scan proving invalid `0x62` responses cannot generate ECU candidates or transmit CAN frames.
+- [ ] Verify PR branch CI, Stable staging, RC and MSIX. Merge only after green and confirm postmerge `main`. Stable v0.2.3 remains published and unchanged; real adapters and installed Windows GUI updater smoke remain deferred.
+
+---
+
 ## Development 0.2.4 ECU profile search literal 0x handling (2026-10-25)
 
 - [x] Preserve literal `0x` text in profile ID, name and source search. Bare `0x` must not become an empty wildcard; malformed/nonhex suffixes must not match unrelated metadata after prefix removal.
 - [x] Strip an optional `0x`/`0X` prefix only for valid nonempty hexadecimal CAN ID/DID queries. Retain existing partial hexadecimal matching, case-insensitive metadata filtering, verified-only selection and sorted results.
 - [x] Add eight offline regressions including bare prefix, literal text, invalid/nonhex suffixes, standard/extended CAN, DID, immutable catalog and verified selection.
-- [ ] Verify Development CI, staging, RC and experimental MSIX before merging. Verify postmerge `main` separately. Stable v0.2.3 unchanged; real J2534 and installed updater smoke remain deferred.
+- [x] PR #481 merged as `21ad88f` after CI #3432, staging #52, RC #53 and MSIX #121 succeeded. Main postmerge CI #3433, staging #53, RC #54 and MSIX #122 started; verify outcomes independently. Stable v0.2.3 unchanged; real J2534 and installed updater smoke remain deferred.
 
 ---
 
