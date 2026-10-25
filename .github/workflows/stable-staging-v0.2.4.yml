@@ -11,6 +11,7 @@ on:
       - "eng/Test-WindowsDistributionChecksums.ps1"
       - "eng/Prepare-StableAcceptance024.ps1"
       - "eng/Start-StableAcceptance024.ps1"
+      - "eng/Write-StableReadiness024.ps1"
       - "START-STABLE-ACCEPTANCE-024.cmd"
       - "eng/Test-RealStableUpgrade024.ps1"
       - "eng/Test-WindowsDistribution.ps1"
@@ -24,6 +25,7 @@ on:
       - "tests/Dvinholm.App.Tests/StableStaging024ContractTests.cs"
       - "tests/Dvinholm.App.Tests/StableAcceptance024ContractTests.cs"
       - "tests/Dvinholm.App.Tests/StableAcceptance024LauncherTests.cs"
+      - "tests/Dvinholm.App.Tests/StableReadiness024ContractTests.cs"
       - "tests/Dvinholm.App.Tests/Published023ToStaged024UpgradeContractTests.cs"
       - "docs/RELEASE_CANDIDATE_0.2.4.md"
   workflow_dispatch:
@@ -55,6 +57,7 @@ jobs:
               'eng/Test-WindowsDistributionChecksums.ps1',
               'eng/Prepare-StableAcceptance024.ps1',
               'eng/Start-StableAcceptance024.ps1',
+              'eng/Write-StableReadiness024.ps1',
               'eng/Test-RealStableUpgrade024.ps1')) {
             $tokens = $null
             $errors = $null
@@ -324,12 +327,33 @@ jobs:
             if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
           }
 
+      - name: Generate fail-closed Stable 0.2.4 pre-release HOLD evidence (never a release)
+        shell: powershell
+        run: |
+          ./eng/Write-StableReadiness024.ps1 -ArchiveDirectory 'artifacts/stable024-downloaded' -ExpectedCommit '${{ github.sha }}' -ReportPath 'READINESS-0.2.4.md'
+          $report = [IO.File]::ReadAllText((Resolve-Path 'READINESS-0.2.4.md').Path)
+          if ($report -notmatch 'Release decision: HOLD' -or
+              $report -notmatch 'NO GO for publication' -or
+              $report -notmatch '${{ github.sha }}') {
+            throw 'Readiness evidence omitted exact commit or release HOLD.'
+          }
+          $humanSection = ($report -split '## Mandatory human Windows 11 LTSC checks \(NOT DONE BY CI\)')[1]
+          if ($null -eq $humanSection) { throw 'Missing explicit human-only section.' }
+          $humanSection = ($humanSection -split '## Remaining release blockers')[0]
+          if (@([regex]::Matches($humanSection, '(?m)^- \[ \] ')).Count -ne 8) {
+            throw 'Exactly eight human Windows GUI checks must remain unchecked.'
+          }
+          # This evidence file is separate from its verification scripts and
+          # never changes a GitHub Release, tag or installed user's files.
+          Write-Host 'Stable 0.2.4 readiness: HOLD, eight manual GUI checks pending. No release.'
+
       - name: Upload Stable 0.2.4 human Windows acceptance kit (NOT PUBLISHED)
         uses: actions/upload-artifact@v7
         with:
           name: Dvinholm-v0.2.4-STABLE-WINDOWS-ACCEPTANCE-KIT
           path: |
             BUILD_COMMIT_024_STABLE.txt
+            READINESS-0.2.4.md
             START-STABLE-ACCEPTANCE-024.cmd
             eng/Start-StableAcceptance024.ps1
             eng/Prepare-StableAcceptance024.ps1

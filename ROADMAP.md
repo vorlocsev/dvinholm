@@ -1,3 +1,12 @@
+## Development 0.2.4 pre-release evidence and HOLD decision packet (2026-10-25)
+
+- [x] Add `eng/Write-StableReadiness024.ps1` to read the **original downloaded** Portable/Lite ZIPs and canonical two-line SHA256SUMS, verify exact lowercase candidate commit and both SHA-256 hashes without regenerating them, collect byte sizes and refuse overwriting any existing report.
+- [x] Always generate `READINESS-0.2.4.md` with **Release decision: HOLD**, two verified hash/size records, prior published Stable 0.2.3 identity and exactly eight unchecked human Windows 11 LTSC GUI acceptance tasks. Keep installed-updater smoke and explicit user publication approval as separate unsatisfied conditions, while physical J2534 remains deferred to future releases.
+- [x] Require the Stage 0.2.4 workflow to generate evidence **only after** downloaded-archive checks, 0.2.3-to-0.2.4 rollback rehearsal and successful exact-SHA one-click prepare-only. Validate HOLD, source commit and eight unchecked items in CI; include the report in the read-only Stable Windows acceptance kit. Add eight offline source-contract regressions.
+- [ ] Require green updated-branch Development CI, full Stable staging and both RCs, legacy v0.2.3 checks and experimental MSIX before merge; verify postmerge `main`. A readiness report can never approve publication automatically. Manual Windows 11 LTSC GUI and installed-updater checks remain outstanding; no public Stable 0.2.4 release without explicit user authorization.
+
+---
+
 ## Development 0.2.4 one-click Stable Windows acceptance (2026-10-25)
 
 - [x] Add `START-STABLE-ACCEPTANCE-024.cmd` to the read-only Stable-channel kit with strict argument handling and a separate `--prepare-only` mode. Do not expand untrusted SHA receipt text inside CMD.
@@ -5,7 +14,7 @@
 - [x] Eight deterministic offline launcher/CI boundary tests. The nonpublishing Stable 0.2.4 workflow dry-runs the **downloaded** two-ZIP artifact through the real CMD with a tampered receipt, valid prepare-only and expected no-overwrite retry; resets expected negative native exit statuses and never opens the GUI.
 - [x] Include the CMD and its PowerShell entrypoint in the versioned Stable acceptance kit; document double-click and prepare-only flows, and keep RC-channel kit unchanged.
 - [x] Diagnose first one-click staging #9: the ordinary Portable/Lite ZIP, hash, migration and isolated extraction gates passed, but the standalone kit lacked `src/Dvinholm.App/Dvinholm.App.csproj`, required to verify the pinned Windows App SDK line during simulated Lite preflight. Add this exact source to both the shipped acceptance kit and actual downloaded-ZIP CI rehearsal, with a regression source contract; do not bypass the validation.
-- [ ] Require green updated-branch Development CI, full dual-flavor staging including downloaded-artifact one-click rehearsal, Portable/Lite RC, v0.2.3 staging/RC and MSIX before merge; then verify postmerge main. Eight actual Windows 11 LTSC GUI checks and real J2534 remain deferred, **no Stable 0.2.4 publication without explicit approval**.
+- [x] PR #496 merged as `6b5d075` after CI #3559, Stable 0.2.4 staging #13 including actual downloaded-ZIP one-click rehearsal, Portable RC #28, Lite RC #15, v0.2.3 staging #93 and RC #87, MSIX #163 all passed. Postmerge main CI #3560, staging #14, Portable RC #29, Lite RC #16 and v0.2.3 staging #94 started, results to verify separately. Eight actual Windows 11 LTSC GUI checks and real J2534 remain deferred; **no Stable 0.2.4 publication without explicit approval**.
 
 ---
 
