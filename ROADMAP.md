@@ -1,9 +1,18 @@
+## Development 0.2.4 hexadecimal profile JSON import compatibility (2026-10-25)
+
+- [x] Accept optional `0x`/`0X` prefix for imported CAN request/response IDs and candidate DIDs, consistent with the existing profile editor. Preserve canonical prefix-free export.
+- [x] Keep 11-bit/29-bit arbitration limits, 16-bit DID bounds, malformed/multiple prefix rejection and numeric duplicate DID detection unchanged.
+- [x] Add eight deterministic offline regression checks, including mixed-case prefixes, round-trip, malformed prefixes, out-of-range values, and no persistence on duplicate DID.
+- [ ] Verify branch CI, staging, RC and experimental MSIX; merge after green, then verify postmerge `main`. Stable v0.2.3 stays published; physical J2534 and interactive updater tests deferred.
+
+---
+
 ## Development 0.2.4 imported ECU candidate DID uniqueness (2026-10-25)
 
 - [x] Reject repeated candidate DIDs in imported ECU JSON instead of silently deduplicating when converting to `IReadOnlySet<ushort>`. Compare parsed numeric DIDs so hexadecimal case and leading zeros cannot hide repetition.
 - [x] Keep distinct DIDs, empty/null lists and the same DID in **different** ECU profiles valid; preserve normal JSON round-trips.
 - [x] Add eight deterministic offline regressions, including rejection in a later profile and no persistence callback on invalid import.
-- [ ] Verify new PR CI, Stable staging, RC and experimental MSIX; only merge after green and check postmerge main. Stable v0.2.3 stays published and unchanged; real J2534 testing remains deferred.
+- [x] PR #478 merged as `2f64b62` after CI #3417, Stable staging #46, RC #47 and MSIX #112 passed. Postmerge main CI #3418, staging #47, RC #48 and MSIX #113 started; verify conclusions separately. Stable v0.2.3 unchanged; real J2534 deferred.
 
 ---
 
@@ -13,7 +22,7 @@
 - [x] Reject duplicate JSON property names within each ECU profile object, including case variants, before deserializing. Avoid silent replacement of CAN request/response IDs, addressing type, DID list or author-marked verification.
 - [x] Preserve forward-compatible distinct extra fields, existing valid catalogs, validation errors and the no-persistence-on-invalid-import boundary.
 - [x] Add eight offline checks: repeated addressing, case-variant field names, verification, DID list, second-profile import atomicity and valid round-trip. No hardware involved.
-- [x] PR #477 merged as `a2801bb` after CI #3412, Stable staging #44, RC #45 and MSIX #109 succeeded. Postmerge main CI #3413, staging #45, RC #46 and MSIX #110 started; confirm their conclusions separately. Stable v0.2.3 remains unchanged; physical J2534 and installed GUI updater checks stay deferred.
+- [x] PR #477 merged as `a2801bb`; postmerge main CI #3413, staging #45, RC #46 and MSIX #110 all passed. Stable v0.2.3 remains unchanged; physical J2534 and installed GUI updater checks stay deferred.
 
 ---
 
