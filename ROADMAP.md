@@ -1,9 +1,18 @@
+## Development 0.2.4 CAN baud-rate settings staged-write integrity (2026-10-25)
+
+- [x] Validate full temporary file contents before replacing the preferred CAN baud-rate setting. Even a different supported speed can be an unintended silent staging write and must fail rather than overwrite the user's choice.
+- [x] Keep existing valid rates (500/250/125 kbit/s), invariant-culture numeric encoding, same-directory unique temp files, UTF-8 without BOM, atomic replacement and cleanup on failure.
+- [x] Add eight deterministic offline regressions: truncated output, changed but valid rate, appended newline, missing stage, empty first stage, interrupted write, successful retry and legacy temp collision without data loss.
+- [ ] Check branch CI, Stable staging, RC and MSIX, then merge if green and verify postmerge `main`. Stable v0.2.3 publication remains unchanged; physical J2534 and installed Windows GUI updater smoke tests remain deferred.
+
+---
+
 ## Development 0.2.4 J2534 DLL path settings atomic save (2026-10-25)
 
 - [x] Save the preferred J2534 DLL path via a uniquely named same-directory temporary file, avoiding collisions with stale fixed-name `.tmp` files and overlapping saves.
 - [x] Compare the complete staged path with the intended value before replacement, preserving prior settings if a writer silently truncates or changes the data. Clean temporary files even when staging or final replacement fails.
 - [x] Add eight offline persistence regressions for nested UTF-8 paths, old temp collisions, interrupted/short/altered writes, missing temp, failed destination replace and retry/clearing. No adapter access.
-- [ ] Verify new PR CI, Stable staging, RC and MSIX; merge only after green, then confirm postmerge `main`. Stable v0.2.3 unchanged; physical J2534 and interactive Windows GUI updater checks remain deferred.
+- [x] PR #485 merged as `cb6a1f2` after CI #3452, staging #60, RC #61 and MSIX #133 all passed. Postmerge CI #3453, staging #61, RC #62 and MSIX #134 are running; confirm final conclusions separately. Stable v0.2.3 unchanged; physical J2534 and interactive Windows GUI updater checks remain deferred.
 
 ---
 
@@ -12,7 +21,7 @@
 - [x] Before replacing an ECU profile catalog, compare the entire staged JSON with the intended serialized catalog. A temporary writer can return without error after emitting truncated, valid-but-incomplete, or same-length altered data; a nonempty file check cannot detect that.
 - [x] Reject bad or missing temporary output without touching the existing primary or its verified backup. Remove stray .tmp files and allow a later normal save to succeed.
 - [x] Add eight deterministic offline tests: partial/nonempty write, valid-but-wrong empty catalog, equal-length tampering, invalid first save, missing file, empty file, successful retry, Unicode two-profile round-trip.
-- [x] PR #484 merged as `8b442d9` after CI #3447, staging #58, RC #59 and MSIX #130 passed. Postmerge main CI #3448, staging #59, RC #60 and MSIX #131 started; verify conclusions separately. Stable v0.2.3 unchanged; physical J2534 and installed-app updater smoke deferred.
+- [x] PR #484 merged as `8b442d9`; postmerge main CI #3448, staging #59, RC #60 and MSIX #131 all passed. Stable v0.2.3 unchanged; physical J2534 and installed-app updater smoke deferred.
 
 ---
 
