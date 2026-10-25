@@ -185,11 +185,21 @@ internal sealed class EcuProfileCatalog
                 throw new InvalidDataException($"Profile '{document.Id}' has an invalid hexadecimal responseId.");
 
             var dids = new List<ushort>();
+            var seenDids = new HashSet<ushort>();
             foreach (var value in document.ReadableDataIdentifiers ?? Array.Empty<string>())
             {
                 if (!ushort.TryParse(value, System.Globalization.NumberStyles.HexNumber,
                         System.Globalization.CultureInfo.InvariantCulture, out var did))
                     throw new InvalidDataException($"Profile '{document.Id}' has an invalid hexadecimal DID '{value}'.");
+
+                // The editor rejects duplicate DID entries; imported JSON must
+                // not silently discard them when EcuProfile builds its set.
+                // Compare parsed numeric IDs so hexadecimal case and padding
+                // do not hide duplicates.
+                if (!seenDids.Add(did))
+                    throw new InvalidDataException(
+                        $"Profile '{document.Id}' has duplicate hexadecimal DID 0x{did:X4}.");
+
                 dids.Add(did);
             }
 

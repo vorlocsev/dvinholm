@@ -1,10 +1,19 @@
+## Development 0.2.4 imported ECU candidate DID uniqueness (2026-10-25)
+
+- [x] Reject repeated candidate DIDs in imported ECU JSON instead of silently deduplicating when converting to `IReadOnlySet<ushort>`. Compare parsed numeric DIDs so hexadecimal case and leading zeros cannot hide repetition.
+- [x] Keep distinct DIDs, empty/null lists and the same DID in **different** ECU profiles valid; preserve normal JSON round-trips.
+- [x] Add eight deterministic offline regressions, including rejection in a later profile and no persistence callback on invalid import.
+- [ ] Verify new PR CI, Stable staging, RC and experimental MSIX; only merge after green and check postmerge main. Stable v0.2.3 stays published and unchanged; real J2534 testing remains deferred.
+
+---
+
 ## Development 0.2.4 ECU profile JSON duplicate-field protection (2026-10-25)
 
 - [x] PR #476 merged as `13a4227`; postmerge main CI #3408, Stable staging #43, RC #44 and experimental MSIX #107 succeeded.
 - [x] Reject duplicate JSON property names within each ECU profile object, including case variants, before deserializing. Avoid silent replacement of CAN request/response IDs, addressing type, DID list or author-marked verification.
 - [x] Preserve forward-compatible distinct extra fields, existing valid catalogs, validation errors and the no-persistence-on-invalid-import boundary.
 - [x] Add eight offline checks: repeated addressing, case-variant field names, verification, DID list, second-profile import atomicity and valid round-trip. No hardware involved.
-- [ ] Verify branch CI, Stable staging, RC and experimental MSIX, then merge and check postmerge main before marking integration complete. Stable v0.2.3 remains unchanged; physical J2534 and installed GUI updater checks stay deferred.
+- [x] PR #477 merged as `a2801bb` after CI #3412, Stable staging #44, RC #45 and MSIX #109 succeeded. Postmerge main CI #3413, staging #45, RC #46 and MSIX #110 started; confirm their conclusions separately. Stable v0.2.3 remains unchanged; physical J2534 and installed GUI updater checks stay deferred.
 
 ---
 
