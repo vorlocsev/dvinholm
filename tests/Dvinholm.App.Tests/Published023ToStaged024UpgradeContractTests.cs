@@ -118,6 +118,6 @@ public sealed class Published023ToStaged024UpgradeContractTests
         Assert.DoesNotContain("Dvinholm.App.exe", script);
         Assert.Contains("NOT A GUI UPDATER TEST", yaml);
         Assert.Contains("NOT PUBLISHED", yaml);
-        Assert.Contains("No installed apps", script);
+        Assert.Contains("Does not start WinUI, mutate a real install", script);
     }
 }
