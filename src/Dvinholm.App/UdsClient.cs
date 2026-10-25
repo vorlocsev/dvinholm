@@ -142,7 +142,12 @@ internal sealed class UdsClient : IDisposable
             return false; // Let the normal parser report malformed responses.
 
         if (response[0] == 0x7F)
-            return response.Length >= 2 && response[1] != requestedService;
+        {
+            // Only a structurally valid 7F SID NRC may be ignored as
+            // another service's reply. An invalid or padded negative frame
+            // must reach ParsePositiveResponse, not vanish into a timeout.
+            return response.Length == 3 && response[1] != requestedService;
+        }
 
         var expectedService = (byte)(requestedService + 0x40);
         if (response[0] != expectedService)
