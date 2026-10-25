@@ -156,10 +156,15 @@ jobs:
               & cmd.exe /d /c 'START-ACCEPTANCE-024.cmd --prepare-only'
               if ($LASTEXITCODE -eq 0) { throw 'Second attempt must not overwrite an existing acceptance directory.' }
             } finally { Pop-Location }
+            # The second cmd.exe intentionally returned a failure code to
+            # prove no-overwrite behavior. Do not leak that expected code into
+            # the enclosing Windows PowerShell GitHub Actions step result.
+            $global:LASTEXITCODE = 0
             Write-Host 'One-click RC 0.2.4: prepare-only succeeded, repeat safely rejected, no GUI was launched.'
           } finally {
             if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
           }
+
       - name: Upload read-only 0.2.4 Windows acceptance kit (not a release)
         uses: actions/upload-artifact@v7
         with:
