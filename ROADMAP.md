@@ -1,10 +1,19 @@
+## Development 0.2.4 one-click isolated Windows RC acceptance (2026-10-25)
+
+- [x] Add `START-ACCEPTANCE-024.cmd` to the separate read-only RC 0.2.4 acceptance kit. It requires the exact run's `BUILD_COMMIT_024.txt` and downloaded `Dvinholm-Windows-x86.zip` plus `SHA256SUMS.txt`; it refuses missing inputs, unknown arguments and any existing target directory.
+- [x] `--prepare-only` verifies and extracts an isolated test copy with its v0.2.4 acceptance receipt, settings folder and EXE but **never launches WinUI**. Double-click/manual mode attempts to launch only the verified isolated copy after all checks, with the private data environment variable and a human checklist.
+- [x] Add eight offline launcher contract tests. On Windows CI, dry-run the actual bundled batch against **downloaded** RC bytes; confirm a valid isolated extraction, then reject a second attempt rather than overwrite the existing copy. Bundle CMD and exact-SHA receipt preparation scripts together for one-click Windows testing.
+- [ ] Check Development CI, RC 0.2.4, legacy Stable staging/RC and experimental MSIX before merge; check postmerge `main`. All eight human Windows 11 LTSC GUI checks remain pending, as do installed-app updater smoke and physical J2534 tests. Published Stable v0.2.3 unchanged; do not publish 0.2.4 without explicit authorization.
+
+---
+
 ## Development 0.2.4 isolated RC acceptance extraction (2026-10-25)
 
 - [x] Recognize the new `ACCEPTANCE-0.2.4.txt` receipt in unpacked 0.2.4 test copies, including direct EXE restarts, while preserving the existing v0.2.3 receipt behavior.
 - [x] Keep the test copy's ECU profiles, CAN speed and selected J2534 DLL path in its private `acceptance-user-data` directory, without changing the normal `%LOCALAPPDATA%\Dvinholm` location for installed copies. Existing acceptance-mode hardware and updater controls remain disabled.
 - [x] Add `Prepare-RcAcceptance024.ps1` to validate exact SHA, checksum and eight 0.2.4 RC binary/ZIP gates on a downloaded archive, extract into a **new** directory, add the v0.2.4 receipt/private data folder and refuse replacing preexisting installs.
 - [x] Add eight deterministic offline receipt, direct-restart, override fail-closed and workflow contract tests. CI rehearses the actual downloaded ZIP and uploads a read-only human acceptance kit with exact `BUILD_COMMIT_024.txt` and instructions.
-- [ ] Confirm Development CI, v0.2.4 RC staging, legacy staging and MSIX; merge only after green then verify `main`. The eight human Windows 11 LTSC acceptance tasks remain **unperformed**. No Stable v0.2.4 release without explicit user authorization; real J2534 deferred.
+- [x] PR #489 merged as `835580a` after CI #3483, RC 0.2.4 #5, staging #70, legacy RC #70 and MSIX #146 all passed. Postmerge main CI #3484, staging #71 and RC 0.2.4 #6 are running; legacy RC #71 and MSIX #147 passed. The eight human Windows 11 LTSC acceptance tasks remain **unperformed**. No Stable v0.2.4 release without explicit user authorization; real J2534 deferred.
 
 ---
 
@@ -14,7 +23,7 @@
 - [x] Publish the application for offline RC validation with `DvinholmDevelopmentFeatures=false`, `PublishTrimmed=false`, version 0.2.4, commit-bound `rc` metadata, no debug files; run eight production-only assembly smoke checks.
 - [x] Add `Test-ReleaseCandidate024.ps1` with eight byte-level guards for candidate identity, file set, size, SHA-256, safe ZIP, isolated x86 extraction, no demo code, AssemblyVersion and commit-bound product version. Run audit before and after GitHub Actions artifact upload/download.
 - [x] Add eight offline workflow/RC-contract tests and `docs/RELEASE_CANDIDATE_0.2.4.md` with explicitly **unperformed** interactive Windows smoke checklist and instructions not to touch a live installation without separate data isolation.
-- [x] PR #488 merged as `903daa2` after Development CI #3469, v0.2.3 staging #66, RC #67, v0.2.4 RC #1 and MSIX #141 passed. Postmerge `main` CI #3470, v0.2.3 staging #67 and 0.2.4 RC #2 are running; verify completion separately. Next: isolated Windows acceptance, reviewed Stable packaging and explicit user release approval. Real J2534 testing remains deferred; published v0.2.3 unchanged.
+- [x] PR #488 merged as `903daa2`; postmerge main CI #3470, v0.2.3 staging #67 and v0.2.4 RC #2 all passed. Next: isolated Windows acceptance, reviewed Stable packaging and explicit user release approval. Real J2534 testing remains deferred; published v0.2.3 unchanged.
 
 ---
 
