@@ -72,7 +72,10 @@ try {
     if (Test-Path -LiteralPath $target) {
         throw 'Destination appeared during extraction: refusing overwrite.'
     }
-    Move-Item -LiteralPath $temp -Destination $target -ErrorAction Stop
+    # Directory.Move fails if the destination appears after the check.
+    # Move-Item can otherwise move the temp folder INSIDE that directory.
+    # Atomic same-parent rename must never merge with an existing install.
+    [IO.Directory]::Move($temp, $target)
     Write-Host "Validated acceptance extraction: $target"
     Write-Host 'No application launched, no installed files modified.'
 }
