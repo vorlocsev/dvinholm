@@ -8,6 +8,7 @@ on:
       - ".github/workflows/release-candidate-v0.2.4.yml"
       - "eng/Test-ReleaseCandidate024.ps1"
       - "eng/Prepare-RcAcceptance024.ps1"
+      - "START-ACCEPTANCE-024.cmd"
       - "eng/Package-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistributionExtraction.ps1"
@@ -17,6 +18,7 @@ on:
       - "tests/Dvinholm.Stable.Tests/**"
       - "tests/Dvinholm.App.Tests/ReleaseCandidate024ContractTests.cs"
       - "tests/Dvinholm.App.Tests/Rc024AcceptanceIsolationTests.cs"
+      - "tests/Dvinholm.App.Tests/Rc024OneClickLauncherTests.cs"
   workflow_dispatch:
 
 # Validation-only, no tag/release creation, signing, installation, or elevated permissions.
@@ -122,12 +124,47 @@ jobs:
         run: |
           [IO.File]::WriteAllText((Join-Path (Get-Location).Path 'BUILD_COMMIT_024.txt'), '${{ github.sha }}' + [Environment]::NewLine, [Text.Encoding]::ASCII)
 
+      - name: Dry-run one-click RC acceptance against downloaded ZIP (no GUI)
+        shell: powershell
+        run: |
+          $root = Join-Path $env:RUNNER_TEMP ('Dvinholm-024-click-' + [Guid]::NewGuid().ToString('N'))
+          $kit = Join-Path $root 'kit'
+          $candidate = Join-Path $root 'candidate'
+          New-Item -ItemType Directory -Path $kit, (Join-Path $kit 'eng'), $candidate -Force | Out-Null
+          try {
+            Copy-Item -LiteralPath 'START-ACCEPTANCE-024.cmd' -Destination $kit
+            Copy-Item -LiteralPath 'BUILD_COMMIT_024.txt' -Destination $kit
+            foreach ($name in @('Prepare-RcAcceptance024.ps1', 'Test-ReleaseCandidate024.ps1', 'Test-WindowsDistribution.ps1', 'Test-WindowsDistributionExtraction.ps1')) {
+              Copy-Item -LiteralPath (Join-Path 'eng' $name) -Destination (Join-Path $kit 'eng')
+            }
+            Copy-Item -LiteralPath 'artifacts/rc-v0.2.4-downloaded/Dvinholm-Windows-x86.zip' -Destination $candidate
+            Copy-Item -LiteralPath 'artifacts/rc-v0.2.4-downloaded/SHA256SUMS.txt' -Destination $candidate
+            Push-Location $kit
+            try {
+              & cmd.exe /d /c 'START-ACCEPTANCE-024.cmd --prepare-only'
+              if ($LASTEXITCODE -ne 0) { throw 'One-click offline prepare-only failed.' }
+            } finally { Pop-Location }
+            $output = Join-Path $root 'Dvinholm-024-acceptance'
+            foreach ($name in @('ACCEPTANCE-0.2.4.txt', 'Dvinholm.App.exe')) {
+              if (-not (Test-Path -LiteralPath (Join-Path $output $name) -PathType Leaf)) { throw ('Missing isolated acceptance output: ' + $name) }
+            }
+            if (-not (Test-Path -LiteralPath (Join-Path $output 'acceptance-user-data') -PathType Container)) { throw 'Private acceptance data directory missing.' }
+            Push-Location $kit
+            try {
+              & cmd.exe /d /c 'START-ACCEPTANCE-024.cmd --prepare-only'
+              if ($LASTEXITCODE -eq 0) { throw 'Second attempt must not overwrite an existing acceptance directory.' }
+            } finally { Pop-Location }
+            Write-Host 'One-click RC 0.2.4: prepare-only succeeded, repeat safely rejected, no GUI was launched.'
+          } finally {
+            if (Test-Path -LiteralPath $root) { Remove-Item -LiteralPath $root -Recurse -Force }
+          }
       - name: Upload read-only 0.2.4 Windows acceptance kit (not a release)
         uses: actions/upload-artifact@v7
         with:
           name: Dvinholm-v0.2.4-WINDOWS-ACCEPTANCE-KIT
           path: |
             BUILD_COMMIT_024.txt
+            START-ACCEPTANCE-024.cmd
             eng/Prepare-RcAcceptance024.ps1
             eng/Test-ReleaseCandidate024.ps1
             eng/Test-WindowsDistribution.ps1
