@@ -1,9 +1,18 @@
+## Development 0.2.4 J2534 DLL path settings atomic save (2026-10-25)
+
+- [x] Save the preferred J2534 DLL path via a uniquely named same-directory temporary file, avoiding collisions with stale fixed-name `.tmp` files and overlapping saves.
+- [x] Compare the complete staged path with the intended value before replacement, preserving prior settings if a writer silently truncates or changes the data. Clean temporary files even when staging or final replacement fails.
+- [x] Add eight offline persistence regressions for nested UTF-8 paths, old temp collisions, interrupted/short/altered writes, missing temp, failed destination replace and retry/clearing. No adapter access.
+- [ ] Verify new PR CI, Stable staging, RC and MSIX; merge only after green, then confirm postmerge `main`. Stable v0.2.3 unchanged; physical J2534 and interactive Windows GUI updater checks remain deferred.
+
+---
+
 ## Development 0.2.4 ECU profile primary staging integrity (2026-10-25)
 
 - [x] Before replacing an ECU profile catalog, compare the entire staged JSON with the intended serialized catalog. A temporary writer can return without error after emitting truncated, valid-but-incomplete, or same-length altered data; a nonempty file check cannot detect that.
 - [x] Reject bad or missing temporary output without touching the existing primary or its verified backup. Remove stray .tmp files and allow a later normal save to succeed.
 - [x] Add eight deterministic offline tests: partial/nonempty write, valid-but-wrong empty catalog, equal-length tampering, invalid first save, missing file, empty file, successful retry, Unicode two-profile round-trip.
-- [ ] Require green PR CI, staging, RC, MSIX before merging, then confirm postmerge main checks. Stable v0.2.3 unchanged; physical J2534 and installed-app updater smoke deferred.
+- [x] PR #484 merged as `8b442d9` after CI #3447, staging #58, RC #59 and MSIX #130 passed. Postmerge main CI #3448, staging #59, RC #60 and MSIX #131 started; verify conclusions separately. Stable v0.2.3 unchanged; physical J2534 and installed-app updater smoke deferred.
 
 ---
 
@@ -13,7 +22,7 @@
 - [x] Validate ISO-TP declared UDS payload length for both Single Frames and First Frames; ignore legal CAN padding beyond declared Single Frame payload.
 - [x] Preserve positive responses for other subfunctions/services and valid negative responses. Passive discovery remains receive-only.
 - [x] Add eight offline regressions, including a virtual J2534 scan that ignores malformed ReadDTC traffic and sends no CAN messages.
-- [x] PR #483 merged as `1e91833` after CI #3442, staging #56, RC #57 and MSIX #127 succeeded. Postmerge main CI #3443, staging #57, RC #58 and MSIX #128 started; confirm final results separately. Stable v0.2.3 publication unchanged; physical J2534 and Windows GUI updater smoke remain deferred.
+- [x] PR #483 merged as `1e91833`; postmerge main CI #3443, staging #57, RC #58 and MSIX #128 all passed. Stable v0.2.3 publication unchanged; physical J2534 and Windows GUI updater smoke remain deferred.
 
 ---
 
