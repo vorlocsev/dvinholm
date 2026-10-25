@@ -138,7 +138,34 @@ internal sealed class EcuProfileCatalog
         ProfileDocument?[] documents;
         try
         {
-            documents = JsonSerializer.Deserialize<ProfileDocument?[]>(json, JsonOptions)
+            using var document = JsonDocument.Parse(json);
+
+            // System.Text.Json normally accepts duplicate object keys, with a
+            // later value silently overwriting an earlier one. For an ECU
+            // profile this can change CAN addressing, requested DIDs or a
+            // user-supplied verification flag without a visible import error.
+            // Check every property name before deserializing any profile.
+            if (document.RootElement.ValueKind == JsonValueKind.Array)
+            {
+                var index = 0;
+                foreach (var entry in document.RootElement.EnumerateArray())
+                {
+                    if (entry.ValueKind == JsonValueKind.Object)
+                    {
+                        var seen = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+                        foreach (var property in entry.EnumerateObject())
+                        {
+                            if (!seen.Add(property.Name))
+                                throw new InvalidDataException(
+                                    $"Profile at index {index} has duplicate JSON property '{property.Name}'.");
+                        }
+                    }
+
+                    index++;
+                }
+            }
+
+            documents = document.RootElement.Deserialize<ProfileDocument?[]>(JsonOptions)
                 ?? throw new InvalidDataException("Profile JSON must be an array.");
         }
         catch (JsonException ex)
