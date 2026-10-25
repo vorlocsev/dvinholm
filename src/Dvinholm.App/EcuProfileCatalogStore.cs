@@ -99,11 +99,17 @@ internal sealed class EcuProfileCatalogStore
         var temporaryPath = _path + "." + Guid.NewGuid().ToString("N") + ".tmp";
         try
         {
-            _writeTemporaryFile(temporaryPath, catalog.ToJson());
-            // A failed/short staging operation must never replace the last
-            // valid catalog, even if a staging implementation returns early.
-            if (!File.Exists(temporaryPath) || new FileInfo(temporaryPath).Length == 0)
-                throw new IOException("ECU profile catalog staging produced no data.");
+            var expectedJson = catalog.ToJson();
+            _writeTemporaryFile(temporaryPath, expectedJson);
+
+            // A faulty writer can return successfully after emitting only
+            // part of the JSON, or different but still valid JSON. Verify the
+            // entire staged catalog, not merely a nonzero file length, before
+            // atomically replacing the last known-good primary.
+            if (!File.Exists(temporaryPath) ||
+                !string.Equals(File.ReadAllText(temporaryPath), expectedJson, StringComparison.Ordinal))
+                throw new IOException("ECU profile catalog staging did not match the intended catalog.");
+
             File.Move(temporaryPath, _path, overwrite: true);
         }
         finally

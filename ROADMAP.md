@@ -1,10 +1,19 @@
+## Development 0.2.4 ECU profile primary staging integrity (2026-10-25)
+
+- [x] Before replacing an ECU profile catalog, compare the entire staged JSON with the intended serialized catalog. A temporary writer can return without error after emitting truncated, valid-but-incomplete, or same-length altered data; a nonempty file check cannot detect that.
+- [x] Reject bad or missing temporary output without touching the existing primary or its verified backup. Remove stray .tmp files and allow a later normal save to succeed.
+- [x] Add eight deterministic offline tests: partial/nonempty write, valid-but-wrong empty catalog, equal-length tampering, invalid first save, missing file, empty file, successful retry, Unicode two-profile round-trip.
+- [ ] Require green PR CI, staging, RC, MSIX before merging, then confirm postmerge main checks. Stable v0.2.3 unchanged; physical J2534 and installed-app updater smoke deferred.
+
+---
+
 ## Development 0.2.4 passive UDS ReadDTC response framing (2026-10-25)
 
 - [x] Reject positive ReadDTCInformation `0x59/0x02` passive ECU candidates without the mandatory status-availability mask or with an incomplete four-byte DTC record.
 - [x] Validate ISO-TP declared UDS payload length for both Single Frames and First Frames; ignore legal CAN padding beyond declared Single Frame payload.
 - [x] Preserve positive responses for other subfunctions/services and valid negative responses. Passive discovery remains receive-only.
 - [x] Add eight offline regressions, including a virtual J2534 scan that ignores malformed ReadDTC traffic and sends no CAN messages.
-- [ ] Require green branch Development CI, staging, RC and experimental MSIX; merge and verify postmerge `main` only after success. Stable v0.2.3 publication unchanged; physical J2534 and Windows GUI updater smoke remain deferred.
+- [x] PR #483 merged as `1e91833` after CI #3442, staging #56, RC #57 and MSIX #127 succeeded. Postmerge main CI #3443, staging #57, RC #58 and MSIX #128 started; confirm final results separately. Stable v0.2.3 publication unchanged; physical J2534 and Windows GUI updater smoke remain deferred.
 
 ---
 
@@ -13,7 +22,7 @@
 - [x] Reject passive discovery candidates whose positive UDS ReadDataByIdentifier response `0x62` does not contain both bytes of the returned DID.
 - [x] Keep valid `0x62` Single/First Frame responses, declared ISO-TP length despite CAN padding, other valid positive response types and strictly framed negative responses.
 - [x] Add eight offline regressions, including a virtual J2534 receive-only scan proving invalid `0x62` responses cannot generate ECU candidates or transmit CAN frames.
-- [x] PR #482 merged as `1542516`; CI #3437, staging #54, RC #55 and MSIX #124 passed. Postmerge main CI #3438, staging #55, RC #56 and MSIX #125 are running; confirm results separately. Stable v0.2.3 remains unchanged; real adapters and installed Windows GUI updater smoke remain deferred.
+- [x] PR #482 merged as `1542516`; postmerge main CI #3438, staging #55, RC #56 and MSIX #125 all passed. Stable v0.2.3 remains unchanged; real adapters and installed Windows GUI updater smoke remain deferred.
 
 ---
 
