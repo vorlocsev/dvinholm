@@ -157,8 +157,10 @@ internal sealed class UdsClient : IDisposable
         return false;
     }
 
+    // A UDS negative response has exactly 3 bytes: 0x7F, SID and NRC.
+    // Do not silently swallow padded or otherwise malformed NRC 0x78 frames.
     internal static bool IsResponsePending(byte requestedService, byte[] response)
-        => response is { Length: >= 3 } &&
+        => response is { Length: 3 } &&
            response[0] == 0x7F &&
            response[1] == requestedService &&
            response[2] == 0x78;
@@ -172,8 +174,8 @@ internal sealed class UdsClient : IDisposable
 
         if (response[0] == 0x7F)
         {
-            if (response.Length < 3)
-                throw new InvalidOperationException("Malformed UDS negative response.");
+            if (response.Length != 3)
+                throw new InvalidOperationException("Malformed UDS negative response: expected exactly three bytes.");
 
             if (response[1] != requestedService)
                 throw new InvalidOperationException(
