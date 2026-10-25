@@ -1,9 +1,22 @@
+## Current status | Stable 0.2.4 frozen candidate | 2026-10-26
+
+> **Verified candidate: `a9e61883a413d4afaebb86fb468987c904250092`. Do not merge this docs-only branch into `main` before a release decision: changing `main` changes the CI-built candidate SHA and invalidates exact-run provenance.** Historic checkpoints farther below reflect their status when originally written.
+
+- [x] **8/8 interactive Windows 11 LTSC GUI acceptance checks user-confirmed without errors** for the exact isolated Stable-channel Portable from [main staging #16](https://github.com/vorlocsev/dvinholm/actions/runs/40240287577). Recorded as direct user attestation, not CI execution or logs, in [issue #498](https://github.com/vorlocsev/dvinholm/issues/498) and [the acceptance record](docs/WINDOWS_ACCEPTANCE_0.2.4.md).
+- [x] Same-run Portable/Lite SHA256SUMS, full downloaded-ZIP assembly checks, no-debug/demo profile, updater file replacement/rollback **simulation**, and private acceptance preparation passed in staging #16.
+- [x] Postmerge `main` CI #3567, Portable RC #31, Lite RC #18, staging Stable 0.2.4 #16, and v0.2.3 #96 all succeeded.
+- [ ] **Real installed in-app updater 0.2.3 → 0.2.4 is NOT tested.** Stable channel currently resolves published v0.2.3, not unpublished 0.2.4; check installed Stable status without updating, then run eight separately documented installed-updater checks only after a future separately authorized v0.2.4 publication. Do not substitute Development/CI updates.
+- [ ] **Explicit user approval to publish Stable v0.2.4 is NOT given.** Keep Stable v0.2.3 published and leave release decision **HOLD**.
+- [ ] Real physical J2534/vehicle testing intentionally deferred to future releases; this is not a blocker for the software-only test scope but must never be represented as passed.
+
+---
+
 ## Development 0.2.4 pre-release evidence and HOLD decision packet (2026-10-25)
 
 - [x] Add `eng/Write-StableReadiness024.ps1` to read the **original downloaded** Portable/Lite ZIPs and canonical two-line SHA256SUMS, verify exact lowercase candidate commit and both SHA-256 hashes without regenerating them, collect byte sizes and refuse overwriting any existing report.
 - [x] Always generate `READINESS-0.2.4.md` with **Release decision: HOLD**, two verified hash/size records, prior published Stable 0.2.3 identity and exactly eight unchecked human Windows 11 LTSC GUI acceptance tasks. Keep installed-updater smoke and explicit user publication approval as separate unsatisfied conditions, while physical J2534 remains deferred to future releases.
 - [x] Require the Stage 0.2.4 workflow to generate evidence **only after** downloaded-archive checks, 0.2.3-to-0.2.4 rollback rehearsal and successful exact-SHA one-click prepare-only. Validate HOLD, source commit and eight unchecked items in CI; include the report in the read-only Stable Windows acceptance kit. Add eight offline source-contract regressions.
-- [ ] Require green updated-branch Development CI, full Stable staging and both RCs, legacy v0.2.3 checks and experimental MSIX before merge; verify postmerge `main`. A readiness report can never approve publication automatically. Manual Windows 11 LTSC GUI and installed-updater checks remain outstanding; no public Stable 0.2.4 release without explicit user authorization.
+- [x] PR #497 merged into `main` as `a9e6188`; postmerge main CI #3567, Stable 0.2.4 staging #16, Portable RC #31, Lite RC #18 and v0.2.3 staging #96 all passed. Original generated `READINESS-0.2.4.md` stays an immutable pre-acceptance HOLD snapshot. The eight manual GUI checks have since been user-confirmed for this exact commit (see the current status section above). Real installed-updater smoke and publication approval remain outstanding.
 
 ---
 
