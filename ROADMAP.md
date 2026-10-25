@@ -1,9 +1,18 @@
+## Development 0.2.4 ECU profile search literal 0x handling (2026-10-25)
+
+- [x] Preserve literal `0x` text in profile ID, name and source search. Bare `0x` must not become an empty wildcard; malformed/nonhex suffixes must not match unrelated metadata after prefix removal.
+- [x] Strip an optional `0x`/`0X` prefix only for valid nonempty hexadecimal CAN ID/DID queries. Retain existing partial hexadecimal matching, case-insensitive metadata filtering, verified-only selection and sorted results.
+- [x] Add eight offline regressions including bare prefix, literal text, invalid/nonhex suffixes, standard/extended CAN, DID, immutable catalog and verified selection.
+- [ ] Verify Development CI, staging, RC and experimental MSIX before merging. Verify postmerge `main` separately. Stable v0.2.3 unchanged; real J2534 and installed updater smoke remain deferred.
+
+---
+
 ## Development 0.2.4 ECU profile JSON editor-compatible limits (2026-10-25)
 
 - [x] Enforce the same metadata length limits on JSON imports as the ECU profile editor: ID up to 120, name up to 160 and source up to 2000 trimmed characters.
 - [x] Reject more than 128 candidate DIDs in any imported profile, without changing the valid 128-DID boundary or existing duplicate DID checks.
 - [x] Add eight deterministic offline tests for metadata boundaries, 128/129-DID boundary and preventing persistence when a later profile is invalid.
-- [ ] Verify Development branch CI, Stable staging, RC and experimental MSIX; merge after green and confirm postmerge `main`. Stable v0.2.3 remains published and unchanged; real adapter and installed-app GUI updater testing remain deferred.
+- [x] PR #480 merged as `298ab8b` after CI #3427, staging #50, RC #51 and MSIX #118 passed. Postmerge main CI #3428, staging #51, RC #52 and MSIX #119 started; confirm conclusions before closing integration. Stable v0.2.3 unchanged; real adapter and installed-app GUI updater testing remain deferred.
 
 ---
 
@@ -12,7 +21,7 @@
 - [x] Accept optional `0x`/`0X` prefix for imported CAN request/response IDs and candidate DIDs, consistent with the existing profile editor. Preserve canonical prefix-free export.
 - [x] Keep 11-bit/29-bit arbitration limits, 16-bit DID bounds, malformed/multiple prefix rejection and numeric duplicate DID detection unchanged.
 - [x] Add eight deterministic offline regression checks, including mixed-case prefixes, round-trip, malformed prefixes, out-of-range values, and no persistence on duplicate DID.
-- [x] PR #479 merged as `80bb483`; branch CI #3422, Stable staging #48, RC #49 and MSIX #115 passed. Postmerge CI #3423, staging #49, RC #50 and MSIX #116 started; confirm their results separately. Stable v0.2.3 unchanged; physical J2534 and interactive updater tests deferred.
+- [x] PR #479 merged as `80bb483`; postmerge main CI #3423, staging #49, RC #50 and MSIX #116 all passed. Stable v0.2.3 unchanged; physical J2534 and interactive updater tests deferred.
 
 ---
 
