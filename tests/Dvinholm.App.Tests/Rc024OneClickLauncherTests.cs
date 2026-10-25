@@ -116,6 +116,14 @@ public sealed class Rc024OneClickLauncherTests
         Assert.Contains("artifacts/rc-v0.2.4-downloaded", workflow);
         Assert.Contains("START-ACCEPTANCE-024.cmd --prepare-only", workflow);
         Assert.Contains("Second attempt must not overwrite", workflow);
+        // Windows PowerShell retains the native executable's nonzero exit
+        // code after the intentionally rejected second CMD invocation.
+        // The positive test result must explicitly clear it, without
+        // weakening the no-overwrite check itself.
+        Assert.Contains("if ($LASTEXITCODE -eq 0) { throw", workflow);
+        Assert.Contains("$global:LASTEXITCODE = 0", workflow);
+        Assert.True(workflow.IndexOf("if ($LASTEXITCODE -eq 0) { throw", StringComparison.Ordinal)
+            < workflow.IndexOf("$global:LASTEXITCODE = 0", StringComparison.Ordinal));
         Assert.Contains("contents: read", workflow);
         Assert.DoesNotContain("gh release create", workflow);
         Assert.DoesNotContain("gh release edit", workflow);
