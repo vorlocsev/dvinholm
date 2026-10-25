@@ -1,9 +1,19 @@
+## Development 0.2.4 private Stable-channel Windows acceptance (2026-10-25)
+
+- [x] Create `Prepare-StableAcceptance024.ps1` for **three-file** downloaded Stable 0.2.4 staging: exactly Portable/Lite ZIPs and original two-entry SHA256SUMS, strict commit SHA, independent eight-gate archive and compiled production metadata checks for both with `-Channel stable`.
+- [x] Extract only verified Portable into a **new** directory with a v0.2.4 acceptance receipt and private ECU/CAN/J2534 settings path; use atomic same-parent rename and refuse overwriting an existing destination. No installed app, updater, GUI or hardware is ever launched by CI.
+- [x] Add eight offline acceptance isolation contracts, a downloaded-real-ZIP CI rehearsal including expected no-overwrite rejection, and a read-only Stable Windows acceptance kit with exact `BUILD_COMMIT_024_STABLE.txt` and all verification prerequisites.
+- [x] Document how to download both artifacts from the **same** successful staging run and manually launch the isolated Stable-channel Portable test copy. RC-channel acceptance kits remain separate.
+- [ ] Require green Development CI, combined Stable 0.2.4 staging with new private acceptance gate, both RC pipelines, v0.2.3 staging/RC and MSIX before merge. Then verify postmerge main. **All eight interactive Windows LTSC GUI tasks remain unperformed**, as do physical J2534/installed-app updater tests. No 0.2.4 public release without explicit approval.
+
+---
+
 ## Development 0.2.4 published v0.2.3 to staged 0.2.4 upgrade rehearsal (2026-10-25)
 
 - [x] Extend read-only dual-flavor Stable staging to download **actual published** v0.2.3 Portable assets and require its exact original `91ecc343608c931eb033523e3db6012a6c5dbd58` release commit, published/non-prerelease metadata and two expected assets.
 - [x] Implement eight-gate `Test-RealStableUpgrade024.ps1`: old/new flat file sets, published v0.2.3 ZIP identity, unchanged combined 0.2.4 SHA hashes, exact 0.2.4 Stable Portable identity, compiled version direction, byte-perfect old-install backup, complete staged upgrade with obsolete-file cleanup and independent settings preservation, byte-perfect rollback with settings preserved.
 - [x] Use extracted **real release and staged ZIP bytes** only in disposable directories; no app launches, installed updates, registry changes or release writes. Add eight deterministic offline source-contract tests and document that this rehearsal is **not** a real in-app updater or GUI acceptance.
-- [ ] Confirm Development CI, new dual-flavor staging with offline upgrade simulation, Lite/Portable RC, v0.2.3 validation/staging and experimental MSIX; merge only after green, then verify `main`. Eight real Windows GUI checks and physical J2534 tests remain deferred; Stable 0.2.4 publication requires explicit authorization.
+- [x] PR #494 merged as `6538176` after CI #3532, dual-flavor staging #5 (eight actual published-0.2.3 to staged-0.2.4 upgrade/rollback gates), v0.2.3 staging #85, Portable RC #20, Lite RC #7 and MSIX #157 all passed. Postmerge main CI #3536, Stable staging #6, Portable #21, Lite #8 and staging v0.2.3 #86 started; verify their results separately. Eight actual Windows GUI checks and physical J2534 remain deferred; Stable 0.2.4 release requires explicit authorization.
 
 ---
 
