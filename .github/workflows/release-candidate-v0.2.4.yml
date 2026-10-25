@@ -8,6 +8,7 @@ on:
       - ".github/workflows/release-candidate-v0.2.4.yml"
       - "eng/Test-ReleaseCandidate024.ps1"
       - "eng/Prepare-RcAcceptance024.ps1"
+      - "eng/Test-Rc024LauncherProvenance.ps1"
       - "START-ACCEPTANCE-024.cmd"
       - "eng/Package-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistribution.ps1"
@@ -41,7 +42,7 @@ jobs:
       - name: Parse Windows PowerShell 5.1 RC verifier and acceptance preparation
         shell: powershell
         run: |
-          foreach ($script in @('eng/Test-ReleaseCandidate024.ps1', 'eng/Prepare-RcAcceptance024.ps1')) {
+          foreach ($script in @('eng/Test-ReleaseCandidate024.ps1', 'eng/Prepare-RcAcceptance024.ps1', 'eng/Test-Rc024LauncherProvenance.ps1')) {
             $tokens = $null
             $errors = $null
             [Management.Automation.Language.Parser]::ParseFile(
@@ -49,6 +50,11 @@ jobs:
               [ref]$tokens, [ref]$errors) | Out-Null
             if (@($errors).Count -ne 0) { throw "PowerShell 5.1 syntax failed for $script" }
           }
+
+      - name: Reject eight malicious or malformed RC build commit receipts (no GUI)
+        shell: powershell
+        run: |
+          ./eng/Test-Rc024LauncherProvenance.ps1 -LauncherPath 'START-ACCEPTANCE-024.cmd'
 
       - name: Restore
         run: dotnet restore Dvinholm.sln
