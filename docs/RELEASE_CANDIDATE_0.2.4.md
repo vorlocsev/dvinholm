@@ -17,6 +17,16 @@ The standalone `eng/Test-ReleaseCandidate024.ps1` verifier checks eight requirem
 
 The workflow also runs the eight production-only x86 smoke tests, uploads the ZIP/manifest as a GitHub Actions artifact, downloads them into a new location, re-runs the eight ZIP gates and dry-runs the one-click acceptance launcher against the downloaded ZIP using `--prepare-only` without opening WinUI. A success is **not** a GUI or physical-adapter acceptance.
 
+## Additional Lite RC validation (not a release)
+
+The optional framework-dependent Windows x86 **Lite** variant is now prepared by a **separate, read-only** workflow: `release-candidate-lite-v0.2.4.yml`. It uploads `Dvinholm-v0.2.4-LITE-RC-TEST-ONLY`, with `Dvinholm-Windows-x86-Lite.zip` and its **Lite-only** strict `SHA256SUMS.txt`.
+
+Its eight checks verify exact commit and filename set, 1–30 MiB Lite ZIP bounds, SHA-256, safe layout without bundled `.NET` or debug tools, bundled read-only prerequisite checker byte parity, extracted x86 apphost with an **explicitly simulated** .NET 10/Windows App SDK 2.5 host, exclusion of demo/preview code, compiled version 0.2.4, and matching product SHA/channel. GitHub Actions uploads the ZIP and re-downloads it for the same checks, without regenerating the downloaded checksum.
+
+Lite requires a real host to already have compatible **.NET 10 Desktop Runtime x86**, Windows App SDK x86 and VC++ Redistributable x86. The simulated check does **not** certify an actual Windows installation and never launches WinUI. Run the bundled `Check-Lite-Prerequisites.cmd` on a real Windows host *before* considering manual Lite use. Lite is experimental, not a replacement for Portable in the self-updater. Keep the acceptance kit below paired with the **Portable RC** from its own workflow; the separate Lite ZIP is not accepted by `START-ACCEPTANCE-024.cmd`.
+
+No 0.2.4 Stable tag, release or update target has been created.
+
 ## Remaining eight manual Windows acceptance checkpoints
 
 These **have not been performed** on 0.2.4. Do not mark complete from CI.

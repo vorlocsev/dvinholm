@@ -1,0 +1,103 @@
+name: Dvinholm 0.2.4 Lite RC (validation only)
+
+on:
+  pull_request:
+  push:
+    branches: ["main"]
+    paths:
+      - ".github/workflows/release-candidate-lite-v0.2.4.yml"
+      - "eng/Test-ReleaseCandidate024Lite.ps1"
+      - "eng/Test-WindowsDistribution.ps1"
+      - "eng/Test-WindowsDistributionExtraction.ps1"
+      - "eng/Test-LiteBundledPreflight.ps1"
+      - "eng/Test-LitePrerequisites.ps1"
+      - "eng/Check-Lite-Prerequisites.cmd"
+      - "eng/Package-WindowsDistribution.ps1"
+      - "src/Dvinholm.App/**"
+      - "tests/Dvinholm.Stable.Tests/**"
+      - "tests/Dvinholm.App.Tests/ReleaseCandidate024LiteContractTests.cs"
+      - "docs/RELEASE_CANDIDATE_0.2.4.md"
+  workflow_dispatch:
+
+# Read-only validation of framework-dependent Lite candidate.
+# No package installation, update, signing, tag or GitHub release creation.
+# Stable v0.2.3 stays immutable.
+permissions:
+  contents: read
+
+jobs:
+  lite-rc:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout exact candidate commit
+        uses: actions/checkout@v7
+
+      - name: Setup .NET x64
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Parse Windows PowerShell 5.1 Lite RC verifier
+        shell: powershell
+        run: |
+          $tokens = $null
+          $errors = $null
+          [Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'eng/Test-ReleaseCandidate024Lite.ps1').Path,
+            [ref]$tokens, [ref]$errors) | Out-Null
+          if (@($errors).Count -ne 0) { throw "Lite RC verifier syntax errors: $errors" }
+
+      - name: Restore
+        run: dotnet restore Dvinholm.sln
+
+      - name: Setup .NET x86 test host
+        uses: actions/setup-dotnet@v6
+        with:
+          dotnet-version: '10.0.401'
+          architecture: x86
+
+      - name: Test production-only assembly (eight offline smoke gates)
+        run: dotnet test tests/Dvinholm.Stable.Tests/Dvinholm.Stable.Tests.csproj --configuration Release -p:Platform=x86 -p:DvinholmDevelopmentFeatures=false --logger "trx;LogFileName=lite-rc024-production.trx"
+
+      - name: Restore x64 .NET publish host
+        uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+          architecture: x64
+
+      - name: Publish framework-dependent Lite RC Windows x86
+        shell: pwsh
+        run: |
+          dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --runtime win-x86 --self-contained false -p:Platform=x86 -p:WindowsAppSDKSelfContained=false -p:PublishTrimmed=false -p:PublishAot=false -p:DvinholmDevelopmentFeatures=false -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.4 -p:InformationalVersion=0.2.4+${{ github.sha }}.rc -p:IncludeSourceRevisionInInformationalVersion=false --output artifacts/app-lite-rc
+          if ($LASTEXITCODE -ne 0) { throw "Lite RC publish failed: $LASTEXITCODE" }
+
+      - name: Package and verify eight Lite candidate gates
+        shell: powershell
+        run: |
+          $folder = 'artifacts/lite-rc-v0.2.4'
+          New-Item -ItemType Directory -Path $folder -Force | Out-Null
+          ./eng/Package-WindowsDistribution.ps1 -Flavor Lite -PublishDirectory artifacts/app-lite-rc -ZipPath "$folder/Dvinholm-Windows-x86-Lite.zip"
+          ./eng/Test-ReleaseCandidate024Lite.ps1 -ArchiveDirectory $folder -ExpectedCommit '${{ github.sha }}' -GenerateChecksum
+          ./eng/Test-ReleaseCandidate024Lite.ps1 -ArchiveDirectory $folder -ExpectedCommit '${{ github.sha }}'
+
+      - name: Upload unsigned Lite test-only ZIP and hash
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-v0.2.4-LITE-RC-TEST-ONLY
+          path: |
+            artifacts/lite-rc-v0.2.4/Dvinholm-Windows-x86-Lite.zip
+            artifacts/lite-rc-v0.2.4/SHA256SUMS.txt
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Download real Lite GitHub Actions artifact
+        uses: actions/download-artifact@v7
+        with:
+          name: Dvinholm-v0.2.4-LITE-RC-TEST-ONLY
+          path: artifacts/lite-rc-v0.2.4-downloaded
+
+      - name: Reverify downloaded Lite bytes and embedded version
+        shell: powershell
+        run: |
+          ./eng/Test-ReleaseCandidate024Lite.ps1 -ArchiveDirectory 'artifacts/lite-rc-v0.2.4-downloaded' -ExpectedCommit '${{ github.sha }}'
+          "0.2.4 Lite RC SHA-256, clean x86 ZIP, simulated prerequisites and embedded commit verified. NOT PUBLISHED. No installed host tested." | Out-File $env:GITHUB_STEP_SUMMARY -Append

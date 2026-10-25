@@ -1,9 +1,18 @@
+## Development 0.2.4 framework-dependent Lite RC validation (2026-10-25)
+
+- [x] Add separate **validation-only** Windows x86 Lite RC build, with `DvinholmDevelopmentFeatures=false`, `WindowsAppSDKSelfContained=false`, `--self-contained false`, `PublishTrimmed=false`, and no debug files, using version 0.2.4 with commit-bound `rc` metadata.
+- [x] Add eight-gate `Test-ReleaseCandidate024Lite.ps1` for strict Lite ZIP and manifest, size bounds, path safety, no bundled runtime, byte-exact prerequisite-checker tools, extracted actual x86 apphost, simulated prerequisites, demo/test exclusion, compiled version and commit identity.
+- [x] Upload test-only Lite ZIP and SHA256SUMS, re-download and audit exact bytes. Add eight offline workflow/validator contract tests; document that Lite requires real .NET x86, Windows App SDK x86 and VC++ x86 and that simulated CI is **not** GUI/real-host acceptance.
+- [ ] Confirm CI, Lite RC, Portable RC, legacy staging/RC and MSIX; merge only after all required gates green and independently check postmerge main. Published Stable v0.2.3 remains unchanged; no new public Stable v0.2.4 release without explicit authorization. Real J2534 and Windows interactive GUI acceptance remain deferred.
+
+---
+
 ## Development 0.2.4 one-click RC provenance hardening (2026-10-25)
 
 - [x] Reject untrusted `BUILD_COMMIT_024.txt` contents *before* expanding the value in a CMD invocation. Require exactly 40 lowercase hexadecimal SHA characters plus an optional single terminal newline, no trailing text, injected quotes, control sequences, leading spaces or multi-line values.
 - [x] Execute eight negative Windows offline cases in `eng/Test-Rc024LauncherProvenance.ps1`: blank SHA, short, long, uppercase, nonhex, leading spaces, multi-line trailer and benign shell-metacharacter injection attempt. Assert rejection happens at the SHA guard, before extraction or GUI launch; check no side-effect marker or existing settings are touched.
 - [x] Extend the RC v0.2.4 workflow with syntax preflight and executable negative tests, and update the launcher source contracts to require validation *before* `set /p`. Preserve normal same-run `--prepare-only` acceptance, ZIP/hash checks and no-overwrite behavior.
-- [ ] Require green CI, RC v0.2.4 including the real downloaded ZIP dry-run, v0.2.3 staging/RC and MSIX before merge; then confirm postmerge `main`. Published Stable v0.2.3 remains unchanged. Eight manual Windows 11 LTSC GUI checks and real J2534 remain deferred; Stable v0.2.4 publication requires explicit approval.
+- [x] PR #491 merged as `d2a190f` after CI #3506, RC 0.2.4 #12, staging #77, legacy RC #76 and MSIX #152 all passed. Postmerge `main` CI #3507, RC 0.2.4 #13 and staging #78 started; verify results separately. Published Stable v0.2.3 remains unchanged. Eight manual Windows 11 LTSC GUI checks and real J2534 remain deferred; Stable v0.2.4 publication requires explicit approval.
 
 ---
 
