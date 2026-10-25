@@ -72,6 +72,14 @@ The preparation does **not** start the application. Once completed, manually sta
 
 **A green CI preparation rehearsal is not successful human acceptance.** Windows 11 LTSC GUI, installed updater and real hardware testing remain unperformed; explicit authorization is still required for public 0.2.4 Stable publication.
 
+## Candidate readiness evidence (not approval or a release)
+
+The read-only Stable 0.2.4 staging workflow also creates `READINESS-0.2.4.md` **inside its Stable Windows acceptance kit**, after the combined ZIP archive, real published 0.2.3 to staged 0.2.4 upgrade/rollback, private extraction and one-click prepare-only checks. The report records the **exact candidate commit**, Portable and Lite byte sizes, and both SHA-256 hashes verified against the **original downloaded two-line checksum manifest**.
+
+The report always says **Release decision: HOLD** and carries all eight Windows 11 LTSC GUI acceptance items **unchecked**, plus the still-unperformed installed-updater smoke check and explicit release-authorization requirement. Even a passing staging workflow or readiness report does not approve, tag or publish Stable 0.2.4; it does not mean the Windows application launched successfully. Physical J2534 testing remains deferred to later versions.
+
+The candidate report reflects the GitHub Actions run and commit that generated it. Download the report and both related artifacts from the **same successful workflow run**, and use those exact matched archives when performing any human acceptance. A new source commit needs a new staging run and new evidence report.
+
 ## Remaining eight manual Windows acceptance checkpoints
 
 These **have not been performed** on 0.2.4. Do not mark complete from CI.
