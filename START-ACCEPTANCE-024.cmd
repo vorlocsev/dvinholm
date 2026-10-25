@@ -8,6 +8,15 @@ if not exist "%PROVENANCE%" (
   echo ERROR: Missing BUILD_COMMIT_024.txt. Download the complete acceptance kit.
   exit /b 1
 )
+rem Validate the entire receipt as DATA before ever expanding its contents
+rem into a CMD command line. Double quotes and shell metacharacters in a
+rem tampered receipt must never become syntax during PowerShell invocation.
+rem Exactly 40 lowercase hex digits with an optional final CRLF/LF only.
+powershell.exe -NoProfile -NonInteractive -Command "$sha=[IO.File]::ReadAllText($env:PROVENANCE); if ($sha -cnotmatch '\A[0-9a-f]{40}(\r?\n)?\z') { exit 1 }"
+if errorlevel 1 (
+  echo ERROR: Invalid exact lowercase 40-character build commit. Refusing preparation.
+  exit /b 1
+)
 set "EXPECTED_COMMIT="
 set /p EXPECTED_COMMIT=<"%PROVENANCE%"
 if not defined EXPECTED_COMMIT (
