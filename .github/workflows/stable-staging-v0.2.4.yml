@@ -27,6 +27,7 @@ on:
       - "tests/Dvinholm.App.Tests/StableAcceptance024LauncherTests.cs"
       - "tests/Dvinholm.App.Tests/StableReadiness024ContractTests.cs"
       - "tests/Dvinholm.App.Tests/Published023ToStaged024UpgradeContractTests.cs"
+      - "tests/Dvinholm.App.Tests/Staged024UpdaterHelperIntegrationTests.cs"
       - "docs/RELEASE_CANDIDATE_0.2.4.md"
   workflow_dispatch:
 
@@ -219,6 +220,23 @@ jobs:
         run: |
           ./eng/Test-RealStableUpgrade024.ps1 -PreviousArchiveDirectory 'artifacts/published-stable-v023' -CandidateArchiveDirectory 'artifacts/stable024-downloaded' -ExpectedCommit '${{ github.sha }}'
           'Eight read-only published 0.2.3 to staged 0.2.4 file mirror/rollback gates passed; private settings preserved. NOT A GUI UPDATER TEST; NOT PUBLISHED.' | Out-File $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Eight production updater-helper checks on published 0.2.3 to staged 0.2.4 (success and rollback, no GUI)
+        shell: pwsh
+        env:
+          DVINHOLM_PUBLISHED_V023_ZIP: ${{ github.workspace }}\\artifacts\\published-stable-v023\\Dvinholm-Windows-x86.zip
+          DVINHOLM_STAGED_V024_ZIP: ${{ github.workspace }}\\artifacts\\stable024-downloaded\\Dvinholm-Windows-x86.zip
+        run: |
+          foreach ($path in @($env:DVINHOLM_PUBLISHED_V023_ZIP,
+              $env:DVINHOLM_STAGED_V024_ZIP)) {
+            if (-not (Test-Path -LiteralPath $path -PathType Leaf)) {
+              throw "Production helper audit requires genuine SHA-audited downloaded ZIP: $path"
+            }
+          }
+          dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release -p:Platform=x86 -p:DvinholmDevelopmentFeatures=false --filter FullyQualifiedName~Staged024UpdaterHelperIntegrationTests --logger "trx;LogFileName=staged024-updater-helper.trx"
+          if ($LASTEXITCODE -ne 0) { throw 'Actual updater helper must pass both forward-replace and rollback cases.' }
+          'Read-only staging: production replacement helper passed on real published v0.2.3 and staged v0.2.4 ZIPs with simulated watchdog, HKCU Run and GUI. No installed updater or user settings touched.' |
+            Out-File $env:GITHUB_STEP_SUMMARY -Append
 
       - name: Rehearse exact-SHA isolated Stable 0.2.4 acceptance on downloaded ZIPs (no GUI)
         shell: powershell
