@@ -43,6 +43,23 @@ The `eng/Test-RealStableUpgrade024.ps1` integration test runs eight gates: exact
 
 This verifies a **file replacement/rollback simulation only**. It does not demonstrate that the real in-app updater works, that a user's actual profile migrations behave correctly, or that WinUI launches. Those manual checks remain separate requirements before release approval.
 
+## Stable 0.2.4 isolated Windows human acceptance (not published)
+
+The read-only dual-flavor staging workflow produces the separate `Dvinholm-v0.2.4-STABLE-WINDOWS-ACCEPTANCE-KIT` artifact **after** rechecking the actual staged ZIPs. This kit is **not interchangeable** with the earlier Portable `rc`-channel kit. It validates the `stable` channel and both ZIPs using the exact commit; it creates no GitHub release.
+
+Download **both artifacts from the same successful 0.2.4 Stable staging workflow run**. Extract the three-file `Dvinholm-v0.2.4-STAGED-NOT-PUBLISHED` artifact into a `candidate` directory, and the acceptance kit into a sibling `kit` directory. With Windows PowerShell in their common parent, execute:
+
+```powershell
+$commit = (Get-Content -LiteralPath '.\kit\BUILD_COMMIT_024_STABLE.txt' -Raw).Trim()
+powershell.exe -NoProfile -ExecutionPolicy Bypass -File '.\kit\eng\Prepare-StableAcceptance024.ps1' -ArchiveDirectory '.\candidate' -ExpectedCommit $commit -DestinationDirectory '.\Dvinholm-024-stable-acceptance'
+```
+
+The preparation script first enforces the exact lowercase 40-character SHA, an exact three-file staging set and the **original two-line checksum manifest**. It verifies both Portable and Lite against their original checksum entries and eight binary/archive gates each, including the 0.2.4 compiled assembly and `0.2.4+<SHA>.stable` product identity. Then it extracts **only Portable** into a new directory with `ACCEPTANCE-0.2.4.txt` and `acceptance-user-data`. The directory is atomically renamed into place. Existing destinations are refused; aborted preparations are cleaned up.
+
+The preparation does **not** start the application. Once completed, manually start `Dvinholm-024-stable-acceptance\Dvinholm.App.exe` and follow the receipt checklist. The receipt keeps profile, baud-rate and J2534-path settings private even after a direct EXE restart and disables acceptance-mode hardware/update actions. Never run an unprepared candidate outside this isolated folder on a computer with an existing installation.
+
+**A green CI preparation rehearsal is not successful human acceptance.** Windows 11 LTSC GUI, installed updater and real hardware testing remain unperformed; explicit authorization is still required for public 0.2.4 Stable publication.
+
 ## Remaining eight manual Windows acceptance checkpoints
 
 These **have not been performed** on 0.2.4. Do not mark complete from CI.
