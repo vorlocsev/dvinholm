@@ -1,10 +1,20 @@
+## Development 0.2.4 isolated RC acceptance extraction (2026-10-25)
+
+- [x] Recognize the new `ACCEPTANCE-0.2.4.txt` receipt in unpacked 0.2.4 test copies, including direct EXE restarts, while preserving the existing v0.2.3 receipt behavior.
+- [x] Keep the test copy's ECU profiles, CAN speed and selected J2534 DLL path in its private `acceptance-user-data` directory, without changing the normal `%LOCALAPPDATA%\Dvinholm` location for installed copies. Existing acceptance-mode hardware and updater controls remain disabled.
+- [x] Add `Prepare-RcAcceptance024.ps1` to validate exact SHA, checksum and eight 0.2.4 RC binary/ZIP gates on a downloaded archive, extract into a **new** directory, add the v0.2.4 receipt/private data folder and refuse replacing preexisting installs.
+- [x] Add eight deterministic offline receipt, direct-restart, override fail-closed and workflow contract tests. CI rehearses the actual downloaded ZIP and uploads a read-only human acceptance kit with exact `BUILD_COMMIT_024.txt` and instructions.
+- [ ] Confirm Development CI, v0.2.4 RC staging, legacy staging and MSIX; merge only after green then verify `main`. The eight human Windows 11 LTSC acceptance tasks remain **unperformed**. No Stable v0.2.4 release without explicit user authorization; real J2534 deferred.
+
+---
+
 ## Development 0.2.4 first standalone validation-only RC (2026-10-25)
 
 - [x] Add a separate `release-candidate-v0.2.4.yml` workflow which produces only an unsigned, uninstalled Windows x86 Portable RC artifact (ZIP + SHA256SUMS), with `contents: read`, no GitHub release/tag write permissions or publication steps.
 - [x] Publish the application for offline RC validation with `DvinholmDevelopmentFeatures=false`, `PublishTrimmed=false`, version 0.2.4, commit-bound `rc` metadata, no debug files; run eight production-only assembly smoke checks.
 - [x] Add `Test-ReleaseCandidate024.ps1` with eight byte-level guards for candidate identity, file set, size, SHA-256, safe ZIP, isolated x86 extraction, no demo code, AssemblyVersion and commit-bound product version. Run audit before and after GitHub Actions artifact upload/download.
 - [x] Add eight offline workflow/RC-contract tests and `docs/RELEASE_CANDIDATE_0.2.4.md` with explicitly **unperformed** interactive Windows smoke checklist and instructions not to touch a live installation without separate data isolation.
-- [ ] Confirm Development CI, v0.2.3 nonpublishing staging, new v0.2.4 RC and MSIX CI; merge only after green and check main. Next: 0.2.4 isolated Windows acceptance, reviewed Stable packaging and explicit user publication approval. Real J2534 testing remains deferred; published v0.2.3 unchanged.
+- [x] PR #488 merged as `903daa2` after Development CI #3469, v0.2.3 staging #66, RC #67, v0.2.4 RC #1 and MSIX #141 passed. Postmerge `main` CI #3470, v0.2.3 staging #67 and 0.2.4 RC #2 are running; verify completion separately. Next: isolated Windows acceptance, reviewed Stable packaging and explicit user release approval. Real J2534 testing remains deferred; published v0.2.3 unchanged.
 
 ---
 
@@ -13,7 +23,7 @@
 - [x] Verify all staged UTF-8 TXT/CSV bytes against the intended report before replacing an existing report. A nonempty temporary file is insufficient protection if a staging writer returned after truncating or silently altering content.
 - [x] Preserve same-directory atomic replacement, UTF-8 without BOM, platform-native CSV line endings, cleanup of temporary files and compatibility with the existing `WriteAtomicallyAsync` test hook.
 - [x] Add eight deterministic offline checks: Unicode TXT, exact CSV, truncated output, equal-length modified output, absent/empty stage, interrupted write and successful retry.
-- [x] PR #487 merged as `b946ac2` after CI #3462, staging #64, RC #65 and MSIX #139 all passed. Postmerge main CI #3463, staging #65, RC #66 and MSIX #140 started; verify conclusions separately. Stable v0.2.3 unchanged; physical J2534 and Windows installed GUI updater remain deferred.
+- [x] PR #487 merged as `b946ac2`; postmerge main CI #3463, staging #65, RC #66 and MSIX #140 all passed. Stable v0.2.3 unchanged; physical J2534 and Windows installed GUI updater remain deferred.
 
 ---
 

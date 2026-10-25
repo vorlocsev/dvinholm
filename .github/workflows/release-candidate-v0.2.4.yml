@@ -7,6 +7,7 @@ on:
     paths:
       - ".github/workflows/release-candidate-v0.2.4.yml"
       - "eng/Test-ReleaseCandidate024.ps1"
+      - "eng/Prepare-RcAcceptance024.ps1"
       - "eng/Package-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistributionExtraction.ps1"
@@ -15,6 +16,7 @@ on:
       - "docs/RELEASE_CANDIDATE_0.2.4.md"
       - "tests/Dvinholm.Stable.Tests/**"
       - "tests/Dvinholm.App.Tests/ReleaseCandidate024ContractTests.cs"
+      - "tests/Dvinholm.App.Tests/Rc024AcceptanceIsolationTests.cs"
   workflow_dispatch:
 
 # Validation-only, no tag/release creation, signing, installation, or elevated permissions.
@@ -34,15 +36,17 @@ jobs:
         with:
           global-json-file: global.json
 
-      - name: Parse Windows PowerShell 5.1 RC verifier
+      - name: Parse Windows PowerShell 5.1 RC verifier and acceptance preparation
         shell: powershell
         run: |
-          $tokens = $null
-          $errors = $null
-          [Management.Automation.Language.Parser]::ParseFile(
-            (Resolve-Path 'eng/Test-ReleaseCandidate024.ps1').Path,
-            [ref]$tokens, [ref]$errors) | Out-Null
-          if (@($errors).Count -ne 0) { throw "RC script syntax errors: $errors" }
+          foreach ($script in @('eng/Test-ReleaseCandidate024.ps1', 'eng/Prepare-RcAcceptance024.ps1')) {
+            $tokens = $null
+            $errors = $null
+            [Management.Automation.Language.Parser]::ParseFile(
+              (Resolve-Path -LiteralPath $script).Path,
+              [ref]$tokens, [ref]$errors) | Out-Null
+            if (@($errors).Count -ne 0) { throw "PowerShell 5.1 syntax failed for $script" }
+          }
 
       - name: Restore
         run: dotnet restore Dvinholm.sln
@@ -98,3 +102,35 @@ jobs:
         run: |
           ./eng/Test-ReleaseCandidate024.ps1 -ArchiveDirectory 'artifacts/rc-v0.2.4-downloaded' -ExpectedCommit '${{ github.sha }}'
           "0.2.4 RC: ZIP SHA-256 and embedded SHA verified after download. NOT PUBLISHED." | Out-File $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Rehearse isolated Windows acceptance extraction (no GUI)
+        shell: powershell
+        run: |
+          $isolated = Join-Path $env:RUNNER_TEMP ('Dvinholm-024-acceptance-' + [Guid]::NewGuid().ToString('N'))
+          try {
+            ./eng/Prepare-RcAcceptance024.ps1 -ArchiveDirectory 'artifacts/rc-v0.2.4-downloaded' -ExpectedCommit '${{ github.sha }}' -DestinationDirectory $isolated
+            if (-not (Test-Path -LiteralPath (Join-Path $isolated 'ACCEPTANCE-0.2.4.txt') -PathType Leaf)) { throw 'RC acceptance receipt missing.' }
+            if (-not (Test-Path -LiteralPath (Join-Path $isolated 'acceptance-user-data') -PathType Container)) { throw 'Isolated user data folder missing.' }
+            if (-not (Test-Path -LiteralPath (Join-Path $isolated 'Dvinholm.App.exe') -PathType Leaf)) { throw 'Extracted executable missing.' }
+            Write-Host 'Isolated 0.2.4 RC acceptance extraction verified. WinUI was NOT launched.'
+          } finally {
+            if (Test-Path -LiteralPath $isolated) { Remove-Item -LiteralPath $isolated -Recurse -Force }
+          }
+
+      - name: Record exact RC commit for the read-only human acceptance kit
+        shell: powershell
+        run: |
+          [IO.File]::WriteAllText((Join-Path (Get-Location).Path 'BUILD_COMMIT_024.txt'), '${{ github.sha }}' + [Environment]::NewLine, [Text.Encoding]::ASCII)
+
+      - name: Upload read-only 0.2.4 Windows acceptance kit (not a release)
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-v0.2.4-WINDOWS-ACCEPTANCE-KIT
+          path: |
+            BUILD_COMMIT_024.txt
+            eng/Prepare-RcAcceptance024.ps1
+            eng/Test-ReleaseCandidate024.ps1
+            eng/Test-WindowsDistribution.ps1
+            eng/Test-WindowsDistributionExtraction.ps1
+            docs/RELEASE_CANDIDATE_0.2.4.md
+          if-no-files-found: error
