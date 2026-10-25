@@ -97,7 +97,7 @@ public sealed class Rc024AcceptanceIsolationTests : IDisposable
 
         var verify = script.IndexOf("Test-ReleaseCandidate024.ps1", StringComparison.Ordinal);
         var receipt = script.IndexOf("ACCEPTANCE-0.2.4.txt", StringComparison.Ordinal);
-        var move = script.IndexOf("Move-Item -LiteralPath $temp -Destination $target", StringComparison.Ordinal);
+        var move = script.IndexOf("[IO.Directory]::Move($temp, $target)", StringComparison.Ordinal);
         Assert.True(verify >= 0 && receipt > verify && move > receipt);
         Assert.Contains("-Channel rc", script);
         Assert.Contains("Destination exists: never modify an installed application", script);
