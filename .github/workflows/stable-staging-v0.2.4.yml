@@ -15,6 +15,7 @@ on:
       - "eng/Test-RealStableUpgrade024.ps1"
       - "eng/Test-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistributionExtraction.ps1"
+      - "src/Dvinholm.App/Dvinholm.App.csproj"
       - "eng/Test-LiteBundledPreflight.ps1"
       - "eng/Test-LitePrerequisites.ps1"
       - "eng/Package-WindowsDistribution.ps1"
@@ -268,6 +269,13 @@ jobs:
                 'Check-Lite-Prerequisites.cmd')) {
               Copy-Item -LiteralPath (Join-Path 'eng' $name) -Destination (Join-Path $kit 'eng')
             }
+            # The Lite simulated-host audit derives the SDK line from the
+            # exact checked-out project; mirror that source in the stand-alone
+            # kit rather than silently skipping a critical validation gate.
+            $sourceProject = 'src/Dvinholm.App/Dvinholm.App.csproj'
+            $kitProjectDirectory = Join-Path $kit 'src/Dvinholm.App'
+            New-Item -ItemType Directory -Path $kitProjectDirectory -Force | Out-Null
+            Copy-Item -LiteralPath $sourceProject -Destination $kitProjectDirectory
             foreach ($name in @('Dvinholm-Windows-x86.zip',
                 'Dvinholm-Windows-x86-Lite.zip', 'SHA256SUMS.txt')) {
               Copy-Item -LiteralPath (Join-Path 'artifacts/stable024-downloaded' $name) -Destination $candidate
@@ -333,5 +341,6 @@ jobs:
             eng/Test-LiteBundledPreflight.ps1
             eng/Test-LitePrerequisites.ps1
             eng/Check-Lite-Prerequisites.cmd
+            src/Dvinholm.App/Dvinholm.App.csproj
             docs/RELEASE_CANDIDATE_0.2.4.md
           if-no-files-found: error
