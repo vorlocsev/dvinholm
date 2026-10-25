@@ -1,9 +1,18 @@
+## Development 0.2.4 unified dual-flavor Stable staging (2026-10-25)
+
+- [x] Add read-only `stable-staging-v0.2.4.yml`: publish production-only Windows x86 Portable (bundled runtime) **and** Lite (framework-dependent) from the same commit with `Version=0.2.4`, `0.2.4+SHA.stable`, debug tools excluded and trimming/AOT disabled.
+- [x] Run eight actual ZIP/binary gates for each flavor independently, prove Lite is smaller, generate one canonical two-entry `SHA256SUMS.txt`, and require it to match both independently audited single-flavor manifests.
+- [x] Upload exactly two ZIPs plus checksum as `Dvinholm-v0.2.4-STAGED-NOT-PUBLISHED`, download actual GitHub Actions bytes and rerun all eight gates per flavor from the **original downloaded SHA lines** without recomputing or modifying a hash. Add eight offline source-level contracts and document the distinction between staging and release authorization.
+- [ ] Require green branch CI, two-flavor Stable staging, Lite RC, Portable RC, old 0.2.3 staging/RC and MSIX before merge. Verify postmerge main. **All eight Windows LTSC GUI acceptance steps remain unperformed**, as does physical J2534 testing. Stable 0.2.4 still requires explicit user approval; do not change published v0.2.3.
+
+---
+
 ## Development 0.2.4 framework-dependent Lite RC validation (2026-10-25)
 
 - [x] Add separate **validation-only** Windows x86 Lite RC build, with `DvinholmDevelopmentFeatures=false`, `WindowsAppSDKSelfContained=false`, `--self-contained false`, `PublishTrimmed=false`, and no debug files, using version 0.2.4 with commit-bound `rc` metadata.
 - [x] Add eight-gate `Test-ReleaseCandidate024Lite.ps1` for strict Lite ZIP and manifest, size bounds, path safety, no bundled runtime, byte-exact prerequisite-checker tools, extracted actual x86 apphost, simulated prerequisites, demo/test exclusion, compiled version and commit identity.
 - [x] Upload test-only Lite ZIP and SHA256SUMS, re-download and audit exact bytes. Add eight offline workflow/validator contract tests; document that Lite requires real .NET x86, Windows App SDK x86 and VC++ x86 and that simulated CI is **not** GUI/real-host acceptance.
-- [ ] Confirm CI, Lite RC, Portable RC, legacy staging/RC and MSIX; merge only after all required gates green and independently check postmerge main. Published Stable v0.2.3 remains unchanged; no new public Stable v0.2.4 release without explicit authorization. Real J2534 and Windows interactive GUI acceptance remain deferred.
+- [x] PR #492 merged as `0ebb593` after CI #3514, Lite RC #1, Portable RC #14, staging #79, legacy RC #77 and MSIX #153 passed. Postmerge main CI #3515, Lite RC #2, Portable RC #15 and staging #80 started; verify their final results separately. Published Stable v0.2.3 remains unchanged; no public Stable 0.2.4 release without explicit authorization. Real J2534 and Windows GUI acceptance remain deferred.
 
 ---
 

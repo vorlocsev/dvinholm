@@ -27,6 +27,14 @@ Lite requires a real host to already have compatible **.NET 10 Desktop Runtime x
 
 No 0.2.4 Stable tag, release or update target has been created.
 
+## Unified Stable 0.2.4 staging (not published)
+
+The separate `stable-staging-v0.2.4.yml` workflow creates **one validation-only staging artifact** containing three files: `Dvinholm-Windows-x86.zip` (Portable), `Dvinholm-Windows-x86-Lite.zip` (Lite), and a canonical two-entry `SHA256SUMS.txt`. Both x86 assemblies have development/demo flags off, debug files excluded, trimming disabled, product version `0.2.4+<exact-commit>.stable` and are validated against the **same commit**.
+
+The workflow performs eight ZIP/binary gates independently for each flavor, checks Lite is smaller, checks the combined checksums against the two independently verified single-flavor sidecars, uploads the three files to Actions, downloads the actual stored artifact and **repeats both eight-gate audits without recalculating the downloaded SHA-256**. Its only permission is `contents: read`; it cannot create or modify a GitHub Release, tag, install or update the published v0.2.3.
+
+A green staging workflow **does not** approve 0.2.4 for publication and is **not** evidence of Windows GUI compatibility, a real installed Lite host or a physical J2534. The eight interactive Windows LTSC checkpoints below remain pending. Before any future Stable 0.2.4 publication, a separate version-specific user-data-isolated acceptance, update migration review and explicit user authorization are required.
+
 ## Remaining eight manual Windows acceptance checkpoints
 
 These **have not been performed** on 0.2.4. Do not mark complete from CI.
