@@ -3,7 +3,8 @@
 - [x] Add `START-ACCEPTANCE-024.cmd` to the separate read-only RC 0.2.4 acceptance kit. It requires the exact run's `BUILD_COMMIT_024.txt` and downloaded `Dvinholm-Windows-x86.zip` plus `SHA256SUMS.txt`; it refuses missing inputs, unknown arguments and any existing target directory.
 - [x] `--prepare-only` verifies and extracts an isolated test copy with its v0.2.4 acceptance receipt, settings folder and EXE but **never launches WinUI**. Double-click/manual mode attempts to launch only the verified isolated copy after all checks, with the private data environment variable and a human checklist.
 - [x] Add eight offline launcher contract tests. On Windows CI, dry-run the actual bundled batch against **downloaded** RC bytes; confirm a valid isolated extraction, then reject a second attempt rather than overwrite the existing copy. Bundle CMD and exact-SHA receipt preparation scripts together for one-click Windows testing.
-- [ ] Check Development CI, RC 0.2.4, legacy Stable staging/RC and experimental MSIX before merge; check postmerge `main`. All eight human Windows 11 LTSC GUI checks remain pending, as do installed-app updater smoke and physical J2534 tests. Published Stable v0.2.3 unchanged; do not publish 0.2.4 without explicit authorization.
+- [x] Diagnose RC #7 failure: verified downloaded ZIP extraction succeeded and the second run correctly refused to overwrite it. Its expected nonzero cmd.exe exit code leaked into the enclosing Windows PowerShell step. Clear that code only after verifying the expected refusal; add a regression test without weakening the no-overwrite guard.
+- [ ] Require green updated-branch Development CI, RC 0.2.4 including the real CMD dry-run and kit upload, legacy Stable staging/RC and MSIX before merge; verify postmerge main. Human Windows LTSC GUI checks, installed updater smoke and physical J2534 remain unperformed. Published Stable v0.2.3 unchanged; do not publish 0.2.4 without explicit approval.
 
 ---
 
