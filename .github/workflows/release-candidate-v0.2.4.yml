@@ -116,3 +116,21 @@ jobs:
           } finally {
             if (Test-Path -LiteralPath $isolated) { Remove-Item -LiteralPath $isolated -Recurse -Force }
           }
+
+      - name: Record exact RC commit for the read-only human acceptance kit
+        shell: powershell
+        run: |
+          [IO.File]::WriteAllText((Join-Path (Get-Location).Path 'BUILD_COMMIT_024.txt'), '${{ github.sha }}' + [Environment]::NewLine, [Text.Encoding]::ASCII)
+
+      - name: Upload read-only 0.2.4 Windows acceptance kit (not a release)
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-v0.2.4-WINDOWS-ACCEPTANCE-KIT
+          path: |
+            BUILD_COMMIT_024.txt
+            eng/Prepare-RcAcceptance024.ps1
+            eng/Test-ReleaseCandidate024.ps1
+            eng/Test-WindowsDistribution.ps1
+            eng/Test-WindowsDistributionExtraction.ps1
+            docs/RELEASE_CANDIDATE_0.2.4.md
+          if-no-files-found: error
