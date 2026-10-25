@@ -9,6 +9,7 @@ on:
       - "eng/Test-ReleaseCandidate024.ps1"
       - "eng/Test-ReleaseCandidate024Lite.ps1"
       - "eng/Test-WindowsDistributionChecksums.ps1"
+      - "eng/Prepare-StableAcceptance024.ps1"
       - "eng/Test-RealStableUpgrade024.ps1"
       - "eng/Test-WindowsDistribution.ps1"
       - "eng/Test-WindowsDistributionExtraction.ps1"
@@ -18,6 +19,7 @@ on:
       - "src/Dvinholm.App/**"
       - "tests/Dvinholm.Stable.Tests/**"
       - "tests/Dvinholm.App.Tests/StableStaging024ContractTests.cs"
+      - "tests/Dvinholm.App.Tests/StableAcceptance024ContractTests.cs"
       - "tests/Dvinholm.App.Tests/Published023ToStaged024UpgradeContractTests.cs"
       - "docs/RELEASE_CANDIDATE_0.2.4.md"
   workflow_dispatch:
@@ -47,6 +49,7 @@ jobs:
           foreach ($script in @('eng/Test-ReleaseCandidate024.ps1',
               'eng/Test-ReleaseCandidate024Lite.ps1',
               'eng/Test-WindowsDistributionChecksums.ps1',
+              'eng/Prepare-StableAcceptance024.ps1',
               'eng/Test-RealStableUpgrade024.ps1')) {
             $tokens = $null
             $errors = $null
@@ -208,3 +211,52 @@ jobs:
         run: |
           ./eng/Test-RealStableUpgrade024.ps1 -PreviousArchiveDirectory 'artifacts/published-stable-v023' -CandidateArchiveDirectory 'artifacts/stable024-downloaded' -ExpectedCommit '${{ github.sha }}'
           'Eight read-only published 0.2.3 to staged 0.2.4 file mirror/rollback gates passed; private settings preserved. NOT A GUI UPDATER TEST; NOT PUBLISHED.' | Out-File $env:GITHUB_STEP_SUMMARY -Append
+
+      - name: Rehearse exact-SHA isolated Stable 0.2.4 acceptance on downloaded ZIPs (no GUI)
+        shell: powershell
+        run: |
+          $dest = Join-Path $env:RUNNER_TEMP ('Dvinholm-stable024-acceptance-' + [Guid]::NewGuid().ToString('N'))
+          try {
+            ./eng/Prepare-StableAcceptance024.ps1 -ArchiveDirectory 'artifacts/stable024-downloaded' -ExpectedCommit '${{ github.sha }}' -DestinationDirectory $dest
+            foreach ($name in @('Dvinholm.App.exe', 'ACCEPTANCE-0.2.4.txt')) {
+              if (-not (Test-Path -LiteralPath (Join-Path $dest $name) -PathType Leaf)) {
+                throw "Stable acceptance extracted ZIP missing $name."
+              }
+            }
+            if (-not (Test-Path -LiteralPath (Join-Path $dest 'acceptance-user-data') -PathType Container)) {
+              throw 'Stable acceptance user-data isolation was not prepared.'
+            }
+            try {
+              ./eng/Prepare-StableAcceptance024.ps1 -ArchiveDirectory 'artifacts/stable024-downloaded' -ExpectedCommit '${{ github.sha }}' -DestinationDirectory $dest
+              throw 'Stable acceptance repeated preparation illegally overwrote its destination.'
+            } catch {
+              if ($_.Exception.Message -notlike '*destination already exists*') { throw }
+            }
+            Write-Host 'Stable 0.2.4 human acceptance preparation passed; repeated attempt rejected. WinUI NOT launched.'
+          } finally {
+            if (Test-Path -LiteralPath $dest) { Remove-Item -LiteralPath $dest -Recurse -Force }
+          }
+
+      - name: Record exact Stable 0.2.4 commit for read-only acceptance kit
+        shell: powershell
+        run: |
+          [IO.File]::WriteAllText((Join-Path (Get-Location).Path 'BUILD_COMMIT_024_STABLE.txt'),
+            '${{ github.sha }}' + [Environment]::NewLine, [Text.Encoding]::ASCII)
+
+      - name: Upload Stable 0.2.4 human Windows acceptance kit (NOT PUBLISHED)
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-v0.2.4-STABLE-WINDOWS-ACCEPTANCE-KIT
+          path: |
+            BUILD_COMMIT_024_STABLE.txt
+            eng/Prepare-StableAcceptance024.ps1
+            eng/Test-ReleaseCandidate024.ps1
+            eng/Test-ReleaseCandidate024Lite.ps1
+            eng/Test-WindowsDistribution.ps1
+            eng/Test-WindowsDistributionExtraction.ps1
+            eng/Test-WindowsDistributionChecksums.ps1
+            eng/Test-LiteBundledPreflight.ps1
+            eng/Test-LitePrerequisites.ps1
+            eng/Check-Lite-Prerequisites.cmd
+            docs/RELEASE_CANDIDATE_0.2.4.md
+          if-no-files-found: error
