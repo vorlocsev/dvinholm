@@ -1,10 +1,20 @@
+## Development 0.2.4 ECU profile JSON duplicate-field protection (2026-10-25)
+
+- [x] PR #476 merged as `13a4227`; postmerge main CI #3408, Stable staging #43, RC #44 and experimental MSIX #107 succeeded.
+- [x] Reject duplicate JSON property names within each ECU profile object, including case variants, before deserializing. Avoid silent replacement of CAN request/response IDs, addressing type, DID list or author-marked verification.
+- [x] Preserve forward-compatible distinct extra fields, existing valid catalogs, validation errors and the no-persistence-on-invalid-import boundary.
+- [x] Add eight offline checks: repeated addressing, case-variant field names, verification, DID list, second-profile import atomicity and valid round-trip. No hardware involved.
+- [ ] Verify branch CI, Stable staging, RC and experimental MSIX, then merge and check postmerge main before marking integration complete. Stable v0.2.3 remains unchanged; physical J2534 and installed GUI updater checks stay deferred.
+
+---
+
 ## Development 0.2.4 UDS cross-service malformed NRC correlation (2026-10-25)
 
 - [x] PR #475 merged as `034721c`; postmerge main CI #3403, Stable staging #41, RC #42 and MSIX #104 succeeded.
 - [x] Tighten UDS cross-service correlation: ignore only complete three-byte `7F SID NRC` messages for another service. Do not suppress malformed two-byte or padded negatives and replace a useful framing exception with a timeout.
 - [x] Preserve valid other-service NRC/pending filtering, same-service NRC parsing and unrelated positive-response filtering.
 - [x] Add eight deterministic offline regressions, including malformed cross-service NRC then successful next DID read over virtual J2534.
-- [ ] Confirm new PR checks and postmerge CI before closing this stage. Stable v0.2.3 release remains untouched; real adapter and installed-app updater GUI smoke remain deferred.
+- [x] PR #476 merged as `13a4227`; main CI #3408, staging #43, RC #44 and MSIX #107 succeeded. Stable v0.2.3 release remains untouched; real adapter and installed-app updater GUI smoke remain deferred.
 
 ---
 
