@@ -28,10 +28,14 @@ public sealed class Rc024OneClickLauncherTests
     {
         var script = Launcher;
         var requireCommit = script.IndexOf("if not exist \"%PROVENANCE%\"", StringComparison.Ordinal);
+        var validateCommit = script.IndexOf("-cnotmatch", StringComparison.Ordinal);
         var readCommit = script.IndexOf("set /p EXPECTED_COMMIT=", StringComparison.Ordinal);
         var preparation = script.IndexOf("Prepare-RcAcceptance024.ps1", StringComparison.Ordinal);
         Assert.Contains("BUILD_COMMIT_024.txt", script);
-        Assert.True(requireCommit >= 0 && readCommit > requireCommit && preparation > readCommit);
+        Assert.Contains(@"\A[0-9a-f]{40}(\r?\n)?\z", script);
+        Assert.Contains("Invalid exact lowercase 40-character build commit", script);
+        Assert.True(requireCommit >= 0 && validateCommit > requireCommit
+            && readCommit > validateCommit && preparation > readCommit);
         Assert.Contains("if not defined EXPECTED_COMMIT", script);
     }
 
@@ -52,7 +56,7 @@ public sealed class Rc024OneClickLauncherTests
     {
         var script = Launcher;
         var existence = script.IndexOf("if exist \"%OUTPUT%\"", StringComparison.Ordinal);
-        var invoke = script.IndexOf("powershell.exe -NoProfile", StringComparison.Ordinal);
+        var invoke = script.IndexOf("powershell.exe -NoProfile -ExecutionPolicy Bypass -File", StringComparison.Ordinal);
         Assert.Contains("Dvinholm-024-acceptance", script);
         Assert.Contains("Never overwrite", script);
         Assert.True(existence >= 0 && invoke > existence);
@@ -124,6 +128,8 @@ public sealed class Rc024OneClickLauncherTests
         Assert.Contains("$global:LASTEXITCODE = 0", workflow);
         Assert.True(workflow.IndexOf("if ($LASTEXITCODE -eq 0) { throw", StringComparison.Ordinal)
             < workflow.IndexOf("$global:LASTEXITCODE = 0", StringComparison.Ordinal));
+        Assert.Contains("Test-Rc024LauncherProvenance.ps1", workflow);
+        Assert.Contains("Reject eight malicious or malformed RC build commit receipts", workflow);
         Assert.Contains("contents: read", workflow);
         Assert.DoesNotContain("gh release create", workflow);
         Assert.DoesNotContain("gh release edit", workflow);
