@@ -1,18 +1,23 @@
 namespace Dvinholm.App;
 
 /// <summary>
-/// Isolates settings for a verified, unpacked 0.2.3 human-acceptance copy.
-/// The marker also survives direct EXE relaunch without the batch launcher.
+/// Isolates settings for verified, unpacked human-acceptance copies.
+/// Versioned receipts preserve isolated settings on direct EXE restart.
 /// Normal installed Stable/Development copies still use %LOCALAPPDATA%\Dvinholm.
 /// </summary>
 internal static class DvinholmUserDataDirectory
 {
     internal const string AcceptanceVariable = "DVINHOLM_ACCEPTANCE_DATA_DIR";
     internal const string AcceptanceFolder = "acceptance-user-data";
+    // Keep v0.2.3 acceptance copies isolated while enabling the separate
+    // v0.2.4 RC test copy. The RC receipt is generated ONLY after byte-exact
+    // ZIP validation by the acceptance preparation script.
     internal const string AcceptanceReceipt = "ACCEPTANCE-0.2.3.txt";
+    internal const string Rc024AcceptanceReceipt = "ACCEPTANCE-0.2.4.txt";
 
     private static bool HasAcceptanceReceipt =>
-        File.Exists(Path.Combine(AppContext.BaseDirectory, AcceptanceReceipt));
+        File.Exists(Path.Combine(AppContext.BaseDirectory, AcceptanceReceipt)) ||
+        File.Exists(Path.Combine(AppContext.BaseDirectory, Rc024AcceptanceReceipt));
 
     internal static bool IsAcceptanceLaunch =>
         HasAcceptanceReceipt || Environment.GetEnvironmentVariable(AcceptanceVariable) is not null;
