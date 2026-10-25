@@ -1,10 +1,20 @@
+## Development 0.2.4 passive UDS discovery NRC framing (2026-10-25)
+
+- [x] Postmerge PR #474 checks completed successfully: main CI #3398, Stable staging #39, RC #40 and experimental MSIX #101 on `601ecab`.
+- [x] Accept passive ECU candidates only for exact three-byte ISO-TP Single Frame UDS negative responses (`7F SID NRC`). Reject truncated, overlong and First Frame negative prefixes rather than misidentifying ECU responders.
+- [x] Preserve valid NRC 0x78/0x31 handling, legal Classic CAN padding outside the declared Single Frame payload and normal positive-response discovery.
+- [x] Add eight read-only offline tests, including a virtual-J2534 passive scan verifying malformed NRC traffic is ignored and no CAN transmissions occur.
+- [ ] Confirm PR checks, merge and postmerge main CI before closing this Development stage. Stable v0.2.3 remains unchanged; physical J2534 and installed-app GUI updater smoke stay deferred.
+
+---
+
 ## Development 0.2.4 UDS negative-response framing (2026-10-25)
 
 - [x] Main CI #3393, Stable staging #37, RC #38 and MSIX #98 succeeded after CAN Monitor PR #473 merged as `c292b6b`.
 - [x] Require exactly three bytes for UDS negative responses (`7F SID NRC`); padded/malformed `responsePending` (`0x78`) must fail visibly instead of being silently treated as an interim response.
 - [x] Retain correct handling of valid 3-byte `0x78`, other-service filtering, and structured negative-response error codes.
 - [x] Add eight offline UDS regression checks, including malformed response followed by successful DID read over virtual J2534 with no real adapter.
-- [ ] Confirm all PR checks and postmerge main CI before marking integration complete. Stable v0.2.3 remains published; physical J2534 and interactive Windows updater tests remain pending.
+- [x] PR #474 merged as `601ecab`; main CI #3398, Stable staging #39, RC #40 and MSIX #101 passed. Stable v0.2.3 remains published; physical J2534 and interactive Windows updater tests remain pending.
 
 ---
 
@@ -14,7 +24,7 @@
 - [x] Fix the software CAN-ID filter to reject hexadecimal identifiers outside the 29-bit arbitration range (`0x00000000` through `0x1FFFFFFF`), whether entered alone or mixed with valid comma-separated IDs.
 - [x] Apply the same numeric validation when matching buffered CAN rows and preserve historical numeric 11/29-bit matching and empty-query wildcard behavior.
 - [x] Add eight offline checks, including both range boundaries, invalid multi-ID fail-closed handling, unchanged buffered history, and virtual-J2534 receive-only operation.
-- [ ] Verify PR and postmerge main CI before marking integration complete. Stable v0.2.3 binaries are unchanged; physical J2534 tests are still deferred.
+- [x] PR #473 merged as `c292b6b`; main CI #3393, Stable staging #37, RC #38 and MSIX #98 passed. Stable v0.2.3 unchanged; physical J2534 deferred.
 
 ---
 

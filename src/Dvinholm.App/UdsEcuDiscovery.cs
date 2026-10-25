@@ -172,13 +172,13 @@ internal sealed class UdsEcuDiscovery
 
         var sid = iso.Data[0];
 
-        // UDS negative response.
+        // A complete UDS negative response is exactly 7F SID NRC (3 bytes).
+        // A padded or truncated negative response is not evidence of an ECU.
+        // It must fit in an ISO-TP Single Frame; a First Frame with a 7F
+        // prefix cannot represent a conforming UDS negative response.
         if (sid == 0x7F)
         {
-            // A UDS negative response must contain the original service and
-            // a negative-response code after 0x7F. A truncated frame is not
-            // enough evidence to classify this CAN ID as a UDS responder.
-            if (iso.Data.Length < 3)
+            if (iso.Type != IsoTpFrameType.SingleFrame || iso.Data.Length != 3)
                 return false;
 
             responseService = sid;
