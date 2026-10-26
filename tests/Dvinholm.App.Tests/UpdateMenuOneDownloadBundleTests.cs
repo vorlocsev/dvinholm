@@ -107,7 +107,7 @@ public sealed class UpdateMenuOneDownloadBundleTests
         Assert.Contains("Existing installed Stable 0.2.4 and user data are unchanged", receipt);
         Assert.Contains("published Stable v0.2.4 and installed user data unchanged", launcher);
         Assert.Contains("Dvinholm-UPDATE-MENU-WINDOWS-ONE-DOWNLOAD", Guide);
-        Assert.Equal(8, System.Text.RegularExpressions.Regex.Matches(Guide, @"(?m)^- \\[ \\] ").Count);
+        Assert.Equal(8, System.Text.RegularExpressions.Regex.Matches(Guide, @"(?m)^- \[ \] ").Count);
     }
 
     private static string BundleSection(string workflow)
