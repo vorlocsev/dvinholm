@@ -1,3 +1,13 @@
+## Development: cancellable per-entry ZIP extraction (2026-10-26)
+
+- [x] Confirm current `main` `d9d6e5b` after PR #512, with **7/7 green post-merge workflows** including CI #3691; published Stable v0.2.4 still points to `a9e6188`.
+- [x] Keep all archive expanded-size and path-traversal validation **before** writing any file. Replace monolithic synchronous extraction with asynchronous per-entry copying on a worker, so `Cancel download` may interrupt **the current large entry** instead of waiting for all ZIP extraction.
+- [x] Preserve `FileMode.CreateNew` to reject duplicate/existing names, explicit ZIP directory entries, last-write timestamps, and the downstream exact downloaded-byte-count/digest check and private-stage failure cleanup.
+- [x] Add eight offline deterministic checks for byte-exact copy, pre-cancellation, cancellation during a blocked stream read, nested and empty directories, timestamps, duplicate paths, traversal rejection and source guard ordering.
+- [ ] Require all seven workflows successful at the exact PR head, then independent post-merge `main` checks. UI interaction on Windows 11 LTSC and real installed-updater cancellation have not been observed; physical J2534 testing remains deferred and Stable publication requires separate permission.
+
+---
+
 ## Development: responsive updater ZIP extraction (2026-10-26)
 
 - [x] Verify post-merge PR #510 Development CI #3686, Stable staging and all seven workflows succeeded on `main` commit `a3bc4d5` (1427/1427 app + 8/8 Stable tests). Published Stable v0.2.4 stays at `a9e6188`.
