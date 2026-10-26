@@ -503,15 +503,14 @@ internal static class LatestBuildUpdater
         }
     }
 
-    // ZipFile.ExtractToDirectory is synchronous. Do not run it on the WinUI
-    // dispatcher: Cancel download and window close must stay responsive while
-    // the archive is being validated and extracted. Keep all existing ZIP
-    // guards and the built-in extractor's safe-path semantics intact.
+    // Extract each file asynchronously on a worker to keep WinUI responsive
+    // *and* allow Cancel download to stop a large individual ZIP entry.
+    // Validate every entry before writing any file to the private stage.
     internal static Task ValidateAndExtractArchiveAsync(
         string archivePath,
         string staging,
         CancellationToken cancellationToken = default) =>
-        Task.Run(() =>
+        Task.Run(async () =>
         {
             cancellationToken.ThrowIfCancellationRequested();
             Directory.CreateDirectory(staging);
@@ -526,13 +525,39 @@ internal static class LatestBuildUpdater
                     throw new InvalidDataException("The artifact contains an unsafe archive path.");
             }
 
-            // Cancellation cannot interrupt ZipFile's synchronous individual
-            // entry writes, but the dispatcher remains free. A late cancel is
-            // observed before the stage is marked prepared or installed.
             cancellationToken.ThrowIfCancellationRequested();
-            archive.ExtractToDirectory(staging);
+            foreach (var entry in archive.Entries)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var target = Path.GetFullPath(Path.Combine(staging, entry.FullName));
+                if (entry.FullName.EndsWith("/", StringComparison.Ordinal))
+                {
+                    Directory.CreateDirectory(target);
+                    continue;
+                }
+
+                Directory.CreateDirectory(Path.GetDirectoryName(target)!);
+                // CreateNew matches the original ZIP extractor's non-overwrite
+                // behavior, even if a crafted ZIP repeats the same file name.
+                // Closing the output stream precedes restoring ZIP timestamps.
+                using (var input = entry.Open())
+                {
+                    await using (var output = new FileStream(
+                        target, FileMode.CreateNew, FileAccess.Write, FileShare.None,
+                        81920, useAsync: true))
+                    {
+                        await CopyArchiveEntryAsync(input, output, cancellationToken);
+                    }
+                }
+                File.SetLastWriteTime(target, entry.LastWriteTime.DateTime);
+            }
+
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
+
+    internal static Task CopyArchiveEntryAsync(
+        Stream input, Stream output, CancellationToken cancellationToken) =>
+        input.CopyToAsync(output, 81920, cancellationToken);
 
     internal static void TryCleanup(Action cleanup)
     {
