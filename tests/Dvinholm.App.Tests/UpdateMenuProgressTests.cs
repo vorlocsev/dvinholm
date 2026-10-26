@@ -107,7 +107,8 @@ public sealed class UpdateMenuProgressTests
         var region = Region("private async Task DownloadAndLaunchLatestBuildAsync(", "private static string ProfileCatalogPath");
         Assert.Contains("ShowUpdateActivity(\"Preparing the selected update…\");", region);
         Assert.Contains("DispatcherQueue.TryEnqueue(() =>", region);
-        Assert.Contains("if (_closing || !_updateProgressGate.Accepts(progressEpoch)) return;", region);
+        Assert.Contains("if (_closing || downloadCts.IsCancellationRequested ||", region);
+        Assert.Contains("!_updateProgressGate.Accepts(progressEpoch)) return;", region);
         Assert.Contains("SetStatus(message);", region);
         Assert.Contains("ShowUpdateActivity(message);", region);
         Assert.Contains("ShowUpdateActivity($\"Replacing application files with", region);
