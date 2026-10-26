@@ -43,6 +43,7 @@ public sealed partial class MainWindow : Window
     private LatestBuildInfo? _latestBuild;
     private bool _updaterBusy;
     private bool _updateAvailable;
+    private readonly UpdateProgressGate _updateProgressGate = new();
     // Do not persist XAML's initial ComboBox selection while restoring settings.
     private bool _loadingUpdateSource = true;
 
@@ -396,11 +397,15 @@ public sealed partial class MainWindow : Window
         UpdateSource.IsEnabled = false;
         RunUpdateButton.Content = "Updating…";
         ShowUpdateActivity("Preparing the selected update…");
+        // The callback may be dispatched after DownloadAndPrepareAsync returns.
+        // Give this attempt an epoch so a late message cannot restore the
+        // spinner after a failure or after file replacement starts.
+        var progressEpoch = _updateProgressGate.Begin();
         var progress = new Progress<string>(message =>
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                if (_closing) return;
+                if (_closing || !_updateProgressGate.Accepts(progressEpoch)) return;
                 SetStatus(message);
                 ShowUpdateActivity(message);
             });
@@ -409,6 +414,8 @@ public sealed partial class MainWindow : Window
         try
         {
             var stagingDirectory = await LatestBuildUpdater.DownloadAndPrepareAsync(build, progress);
+            // No download progress is valid once replacement begins.
+            _updateProgressGate.Complete(progressEpoch);
             SetStatus($"Replacing application files with {build.DisplayVersion}…");
             ShowUpdateActivity($"Replacing application files with {build.DisplayVersion}…");
             LatestBuildUpdater.StartReplacement(stagingDirectory, AppContext.BaseDirectory, Environment.ProcessId);
@@ -416,6 +423,9 @@ public sealed partial class MainWindow : Window
         }
         catch (Exception ex)
         {
+            // Complete before displaying the failure: queued progress from
+            // the failed attempt must never overwrite the retry/error state.
+            _updateProgressGate.Complete(progressEpoch);
             var detail = FormatSafeException(ex, "Unexpected update error.");
             var logPath = Path.Combine(
                 DvinholmUserDataDirectory.Current,
@@ -438,6 +448,9 @@ public sealed partial class MainWindow : Window
         }
         finally
         {
+            // Idempotent even when the successful path or catch already
+            // completed this epoch.
+            _updateProgressGate.Complete(progressEpoch);
             _updaterBusy = false;
             RunUpdateButton.IsEnabled = true;
             UpdateSource.IsEnabled = true;
