@@ -9,16 +9,35 @@
     <Grid x:Name="RootLayout" Padding="20" RowSpacing="14">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
+        <!-- The main window only opens the dedicated update menu. Never
+             start a replacement or a network lookup just by opening it. -->
         <StackPanel Spacing="4">
-            <Grid ColumnSpacing="10" Margin="0,6,0,0">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/><ColumnDefinition Width="Auto"/></Grid.ColumnDefinitions>
-                <ComboBox x:Name="UpdateSource" Width="145" VerticalAlignment="Center" SelectedIndex="0" SelectionChanged="UpdateSource_SelectionChanged" AutomationProperties.Name="Update source">
-                    <ComboBoxItem Content="Development"/>
-                    <ComboBoxItem Content="Stable"/>
-                </ComboBox>
-                <TextBlock x:Name="UpdateStatusText" Grid.Column="1" Text="Current version: checking…" VerticalAlignment="Center" TextWrapping="Wrap"/>
-                <Button x:Name="UpdateButton" Grid.Column="2" Content="Check update" Click="UpdateButton_Click" MinWidth="170"/>
-            </Grid>
+            <Button x:Name="UpdateButton" Content="Check update"
+                    MinWidth="170" AutomationProperties.Name="Open update menu">
+                <Button.Flyout>
+                    <Flyout x:Name="UpdateFlyout" Placement="Bottom">
+                        <StackPanel Spacing="12" Width="390">
+                            <TextBlock Text="Updates" Style="{StaticResource SubtitleTextBlockStyle}"/>
+                            <TextBlock Text="Update channel" />
+                            <ComboBox x:Name="UpdateSource" Width="210"
+                                      HorizontalAlignment="Left" SelectedIndex="0"
+                                      SelectionChanged="UpdateSource_SelectionChanged"
+                                      AutomationProperties.Name="Update source">
+                                <ComboBoxItem Content="Development"/>
+                                <ComboBoxItem Content="Stable"/>
+                            </ComboBox>
+                            <TextBlock x:Name="UpdateStatusText"
+                                       Text="Current: checking…" TextWrapping="Wrap"
+                                       AutomationProperties.Name="Update status"/>
+                            <TextBlock Text="Development uses successful CI builds. Stable uses published releases."
+                                       TextWrapping="Wrap" Opacity="0.7"/>
+                            <Button x:Name="RunUpdateButton" Content="Check for updates"
+                                    Click="UpdateButton_Click" HorizontalAlignment="Stretch"
+                                    AutomationProperties.Name="Check or install update"/>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
         </StackPanel>
 
         <Grid Grid.Row="1" ColumnSpacing="10">
