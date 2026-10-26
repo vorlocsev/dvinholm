@@ -20,7 +20,7 @@ internal sealed record LatestBuildInfo(
     public string ShortSha => CommitSha.Length >= 7 ? CommitSha[..7] : CommitSha;
     public string DisplayVersion => ReleaseTag is null
         ? $"CI #{RunNumber} · {ShortSha}"
-        : $"{ReleaseTag[1..]} · {ShortSha}";
+        : ReleaseTag[1..];
 }
 
 internal static class LatestBuildUpdater
@@ -51,44 +51,58 @@ internal static class LatestBuildUpdater
         }
     }
 
-    public static string CurrentDisplayVersion
-    {
-        get
-        {
-            var value = CurrentVersion;
-            var plus = value.LastIndexOf('+');
-            var sha = GetEmbeddedCommitSha(value, plus);
-            var runNumber = CurrentCiRunNumber;
-            if (sha is not null && runNumber is int ciRun)
-                return $"CI #{ciRun} · {sha[..7]}";
+    public static string CurrentDisplayVersion => FormatInstalledVersion(CurrentVersion);
 
-            return sha is not null
-                ? $"{value[..plus]} · {sha[..7]}"
-                : value;
-        }
+    // The full informational version and SHA remain available internally for
+    // updater integrity checks. Stable status labels show only the release
+    // number; Development keeps its CI number and short commit identifier.
+    internal static string FormatInstalledVersion(string informationalVersion)
+    {
+        if (string.IsNullOrWhiteSpace(informationalVersion))
+            return "version unknown";
+
+        var plus = informationalVersion.LastIndexOf('+');
+        var sha = GetEmbeddedCommitSha(informationalVersion, plus);
+        if (sha is null)
+            return informationalVersion;
+
+        if (IsStableInformationalVersion(informationalVersion))
+            return informationalVersion[..plus];
+
+        var ciRun = ParseCiRunNumber(informationalVersion);
+        return ciRun is int run
+            ? $"CI #{run} · {sha[..7]}"
+            : $"{informationalVersion[..plus]} · {sha[..7]}";
     }
+
+    internal static bool IsStableInformationalVersion(string informationalVersion) =>
+        informationalVersion.EndsWith(".stable", StringComparison.OrdinalIgnoreCase) &&
+        ParseCommitSha(informationalVersion) is not null;
+
+    internal static bool IsCurrentStableBuild => IsStableInformationalVersion(CurrentVersion);
 
     public static string CurrentWindowTitle =>
         CurrentCiRunNumber is int runNumber ? $"Dvinholm CI #{runNumber}" : "Dvinholm";
 
-    public static int? CurrentCiRunNumber
-    {
-        get
-        {
-            var value = CurrentVersion;
-            var plus = value.LastIndexOf('+');
-            if (plus < 0)
-                return null;
+    public static int? CurrentCiRunNumber => ParseCiRunNumber(CurrentVersion);
 
-            var suffix = value[(plus + 1)..];
-            var marker = suffix.LastIndexOf(".ci", StringComparison.OrdinalIgnoreCase);
-            return marker >= 0 && int.TryParse(suffix[(marker + 3)..], out var runNumber) && runNumber > 0
-                ? runNumber
-                : null;
-        }
+    private static int? ParseCiRunNumber(string informationalVersion)
+    {
+        var plus = informationalVersion.LastIndexOf('+');
+        if (plus < 0)
+            return null;
+
+        var suffix = informationalVersion[(plus + 1)..];
+        var marker = suffix.LastIndexOf(".ci", StringComparison.OrdinalIgnoreCase);
+        return marker >= 0 && int.TryParse(suffix[(marker + 3)..], out var runNumber) && runNumber > 0
+            ? runNumber
+            : null;
     }
 
-    public static string? CurrentCommitSha => GetEmbeddedCommitSha(CurrentVersion, CurrentVersion.LastIndexOf('+'));
+    internal static string? ParseCommitSha(string informationalVersion) =>
+        GetEmbeddedCommitSha(informationalVersion, informationalVersion.LastIndexOf('+'));
+
+    public static string? CurrentCommitSha => ParseCommitSha(CurrentVersion);
 
     internal static bool IsUpdateAvailable(string? currentCommitSha, LatestBuildInfo latestBuild) =>
         string.IsNullOrWhiteSpace(currentCommitSha) ||
@@ -117,8 +131,15 @@ internal static class LatestBuildUpdater
             return null;
 
         var suffix = value[(plus + 1)..];
-        var marker = suffix.IndexOf(".ci", StringComparison.OrdinalIgnoreCase);
-        var sha = marker >= 0 ? suffix[..marker] : suffix;
+        var ciMarker = suffix.IndexOf(".ci", StringComparison.OrdinalIgnoreCase);
+        // Stable embeds an exact 40-digit commit followed by ".stable".
+        // The old parser treated "SHA.stable" as a 47-character SHA and
+        // mistakenly offered another install of the already-current release.
+        var sha = ciMarker >= 0
+            ? suffix[..ciMarker]
+            : suffix.EndsWith(".stable", StringComparison.OrdinalIgnoreCase)
+                ? suffix[..^".stable".Length]
+                : suffix;
         return sha.Length == 40 && sha.All(Uri.IsHexDigit) ? sha.ToLowerInvariant() : null;
     }
 

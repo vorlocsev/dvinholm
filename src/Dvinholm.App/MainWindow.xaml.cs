@@ -43,10 +43,14 @@ public sealed partial class MainWindow : Window
     private LatestBuildInfo? _latestBuild;
     private bool _updaterBusy;
     private bool _updateAvailable;
+    // Do not persist XAML's initial ComboBox selection while restoring settings.
+    private bool _loadingUpdateSource = true;
 
     public MainWindow()
     {
         InitializeComponent();
+        LoadSavedUpdateSource();
+        _loadingUpdateSource = false;
 #if DVINHOLM_DEVELOPMENT_FEATURES
         InitializeDevelopmentControls();
 #endif
@@ -64,7 +68,7 @@ public sealed partial class MainWindow : Window
         EcusView.ItemsSource = _ecus;
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · select Check update to look for a new build.";
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion}";
 #if DVINHOLM_MSIX
         // WindowsApps files are managed by MSIX, not Portable's updater.
         UpdateButton.IsEnabled = false;
@@ -180,18 +184,66 @@ public sealed partial class MainWindow : Window
 
     private bool UseStableUpdateSource => UpdateSource.SelectedIndex == 1;
 
+    private static string UpdateSourceSettingsFile => Path.Combine(
+        DvinholmUserDataDirectory.Current, UpdateSourcePreferenceStore.FileName);
+
+    private void LoadSavedUpdateSource()
+    {
+        var fallback = LatestBuildUpdater.IsCurrentStableBuild
+            ? UpdateSourceChannel.Stable
+            : UpdateSourceChannel.Development;
+        var channel = fallback;
+        try
+        {
+            channel = new UpdateSourcePreferenceStore(UpdateSourceSettingsFile).Load(fallback);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+
+        // UpdateSource_SelectionChanged fires when this is set, but must not
+        // overwrite the saved user choice during startup or updater relaunch.
+        UpdateSource.SelectedIndex = channel == UpdateSourceChannel.Stable ? 1 : 0;
+    }
+
     private void UpdateSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         // Source changes invalidate *both* a pending update offer and its download
         // URL. Never install a CI archive after switching the UI to Stable (or vice versa).
-        if (UpdateButton is null || UpdateStatusText is null || _updaterBusy)
+        if (_loadingUpdateSource || RunUpdateButton is null || UpdateStatusText is null || _updaterBusy)
             return;
+
+        try
+        {
+            new UpdateSourcePreferenceStore(UpdateSourceSettingsFile).Save(
+                UseStableUpdateSource ? UpdateSourceChannel.Stable : UpdateSourceChannel.Development);
+        }
+        catch (IOException)
+        {
+            SetStatus("Update source changed, but the preference could not be saved.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            SetStatus("Update source changed, but the preference could not be saved.");
+        }
 
         _latestBuild = null;
         _updateAvailable = false;
-        UpdateButton.Content = "Check update";
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
-            $"source: {(UseStableUpdateSource ? "Stable" : "Development")}; select Check update.";
+        RunUpdateButton.Content = "Check update";
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion}";
+    }
+
+    private async void UpdateFlyout_Opened(object sender, object e)
+    {
+        // Check the selected channel once the menu is visible. Never start
+        // downloading/replacing files until the user presses the menu action.
+        // A cached result remains visible on reopen; "Check update" refreshes it.
+        if (_closing || _updaterBusy || _latestBuild is not null ||
+            DvinholmUserDataDirectory.IsAcceptanceLaunch)
+            return;
+#if DVINHOLM_MSIX
+        return;
+#endif
+        await CheckLatestBuildAsync();
     }
 
     private async void UpdateButton_Click(object sender, RoutedEventArgs e)
@@ -214,7 +266,7 @@ public sealed partial class MainWindow : Window
                 UseStableUpdateSource, LatestBuildUpdater.CurrentCommitSha, build))
             {
                 _updaterBusy = true;
-                UpdateButton.IsEnabled = false;
+                RunUpdateButton.IsEnabled = false;
                 UpdateSource.IsEnabled = false;
                 try
                 {
@@ -242,7 +294,7 @@ public sealed partial class MainWindow : Window
                         // Do not keep an actionable cached Stable offer after Cancel.
                         _latestBuild = null;
                         _updateAvailable = false;
-                        UpdateButton.Content = "Check update";
+                        RunUpdateButton.Content = "Check update";
                         UpdateStatusText.Text =
                             $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
                             "Stable replacement cancelled. Select Check update to check again.";
@@ -252,7 +304,7 @@ public sealed partial class MainWindow : Window
                 finally
                 {
                     _updaterBusy = false;
-                    UpdateButton.IsEnabled = true;
+                    RunUpdateButton.IsEnabled = true;
                     UpdateSource.IsEnabled = true;
                 }
             }
@@ -270,9 +322,9 @@ public sealed partial class MainWindow : Window
             return;
 
         _updaterBusy = true;
-        UpdateButton.IsEnabled = false;
+        RunUpdateButton.IsEnabled = false;
         UpdateSource.IsEnabled = false;
-        UpdateButton.Content = "Checking…";
+        RunUpdateButton.Content = "Checking…";
         var stable = UseStableUpdateSource;
         UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
             (stable ? "checking latest published stable release…" : "checking latest successful main-branch CI build…");
@@ -290,7 +342,7 @@ public sealed partial class MainWindow : Window
                 LatestBuildUpdater.CurrentDisplayVersion,
                 latest,
                 _updateAvailable);
-            UpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check update";
+            RunUpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check update";
         }
         catch (Exception)
         {
@@ -298,12 +350,12 @@ public sealed partial class MainWindow : Window
             _updateAvailable = false;
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
                 (stable ? "Latest stable release: unavailable" : "Latest CI build: unavailable");
-            UpdateButton.Content = "Retry update check";
+            RunUpdateButton.Content = "Retry update check";
         }
         finally
         {
             _updaterBusy = false;
-            UpdateButton.IsEnabled = true;
+            RunUpdateButton.IsEnabled = true;
             UpdateSource.IsEnabled = true;
         }
     }
@@ -311,9 +363,9 @@ public sealed partial class MainWindow : Window
     private async Task DownloadAndLaunchLatestBuildAsync(LatestBuildInfo build)
     {
         _updaterBusy = true;
-        UpdateButton.IsEnabled = false;
+        RunUpdateButton.IsEnabled = false;
         UpdateSource.IsEnabled = false;
-        UpdateButton.Content = "Updating…";
+        RunUpdateButton.Content = "Updating…";
         var progress = new Progress<string>(message =>
         {
             DispatcherQueue.TryEnqueue(() => SetStatus(message));
@@ -342,7 +394,7 @@ public sealed partial class MainWindow : Window
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
 
-            UpdateButton.Content = "Retry update";
+            RunUpdateButton.Content = "Retry update";
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {build.DisplayVersion}";
             SetStatus($"Update failed: {detail} See %LOCALAPPDATA%\\Dvinholm\\update.log for details.");
             _updateAvailable = true;
@@ -350,7 +402,7 @@ public sealed partial class MainWindow : Window
         finally
         {
             _updaterBusy = false;
-            UpdateButton.IsEnabled = true;
+            RunUpdateButton.IsEnabled = true;
             UpdateSource.IsEnabled = true;
         }
     }
