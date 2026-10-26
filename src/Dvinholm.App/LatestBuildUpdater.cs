@@ -546,7 +546,10 @@ internal static class LatestBuildUpdater
                         target, FileMode.CreateNew, FileAccess.Write, FileShare.None,
                         81920, useAsync: true))
                     {
-                        await CopyArchiveEntryAsync(input, output, cancellationToken);
+                        // The ZIP's claimed uncompressed entry size is only
+                        // metadata. Enforce it against actual streamed output
+                        // so a forged length cannot bypass the aggregate cap.
+                        await CopyArchiveEntryAsync(input, output, entry.Length, cancellationToken);
                     }
                 }
                 File.SetLastWriteTime(target, entry.LastWriteTime.DateTime);
@@ -555,9 +558,37 @@ internal static class LatestBuildUpdater
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
 
-    internal static Task CopyArchiveEntryAsync(
-        Stream input, Stream output, CancellationToken cancellationToken) =>
-        input.CopyToAsync(output, 81920, cancellationToken);
+    // Per-entry streaming verifies the *actual* expanded bytes, not only
+    // the lengths recorded in ZIP metadata. The existing aggregate bound
+    // pre-validates metadata before any extraction starts.
+    internal static async Task CopyArchiveEntryAsync(
+        Stream input, Stream output, long declaredLength, CancellationToken cancellationToken)
+    {
+        if (declaredLength < 0 || declaredLength > MaximumExpandedBytes)
+            throw new InvalidDataException("The archive contains an invalid expanded entry size.");
+
+        var buffer = new byte[81920];
+        long written = 0;
+        while (true)
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            var read = await input.ReadAsync(buffer.AsMemory(), cancellationToken);
+            if (read == 0)
+                break;
+
+            // Compare with the remaining allowance to avoid overflowing long.
+            // Reject this chunk before it is written outside the metadata budget.
+            if (read > declaredLength - written)
+                throw new InvalidDataException("An archive entry expands beyond its declared size.");
+
+            await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+            written += read;
+        }
+
+        cancellationToken.ThrowIfCancellationRequested();
+        if (written != declaredLength)
+            throw new InvalidDataException("An archive entry is shorter than its declared size.");
+    }
 
     internal static void TryCleanup(Action cleanup)
     {

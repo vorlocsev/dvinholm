@@ -1,3 +1,13 @@
+## Development: verify actual ZIP entry expansion length (2026-10-26)
+
+- [x] Confirm Development `main` `bb1b53d` after PR #513 with seven green workflows (CI #3697); published Stable v0.2.4 tag stays at `a9e6188`.
+- [x] Retain the existing all-entry expanded-size/path validation before any private-stage writes and add a **second limit during each async entry copy**: the real decompressed bytes may not exceed or fall short of the declared ZIP entry length. Check remaining allowance before writing each chunk to avoid integer overflow and hidden excess expansion.
+- [x] Preserve UI responsiveness, cancellation during individual entry reads, existing per-file non-overwrite semantics, full downloaded ZIP byte-length/digest checks, timestamp restoration and private-stage failure cleanup. Invalid archives must not start replacement.
+- [x] Add eight offline tests for exact small/multi-buffer copies, zero length, negative/oversized declared values, too-long and truncated payloads, and pre-cancelled operation; update source contracts for the new verified copy signature.
+- [ ] Require seven successful workflows on this exact PR head and independent post-merge `main` confirmation; manual Windows 11 LTSC updater tests and physical J2534 remain outstanding. No new Stable release without explicit permission.
+
+---
+
 ## Development: cancellable per-entry ZIP extraction (2026-10-26)
 
 - [x] Confirm current `main` `d9d6e5b` after PR #512, with **7/7 green post-merge workflows** including CI #3691; published Stable v0.2.4 still points to `a9e6188`.

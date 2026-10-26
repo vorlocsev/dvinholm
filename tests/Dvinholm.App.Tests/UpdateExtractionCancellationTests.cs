@@ -16,7 +16,7 @@ public sealed class UpdateExtractionCancellationTests
         using var input = new MemoryStream(bytes);
         using var output = new MemoryStream();
 
-        await LatestBuildUpdater.CopyArchiveEntryAsync(input, output, CancellationToken.None);
+        await LatestBuildUpdater.CopyArchiveEntryAsync(input, output, bytes.Length, CancellationToken.None);
 
         Assert.Equal(bytes, output.ToArray());
     }
@@ -30,7 +30,7 @@ public sealed class UpdateExtractionCancellationTests
         cts.Cancel();
 
         await Assert.ThrowsAnyAsync<OperationCanceledException>(() =>
-            LatestBuildUpdater.CopyArchiveEntryAsync(input, output, cts.Token));
+            LatestBuildUpdater.CopyArchiveEntryAsync(input, output, 200_000, cts.Token));
         Assert.Equal(0, output.Length);
     }
 
@@ -41,7 +41,7 @@ public sealed class UpdateExtractionCancellationTests
         using var output = new MemoryStream();
         using var cts = new CancellationTokenSource();
 
-        var copy = LatestBuildUpdater.CopyArchiveEntryAsync(input, output, cts.Token);
+        var copy = LatestBuildUpdater.CopyArchiveEntryAsync(input, output, 200_000, cts.Token);
         await input.Blocked.WaitAsync(TimeSpan.FromSeconds(10));
         cts.Cancel();
 
@@ -128,12 +128,12 @@ public sealed class UpdateExtractionCancellationTests
         var worker = method.IndexOf("Task.Run(async () =>", StringComparison.Ordinal);
         var expanded = method.IndexOf("ValidateExpandedSize(archive.Entries.Select(entry => entry.Length))", StringComparison.Ordinal);
         var pathGuard = method.IndexOf("if (!target.StartsWith(fullRoot,", StringComparison.Ordinal);
-        var copy = method.IndexOf("await CopyArchiveEntryAsync(input, output, cancellationToken);", StringComparison.Ordinal);
+        var copy = method.IndexOf("await CopyArchiveEntryAsync(input, output, entry.Length, cancellationToken);", StringComparison.Ordinal);
         var finalCancel = method.LastIndexOf("cancellationToken.ThrowIfCancellationRequested();", StringComparison.Ordinal);
         Assert.True(worker >= 0 && expanded > worker && pathGuard > expanded && copy > pathGuard);
         Assert.True(finalCancel > copy);
         Assert.Contains("FileMode.CreateNew", method);
-        Assert.Contains("input.CopyToAsync(output, 81920, cancellationToken)", method);
+        Assert.Contains("if (read > declaredLength - written)", method);
         Assert.DoesNotContain("archive.ExtractToDirectory(staging)", method);
     }
 
