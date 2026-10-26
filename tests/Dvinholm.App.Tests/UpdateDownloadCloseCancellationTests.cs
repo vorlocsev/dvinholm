@@ -78,10 +78,13 @@ public sealed class UpdateDownloadCloseCancellationTests
     {
         var code = DownloadMethod();
         var closeCatch = code.IndexOf("catch (Exception) when (_closing)", StringComparison.Ordinal);
-        var normalCatch = code.IndexOf("catch (Exception ex)", StringComparison.Ordinal);
+        var userCatch = code.IndexOf("catch (OperationCanceledException) when (!_closing", closeCatch, StringComparison.Ordinal);
+        var normalCatch = code.IndexOf("catch (Exception ex)", userCatch, StringComparison.Ordinal);
         var logWrite = code.IndexOf("File.WriteAllText(logPath", StringComparison.Ordinal);
-        Assert.True(closeCatch >= 0 && normalCatch > closeCatch && logWrite > normalCatch);
-        var canceledBranch = code[closeCatch..normalCatch];
+        Assert.True(closeCatch >= 0 && userCatch > closeCatch && normalCatch > userCatch && logWrite > normalCatch);
+        // Only the close handler must stay UI-free: the separate user-cancel
+        // branch intentionally updates retry controls on a still-open window.
+        var canceledBranch = code[closeCatch..userCatch];
         Assert.DoesNotContain("UpdateStatusText.", canceledBranch);
         Assert.DoesNotContain("RunUpdateButton.", canceledBranch);
         Assert.DoesNotContain("SetStatus(", canceledBranch);
