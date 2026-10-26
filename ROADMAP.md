@@ -1,3 +1,12 @@
+## Development: reject Windows-unsafe ZIP entry names before staging (2026-10-26)
+
+- [x] Confirm main `c0a0227` after PR #517 passed all seven workflows, including CI #3723; published Stable v0.2.4 tag stays `a9e6188`.
+- [x] Reject dangerous Win32 name components **before** creating `UpdateStaging`: NTFS alternate-data-stream `:`, reserved device names (including extensions, case variants and COM/LPT superscript numbers), invalid/control characters, backslash aliases, dot/parent components, trailing dots/spaces and repeated separators.
+- [x] Add eight offline Windows x86 ZIP tests checking rejection without a staging directory and valid nested archive extraction. Existing ZIP entry count, expanded-size, path collision, checksum and cancellation defenses remain intact.
+- [ ] Require seven green PR-head workflows and independently confirm post-merge `main` workflows. No installed-app GUI test, production update, physical J2534 adapter or Stable release is implied by this automated work.
+
+---
+
 ## Development: reject ambiguous ZIP extraction targets before writing (2026-10-26)
 
 - [x] Confirm post-merge Development CI #3716 and all seven workflows are green at commit `e13d9ac`. Published Stable 0.2.4 stays pinned to `a9e6188`.
