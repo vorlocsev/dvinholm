@@ -44,6 +44,8 @@ public sealed partial class MainWindow : Window
     private bool _updaterBusy;
     private bool _updateAvailable;
     private readonly UpdateProgressGate _updateProgressGate = new();
+    // One lookup token per operation; cancel on window close and after 60 seconds.
+    private CancellationTokenSource? _updateCheckCts;
     // Do not persist XAML's initial ComboBox selection while restoring settings.
     private bool _loadingUpdateSource = true;
 
@@ -100,6 +102,7 @@ public sealed partial class MainWindow : Window
         Closed += (_, _) =>
         {
             _closing = true;
+            _updateCheckCts?.Cancel();
 #if DVINHOLM_DEVELOPMENT_FEATURES
             StopDemoMonitor();
 #endif
@@ -345,9 +348,13 @@ public sealed partial class MainWindow : Window
 
     private async Task CheckLatestBuildAsync()
     {
-        if (_updaterBusy)
+        if (_updaterBusy || _closing)
             return;
 
+        // Bound the entire potentially multi-page GitHub lookup, not each
+        // individual HTTP response. The same token cancels on window close.
+        using var lookupCts = new CancellationTokenSource(TimeSpan.FromSeconds(60));
+        _updateCheckCts = lookupCts;
         _updaterBusy = true;
         RunUpdateButton.IsEnabled = false;
         UpdateSource.IsEnabled = false;
@@ -360,8 +367,8 @@ public sealed partial class MainWindow : Window
         try
         {
             var latest = stable
-                ? await LatestBuildUpdater.GetLatestStableReleaseAsync()
-                : await LatestBuildUpdater.GetLatestSuccessfulBuildAsync();
+                ? await LatestBuildUpdater.GetLatestStableReleaseAsync(lookupCts.Token)
+                : await LatestBuildUpdater.GetLatestSuccessfulBuildAsync(lookupCts.Token);
             _latestBuild = latest;
             var currentSha = LatestBuildUpdater.CurrentCommitSha;
             _updateAvailable = LatestBuildUpdater.IsUpdateAvailable(currentSha, latest);
@@ -372,6 +379,19 @@ public sealed partial class MainWindow : Window
                 _updateAvailable);
             RunUpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check update";
             FinishUpdateActivity();
+        }
+        catch (OperationCanceledException) when (_closing)
+        {
+            // Window closed: never touch WinUI controls while unwinding.
+            return;
+        }
+        catch (OperationCanceledException) when (lookupCts.IsCancellationRequested)
+        {
+            _latestBuild = null;
+            _updateAvailable = false;
+            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Update check timed out.";
+            RunUpdateButton.Content = "Retry update check";
+            FinishUpdateActivity("Update check timed out. Select Retry update check.");
         }
         catch (Exception)
         {
@@ -384,9 +404,13 @@ public sealed partial class MainWindow : Window
         }
         finally
         {
+            _updateCheckCts = null;
             _updaterBusy = false;
-            RunUpdateButton.IsEnabled = true;
-            UpdateSource.IsEnabled = true;
+            if (!_closing)
+            {
+                RunUpdateButton.IsEnabled = true;
+                UpdateSource.IsEnabled = true;
+            }
         }
     }
 
