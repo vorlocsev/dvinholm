@@ -186,6 +186,23 @@ public sealed partial class MainWindow : Window
 
     private void SetStatus(string text) => StatusText.Text = text;
 
+    // Keep updater activity and errors visible inside the dedicated flyout.
+    // GitHub lookup, download and file-replacement stages cannot share a
+    // meaningful percentage, so the ProgressBar is deliberately indeterminate.
+    private void ShowUpdateActivity(string text)
+    {
+        UpdateProgressText.Text = text;
+        UpdateProgressText.Visibility = Visibility.Visible;
+        UpdateProgressBar.Visibility = Visibility.Visible;
+    }
+
+    private void FinishUpdateActivity(string? message = null)
+    {
+        UpdateProgressBar.Visibility = Visibility.Collapsed;
+        UpdateProgressText.Text = message ?? string.Empty;
+        UpdateProgressText.Visibility = message is null ? Visibility.Collapsed : Visibility.Visible;
+    }
+
     private bool UseStableUpdateSource => UpdateSource.SelectedIndex == 1;
 
     private static string UpdateSourceSettingsFile => Path.Combine(
@@ -232,6 +249,7 @@ public sealed partial class MainWindow : Window
 
         _latestBuild = null;
         _updateAvailable = false;
+        FinishUpdateActivity();
         RunUpdateButton.Content = "Check update";
         UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion}" +
             (DvinholmUserDataDirectory.IsAcceptanceLaunch
@@ -302,6 +320,7 @@ public sealed partial class MainWindow : Window
                         _latestBuild = null;
                         _updateAvailable = false;
                         RunUpdateButton.Content = "Check update";
+                        FinishUpdateActivity("Stable replacement cancelled.");
                         UpdateStatusText.Text =
                             $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
                             "Stable replacement cancelled. Select Check update to check again.";
@@ -332,6 +351,7 @@ public sealed partial class MainWindow : Window
         RunUpdateButton.IsEnabled = false;
         UpdateSource.IsEnabled = false;
         RunUpdateButton.Content = "Checking…";
+        ShowUpdateActivity("Checking selected update channel…");
         var stable = UseStableUpdateSource;
         UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
             (stable ? "checking latest published stable release…" : "checking latest successful main-branch CI build…");
@@ -350,6 +370,7 @@ public sealed partial class MainWindow : Window
                 latest,
                 _updateAvailable);
             RunUpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check update";
+            FinishUpdateActivity();
         }
         catch (Exception)
         {
@@ -358,6 +379,7 @@ public sealed partial class MainWindow : Window
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
                 (stable ? "Latest stable release: unavailable" : "Latest CI build: unavailable");
             RunUpdateButton.Content = "Retry update check";
+            FinishUpdateActivity("Update check unavailable. Select Retry update check.");
         }
         finally
         {
@@ -373,15 +395,22 @@ public sealed partial class MainWindow : Window
         RunUpdateButton.IsEnabled = false;
         UpdateSource.IsEnabled = false;
         RunUpdateButton.Content = "Updating…";
+        ShowUpdateActivity("Preparing the selected update…");
         var progress = new Progress<string>(message =>
         {
-            DispatcherQueue.TryEnqueue(() => SetStatus(message));
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (_closing) return;
+                SetStatus(message);
+                ShowUpdateActivity(message);
+            });
         });
 
         try
         {
             var stagingDirectory = await LatestBuildUpdater.DownloadAndPrepareAsync(build, progress);
             SetStatus($"Replacing application files with {build.DisplayVersion}…");
+            ShowUpdateActivity($"Replacing application files with {build.DisplayVersion}…");
             LatestBuildUpdater.StartReplacement(stagingDirectory, AppContext.BaseDirectory, Environment.ProcessId);
             Close();
         }
@@ -404,6 +433,7 @@ public sealed partial class MainWindow : Window
             RunUpdateButton.Content = "Retry update";
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {build.DisplayVersion}";
             SetStatus($"Update failed: {detail} See %LOCALAPPDATA%\\Dvinholm\\update.log for details.");
+            FinishUpdateActivity($"Update failed: {detail} See update.log for details.");
             _updateAvailable = true;
         }
         finally
