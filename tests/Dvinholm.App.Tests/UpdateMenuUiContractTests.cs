@@ -124,9 +124,9 @@ public sealed class UpdateMenuUiContractTests
         var nextHandler = cs.IndexOf("_session.ReadError +=", acceptance, StringComparison.Ordinal);
         Assert.True(acceptance >= 0 && nextHandler > acceptance);
         var acceptanceSetup = cs[acceptance..nextHandler];
-        Assert.Contains("RunUpdateButton.IsEnabled = false;", acceptanceSetup);
-        Assert.DoesNotContain("UpdateButton.IsEnabled = false;", acceptanceSetup);
-        Assert.DoesNotContain("UpdateSource.IsEnabled = false;", acceptanceSetup);
+        Assert.Contains("RunUpdateButton.IsEnabled = false;", acceptanceSetup.Split('\n').Select(line => line.Trim()));
+        Assert.DoesNotContain("UpdateButton.IsEnabled = false;", acceptanceSetup.Split('\n').Select(line => line.Trim()));
+        Assert.DoesNotContain("UpdateSource.IsEnabled = false;", acceptanceSetup.Split('\n').Select(line => line.Trim()));
         Assert.Contains("ConnectButton.IsEnabled = false;", acceptanceSetup);
 
         // MSIX is still managed by its package manager; no portable updater.
