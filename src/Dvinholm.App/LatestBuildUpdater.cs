@@ -534,6 +534,9 @@ internal static class LatestBuildUpdater
             foreach (var entry in archive.Entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
+                // A ZIP path can be within staging yet unsafe on Windows:
+                // alternate data streams, reserved devices and path aliases.
+                ValidateWindowsArchiveEntryName(entry.FullName);
                 var target = Path.GetFullPath(Path.Combine(staging, entry.FullName));
                 if (!target.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidDataException("The artifact contains an unsafe archive path.");
@@ -595,6 +598,45 @@ internal static class LatestBuildUpdater
 
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
+
+    // Enforce Win32 component rules before staging. A ZIP with ambiguous
+    // names must not leave behind any partially extracted update files.
+    internal static void ValidateWindowsArchiveEntryName(string name)
+    {
+        if (string.IsNullOrEmpty(name))
+            throw new InvalidDataException("The archive has an empty entry name.");
+
+        var path = name.EndsWith("/", StringComparison.Ordinal) ? name[..^1] : name;
+        if (path.Length == 0)
+            throw new InvalidDataException("The archive has an invalid entry name.");
+
+        foreach (var part in path.Split('/'))
+        {
+            if (string.IsNullOrWhiteSpace(part) || part is "." or ".." ||
+                part.EndsWith(".", StringComparison.Ordinal) ||
+                char.IsWhiteSpace(part[^1]) ||
+                part.Any(c => char.IsControl(c) || c == '\\' || "<>:\"|?*".Contains(c)))
+                throw new InvalidDataException("The archive contains a Windows-unsafe entry name.");
+
+            // DOS device stems are reserved even when followed by extensions.
+            // Windows also recognizes superscript 1/2/3 as device numbers.
+            var dot = part.IndexOf('.');
+            var stem = (dot < 0 ? part : part[..dot]).TrimEnd(' ');
+            var reserved = stem.Equals("CON", StringComparison.OrdinalIgnoreCase) ||
+                stem.Equals("PRN", StringComparison.OrdinalIgnoreCase) ||
+                stem.Equals("AUX", StringComparison.OrdinalIgnoreCase) ||
+                stem.Equals("NUL", StringComparison.OrdinalIgnoreCase) ||
+                stem.Equals("CONIN$", StringComparison.OrdinalIgnoreCase) ||
+                stem.Equals("CONOUT$", StringComparison.OrdinalIgnoreCase) ||
+                (stem.Length == 4 &&
+                 (stem.StartsWith("COM", StringComparison.OrdinalIgnoreCase) ||
+                  stem.StartsWith("LPT", StringComparison.OrdinalIgnoreCase)) &&
+                 (stem[3] is >= '1' and <= '9' or '¹' or '²' or '³'));
+
+            if (reserved)
+                throw new InvalidDataException("The archive contains a reserved Windows device path.");
+        }
+    }
 
     // Per-entry streaming verifies the *actual* expanded bytes, not only
     // the lengths recorded in ZIP metadata. The existing aggregate bound
