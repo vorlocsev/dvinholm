@@ -1,3 +1,12 @@
+## Development updater download byte progress (2026-10-26)
+
+- [x] Verify post-merge Development CI #3648 and all seven workflows from PR #506 at commit `b246ea4` passed; the published v0.2.4 tag remains fixed at `a9e6188`.
+- [x] Add `UpdateDownloadProgress` to report **at most one** progress message per newly reached 10% boundary while retaining the existing indeterminate WinUI progress bar for verification/extraction phases. Percentages are calculated from copied bytes and expected GitHub artifact size, not arbitrary timers or untrusted Content-Length.
+- [x] The real download loop emits milestones **only after** each async write, while preserving existing maximum-size checks, exact downloaded-size comparison and optional SHA-256 digest validation. Add eight deterministic offline tests (invalid sizes/counts, monotonic milestones, batching, huge values and integration ordering).
+- [ ] Require all **seven** PR-head Windows workflows and separate post-merge `main` validation before considering this development change done. Never claim user-observed WinUI download progress solely from CI. Keep physical J2534 tests deferred and published Stable v0.2.4 untouched.
+
+---
+
 ## Development 0.2.4 pre-release evidence and HOLD decision packet (2026-10-25)
 
 - [x] Add `eng/Write-StableReadiness024.ps1` to read the **original downloaded** Portable/Lite ZIPs and canonical two-line SHA256SUMS, verify exact lowercase candidate commit and both SHA-256 hashes without regenerating them, collect byte sizes and refuse overwriting any existing report.
