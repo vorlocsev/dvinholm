@@ -69,7 +69,7 @@ public sealed class UpdateExtractionResponsivenessTests
         var method = src[start..end];
 
         Assert.Contains("Task.Run(async () =>", method);
-        Assert.Contains("await CopyArchiveEntryAsync(input, output, cancellationToken);", method);
+        Assert.Contains("await CopyArchiveEntryAsync(input, output, entry.Length, cancellationToken);", method);
         Assert.Contains("}, cancellationToken);", method);
     }
 
@@ -79,7 +79,7 @@ public sealed class UpdateExtractionResponsivenessTests
         var method = ExtractorMethod();
         var expanded = method.IndexOf("ValidateExpandedSize(archive.Entries.Select(entry => entry.Length))", StringComparison.Ordinal);
         var pathValidation = method.IndexOf("if (!target.StartsWith(fullRoot,", StringComparison.Ordinal);
-        var unzip = method.IndexOf("await CopyArchiveEntryAsync(input, output, cancellationToken);", StringComparison.Ordinal);
+        var unzip = method.IndexOf("await CopyArchiveEntryAsync(input, output, entry.Length, cancellationToken);", StringComparison.Ordinal);
         Assert.True(expanded >= 0 && pathValidation > expanded && unzip > pathValidation);
         Assert.Contains("Path.GetFullPath(Path.Combine(staging, entry.FullName))", method);
         Assert.Contains("throw new InvalidDataException(\"The artifact contains an unsafe archive path.\")", method);
@@ -90,7 +90,7 @@ public sealed class UpdateExtractionResponsivenessTests
     {
         var method = ExtractorMethod();
         var checks = AllIndexes(method, "cancellationToken.ThrowIfCancellationRequested();");
-        var unzip = method.IndexOf("await CopyArchiveEntryAsync(input, output, cancellationToken);", StringComparison.Ordinal);
+        var unzip = method.IndexOf("await CopyArchiveEntryAsync(input, output, entry.Length, cancellationToken);", StringComparison.Ordinal);
         Assert.True(checks.Count >= 4);
         Assert.True(checks[0] < method.IndexOf("Directory.CreateDirectory(staging);", StringComparison.Ordinal));
         Assert.True(checks[^2] < unzip && checks[^1] > unzip);
