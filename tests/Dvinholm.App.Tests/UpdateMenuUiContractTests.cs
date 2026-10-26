@@ -35,7 +35,10 @@ public sealed class UpdateMenuUiContractTests
         var entry = NamedElement(xaml, "Button", "UpdateButton");
         Assert.Equal("Check update", (string?)entry.Attribute("Content"));
         Assert.Null(entry.Attribute("Click"));
-        Assert.Single(entry.Descendants().Where(node => node.Name.LocalName == "Flyout"));
+        var flyout = Assert.Single(entry.Descendants().Where(node => node.Name.LocalName == "Flyout"));
+        Assert.Equal("UpdateFlyout_Opened", (string?)flyout.Attribute("Opened"));
+        Assert.Contains("await CheckLatestBuildAsync();", Code);
+        Assert.Contains("if (_closing || _updaterBusy || _latestBuild is not null ||", Code);
     }
 
     [Fact]
