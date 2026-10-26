@@ -369,6 +369,8 @@ public sealed partial class MainWindow : Window
             var latest = stable
                 ? await LatestBuildUpdater.GetLatestStableReleaseAsync(lookupCts.Token)
                 : await LatestBuildUpdater.GetLatestSuccessfulBuildAsync(lookupCts.Token);
+            if (_closing)
+                return; // A response racing with window close must not touch WinUI.
             _latestBuild = latest;
             var currentSha = LatestBuildUpdater.CurrentCommitSha;
             _updateAvailable = LatestBuildUpdater.IsUpdateAvailable(currentSha, latest);
@@ -380,9 +382,10 @@ public sealed partial class MainWindow : Window
             RunUpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check update";
             FinishUpdateActivity();
         }
-        catch (OperationCanceledException) when (_closing)
+        catch (Exception) when (_closing)
         {
-            // Window closed: never touch WinUI controls while unwinding.
+            // Cancellation can race with transport errors; suppress all
+            // updater UI writes once this window has closed.
             return;
         }
         catch (OperationCanceledException) when (lookupCts.IsCancellationRequested)
