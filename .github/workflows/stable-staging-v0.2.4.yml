@@ -367,4 +367,5 @@ jobs:
             eng/Check-Lite-Prerequisites.cmd
             src/Dvinholm.App/Dvinholm.App.csproj
             docs/RELEASE_CANDIDATE_0.2.4.md
+            docs/UPDATE_MENU_WINDOWS_ACCEPTANCE.md
           if-no-files-found: error

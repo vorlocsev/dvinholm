@@ -80,10 +80,14 @@ public sealed partial class MainWindow : Window
             // This is a verified disposable copy, not the installed app.
             // Keep private profile/speed/DLL settings and prevent updates
             // or a real adapter session during an offline GUI acceptance.
-            UpdateButton.IsEnabled = false;
-            UpdateSource.IsEnabled = false;
+            // Let the tester inspect the update menu and persist the channel
+            // inside acceptance-user-data without granting update capability.
+            // The outer button only opens the flyout; the inner action is
+            // disabled, and both handler-level guards still reject updates.
+            RunUpdateButton.IsEnabled = false;
             ConnectButton.IsEnabled = false;
-            UpdateStatusText.Text = "Offline acceptance copy: updates and hardware connections disabled; user data isolated.";
+            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
+                "Offline acceptance: update checks and installation disabled; settings isolated.";
         }
         _session.ReadError += ex => DispatcherQueue.TryEnqueue(() =>
         {
@@ -229,7 +233,10 @@ public sealed partial class MainWindow : Window
         _latestBuild = null;
         _updateAvailable = false;
         RunUpdateButton.Content = "Check update";
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion}";
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion}" +
+            (DvinholmUserDataDirectory.IsAcceptanceLaunch
+                ? " · Offline acceptance: update checks and installation disabled; settings isolated."
+                : string.Empty);
     }
 
     private async void UpdateFlyout_Opened(object sender, object e)
