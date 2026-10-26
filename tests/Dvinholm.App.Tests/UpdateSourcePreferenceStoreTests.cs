@@ -91,7 +91,9 @@ public sealed class UpdateSourcePreferenceStoreTests
         var file = Path.Combine(folder.Path, "update-source.txt");
         Directory.CreateDirectory(file);
         var store = new UpdateSourcePreferenceStore(file);
-        Assert.ThrowsAny<IOException>(() => store.Save(UpdateSourceChannel.Stable));
+        var failure = Record.Exception(() => store.Save(UpdateSourceChannel.Stable));
+        Assert.True(failure is IOException or UnauthorizedAccessException,
+            $"Expected a blocked Windows file replacement, got {failure?.GetType().Name ?? "no exception"}.");
         Assert.True(Directory.Exists(file));
         Assert.Empty(Directory.GetFiles(folder.Path, "*.tmp"));
     }
