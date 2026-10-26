@@ -369,3 +369,69 @@ jobs:
             docs/RELEASE_CANDIDATE_0.2.4.md
             docs/UPDATE_MENU_WINDOWS_ACCEPTANCE.md
           if-no-files-found: error
+
+      - name: Assemble and verify single-download update-menu acceptance bundle (NO GUI)
+        shell: powershell
+        run: |
+          $root = 'artifacts/update-menu-acceptance-bundle'
+          $candidate = Join-Path $root 'candidate'
+          $kit = Join-Path $root 'kit'
+          foreach ($dir in @($candidate, (Join-Path $kit 'eng'),
+              (Join-Path $kit 'src/Dvinholm.App'), (Join-Path $kit 'docs'))) {
+            New-Item -ItemType Directory -Path $dir -Force | Out-Null
+          }
+          foreach ($name in @('Dvinholm-Windows-x86.zip',
+              'Dvinholm-Windows-x86-Lite.zip', 'SHA256SUMS.txt')) {
+            # Copy the original already-download-verified files as-is.
+            Copy-Item -LiteralPath (Join-Path 'artifacts/stable024-downloaded' $name) -Destination $candidate -ErrorAction Stop
+          }
+          foreach ($name in @('BUILD_COMMIT_024_STABLE.txt',
+              'READINESS-0.2.4.md', 'START-STABLE-ACCEPTANCE-024.cmd')) {
+            Copy-Item -LiteralPath $name -Destination $kit -ErrorAction Stop
+          }
+          foreach ($name in @('Start-StableAcceptance024.ps1',
+              'Prepare-StableAcceptance024.ps1', 'Test-ReleaseCandidate024.ps1',
+              'Test-ReleaseCandidate024Lite.ps1', 'Test-WindowsDistribution.ps1',
+              'Test-WindowsDistributionExtraction.ps1', 'Test-WindowsDistributionChecksums.ps1',
+              'Test-LiteBundledPreflight.ps1', 'Test-LitePrerequisites.ps1',
+              'Check-Lite-Prerequisites.cmd')) {
+            Copy-Item -LiteralPath (Join-Path 'eng' $name) -Destination (Join-Path $kit 'eng') -ErrorAction Stop
+          }
+          Copy-Item -LiteralPath 'src/Dvinholm.App/Dvinholm.App.csproj' -Destination (Join-Path $kit 'src/Dvinholm.App') -ErrorAction Stop
+          foreach ($name in @('RELEASE_CANDIDATE_0.2.4.md', 'UPDATE_MENU_WINDOWS_ACCEPTANCE.md')) {
+            Copy-Item -LiteralPath (Join-Path 'docs' $name) -Destination (Join-Path $kit 'docs') -ErrorAction Stop
+          }
+          Copy-Item -LiteralPath 'START-UPDATE-MENU-ACCEPTANCE.cmd' -Destination $root -ErrorAction Stop
+          $rawReceipt = [IO.File]::ReadAllText((Resolve-Path -LiteralPath (Join-Path $kit 'BUILD_COMMIT_024_STABLE.txt')).Path)
+          if ($rawReceipt -cnotmatch '\A[0-9a-f]{40}(\r?\n)?\z' -or
+              $rawReceipt.Substring(0, 40) -cne '${{ github.sha }}') {
+            throw 'Single-download acceptance receipt does not match exact workflow SHA.'
+          }
+          ./eng/Test-WindowsDistributionChecksums.ps1 -Directory $candidate
+          if (-not $?) { throw 'Single-download bundle original SHA256SUMS verification failed.' }
+          $destination = Join-Path $root 'Dvinholm-024-stable-acceptance'
+          try {
+            & cmd.exe /d /c 'artifacts\update-menu-acceptance-bundle\START-UPDATE-MENU-ACCEPTANCE.cmd --prepare-only'
+            if ($LASTEXITCODE -ne 0) { throw 'Single-download acceptance wrapper verification failed.' }
+            if (-not (Test-Path -LiteralPath (Join-Path $destination 'ACCEPTANCE-0.2.4.txt') -PathType Leaf)) {
+              throw 'Single-download prepare-only did not create verified acceptance receipt.'
+            }
+            if (-not (Test-Path -LiteralPath (Join-Path $destination 'acceptance-user-data') -PathType Container)) {
+              throw 'Single-download prepare-only did not create private user-data folder.'
+            }
+          }
+          finally {
+            if (Test-Path -LiteralPath $destination) {
+              Remove-Item -LiteralPath $destination -Recurse -Force
+            }
+            $global:LASTEXITCODE = 0
+          }
+          Write-Host 'Single-download bundle verified: SHA256, matching commit, private extraction, no GUI, no release.'
+
+      - name: Upload update-menu Windows one-download acceptance bundle (NOT PUBLISHED)
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-UPDATE-MENU-WINDOWS-ONE-DOWNLOAD
+          path: artifacts/update-menu-acceptance-bundle/
+          if-no-files-found: error
+          compression-level: 0
