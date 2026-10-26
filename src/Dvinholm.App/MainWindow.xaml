@@ -29,9 +29,9 @@
                             <TextBlock x:Name="UpdateStatusText"
                                        Text="Current: checking…" TextWrapping="Wrap"
                                        AutomationProperties.Name="Update status"/>
-                            <!-- Progress is kept in this menu, not just the main status bar.
-                                 An indeterminate bar is intentional: GitHub request and
-                                 file replacement phases have no shared percentage scale. -->
+                            <!-- Real ZIP byte milestones switch this bar to a 10%-step
+                                 determinate display. GitHub lookup, checksum, extraction
+                                 and file replacement remain indeterminate. -->
                             <ProgressBar x:Name="UpdateProgressBar"
                                          IsIndeterminate="True" Visibility="Collapsed"
                                          AutomationProperties.Name="Update progress"/>
