@@ -209,7 +209,7 @@ public sealed partial class MainWindow : Window
     {
         // Source changes invalidate *both* a pending update offer and its download
         // URL. Never install a CI archive after switching the UI to Stable (or vice versa).
-        if (_loadingUpdateSource || UpdateButton is null || UpdateStatusText is null || _updaterBusy)
+        if (_loadingUpdateSource || RunUpdateButton is null || UpdateStatusText is null || _updaterBusy)
             return;
 
         try
@@ -228,7 +228,7 @@ public sealed partial class MainWindow : Window
 
         _latestBuild = null;
         _updateAvailable = false;
-        UpdateButton.Content = "Check update";
+        RunUpdateButton.Content = "Check update";
         UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion}";
     }
 
@@ -252,7 +252,7 @@ public sealed partial class MainWindow : Window
                 UseStableUpdateSource, LatestBuildUpdater.CurrentCommitSha, build))
             {
                 _updaterBusy = true;
-                UpdateButton.IsEnabled = false;
+                RunUpdateButton.IsEnabled = false;
                 UpdateSource.IsEnabled = false;
                 try
                 {
@@ -280,7 +280,7 @@ public sealed partial class MainWindow : Window
                         // Do not keep an actionable cached Stable offer after Cancel.
                         _latestBuild = null;
                         _updateAvailable = false;
-                        UpdateButton.Content = "Check update";
+                        RunUpdateButton.Content = "Check update";
                         UpdateStatusText.Text =
                             $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
                             "Stable replacement cancelled. Select Check update to check again.";
@@ -290,7 +290,7 @@ public sealed partial class MainWindow : Window
                 finally
                 {
                     _updaterBusy = false;
-                    UpdateButton.IsEnabled = true;
+                    RunUpdateButton.IsEnabled = true;
                     UpdateSource.IsEnabled = true;
                 }
             }
@@ -308,9 +308,9 @@ public sealed partial class MainWindow : Window
             return;
 
         _updaterBusy = true;
-        UpdateButton.IsEnabled = false;
+        RunUpdateButton.IsEnabled = false;
         UpdateSource.IsEnabled = false;
-        UpdateButton.Content = "Checking…";
+        RunUpdateButton.Content = "Checking…";
         var stable = UseStableUpdateSource;
         UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
             (stable ? "checking latest published stable release…" : "checking latest successful main-branch CI build…");
@@ -328,7 +328,7 @@ public sealed partial class MainWindow : Window
                 LatestBuildUpdater.CurrentDisplayVersion,
                 latest,
                 _updateAvailable);
-            UpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check update";
+            RunUpdateButton.Content = _updateAvailable ? "Replace files and restart" : "Check update";
         }
         catch (Exception)
         {
@@ -336,12 +336,12 @@ public sealed partial class MainWindow : Window
             _updateAvailable = false;
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
                 (stable ? "Latest stable release: unavailable" : "Latest CI build: unavailable");
-            UpdateButton.Content = "Retry update check";
+            RunUpdateButton.Content = "Retry update check";
         }
         finally
         {
             _updaterBusy = false;
-            UpdateButton.IsEnabled = true;
+            RunUpdateButton.IsEnabled = true;
             UpdateSource.IsEnabled = true;
         }
     }
@@ -349,9 +349,9 @@ public sealed partial class MainWindow : Window
     private async Task DownloadAndLaunchLatestBuildAsync(LatestBuildInfo build)
     {
         _updaterBusy = true;
-        UpdateButton.IsEnabled = false;
+        RunUpdateButton.IsEnabled = false;
         UpdateSource.IsEnabled = false;
-        UpdateButton.Content = "Updating…";
+        RunUpdateButton.Content = "Updating…";
         var progress = new Progress<string>(message =>
         {
             DispatcherQueue.TryEnqueue(() => SetStatus(message));
@@ -380,7 +380,7 @@ public sealed partial class MainWindow : Window
             catch (IOException) { }
             catch (UnauthorizedAccessException) { }
 
-            UpdateButton.Content = "Retry update";
+            RunUpdateButton.Content = "Retry update";
             UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {build.DisplayVersion}";
             SetStatus($"Update failed: {detail} See %LOCALAPPDATA%\\Dvinholm\\update.log for details.");
             _updateAvailable = true;
@@ -388,7 +388,7 @@ public sealed partial class MainWindow : Window
         finally
         {
             _updaterBusy = false;
-            UpdateButton.IsEnabled = true;
+            RunUpdateButton.IsEnabled = true;
             UpdateSource.IsEnabled = true;
         }
     }
