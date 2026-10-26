@@ -58,8 +58,8 @@ public sealed class UpdateMenuAcceptanceIsolationTests
     [Fact]
     public void AcceptanceLeavesOnlyMenuEntryAvailable()
     {
-        Assert.DoesNotContain("UpdateButton.IsEnabled = false;", AcceptanceStartup);
-        Assert.Contains("RunUpdateButton.IsEnabled = false;", AcceptanceStartup);
+        Assert.DoesNotContain("UpdateButton.IsEnabled = false;", AcceptanceStartup.Split('\n').Select(line => line.Trim()));
+        Assert.Contains("RunUpdateButton.IsEnabled = false;", AcceptanceStartup.Split('\n').Select(line => line.Trim()));
     }
 
     [Fact]
