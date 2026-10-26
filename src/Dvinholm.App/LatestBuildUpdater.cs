@@ -526,13 +526,41 @@ internal static class LatestBuildUpdater
             // an empty or partial private update directory behind.
             cancellationToken.ThrowIfCancellationRequested();
             var fullRoot = Path.GetFullPath(staging) + Path.DirectorySeparatorChar;
+            // Detect Windows case-insensitive duplicates and file/directory
+            // aliases before any update staging directory or file is created.
+            var seenTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var fileTargets = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            var requiredDirectories = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
             foreach (var entry in archive.Entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
                 var target = Path.GetFullPath(Path.Combine(staging, entry.FullName));
                 if (!target.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidDataException("The artifact contains an unsafe archive path.");
+
+                // Trim trailing separators for explicit ZIP directory records
+                // so Assets/ and Assets are treated as the same target.
+                var canonicalTarget = target.TrimEnd(Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar);
+                if (!seenTargets.Add(canonicalTarget))
+                    throw new InvalidDataException("The artifact contains duplicate archive paths.");
+
+                if (entry.FullName.EndsWith("/", StringComparison.Ordinal))
+                    requiredDirectories.Add(canonicalTarget);
+                else
+                    fileTargets.Add(canonicalTarget);
+
+                // A parent folder may be implicit in ZIPs. Forbid an archive
+                // from creating a file that also needs to be a directory.
+                var parent = Path.GetDirectoryName(canonicalTarget);
+                while (parent is not null && parent.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
+                {
+                    requiredDirectories.Add(parent);
+                    parent = Path.GetDirectoryName(parent);
+                }
             }
+
+            if (fileTargets.Overlaps(requiredDirectories))
+                throw new InvalidDataException("The artifact contains a file/directory path conflict.");
 
             cancellationToken.ThrowIfCancellationRequested();
             Directory.CreateDirectory(staging);
