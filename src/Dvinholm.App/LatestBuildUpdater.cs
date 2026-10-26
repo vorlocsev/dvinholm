@@ -537,6 +537,7 @@ internal static class LatestBuildUpdater
                 // A ZIP path can be within staging yet unsafe on Windows:
                 // alternate data streams, reserved devices and path aliases.
                 ValidateWindowsArchiveEntryName(entry.FullName);
+                ValidateArchiveEntryType(entry);
                 var target = Path.GetFullPath(Path.Combine(staging, entry.FullName));
                 if (!target.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
                     throw new InvalidDataException("The artifact contains an unsafe archive path.");
@@ -598,6 +599,25 @@ internal static class LatestBuildUpdater
 
             cancellationToken.ThrowIfCancellationRequested();
         }, cancellationToken);
+
+    // ZIP records may describe symlinks, devices, FIFOs or sockets in Unix
+    // external attributes. The Windows update package only contains regular
+    // files and directories. Reject special and contradictory metadata before
+    // creating any staging files, rather than silently materializing it.
+    internal static void ValidateArchiveEntryType(ZipArchiveEntry entry)
+    {
+        // Upper 16 bits encode Unix mode on Unix-created ZIPs; a zero type
+        // means no Unix file type is supplied (normal Windows-created ZIPs).
+        var unixType = (entry.ExternalAttributes >> 16) & 0xF000;
+        var isDirectoryName = entry.FullName.EndsWith("/", StringComparison.Ordinal);
+        if (unixType != 0 &&
+            (isDirectoryName ? unixType != 0x4000 : unixType != 0x8000))
+            throw new InvalidDataException("The update archive has an unsafe or mismatched file type.");
+
+        // Do not accept an NTFS reparse-point marker in ZIP DOS attributes.
+        if ((entry.ExternalAttributes & 0x400) != 0)
+            throw new InvalidDataException("The update archive contains a reparse-point entry.");
+    }
 
     // Enforce Win32 component rules before staging. A ZIP with ambiguous
     // names must not leave behind any partially extracted update files.
