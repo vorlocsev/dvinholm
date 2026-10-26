@@ -1,3 +1,12 @@
+## Development: bounded update ZIP entry count (2026-10-26)
+
+- [x] Verified post-merge `main` `aa387d3` (PR #514) passed all seven workflows, including CI #3706. Published Stable v0.2.4 remains pinned to `a9e6188`.
+- [x] Guard against a ZIP containing huge numbers of zero-byte files/directories: enforce a **10,000-entry maximum** independently from the existing 1 GiB expanded-size budget, before creating a staging folder or writing any extracted files. Reject count overflow and hostile archives without installing.
+- [x] Add eight offline xUnit checks: zero/typical/exact-budget counts, first excess, extreme/negative counts, a real 10,001-entry empty ZIP rejected without staging, and a valid nested ZIP preserved.
+- [ ] Require all seven PR-head workflows green before merge and separately verify post-merge `main` CI. Do not interpret tests as an interactive Windows updater acceptance. Real J2534 remains deferred, and no Stable release is authorized by this change.
+
+---
+
 ## Development: verify actual ZIP entry expansion length (2026-10-26)
 
 - [x] Confirm Development `main` `bb1b53d` after PR #513 with seven green workflows (CI #3697); published Stable v0.2.4 tag stays at `a9e6188`.
