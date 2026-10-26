@@ -30,7 +30,7 @@ public sealed class LatestStableReleaseLookupTests
 
         Assert.Equal(Sha, release.CommitSha);
         Assert.Equal("v0.2.2", release.ReleaseTag);
-        Assert.Equal("0.2.2 · aaaaaaa", release.DisplayVersion);
+        Assert.Equal("0.2.2", release.DisplayVersion);
         Assert.Equal(123456L, release.ArtifactSize);
         Assert.Equal(Digest, release.ArtifactDigest);
         Assert.Equal("https://api.github.com/repos/vorlocsev/dvinholm/releases/assets/7654", release.DownloadUrl);
@@ -45,7 +45,7 @@ public sealed class LatestStableReleaseLookupTests
 
         Assert.False(LatestBuildUpdater.IsUpdateAvailable(Sha, release));
         var status = LatestBuildUpdater.FormatUpdateStatus("0.2.2 · aaaaaaa", release, false);
-        Assert.Contains("Up to date (latest: 0.2.2 · aaaaaaa)", status);
+        Assert.Contains("Up to date (latest: 0.2.2)", status);
         Assert.DoesNotContain("Available:", status);
     }
 
@@ -56,7 +56,7 @@ public sealed class LatestStableReleaseLookupTests
         var release = await LatestBuildUpdater.GetLatestStableReleaseAsync(http);
 
         Assert.True(LatestBuildUpdater.IsUpdateAvailable(new string('d', 40), release));
-        Assert.Contains("Available: 0.2.2 · aaaaaaa",
+        Assert.Contains("Available: 0.2.2",
             LatestBuildUpdater.FormatUpdateStatus("0.2.1 · ddddddd", release, true));
     }
 
