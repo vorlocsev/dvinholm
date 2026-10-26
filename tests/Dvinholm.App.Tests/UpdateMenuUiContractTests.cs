@@ -110,8 +110,10 @@ public sealed class UpdateMenuUiContractTests
         var end = cs.IndexOf("private static string ProfileCatalogPath", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
         var handlers = cs[start..end];
-        Assert.DoesNotContain("UpdateButton.Content", handlers.Replace("RunUpdateButton.Content", ""));
-        Assert.DoesNotContain("UpdateButton.IsEnabled", handlers.Replace("RunUpdateButton.IsEnabled", ""));
+        // Check a full identifier, not the UpdateButton suffix of
+        // RunUpdateButton or the new CancelUpdateButton.
+        Assert.DoesNotMatch(@"(?<![A-Za-z0-9_])UpdateButton\.Content\s*=", handlers);
+        Assert.DoesNotMatch(@"(?<![A-Za-z0-9_])UpdateButton\.IsEnabled\s*=", handlers);
         Assert.Contains("RunUpdateButton.Content = \"Retry update check\"", handlers);
         Assert.Contains("RunUpdateButton.Content = _updateAvailable ? \"Replace files and restart\" : \"Check update\"", handlers);
     }
