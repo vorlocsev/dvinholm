@@ -1,3 +1,12 @@
+## Development: reject ambiguous ZIP extraction targets before writing (2026-10-26)
+
+- [x] Confirm post-merge Development CI #3716 and all seven workflows are green at commit `e13d9ac`. Published Stable 0.2.4 stays pinned to `a9e6188`.
+- [x] Preflight Windows case-insensitive duplicate file/directory paths, normalized target aliases and implicit parent directories before creating private UpdateStaging files. ZIP archives with conflicting file and directory targets are rejected with `InvalidDataException` instead of failing after some files were already written.
+- [x] Add eight real disposable-ZIP regression cases for duplicate file names, case-only aliases, repeated directories, file/directory collisions in either order, normalized aliases, and an ordinary valid nested archive. No real J2534 or installed application is used.
+- [ ] Require seven successful workflows at the exact PR head and verify independent post-merge `main` CI. Windows GUI acceptance and actual updater installation are separate; no Stable release publication without explicit authorization.
+
+---
+
 ## Development updater ZIP path preflight before staging (2026-10-26)
 
 - [x] PR #515 merged into Development as `851daee`; its seven PR-head workflows passed (CI #3710 with 1459/1459 app checks and 8/8 Stable checks). Post-merge `main` workflows #3711 and companion staging/RCs require separate final verification.
