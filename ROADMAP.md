@@ -1,3 +1,12 @@
+## Development: responsive updater ZIP extraction (2026-10-26)
+
+- [x] Verify post-merge PR #510 Development CI #3686, Stable staging and all seven workflows succeeded on `main` commit `a3bc4d5` (1427/1427 app + 8/8 Stable tests). Published Stable v0.2.4 stays at `a9e6188`.
+- [x] Move the existing, synchronous `ZipFile.ExtractToDirectory` call and all pre-extraction guards into `Task.Run` so WinUI does not freeze when extracting a large downloaded archive. Retain expanded-size checks, canonicalized path/traversal validation and .NET ZIP extraction semantics, with cancellation checkpoints before and after extraction.
+- [x] Add eight offline checks: actual safe nested ZIP extraction, pre-cancelled task, rejection before any unsafe/benign entry write, invalid archive, worker-thread task contract, path/expanded-size guard order, cancellation checkpoints and original checksum/cleanup sequencing.
+- [ ] Require 7/7 PR-head workflows and separate post-merge `main` green. The synchronous ZIP extractor cannot abort an individual entry midway, but cancellation remains responsive in the UI and prevents installation once extraction returns. Manual Windows 11 LTSC user-cancel acceptance is still pending. No physical J2534 or Stable publication without separate authorization.
+
+---
+
 ## Development: determinate ZIP download progress (2026-10-26)
 
 - [x] Verify PR #509 merged as `db46afb` and all **7/7** post-merge workflows passed (CI #3672); Stable v0.2.4 tag remains unchanged at `a9e6188`.

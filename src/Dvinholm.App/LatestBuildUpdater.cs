@@ -476,21 +476,7 @@ internal static class LatestBuildUpdater
             }
 
             progress?.Report("Validating and extracting the build…");
-            Directory.CreateDirectory(staging);
-            using (var archive = ZipFile.OpenRead(archivePath))
-            {
-                ValidateExpandedSize(archive.Entries.Select(entry => entry.Length));
-                var fullRoot = Path.GetFullPath(staging) + Path.DirectorySeparatorChar;
-                foreach (var entry in archive.Entries)
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    var target = Path.GetFullPath(Path.Combine(staging, entry.FullName));
-                    if (!target.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
-                        throw new InvalidDataException("The artifact contains an unsafe archive path.");
-                }
-
-                archive.ExtractToDirectory(staging);
-            }
+            await ValidateAndExtractArchiveAsync(archivePath, staging, cancellationToken);
 
             if (!File.Exists(Path.Combine(staging, "Dvinholm.App.exe")))
                 throw new InvalidDataException("The downloaded artifact does not contain Dvinholm.App.exe.");
@@ -516,6 +502,37 @@ internal static class LatestBuildUpdater
             });
         }
     }
+
+    // ZipFile.ExtractToDirectory is synchronous. Do not run it on the WinUI
+    // dispatcher: Cancel download and window close must stay responsive while
+    // the archive is being validated and extracted. Keep all existing ZIP
+    // guards and the built-in extractor's safe-path semantics intact.
+    internal static Task ValidateAndExtractArchiveAsync(
+        string archivePath,
+        string staging,
+        CancellationToken cancellationToken = default) =>
+        Task.Run(() =>
+        {
+            cancellationToken.ThrowIfCancellationRequested();
+            Directory.CreateDirectory(staging);
+            using var archive = ZipFile.OpenRead(archivePath);
+            ValidateExpandedSize(archive.Entries.Select(entry => entry.Length));
+            var fullRoot = Path.GetFullPath(staging) + Path.DirectorySeparatorChar;
+            foreach (var entry in archive.Entries)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                var target = Path.GetFullPath(Path.Combine(staging, entry.FullName));
+                if (!target.StartsWith(fullRoot, StringComparison.OrdinalIgnoreCase))
+                    throw new InvalidDataException("The artifact contains an unsafe archive path.");
+            }
+
+            // Cancellation cannot interrupt ZipFile's synchronous individual
+            // entry writes, but the dispatcher remains free. A late cancel is
+            // observed before the stage is marked prepared or installed.
+            cancellationToken.ThrowIfCancellationRequested();
+            archive.ExtractToDirectory(staging);
+            cancellationToken.ThrowIfCancellationRequested();
+        }, cancellationToken);
 
     internal static void TryCleanup(Action cleanup)
     {
