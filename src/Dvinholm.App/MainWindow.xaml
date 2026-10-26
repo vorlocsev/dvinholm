@@ -9,13 +9,13 @@
     <Grid x:Name="RootLayout" Padding="20" RowSpacing="14">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
-        <!-- The main window only opens the dedicated update menu. Never
-             start a replacement or a network lookup just by opening it. -->
+        <!-- The main window only opens the update menu. Opening it checks
+             the selected channel; installation still requires a separate click. -->
         <StackPanel Spacing="4">
             <Button x:Name="UpdateButton" Content="Check update"
                     MinWidth="170" AutomationProperties.Name="Open update menu">
                 <Button.Flyout>
-                    <Flyout x:Name="UpdateFlyout" Placement="Bottom">
+                    <Flyout x:Name="UpdateFlyout" Placement="Bottom" Opened="UpdateFlyout_Opened">
                         <StackPanel Spacing="12" Width="390">
                             <TextBlock Text="Updates" Style="{StaticResource SubtitleTextBlockStyle}"/>
                             <TextBlock Text="Update channel" />
