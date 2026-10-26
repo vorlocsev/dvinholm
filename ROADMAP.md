@@ -1,3 +1,13 @@
+## Development: cancel active update without exiting Dvinholm (2026-10-26)
+
+- [x] Verify all seven post-merge workflows on `main` commit `49155ae` after PR #508, including CI #3661. Published Stable 0.2.4 remains pinned to `a9e6188`.
+- [x] Add an accessible **Cancel download** action in the Update flyout, initially hidden and disabled, shown only during an active archive transfer/preparation. Disable repeat clicks while cancellation is pending and hide the action before launching file replacement.
+- [x] Cancel the existing per-download token without closing Dvinholm. Suppress stale queued progress, treat user cancellation as a retryable non-error, keep the selected channel and verified update offer, and clean a private fully prepared staging directory if cancellation raced with download completion. Existing close-triggered cancellation continues to suppress writes to closed WinUI controls.
+- [x] Add eight offline xUnit gates for XAML visibility/accessibility, guard, request cancellation, progress suppression, no replacement/logging, retry state and safe UI cleanup.
+- [ ] Require seven green PR-head workflows and independent post-merge CI; only actual Windows 11 LTSC interaction can confirm the cancel button and return to Retry update. No physical J2534 or Stable publication without separate authorization.
+
+---
+
 ## Development: cancel update download on window close (2026-10-26)
 
 - [x] Confirm post-merge PR #507 Development CI #3654 and all seven workflows are green at `a886813`, while published Stable v0.2.4 remains fixed at `a9e6188`.
