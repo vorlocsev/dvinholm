@@ -58,7 +58,8 @@ public sealed class UpdateMenuProgressTests
         Assert.Contains(flyout, details.Ancestors());
         Assert.Equal("Collapsed", (string?)details.Attribute("Visibility"));
         Assert.Equal("Wrap", (string?)details.Attribute("TextWrapping"));
-        Assert.Equal("Update progress", (string?)bar.Attributes().Single(a => a.Name.LocalName == "Name" && a.Name.NamespaceName.EndsWith("AutomationProperties", StringComparison.Ordinal)).Value);
+        Assert.Equal("Update progress", (string?)bar.Attribute("AutomationProperties.Name"));
+        Assert.Equal("Update progress details", (string?)details.Attribute("AutomationProperties.Name"));
     }
 
     [Fact]
