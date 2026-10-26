@@ -58,4 +58,4 @@ $env:DVINHOLM_ACCEPTANCE_DATA_DIR = $private
 Write-Host 'Attempting to open verified isolated Stable 0.2.4. GUI acceptance remains manual.'
 Start-Process -FilePath $exe -WorkingDirectory $destination
 Write-Host "Human checklist: $receipt"
-Write-Host 'STAGING ONLY: published Stable v0.2.3 and installed user data unchanged.'
+Write-Host 'STAGING ONLY: published Stable v0.2.4 and installed user data unchanged.'

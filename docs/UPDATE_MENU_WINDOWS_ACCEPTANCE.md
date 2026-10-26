@@ -7,22 +7,38 @@ proof of completed Windows testing, adapter support or an approved release.
 
 ## Prepare an exact-SHA, isolated GUI copy
 
-Use the **same successful run** of `Dvinholm Stable 0.2.4 (staging only, no
-publish)` on the intended **post-v0.2.4 Development commit**. This is a
-*read-only staging artifact*, not the already-published Stable v0.2.4. The
-published release tag always points to frozen `a9e6188`; do not replace it.
+Choose the newest **successful** run of `Dvinholm Stable 0.2.4 (staging
+only, no publish)` at the intended **post-v0.2.4 Development commit**.
 
-Download both GitHub Actions artifacts from the same run:
+**Recommended: one download.** On that run's **Artifacts** section, download
+`Dvinholm-UPDATE-MENU-WINDOWS-ONE-DOWNLOAD`. Extract the entire artifact
+into a **new** folder; it contains `candidate/`, `kit/` and
+`START-UPDATE-MENU-ACCEPTANCE.cmd`. Double-click
+`START-UPDATE-MENU-ACCEPTANCE.cmd` to verify both archives against the
+original SHA256SUMS and exact source commit, prepare an isolated copy,
+then launch it. The verifier refuses to overwrite a previously prepared
+destination. For an unattended verification **without starting WinUI**, run
+`START-UPDATE-MENU-ACCEPTANCE.cmd --prepare-only` from Command Prompt.
 
-- `Dvinholm-v0.2.4-STAGED-NOT-PUBLISHED`: two ZIPs and their original two-line `SHA256SUMS.txt`. Extract into `candidate`.
-- `Dvinholm-v0.2.4-STABLE-WINDOWS-ACCEPTANCE-KIT`: receipt, scripts and this document. Extract into the sibling `kit` directory, preserving subfolders.
+**Alternative: legacy two-artifact setup.** Download both artifacts
+from the **same** staging workflow run:
 
-The acceptance kit's `BUILD_COMMIT_024_STABLE.txt` must exactly match the
-chosen run's source commit. Run `kit/START-STABLE-ACCEPTANCE-024.cmd
---prepare-only` from a command prompt. It validates both downloaded ZIPs and
-extracts a new `Dvinholm-024-stable-acceptance` directory. Do not copy raw
-candidate files into an existing installation. Start only the prepared
-`Dvinholm-024-stable-acceptance/Dvinholm.App.exe` on Windows 11 LTSC.
+- `Dvinholm-v0.2.4-STAGED-NOT-PUBLISHED`: both original ZIPs and the
+  original `SHA256SUMS.txt`. Extract into `candidate/`.
+- `Dvinholm-v0.2.4-STABLE-WINDOWS-ACCEPTANCE-KIT`: exact-SHA receipt
+  and scripts. Extract into sibling `kit/`, preserving its subfolders.
+
+Run `kit/START-STABLE-ACCEPTANCE-024.cmd` to verify and launch, or use
+`kit/START-STABLE-ACCEPTANCE-024.cmd --prepare-only` for headless
+verification. **Never mix artifacts from different CI runs.**
+
+Both paths create `Dvinholm-024-stable-acceptance/` beside `kit/`
+and `candidate/`, containing a verified `Dvinholm.App.exe`.
+Use the prepared EXE only, never the raw ZIP or the existing Stable
+installation folder. This *staging-only* binary is **not** the
+published Stable v0.2.4; the public release tag is frozen at `a9e6188`.
+If the destination already exists, restart its verified EXE directly
+rather than overwriting the folder.
 
 The receipt keeps application data under
 `Dvinholm-024-stable-acceptance/acceptance-user-data`, separate from the
