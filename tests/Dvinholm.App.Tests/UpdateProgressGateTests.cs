@@ -81,7 +81,7 @@ public sealed class UpdateProgressGateTests
         while (queued.TryDequeue(out var callback))
             callback();
 
-        Assert.Equal(["new download"], shown);
+        Assert.Equal(new[] { "new download" }, shown);
         gate.Complete(retryEpoch);
     }
 
