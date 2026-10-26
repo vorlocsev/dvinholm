@@ -232,6 +232,20 @@ public sealed partial class MainWindow : Window
         UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion}";
     }
 
+    private async void UpdateFlyout_Opened(object sender, object e)
+    {
+        // Check the selected channel once the menu is visible. Never start
+        // downloading/replacing files until the user presses the menu action.
+        // A cached result remains visible on reopen; "Check update" refreshes it.
+        if (_closing || _updaterBusy || _latestBuild is not null ||
+            DvinholmUserDataDirectory.IsAcceptanceLaunch)
+            return;
+#if DVINHOLM_MSIX
+        return;
+#endif
+        await CheckLatestBuildAsync();
+    }
+
     private async void UpdateButton_Click(object sender, RoutedEventArgs e)
     {
         if (DvinholmUserDataDirectory.IsAcceptanceLaunch)
