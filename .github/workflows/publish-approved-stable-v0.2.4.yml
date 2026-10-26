@@ -1,4 +1,4 @@
-name: Publish approved Dvinholm Stable v0.2.4 (frozen a9e6188)
+name: Publish verified Dvinholm Stable v0.2.4 draft (owner approved)
 
 on:
   push:
@@ -7,8 +7,8 @@ on:
     paths:
       - ".github/workflows/publish-approved-stable-v0.2.4.yml"
 
-# One-time, exact-SHA publication approved by repository owner on 2026-10-26.
-# Never rebuild, never publish from PR #500, never change main or the installed app.
+# Recovery of the already-created, verified draft, not a second release.
+# Release ID and original frozen commit are exact, and main is not modified.
 permissions:
   actions: read
   contents: write
@@ -21,193 +21,77 @@ jobs:
   publish:
     if: ${{ github.repository == 'vorlocsev/dvinholm' && github.ref == 'refs/heads/release/approved-v0.2.4-a9e6188' }}
     runs-on: ubuntu-latest
-    timeout-minutes: 40
+    timeout-minutes: 20
     steps:
-      - name: Verify owner-approved main commit, staging provenance and absence of release
+      - name: Fail-closed verification of owner-approved draft, assets and provenance
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
           frozen='a9e61883a413d4afaebb86fb468987c904250092'
-          main="$(gh api repos/vorlocsev/dvinholm/git/ref/heads/main --jq '.object.sha')"
-          test "$main" = "$frozen" || { echo 'main moved since original Windows GUI acceptance'; exit 1; }
-          source="$(gh api repos/vorlocsev/dvinholm/actions/runs/40240287577 --jq '.head_sha')"
-          verdict="$(gh api repos/vorlocsev/dvinholm/actions/runs/40240287577 --jq '.conclusion')"
-          test "$source" = "$frozen" && test "$verdict" = success || { echo 'Frozen staging run not verified'; exit 1; }
-          gh release view v0.2.3 -R vorlocsev/dvinholm --json tagName >/dev/null
-          if gh release view v0.2.4 -R vorlocsev/dvinholm >/dev/null 2>&1; then
-            echo 'v0.2.4 release already exists; never replace it'
+          test "$(gh api repos/vorlocsev/dvinholm/git/ref/heads/main --jq '.object.sha')" = "$frozen" || {
+            echo 'main no longer matches frozen Windows-accepted candidate'
             exit 1
-          fi
-          if gh api repos/vorlocsev/dvinholm/git/ref/tags/v0.2.4 >/dev/null 2>&1; then
-            echo 'v0.2.4 tag already exists; never change it'
-            exit 1
-          fi
-          echo "Approved frozen main SHA: $frozen. Nothing published by the checks."
-
-      - name: Download exact original staging #16 artifact (immutable ID)
-        uses: actions/download-artifact@v7
-        with:
-          artifact-ids: 12616373660
-          repository: vorlocsev/dvinholm
-          run-id: 40240287577
-          github-token: ${{ github.token }}
-          path: artifacts
-
-      - name: Verify eight frozen release asset gates and write offline verifier
-        shell: bash
-        run: |
-          set -euo pipefail
-          cat > audit-stable-v024.py <<'PY'
-          from pathlib import Path, PurePosixPath
-          from zipfile import ZipFile
-          import hashlib
-          import sys
-
-          base = Path(sys.argv[1])
-          portable = "Dvinholm-Windows-x86.zip"
-          lite = "Dvinholm-Windows-x86-Lite.zip"
-          expected = {
-              portable: ("b277dd76211a1dfa1aee214d28fb3ebb15c335ddf8081a381103632533519bfb", 62246431, 564),
-              lite: ("146372f8b7afcde5ae5eed3ff67957ce6a583b80c40a8f5b2806fb631b5a6f19", 10362408, 49),
           }
-          # Gate 1: only the two approved archives and the unmodified manifest.
-          assert base.is_dir() and {p.name for p in base.iterdir()} == {portable, lite, "SHA256SUMS.txt"}
-          # Gate 2: original canonical SHA256SUMS bytes.
-          expected_manifest = (
-              expected[portable][0] + "  " + portable + "\r\n"
-              + expected[lite][0] + "  " + lite + "\r\n"
-          ).encode("ascii")
-          assert (base / "SHA256SUMS.txt").read_bytes() == expected_manifest
-          for name, (digest, size, count) in expected.items():
-              data = (base / name).read_bytes()
-              # Gate 3/4: both independent SHA-256 hashes and exact approved sizes.
-              assert len(data) == size, name + ": unexpected byte length"
-              assert hashlib.sha256(data).hexdigest() == digest, name + ": SHA-256 mismatch"
-              # Gate 5: only safe relative ZIP entries.
-              with ZipFile(base / name) as z:
-                  members = z.namelist()
-                  assert len(members) == count, name + ": unexpected entry count"
-                  assert all(
-                      x and not x.startswith(("/", "\\")) and ":" not in x
-                      and ".." not in PurePosixPath(x.replace("\\", "/")).parts
-                      for x in members
-                  ), name + ": unsafe ZIP path"
-                  # Gate 6: signed-off app payload and branding present.
-                  for required in ("Dvinholm.App.exe", "Dvinholm.App.dll", "Assets/Dvinholm.ico"):
-                      assert required in members, name + ": missing " + required
-                  # Gate 7: no debugging artifacts, .pdb, or synthetic fixtures shipped.
-                  assert not any(
-                      x.lower().endswith((".pdb", ".ilk", ".exp")) or "createdump" in x.lower()
-                      for x in members
-                  ), name + ": debug artifact present"
-                  # Gate 8: Portable bundles runtime, while Lite is framework-dependent.
-                  if name == portable:
-                      assert "coreclr.dll" in members and "hostfxr.dll" in members
-                  else:
-                      assert "coreclr.dll" not in members and "hostfxr.dll" not in members
-                      assert "Check-Lite-Prerequisites.cmd" in members
-              print("Eight frozen release gates verified:", name, size, digest)
-          assert expected[lite][1] < expected[portable][1]
-          PY
-          python3 audit-stable-v024.py artifacts
-
-      - name: Prepare approved release notes
-        shell: bash
-        run: |
-          cat > RELEASE_NOTES.md <<'NOTES'
-          # Dvinholm v0.2.4
-
-          Stable Windows x86 release from the **frozen and user-accepted** commit
-          a9e61883a413d4afaebb86fb468987c904250092.
-
-          ## Downloads
-          - **Dvinholm-Windows-x86.zip**: Portable, self-contained .NET 10 and Windows App SDK runtime.
-          - **Dvinholm-Windows-x86-Lite.zip**: Smaller, framework-dependent; requires compatible .NET 10 Desktop Runtime x86, Windows App SDK x86 and VC++ Redistributable x86. Check prerequisites before launch.
-          - **SHA256SUMS.txt**: SHA-256 checksums of both original verified ZIPs.
-
-          ## Production release
-          - Production-only Stable builds omit demo/test/preview features and debugging byproducts.
-          - Windows x86 Portable/Lite built from the same exact commit; trimming and AOT remain disabled.
-          - Preserves user ECU profiles and saved CAN settings during normal use.
-          - Supports the existing CAN Monitor, ECU profile and read-only UDS diagnostics architecture subject to compatible adapters and ECUs.
-
-          ## Verified
-          - Original Stable staging #16 on the exact approved commit passed archive, assembly and SHA-256 checks for both packages.
-          - Eight Windows 11 LTSC GUI checks were user-confirmed successful on the frozen isolated Portable candidate.
-          - Offline replacement/rollback rehearsals used real published v0.2.3 and staged v0.2.4 ZIP files.
-          - Separate subsequent development CI confirmed production updater-helper success/rollback tests, without changing these approved release binaries.
-
-          ## Limitations
-          A real **installed in-app Stable v0.2.3 to v0.2.4 update** has not yet been manually smoke-tested; that is a post-publication check. Physical J2534 hardware and vehicle/ECU interoperability tests remain deferred. This project is not affiliated with or endorsed by Volvo Cars.
-
-          ## Provenance
-          Frozen Git commit: a9e61883a413d4afaebb86fb468987c904250092
-          Source staging run: https://github.com/vorlocsev/dvinholm/actions/runs/40240287577
-          NOTES
-
-      - name: Create unpublished draft with only verified release assets
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          gh release create v0.2.4 \
-            artifacts/Dvinholm-Windows-x86.zip \
-            artifacts/Dvinholm-Windows-x86-Lite.zip \
-            artifacts/SHA256SUMS.txt \
-            --repo vorlocsev/dvinholm \
-            --target a9e61883a413d4afaebb86fb468987c904250092 \
-            --draft \
-            --title 'Dvinholm 0.2.4' \
-            --notes-file RELEASE_NOTES.md
-          gh api repos/vorlocsev/dvinholm/releases/tags/v0.2.4 > draft.json
+          test "$(gh api repos/vorlocsev/dvinholm/actions/runs/40240287577 --jq '.head_sha')" = "$frozen"
+          test "$(gh api repos/vorlocsev/dvinholm/actions/runs/40240287577 --jq '.conclusion')" = success
+          gh release view v0.2.3 --repo vorlocsev/dvinholm --json tagName >/dev/null
+          # A new public tag would be a race; do not overwrite anything.
+          if gh api repos/vorlocsev/dvinholm/git/ref/tags/v0.2.4 >/dev/null 2>&1; then
+            echo 'v0.2.4 tag already exists; refuse publication/overwrite'
+            exit 1
+          fi
+          gh api repos/vorlocsev/dvinholm/releases/423824316 > draft.json
           python3 - <<'PY'
           import json
           d = json.load(open("draft.json", encoding="utf-8"))
-          assert d["draft"] is True and d["prerelease"] is False
+          assert d["id"] == 423824316 and d["draft"] is True and d["prerelease"] is False
+          assert d["tag_name"] == "v0.2.4" and d["name"] == "Dvinholm 0.2.4"
           assert d["target_commitish"] == "a9e61883a413d4afaebb86fb468987c904250092"
+          assert "frozen and user-accepted" in d["body"]
           expected = {
-              "Dvinholm-Windows-x86.zip": 62246431,
-              "Dvinholm-Windows-x86-Lite.zip": 10362408,
-              "SHA256SUMS.txt": 189,
+              "Dvinholm-Windows-x86.zip":
+                  (62246431, "sha256:b277dd76211a1dfa1aee214d28fb3ebb15c335ddf8081a381103632533519bfb"),
+              "Dvinholm-Windows-x86-Lite.zip":
+                  (10362408, "sha256:146372f8b7afcde5ae5eed3ff67957ce6a583b80c40a8f5b2806fb631b5a6f19"),
+              "SHA256SUMS.txt":
+                  (189, "sha256:402b7290894e904e4a372528f88559a8b4bcd576f8aef6fd6ef2439c13e73d69"),
           }
-          assert {a["name"]: a["size"] for a in d["assets"]} == expected
-          print("Draft release asset metadata verified; still unpublished")
+          found = {asset["name"]: (asset["size"], asset["digest"]) for asset in d["assets"]}
+          assert found == expected, "Draft asset bytes or hashes changed; refuse publication"
+          print("PASS: exact frozen a9e6188 provenance and three original GitHub SHA-256 draft digests")
           PY
 
-      - name: Download draft assets and verify bytes independently before publication
+      - name: Publish existing verified draft, then check exact git tag
         shell: bash
         env:
           GH_TOKEN: ${{ github.token }}
         run: |
           set -euo pipefail
-          mkdir -p draft-roundtrip
-          gh release download v0.2.4 --repo vorlocsev/dvinholm --dir draft-roundtrip
-          python3 audit-stable-v024.py draft-roundtrip
-
-      - name: Publish exact approved v0.2.4 Stable release
-        shell: bash
-        env:
-          GH_TOKEN: ${{ github.token }}
-        run: |
-          set -euo pipefail
-          frozen='a9e61883a413d4afaebb86fb468987c904250092'
-          main="$(gh api repos/vorlocsev/dvinholm/git/ref/heads/main --jq '.object.sha')"
-          test "$main" = "$frozen" || { echo 'main changed; leave draft unpublished'; exit 1; }
-          gh release edit v0.2.4 --repo vorlocsev/dvinholm --draft=false --latest
-          gh api repos/vorlocsev/dvinholm/releases/tags/v0.2.4 > published.json
+          # GitHub's get-release-by-tag endpoint intentionally hides drafts.
+          # Publish the exact checked draft ID instead of creating duplicates.
+          gh api --method PATCH repos/vorlocsev/dvinholm/releases/423824316 \
+            -F draft=false \
+            -F prerelease=false \
+            -F make_latest=true > live.json
           python3 - <<'PY'
           import json
-          r = json.load(open("published.json", encoding="utf-8"))
-          assert r["tag_name"] == "v0.2.4" and not r["draft"] and not r["prerelease"]
-          assert r["target_commitish"] == "a9e61883a413d4afaebb86fb468987c904250092"
-          assert {a["name"] for a in r["assets"]} == {
-              "Dvinholm-Windows-x86.zip", "Dvinholm-Windows-x86-Lite.zip", "SHA256SUMS.txt"
+          d = json.load(open("live.json", encoding="utf-8"))
+          assert d["id"] == 423824316 and d["tag_name"] == "v0.2.4"
+          assert d["draft"] is False and d["prerelease"] is False
+          assert d["target_commitish"] == "a9e61883a413d4afaebb86fb468987c904250092"
+          assert {a["name"] for a in d["assets"]} == {
+              "Dvinholm-Windows-x86.zip",
+              "Dvinholm-Windows-x86-Lite.zip",
+              "SHA256SUMS.txt",
           }
-          print("Published Stable 0.2.4, exact approved source and all assets")
+          print("Release published successfully:", d["html_url"])
           PY
+          expected='a9e61883a413d4afaebb86fb468987c904250092'
           tag_sha="$(gh api repos/vorlocsev/dvinholm/git/ref/tags/v0.2.4 --jq '.object.sha')"
-          test "$tag_sha" = "$frozen" || { echo "Unexpected published tag SHA: $tag_sha"; exit 1; }
-          echo 'Stable v0.2.4 published from frozen a9e6188 with verified Portable, Lite and checksums.' >> "$GITHUB_STEP_SUMMARY"
+          test "$tag_sha" = "$expected" || {
+            echo "FATAL: unexpected v0.2.4 tag commit: $tag_sha"
+            exit 1
+          }
+          echo 'Stable v0.2.4 published: frozen a9e6188, original Portable/Lite assets and SHA256SUMS.' >> "$GITHUB_STEP_SUMMARY"
