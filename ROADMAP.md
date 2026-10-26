@@ -1,3 +1,12 @@
+## Development: ZIP external file-type preflight (2026-10-26)
+
+- [x] Confirm `main` at `921eb81` and seven successful post-merge workflows for PR #518 (CI #3728). Public Stable v0.2.4 tag stays at `a9e6188`.
+- [x] Reject ZIP Unix symlinks, special device nodes, FIFOs and sockets before staging. Reject records whose Unix file type disagrees with ZIP directory/file path syntax and records flagged as Windows reparse points. Ordinary Windows ZIPs without Unix mode metadata are supported.
+- [x] Add eight offline ZIP fixtures covering Unix link/special types, mismatched file/directory modes, Windows reparse markers, valid Windows/Unix entries and rejection of a late hostile entry before any staging write.
+- [ ] Require seven green PR-head workflows and separate post-merge `main` checks before marking complete. The checks do not substitute for installed Windows 11 LTSC update acceptance or physical J2534. Stable v0.2.4 publication state must remain untouched.
+
+---
+
 ## Development: reject Windows-unsafe ZIP entry names before staging (2026-10-26)
 
 - [x] Confirm main `c0a0227` after PR #517 passed all seven workflows, including CI #3723; published Stable v0.2.4 tag stays `a9e6188`.
