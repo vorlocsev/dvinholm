@@ -29,10 +29,11 @@ internal static class UpdateDownloadPercentage
             return false;
 
         var counts = suffix[(percentEnd + 3)..];
-        if (!counts.EndsWith(" bytes)".AsSpan(), StringComparison.Ordinal))
+        const string ending = " bytes)";
+        if (!counts.EndsWith(ending.AsSpan(), StringComparison.Ordinal))
             return false;
 
-        var copiedAndExpected = counts[..^" bytes)".Length];
+        var copiedAndExpected = counts[..^ending.Length];
         var slash = copiedAndExpected.IndexOf('/');
         if (slash < 1 || slash == copiedAndExpected.Length - 1)
             return false;
