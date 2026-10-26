@@ -93,10 +93,12 @@ public sealed class UpdateExtractionCancellationTests
             Write(archive, "same.txt", "second");
         }
 
-        await Assert.ThrowsAnyAsync<IOException>(() =>
+        // Duplicate paths are now rejected during metadata preflight, before
+        // the stage exists; the first entry is never extracted.
+        await Assert.ThrowsAsync<InvalidDataException>(() =>
             LatestBuildUpdater.ValidateAndExtractArchiveAsync(folder.Zip, folder.Stage));
 
-        Assert.Equal("first", File.ReadAllText(Path.Combine(folder.Stage, "same.txt")));
+        Assert.False(Directory.Exists(folder.Stage));
     }
 
     [Fact]
