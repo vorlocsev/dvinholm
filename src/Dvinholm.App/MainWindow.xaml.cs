@@ -46,6 +46,8 @@ public sealed partial class MainWindow : Window
     private readonly UpdateProgressGate _updateProgressGate = new();
     // One lookup token per operation; cancel on window close and after 60 seconds.
     private CancellationTokenSource? _updateCheckCts;
+    // In-flight archive transfer must stop if the user closes Dvinholm.
+    private CancellationTokenSource? _updateDownloadCts;
     // Do not persist XAML's initial ComboBox selection while restoring settings.
     private bool _loadingUpdateSource = true;
 
@@ -103,6 +105,7 @@ public sealed partial class MainWindow : Window
         {
             _closing = true;
             _updateCheckCts?.Cancel();
+            _updateDownloadCts?.Cancel();
 #if DVINHOLM_DEVELOPMENT_FEATURES
             StopDemoMonitor();
 #endif
@@ -419,6 +422,10 @@ public sealed partial class MainWindow : Window
 
     private async Task DownloadAndLaunchLatestBuildAsync(LatestBuildInfo build)
     {
+        if (_closing)
+            return;
+        using var downloadCts = new CancellationTokenSource();
+        _updateDownloadCts = downloadCts;
         _updaterBusy = true;
         RunUpdateButton.IsEnabled = false;
         UpdateSource.IsEnabled = false;
@@ -438,15 +445,33 @@ public sealed partial class MainWindow : Window
             });
         });
 
+        string? stagedDirectory = null;
         try
         {
-            var stagingDirectory = await LatestBuildUpdater.DownloadAndPrepareAsync(build, progress);
+            stagedDirectory = await LatestBuildUpdater.DownloadAndPrepareAsync(
+                build, progress, downloadCts.Token);
+            // The user may have closed the window while the download awaited.
+            // Never start the replacement helper after a close/cancellation.
+            downloadCts.Token.ThrowIfCancellationRequested();
+            if (_closing)
+                throw new OperationCanceledException(downloadCts.Token);
             // No download progress is valid once replacement begins.
             _updateProgressGate.Complete(progressEpoch);
             SetStatus($"Replacing application files with {build.DisplayVersion}…");
             ShowUpdateActivity($"Replacing application files with {build.DisplayVersion}…");
-            LatestBuildUpdater.StartReplacement(stagingDirectory, AppContext.BaseDirectory, Environment.ProcessId);
+            LatestBuildUpdater.StartReplacement(stagedDirectory, AppContext.BaseDirectory, Environment.ProcessId);
             Close();
+        }
+        catch (Exception) when (_closing)
+        {
+            // A canceled transfer is not a failed update. Never write an
+            // update.log or touch controls after this window has closed.
+            // DownloadAndPrepareAsync removes its own incomplete staging;
+            // remove any fully prepared archive if close raced with return.
+            _updateProgressGate.Complete(progressEpoch);
+            if (stagedDirectory is not null)
+                LatestBuildUpdater.TryCleanup(() => Directory.Delete(stagedDirectory, recursive: true));
+            return;
         }
         catch (Exception ex)
         {
@@ -478,9 +503,13 @@ public sealed partial class MainWindow : Window
             // Idempotent even when the successful path or catch already
             // completed this epoch.
             _updateProgressGate.Complete(progressEpoch);
+            _updateDownloadCts = null;
             _updaterBusy = false;
-            RunUpdateButton.IsEnabled = true;
-            UpdateSource.IsEnabled = true;
+            if (!_closing)
+            {
+                RunUpdateButton.IsEnabled = true;
+                UpdateSource.IsEnabled = true;
+            }
         }
     }
 
