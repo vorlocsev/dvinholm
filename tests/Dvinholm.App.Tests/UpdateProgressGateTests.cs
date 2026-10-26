@@ -95,7 +95,8 @@ public sealed class UpdateProgressGateTests
         var region = code[start..end];
 
         Assert.Contains("var progressEpoch = _updateProgressGate.Begin();", region);
-        Assert.Contains("if (_closing || !_updateProgressGate.Accepts(progressEpoch)) return;", region);
+        Assert.Contains("if (_closing || downloadCts.IsCancellationRequested ||", region);
+        Assert.Contains("!_updateProgressGate.Accepts(progressEpoch)) return;", region);
         Assert.Contains("DispatcherQueue.TryEnqueue(() =>", region);
 
         var returned = region.IndexOf("stagedDirectory = await LatestBuildUpdater.DownloadAndPrepareAsync(", StringComparison.Ordinal);

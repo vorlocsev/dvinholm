@@ -43,6 +43,10 @@
                             <Button x:Name="RunUpdateButton" Content="Check for updates"
                                     Click="UpdateButton_Click" HorizontalAlignment="Stretch"
                                     AutomationProperties.Name="Check or install update"/>
+                            <Button x:Name="CancelUpdateButton" Content="Cancel download"
+                                    Click="CancelUpdateButton_Click" HorizontalAlignment="Stretch"
+                                    Visibility="Collapsed" IsEnabled="False"
+                                    AutomationProperties.Name="Cancel update download"/>
                         </StackPanel>
                     </Flyout>
                 </Button.Flyout>
