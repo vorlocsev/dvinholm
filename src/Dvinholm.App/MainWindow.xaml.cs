@@ -43,10 +43,14 @@ public sealed partial class MainWindow : Window
     private LatestBuildInfo? _latestBuild;
     private bool _updaterBusy;
     private bool _updateAvailable;
+    // Do not persist XAML's initial ComboBox selection while restoring settings.
+    private bool _loadingUpdateSource = true;
 
     public MainWindow()
     {
         InitializeComponent();
+        LoadSavedUpdateSource();
+        _loadingUpdateSource = false;
 #if DVINHOLM_DEVELOPMENT_FEATURES
         InitializeDevelopmentControls();
 #endif
@@ -64,7 +68,7 @@ public sealed partial class MainWindow : Window
         EcusView.ItemsSource = _ecus;
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · select Check update to look for a new build.";
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion}";
 #if DVINHOLM_MSIX
         // WindowsApps files are managed by MSIX, not Portable's updater.
         UpdateButton.IsEnabled = false;
@@ -180,18 +184,52 @@ public sealed partial class MainWindow : Window
 
     private bool UseStableUpdateSource => UpdateSource.SelectedIndex == 1;
 
+    private static string UpdateSourceSettingsFile => Path.Combine(
+        DvinholmUserDataDirectory.Current, UpdateSourcePreferenceStore.FileName);
+
+    private void LoadSavedUpdateSource()
+    {
+        var fallback = LatestBuildUpdater.IsCurrentStableBuild
+            ? UpdateSourceChannel.Stable
+            : UpdateSourceChannel.Development;
+        var channel = fallback;
+        try
+        {
+            channel = new UpdateSourcePreferenceStore(UpdateSourceSettingsFile).Load(fallback);
+        }
+        catch (IOException) { }
+        catch (UnauthorizedAccessException) { }
+
+        // UpdateSource_SelectionChanged fires when this is set, but must not
+        // overwrite the saved user choice during startup or updater relaunch.
+        UpdateSource.SelectedIndex = channel == UpdateSourceChannel.Stable ? 1 : 0;
+    }
+
     private void UpdateSource_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         // Source changes invalidate *both* a pending update offer and its download
         // URL. Never install a CI archive after switching the UI to Stable (or vice versa).
-        if (UpdateButton is null || UpdateStatusText is null || _updaterBusy)
+        if (_loadingUpdateSource || UpdateButton is null || UpdateStatusText is null || _updaterBusy)
             return;
+
+        try
+        {
+            new UpdateSourcePreferenceStore(UpdateSourceSettingsFile).Save(
+                UseStableUpdateSource ? UpdateSourceChannel.Stable : UpdateSourceChannel.Development);
+        }
+        catch (IOException)
+        {
+            SetStatus("Update source changed, but the preference could not be saved.");
+        }
+        catch (UnauthorizedAccessException)
+        {
+            SetStatus("Update source changed, but the preference could not be saved.");
+        }
 
         _latestBuild = null;
         _updateAvailable = false;
         UpdateButton.Content = "Check update";
-        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · " +
-            $"source: {(UseStableUpdateSource ? "Stable" : "Development")}; select Check update.";
+        UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion}";
     }
 
     private async void UpdateButton_Click(object sender, RoutedEventArgs e)
