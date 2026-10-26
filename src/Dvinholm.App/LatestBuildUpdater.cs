@@ -30,6 +30,9 @@ internal static class LatestBuildUpdater
     private const string ArtifactName = "Dvinholm-Windows-x86";
     private const long MaximumDownloadBytes = 500L * 1024 * 1024;
     private const long MaximumExpandedBytes = 1_000L * 1024 * 1024;
+    // Aggregate bytes alone do not bound an archive containing thousands
+    // of empty files/directories. Limit metadata and filesystem operations.
+    internal const int MaximumArchiveEntries = 10_000;
     private static readonly HttpClient Http = CreateHttpClient();
 
     private static HttpClient CreateHttpClient()
@@ -513,9 +516,13 @@ internal static class LatestBuildUpdater
         Task.Run(async () =>
         {
             cancellationToken.ThrowIfCancellationRequested();
-            Directory.CreateDirectory(staging);
             using var archive = ZipFile.OpenRead(archivePath);
+            // Reject excessive file/dir entries before creating private
+            // staging directories or writing any extracted file.
+            ValidateArchiveEntryCount(archive.Entries.Count);
             ValidateExpandedSize(archive.Entries.Select(entry => entry.Length));
+            cancellationToken.ThrowIfCancellationRequested();
+            Directory.CreateDirectory(staging);
             var fullRoot = Path.GetFullPath(staging) + Path.DirectorySeparatorChar;
             foreach (var entry in archive.Entries)
             {
@@ -604,6 +611,12 @@ internal static class LatestBuildUpdater
         {
             // A transient ACL/lock issue must not hide the original failure either.
         }
+    }
+
+    internal static void ValidateArchiveEntryCount(int count)
+    {
+        if (count < 0 || count > MaximumArchiveEntries)
+            throw new InvalidDataException("The update archive contains too many files or directories.");
     }
 
     internal static void ValidateExpandedSize(IEnumerable<long> entryLengths)
