@@ -14,7 +14,7 @@ public sealed class UpdateCheckDeadlineTests
         {
             var path = Path.Combine(dir.FullName, "src", "Dvinholm.App", "MainWindow.xaml.cs");
             if (File.Exists(path))
-                return File.ReadAllText(path);
+                return File.ReadAllText(path).Replace("\r\n", "\n", StringComparison.Ordinal);
         }
 
         throw new FileNotFoundException("MainWindow.xaml.cs not found.");
