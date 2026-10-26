@@ -614,6 +614,19 @@ internal static class LatestBuildUpdater
             (isDirectoryName ? unixType != 0x4000 : unixType != 0x8000))
             throw new InvalidDataException("The update archive has an unsafe or mismatched file type.");
 
+        // The low DOS attribute bits must agree with the ZIP entry name.
+        // A regular file disguised as a directory, or a device/volume
+        // label, is not part of a normal Portable/Lite distribution.
+        const int dosDirectory = 0x10;
+        const int dosVolumeLabel = 0x08;
+        const int dosDevice = 0x40;
+        if ((entry.ExternalAttributes & (dosVolumeLabel | dosDevice)) != 0)
+            throw new InvalidDataException("The update archive has an unsafe DOS file attribute.");
+        if (!isDirectoryName && (entry.ExternalAttributes & dosDirectory) != 0)
+            throw new InvalidDataException("The update archive has a directory-flagged file entry.");
+
+        // Directory names without the DOS flag remain supported: many ZIP
+        // creators represent directories solely with a trailing '/'.
         // Do not accept an NTFS reparse-point marker in ZIP DOS attributes.
         if ((entry.ExternalAttributes & 0x400) != 0)
             throw new InvalidDataException("The update archive contains a reparse-point entry.");
