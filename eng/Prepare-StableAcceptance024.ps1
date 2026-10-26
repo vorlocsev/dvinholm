@@ -93,8 +93,8 @@ try {
         '[ ] CAN speed save/restart/reload uses isolated settings.'
         '[ ] ECU JSON import/export/edit/restart uses isolated profiles.'
         '[ ] CAN Monitor layout/filter and CSV export behave as expected.'
-        '[ ] Update channel UI remains disabled in acceptance mode.'
-        '[ ] Existing installed Stable 0.2.3 and user data are unchanged.'
+        '[ ] Update menu and channel selection remain available; network checking and installation are disabled.'
+        '[ ] Existing installed Stable 0.2.4 and user data are unchanged.'
         'Manual GUI acceptance is NOT part of GitHub Actions CI.'
     )
     [IO.File]::WriteAllLines((Join-Path $stage 'ACCEPTANCE-0.2.4.txt'),
