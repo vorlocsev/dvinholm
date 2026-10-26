@@ -420,6 +420,17 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private void CancelUpdateButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_closing || !_updaterBusy ||
+            _updateDownloadCts is not { IsCancellationRequested: false } downloadCts)
+            return;
+
+        CancelUpdateButton.IsEnabled = false;
+        UpdateProgressText.Text = "Cancelling download…";
+        downloadCts.Cancel();
+    }
+
     private async Task DownloadAndLaunchLatestBuildAsync(LatestBuildInfo build)
     {
         if (_closing)
@@ -430,6 +441,8 @@ public sealed partial class MainWindow : Window
         RunUpdateButton.IsEnabled = false;
         UpdateSource.IsEnabled = false;
         RunUpdateButton.Content = "Updating…";
+        CancelUpdateButton.IsEnabled = true;
+        CancelUpdateButton.Visibility = Visibility.Visible;
         ShowUpdateActivity("Preparing the selected update…");
         // The callback may be dispatched after DownloadAndPrepareAsync returns.
         // Give this attempt an epoch so a late message cannot restore the
@@ -439,7 +452,8 @@ public sealed partial class MainWindow : Window
         {
             DispatcherQueue.TryEnqueue(() =>
             {
-                if (_closing || !_updateProgressGate.Accepts(progressEpoch)) return;
+                if (_closing || downloadCts.IsCancellationRequested ||
+                    !_updateProgressGate.Accepts(progressEpoch)) return;
                 SetStatus(message);
                 ShowUpdateActivity(message);
             });
@@ -455,6 +469,10 @@ public sealed partial class MainWindow : Window
             downloadCts.Token.ThrowIfCancellationRequested();
             if (_closing)
                 throw new OperationCanceledException(downloadCts.Token);
+            // Cancellation is no longer offered once the replacement phase
+            // begins. The synchronous helper launch cannot be interrupted.
+            CancelUpdateButton.IsEnabled = false;
+            CancelUpdateButton.Visibility = Visibility.Collapsed;
             // No download progress is valid once replacement begins.
             _updateProgressGate.Complete(progressEpoch);
             SetStatus($"Replacing application files with {build.DisplayVersion}…");
@@ -472,6 +490,19 @@ public sealed partial class MainWindow : Window
             if (stagedDirectory is not null)
                 LatestBuildUpdater.TryCleanup(() => Directory.Delete(stagedDirectory, recursive: true));
             return;
+        }
+        catch (OperationCanceledException) when (!_closing && downloadCts.IsCancellationRequested)
+        {
+            // User pressed Cancel download; this is not an update failure.
+            // The downloader removes incomplete stage files in its finally.
+            _updateProgressGate.Complete(progressEpoch);
+            if (stagedDirectory is not null)
+                LatestBuildUpdater.TryCleanup(() => Directory.Delete(stagedDirectory, recursive: true));
+            RunUpdateButton.Content = "Retry update";
+            UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion} · Available: {build.DisplayVersion}";
+            FinishUpdateActivity("Download cancelled. Select Retry update to try again.");
+            SetStatus("Update download cancelled.");
+            _updateAvailable = true;
         }
         catch (Exception ex)
         {
@@ -505,6 +536,11 @@ public sealed partial class MainWindow : Window
             _updateProgressGate.Complete(progressEpoch);
             _updateDownloadCts = null;
             _updaterBusy = false;
+            if (!_closing)
+            {
+                CancelUpdateButton.IsEnabled = false;
+                CancelUpdateButton.Visibility = Visibility.Collapsed;
+            }
             if (!_closing)
             {
                 RunUpdateButton.IsEnabled = true;
