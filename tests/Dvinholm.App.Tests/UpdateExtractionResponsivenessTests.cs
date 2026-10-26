@@ -89,10 +89,15 @@ public sealed class UpdateExtractionResponsivenessTests
     public void CancellationIsCheckedBeforeEntryValidationAndAfterExtraction()
     {
         var method = ExtractorMethod();
-        var checks = AllIndexes(method, "cancellationToken.ThrowIfCancellationRequested();");
-        var unzip = method.IndexOf("await CopyArchiveEntryAsync(input, output, entry.Length, cancellationToken);", StringComparison.Ordinal);
-        Assert.True(checks.Count >= 4);
-        Assert.True(checks[0] < method.IndexOf("Directory.CreateDirectory(staging);", StringComparison.Ordinal));
+        // The following helper has its own per-chunk cancellation checks.
+        // Test the worker's pre- and post-copy checkpoints independently.
+        var helperStart = method.IndexOf("internal static async Task CopyArchiveEntryAsync(", StringComparison.Ordinal);
+        Assert.True(helperStart > 0);
+        var worker = method[..helperStart];
+        var checks = AllIndexes(worker, "cancellationToken.ThrowIfCancellationRequested();");
+        var unzip = worker.IndexOf("await CopyArchiveEntryAsync(input, output, entry.Length, cancellationToken);", StringComparison.Ordinal);
+        Assert.True(checks.Count >= 4 && unzip >= 0);
+        Assert.True(checks[0] < worker.IndexOf("Directory.CreateDirectory(staging);", StringComparison.Ordinal));
         Assert.True(checks[^2] < unzip && checks[^1] > unzip);
     }
 
