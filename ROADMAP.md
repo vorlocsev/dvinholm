@@ -1,3 +1,13 @@
+## Development: cancel update download on window close (2026-10-26)
+
+- [x] Confirm post-merge PR #507 Development CI #3654 and all seven workflows are green at `a886813`, while published Stable v0.2.4 remains fixed at `a9e6188`.
+- [x] Cancel in-flight ZIP transfer when Windows closes via a per-download CancellationTokenSource; propagate it through the existing trusted downloader and check it **again** immediately before launching the replacement helper. Never install after a user-initiated close.
+- [x] Suppress update.log / error controls after window close, avoid re-enabling detached WinUI controls, and best-effort remove a uniquely prepared staging directory if closing races with the download's completion. Keep the verified checksum, maximum archive-size and rollback paths unchanged.
+- [x] Add eight offline regression gates including cancellation of a genuinely in-flight fake-HTTP transfer. No real adapter or installed-app update is involved.
+- [ ] Require seven green PR-head workflows and separate post-merge main CI; manual Windows 11 LTSC close-during-download and installed-updater acceptance remain pending. No new Stable release without explicit approval.
+
+---
+
 ## Development updater download byte progress (2026-10-26)
 
 - [x] Verify post-merge Development CI #3648 and all seven workflows from PR #506 at commit `b246ea4` passed; the published v0.2.4 tag remains fixed at `a9e6188`.
