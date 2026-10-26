@@ -198,6 +198,11 @@ public sealed partial class MainWindow : Window
     // meaningful percentage, so the ProgressBar is deliberately indeterminate.
     private void ShowUpdateActivity(string text)
     {
+        // A known byte milestone is the only determinate phase. Progress in
+        // GitHub lookups, checksum, extraction and replacement is not linear.
+        var percentage = UpdateDownloadProgress.ReadMilestone(text);
+        UpdateProgressBar.IsIndeterminate = percentage is null;
+        UpdateProgressBar.Value = percentage ?? 0;
         UpdateProgressText.Text = text;
         UpdateProgressText.Visibility = Visibility.Visible;
         UpdateProgressBar.Visibility = Visibility.Visible;
@@ -205,6 +210,9 @@ public sealed partial class MainWindow : Window
 
     private void FinishUpdateActivity(string? message = null)
     {
+        // Never carry the prior download's 100% into a later update check.
+        UpdateProgressBar.IsIndeterminate = true;
+        UpdateProgressBar.Value = 0;
         UpdateProgressBar.Visibility = Visibility.Collapsed;
         UpdateProgressText.Text = message ?? string.Empty;
         UpdateProgressText.Visibility = message is null ? Visibility.Collapsed : Visibility.Visible;
