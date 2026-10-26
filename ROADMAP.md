@@ -1,3 +1,12 @@
+## Development updater ZIP path preflight before staging (2026-10-26)
+
+- [x] PR #515 merged into Development as `851daee`; its seven PR-head workflows passed (CI #3710 with 1459/1459 app checks and 8/8 Stable checks). Post-merge `main` workflows #3711 and companion staging/RCs require separate final verification.
+- [x] Refuse malicious ZIP entry paths before creating the private `UpdateStaging` extraction directory. Preflight path traversal after the existing entry-count and expanded-byte checks; only allocate the staging directory after all entry paths are within the intended root. Preserve cancellation checks before and during extraction.
+- [x] Add eight offline x86 regression checks: source ordering, parent/nested traversal, sibling-prefix collision, absolute path, root-resolving dot entry, last-entry attack with preceding valid files, and legitimate nested/directory entries.
+- [ ] Require 7/7 green PR-head workflows and separate post-merge `main` validation before considering the stage complete. No user-installed updater, manual Windows GUI, or physical J2534 test is implied. Published Stable v0.2.4 assets/tags remain untouched.
+
+---
+
 ## Development: bounded update ZIP entry count (2026-10-26)
 
 - [x] Verified post-merge `main` `aa387d3` (PR #514) passed all seven workflows, including CI #3706. Published Stable v0.2.4 remains pinned to `a9e6188`.
