@@ -521,8 +521,10 @@ internal static class LatestBuildUpdater
             // staging directories or writing any extracted file.
             ValidateArchiveEntryCount(archive.Entries.Count);
             ValidateExpandedSize(archive.Entries.Select(entry => entry.Length));
+            // Resolve every ZIP entry and reject traversal before any staging
+            // directory is created. Rejecting hostile metadata must not leave
+            // an empty or partial private update directory behind.
             cancellationToken.ThrowIfCancellationRequested();
-            Directory.CreateDirectory(staging);
             var fullRoot = Path.GetFullPath(staging) + Path.DirectorySeparatorChar;
             foreach (var entry in archive.Entries)
             {
@@ -533,6 +535,7 @@ internal static class LatestBuildUpdater
             }
 
             cancellationToken.ThrowIfCancellationRequested();
+            Directory.CreateDirectory(staging);
             foreach (var entry in archive.Entries)
             {
                 cancellationToken.ThrowIfCancellationRequested();
