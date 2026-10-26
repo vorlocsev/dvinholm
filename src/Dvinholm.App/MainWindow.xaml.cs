@@ -198,6 +198,19 @@ public sealed partial class MainWindow : Window
     // meaningful percentage, so the ProgressBar is deliberately indeterminate.
     private void ShowUpdateActivity(string text)
     {
+        // Only bytes actually written to the ZIP have a known percentage.
+        // Lookup, verification, extraction and replacement have no common
+        // denominator, so do not display a fake determinate percentage.
+        if (UpdateDownloadPercentage.TryRead(text, out var percent))
+        {
+            UpdateProgressBar.IsIndeterminate = false;
+            UpdateProgressBar.Value = percent;
+        }
+        else
+        {
+            UpdateProgressBar.IsIndeterminate = true;
+            UpdateProgressBar.Value = 0;
+        }
         UpdateProgressText.Text = text;
         UpdateProgressText.Visibility = Visibility.Visible;
         UpdateProgressBar.Visibility = Visibility.Visible;
@@ -205,6 +218,9 @@ public sealed partial class MainWindow : Window
 
     private void FinishUpdateActivity(string? message = null)
     {
+        // A retry must never inherit the previous archive's percentage.
+        UpdateProgressBar.IsIndeterminate = true;
+        UpdateProgressBar.Value = 0;
         UpdateProgressBar.Visibility = Visibility.Collapsed;
         UpdateProgressText.Text = message ?? string.Empty;
         UpdateProgressText.Visibility = message is null ? Visibility.Collapsed : Visibility.Visible;
