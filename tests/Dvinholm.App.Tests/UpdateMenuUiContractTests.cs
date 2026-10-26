@@ -117,13 +117,23 @@ public sealed class UpdateMenuUiContractTests
     }
 
     [Fact]
-    public void AcceptanceAndMsixKeepPortableUpdaterDisabled()
+    public void AcceptanceMenuRemainsInspectableButInstallerAndMsixStayBlocked()
     {
         var cs = Code;
-        Assert.Contains("if (DvinholmUserDataDirectory.IsAcceptanceLaunch)", cs);
-        Assert.Contains("UpdateButton.IsEnabled = false;", cs);
-        Assert.Contains("UpdateSource.IsEnabled = false;", cs);
-        Assert.Contains("#if DVINHOLM_MSIX", cs);
-        Assert.Contains("if (_updaterBusy)", cs);
+        var acceptance = cs.IndexOf("if (DvinholmUserDataDirectory.IsAcceptanceLaunch)", StringComparison.Ordinal);
+        var nextHandler = cs.IndexOf("_session.ReadError +=", acceptance, StringComparison.Ordinal);
+        Assert.True(acceptance >= 0 && nextHandler > acceptance);
+        var acceptanceSetup = cs[acceptance..nextHandler];
+        Assert.Contains("RunUpdateButton.IsEnabled = false;", acceptanceSetup);
+        Assert.DoesNotContain("UpdateButton.IsEnabled = false;", acceptanceSetup);
+        Assert.DoesNotContain("UpdateSource.IsEnabled = false;", acceptanceSetup);
+        Assert.Contains("ConnectButton.IsEnabled = false;", acceptanceSetup);
+
+        // MSIX is still managed by its package manager; no portable updater.
+        var msixStart = cs.IndexOf("#if DVINHOLM_MSIX", StringComparison.Ordinal);
+        Assert.True(msixStart >= 0 && msixStart < acceptance);
+        var msixSetup = cs[msixStart..acceptance];
+        Assert.Contains("UpdateButton.IsEnabled = false;", msixSetup);
+        Assert.Contains("UpdateSource.IsEnabled = false;", msixSetup);
     }
 }
