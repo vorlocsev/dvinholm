@@ -1,3 +1,13 @@
+## Development: determinate ZIP download progress (2026-10-26)
+
+- [x] Verify PR #509 merged as `db46afb` and all **7/7** post-merge workflows passed (CI #3672); Stable v0.2.4 tag remains unchanged at `a9e6188`.
+- [x] Reuse the real byte-based 10% milestones from `UpdateDownloadProgress` to switch the menu `UpdateProgressBar` from indeterminate into determinate during a ZIP download. No synthetic percentage is shown for GitHub lookup, checksum validation, extraction, cancellation or replacement.
+- [x] Reset `IsIndeterminate` and `Value` when an operation ends, channel switches or a retry follows. Reject unrelated/malformed milestone messages. Keep existing cancellation, checksum, size-limit and production-only Stable behavior unchanged.
+- [x] Eight new offline xUnit checks cover parser behavior, real formatter integration, 10–100% progress, out-of-range input, phases without meaningful percent, and WinUI source-mode wiring.
+- [ ] Validate all seven PR workflows and postmerge `main` CI separately; manually confirm the graphical bar on Windows 11 LTSC before claiming GUI acceptance. No Stable release without approval; physical J2534 remains deferred.
+
+---
+
 ## Development: cancel active update without exiting Dvinholm (2026-10-26)
 
 - [x] Verify all seven post-merge workflows on `main` commit `49155ae` after PR #508, including CI #3661. Published Stable 0.2.4 remains pinned to `a9e6188`.

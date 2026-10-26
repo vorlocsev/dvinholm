@@ -34,4 +34,30 @@ internal sealed class UpdateDownloadProgress
         return string.Create(CultureInfo.InvariantCulture,
             $"Downloading {displayVersion}: {milestone}% ({receivedBytes:N0}/{_expectedBytes:N0} bytes)");
     }
+
+    // Only the downloader's structured milestone text can set a determinate
+    // progress value. Checking, checksum, extraction and replacement phases
+    // have no comparable percentage, so they stay indeterminate.
+    internal static int? ReadMilestone(string? message)
+    {
+        if (string.IsNullOrEmpty(message) ||
+            !message.StartsWith("Downloading ", StringComparison.Ordinal) ||
+            !message.EndsWith(" bytes)", StringComparison.Ordinal))
+            return null;
+
+        var colon = message.LastIndexOf(": ", StringComparison.Ordinal);
+        if (colon <= "Downloading ".Length)
+            return null;
+
+        var marker = message.IndexOf("% (", colon + 2, StringComparison.Ordinal);
+        if (marker <= colon + 2)
+            return null;
+
+        if (!int.TryParse(message.AsSpan(colon + 2, marker - colon - 2),
+                NumberStyles.None, CultureInfo.InvariantCulture, out var percent) ||
+            percent < 10 || percent > 100 || percent % 10 != 0)
+            return null;
+
+        return percent;
+    }
 }
