@@ -445,6 +445,9 @@ internal static class LatestBuildUpdater
                 await using var output = new FileStream(archivePath, FileMode.CreateNew, FileAccess.Write, FileShare.None, 81920, useAsync: true);
                 var buffer = new byte[81920];
                 long total = 0;
+                // Report only newly crossed 10% milestones to avoid flooding
+                // the WinUI dispatcher for every network read.
+                var downloadProgress = new UpdateDownloadProgress(build.ArtifactSize);
                 while (true)
                 {
                     var read = await input.ReadAsync(buffer, cancellationToken);
@@ -453,6 +456,9 @@ internal static class LatestBuildUpdater
                     if (total > MaximumDownloadBytes)
                         throw new InvalidDataException("The downloaded artifact exceeds the configured size limit.");
                     await output.WriteAsync(buffer.AsMemory(0, read), cancellationToken);
+                    var milestoneMessage = downloadProgress.ReportCopied(total, build.DisplayVersion);
+                    if (milestoneMessage is not null)
+                        progress?.Report(milestoneMessage);
                 }
             }
 
