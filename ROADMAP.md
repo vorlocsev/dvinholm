@@ -1,3 +1,12 @@
+## Development: read-only ECU configuration snapshot diff (2026-10-27)
+
+- [x] [PR #526](https://github.com/vorlocsev/dvinholm/pull/526) merged as `a3eee80` after **7/7** green PR-head checks (CI #3771); independent post-merge `main` CI #3772 was still running when this stage began. Public Stable v0.2.4 remains pinned to `a9e6188`.
+- [x] Implement an **in-memory, deterministic DID-by-DID snapshot diff** for the 0.3.0 read-only configuration baseline. Require the same profile ID, request/response CAN IDs, frame addressing and exact DID set. Reject duplicates, missing values, malformed HEX and excessive values before computing changes; compare sorted DIDs as opaque bytes. No ECU identity, variant or write permission is inferred from matching profile/CAN IDs.
+- [x] Add **8 offline tests**: unchanged snapshots, changed raw bytes, ordering and hex-case normalization, wrong profile, CAN/address mismatch, missing/extra DID, duplicate/malformed/empty/oversized values, and read-only results with UTC provenance. No vehicle, J2534 adapter, network or file export.
+- [ ] Require seven successful workflows on exact final PR head before merge and independently verify post-merge `main`. Snapshot comparison is not a restorable backup and must not enable an ECU write/PIN path. No new Stable publication without explicit approval.
+
+---
+
 ## Planned releases: 0.3.0–1.0.0 after Stable 0.2.4 (2026-10-27)
 
 - [x] Define the **proposed milestone sequence** in [Release roadmap](docs/RELEASE-ROADMAP.md): 0.3.0 read-only P2/CEM identification and configuration baseline; 0.4.0 authorized PIN workflow; 0.5.0 configuration editor and preview; 0.6.0 guarded write after physical hardware acceptance; 0.7.0 compatibility coverage; 1.0.0 tested supported subset. 0.2.5 remains an optional maintenance release. No dates or publication are implied.
