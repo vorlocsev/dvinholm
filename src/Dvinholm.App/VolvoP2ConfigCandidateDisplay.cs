@@ -17,7 +17,7 @@ internal static class VolvoP2ConfigCandidateDisplay
         text.AppendLine("NOT VEHICLE SETTINGS. The option names below are vendor-advertised");
         text.AppendLine("categories, not verified ECU parameters or a decoded configuration.");
         text.AppendLine("Actual model year, CEM hardware/firmware, bus and option ownership");
-        text.AppendLine("are unknown. No vehicle has been identified or contacted.");
+        text.AppendLine("are unknown. This viewer neither identifies nor contacts any vehicle.");
         text.AppendLine("SectorV public P2 advertisement (reviewed 2026-10-27) describes");
         text.AppendLine("MY2006+; no individual XC90 variant is independently validated.");
         text.AppendLine();
