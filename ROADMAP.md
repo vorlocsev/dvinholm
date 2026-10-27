@@ -1,3 +1,13 @@
+## Development 0.3.0: optional CEM VIDA identity JSON save (2026-10-27)
+
+- [x] [PR #548](https://github.com/vorlocsev/dvinholm/pull/548) merged as `af57b0a` after 5/5 green exact-HEAD workflows (CI #3940); postmerge `main` CI separately pending.
+- [x] Add optional **Save research JSON...** to the previously implemented offline, manually typed CEM VIDA part-number worksheet. Only explicit user Save As writes a file, via the existing guarded, atomic file writer; Cancel/Close do not write.
+- [x] Define strict 4 KiB research JSON schema v1 and read-only backend validator, recording three manually claimed part numbers, claimed model year, claimed VIDA origin and permanent **unverified / non-restorable / no ECU access** flags. Reject unknown/duplicate fields, malformed years, invalid/VIN-shaped part numbers and capabilities claiming vehicle access.
+- [x] Add **8 offline tests** for safe roundtrip, privacy, schema, explicit guarded UTF-8 save and no file corruption on blocked/invalid output. Update [VIDA worksheet instructions](docs/P2-CEM-VIDA-IDENTITY-WORKSHEET.md) and [compatibility register](docs/VOLVO-P2-CEM-COMPATIBILITY.md).
+- [ ] Require all 5 final-HEAD PR checks and separate postmerge `main` check; installed Windows/virtual adapter review and authorized physical CEM tests remain outstanding. No actual PIN or configuration change service is added. Stable 0.2.4 untouched; further release only with explicit user approval.
+
+---
+
 ## Development 0.3.0: offline VIDA CEM identity worksheet (2026-10-27)
 
 - [x] [PR #547](https://github.com/vorlocsev/dvinholm/pull/547) merged to Development as `e635692` after **5/5 successful exact-head checks** including CI #3932, archiving superseded 0.2.3 auto-triggered workflows. Postmerge `main` acceptance remains separate.

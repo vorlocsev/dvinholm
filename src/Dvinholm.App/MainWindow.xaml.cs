@@ -1216,6 +1216,7 @@ public sealed partial class MainWindow : Window
                 }
             },
             PrimaryButtonText = canCopy ? "Copy worksheet" : "",
+            SecondaryButtonText = canCopy ? "Save research JSON..." : "",
             CloseButtonText = "Close",
             DefaultButton = ContentDialogButton.Close
         };
@@ -1237,13 +1238,54 @@ public sealed partial class MainWindow : Window
                 }
             };
         }
-        var copied = await preview.ShowAsync() == ContentDialogResult.Primary;
-        if (!_closing)
-            SetStatus(copied && canCopy
-                ? "User-copied claimed CEM part numbers to clipboard. " +
-                  "No ECU identity or compatibility was verified."
-                : "Offline CEM identity worksheet reviewed. " +
-                  "No diagnostic request, PIN, configuration edit or file write.");
+        var choice = await preview.ShowAsync();
+        if (_closing)
+            return;
+
+        if (choice == ContentDialogResult.Secondary && canCopy)
+        {
+            // The WinRT save picker creates a zero-byte placeholder before
+            // authorization/path checks. Use the existing path-only picker
+            // and atomic writer instead. No file on Cancel.
+            try
+            {
+                var destinationPath = ReportSavePathPicker.PickPath(
+                    WindowNative.GetWindowHandle(this),
+                    "cem-identity-research", ".json", "JSON");
+                if (destinationPath is null || _closing)
+                {
+                    if (!_closing)
+                        SetStatus("CEM identity JSON export cancelled. No file saved.");
+                    return;
+                }
+
+                await VolvoP2CemIdentityResearchExport.SaveToUserSelectedPathAsync(
+                    year.Text, hardware.Text, software.Text, diagnostics.Text,
+                    fromVida.IsChecked == true, destinationPath,
+                    AppContext.BaseDirectory);
+                if (!_closing)
+                    SetStatus("Saved unverified manual CEM identity research JSON. " +
+                        "Not a verified ECU or a restorable configuration backup.");
+            }
+            catch (IOException)
+            {
+                if (!_closing)
+                    SetStatus("Could not save CEM research JSON. " +
+                        "Choose a writable folder outside the application directory.");
+            }
+            catch (Exception)
+            {
+                if (!_closing)
+                    SetStatus("CEM research JSON export failed. No ECU operation occurred.");
+            }
+            return;
+        }
+
+        SetStatus(choice == ContentDialogResult.Primary && canCopy
+            ? "User-copied claimed CEM part numbers to clipboard. " +
+              "No ECU identity or compatibility was verified."
+            : "Offline CEM identity worksheet reviewed. " +
+              "No diagnostic request, PIN, configuration edit or file write.");
     }
 
     private async void CompareSnapshots_Click(object sender, RoutedEventArgs e)
