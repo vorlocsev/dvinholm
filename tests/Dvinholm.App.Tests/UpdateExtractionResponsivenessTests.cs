@@ -111,9 +111,16 @@ public sealed class UpdateExtractionResponsivenessTests
         var body = src[start..end];
         var digest = body.IndexOf("SHA256.HashDataAsync(checksumStream, cancellationToken)", StringComparison.Ordinal);
         var awaitExtraction = body.IndexOf("await ValidateAndExtractArchiveAsync(archivePath, staging, cancellationToken)", StringComparison.Ordinal);
-        var exists = body.IndexOf("File.Exists(Path.Combine(staging, \"Dvinholm.App.exe\"))", StringComparison.Ordinal);
+        var validateExecutable = body.IndexOf("ValidateStagedExecutable(staging);", StringComparison.Ordinal);
         var prepared = body.IndexOf("prepared = true;", StringComparison.Ordinal);
-        Assert.True(digest >= 0 && awaitExtraction > digest && exists > awaitExtraction && prepared > exists);
+        Assert.True(digest >= 0 && awaitExtraction > digest &&
+            validateExecutable > awaitExtraction && prepared > validateExecutable);
+        var verifierStart = body.IndexOf("internal static void ValidateStagedExecutable(", StringComparison.Ordinal);
+        Assert.True(verifierStart > prepared);
+        var verifier = body[verifierStart..];
+        Assert.Contains("File.Exists(executable)", verifier);
+        Assert.Contains("file.Length == 0", verifier);
+        Assert.Contains("FileAttributes.ReparsePoint", verifier);
         Assert.Contains("if (!prepared)", body);
         Assert.Contains("Directory.Delete(staging, recursive: true)", body);
     }
