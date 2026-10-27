@@ -22,4 +22,9 @@
   <ItemGroup>
     <ProjectReference Include="..\..\src\Dvinholm.App\Dvinholm.App.csproj" />
   </ItemGroup>
+  <!-- XAML structure is tested offline without launching WinUI or J2534. -->
+  <ItemGroup>
+    <EmbeddedResource Include="..\..\src\Dvinholm.App\MainWindow.xaml"
+                      LogicalName="Dvinholm.App.Tests.MainWindow.xaml" />
+  </ItemGroup>
 </Project>
