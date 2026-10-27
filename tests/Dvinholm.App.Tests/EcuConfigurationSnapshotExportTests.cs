@@ -19,7 +19,7 @@ public sealed class EcuConfigurationSnapshotExportTests
     }
 
     [Fact]
-    public void SortsDidsAndSignsExactCanonicalPayloadWithSha256()
+    public void SortsDidsAndHashesExactCanonicalPayloadWithSha256()
     {
         var json = EcuConfigurationSnapshotExport.CreateJson(
             Snapshot((0xF190, "595631"), (0xF187, "00ab")), true);
@@ -62,7 +62,7 @@ public sealed class EcuConfigurationSnapshotExportTests
             Snapshot((0xF187, "ZZ")),
             Snapshot((0xF187, "AA"), (0xF187, "BB")),
             Snapshot((0xF187, new string('A', 16_386))),
-            Snapshot()
+            Snapshot(Array.Empty<(ushort did, string hex)>())
         };
 
         foreach (var item in invalid)
@@ -141,14 +141,14 @@ public sealed class EcuConfigurationSnapshotExportTests
         Assert.Equal("last complete backup", File.ReadAllText(target));
     }
 
+    private static EcuConfigurationReadSnapshot Snapshot() =>
+        Snapshot((0xF187, "004142"));
+
     private static EcuConfigurationReadSnapshot Snapshot(
-        params (ushort did, string hex)[]? entries)
-    {
-        entries ??= [(0xF187, "004142")];
-        return new("synthetic.ecm", "Synthetic ECM", 0x7E0, 0x7E8, false,
+        params (ushort did, string hex)[] entries) =>
+        new("synthetic.ecm", "Synthetic ECM", 0x7E0, 0x7E8, false,
             false, new DateTimeOffset(2026, 10, 27, 0, 0, 0, TimeSpan.Zero),
             entries.Select(x => new EcuDidReadback(x.did, x.hex)).ToArray());
-    }
 
     private sealed class TemporaryPaths : IDisposable
     {
