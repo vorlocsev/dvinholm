@@ -1,3 +1,13 @@
+## Development 0.3.0: offline diagnostic JSON integrity inspection (2026-10-27)
+
+- [x] [PR #529](https://github.com/vorlocsev/dvinholm/pull/529) merged as `f9b45a2` with **7/7** successful PR-head workflows (CI #3796). Independent post-merge `main` workflows (CI #3797 and six companions) are checked separately. Published Stable v0.2.4 remains unchanged at `a9e6188`.
+- [x] Build **read-only, bounded JSON diagnostic snapshot inspection** as the next 0.3.0 backend step. Verify the exact exported schema v1, format, non-restorable and sensitive-data flags, canonical payload SHA-256, strict JSON field names, sorted distinct DID records, uppercase bounded hex values, 11/29-bit CAN IDs and UTC provenance. Matching SHA-256 indicates no accidental change to the payload only, **not authorship or ECU authenticity**.
+- [x] Add a local, cancellable **file inspector with a 4 MiB upper bound and strict UTF-8**. The reader returns immutable historical diagnostic values and never updates live ECU identity, connection state, PIN or configuration. There is no UI file import in this step.
+- [x] Add **8 offline xUnit regression checks** covering valid roundtrip, tamper detection, duplicate/extra/missing JSON fields, schema and safety flags even with a recomputed hash, wrong CAN/duplicate/unordered values, oversize inputs, disk read without writes, invalid UTF-8/file size/cancellation.
+- [ ] Require 7/7 successful workflows on exact PR head and independently verify 7/7 after merge. Physical J2534/ECU tests, import UI, recoverable ECU backups and PIN/write operations remain separate, unperformed milestones. Do not publish Stable without explicit permission.
+
+---
+
 ## Development 0.3.0: opt-in WinUI DID snapshot read and Save As (2026-10-27)
 
 - [x] [PR #528](https://github.com/vorlocsev/dvinholm/pull/528) merged as `bd4d0cf` after **7/7** successful PR-head workflows (CI #3784). Separate post-merge `main` CI #3785 and six companions were launched and remain an independent acceptance gate. Published Stable v0.2.4 is immutable at `a9e6188`.

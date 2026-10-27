@@ -45,9 +45,14 @@ module, software version and physical adapter.
    snapshot** action, which requires an active J2534 connection, matching
    selected profile/CAN IDs, visible pre-read consent and a path-only Save As
    selection. It sends only `0x22` reads and supports cancellation. The opaque
-   DID export is explicitly **not a restorable ECU backup**. JSON import and
-   integrity verification, controlled redaction and verified recovery
-   backups remain future requirements; no physical ECU acceptance is claimed.
+   DID export is explicitly **not a restorable ECU backup**. The offline
+   inspection backend can now read a locally selected JSON file, verify exact
+   schema v1, compare its stored SHA-256 against raw payload bytes and reject
+   unexpected or invalid CAN/DID data with strict size/UTF-8 limits. **An
+   attacker can recalculate SHA-256**, so this is integrity checking, not
+   authentication, ECU identity or authorization. A WinUI file-inspection
+   picker, controlled redaction and verified recovery backups remain future
+   requirements; no physical ECU acceptance is claimed.
 3. **Authorized PIN workflow research:** map precisely which module, model
    year and authorization proofs are necessary. Keep authentication secrets out
    of logs, exported snapshots and CI fixtures. No PIN guessing, brute-force,
