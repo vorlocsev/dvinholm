@@ -301,6 +301,30 @@ schema/UTC/CAN/DID limits. Installed Windows Clipboard UX and virtual
 adapter checks remain separate gates. See
 [the offline research intake guide](P2-CEM-SNAPSHOT-RESEARCH-INTAKE.md).
 
+## Repeated historical DID observations (Development 0.3.0)
+
+The existing **Compare snapshots** offline panel now provides an
+additional **two-capture research summary**, built from separately
+inspected Dvinholm diagnostic JSON files. It reports DID IDs in
+ascending order, byte lengths in each capture, whether each value
+changed and counts of unchanged/changed/length-changed observations.
+The raw DID values, profile metadata and file paths are never shown.
+Chronological labels require distinct UTC captures; equal timestamps
+leave the existing generic DID comparison available.
+
+Repeated matching DID values do **not** independently verify genuine
+XC90 P2/CEM identity, firmware revision or option meaning. Even the
+same profile/CAN addressing cannot prove both files came from the
+same physical ECU. User-supplied snapshots can be rehashed and
+are not authenticated evidence. No new ECU requests, PIN operations,
+configuration changes, backups or writes are introduced.
+
+Eight deterministic synthetic offline tests cover unchanged/changed
+DIDs, lengths, sorting, UTC ordering, incompatible profiles/CAN,
+invalid/duplicate DID data, privacy and immutable denial flags. See
+[repeated DID research guidance](P2-CEM-REPEATED-DID-EVIDENCE.md).
+Actual CEM hardware evidence and Windows acceptance remain pending.
+
 ## Status in Development
 
 - `EcuConfigurationReadback`: 0x22 read-only opaque DID capture;
