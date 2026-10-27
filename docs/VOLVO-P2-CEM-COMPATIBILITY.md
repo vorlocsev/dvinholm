@@ -139,6 +139,31 @@ years, advertised-only applicability and strict ID/safety labels.
 This is **backend research scaffolding**, not an exposed settings
 editor and not an on-car compatibility claim.
 
+## Offline XC90 P2 catalog viewer (Development 0.3.0)
+
+The ECU Profiles panel now has a separate **P2 configuration candidates
+(offline)** action. It opens a read-only, scrollable research panel with
+the eight newly named candidate groups and per-candidate provenance/year
+limitations. It is **not** a decoded CEM configuration or a real CarConfig
+editor. No vehicle identity, PIN, CAN ID, firmware ID, decoded value,
+desired value, file path, authorization token or snapshot is consumed.
+
+The panel states: no connected vehicle has been identified; actual
+current values are unavailable; desired values and all ECU writes are
+disabled; service authentication/PIN are unavailable. The candidate
+catalog is still solely based on a **vendor advertisement**, not
+independent XC90 P2 coverage verification. The UI does not make any
+connection, diagnostic request, PIN attempt, edit, backup or save.
+
+A shared dialog guard prevents overlaps with the existing historical
+snapshot Inspect/Compare panels. Seven existing compact profile/snapshot
+actions remain untouched in their two-row layout; the new research
+button is added after the capped scrollable profile metadata view.
+The development PR includes **8 offline tests** for display contents,
+unknown values, evidence/year disclosure, disabled operations, safety
+warnings, and actual XAML button/layout contracts. Separate installed
+Windows visual/virtual-J2534 verification is still required.
+
 ## Status in Development
 
 - `EcuConfigurationReadback`: 0x22 read-only opaque DID capture;
