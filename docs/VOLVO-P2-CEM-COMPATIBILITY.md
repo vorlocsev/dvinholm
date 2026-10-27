@@ -385,6 +385,26 @@ source status and denial flags. Actual hardware/software
 part-number values must still be independently checked on an
 authorized physical CEM; the production mapping catalog is empty.
 
+## Opt-in offline CEM identity JSON research record
+
+The [manual VIDA worksheet](P2-CEM-VIDA-IDENTITY-WORKSHEET.md)
+now also supports explicitly saving a bounded `.json` research
+record using the path-only file picker and atomic writer.
+The record preserves the manually claimed XC90 year and exactly
+three normalized CEM part numbers, the user's claimed VIDA source,
+and explicit **unverified**, **non-restorable** and **no ECU access**
+flags. It never includes VIN, hardware serial, PIN, DID values,
+passwords or private notes. The backend-only strict file inspector
+rejects unexpected/duplicate keys, invalid values and unsafe
+permissions; it does not infer actual ECU identity from a user
+file. Files remain sensitive device metadata despite omitted VIN.
+
+Eight new synthetic offline tests verify roundtrip, schema,
+privacy, bounds, no enabled capabilities and safe explicit
+file writing. No GUI-based import, active J2534 request,
+CEM write or PIN service is added; real CEM evidence remains
+unverified and physical testing deferred.
+
 ## Status in Development
 
 - `EcuConfigurationReadback`: 0x22 read-only opaque DID capture;
