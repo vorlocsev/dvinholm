@@ -65,8 +65,17 @@ internal static class VolvoP2CemSupportMatrix
             snapshot.Values.Count is < 1 or > EcuConfigurationReadback.MaximumDataIdentifiers)
             return unknown;
 
-        var candidates = evidence
-            .Where(entry => IsEligible(entry, modelYear))
+        // Scan no more than 129 entries even for an untrusted or infinite
+        // enumerable. A single malformed/conflicting entry makes the entire
+        // supplied evidence catalog ineligible instead of silently ignoring it.
+        var supplied = evidence.Take(
+            VolvoP2CemEvidenceCatalogValidator.MaximumEntries + 1).ToArray();
+        if (VolvoP2CemEvidenceCatalogValidator.Validate(supplied).Count != 0)
+            return unknown;
+
+        var candidates = supplied
+            .Where(entry => modelYear >= entry.ModelYearFrom &&
+                            modelYear <= entry.ModelYearThrough)
             .ToArray();
         if (candidates.Length == 0)
             return unknown;
@@ -111,26 +120,4 @@ internal static class VolvoP2CemSupportMatrix
             "These are opaque values, not decoded configuration or a restorable backup.");
     }
 
-    private static bool IsEligible(VolvoP2CemSupportEntry? entry, int modelYear)
-    {
-        if (entry is null || entry.Identity is not { } identity ||
-            modelYear < entry.ModelYearFrom || modelYear > entry.ModelYearThrough ||
-            entry.ModelYearFrom > entry.ModelYearThrough ||
-            !identity.IsVerified ||
-            !string.Equals(identity.Platform, "P2", StringComparison.OrdinalIgnoreCase) ||
-            !string.Equals(identity.ModuleName, "CEM", StringComparison.OrdinalIgnoreCase) ||
-            string.IsNullOrWhiteSpace(identity.VariantId) ||
-            string.IsNullOrWhiteSpace(identity.EvidenceSource) ||
-            entry.DocumentedReadableDids is null ||
-            entry.DocumentedReadableDids.Count > EcuConfigurationReadback.MaximumDataIdentifiers)
-            return false;
-
-        if (entry.DocumentedReadableDids.Count == 0)
-            return true; // An identity may be sourced before data mapping is.
-
-        return !string.IsNullOrWhiteSpace(entry.ReadDidEvidenceSource) &&
-               entry.DocumentedReadableDids.Distinct().Count() ==
-                   entry.DocumentedReadableDids.Count &&
-               !entry.DocumentedReadableDids.Contains((ushort)0xF190);
-    }
 }
