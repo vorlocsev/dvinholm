@@ -1,9 +1,18 @@
+## Development: ECU configuration readback foundation (2026-10-27)
+
+- [x] Confirm PR #522 and post-merge `main` `8442865` passed **7/7** workflows, including CI #3760. Stable v0.2.4 release remains pinned to `a9e6188`.
+- [x] Begin the **post-0.2.4** ECU-configuration roadmap with a typed, in-memory, read-only DID snapshot builder. Reuse `EcuProfile` metadata and the existing `UdsClient.ReadDataByIdentifier` (`0x22`) service; validate DID echoes, keep opaque exact hex values, reject incomplete or cancelled reads, record unverified provenance. No new ECU writes, SecurityAccess, PIN retrieval or PIN guesses are implemented.
+- [x] Add eight offline checks for DID ordering/byte fidelity, ECU identity/provenance, empty and >128-DID profiles, mismatched echo, missing/empty values, cancellation before/during capture, and failure on a later DID. See [ECU configuration and authorized PIN roadmap](docs/ECU-CONFIGURATION-ROADMAP.md) with SectorV, P3Tool and VDASH as unverified reference tools.
+- [ ] Require **7/7** green workflows on final PR head before merge, followed by independent 7/7 post-merge `main` verification. Readback is backend-only and not yet usable through WinUI; no installed vehicle ECU compatibility, hardware J2534 testing or Stable release is implied. Later authenticated configuration writes require separately verified module-specific safety gates.
+
+---
+
 ## Development: refuse pre-existing ZIP staging targets (2026-10-27)
 
 - [x] Confirm PR #521 merged as `eddc611` with 7/7 successful PR workflows and 7/7 successful post-merge workflows including CI #3745. Published Stable v0.2.4 stays at `a9e6188`.
 - [x] Immediately before creating the temporary extraction folder, refuse an already existing staging directory or file. Otherwise a reused extraction target can silently carry files not present in the verified downloaded ZIP into the replacement tree. Preserve the previous ZIP metadata preflight, strict per-file `CreateNew`, digest and length verification, cancellation and recovery behavior.
 - [x] Add eight offline real-ZIP tests: new-folder extraction, existing empty folder rejection, unexpected file preservation, existing EXE preservation, nested folder preservation, occupied file path rejection, normal explicit directory extraction and validation-before-write source order.
-- [ ] Require **7/7** successful workflows on the exact PR head before merging, then verify post-merge `main` independently. A timing/race-resistant filesystem creation primitive is outside this change; no local adversary/Windows-installed updater acceptance is claimed. Physical J2534 remains deferred. Do not publish or retag Stable without permission.
+- [x] [PR #522](https://github.com/vorlocsev/dvinholm/pull/522) merged as `8442865` after **7/7** PR-head workflows (CI #3749) and **7/7** independent post-merge `main` workflows (CI #3760). Atomic protection against local adversarial filesystem races is not claimed. No installed Windows update or physical J2534 acceptance; Stable v0.2.4 remains untouched.
 
 ---
 
