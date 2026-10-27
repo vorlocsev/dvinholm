@@ -1,3 +1,13 @@
+## Development 0.3.0: XC90 P2 configuration candidate option catalog (2026-10-27)
+
+- [x] [PR #537](https://github.com/vorlocsev/dvinholm/pull/537) merged as `855f79a` following **7/7** successful PR-head workflows (CI #3851). Its independent post-merge `main` workflow set, including CI #3852, must be verified separately.
+- [x] Add an **eight-option, research-only** `VolvoP2ConfigOptionCatalog` for the XC90 P2: auxiliary heater, headlamp washers, region, parking assist, automatic locking, service interval, wheel size and speed policy. Every option is explicitly **vendor-advertised and unverified**, with original Dvinholm candidate IDs, provenance, model-year disclaimer, and safety/compliance review labels.
+- [x] Add a fail-closed assessment: unknown IDs, unconfirmed/out-of-scope years cannot suggest applicability; 2006–2014 only returns vendor-advertised candidate status, **never diagnostic, PIN, vehicle read/write or service authorization permission**. No CAN identifiers, DIDs, configuration offsets, commands, payloads or PIN algorithm.
+- [x] Add **8 offline xUnit checks** for uniqueness, provenance, operation denial, catalog immutability, model-year confirmation/bounds, vendor-only limitation and safety flags. Document missing hardware/firmware/mapping evidence in [P2/CEM research register](docs/VOLVO-P2-CEM-COMPATIBILITY.md).
+- [ ] Await 7/7 exact-head PR checks and 7/7 independent postmerge `main` checks; separately validate real ECU evidence before later configuration editor or service authorization stages. Published Stable v0.2.4 stays untouched. No physical J2534 or Windows UI acceptance claimed and no new Stable release without explicit user approval.
+
+---
+
 ## Development 0.3.0: XC90 P2 HS-CAN model-year speed advisory (2026-10-27)
 
 - [x] [PR #536](https://github.com/vorlocsev/dvinholm/pull/536) merged as `598549d` after **7/7** successful exact-head PR workflows (CI #3844). Seven independent post-merge `main` workflows, including CI #3845, were launched and must be verified separately.
