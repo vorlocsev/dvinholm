@@ -16,19 +16,20 @@ public sealed class StableRelease023WorkflowContractTests
     }
 
     [Fact]
-    public void OnlyMainPushCanStageAndOnlyManualDispatchCanPublish()
+    public void ArchivedV023WorkflowNeverAutoStagesAndOnlyManualDispatchCanPublish()
     {
         var source = Workflow();
-        Assert.DoesNotMatch(new Regex(@"(?m)^  create:"), source);
-        Assert.Contains("  push:\n    branches: [\"main\"]", source);
-        Assert.Contains("pull_request:", source);
+        var triggers = source[..source.IndexOf("\npermissions:", StringComparison.Ordinal)];
+        Assert.DoesNotMatch(new Regex(@"(?m)^  create:"), triggers);
+        Assert.Contains("\n  workflow_dispatch:", triggers);
+        Assert.DoesNotContain("\n  push:", triggers);
+        Assert.DoesNotContain("\n  pull_request:", triggers);
         var publishIndex = source.IndexOf("\n  publish:", StringComparison.Ordinal);
         Assert.True(publishIndex > 0);
-        Assert.Contains("github.event_name == 'push' && github.ref == 'refs/heads/main'",
-            source[..publishIndex]);
         Assert.Contains("github.event_name == 'workflow_dispatch'",
             source[publishIndex..]);
         Assert.DoesNotContain("github.event_name == 'push'", source[publishIndex..]);
+        Assert.DoesNotContain("github.event_name == 'pull_request'", source[publishIndex..]);
     }
 
     [Fact]
