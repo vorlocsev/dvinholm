@@ -1018,6 +1018,88 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private async void CompareSnapshots_Click(object sender, RoutedEventArgs e)
+    {
+        // Both file selections and the comparison are local-only. Never
+        // populate any UDS controls, connect to J2534, or transmit CAN.
+        if (_snapshotInspectionBusy || _closing)
+            return;
+
+        _snapshotInspectionBusy = true;
+        InspectSnapshotButton.IsEnabled = false;
+        CompareSnapshotsButton.IsEnabled = false;
+        try
+        {
+            SetStatus("Choose the first historical diagnostic JSON snapshot.");
+            var firstPicker = new FileOpenPicker();
+            InitializeWithWindow.Initialize(firstPicker, WindowNative.GetWindowHandle(this));
+            firstPicker.FileTypeFilter.Add(".json");
+            var first = await firstPicker.PickSingleFileAsync();
+            if (first is null || _closing)
+                return;
+
+            var before = await EcuConfigurationSnapshotInspection.InspectFileAsync(first.Path);
+            if (_closing)
+                return;
+
+            SetStatus("Choose the second historical diagnostic JSON snapshot.");
+            var secondPicker = new FileOpenPicker();
+            InitializeWithWindow.Initialize(secondPicker, WindowNative.GetWindowHandle(this));
+            secondPicker.FileTypeFilter.Add(".json");
+            var second = await secondPicker.PickSingleFileAsync();
+            if (second is null || _closing)
+                return;
+
+            var after = await EcuConfigurationSnapshotInspection.InspectFileAsync(second.Path);
+            if (_closing)
+                return;
+
+            var report = EcuHistoricalSnapshotComparer.Compare(before, after);
+            var dialog = new ContentDialog
+            {
+                XamlRoot = RootLayout.XamlRoot,
+                Title = "Historical ECU DID comparison (offline)",
+                Content = new ScrollViewer
+                {
+                    MaxHeight = 320,
+                    Content = new TextBlock
+                    {
+                        Text = report.Summary,
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true
+                    }
+                },
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close
+            };
+            await dialog.ShowAsync();
+            if (!_closing)
+                SetStatus($"Compared {report.ComparedCount} historical DID(s); " +
+                    $"{report.ChangedCount} DID(s) changed. Values hidden. " +
+                    "No ECU request or configuration write was performed.");
+        }
+        catch (InvalidDataException)
+        {
+            SetStatus("Historical DID comparison rejected: invalid file, checksum, " +
+                "CAN addressing, profile or DID set. No ECU operation was performed.");
+        }
+        catch (Exception)
+        {
+            // Never leak raw data, private paths or parser exception content.
+            SetStatus("Historical DID comparison failed. Check local JSON files " +
+                "and access permissions. No ECU operation was performed.");
+        }
+        finally
+        {
+            _snapshotInspectionBusy = false;
+            if (!_closing)
+            {
+                InspectSnapshotButton.IsEnabled = true;
+                CompareSnapshotsButton.IsEnabled = true;
+            }
+        }
+    }
+
     private async void InspectSnapshot_Click(object sender, RoutedEventArgs e)
     {
         // This action is fully offline, including when J2534 is disconnected.
@@ -1028,6 +1110,7 @@ public sealed partial class MainWindow : Window
 
         _snapshotInspectionBusy = true;
         InspectSnapshotButton.IsEnabled = false;
+        CompareSnapshotsButton.IsEnabled = false;
         try
         {
             var picker = new FileOpenPicker();
@@ -1082,7 +1165,10 @@ public sealed partial class MainWindow : Window
         {
             _snapshotInspectionBusy = false;
             if (!_closing)
+            {
                 InspectSnapshotButton.IsEnabled = true;
+                CompareSnapshotsButton.IsEnabled = true;
+            }
         }
     }
 
