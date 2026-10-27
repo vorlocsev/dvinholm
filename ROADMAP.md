@@ -1,3 +1,13 @@
+## Development 0.3.0: read-only WinUI inspection of saved DID snapshots (2026-10-27)
+
+- [x] [PR #530](https://github.com/vorlocsev/dvinholm/pull/530) merged as `a2cc452` after **7/7** successful PR-head workflows (CI #3802); independently launched post-merge `main` workflows including CI #3803. Published Stable v0.2.4 remains pinned to `a9e6188`.
+- [x] Add a **fully offline Inspect saved snapshot** button to ECU Profiles: choose local JSON through a user-initiated Open dialog, read with the existing 4 MiB strict-UTF8 inspector, require valid schema and payload SHA-256, and display only historical timestamp, CAN addressing and DID identifiers. Do **not** echo raw DID contents, profile name/ID or path into UI, and never populate the live profile selector or request J2534/UDS.
+- [x] Display clear warning: a checksum is not authenticity, the file is not verified ECU identity, not a restorable backup and cannot authorize writes. Prevent duplicate concurrent inspection clicks and preserve the previous UI/session state on cancel or invalid file.
+- [x] Add **8 isolated synthetic offline tests** for historical metadata, hiding raw values and private profile strings, CAN frame type, safety notice, invalid version/restore claim, missing sensitivity/UTC, and null/empty/excessive DID sets. No physical adapter or ECU used.
+- [ ] Require 7/7 green workflows on the exact PR head before merging and 7/7 independent post-merge `main` checks; Windows 11 LTSC manual UI tests and real J2534 remain separate, unperformed gates. No PIN, ECU write, restorable configuration recovery or new Stable release is implied.
+
+---
+
 ## Development 0.3.0: offline diagnostic JSON integrity inspection (2026-10-27)
 
 - [x] [PR #529](https://github.com/vorlocsev/dvinholm/pull/529) merged as `f9b45a2` with **7/7** successful PR-head workflows (CI #3796). Independent post-merge `main` workflows (CI #3797 and six companions) are checked separately. Published Stable v0.2.4 remains unchanged at `a9e6188`.

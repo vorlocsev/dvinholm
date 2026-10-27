@@ -135,6 +135,10 @@
                                 Content="Read + save DID snapshot"
                                 ToolTipService.ToolTip="Read selected profile DIDs and explicitly save a diagnostic JSON file. Not a restorable ECU backup."
                                 Click="CaptureSnapshot_Click" IsEnabled="False"/>
+                        <Button x:Name="InspectSnapshotButton"
+                                Content="Inspect saved snapshot"
+                                ToolTipService.ToolTip="Inspect local DID JSON without connecting, transmitting CAN, or restoring ECU data."
+                                Click="InspectSnapshot_Click"/>
                     </StackPanel>
                     <ScrollViewer Grid.Row="2" MaxHeight="76"
                                   VerticalScrollBarVisibility="Auto"

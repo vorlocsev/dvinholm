@@ -36,6 +36,7 @@ public sealed partial class MainWindow : Window
     private CancellationTokenSource? _udsCts;
     private readonly ObservableCollection<EcuRow> _ecus = new();
     private EcuProfileCatalog _profileCatalog = new();
+    private bool _snapshotInspectionBusy;
     private bool _loadingProfiles;
     private int _profileFilterGeneration;
     private int _rateFrames;
@@ -1014,6 +1015,74 @@ public sealed partial class MainWindow : Window
         catch (Exception)
         {
             SetStatus("Profile export failed. Check destination permissions and available disk space.");
+        }
+    }
+
+    private async void InspectSnapshot_Click(object sender, RoutedEventArgs e)
+    {
+        // This action is fully offline, including when J2534 is disconnected.
+        // Never apply historical CAN IDs, DIDs or profile metadata to the
+        // current session, and never transmit a diagnostic request.
+        if (_snapshotInspectionBusy || _closing)
+            return;
+
+        _snapshotInspectionBusy = true;
+        InspectSnapshotButton.IsEnabled = false;
+        try
+        {
+            var picker = new FileOpenPicker();
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
+            picker.FileTypeFilter.Add(".json");
+            var selectedFile = await picker.PickSingleFileAsync();
+            if (selectedFile is null || _closing)
+                return;
+
+            var inspected = await EcuConfigurationSnapshotInspection.InspectFileAsync(
+                selectedFile.Path);
+            if (_closing)
+                return;
+
+            var summary = EcuSnapshotInspectionDisplay.Build(inspected);
+            var dialog = new ContentDialog
+            {
+                XamlRoot = RootLayout.XamlRoot,
+                Title = "Historical ECU DID snapshot (read-only)",
+                Content = new ScrollViewer
+                {
+                    MaxHeight = 320,
+                    Content = new TextBlock
+                    {
+                        Text = summary,
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true
+                    }
+                },
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close
+            };
+
+            await dialog.ShowAsync();
+            if (!_closing)
+                SetStatus("Local diagnostic snapshot verified against its SHA-256. " +
+                    "No vehicle data was imported, restored or transmitted.");
+        }
+        catch (InvalidDataException)
+        {
+            SetStatus("Local diagnostic snapshot rejected: invalid format, data or SHA-256. " +
+                "No vehicle data was imported.");
+        }
+        catch (Exception)
+        {
+            // Do not echo untrusted paths, raw DID values or exception content
+            // into the application's global status line.
+            SetStatus("Could not inspect the selected diagnostic snapshot. " +
+                "Check the file, access permissions and disk.");
+        }
+        finally
+        {
+            _snapshotInspectionBusy = false;
+            if (!_closing)
+                InspectSnapshotButton.IsEnabled = true;
         }
     }
 
