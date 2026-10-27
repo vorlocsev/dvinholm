@@ -481,8 +481,8 @@ internal static class LatestBuildUpdater
             progress?.Report("Validating and extracting the build…");
             await ValidateAndExtractArchiveAsync(archivePath, staging, cancellationToken);
 
-            if (!File.Exists(Path.Combine(staging, "Dvinholm.App.exe")))
-                throw new InvalidDataException("The downloaded artifact does not contain Dvinholm.App.exe.");
+            // A present but empty EXE must never reach the replacement helper.
+            ValidateStagedExecutable(staging);
 
             prepared = true;
             return staging;
@@ -504,6 +504,22 @@ internal static class LatestBuildUpdater
                     File.Delete(archivePath);
             });
         }
+    }
+
+    // Verify the extracted application entry before declaring an update ready.
+    // The replacement helper is the last line of defense, not the first place
+    // an empty or redirected EXE should be discovered.
+    internal static void ValidateStagedExecutable(string staging)
+    {
+        var executable = Path.Combine(staging, "Dvinholm.App.exe");
+        if (!File.Exists(executable))
+            throw new InvalidDataException("The downloaded artifact does not contain Dvinholm.App.exe.");
+
+        var file = new FileInfo(executable);
+        if ((file.Attributes & FileAttributes.ReparsePoint) != 0)
+            throw new InvalidDataException("The staged application executable must be a regular file.");
+        if (file.Length == 0)
+            throw new InvalidDataException("The downloaded artifact contains an empty Dvinholm.App.exe.");
     }
 
     // Extract each file asynchronously on a worker to keep WinUI responsive
