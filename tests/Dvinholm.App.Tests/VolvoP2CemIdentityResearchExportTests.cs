@@ -1,4 +1,5 @@
 using System.Text;
+using System.Text.Json;
 
 namespace Dvinholm.App.Tests;
 
@@ -29,9 +30,18 @@ public sealed class VolvoP2CemIdentityResearchExportTests
     public void NoVinSerialPinRawPayloadOrOwnerFieldsAreExported()
     {
         var json = Export();
+        using var parsed = JsonDocument.Parse(json);
+        var fieldNames = parsed.RootElement.EnumerateObject()
+            .Select(property => property.Name).ToArray();
+
+        // Inspect PROPERTY NAMES, not arbitrary substrings of values:
+        // the product's own format identifier contains "dvinholm",
+        // which naturally contains the letters "vin".
         foreach (var forbidden in new[] { "vin", "serial", "pin", "password",
             "rawDid", "owner", "securityAccess", "canId", "seed", "key" })
-            Assert.DoesNotContain(forbidden, json, StringComparison.OrdinalIgnoreCase);
+            Assert.DoesNotContain(fieldNames, field =>
+                field.Contains(forbidden, StringComparison.OrdinalIgnoreCase));
+        Assert.Equal(10, fieldNames.Length);
         Assert.DoesNotContain("IsVerifiedPhysicalCem", json);
         Assert.Contains("\"isUnverifiedManualClaim\":true", json);
         Assert.Contains("\"mayAccessEcu\":false", json);
