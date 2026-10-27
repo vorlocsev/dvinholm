@@ -1,3 +1,12 @@
+## Development 0.3.0: end-to-end offline P2/CEM read-only acceptance (2026-10-27)
+
+- [x] [PR #534](https://github.com/vorlocsev/dvinholm/pull/534) merged as `656bfd7` after **7/7** exact-head PR workflows, including CI #3833. Seven independent post-merge `main` workflows, including CI #3834, must be checked separately.
+- [x] Add **8 synthetic end-to-end offline tests** exercising the real read-only component chain: injected DID capture, JSON export and inspection, deterministic DID order, historical comparison, cancellation, incomplete DID response rejection, tamper detection and the evidence-gated P2/CEM support matrix. Tests run without J2534, a physical ECU, CAN traffic, PIN or programming.
+- [x] Add [0.3.0 read-only acceptance checklist](docs/0.3.0-READONLY-ACCEPTANCE.md) with separate automated, virtual-J2534 Windows UI and real hardware gates. Keep `VolvoP2CemSupportMatrix.ProductionEntries` empty until model/firmware/transport evidence is independently verified. A green CI is not installed Windows or real CEM acceptance.
+- [ ] Require **7/7** PR workflows at exact final commit and **7/7** separate post-merge `main` workflows. Confirm 0.3.0 Windows x86 and virtual-adapter UI checks when available; no manual checks claimed performed. No PIN/configuration writes and no new Stable release without user approval.
+
+---
+
 ## Development 0.3.0: full-catalog XC90 P2/CEM evidence preflight (2026-10-27)
 
 - [x] [PR #533](https://github.com/vorlocsev/dvinholm/pull/533) merged as `ab137f0` after **7/7** successful PR-head workflows on corrected `a24edc5` (CI #3826). Original CS1929 build failure was fixed; independent post-merge Development workflows including CI #3827 are verified separately.
