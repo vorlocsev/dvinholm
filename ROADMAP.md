@@ -1,3 +1,14 @@
+## Development 0.3.0: shareable sanitized XC90 P2/CEM DID research intake (2026-10-27)
+
+- [x] [PR #543](https://github.com/vorlocsev/dvinholm/pull/543) merged into Development as `52fddff` after 7/7 successful exact-HEAD PR checks including CI #3894. Postmerge `main` checks are a **separate** acceptance gate.
+- [x] Extend the existing WinUI **Inspect snapshot** dialog rather than adding another profile button. Present historical UTC, 11/29-bit CAN IDs and DID ID/byte-length metadata with an explicit user-triggered **Copy sanitized research metadata** action.
+- [x] Keep sensitive raw DID bytes, VIN, ECU profile identity/name and file paths out of the displayed/copyable intake. Warn that CAN/DID identifiers can still fingerprint a vehicle and Clipboard content may persist. Never infer genuine XC90/CEM support, model year, firmware, PIN or configuration values.
+- [x] Use the existing bounded, read-only Dvinholm JSON integrity inspector. No new J2534/UDS request, ECU edit, file write or PIN access. Add **8 deterministic offline tests** for formatting, redaction, provenance, 11/29-bit addressing, invalid metadata and safety flags.
+- [x] Update [compatibility evidence register](docs/VOLVO-P2-CEM-COMPATIBILITY.md) and [intake and privacy instructions](docs/P2-CEM-SNAPSHOT-RESEARCH-INTAKE.md).
+- [ ] Require 7/7 green exact-HEAD PR workflows and 7/7 independent postmerge `main` workflows. Windows clipboard/UI acceptance and physical CEM identity verification remain unperformed. Stable v0.2.4 remains frozen, and any new publication needs explicit approval.
+
+---
+
 ## Development 0.3.0: XC90 P2 CEM parameter/revision research register (2026-10-27)
 
 - [x] [PR #541](https://github.com/vorlocsev/dvinholm/pull/541) merged into Development as `222e1e6` after 7/7 exact-head green workflows (including CI #3882); [PR #542](https://github.com/vorlocsev/dvinholm/pull/542) merged as `7fcf66c` after 7/7 exact-head successful workflows (including CI #3886). Their separate postmerge `main` checks remain an independent gate.

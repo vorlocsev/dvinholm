@@ -2,6 +2,7 @@ using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Dispatching;
 using Windows.Storage.Pickers;
+using Windows.ApplicationModel.DataTransfer;
 using WinRT.Interop;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
@@ -1259,6 +1260,10 @@ public sealed partial class MainWindow : Window
                 return;
 
             var summary = EcuSnapshotInspectionDisplay.Build(inspected);
+            // This second text is a deliberately redacted research *intake*,
+            // never a supported CEM identification or decoded option map.
+            var researchSummary = EcuCemResearchIntakeDisplay.Build(inspected);
+            bool copiedResearchSummary = false;
             var dialog = new ContentDialog
             {
                 XamlRoot = RootLayout.XamlRoot,
@@ -1268,19 +1273,44 @@ public sealed partial class MainWindow : Window
                     MaxHeight = 320,
                     Content = new TextBlock
                     {
-                        Text = summary,
+                        Text = summary + Environment.NewLine + Environment.NewLine +
+                            "Optional P2/CEM research metadata (select Copy to share):" +
+                            Environment.NewLine + researchSummary,
                         TextWrapping = TextWrapping.Wrap,
                         IsTextSelectionEnabled = true
                     }
                 },
+                PrimaryButtonText = "Copy sanitized research metadata",
                 CloseButtonText = "Close",
                 DefaultButton = ContentDialogButton.Close
+            };
+            dialog.PrimaryButtonClick += (_, args) =>
+            {
+                // Copy only on explicit user action. Clipboard may outlive the
+                // app, and even CAN addresses/DID lengths can fingerprint a car.
+                try
+                {
+                    var content = new DataPackage();
+                    content.SetText(researchSummary);
+                    Clipboard.SetContent(content);
+                    copiedResearchSummary = true;
+                }
+                catch (Exception)
+                {
+                    args.Cancel = true;
+                    if (!_closing)
+                        SetStatus("Could not copy historical research metadata. " +
+                            "No file or vehicle data was changed.");
+                }
             };
 
             await dialog.ShowAsync();
             if (!_closing)
-                SetStatus("Local diagnostic snapshot verified against its SHA-256. " +
-                    "No vehicle data was imported, restored or transmitted.");
+                SetStatus(copiedResearchSummary
+                    ? "Copied historical CEM research metadata (CAN and DID lengths). " +
+                      "Review before sharing; no raw DID bytes or profile names copied."
+                    : "Local diagnostic snapshot verified against its SHA-256. " +
+                      "No vehicle data was imported, restored or transmitted.");
         }
         catch (InvalidDataException)
         {
