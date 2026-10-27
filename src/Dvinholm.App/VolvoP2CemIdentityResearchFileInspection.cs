@@ -33,7 +33,8 @@ internal static class VolvoP2CemIdentityResearchFileInspection
 
         // This writer emits strict UTF-8 without a BOM. Do not silently
         // accept UTF-16, a leading BOM or lossy replacement characters.
-        if (bytes.AsSpan().StartsWith([0xEF, 0xBB, 0xBF]))
+        if (bytes.Length >= 3 && bytes[0] == 0xEF &&
+            bytes[1] == 0xBB && bytes[2] == 0xBF)
             throw new InvalidDataException(
                 "The CEM identity research JSON must use UTF-8 without a BOM.");
 
