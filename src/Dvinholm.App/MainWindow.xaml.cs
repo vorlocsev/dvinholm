@@ -624,6 +624,7 @@ public sealed partial class MainWindow : Window
         }
 
         EditProfileButton.IsEnabled = retained is not null;
+        RefreshSnapshotCaptureAvailability();
 
         EcuInfoText.Text = retained is null
             ? $"ECU profiles: {filtered.Count} shown of {_profileCatalog.All.Count}. " +
@@ -1054,6 +1055,7 @@ public sealed partial class MainWindow : Window
         {
             ClearProfileInputs();
             EcuInfoText.Text = "No ECU profile selected.";
+            RefreshSnapshotCaptureAvailability();
             return;
         }
 
@@ -1065,6 +1067,7 @@ public sealed partial class MainWindow : Window
             : string.Empty;
 
         EcuInfoText.Text = EcuProfileCatalogSearch.Describe(profile);
+        RefreshSnapshotCaptureAvailability();
         SetStatus($"Applied profile '{profile.Name}' (request {UdsRequestId.Text}, response {UdsResponseId.Text}). No diagnostic request was sent.");
     }
 
@@ -1277,9 +1280,9 @@ public sealed partial class MainWindow : Window
             cts.Dispose();
             CancelDiscoveryButton.IsEnabled = false;
             DiscoverButton.IsEnabled = _connected;
-            SetUdsEnabled(_connected);
             ConnectButton.IsEnabled = true;
             _udsGate.Release();
+            SetUdsEnabled(_connected);
         }
     }
 
@@ -1354,6 +1357,53 @@ public sealed partial class MainWindow : Window
         ReadDidButton.IsEnabled = enabled;
         ReadVinButton.IsEnabled = enabled;
         ReadDtcButton.IsEnabled = enabled;
+        RefreshSnapshotCaptureAvailability();
+    }
+
+    private void SnapshotCanIdTextChanged(object sender, TextChangedEventArgs e) =>
+        RefreshSnapshotCaptureAvailability();
+
+    private void SnapshotCanIdFormatChanged(object sender, SelectionChangedEventArgs e) =>
+        RefreshSnapshotCaptureAvailability();
+
+    private bool CanCaptureSelectedSnapshot(EcuProfile? profile, bool busy)
+    {
+        if (CanIdFormat is null || UdsRequestId is null || UdsResponseId is null)
+            return false;
+
+        bool? extended = CanIdFormat.SelectedIndex switch
+        {
+            0 => false,
+            1 => true,
+            _ => null
+        };
+
+        uint? requestId = null;
+        uint? responseId = null;
+        if (extended is bool format &&
+            TryParseCanId(UdsRequestId.Text, format, out var request, out _) &&
+            TryParseCanId(UdsResponseId.Text, format, out var response, out _))
+        {
+            requestId = request;
+            responseId = response;
+        }
+
+        return EcuSnapshotCaptureUiGate.CanCapture(
+            profile, _connected && !_closing,
+            DvinholmUserDataDirectory.IsAcceptanceLaunch, busy,
+            requestId, responseId, extended);
+    }
+
+    private void RefreshSnapshotCaptureAvailability()
+    {
+        // XAML may fire its initial TextChanged/SelectionChanged before all
+        // named controls exist. Never enable an action on partial UI state.
+        if (CaptureSnapshotButton is null || ProfileSelector is null)
+            return;
+
+        CaptureSnapshotButton.IsEnabled = CanCaptureSelectedSnapshot(
+            ProfileSelector.SelectedItem as EcuProfile,
+            _udsGate.CurrentCount == 0 || _discoveryCts is not null);
     }
 
     private bool TryGetUdsClient(out UdsClient? client, out string error)
@@ -1491,6 +1541,130 @@ public sealed partial class MainWindow : Window
     }
 
 #endif
+    private async void CaptureSnapshot_Click(object sender, RoutedEventArgs e)
+    {
+        var profile = ProfileSelector.SelectedItem as EcuProfile;
+        if (!CanCaptureSelectedSnapshot(profile,
+                _udsGate.CurrentCount == 0 || _discoveryCts is not null))
+        {
+            SetStatus("Select a profile with DIDs, connect to J2534 and restore its exact CAN IDs before reading a snapshot.");
+            return;
+        }
+
+        // Keep all UDS work exclusive, including the consent and Save As
+        // dialogs. No diagnostic request is transmitted before confirmation.
+        if (!await _udsGate.WaitAsync(0))
+        {
+            SetStatus("Another ECU operation is running.");
+            return;
+        }
+
+        using var cts = new CancellationTokenSource();
+        _udsCts = cts;
+        try
+        {
+            SetUdsEnabled(false);
+            DiscoverButton.IsEnabled = false;
+            ConnectButton.IsEnabled = false;
+            CancelUdsButton.IsEnabled = true;
+
+            var consent = new ContentDialog
+            {
+                XamlRoot = RootLayout.XamlRoot,
+                Title = "Read and export ECU DID values?",
+                Content = new TextBlock
+                {
+                    Text = "Dvinholm will request the selected profile's DIDs using read-only UDS 0x22. " +
+                           "The JSON export can contain a VIN or other sensitive vehicle data. " +
+                           "It is a diagnostic snapshot, NOT a restorable ECU backup. " +
+                           "No configuration or PIN operation will be performed. " +
+                           "Read the data and choose a local file?",
+                    TextWrapping = TextWrapping.Wrap
+                },
+                PrimaryButtonText = "Read and choose Save As",
+                CloseButtonText = "Cancel",
+                DefaultButton = ContentDialogButton.Close
+            };
+
+            if (await consent.ShowAsync() != ContentDialogResult.Primary)
+            {
+                SetStatus("ECU snapshot cancelled. No diagnostic request was sent.");
+                return;
+            }
+
+            cts.Token.ThrowIfCancellationRequested();
+            if (_closing || !_connected ||
+                !ReferenceEquals(ProfileSelector.SelectedItem, profile) ||
+                !CanCaptureSelectedSnapshot(profile, busy: false))
+            {
+                SetStatus("ECU snapshot cancelled: session, profile or CAN addressing changed.");
+                return;
+            }
+
+            if (!TryGetUdsClient(out var client, out var error) || client is null)
+            {
+                SetStatus(error);
+                return;
+            }
+
+            using var udsClient = client;
+            SetStatus("Reading selected ECU DIDs (read-only)...");
+            var snapshot = await Task.Run(() =>
+                EcuConfigurationReadback.Capture(profile!, udsClient, cts.Token));
+
+            cts.Token.ThrowIfCancellationRequested();
+            if (_closing || !_connected)
+            {
+                SetStatus("ECU snapshot discarded because the session closed.");
+                return;
+            }
+
+            // Path-only Save As: cancelling never creates a placeholder file.
+            var destinationPath = ReportSavePathPicker.PickPath(
+                WindowNative.GetWindowHandle(this),
+                "ecu-did-snapshot", ".json", "JSON");
+            if (destinationPath is null)
+            {
+                SetStatus("ECU DID snapshot read, but export was cancelled. No file was saved.");
+                return;
+            }
+
+            cts.Token.ThrowIfCancellationRequested();
+            if (_closing || !_connected)
+            {
+                SetStatus("ECU snapshot export cancelled because the session closed.");
+                return;
+            }
+
+            await EcuConfigurationSnapshotExport.SaveToUserSelectedPathAsync(
+                snapshot, destinationPath, AppContext.BaseDirectory,
+                userApprovedSensitiveExport: true);
+            SetStatus($"Read {snapshot.Values.Count} ECU DID(s) and saved a sensitive diagnostic snapshot to {Path.GetFileName(destinationPath)}. Not a restorable backup.");
+        }
+        catch (OperationCanceledException)
+        {
+            SetStatus("ECU DID snapshot cancelled. No file was saved.");
+        }
+        catch (UdsNegativeResponseException ex)
+        {
+            SetStatus("ECU DID snapshot rejected: " + ex.Message);
+        }
+        catch (Exception ex)
+        {
+            SetStatus("ECU snapshot read/export failed: " +
+                FormatSafeException(ex, "check the selected profile, adapter and destination."));
+        }
+        finally
+        {
+            _udsCts = null;
+            CancelUdsButton.IsEnabled = false;
+            DiscoverButton.IsEnabled = _connected && !_closing;
+            ConnectButton.IsEnabled = !_closing;
+            _udsGate.Release();
+            SetUdsEnabled(_connected && !_closing);
+        }
+    }
+
     private async void ReadDid_Click(object sender, RoutedEventArgs e)
     {
         if (!TryParseDid(out var did)) return;
@@ -1584,10 +1758,10 @@ public sealed partial class MainWindow : Window
         {
             _udsCts = null;
             CancelUdsButton.IsEnabled = false;
-            SetUdsEnabled(_connected);
             DiscoverButton.IsEnabled = _connected;
             ConnectButton.IsEnabled = true;
             _udsGate.Release();
+            SetUdsEnabled(_connected);
         }
     }
 

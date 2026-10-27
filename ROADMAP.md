@@ -1,3 +1,13 @@
+## Development 0.3.0: opt-in WinUI DID snapshot read and Save As (2026-10-27)
+
+- [x] [PR #528](https://github.com/vorlocsev/dvinholm/pull/528) merged as `bd4d0cf` after **7/7** successful PR-head workflows (CI #3784). Separate post-merge `main` CI #3785 and six companions were launched and remain an independent acceptance gate. Published Stable v0.2.4 is immutable at `a9e6188`.
+- [x] Add a clearly labeled **Read + save DID snapshot** action beside ECU Profiles. It is disabled until J2534 is connected and the selected profile's CAN request/response IDs, frame format and at least one DID exactly match the live UDS inputs. No operation during offline acceptance, ECU discovery or another active UDS request.
+- [x] Require a visible pre-read consent dialog warning that the result may contain personal vehicle data and is **not a restorable ECU backup**. Use exclusive UDS operation lock, background `0x22` DID capture, cancellation, recheck exact selected ECU profile before reading, path-only Win32 Save As and the explicit-consent/atomic JSON writer. Cancel before permission sends no requests; cancel Save As leaves no file.
+- [x] Add **eight offline unit checks** for the UI capture eligibility gate: valid profile, disconnected/acceptance/busy states, absent or empty profile, edited request/response CAN IDs, mismatched frame type and excessive DID count. No physical adapter used.
+- [ ] Require 7/7 final PR workflows, then 7/7 independent `main` checks. Run manual Windows 11 LTSC UI acceptance with virtual J2534 where available; real CEM/adapter and actual vehicle compatibility remain deferred. No PIN, configuration writes, restorable backup or Stable publication are authorized by this stage.
+
+---
+
 ## Development: explicit-consent diagnostic DID snapshot JSON export (2026-10-27)
 
 - [x] [PR #527](https://github.com/vorlocsev/dvinholm/pull/527) merged into Development as `8d6c2b4` after **7/7** successful PR-head workflows (CI #3777). Seven independent post-merge workflows, including CI #3778, were still completing when this export stage began. Published Stable v0.2.4 remains pinned to `a9e6188`.
