@@ -46,6 +46,28 @@ internal static class VolvoP2ConfigCandidateDisplay
         }
 
         text.AppendLine("Evidence: https://sectorv.ru/ (advertisement only).");
+        text.AppendLine();
+        text.AppendLine("Volvo-documented XC90 CEM service menu (manufacturer service-menu names only)");
+        text.AppendLine("Volvo Technical Journal 20278.6.11 (2016-09-06), XC90 page 3.");
+        text.AppendLine("This source lists possible workshop service-menu categories,");
+        text.AppendLine("NOT valid configuration values for this vehicle or firmware.");
+        text.AppendLine("Exact CAN IDs, DIDs, firmware read/write mapping: NOT documented.");
+        text.AppendLine("Actual settings, PIN/service access and ECU writing remain disabled.");
+        text.AppendLine();
+        foreach (var feature in VolvoXc90OemCemMenuCatalog.Entries)
+        {
+            text.Append("• OEM: ").AppendLine(feature.Name);
+            text.Append("  Research ID: ").AppendLine(feature.ResearchId);
+            text.Append("  Evidence: Volvo technical journal, PDF page ")
+                .AppendLine(feature.PdfPage.ToString());
+            if (feature.ConditionalEquipment)
+                text.AppendLine("  Equipment-dependent; availability unconfirmed.");
+            text.AppendLine("  Model year, ECU firmware, value encoding, protocol: unknown.");
+            text.AppendLine("  Read/write, PIN/service access: disabled.");
+            text.AppendLine();
+        }
+        text.Append("Document: ").AppendLine(VolvoXc90OemCemMenuCatalog.Source);
+        text.AppendLine("Manufacturer menu names do not establish a supported CEM variant.");
         text.AppendLine("A real ECU configuration needs verified identity, documented");
         text.AppendLine("mappings, backups, authorization and physical hardware tests.");
         text.AppendLine("This screen cannot request a PIN, read or alter a vehicle.");
