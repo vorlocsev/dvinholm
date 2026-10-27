@@ -1280,9 +1280,9 @@ public sealed partial class MainWindow : Window
             cts.Dispose();
             CancelDiscoveryButton.IsEnabled = false;
             DiscoverButton.IsEnabled = _connected;
-            SetUdsEnabled(_connected);
             ConnectButton.IsEnabled = true;
             _udsGate.Release();
+            SetUdsEnabled(_connected);
         }
     }
 
@@ -1758,10 +1758,10 @@ public sealed partial class MainWindow : Window
         {
             _udsCts = null;
             CancelUdsButton.IsEnabled = false;
-            SetUdsEnabled(_connected);
             DiscoverButton.IsEnabled = _connected;
             ConnectButton.IsEnabled = true;
             _udsGate.Release();
+            SetUdsEnabled(_connected);
         }
     }
 
