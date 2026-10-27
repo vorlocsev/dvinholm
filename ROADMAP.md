@@ -1,3 +1,14 @@
+## Development 0.3.0: XC90 P2 CEM service evidence and permission gap model (2026-10-27)
+
+- [x] [PR #540](https://github.com/vorlocsev/dvinholm/pull/540) merged as `af9c090` after **7/7** successful exact-head PR workflows (CI #3876); independently validate the seven postmerge `main` workflows.
+- [x] Introduce a pure, offline `VolvoP2CemServiceCapabilityMatrix`: six candidate research operations (identify CEM, read configuration, review legitimate PIN route, authenticate configuration service, preview edit, write configuration). No service is implemented or executable.
+- [x] Evaluate explicit evidence gaps per category: confirmed XC90 P2 year, independently reviewed exact CEM identity, documented raw configuration mapping, legitimate authorization route, configuration-scoped entitlement (never immobilizer material), physical J2534/CEM acceptance, validated backup/recovery for writes.
+- [x] **Fail closed even on fully supplied synthetic evidence.** Every assessment always includes `OperationalServiceNotImplemented`; PIN, credential, ECU request, configuration read/write flags stay false, and opaque evidence references are never copied into results.
+- [x] Add **8 deterministic software-only tests** for operation coverage, year and ECU identity boundaries, missing mappings, separate PIN/credential gates, physical/recovery preconditions, immutable outputs and terminal no-permission state. Update [XC90 P2/CEM evidence register](docs/VOLVO-P2-CEM-COMPATIBILITY.md).
+- [ ] Require **7/7 green final-head PR workflows** and independent postmerge `main` checks. No real hardware trials, authorized PIN operations, actual CEM configuration or installed Windows acceptance claimed. Published Stable 0.2.4 remains untouched; subsequent Stable publication needs separate user confirmation.
+
+---
+
 ## Development 0.3.0: cancellable P2 CEM PIN readiness checklist (2026-10-27)
 
 - [x] [PR #539](https://github.com/vorlocsev/dvinholm/pull/539) merged into Development as `b561e42` after **7/7** successful exact-HEAD workflows (CI #3868). Seven independent postmerge `main` workflows require a separate audit.
