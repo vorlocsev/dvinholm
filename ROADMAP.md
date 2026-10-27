@@ -1,3 +1,13 @@
+## Development 0.3.0: virtual J2534 read-only capture E2E (2026-10-28)
+
+- [x] [PR #549](https://github.com/vorlocsev/dvinholm/pull/549) merged as `9256dd4` after **5/5** exact-head green workflows, including CI #3952. Independently audit postmerge `main` checks.
+- [x] Add **eight synthetic integration tests** calling the existing production `EcuConfigurationReadback.Capture(EcuProfile, UdsClient)` through real in-process `CanBus -> CanRxDispatcher -> IsoTpChannel -> UdsClient` and the **virtual J2534** test adapter, rather than stubbing the DID read delegate.
+- [x] Cover sorted multi-DID reads and shared CAN monitor, multi-frame ISO-TP receive with Flow Control, 29-bit CAN, opt-in snapshot JSON/inspection, UDS negative response, pre-cancellation, cancellation between real responses and failure after a successful first DID. All requests are the read-only `0x22` service; synthetic identifiers/addresses are **not Volvo CEM specifications**.
+- [x] Document that virtual CAN/UDS success is not VIDA/DiCE/J2534 driver acceptance or XC90/CEM transport evidence, and no valid production CAN IDs/DIDs, PIN extraction, access/unlock commands or configuration writes have been added.
+- [ ] Verify 5/5 successful final-HEAD PR workflows and independent postmerge main CI. Real Windows GUI and authorized physical J2534 tests remain deferred; Stable v0.2.4 unchanged, further releases require separate approval.
+
+---
+
 ## Development 0.3.0: optional CEM VIDA identity JSON save (2026-10-27)
 
 - [x] [PR #548](https://github.com/vorlocsev/dvinholm/pull/548) merged as `af57b0a` after 5/5 green exact-HEAD workflows (CI #3940); postmerge `main` CI separately pending.
