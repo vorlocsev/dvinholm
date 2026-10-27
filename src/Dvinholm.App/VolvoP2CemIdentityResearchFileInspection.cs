@@ -21,7 +21,7 @@ internal static class VolvoP2CemIdentityResearchFileInspection
         await using var stream = new FileStream(userSelectedPath,
             FileMode.Open, FileAccess.Read, FileShare.Read,
             bufferSize: 4096,
-            FileOptions.Asynchronous | FileOptions.SequentialScan);
+            options: FileOptions.Asynchronous | FileOptions.SequentialScan);
 
         if (stream.Length is < 1 or > VolvoP2CemIdentityResearchExport.MaximumBytes)
             throw new InvalidDataException(
