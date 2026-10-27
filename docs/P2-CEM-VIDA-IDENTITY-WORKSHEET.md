@@ -41,6 +41,26 @@ provided by these references** and must not be guessed.
    versioned JSON research record. Cancel and Close never write
    or copy anything. Neither action connects to a vehicle.
 
+### Open a previously saved identity research JSON
+
+From **P2 configuration candidates (offline)** select **Open CEM
+research JSON...**, choose your own previously saved `.json` file,
+then review its contents in a **read-only, clearly unverified** dialog.
+Opening is local and never changes the active ECU profile, CAN speed,
+adapter connection, configuration or stored application data. Cancel
+creates no file or state change.
+
+The reader imposes the same strict 4 KiB size limit, UTF-8 (without BOM),
+exact schema and safety flags as the exporter. It rejects malformed,
+unexpected, duplicate or dangerous properties, invalid strings,
+invalid text encoding and a claimed ability to access an ECU or restore
+a configuration. No file name or private path appears in status text.
+A saved document is a user-editable claim, not a proof of VIDA origin,
+CEM identity, actual hardware compatibility, PIN entitlement or
+a safe programming procedure. Do not put VIN/PIN/serial/secret data in
+a file intended for this inspector.
+
+
 For privacy, **do not enter** the hardware serial number, VIN,
 immobilizer PIN, credentials, vehicle owner details or raw ECU
 response bytes. The Dvinholm form does not request or store those
