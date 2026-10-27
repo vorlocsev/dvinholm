@@ -70,9 +70,9 @@
                 <ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="120"/>
                 <ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/><ColumnDefinition Width="110"/>
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="UdsRequestId" Header="UDS request ID" Text="7E0" PlaceholderText="e.g. 7E0"/>
-            <TextBox x:Name="UdsResponseId" Grid.Column="1" Header="UDS response ID" Text="7E8" PlaceholderText="e.g. 7E8"/>
-            <ComboBox x:Name="CanIdFormat" Grid.Column="2" Header="CAN ID format" SelectedIndex="0">
+            <TextBox x:Name="UdsRequestId" Header="UDS request ID" Text="7E0" PlaceholderText="e.g. 7E0" TextChanged="SnapshotCanIdTextChanged"/>
+            <TextBox x:Name="UdsResponseId" Grid.Column="1" Header="UDS response ID" Text="7E8" PlaceholderText="e.g. 7E8" TextChanged="SnapshotCanIdTextChanged"/>
+            <ComboBox x:Name="CanIdFormat" Grid.Column="2" Header="CAN ID format" SelectedIndex="0" SelectionChanged="SnapshotCanIdFormatChanged">
                 <ComboBoxItem Content="11-bit" Tag="standard"/>
                 <ComboBoxItem Content="29-bit" Tag="extended"/>
             </ComboBox>
