@@ -21,6 +21,38 @@ methods, PIN algorithms, DID semantics or write sequences.
 | PIN/service authorization | Verified legitimate model-specific entitlement/acquisition route, exact ECU prerequisites and consent | **Not implemented** |
 | Configuration writes | Confirmed protocol and power, locking, rollback/verification procedure, J2534 and ECU bench test | **Not implemented** |
 
+## Model-year HS-CAN rate: source-scoped safety research
+
+A Volvo XC90 workshop fault-tracing reference describes different **high-speed
+CAN (HS-CAN)** rates for the P2 vehicles in scope: up to and including model
+year 2004, **250 kbit/s**; from model year 2005 onward, **500 kbit/s**.
+It warns that using an incorrect vehicle profile before bus communication
+can impair communication and trigger trouble codes. A separate 2004 XC90
+network description identifies distinct low-speed CAN at 125 kbit/s.
+These are **network-specific workshop observations**, not proof of a
+particular CEM diagnostic address, protocol or supported adapter.
+
+Sources (reviewed 2026-10-27):
+
+- [XC90 workshop communication fault tracing: model-year HS-CAN difference](https://workshop-manuals.com/volvo/xc90_2.5t_awd/l5-2.5l_turbo_vin_59_b5254t2/relays_and_modules/relays_and_modules_accessories_and_optional_equipment/communications_control_module/component_information/testing_and_inspection/reading_and_clearing_diagnostic_trouble_codes/page_193/)
+- [2004 XC90 CAN network: 250 kbit/s HS-CAN, 125 kbit/s LS-CAN](https://workshop-manuals.com/volvo/xc90/l5-2.5l_turbo_vin_59_b5254t2/powertrain_management/computers_and_control_systems/information_bus/component_information/description_and_operation/the_controller_area_network_%28can%29/page_4924/)
+- [Volvo Special Tools: DiCE/J2534 support and J2534-1 limitations](https://www.volvospecialtools.com/index.cfm?event=info.dice)
+
+Development adds a **pure, advisory-only** `VolvoP2CemHsCanSpeedAdvisory`
+that only evaluates an independently confirmed XC90 P2 *model year*
+(2003–2014), an explicitly identified HS-CAN network and a user-selected
+baud rate. It flags a 250/500 kbit/s mismatch but never changes device
+settings or permits transmission automatically. Unknown years, unknown
+networks, LS-CAN and K-line must not reuse these HS-CAN values.
+
+The app's generic `CAN speed` selector includes a warning tooltip; it
+does **not** yet have a verified year/network identification flow, and no
+manual Windows test of the tooltip has been performed. User-supplied year
+alone never certifies a real CEM, a diagnostic transport, a VIN, or PIN and
+write availability. P2/CEM compatibility remains **unknown** until a
+model-/firmware-specific, independently sourced hardware procedure is
+available. The production signature catalog is still empty.
+
 ## Compatibility registration workflow
 
 1. Identify a vehicle as an XC90 P2 candidate from documented metadata. Do
