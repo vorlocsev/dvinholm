@@ -131,6 +131,10 @@
                                 Click="EditProfile_Click" IsEnabled="False"/>
                         <Button Content="Import JSON" Click="ImportProfiles_Click"/>
                         <Button Content="Export JSON" Click="ExportProfiles_Click"/>
+                        <Button x:Name="CaptureSnapshotButton"
+                                Content="Read + save DID snapshot"
+                                ToolTipService.ToolTip="Read selected profile DIDs and explicitly save a diagnostic JSON file. Not a restorable ECU backup."
+                                Click="CaptureSnapshot_Click" IsEnabled="False"/>
                     </StackPanel>
                     <ScrollViewer Grid.Row="2" MaxHeight="76"
                                   VerticalScrollBarVisibility="Auto"
