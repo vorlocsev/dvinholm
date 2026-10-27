@@ -1193,6 +1193,7 @@ public sealed partial class MainWindow : Window
                     }
                 },
                 PrimaryButtonText = "Compare another JSON...",
+                SecondaryButtonText = "Pair with DID snapshot...",
                 CloseButtonText = "Close",
                 DefaultButton = ContentDialogButton.Close
             };
@@ -1202,6 +1203,11 @@ public sealed partial class MainWindow : Window
             if (choice == ContentDialogResult.Primary)
             {
                 await ShowP2CemIdentityResearchComparisonAsync(record);
+                return;
+            }
+            if (choice == ContentDialogResult.Secondary)
+            {
+                await ShowP2CemPairedResearchIntakeAsync(record);
                 return;
             }
 
@@ -1220,6 +1226,52 @@ public sealed partial class MainWindow : Window
                 SetStatus("Could not open CEM research JSON. Check local " +
                     "file permissions and format. No ECU operation occurred.");
         }
+    }
+
+    /// <summary>
+    /// Pair a user-selected CEM research card with a separately chosen
+    /// historical diagnostic snapshot, without asserting that they belong
+    /// to the same module or using any ECU communication.
+    /// </summary>
+    private async Task ShowP2CemPairedResearchIntakeAsync(
+        VolvoP2CemIdentityResearchDocument manualClaim)
+    {
+        var picker = new FileOpenPicker();
+        InitializeWithWindow.Initialize(picker,
+            WindowNative.GetWindowHandle(this));
+        picker.FileTypeFilter.Add(".json");
+        var selected = await picker.PickSingleFileAsync();
+        if (selected is null || _closing)
+            return;
+
+        var snapshot = await EcuConfigurationSnapshotInspection
+            .InspectFileAsync(selected.Path);
+        if (_closing)
+            return;
+
+        var report = VolvoP2CemPairedResearchIntakeDisplay
+            .Build(manualClaim, snapshot);
+        var dialog = new ContentDialog
+        {
+            XamlRoot = RootLayout.XamlRoot,
+            Title = "Paired P2/CEM research (UNVERIFIED, offline)",
+            Content = new ScrollViewer
+            {
+                MaxHeight = 350,
+                Content = new TextBlock
+                {
+                    Text = report,
+                    TextWrapping = TextWrapping.Wrap,
+                    IsTextSelectionEnabled = true
+                }
+            },
+            CloseButtonText = "Close",
+            DefaultButton = ContentDialogButton.Close
+        };
+        await dialog.ShowAsync();
+        if (!_closing)
+            SetStatus("Reviewed separate CEM identity claim and historical DID metadata " +
+                "offline. Neither ECU identity nor configuration compatibility was verified.");
     }
 
     /// <summary>
