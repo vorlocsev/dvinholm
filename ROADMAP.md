@@ -1,10 +1,19 @@
+## Development 0.3.0: offline saved VIDA CEM JSON open/review (2026-10-28)
+
+- [x] Implement **Open CEM research JSON...** on the existing offline P2 research viewer; use the standard user-directed Windows Open picker, not an automatic import or background scan.
+- [x] Strict local parser for bounded 4 KiB UTF-8 files: reject empty/oversized, malformed encoding, UTF-8 BOM, unexpected/duplicate JSON keys, unsafe flags, invalid model years and fake part numbers. Output **read-only UNVERIFIED research** without exposing private paths, accessing J2534, enrolling profiles, or changing settings.
+- [x] Add **8 synthetic offline tests**: roundtrip, unverified review, bounded sizes, invalid schema, forged permissions, invalid UTF-8, BOM and pre-cancelled file access. Update [research guide](docs/P2-CEM-VIDA-IDENTITY-WORKSHEET.md) and CEM compatibility register.
+- [ ] Require 5/5 latest-head PR CI and independent postmerge main CI; separately validate WinUI picker on Windows. Actual Volvo CEM protocol, PIN and configuration writes remain unsupported without authorized physical/OEM evidence; Stable v0.2.4 unchanged.
+
+---
+
 ## Development 0.3.0: VIDA CEM node namespace & diagnostic interface audit (2026-10-28)
 
 - [x] [PR #550](https://github.com/vorlocsev/dvinholm/pull/550) merged as `1fed749` after **5/5 successful exact-HEAD workflows** (CI #3957). Postmerge main CI #3958 also completed successfully.
 - [x] Audit **official Volvo vehicle communication guidance** (Workshop System Requirements 320EN20, section 6) against the project assumption: DiCE recommended for D2/GGD diagnostics; `J2534-1` in VIDA is software-download-only and cannot do VIDA diagnostics. Do not infer third-party app support or failure solely from VIDA's limitations.
 - [x] Add source-scoped **offline VIDA CEM logical node advisory** for historical *reported* P2 node labels `40` (MY2003-04) and `50` (MY2005+), explicitly **NOT a CAN request ID, ISO-TP response ID, DID or usable PIN**. Record disagreement in secondary reproductions of Volvo TJ14902; unconfirmed years remain unknown.
 - [x] Integrate the advisory into the existing P2 configuration research viewer, add **8 deterministic offline tests** including no live access on any path, and document [exact source tier and conflicts](docs/VOLVO-P2-CEM-COMPATIBILITY.md).
-- [ ] Await 5/5 final-head PR checks and a separate postmerge main CI. Actual CEM addressing/transport and hardware/firmware fingerprint remain unverified; physical validation stays deferred. No PIN extraction or configuration write, no new Stable release without approval.
+- [x] [PR #551](https://github.com/vorlocsev/dvinholm/pull/551) merged as `41746b8` after **5/5 green exact-head workflows** (CI #3966). Postmerge `main` CI #3967 pending. Actual CEM addressing/transport and hardware/firmware fingerprint remain unverified; physical validation stays deferred. No PIN extraction or configuration write, no new Stable release without approval.
 
 ---
 
