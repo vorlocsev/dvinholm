@@ -1,3 +1,14 @@
+## Development 0.3.0: XC90 P2 CEM parameter/revision research register (2026-10-27)
+
+- [x] [PR #541](https://github.com/vorlocsev/dvinholm/pull/541) merged into Development as `222e1e6` after 7/7 exact-head green workflows (including CI #3882); [PR #542](https://github.com/vorlocsev/dvinholm/pull/542) merged as `7fcf66c` after 7/7 exact-head successful workflows (including CI #3886). Their separate postmerge `main` checks remain an independent gate.
+- [x] Add an **offline-only**, bounded `VolvoP2CemParameterEvidenceCatalog` with zero production parameter records. Research assertions bind Dvinholm candidate display names to claimed CEM variant ID, exact hardware/software revision labels, advertised model-year range and explicit source/meaning references. A human-reviewed flag is a notation, not authentication of the source, ECU or firmware.
+- [x] Validate the **entire** supplied research catalog before matching: known option names, year scope, revision/source character and size limits, complete human-reviewed meaning references, review enums and non-overlapping exact-revision year ranges. Cap to 64 records; invalid/ambiguous sets fail closed.
+- [x] Separate proposed/notated-reviewed research matches from actual verified CEM identity, module parameter mappings and legitimate service authorization. **Always deny vehicle requests, live read, edit preparation, PIN operations and writes**; results never expose researcher source notes.
+- [x] Add **8 offline xUnit checks**, and document the evidence / hardware acceptance requirements in [P2/CEM parameter revision research](docs/P2-CEM-PARAMETER-REVISION-RESEARCH.md) and [P2/CEM compatibility evidence register](docs/VOLVO-P2-CEM-COMPATIBILITY.md).
+- [ ] Require seven completed green checks on the PR final HEAD and seven separate postmerge `main` checks; physical J2534/CEM tests, Windows UI acceptance and genuine manufacturer/bench parameter evidence are unperformed. Published Stable v0.2.4 stays frozen. New releases need explicit user approval.
+
+---
+
 ## Development 0.3.0: XC90 P2 CEM service evidence and permission gap model (2026-10-27)
 
 - [x] [PR #540](https://github.com/vorlocsev/dvinholm/pull/540) merged as `af9c090` after **7/7** successful exact-head PR workflows (CI #3876); independently validate the seven postmerge `main` workflows.

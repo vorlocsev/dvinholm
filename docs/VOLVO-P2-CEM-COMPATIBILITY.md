@@ -245,6 +245,35 @@ command or the published Stable v0.2.4 release. Do not mark hardware,
 authorization or functional PIN capability as supported based on this
 research status.
 
+## Revision-scoped configuration parameter research (Development 0.3.0)
+
+`VolvoP2CemParameterEvidenceCatalog` provides an **offline, fail-closed
+metadata preflight** for future source-backed candidate parameter records.
+Its production collection is **empty**. Proposed and human-reviewed
+claims can be scoped to a CEM variant, exact claimed hardware/software
+revision labels and an independently confirmed advertised model-year
+window. This only validates string/interval consistency and
+research provenance notation; neither an author-supplied review flag
+nor synthetic read-only CEM identity independently authenticates ECU
+firmware or validates an actual option mapping.
+
+The bounded full-catalog check rejects unknown candidate IDs,
+missing or invalid revision labels/sources, unreviewed value-meaning
+evidence for human-reviewed claims, conflicting overlapping year
+intervals, invalid review types and catalogs over 64 entries. No
+real Volvo values, memory locations, CAN/DID IDs, parameter bytes,
+PINs, security routines or write encodings are present. Assessment
+never copies untrusted source notes into messages.
+
+The six `May...`/`HasVerified...` permission flags remain **false**
+in every state, including a matching human-reviewed claim. Eight
+synthetic offline tests cover zero production mappings, proposed
+and reviewed notation, model-year boundaries, identity/revision
+mismatches, full-catalog rejection, overlaps and immutable redacted
+diagnostics. See [the research gate specification](P2-CEM-PARAMETER-REVISION-RESEARCH.md).
+Real hardware, source authentication and readback acceptance are
+separate prerequisites; Stable v0.2.4 is not changed.
+
 ## Status in Development
 
 - `EcuConfigurationReadback`: 0x22 read-only opaque DID capture;
