@@ -21,6 +21,51 @@ methods, PIN algorithms, DID semantics or write sequences.
 | PIN/service authorization | Verified legitimate model-specific entitlement/acquisition route, exact ECU prerequisites and consent | **Not implemented** |
 | Configuration writes | Confirmed protocol and power, locking, rollback/verification procedure, J2534 and ECU bench test | **Not implemented** |
 
+## VIDA logical CEM node versus physical CAN address (source audit 2026-10-28)
+
+Source tier A, **Volvo's own 2021 Workshop System Requirements 320EN20**
+([official Volvo PDF](https://workshopsupportguide.volvocars.biz/media/35358/VIDA-WS-Requirements-320EN20-en-GB.pdf),
+section 6): VIDA supports DiCE and J2534 communication tools; Volvo
+**recommends DiCE** for D2/GGD vehicles. For VIDA, **J2534-1 is
+software download only and explicitly NOT diagnostic access**;
+J2534-2 also covers software download over HS/MS CAN. These statements
+are about **Volvo VIDA** support, not a claim that Dvinholm or every
+third-party scan tool must share the same limitations. An unknown
+third-party J2534 device is not an accepted first-generation XC90
+CEM diagnostic interface solely because the DLL is detected.
+
+Source tier B, **historical Volvo Technical Journal US14902.6.0
+(2010)** reproduced on third-party workshop-manual sites: a CEM recovery
+procedure refers to a **VIDA logical ECU node** rather than a bus
+arbitration ID. A [reproduced MY2009 XC90 bulletin](https://lemon-manuals.la/Volvo/2009/XC90%20FWD%20L6-3.2L%20VIN%2098%20B6324S/Repair%20and%20Diagnosis/Powertrain%20Management/Computers%20and%20Control%20Systems/Technical%20Service%20Bulletins/Customer%20Interest/Computers%2FControls%20-%20CEM%20Download%20Interrupt%20Recovery/)
+reports node label **40 for early P2 (through 2004)** and **50
+for P2 from model year 2005**. A [different reproduction of the
+same journal](https://workshop-manuals.com/volvo/xc90_fwd/l6-3.2l_vin_98_b6324s/powertrain_management/computers_and_control_systems/relays_and_modules_computers_and_control_systems/engine_control_module/component_information/technical_service_bulletins/computers/controls_cem_download_interrupt_recovery/page_9324/)
+only states node **50 for P2** without the early-year distinction.
+Treat this as **historical, context-dependent and not independently
+resolved per CEM revision**, not a complete mapping. The cited procedure
+is about firmware download failure recovery, **not** a safe way to
+discover or program a vehicle; Dvinholm neither reproduces nor invokes
+its recovery operations.
+
+`VolvoP2CemVidaNodeAdvisory` now displays those **reported VIDA
+logical node labels** in the existing *offline P2 configuration
+candidate viewer*. Inputs to its pure assessment require an independently
+confirmed XC90 P2 model year; a manually typed worksheet year does not
+qualify. All assessment paths have **null** CAN request/response IDs
+and read DID, with **false** live connection, identity read,
+configuration read/write and PIN capabilities. The underlying
+vehicle network, pass-thru configuration, ISO-TP address format,
+module firmware and active VIDA/DiCE procedure remain **unknown**.
+The logical strings `40` and `50` are **not** hexadecimal `0x40`
+and `0x50` requests to pass into the J2534 driver.
+
+Eight offline tests cover unverified/out-of-scope years, early/later
+source reports, explicit VIDA J2534-1 diagnostic limitations,
+DiCE recommendations, J2534-2/other devices not granting support,
+and visible research-only UI labels. No actual CAN traffic,
+configuration access or physical interface test occurs in these tests.
+
 ## Model-year HS-CAN rate: source-scoped safety research
 
 A Volvo XC90 workshop fault-tracing reference describes different **high-speed
