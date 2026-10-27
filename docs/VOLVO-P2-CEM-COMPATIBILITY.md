@@ -274,6 +274,33 @@ diagnostics. See [the research gate specification](P2-CEM-PARAMETER-REVISION-RES
 Real hardware, source authentication and readback acceptance are
 separate prerequisites; Stable v0.2.4 is not changed.
 
+## User-directed, privacy-reduced DID metadata intake (Development 0.3.0)
+
+The existing **Inspect snapshot** WinUI dialog can now show a separate
+historical **P2/CEM research metadata** section and offers **Copy
+sanitized research metadata**. The optional text records the historical
+capture UTC, observed CAN frame type and request/response IDs, DID
+numbers and **DID value byte lengths only**. Raw hexadecimal bytes,
+VIN, sensitive profile name/ID, selected file path and credentials are
+neither displayed in this research report nor copied to Clipboard.
+However CAN/DID metadata can still fingerprint an individual vehicle;
+explicit copying is a user choice, and the OS clipboard may outlive
+the app. Dismissal creates no clipboard entry.
+
+This uses the existing checked schema-v1 historical read-only JSON
+inspector (strict UTF-8, file size cap, ordering, flags and SHA-256).
+Neither file integrity nor user-provided CAN/DID metadata authenticates
+an actual XC90 CEM, model year, firmware, supported option, PIN or
+service permission. There are **no new vehicle requests, changes,
+writes or backups**, and the production CEM signature catalog remains
+empty.
+
+Eight synthetic offline tests verify metadata formatting, raw-value
+and profile redaction, evidence limitations, 11/29-bit support, strict
+schema/UTC/CAN/DID limits. Installed Windows Clipboard UX and virtual
+adapter checks remain separate gates. See
+[the offline research intake guide](P2-CEM-SNAPSHOT-RESEARCH-INTAKE.md).
+
 ## Status in Development
 
 - `EcuConfigurationReadback`: 0x22 read-only opaque DID capture;
