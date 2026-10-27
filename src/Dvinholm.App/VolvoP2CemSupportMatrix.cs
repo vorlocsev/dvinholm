@@ -131,6 +131,6 @@ internal static class VolvoP2CemSupportMatrix
         return !string.IsNullOrWhiteSpace(entry.ReadDidEvidenceSource) &&
                entry.DocumentedReadableDids.Distinct().Count() ==
                    entry.DocumentedReadableDids.Count &&
-               !entry.DocumentedReadableDids.Contains(0xF190);
+               !entry.DocumentedReadableDids.Contains((ushort)0xF190);
     }
 }
