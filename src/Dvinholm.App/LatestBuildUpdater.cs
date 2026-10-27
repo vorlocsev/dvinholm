@@ -583,6 +583,11 @@ internal static class LatestBuildUpdater
                 throw new InvalidDataException("The artifact contains a file/directory path conflict.");
 
             cancellationToken.ThrowIfCancellationRequested();
+            // A fresh update must never reuse an occupied extraction target.
+            // Otherwise files not present in the verified ZIP may be carried
+            // into the replacement tree alongside the downloaded package.
+            if (Directory.Exists(staging) || File.Exists(staging))
+                throw new InvalidDataException("The update staging target already exists.");
             Directory.CreateDirectory(staging);
             foreach (var entry in archive.Entries)
             {

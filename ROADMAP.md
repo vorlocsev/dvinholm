@@ -1,9 +1,18 @@
+## Development: refuse pre-existing ZIP staging targets (2026-10-27)
+
+- [x] Confirm PR #521 merged as `eddc611` with 7/7 successful PR workflows and 7/7 successful post-merge workflows including CI #3745. Published Stable v0.2.4 stays at `a9e6188`.
+- [x] Immediately before creating the temporary extraction folder, refuse an already existing staging directory or file. Otherwise a reused extraction target can silently carry files not present in the verified downloaded ZIP into the replacement tree. Preserve the previous ZIP metadata preflight, strict per-file `CreateNew`, digest and length verification, cancellation and recovery behavior.
+- [x] Add eight offline real-ZIP tests: new-folder extraction, existing empty folder rejection, unexpected file preservation, existing EXE preservation, nested folder preservation, occupied file path rejection, normal explicit directory extraction and validation-before-write source order.
+- [ ] Require **7/7** successful workflows on the exact PR head before merging, then verify post-merge `main` independently. A timing/race-resistant filesystem creation primitive is outside this change; no local adversary/Windows-installed updater acceptance is claimed. Physical J2534 remains deferred. Do not publish or retag Stable without permission.
+
+---
+
 ## Development: reject empty staged EXE before replacement (2026-10-27)
 
 - [x] Verify seven successful post-merge `main` workflows from PR #520, including CI #3738, on `2a52d12`. Published Stable v0.2.4 remains frozen at `a9e6188`.
 - [x] After ZIP extraction and before returning a prepared update, require the root `Dvinholm.App.exe` to exist as a nonempty, non-reparse file. Previously only existence was checked, allowing a valid ZIP with a zero-byte EXE to reach the replacement helper and rely on rollback. Preserve artifact SHA-256, size, cancellation, path safety and current replacement logic.
 - [x] Add eight isolated offline xUnit checks: valid/missing/empty/directory/nested-only EXE, successful real ZIP download with matching digest, rejected empty-EXE ZIP with staging/temp cleanup, and source ordering before marking an update prepared.
-- [ ] Require 7/7 workflows successful on the exact PR head before merging this Development-only change; check independent post-merge `main` workflows. No installed Windows update/GUI acceptance or physical J2534 test claimed. Do not publish a new Stable release without confirmation.
+- [x] [PR #521](https://github.com/vorlocsev/dvinholm/pull/521) merged as `eddc611` after **7/7** successful PR-head workflows (CI #3744) and **7/7** independent post-merge `main` workflows (CI #3745). Installed Windows update/GUI acceptance and physical J2534 remain separate, unperformed gates. Stable v0.2.4 was not modified.
 
 ---
 
