@@ -1,3 +1,13 @@
+## Development 0.3.0: XC90 P2/CEM year/firmware support evidence (2026-10-27)
+
+- [x] [PR #532](https://github.com/vorlocsev/dvinholm/pull/532) merged as `bec1eae` after **7/7** successful exact-head PR workflows (CI #3818). The independent seven `main` workflows, including CI #3819, started separately and must be verified before this merge is considered fully accepted. Published Stable v0.2.4 remains fixed at `a9e6188`.
+- [x] Add `VolvoP2CemSupportMatrix` to evaluate **only separately sourced and verified XC90 P2/CEM fingerprints**, scoped by explicitly recorded model-year ranges, CAN frame IDs/type and at least two matching read-only software/hardware DID bytes. Distinguish unknown, read-only identity, documented/observed DID set and ambiguous results; NEVER infer PIN access, configuration write eligibility or physical adapter readiness.
+- [x] Leave `ProductionEntries` **empty** until real, independently validated CEM firmware/address mappings exist. Add [XC90 P2/CEM compatibility evidence register](docs/VOLVO-P2-CEM-COMPATIBILITY.md) to track model years, ECU hardware/software, provenance, read-only DIDs, adapter/transport and unresolved requirements without guessed VIN/CEM mappings.
+- [x] Add **8 synthetic offline unit checks** for empty production catalog, exact read-only identity, documented observed DIDs, year boundary rejection, wrong/unverified platform/ECU, wrong CAN/firmware/missing DID, ambiguity and VIN/duplicate/missing mappings. Synthetic IDs are not production Volvo specifications.
+- [ ] Require **7/7** green workflows on exact final PR head and **7/7** independent post-merge `main` workflows. Collect verified CEM hardware/firmware evidence and support matrix entries before promising XC90 compatibility. Physical J2534 and vehicle tests remain deferred; no PIN/configuration writes or new Stable publication without separate validation and consent.
+
+---
+
 ## Development 0.3.0: compare two historical DID snapshots offline (2026-10-27)
 
 - [x] [PR #531](https://github.com/vorlocsev/dvinholm/pull/531) merged as `826c85c` after **7/7** green PR-head workflows (CI #3810). Seven independent post-merge workflows, including CI #3811, are tracked separately. Published Stable v0.2.4 remains pinned to `a9e6188`.
