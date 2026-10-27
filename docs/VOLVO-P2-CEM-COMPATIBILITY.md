@@ -164,6 +164,42 @@ unknown values, evidence/year disclosure, disabled operations, safety
 warnings, and actual XAML button/layout contracts. Separate installed
 Windows visual/virtual-J2534 verification is still required.
 
+## Offline P2 CEM PIN/service readiness review (Development 0.3.0)
+
+The ECU Profiles panel now includes **P2 CEM PIN readiness (offline
+review)** below the static configuration candidate viewer. The new
+`VolvoP2PinAuthorizationReview` is an explicit four-stage *evidence
+checklist*, **not** an ECU search task or an implementation of PIN
+retrieval. The stages cover: (1) independently confirmed CEM identity,
+(2) physical adapter/transport evidence, (3) a legitimate verified
+P2-specific service/PIN procedure, and (4) entitlement, authorization
+scope and explicit consent. None are claimed to have passed. It
+distinguishes configuration access rights from immobilizer secrets.
+
+The dialog shows the **review step number, not PIN-search progress**:
+there is no estimated completion time, diagnostic probe, PIN result,
+credential entry, brute-force algorithm, file access, CAN request or
+vehicle programming. After all four stages, the workflow ends as
+`ReviewFinishedUnsupported`; it does not enable any real operation.
+**Cancel review** immediately terminates the local checklist as
+`Cancelled`, never implying that a vehicle operation was running.
+All service access/read/write permissions stay hard-disabled,
+including after review completion.
+
+The WinUI action shares a non-reentrant ContentDialog gate with
+the research catalog and historical DID inspection/comparison.
+The compact seven-button ECU Profiles grid and existing read-only
+diagnostics remain unchanged. Eight offline tests cover steps, their
+blocked capabilities, terminal completion, cancellation, scope
+separation and the actual XAML layout/action contract. Physical J2534,
+CEM hardware and Windows user acceptance remain unperformed.
+
+This is user-interface architecture only. Implementing verified
+authorization later needs independently documented ECU/firmware
+compatibility, legitimate permission/credential handling, hardware
+testing, clear consent and separate security/safety review. **Do not
+confuse an offline walkthrough with a PIN algorithm or a PIN result.**
+
 ## Status in Development
 
 - `EcuConfigurationReadback`: 0x22 read-only opaque DID capture;
