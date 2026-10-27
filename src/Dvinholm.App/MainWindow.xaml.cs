@@ -1120,6 +1120,7 @@ public sealed partial class MainWindow : Window
                     }
                 },
                 PrimaryButtonText = "Enter CEM identity (offline)",
+                SecondaryButtonText = "Open CEM research JSON...",
                 CloseButtonText = "Close",
                 DefaultButton = ContentDialogButton.Close
             };
@@ -1128,6 +1129,8 @@ public sealed partial class MainWindow : Window
                 return;
             if (choice == ContentDialogResult.Primary)
                 await ShowP2CemVidaIdentityWorksheetAsync();
+            else if (choice == ContentDialogResult.Secondary)
+                await ShowP2CemIdentityResearchFileAsync();
             else
                 SetStatus("Viewed offline P2 research categories: vendor claims and " +
                     "Volvo-documented service menu names, neither a vehicle configuration. " +
@@ -1152,6 +1155,64 @@ public sealed partial class MainWindow : Window
         }
     }
 
+
+    /// <summary>
+    /// Read-only review of a user-selected, untrusted local JSON research
+    /// card. Never applies identifiers to profiles, CAN, J2534 or CEM.
+    /// </summary>
+    private async Task ShowP2CemIdentityResearchFileAsync()
+    {
+        try
+        {
+            var picker = new FileOpenPicker();
+            InitializeWithWindow.Initialize(picker,
+                WindowNative.GetWindowHandle(this));
+            picker.FileTypeFilter.Add(".json");
+            var file = await picker.PickSingleFileAsync();
+            if (file is null || _closing)
+                return;
+
+            var record = await VolvoP2CemIdentityResearchFileInspection
+                .InspectFileAsync(file.Path);
+            if (_closing)
+                return;
+
+            var preview = new ContentDialog
+            {
+                XamlRoot = RootLayout.XamlRoot,
+                Title = "Saved CEM identity research (UNVERIFIED, offline)",
+                Content = new ScrollViewer
+                {
+                    MaxHeight = 350,
+                    Content = new TextBlock
+                    {
+                        Text = VolvoP2CemIdentityResearchFileInspection
+                            .BuildReadOnlyReview(record),
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true
+                    }
+                },
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close
+            };
+            await preview.ShowAsync();
+            if (!_closing)
+                SetStatus("Reviewed saved unverified CEM research JSON offline. " +
+                    "No profile changed and no ECU/PIN/configuration command sent.");
+        }
+        catch (InvalidDataException)
+        {
+            if (!_closing)
+                SetStatus("Rejected CEM research JSON: invalid, unsafe or " +
+                    "unsupported file. No ECU operation or profile change.");
+        }
+        catch (Exception)
+        {
+            if (!_closing)
+                SetStatus("Could not open CEM research JSON. Check local " +
+                    "file permissions and format. No ECU operation occurred.");
+        }
+    }
 
     /// <summary>
     /// Manual, offline VIDA identification notes. Never opens a J2534 session,
