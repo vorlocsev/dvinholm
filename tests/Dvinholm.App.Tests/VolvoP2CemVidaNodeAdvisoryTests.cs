@@ -14,7 +14,8 @@ public sealed class VolvoP2CemVidaNodeAdvisoryTests
             (null, true), (2007, false), (null, false)
         })
         {
-            var result = Assess(value.Item1, value.Item2);
+            var result = VolvoP2CemVidaNodeAdvisory.Assess(value.Item1,
+                value.Item2, VolvoP2CemDiagnosticInterface.Unspecified);
             Assert.Equal(VolvoP2CemVidaNodeAssessmentKind.ModelYearNotIndependentlyConfirmed,
                 result.Kind);
             Assert.Null(result.ReportedWorkshopNode);
