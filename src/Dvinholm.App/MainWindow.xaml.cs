@@ -1018,6 +1018,78 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private async void P2PinReview_Click(object sender, RoutedEventArgs e)
+    {
+        // A cancellable *explanatory* checklist, not a live PIN workflow.
+        // No J2534, CAN/UDS, credentials, configuration or vehicle input.
+        if (_snapshotInspectionBusy || _closing)
+            return;
+
+        var review = new VolvoP2PinAuthorizationReview();
+        _snapshotInspectionBusy = true;
+        P2PinReviewButton.IsEnabled = false;
+        P2ConfigCatalogButton.IsEnabled = false;
+        InspectSnapshotButton.IsEnabled = false;
+        CompareSnapshotsButton.IsEnabled = false;
+        try
+        {
+            var description = new TextBlock
+            {
+                Text = review.DescribeCurrent(),
+                TextWrapping = TextWrapping.Wrap,
+                IsTextSelectionEnabled = true
+            };
+            var dialog = new ContentDialog
+            {
+                XamlRoot = RootLayout.XamlRoot,
+                Title = "XC90 P2 CEM PIN readiness (offline only)",
+                Content = new ScrollViewer { MaxHeight = 330, Content = description },
+                PrimaryButtonText = "Next review step",
+                CloseButtonText = "Cancel review",
+                DefaultButton = ContentDialogButton.Close
+            };
+            dialog.PrimaryButtonClick += (_, args) =>
+            {
+                if (review.Advance())
+                {
+                    // Keep the dialog open until all four evidence requirements
+                    // have been displayed. This is NOT PIN-search progress.
+                    args.Cancel = true;
+                    description.Text = review.DescribeCurrent();
+                    if (review.StepNumber == review.TotalSteps)
+                        dialog.PrimaryButtonText = "Finish offline review";
+                }
+            };
+
+            var result = await dialog.ShowAsync();
+            if (result != ContentDialogResult.Primary)
+                review.Cancel();
+            if (!_closing)
+                SetStatus(review.State == VolvoP2PinPreviewState.Cancelled
+                    ? "Offline P2 PIN readiness review cancelled. No operation started."
+                    : "Offline P2 PIN readiness review finished: unsupported. " +
+                      "No PIN, credentials, vehicle requests or configuration changes.");
+        }
+        catch (Exception)
+        {
+            review.Cancel();
+            if (!_closing)
+                SetStatus("Could not display offline P2 PIN readiness review. " +
+                          "No vehicle or security operation was attempted.");
+        }
+        finally
+        {
+            _snapshotInspectionBusy = false;
+            if (!_closing)
+            {
+                P2PinReviewButton.IsEnabled = true;
+                P2ConfigCatalogButton.IsEnabled = true;
+                InspectSnapshotButton.IsEnabled = true;
+                CompareSnapshotsButton.IsEnabled = true;
+            }
+        }
+    }
+
     private async void P2ConfigCatalog_Click(object sender, RoutedEventArgs e)
     {
         // This is static research text only. Do not touch ECU selection,
@@ -1026,6 +1098,7 @@ public sealed partial class MainWindow : Window
             return;
 
         _snapshotInspectionBusy = true;
+        P2PinReviewButton.IsEnabled = false;
         P2ConfigCatalogButton.IsEnabled = false;
         InspectSnapshotButton.IsEnabled = false;
         CompareSnapshotsButton.IsEnabled = false;
@@ -1064,6 +1137,7 @@ public sealed partial class MainWindow : Window
             _snapshotInspectionBusy = false;
             if (!_closing)
             {
+                P2PinReviewButton.IsEnabled = true;
                 P2ConfigCatalogButton.IsEnabled = true;
                 InspectSnapshotButton.IsEnabled = true;
                 CompareSnapshotsButton.IsEnabled = true;
@@ -1079,6 +1153,7 @@ public sealed partial class MainWindow : Window
             return;
 
         _snapshotInspectionBusy = true;
+        P2PinReviewButton.IsEnabled = false;
         P2ConfigCatalogButton.IsEnabled = false;
         InspectSnapshotButton.IsEnabled = false;
         CompareSnapshotsButton.IsEnabled = false;
@@ -1148,6 +1223,7 @@ public sealed partial class MainWindow : Window
             _snapshotInspectionBusy = false;
             if (!_closing)
             {
+                P2PinReviewButton.IsEnabled = true;
                 P2ConfigCatalogButton.IsEnabled = true;
                 InspectSnapshotButton.IsEnabled = true;
                 CompareSnapshotsButton.IsEnabled = true;
@@ -1164,6 +1240,7 @@ public sealed partial class MainWindow : Window
             return;
 
         _snapshotInspectionBusy = true;
+        P2PinReviewButton.IsEnabled = false;
         P2ConfigCatalogButton.IsEnabled = false;
         InspectSnapshotButton.IsEnabled = false;
         CompareSnapshotsButton.IsEnabled = false;
@@ -1222,6 +1299,7 @@ public sealed partial class MainWindow : Window
             _snapshotInspectionBusy = false;
             if (!_closing)
             {
+                P2PinReviewButton.IsEnabled = true;
                 P2ConfigCatalogButton.IsEnabled = true;
                 InspectSnapshotButton.IsEnabled = true;
                 CompareSnapshotsButton.IsEnabled = true;
