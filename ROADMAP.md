@@ -1,3 +1,12 @@
+## Development 0.3.0: compare manually saved CEM identity claims (2026-10-28)
+
+- [x] Add an explicit second-file selection from the **Open CEM research JSON...** read-only viewer. Compare claimed XC90 model year and three CEM P/N fields without importing either file, choosing a diagnostic profile, connecting to a vehicle or enabling PIN/configuration actions.
+- [x] Reuse bounded strict UTF-8/schema validation for both records. Show SAME/DIFFERENT with both values, separate the unverified VIDA source flag from module identity, and avoid private paths or background persistence.
+- [x] Add **8 deterministic offline tests** for unchanged cards, four field differences, source-claim differences and forged/noncanonical records; document these limits in the VIDA worksheet.
+- [ ] PR exact-head CI, independent postmerge CI and manual installed Windows File Picker acceptance still required. Neither matching parts nor CI proves an actual CEM, network address, firmware mapping, PIN or supported configuration write. Stable 0.2.4 unchanged.
+
+---
+
 ## Development 0.3.0: offline saved VIDA CEM JSON open/review (2026-10-28)
 
 - [x] Implement **Open CEM research JSON...** on the existing offline P2 research viewer; use the standard user-directed Windows Open picker, not an automatic import or background scan.
