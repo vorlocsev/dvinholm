@@ -1,3 +1,14 @@
+## Development 0.3.0: XC90 P2 HS-CAN model-year speed advisory (2026-10-27)
+
+- [x] [PR #536](https://github.com/vorlocsev/dvinholm/pull/536) merged as `598549d` after **7/7** successful exact-head PR workflows (CI #3844). Seven independent post-merge `main` workflows, including CI #3845, were launched and must be verified separately.
+- [x] Add a non-connecting **Volvo P2 XC90 HS-CAN speed advisory** grounded in workshop guidance for 250 kbit/s through model year 2004 and 500 kbit/s from 2005. Require a confirmed model year and explicitly identified **HS-CAN** before even reporting a recommended historical rate. Any missing data, other bus or mismatch fails closed; this is not a source of CEM CAN IDs, ECU identity or authorization.
+- [x] Add a concise **CAN speed** selector tooltip warning that Volvo P2 HS-CAN varies by model year, other networks differ and the app does **not** change speed automatically.
+- [x] Add **8 offline xUnit checks** for unconfirmed/out-of-range model years, both historical HS-CAN rate groups, wrong-speed warnings, LS-CAN/K-line exclusion, unknown network/baud and the exact UI tooltip/options. No J2534 requests, adapters or physical ECU tested.
+- [x] Document source URLs and qualification in [P2/CEM compatibility evidence register](docs/VOLVO-P2-CEM-COMPATIBILITY.md). The first-generation XC90 production ECU signature catalog remains **empty**; HS-CAN speed alone does not establish a supported diagnostic protocol or PIN/configuration access.
+- [ ] Require **7/7** successful PR workflows on the final HEAD and independent post-merge `main` checks. Windows UI and virtual J2534 acceptance are separate pending tests; no new Stable release without explicit approval.
+
+---
+
 ## Development 0.3.0: compact ECU Profiles actions on narrower windows (2026-10-27)
 
 - [x] [PR #535](https://github.com/vorlocsev/dvinholm/pull/535) merged as `5b2c30a` after **7/7** successful PR-head workflows (CI #3838). Seven independent post-merge `main` workflows, including CI #3839, remain a separate verification gate. Published Stable v0.2.4 remains pinned to `a9e6188`.
