@@ -1593,7 +1593,9 @@ public sealed partial class MainWindow : Window
             }
 
             cts.Token.ThrowIfCancellationRequested();
-            if (_closing || !_connected || !CanCaptureSelectedSnapshot(profile, busy: false))
+            if (_closing || !_connected ||
+                !ReferenceEquals(ProfileSelector.SelectedItem, profile) ||
+                !CanCaptureSelectedSnapshot(profile, busy: false))
             {
                 SetStatus("ECU snapshot cancelled: session, profile or CAN addressing changed.");
                 return;
