@@ -12,7 +12,7 @@ public sealed class EcuCemResearchIntakeDisplayTests
         var summary = EcuCemResearchIntakeDisplay.Build(Document());
         Assert.Contains("2026-10-27 05:00:00", summary);
         Assert.Contains("CAN 11-bit; request 7E0; response 7E8", summary);
-        Assert.Contains("DID F187: 3 byte(s); value hidden", summary);
+        Assert.Contains("DID F187: 6 byte(s); value hidden", summary);
         Assert.Contains("DID F189: 2 byte(s); value hidden", summary);
         Assert.Contains("2 identifier(s)", summary);
     }
