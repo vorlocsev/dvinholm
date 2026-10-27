@@ -58,7 +58,8 @@
             <TextBox x:Name="DllPath" PlaceholderText="Path to 32-bit J2534 DLL" Header="J2534 DLL"/>
             <ComboBox x:Name="J2534Devices" Grid.Column="1" Header="Registered adapters" DisplayMemberPath="Label" PlaceholderText="Select adapter" SelectionChanged="J2534Device_SelectionChanged"/>
             <Button Grid.Column="2" Content="Refresh" Click="RefreshJ2534Devices_Click" VerticalAlignment="Bottom"/>
-            <ComboBox x:Name="BaudRate" Grid.Column="3" Header="CAN speed" SelectedIndex="0">
+            <ComboBox x:Name="BaudRate" Grid.Column="3" Header="CAN speed" SelectedIndex="0"
+                      ToolTipService.ToolTip="Volvo XC90 P2 HS-CAN guidance: through model year 2004 250 kbit/s; from model year 2005 500 kbit/s. Other networks differ. Verify actual model year, bus and adapter before connecting; Dvinholm does not adjust the speed automatically.">
                 <ComboBoxItem Content="500 kbit/s" Tag="500000"/><ComboBoxItem Content="250 kbit/s" Tag="250000"/><ComboBoxItem Content="125 kbit/s" Tag="125000"/>
             </ComboBox>
             <Button x:Name="ConnectButton" Grid.Column="4" Content="Connect" Click="Connect_Click" VerticalAlignment="Bottom"/>
