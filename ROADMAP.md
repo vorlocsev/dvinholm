@@ -1,3 +1,13 @@
+## Development 0.3.0: offline VIDA CEM identity worksheet (2026-10-27)
+
+- [x] [PR #547](https://github.com/vorlocsev/dvinholm/pull/547) merged to Development as `e635692` after **5/5 successful exact-head checks** including CI #3932, archiving superseded 0.2.3 auto-triggered workflows. Postmerge `main` acceptance remains separate.
+- [x] Add a **manual, offline VIDA CEM identity worksheet** from the existing P2 research viewer, with claimed first-generation XC90 model year, hardware P/N, software P/N and diagnostic software P/N. No VIN, hardware serial, PIN, secrets, raw diagnostic bytes or arbitrary identifying notes are collected.
+- [x] Validate complete bounded safe-ASCII part-number entries and year scope, reject VIN-shaped strings, distinguish claimed VIDA transcriptions from independent authentication. Review locally and copy only on user click; no file persistence or CAN/K-Line/J2534/UDS requests.
+- [x] Add **8 deterministic synthetic offline tests** and [source/privacy guidance](docs/P2-CEM-VIDA-IDENTITY-WORKSHEET.md). Manual identity notes never populate verified production CEM fingerprints or authorize read/write/PIN operations.
+- [ ] Await final PR-head CI and postmerge `main` checks, then confirm installed WinUI and authorized physical VIDA/DiCE observations separately. Capture authentic part numbers/transport for exactly one CEM variant before engineering live support. Stable v0.2.4 remains frozen; no release without explicit approval.
+
+---
+
 ## Development CI cleanup: archive superseded 0.2.3 workflows (2026-10-27)
 
 - [x] Mark `.github/workflows/release-candidate-v0.2.3.yml` and `.github/workflows/release-v0.2.3.yml` as **archived manual-only workflows**. Remove automatic `pull_request` and `push main` event triggers that were rebuilding historical v0.2.3 test archives on unrelated 0.3.0 development.

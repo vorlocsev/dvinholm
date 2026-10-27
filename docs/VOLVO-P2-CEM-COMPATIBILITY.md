@@ -356,6 +356,35 @@ recommended for legacy D2/GGD applications. Driver detection is not
 CEM diagnostic support. See [manufacturer CEM menu evidence and
 adapter limits](XC90-OEM-CEM-MENU-EVIDENCE.md).
 
+## Offline VIDA CEM part-number worksheet (Development 0.3.0)
+
+The existing **P2 configuration candidates (offline)** dialog
+offers **Enter CEM identity (offline)**. It collects three
+**manually transcribed** part-number fields from an authorized
+VIDA identity display, and a claimed first-generation XC90
+model year: hardware P/N, software P/N and diagnostic software
+P/N. Hardware serial numbers, VIN, credentials, PINs and raw
+responses are not requested. The source indicator is a self-report,
+not a verified vehicle attestation. A strict bounded preflight
+rejects invalid years/unsafe part numbers and VIN-shaped values.
+
+The user may review a local unverified worksheet and explicitly
+copy it. No automatic clipboard/file persistence or ECU traffic
+is introduced; copied identifiers may still be identifying
+metadata. All identification/transport/read/configuration/PIN
+permission flags remain **false**. The actual ECU request
+format, addresses, diagnostic services and applicability for
+a given XC90 CEM revision are **unknown**. Evidence basis:
+[2007 XC90 CEM diagnostic functions, workshop-manual republication](https://lemon-manuals.org.ua/Volvo/2007/XC90%20FWD%20L6-3.2L%20VIN%2098%20B6324S/Repair%20and%20Diagnosis/Body%20and%20Frame/Body%20Control%20Systems/Description%20and%20Operation/Central%20Electronic%20Module%20%28CEM%29/Diagnostic%20Functions/)
+and the [official Volvo DiCE/J2534 interface guidance](https://www.volvospecialtools.com/index.cfm?event=info.dice).
+See [offline VIDA identity worksheet guide](P2-CEM-VIDA-IDENTITY-WORKSHEET.md).
+
+Eight deterministic offline tests cover completeness, model
+year, safe text format, VIN-like rejection, normalization,
+source status and denial flags. Actual hardware/software
+part-number values must still be independently checked on an
+authorized physical CEM; the production mapping catalog is empty.
+
 ## Status in Development
 
 - `EcuConfigurationReadback`: 0x22 read-only opaque DID capture;

@@ -1119,11 +1119,16 @@ public sealed partial class MainWindow : Window
                         IsTextSelectionEnabled = true
                     }
                 },
+                PrimaryButtonText = "Enter CEM identity (offline)",
                 CloseButtonText = "Close",
                 DefaultButton = ContentDialogButton.Close
             };
-            await dialog.ShowAsync();
-            if (!_closing)
+            var choice = await dialog.ShowAsync();
+            if (_closing)
+                return;
+            if (choice == ContentDialogResult.Primary)
+                await ShowP2CemVidaIdentityWorksheetAsync();
+            else
                 SetStatus("Viewed offline P2 research categories: vendor claims and " +
                     "Volvo-documented service menu names, neither a vehicle configuration. " +
                     "No vehicle data read, PIN requested or ECU data changed.");
@@ -1145,6 +1150,100 @@ public sealed partial class MainWindow : Window
                 CompareSnapshotsButton.IsEnabled = true;
             }
         }
+    }
+
+
+    /// <summary>
+    /// Manual, offline VIDA identification notes. Never opens a J2534 session,
+    /// imports raw DIDs, saves files or requests sensitive serial/VIN/PIN data.
+    /// </summary>
+    private async Task ShowP2CemVidaIdentityWorksheetAsync()
+    {
+        var year = new TextBox { Header = "XC90 model year (claimed)", MaxLength = 4 };
+        var hardware = new TextBox { Header = "CEM hardware P/N", MaxLength = 40 };
+        var software = new TextBox { Header = "CEM software P/N", MaxLength = 40 };
+        var diagnostics = new TextBox
+        {
+            Header = "CEM diagnostic software P/N",
+            MaxLength = 40
+        };
+        var fromVida = new CheckBox
+        {
+            Content = "I transcribed these three part numbers from VIDA"
+        };
+        var fields = new StackPanel { Spacing = 8 };
+        fields.Children.Add(new TextBlock
+        {
+            Text = "Offline research notes only. Do NOT enter VIN, hardware serial, " +
+                   "PIN, credentials or ECU response bytes. Source remains unverified.",
+            TextWrapping = TextWrapping.Wrap
+        });
+        fields.Children.Add(year);
+        fields.Children.Add(hardware);
+        fields.Children.Add(software);
+        fields.Children.Add(diagnostics);
+        fields.Children.Add(fromVida);
+
+        var enter = new ContentDialog
+        {
+            XamlRoot = RootLayout.XamlRoot,
+            Title = "XC90 P2 CEM identity worksheet (offline)",
+            Content = new ScrollViewer { MaxHeight = 380, Content = fields },
+            PrimaryButtonText = "Review notes",
+            CloseButtonText = "Cancel",
+            DefaultButton = ContentDialogButton.Close
+        };
+        if (await enter.ShowAsync() != ContentDialogResult.Primary || _closing)
+            return;
+
+        var result = VolvoP2CemVidaIdentityWorksheet.Assess(
+            year.Text, hardware.Text, software.Text, diagnostics.Text,
+            fromVida.IsChecked == true);
+
+        var canCopy = result.Kind == VolvoP2CemVidaWorksheetKind.ManualClaimUnverified;
+        var preview = new ContentDialog
+        {
+            XamlRoot = RootLayout.XamlRoot,
+            Title = "Manual CEM identity: unverified research only",
+            Content = new ScrollViewer
+            {
+                MaxHeight = 350,
+                Content = new TextBlock
+                {
+                    Text = result.Summary,
+                    TextWrapping = TextWrapping.Wrap,
+                    IsTextSelectionEnabled = true
+                }
+            },
+            PrimaryButtonText = canCopy ? "Copy worksheet" : "",
+            CloseButtonText = "Close",
+            DefaultButton = ContentDialogButton.Close
+        };
+        if (canCopy)
+        {
+            preview.PrimaryButtonClick += (_, args) =>
+            {
+                try
+                {
+                    var clipboardContent = new DataPackage();
+                    clipboardContent.SetText(result.Summary);
+                    Clipboard.SetContent(clipboardContent);
+                }
+                catch (Exception)
+                {
+                    args.Cancel = true;
+                    if (!_closing)
+                        SetStatus("Could not copy offline CEM identity notes.");
+                }
+            };
+        }
+        var copied = await preview.ShowAsync() == ContentDialogResult.Primary;
+        if (!_closing)
+            SetStatus(copied && canCopy
+                ? "User-copied claimed CEM part numbers to clipboard. " +
+                  "No ECU identity or compatibility was verified."
+                : "Offline CEM identity worksheet reviewed. " +
+                  "No diagnostic request, PIN, configuration edit or file write.");
     }
 
     private async void CompareSnapshots_Click(object sender, RoutedEventArgs e)
