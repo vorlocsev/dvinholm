@@ -154,7 +154,7 @@ public sealed class VolvoP2CemIdentityResearchExportTests
         {
             var protectedPath = Path.Combine(directory, "cem.json");
             File.WriteAllText(protectedPath, "original", Encoding.UTF8);
-            Assert.Throws<IOException>(() =>
+            await Assert.ThrowsAsync<IOException>(() =>
                 VolvoP2CemIdentityResearchExport.SaveToUserSelectedPathAsync(
                     "2007", "HW123", "SW456", "DS789", false,
                     protectedPath, directory));
