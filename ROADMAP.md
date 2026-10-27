@@ -1,3 +1,14 @@
+## Development 0.3.0: cancellable P2 CEM PIN readiness checklist (2026-10-27)
+
+- [x] [PR #539](https://github.com/vorlocsev/dvinholm/pull/539) merged into Development as `b561e42` after **7/7** successful exact-HEAD workflows (CI #3868). Seven independent postmerge `main` workflows require a separate audit.
+- [x] Add `VolvoP2PinAuthorizationReview`, a deliberately **non-operational, four-stage** evidence checklist for XC90 P2 CEM identity, physical transport/J2534 verification, legitimate model-specific PIN/service procedure, and scoped credentials/consent. Distinguish configuration authorization from immobilizer secrets.
+- [x] Provide an offline WinUI action **P2 CEM PIN readiness (offline review)** with a step counter, **Cancel review** and a terminal `ReviewFinishedUnsupported` state. No real PIN-search progress, fake time estimate, credentials, PIN result, CAN/UDS requests, service access or configuration writes.
+- [x] Share ContentDialog mutual exclusion with the existing snapshot and configuration research dialogs. Preserve original seven ECU Profiles actions and the separate static configuration viewer.
+- [x] Add **8 deterministic offline tests**: initial state, all stages fail closed, unsupported completion, cancellation/idempotence, late cancellation, credential/immobilizer separation, XAML action and compact-layout preservation.
+- [ ] Require **7/7 exact-final-HEAD** CI and separately verify **7/7 postmerge main** workflows. Real hardware compatibility, actual authorization and PIN algorithms are not implemented or accepted. No new Stable release without explicit approval; published Stable v0.2.4 remains frozen.
+
+---
+
 ## Development 0.3.0: offline XC90 P2 configuration catalog viewer (2026-10-27)
 
 - [x] [PR #538](https://github.com/vorlocsev/dvinholm/pull/538) merged into Development as `94fe881` after **7/7 successful PR-head workflows** including CI #3857. Independent post-merge `main` workflows remain a separate verification gate.
