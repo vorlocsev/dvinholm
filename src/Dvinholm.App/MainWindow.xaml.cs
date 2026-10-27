@@ -1185,6 +1185,15 @@ public sealed partial class MainWindow : Window
                 return;
 
             var report = EcuHistoricalSnapshotComparer.Compare(before, after);
+            // Analyze *two historical observations*, not an ECU identity.
+            // Do not make the existing snapshot comparison depend on
+            // chronology: equal timestamps still permit a normal DID diff.
+            var repeatedSummary = before.CapturedAtUtc == after.CapturedAtUtc
+                ? "Repeated-DID observation requires distinct UTC capture times; " +
+                  "ordinary historical diff is still available."
+                : EcuRepeatedDidEvidence.Compare(
+                    before.CapturedAtUtc < after.CapturedAtUtc ? before : after,
+                    before.CapturedAtUtc < after.CapturedAtUtc ? after : before).Summary;
             var dialog = new ContentDialog
             {
                 XamlRoot = RootLayout.XamlRoot,
@@ -1194,7 +1203,8 @@ public sealed partial class MainWindow : Window
                     MaxHeight = 320,
                     Content = new TextBlock
                     {
-                        Text = report.Summary,
+                        Text = report.Summary + Environment.NewLine + Environment.NewLine +
+                            repeatedSummary,
                         TextWrapping = TextWrapping.Wrap,
                         IsTextSelectionEnabled = true
                     }
