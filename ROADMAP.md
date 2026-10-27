@@ -1,3 +1,13 @@
+## Development 0.3.0: offline XC90 P2 configuration catalog viewer (2026-10-27)
+
+- [x] [PR #538](https://github.com/vorlocsev/dvinholm/pull/538) merged into Development as `94fe881` after **7/7 successful PR-head workflows** including CI #3857. Independent post-merge `main` workflows remain a separate verification gate.
+- [x] Add a standalone **P2 configuration candidates (offline)** button below the compact ECU Profiles/snapshot action grid. The scrollable WinUI panel shows eight research-only groups, vendor-advertisement evidence, scope, unknown vehicle/firmware applicability and safety warnings.
+- [x] Show current values as **unavailable**, desired values/PIN/service authentication and ECU writes as **disabled**. No real ECU configuration, vehicle hardware, J2534, UDS or file access occurs; no claims of supported on-car editing.
+- [x] Prevent simultaneous research/historical snapshot dialogs. Retain existing seven-button compact grid, scrollable profile metadata and all original handlers; add **8 deterministic offline tests** for safe display content, provenance and XAML layout.
+- [ ] Verify **7/7 exact-final-head PR CI** and independently **7/7 postmerge `main` checks**. Run separately gated installed Windows narrow-window/offline/virtual-adapter acceptance before a later release. Never count real J2534/CEM acceptance or publish Stable without explicit approval.
+
+---
+
 ## Development 0.3.0: XC90 P2 configuration candidate option catalog (2026-10-27)
 
 - [x] [PR #537](https://github.com/vorlocsev/dvinholm/pull/537) merged as `855f79a` following **7/7** successful PR-head workflows (CI #3851). Its independent post-merge `main` workflow set, including CI #3852, must be verified separately.

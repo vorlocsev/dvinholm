@@ -1018,6 +1018,59 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private async void P2ConfigCatalog_Click(object sender, RoutedEventArgs e)
+    {
+        // This is static research text only. Do not touch ECU selection,
+        // diagnostic state, CAN/J2534, saved snapshots, or service access.
+        if (_snapshotInspectionBusy || _closing)
+            return;
+
+        _snapshotInspectionBusy = true;
+        P2ConfigCatalogButton.IsEnabled = false;
+        InspectSnapshotButton.IsEnabled = false;
+        CompareSnapshotsButton.IsEnabled = false;
+        try
+        {
+            var dialog = new ContentDialog
+            {
+                XamlRoot = RootLayout.XamlRoot,
+                Title = "XC90 P2 configuration candidates (offline only)",
+                Content = new ScrollViewer
+                {
+                    MaxHeight = 340,
+                    Content = new TextBlock
+                    {
+                        Text = VolvoP2ConfigCandidateDisplay.BuildOverview(),
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true
+                    }
+                },
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close
+            };
+            await dialog.ShowAsync();
+            if (!_closing)
+                SetStatus("Viewed offline vendor-advertised P2 candidate names only. " +
+                    "No vehicle data read, PIN requested or ECU data changed.");
+        }
+        catch (Exception)
+        {
+            if (!_closing)
+                SetStatus("Could not display the offline P2 research catalog. " +
+                    "No vehicle or configuration operation was attempted.");
+        }
+        finally
+        {
+            _snapshotInspectionBusy = false;
+            if (!_closing)
+            {
+                P2ConfigCatalogButton.IsEnabled = true;
+                InspectSnapshotButton.IsEnabled = true;
+                CompareSnapshotsButton.IsEnabled = true;
+            }
+        }
+    }
+
     private async void CompareSnapshots_Click(object sender, RoutedEventArgs e)
     {
         // Both file selections and the comparison are local-only. Never
@@ -1026,6 +1079,7 @@ public sealed partial class MainWindow : Window
             return;
 
         _snapshotInspectionBusy = true;
+        P2ConfigCatalogButton.IsEnabled = false;
         InspectSnapshotButton.IsEnabled = false;
         CompareSnapshotsButton.IsEnabled = false;
         try
@@ -1094,6 +1148,7 @@ public sealed partial class MainWindow : Window
             _snapshotInspectionBusy = false;
             if (!_closing)
             {
+                P2ConfigCatalogButton.IsEnabled = true;
                 InspectSnapshotButton.IsEnabled = true;
                 CompareSnapshotsButton.IsEnabled = true;
             }
@@ -1109,6 +1164,7 @@ public sealed partial class MainWindow : Window
             return;
 
         _snapshotInspectionBusy = true;
+        P2ConfigCatalogButton.IsEnabled = false;
         InspectSnapshotButton.IsEnabled = false;
         CompareSnapshotsButton.IsEnabled = false;
         try
@@ -1166,6 +1222,7 @@ public sealed partial class MainWindow : Window
             _snapshotInspectionBusy = false;
             if (!_closing)
             {
+                P2ConfigCatalogButton.IsEnabled = true;
                 InspectSnapshotButton.IsEnabled = true;
                 CompareSnapshotsButton.IsEnabled = true;
             }
