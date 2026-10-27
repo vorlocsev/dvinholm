@@ -53,10 +53,14 @@ module, software version and physical adapter.
    authentication, ECU identity or authorization. The Development WinUI
    offers a separate opt-in, completely offline **Inspect saved snapshot**
    picker. It presents capture time, CAN addressing and DID numbers only;
-   raw DID values and private profile metadata stay hidden. It never changes
-   the live ECU session or sends requests. Controlled export redaction and
-   verified recovery backups remain future requirements; Windows UI/hardware
-   acceptance is still unperformed.
+   raw DID values and private profile metadata stay hidden. The WinUI also
+   offers an offline **Compare saved snapshots** action; it validates two
+   user-selected JSON files and displays changed DID identifiers and counts
+   only. It rejects mismatched profile IDs, CAN addressing and DID sets;
+   matching addresses do not prove the same physical ECU or firmware.
+   Neither action changes the live ECU session or transmits requests.
+   Controlled export redaction and verified recovery backups remain future
+   requirements; Windows UI/hardware acceptance is still unperformed.
 3. **Authorized PIN workflow research:** map precisely which module, model
    year and authorization proofs are necessary. Keep authentication secrets out
    of logs, exported snapshots and CI fixtures. No PIN guessing, brute-force,

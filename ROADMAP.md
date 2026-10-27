@@ -1,3 +1,13 @@
+## Development 0.3.0: compare two historical DID snapshots offline (2026-10-27)
+
+- [x] [PR #531](https://github.com/vorlocsev/dvinholm/pull/531) merged as `826c85c` after **7/7** green PR-head workflows (CI #3810). Seven independent post-merge workflows, including CI #3811, are tracked separately. Published Stable v0.2.4 remains pinned to `a9e6188`.
+- [x] Add a **Compare saved snapshots** action next to the offline DID viewer. Select two local `.json` files independently with WinUI file pickers; validate each using the existing bounded SHA-256/schema inspector; reuse deterministic `EcuConfigurationSnapshotDiff` to reject mismatched profile/CAN addressing or DID sets. This feature never connects to hardware or writes files/ECUs.
+- [x] Build a privacy-conscious summary of UTC capture timestamps, compared/changed DID counts and **identifiers of changed DIDs only**, without raw ECU values, private profile metadata, VIN, or full file paths. Warn that matching CAN addresses does not prove same physical ECU and SHA-256 does not authenticate a file. Avoid simultaneous viewer/comparer dialogs.
+- [x] Add **8 offline synthetic tests** for identical/different DID data, stable DID ordering, redaction of both files' values/profile metadata, profile/CAN mismatches, incomplete or duplicate sets, schema/UTC and safety flags, and immutable results.
+- [ ] Require 7/7 successful workflows on exact final PR head, followed by 7/7 independent post-merge `main` checks. Manual Windows 11 LTSC GUI and virtual-J2534 acceptance remain separate from CI; physical J2534/CEM and PIN/configuration writes are still unsupported. No new Stable publication without approval.
+
+---
+
 ## Development 0.3.0: read-only WinUI inspection of saved DID snapshots (2026-10-27)
 
 - [x] [PR #530](https://github.com/vorlocsev/dvinholm/pull/530) merged as `a2cc452` after **7/7** successful PR-head workflows (CI #3802); independently launched post-merge `main` workflows including CI #3803. Published Stable v0.2.4 remains pinned to `a9e6188`.
