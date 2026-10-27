@@ -1,9 +1,19 @@
+## Planned releases: 0.3.0–1.0.0 after Stable 0.2.4 (2026-10-27)
+
+- [x] Define the **proposed milestone sequence** in [Release roadmap](docs/RELEASE-ROADMAP.md): 0.3.0 read-only P2/CEM identification and configuration baseline; 0.4.0 authorized PIN workflow; 0.5.0 configuration editor and preview; 0.6.0 guarded write after physical hardware acceptance; 0.7.0 compatibility coverage; 1.0.0 tested supported subset. 0.2.5 remains an optional maintenance release. No dates or publication are implied.
+- [x] Complete first backend readback building block in PR #525; post-merge Development CI #3766 and six companion workflows passed on `a80218c`. Published Stable v0.2.4 remains pinned to `a9e6188`.
+- [x] Implement **read-only verified ECU identity evidence matching** with exact CAN addressing and at least two sourced DID values, distinguishing unknown and ambiguous signatures. Exclude VIN from cross-vehicle identity and leave production P2/CEM signature list empty until independently validated.
+- [x] Add **eight offline synthetic identity tests**: no catalog, exact verified match, unverified rejection, software-byte mismatch, missing/corrupt observations, CAN/address mismatch, ambiguity, and malformed/VIN-only/duplicate signatures.
+- [ ] Require seven green PR workflows on final head, independent seven green post-merge workflows; then collect genuine module variant evidence and supported DID metadata. Backend-only classification is not a hardware identification or ECU configuration editor. Keep physical J2534 tests deferred, with no new Stable publication without approval.
+
+---
+
 ## Development: ECU configuration readback foundation (2026-10-27)
 
 - [x] Confirm PR #522 and post-merge `main` `8442865` passed **7/7** workflows, including CI #3760. Stable v0.2.4 release remains pinned to `a9e6188`.
 - [x] Begin the **post-0.2.4** ECU-configuration roadmap with a typed, in-memory, read-only DID snapshot builder. Reuse `EcuProfile` metadata and the existing `UdsClient.ReadDataByIdentifier` (`0x22`) service; validate DID echoes, keep opaque exact hex values, reject incomplete or cancelled reads, record unverified provenance. No new ECU writes, SecurityAccess, PIN retrieval or PIN guesses are implemented.
 - [x] Add eight offline checks for DID ordering/byte fidelity, ECU identity/provenance, empty and >128-DID profiles, mismatched echo, missing/empty values, cancellation before/during capture, and failure on a later DID. See [ECU configuration and authorized PIN roadmap](docs/ECU-CONFIGURATION-ROADMAP.md) with SectorV, P3Tool and VDASH as unverified reference tools.
-- [ ] Require **7/7** green workflows on final PR head before merge, followed by independent 7/7 post-merge `main` verification. Readback is backend-only and not yet usable through WinUI; no installed vehicle ECU compatibility, hardware J2534 testing or Stable release is implied. Later authenticated configuration writes require separately verified module-specific safety gates.
+- [x] [PR #525](https://github.com/vorlocsev/dvinholm/pull/525) merged into Development as `a80218c` after **7/7** successful PR-head workflows (CI #3765) and **7/7** independent post-merge `main` workflows (CI #3766). Readback remains backend-only; Windows UI and real J2534/CEM acceptance have not been performed. No new Stable release or ECU write/PIN capability is implied.
 
 ---
 
