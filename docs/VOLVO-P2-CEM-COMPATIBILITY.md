@@ -98,6 +98,47 @@ subset. This is a **structural and provenance-notation gate only**:
 author, not cryptographic proof or independent verification. The production
 catalog remains **empty**. CEM/PIN/write operations are not enabled.
 
+## XC90 P2 configuration option candidates (Development 0.3.0)
+
+`VolvoP2ConfigOptionCatalog` records **eight vendor-advertised display
+categories only**: auxiliary heater, headlamp washers, region, parking
+assistance, automatic locking, service interval, wheel size and vehicle
+speed policy. Identifiers are newly assigned Dvinholm research labels;
+they are **not Volvo parameter IDs**, another application's IDs or a
+verified factory configuration dictionary.
+
+Evidence: the user-provided readable SectorV product screenshots from
+2026-10-27 and the vendor homepage, https://sectorv.ru/. The claim
+"from model year 2006" is **vendor advertising for P2**, not
+independently validated coverage for every XC90, CEM firmware, option
+or compatible adapter. Earlier first-generation XC90 years
+(2003–2005) are **outside that advertisement**, not proven incapable.
+
+The model deliberately has **no CAN IDs, DIDs, raw memory offsets,
+parameter bytes, PIN acquisition routine, security algorithm or
+read/write commands**. Each candidate records unverified module
+ownership and firmware applicability, an explicit source, year scope
+and an initial safety/compliance review flag. Even after a model
+year is independently confirmed, the assessment returns
+`VendorAdvertisedOnly`, never permission to issue requests or writes.
+Unsupported/unknown years and unknown option IDs fail closed.
+
+Before any option graduates from this research catalog:
+1. Independently verify exact CEM hardware/software revision,
+   applicable vehicle/model year, responsible ECU and protocol.
+2. Obtain legitimate documented read mappings, raw lengths, allowed
+   values, safety/legal constraints and dependency evidence.
+3. Independently validate backup, authorization, power/interruption
+   handling and readback/recovery on compatible test hardware.
+4. Add separately reviewed commands only behind explicit hardware and
+   user-consent gates. No current catalog flag authorizes such commands.
+
+Eight synthetic unit tests cover metadata uniqueness, provenance,
+disabled operations, immutability, missing model year, out-of-range
+years, advertised-only applicability and strict ID/safety labels.
+This is **backend research scaffolding**, not an exposed settings
+editor and not an on-car compatibility claim.
+
 ## Status in Development
 
 - `EcuConfigurationReadback`: 0x22 read-only opaque DID capture;
