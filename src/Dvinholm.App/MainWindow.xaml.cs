@@ -1192,13 +1192,21 @@ public sealed partial class MainWindow : Window
                         IsTextSelectionEnabled = true
                     }
                 },
+                PrimaryButtonText = "Compare another JSON...",
                 CloseButtonText = "Close",
                 DefaultButton = ContentDialogButton.Close
             };
-            await preview.ShowAsync();
-            if (!_closing)
-                SetStatus("Reviewed saved unverified CEM research JSON offline. " +
-                    "No profile changed and no ECU/PIN/configuration command sent.");
+            var choice = await preview.ShowAsync();
+            if (_closing)
+                return;
+            if (choice == ContentDialogResult.Primary)
+            {
+                await ShowP2CemIdentityResearchComparisonAsync(record);
+                return;
+            }
+
+            SetStatus("Reviewed saved unverified CEM research JSON offline. " +
+                "No profile changed and no ECU/PIN/configuration command sent.");
         }
         catch (InvalidDataException)
         {
@@ -1212,6 +1220,52 @@ public sealed partial class MainWindow : Window
                 SetStatus("Could not open CEM research JSON. Check local " +
                     "file permissions and format. No ECU operation occurred.");
         }
+    }
+
+    /// <summary>
+    /// A second explicit file choice compares manual research claims only.
+    /// The first record remains in memory; neither file is imported, saved,
+    /// converted to an ECU identity signature or sent to J2534.
+    /// </summary>
+    private async Task ShowP2CemIdentityResearchComparisonAsync(
+        VolvoP2CemIdentityResearchDocument first)
+    {
+        var picker = new FileOpenPicker();
+        InitializeWithWindow.Initialize(picker,
+            WindowNative.GetWindowHandle(this));
+        picker.FileTypeFilter.Add(".json");
+        var file = await picker.PickSingleFileAsync();
+        if (file is null || _closing)
+            return;
+
+        var second = await VolvoP2CemIdentityResearchFileInspection
+            .InspectFileAsync(file.Path);
+        if (_closing)
+            return;
+
+        var report = VolvoP2CemIdentityResearchComparison
+            .BuildReadOnlyDiff(first, second);
+        var dialog = new ContentDialog
+        {
+            XamlRoot = RootLayout.XamlRoot,
+            Title = "Compare CEM research claims (UNVERIFIED, offline)",
+            Content = new ScrollViewer
+            {
+                MaxHeight = 350,
+                Content = new TextBlock
+                {
+                    Text = report,
+                    TextWrapping = TextWrapping.Wrap,
+                    IsTextSelectionEnabled = true
+                }
+            },
+            CloseButtonText = "Close",
+            DefaultButton = ContentDialogButton.Close
+        };
+        await dialog.ShowAsync();
+        if (!_closing)
+            SetStatus("Compared two offline CEM identity research cards. " +
+                "No ECU identity was verified and no profile or vehicle was changed.");
     }
 
     /// <summary>

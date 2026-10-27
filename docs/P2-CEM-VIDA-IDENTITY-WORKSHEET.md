@@ -61,6 +61,34 @@ a safe programming procedure. Do not put VIN/PIN/serial/secret data in
 a file intended for this inspector.
 
 
+
+### Compare two saved CEM identity research cards
+
+In Development, select **Open CEM research JSON...** and review the
+first research card. Choose **Compare another JSON...**, then explicitly
+select the second saved card. The app uses the same bounded strict UTF-8,
+versioned schema and unverified-only checks for each file. The resulting
+read-only comparison marks **SAME** or **DIFFERENT** for the claimed model
+year, CEM hardware P/N, CEM software P/N and CEM diagnostic software P/N,
+showing both entered values. The user-claimed VIDA origin flag is
+compared separately and **never** counts as proof or a hardware match.
+
+Matching numbers cannot prove the files came from the same physical CEM,
+and differing numbers do not prove incompatibility. The two saved
+files are untrusted, editable notes, not a verified module inventory or
+firmware support table. No filename, local path, serial, VIN, PIN or
+raw ECU data is included; the visible part numbers themselves can be
+identifying metadata. Cancelling the second picker leaves both files
+unchanged. Nothing is saved automatically, and no profile, ECU session,
+PIN or configuration operation is invoked.
+
+Eight synthetic comparison tests check identical records, each of four
+identity-field differences, a differing source claim, and fail-closed
+behavior for unsafe or noncanonical records. Installed Windows picker
+behavior is **not** proven by these unit tests and requires a separate
+manual acceptance check.
+
+
 For privacy, **do not enter** the hardware serial number, VIN,
 immobilizer PIN, credentials, vehicle owner details or raw ECU
 response bytes. The Dvinholm form does not request or store those
