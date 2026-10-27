@@ -25,7 +25,7 @@ public sealed class VolvoP2ConfigCandidateDisplayTests
         var overview = Overview();
         Assert.Contains("offline research", overview);
         Assert.Contains("NOT VEHICLE SETTINGS", overview);
-        Assert.Contains("No vehicle has been identified or contacted", overview);
+        Assert.Contains("This viewer neither identifies nor contacts any vehicle", overview);
         Assert.Contains("Actual model year", overview);
     }
 
