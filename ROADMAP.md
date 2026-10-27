@@ -1,3 +1,13 @@
+## Development 0.3.0: VIDA CEM node namespace & diagnostic interface audit (2026-10-28)
+
+- [x] [PR #550](https://github.com/vorlocsev/dvinholm/pull/550) merged as `1fed749` after **5/5 successful exact-HEAD workflows** (CI #3957). Postmerge main CI #3958 also completed successfully.
+- [x] Audit **official Volvo vehicle communication guidance** (Workshop System Requirements 320EN20, section 6) against the project assumption: DiCE recommended for D2/GGD diagnostics; `J2534-1` in VIDA is software-download-only and cannot do VIDA diagnostics. Do not infer third-party app support or failure solely from VIDA's limitations.
+- [x] Add source-scoped **offline VIDA CEM logical node advisory** for historical *reported* P2 node labels `40` (MY2003-04) and `50` (MY2005+), explicitly **NOT a CAN request ID, ISO-TP response ID, DID or usable PIN**. Record disagreement in secondary reproductions of Volvo TJ14902; unconfirmed years remain unknown.
+- [x] Integrate the advisory into the existing P2 configuration research viewer, add **8 deterministic offline tests** including no live access on any path, and document [exact source tier and conflicts](docs/VOLVO-P2-CEM-COMPATIBILITY.md).
+- [ ] Await 5/5 final-head PR checks and a separate postmerge main CI. Actual CEM addressing/transport and hardware/firmware fingerprint remain unverified; physical validation stays deferred. No PIN extraction or configuration write, no new Stable release without approval.
+
+---
+
 ## Development 0.3.0: virtual J2534 read-only capture E2E (2026-10-28)
 
 - [x] [PR #549](https://github.com/vorlocsev/dvinholm/pull/549) merged as `9256dd4` after **5/5** exact-head green workflows, including CI #3952. Independently audit postmerge `main` checks.
