@@ -139,6 +139,10 @@
                                 Content="Inspect saved snapshot"
                                 ToolTipService.ToolTip="Inspect local DID JSON without connecting, transmitting CAN, or restoring ECU data."
                                 Click="InspectSnapshot_Click"/>
+                        <Button x:Name="CompareSnapshotsButton"
+                                Content="Compare saved snapshots"
+                                ToolTipService.ToolTip="Compare two local diagnostic JSON snapshots offline. Show only changed DID numbers, not their data."
+                                Click="CompareSnapshots_Click"/>
                     </StackPanel>
                     <ScrollViewer Grid.Row="2" MaxHeight="76"
                                   VerticalScrollBarVisibility="Auto"
