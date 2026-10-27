@@ -106,6 +106,7 @@
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
                         <RowDefinition Height="Auto"/>
+                        <RowDefinition Height="Auto"/>
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
@@ -179,6 +180,11 @@
                             HorizontalAlignment="Stretch"
                             ToolTipService.ToolTip="View vendor-advertised Volvo XC90 P2 option names offline; no vehicle queries, PIN, editing or writes."
                             Click="P2ConfigCatalog_Click"/>
+                    <Button x:Name="P2PinReviewButton" Grid.Row="4"
+                            Content="P2 CEM PIN readiness (offline review)"
+                            HorizontalAlignment="Stretch"
+                            ToolTipService.ToolTip="Cancellable offline evidence checklist only. No PIN extraction, credential entry or vehicle operation."
+                            Click="P2PinReview_Click"/>
                 </Grid>
             </Border>
             <Grid Grid.Row="3">
