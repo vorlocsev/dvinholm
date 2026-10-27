@@ -325,6 +325,37 @@ invalid/duplicate DID data, privacy and immutable denial flags. See
 [repeated DID research guidance](P2-CEM-REPEATED-DID-EVIDENCE.md).
 Actual CEM hardware evidence and Windows acceptance remain pending.
 
+## Manufacturer-documented XC90 CEM service-menu categories
+
+Volvo Cars **Technical Journal 20278.6.11** (2016-09-06),
+[NHTSA-hosted PDF page 16, XC90 page 3](https://static.nhtsa.gov/odi/tsbs/2016/SB-10087303-5448.pdf),
+separately documents six CEM service-menu settings: home-safe
+lighting, daytime running lamps, tailgate wiper, fuel filler locking
+delay, Bi-Xenon low-beam warning and triple-flash turn indicator.
+This is **actual manufacturer source evidence for the named service
+menus**, unlike the vendor-advertised eight display categories.
+They are shown in a separate section of Dvinholm's existing **offline**
+P2 research viewer.
+
+**Not independently established:** applicability to each model
+year/individual XC90 CEM hardware and software revision, per-feature
+parameter IDs/offsets, current values, binary encoding, CAN/diagnostic
+transport, security authorization, PIN retrieval or any operation in
+Dvinholm. The Dvinholm research identifiers are invented labels,
+not manufacturer protocol IDs. Six immutable source-backed names do
+**not** populate the production CEM fingerprint or parameter catalog,
+both of which remain empty. Eight offline tests cover provenance,
+feature scope, separation from vendor advertising, immutability,
+unsafe/unknown IDs, disabled operations and the UI research text.
+
+Volvo's [official DiCE/J2534 explanation](https://www.volvospecialtools.com/index.cfm?event=info.dice)
+also distinguishes VIDA diagnostic capabilities from pass-thru
+programming: J2534-1 is expressly **not for VIDA diagnostics**,
+J2534-2 handles additional network programming, and DiCE is
+recommended for legacy D2/GGD applications. Driver detection is not
+CEM diagnostic support. See [manufacturer CEM menu evidence and
+adapter limits](XC90-OEM-CEM-MENU-EVIDENCE.md).
+
 ## Status in Development
 
 - `EcuConfigurationReadback`: 0x22 read-only opaque DID capture;

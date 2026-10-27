@@ -7,6 +7,17 @@
 
 ---
 
+## Development 0.3.0: manufacturer-documented XC90 CEM service menu (2026-10-27)
+
+- [x] [PR #545](https://github.com/vorlocsev/dvinholm/pull/545) merged as `78fa572` following **7/7** successful exact-head PR workflows (CI #3911); independently audit all seven postmerge `main` workflows.
+- [x] Identify and review Volvo **Technical Journal 20278.6.11** (2016-09-06), NHTSA-hosted PDF page 16, which separately lists **six XC90 CEM service-menu setting categories**. This is genuine manufacturer provenance for *menu names*, not firmware parameter encodings.
+- [x] Add `VolvoXc90OemCemMenuCatalog` with six immutable source-attributed research labels and all executable/read/edit/PIN flags **false**. Keep them separate from the eight SectorV-advertised candidates. No CEM parameter IDs, programming offsets, CAN IDs, DIDs, PIN methods or raw code are asserted.
+- [x] Present both evidence tiers separately in the existing offline P2 configuration viewer, including public source link and limitations. No new ECU or snapshot operations.
+- [x] Add eight deterministic offline source/immutability/UI/denial tests. Note manufacturer compatibility distinction for **DiCE, J2534-1 and J2534-2** in [evidence guide](docs/XC90-OEM-CEM-MENU-EVIDENCE.md) and [XC90 CEM compatibility register](docs/VOLVO-P2-CEM-COMPATIBILITY.md).
+- [ ] Require seven successful exact-head PR checks and independently seven successful postmerge main checks. Model-year/firmware mapping, true physical diagnostic capability, Windows UI and authorized PIN/write operations remain unverified. Published Stable v0.2.4 unchanged; further Stable release requires explicit approval.
+
+---
+
 ## Development 0.3.0: two-capture DID stability evidence (2026-10-27)
 
 - [x] [PR #544](https://github.com/vorlocsev/dvinholm/pull/544) merged into Development as `acd94be` after **7/7** green exact-head workflow checks, including CI #3903. Seven independent postmerge `main` checks require a separate audit.
