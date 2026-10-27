@@ -59,7 +59,7 @@ public sealed class VolvoXc90OemCemMenuCatalogTests
                 result.HasKnownReadMapping, result.HasKnownWriteMapping,
                 result.MayRequestEcu, result.MayEditConfiguration,
                 result.MaySearchOrAuthorizePin
-            }, Assert.False);
+            }, enabled => Assert.False(enabled));
         }
     }
 
