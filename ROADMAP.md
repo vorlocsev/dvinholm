@@ -1,3 +1,12 @@
+## Development: reject unsafe DOS ZIP flags before staging (2026-10-27)
+
+- [x] Confirm main `240439c` after PR #519 and successful post-merge CI #3733; published Stable v0.2.4 is frozen at `a9e6188`. Development branch `fix/updater-zip-dos-file-type-attributes` adds a follow-up metadata safety guard.
+- [x] Reject ZIP entries with DOS volume-label (0x08) or device (0x40) attributes, and regular files falsely marked as DOS directories (0x10). Preserve valid directory entries with or without the DOS directory marker, and ordinary hidden/system/archive flags. Existing Unix file-type/reparse-point preflight remains intact.
+- [x] Add eight offline disposable-ZIP tests covering three unsafe DOS categories, late-entry rejection before any staging files, and normal Windows-compatible file/directory behavior. Development-only CI #3735 passed on the feature branch; this does not imply complete PR verification.
+- [ ] Create PR, require **7/7** workflows successful on its exact final head before merge, and independently verify post-merge `main` workflows. Installed Windows 11 LTSC UI/update replacement and physical J2534 are separate acceptance gates; no new Stable release is authorized.
+
+---
+
 ## Development: ZIP external file-type preflight (2026-10-26)
 
 - [x] Confirm `main` at `921eb81` and seven successful post-merge workflows for PR #518 (CI #3728). Public Stable v0.2.4 tag stays at `a9e6188`.
