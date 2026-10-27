@@ -107,8 +107,8 @@
                     </Grid.RowDefinitions>
                     <Grid Grid.Row="0" ColumnSpacing="8">
                         <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="250"/>
+                            <ColumnDefinition Width="2*"/>
+                            <ColumnDefinition Width="2*"/>
                             <ColumnDefinition Width="Auto"/>
                         </Grid.ColumnDefinitions>
                         <TextBox x:Name="ProfileSearch" Grid.Column="0"
@@ -124,26 +124,46 @@
                                   Unchecked="MarkedVerifiedOnly_Changed"
                                   VerticalAlignment="Bottom"/>
                     </Grid>
-                    <StackPanel x:Name="ProfileActionsPanel" Grid.Row="1" Orientation="Horizontal" Spacing="8">
-                        <Button x:Name="CreateProfileButton" Content="New profile"
+                    <!-- Two compact action rows replace a seven-button horizontal
+                         strip which overflowed narrower app windows. All controls
+                         stay reachable without horizontal scrolling. -->
+                    <Grid x:Name="ProfileActionsPanel" Grid.Row="1" RowSpacing="6" ColumnSpacing="8">
+                        <Grid.RowDefinitions>
+                            <RowDefinition Height="Auto"/>
+                            <RowDefinition Height="Auto"/>
+                        </Grid.RowDefinitions>
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                            <ColumnDefinition Width="*"/>
+                        </Grid.ColumnDefinitions>
+                        <Button x:Name="CreateProfileButton" Grid.Row="0" Grid.Column="0"
+                                Content="New profile" HorizontalAlignment="Stretch"
                                 Click="CreateProfile_Click"/>
-                        <Button x:Name="EditProfileButton" Content="Edit selected"
+                        <Button x:Name="EditProfileButton" Grid.Row="0" Grid.Column="1"
+                                Content="Edit selected" HorizontalAlignment="Stretch"
                                 Click="EditProfile_Click" IsEnabled="False"/>
-                        <Button Content="Import JSON" Click="ImportProfiles_Click"/>
-                        <Button Content="Export JSON" Click="ExportProfiles_Click"/>
-                        <Button x:Name="CaptureSnapshotButton"
-                                Content="Read + save DID snapshot"
+                        <Button Grid.Row="0" Grid.Column="2"
+                                Content="Import JSON" HorizontalAlignment="Stretch"
+                                Click="ImportProfiles_Click"/>
+                        <Button Grid.Row="0" Grid.Column="3"
+                                Content="Export JSON" HorizontalAlignment="Stretch"
+                                Click="ExportProfiles_Click"/>
+                        <Button x:Name="CaptureSnapshotButton" Grid.Row="1"
+                                Grid.Column="0" Grid.ColumnSpan="2"
+                                Content="Read + save snapshot" HorizontalAlignment="Stretch"
                                 ToolTipService.ToolTip="Read selected profile DIDs and explicitly save a diagnostic JSON file. Not a restorable ECU backup."
                                 Click="CaptureSnapshot_Click" IsEnabled="False"/>
-                        <Button x:Name="InspectSnapshotButton"
-                                Content="Inspect saved snapshot"
+                        <Button x:Name="InspectSnapshotButton" Grid.Row="1" Grid.Column="2"
+                                Content="Inspect snapshot" HorizontalAlignment="Stretch"
                                 ToolTipService.ToolTip="Inspect local DID JSON without connecting, transmitting CAN, or restoring ECU data."
                                 Click="InspectSnapshot_Click"/>
-                        <Button x:Name="CompareSnapshotsButton"
-                                Content="Compare saved snapshots"
+                        <Button x:Name="CompareSnapshotsButton" Grid.Row="1" Grid.Column="3"
+                                Content="Compare snapshots" HorizontalAlignment="Stretch"
                                 ToolTipService.ToolTip="Compare two local diagnostic JSON snapshots offline. Show only changed DID numbers, not their data."
                                 Click="CompareSnapshots_Click"/>
-                    </StackPanel>
+                    </Grid>
                     <ScrollViewer Grid.Row="2" MaxHeight="76"
                                   VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">

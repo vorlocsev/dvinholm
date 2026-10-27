@@ -1,3 +1,13 @@
+## Development 0.3.0: compact ECU Profiles actions on narrower windows (2026-10-27)
+
+- [x] [PR #535](https://github.com/vorlocsev/dvinholm/pull/535) merged as `5b2c30a` after **7/7** successful PR-head workflows (CI #3838). Seven independent post-merge `main` workflows, including CI #3839, remain a separate verification gate. Published Stable v0.2.4 remains pinned to `a9e6188`.
+- [x] Replace the ECU Profiles **seven-button single horizontal strip** with a compact two-row, four-column stretch grid. Keep profile Create/Edit/Import/Export on one row and Read + Save/Inspect/Compare DID snapshot actions on the next, with no horizontal scrolling. Preserve all original handlers, disabled-state safeguards and sensitive-export tooltips.
+- [x] Make the search and profile selector share available width instead of a fixed 250-pixel selector column. Keep profile detail metadata in the capped 76-pixel vertical scroll region so the CAN Monitor remains visible in more compact windows.
+- [x] Add **8 offline xUnit XAML-contract checks** via an embedded copy of the actual `MainWindow.xaml`: rows/columns, button count, original profile handlers, capture gating/tooltip, read-only actions, filter sizing, metadata scroll and unique stretch actions. No manual Windows launch, real hardware or UI pixel-layout acceptance is implied.
+- [ ] Confirm 7/7 exact-head PR workflows and 7/7 independent merged `main` workflows. Perform Windows 11 LTSC acceptance of compact layout with virtual J2534 when available; physical ECU tests deferred. No new Stable release without explicit user approval.
+
+---
+
 ## Development 0.3.0: end-to-end offline P2/CEM read-only acceptance (2026-10-27)
 
 - [x] [PR #534](https://github.com/vorlocsev/dvinholm/pull/534) merged as `656bfd7` after **7/7** exact-head PR workflows, including CI #3833. Seven independent post-merge `main` workflows, including CI #3834, must be checked separately.
