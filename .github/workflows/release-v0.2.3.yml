@@ -1,39 +1,8 @@
-name: Stable v0.2.3 (automated staging, manual publish)
+name: Stable v0.2.3 (archived, manual staging only)
 
+# 0.2.3 was superseded by Stable 0.2.4. No automatic PR or push
+# staging is useful; preserve explicit manual modes and release guards.
 on:
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/release-v0.2.3.yml"
-      - "eng/Test-ReleaseCandidate023.ps1"
-      - "eng/Resume-StableDraft023.ps1"
-      - "eng/Prepare-StableAcceptance023.ps1"
-      - "START-ACCEPTANCE.cmd"
-      - "eng/Test-StableAcceptance023Safety.ps1"
-      - "eng/Test-RealStableUpgrade023.ps1"
-      - "docs/WINDOWS_ACCEPTANCE_0.2.3.md"
-      - "eng/Package-WindowsDistribution.ps1"
-      - "eng/Test-WindowsDistribution.ps1"
-      - "eng/Test-WindowsDistributionExtraction.ps1"
-      - "src/Dvinholm.App/**"
-      - "tests/Dvinholm.App.Tests/**"
-      - "tests/Dvinholm.Stable.Tests/**"
-  pull_request:
-    paths:
-      - ".github/workflows/release-v0.2.3.yml"
-      - "eng/Test-ReleaseCandidate023.ps1"
-      - "eng/Resume-StableDraft023.ps1"
-      - "eng/Prepare-StableAcceptance023.ps1"
-      - "START-ACCEPTANCE.cmd"
-      - "eng/Test-StableAcceptance023Safety.ps1"
-      - "eng/Test-RealStableUpgrade023.ps1"
-      - "docs/WINDOWS_ACCEPTANCE_0.2.3.md"
-      - "eng/Package-WindowsDistribution.ps1"
-      - "eng/Test-WindowsDistribution.ps1"
-      - "eng/Test-WindowsDistributionExtraction.ps1"
-      - "src/Dvinholm.App/**"
-      - "tests/Dvinholm.App.Tests/**"
-      - "tests/Dvinholm.Stable.Tests/**"
   workflow_dispatch:
     inputs:
       mode:

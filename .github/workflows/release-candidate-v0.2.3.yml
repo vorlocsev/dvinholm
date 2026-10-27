@@ -1,18 +1,8 @@
-name: Dvinholm 0.2.3 RC (validation only)
+name: Dvinholm 0.2.3 RC (archived, manual validation only)
 
+# Obsolete 0.2.3 RC is kept for manually requested historical audits.
+# Development PRs and main pushes must not rebuild a superseded version.
 on:
-  pull_request:
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/release-candidate-v0.2.3.yml"
-      - "eng/Test-ReleaseCandidate023.ps1"
-      - "eng/Package-WindowsDistribution.ps1"
-      - "eng/Test-WindowsDistribution.ps1"
-      - "eng/Test-WindowsDistributionExtraction.ps1"
-      - "src/Dvinholm.App/**"
-      - ".github/release-notes-v0.2.3.md"
-      - "docs/RELEASE_CANDIDATE_0.2.3.md"
   workflow_dispatch:
 
 # No tag/release creation, signing, installation, or elevated permissions.

@@ -1,3 +1,12 @@
+## Development CI cleanup: archive superseded 0.2.3 workflows (2026-10-27)
+
+- [x] Mark `.github/workflows/release-candidate-v0.2.3.yml` and `.github/workflows/release-v0.2.3.yml` as **archived manual-only workflows**. Remove automatic `pull_request` and `push main` event triggers that were rebuilding historical v0.2.3 test archives on unrelated 0.3.0 development.
+- [x] Preserve explicit `workflow_dispatch` operation, including existing SHA/authorization safety gates. No workflow automatically publishes a Stable release; the published 0.2.4 artifacts and updater channels are unchanged.
+- [x] Verify main branch ruleset contains no mandatory status-check rules for the removed automatic workflows. Standard current Development CI and 0.2.4 validation stay enabled.
+- [ ] Verify final branch's workflow configuration and CI, then inspect postmerge main to ensure *new* 0.3.0 commits no longer auto-run either historical 0.2.3 workflow. Do not count historical runs already started as new patches or releases.
+
+---
+
 ## Development 0.3.0: manufacturer-documented XC90 CEM service menu (2026-10-27)
 
 - [x] [PR #545](https://github.com/vorlocsev/dvinholm/pull/545) merged as `78fa572` following **7/7** successful exact-head PR workflows (CI #3911); independently audit all seven postmerge `main` workflows.
