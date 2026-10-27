@@ -1124,7 +1124,8 @@ public sealed partial class MainWindow : Window
             };
             await dialog.ShowAsync();
             if (!_closing)
-                SetStatus("Viewed offline vendor-advertised P2 candidate names only. " +
+                SetStatus("Viewed offline P2 research categories: vendor claims and " +
+                    "Volvo-documented service menu names, neither a vehicle configuration. " +
                     "No vehicle data read, PIN requested or ECU data changed.");
         }
         catch (Exception)
