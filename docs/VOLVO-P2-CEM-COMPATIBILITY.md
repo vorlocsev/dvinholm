@@ -200,6 +200,51 @@ compatibility, legitimate permission/credential handling, hardware
 testing, clear consent and separate security/safety review. **Do not
 confuse an offline walkthrough with a PIN algorithm or a PIN result.**
 
+## XC90 P2 CEM service-operation evidence gap matrix (Development 0.3.0)
+
+`VolvoP2CemServiceCapabilityMatrix` adds a **read-only, offline research
+assessment**, independent from both the existing generic UDS reader and
+the educational PIN readiness dialog. It lists six *not implemented*
+P2/CEM-specific operation categories: identify CEM, read vehicle
+configuration, review authorized PIN acquisition, service authentication,
+preview a configuration change and write configuration. These are
+future feature categories, **not callable ECU commands**.
+
+Each category is assessed against explicit missing requirements:
+
+- **Confirmed model year and matching CEM identity.** A P2/CEM support
+  assessment made from synthetic data is not production verification.
+- **Configuration read/encoding evidence.** A read-only DID snapshot is
+  opaque and is not a model-specific configuration dictionary.
+- **Legitimate model-specific service route and scoped entitlement.**
+  Configuration-service authorization is kept separate from
+  immobilizer/key material; unknown or immobilizer scope never qualifies.
+- **Physical J2534/CEM acceptance.** Required before live vehicle
+  operations. Offline preview alone does not send data.
+- **Tested backup/recovery plan.** Required additionally before writing.
+- **Operational service implementation.** Deliberately and
+  unconditionally missing for every P2-specific operation.
+
+The result is an immutable list of blockers and a generic explanation.
+All `May...` permissions remain **false**, even when a synthetic input
+claims every other requirement has been documented or passed. Reference
+strings are only bounded, opaque research pointers; they are *not*
+independent verification, PINs, credentials, vehicle data or executable
+security material. They are not echoed in UI/report messages.
+
+The production CEM signature catalog remains empty. No physical
+J2534 tests, approved service protocol, PIN extraction algorithm,
+credential storage, actual option mapping, editor integration or
+ECU write has been added. **Eight offline tests** cover six denied
+services, year and identity failure, read mappings, credential scope,
+physical/backup gates and the all-claims-true terminal denial.
+
+The new model is backend scaffolding only. It does **not** change any
+existing WinUI permission, CAN speed, diagnostic session, read-only UDS
+command or the published Stable v0.2.4 release. Do not mark hardware,
+authorization or functional PIN capability as supported based on this
+research status.
+
 ## Status in Development
 
 - `EcuConfigurationReadback`: 0x22 read-only opaque DID capture;
