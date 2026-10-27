@@ -35,9 +35,13 @@ module, software version and physical adapter.
 1. **Module identification and support matrix:** collect read-only ECU
    identifiers, software revisions and known-safe DID lists, distinguishing
    confirmed from hypothesized values. Add offline/virtual-adapter tests.
-2. **Snapshot export and comparison:** user-initiated local export with
-   integrity metadata, strict size limits, private storage, redaction options
-   and safeguards against overwriting the only backup. Use deterministic diffs.
+2. **Snapshot export and comparison:** deterministic, strict in-memory
+   DID-by-DID diff is now the second offline Development building block.
+   The diff refuses mismatched CAN addressing, profile or DID sets and never
+   treats equal addressing as verified ECU identity. File export remains
+   **unimplemented**; later user-initiated local export needs integrity
+   metadata, strict size limits, privacy/redaction options, and safeguards
+   against overwriting the only backup.
 3. **Authorized PIN workflow research:** map precisely which module, model
    year and authorization proofs are necessary. Keep authentication secrets out
    of logs, exported snapshots and CI fixtures. No PIN guessing, brute-force,
