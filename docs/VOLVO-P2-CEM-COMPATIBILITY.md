@@ -43,6 +43,29 @@ methods, PIN algorithms, DID semantics or write sequences.
    read-only fingerprint never grants security access or authorizes ECU
    programming. These functions require independent release gates.
 
+## Evidence catalog preflight (Development)
+
+Before any evidence entry is considered for **read-only identity assessment**,
+`VolvoP2CemEvidenceCatalogValidator` checks the entire bounded catalog:
+
+- At most 128 entries, each with a coherent model-year interval, P2/CEM
+  scope, a clearly sourced and author-marked-verified identity.
+- Valid distinct 11-bit or 29-bit CAN request/response IDs, and at least two
+  distinct, bounded hexadecimal hardware/software identifiers. VIN DID
+  `F190` is never a cross-vehicle identity fingerprint.
+- A bounded duplicate-free read-only DID list with independent source notes
+  when mappings are declared; VIN is excluded from module-variant mappings.
+- No overlap of the **same variant ID** across year intervals. Different
+  firmware revisions can share CAN IDs but must be uniquely distinguished by
+  actual verified identifiers.
+
+If the entire catalog contains a malformed or conflicting entry, its
+read-only assessment fails closed rather than selecting a seemingly valid
+subset. This is a **structural and provenance-notation gate only**:
+`IsVerified` and evidence-source strings are statements by the evidence
+author, not cryptographic proof or independent verification. The production
+catalog remains **empty**. CEM/PIN/write operations are not enabled.
+
 ## Status in Development
 
 - `EcuConfigurationReadback`: 0x22 read-only opaque DID capture;

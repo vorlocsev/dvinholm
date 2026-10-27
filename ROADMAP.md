@@ -1,3 +1,13 @@
+## Development 0.3.0: full-catalog XC90 P2/CEM evidence preflight (2026-10-27)
+
+- [x] [PR #533](https://github.com/vorlocsev/dvinholm/pull/533) merged as `ab137f0` after **7/7** successful PR-head workflows on corrected `a24edc5` (CI #3826). Original CS1929 build failure was fixed; independent post-merge Development workflows including CI #3827 are verified separately.
+- [x] Add bounded, **fail-closed** validation of the complete prospective XC90 P2/CEM evidence catalog before any read-only identity match. Validate scope, model-year ranges, 11/29-bit addressing, separately sourced two-or-more-DID fingerprints, VIN exclusion, duplicate/read DID records, source-note lengths and same-variant overlapping model years. Cap catalogs at 128 entries; reject partial/ambiguous input without changing the production catalog.
+- [x] Preserve the deliberately **empty production CEM variant catalog** and zero PIN/configuration write support. Catalogue preflight only validates structure and author-supplied provenance claims; it does not authenticate manufacturers, ECU firmware, vehicle identity or the evidence author's assertions.
+- [x] Add **8 synthetic offline checks**: empty catalog, valid read-only result, invalid source/platform, year/CAN mismatches, malformed/VIN identity, bad read DID provenance, overlapping variant scopes and catalog size/immutability. No physical J2534 or ECU used.
+- [ ] Verify 7/7 successful workflows at final PR HEAD and independently 7/7 after merging to `main`. Continue collecting independently validated real P2/CEM firmware/transport evidence before declaring actual vehicle compatibility. No new Stable version without user approval.
+
+---
+
 ## Development 0.3.0: XC90 P2/CEM year/firmware support evidence (2026-10-27)
 
 - [x] [PR #532](https://github.com/vorlocsev/dvinholm/pull/532) merged as `bec1eae` after **7/7** successful exact-head PR workflows (CI #3818). The independent seven `main` workflows, including CI #3819, started separately and must be verified before this merge is considered fully accepted. Published Stable v0.2.4 remains fixed at `a9e6188`.
