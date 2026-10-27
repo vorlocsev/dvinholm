@@ -14,8 +14,9 @@ internal static class VolvoP2ConfigCandidateDisplay
         var text = new StringBuilder();
         text.AppendLine("XC90 P2 configuration candidates (offline research)");
         text.AppendLine();
-        text.AppendLine("NOT VEHICLE SETTINGS. The option names below are vendor-advertised");
-        text.AppendLine("categories, not verified ECU parameters or a decoded configuration.");
+        text.AppendLine("NOT VEHICLE SETTINGS. The first eight names below are vendor-advertised");
+        text.AppendLine("categories. A separate section lists six Volvo-documented CEM menus.");
+        text.AppendLine("Neither evidence tier provides a decoded ECU configuration.");
         text.AppendLine("Actual model year, CEM hardware/firmware, bus and option ownership");
         text.AppendLine("are unknown. This viewer neither identifies nor contacts any vehicle.");
         text.AppendLine("SectorV public P2 advertisement (reviewed 2026-10-27) describes");
