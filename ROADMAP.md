@@ -1,3 +1,14 @@
+## Development 0.3.0: two-capture DID stability evidence (2026-10-27)
+
+- [x] [PR #544](https://github.com/vorlocsev/dvinholm/pull/544) merged into Development as `acd94be` after **7/7** green exact-head workflow checks, including CI #3903. Seven independent postmerge `main` checks require a separate audit.
+- [x] Extend existing **Compare snapshots** WinUI research panel with `EcuRepeatedDidEvidence` showing each compared DID's earlier/later **byte lengths**, value changed/unchanged status and observation counts. Never expose actual values, profile labels, file paths or private metadata.
+- [x] Reuse stringent historical snapshot validation, CAN/profile/DID-set compatibility and no-J2534 rule. Require strictly increasing UTC for chronological findings; reversed user file selection is ordered automatically; equal timestamps keep the original generic DID diff working.
+- [x] Keep physical CEM identity, firmware mapping, service PIN/access, configuration writes and all live diagnostic permissions **disabled**. Matching raw values across just two captures is not evidence of immutable CEM identity or a restorable backup.
+- [x] Add **8 deterministic offline xUnit checks** for equality/change/length, ordering/time, mismatched profile/transport/DID set, redaction and immutable fail-closed output. Document privacy/provenance in [repeated-DID research guidance](docs/P2-CEM-REPEATED-DID-EVIDENCE.md).
+- [ ] Require all 7 final-head PR workflows and 7 independent postmerge `main` workflows. Installed Windows UI/virtual-J2534 and real authorized CEM tests remain unperformed. Stable v0.2.4 unchanged; do not publish another Stable without explicit user approval.
+
+---
+
 ## Development 0.3.0: shareable sanitized XC90 P2/CEM DID research intake (2026-10-27)
 
 - [x] [PR #543](https://github.com/vorlocsev/dvinholm/pull/543) merged into Development as `52fddff` after 7/7 successful exact-HEAD PR checks including CI #3894. Postmerge `main` checks are a **separate** acceptance gate.
