@@ -1,9 +1,18 @@
+## Development: reject empty staged EXE before replacement (2026-10-27)
+
+- [x] Verify seven successful post-merge `main` workflows from PR #520, including CI #3738, on `2a52d12`. Published Stable v0.2.4 remains frozen at `a9e6188`.
+- [x] After ZIP extraction and before returning a prepared update, require the root `Dvinholm.App.exe` to exist as a nonempty, non-reparse file. Previously only existence was checked, allowing a valid ZIP with a zero-byte EXE to reach the replacement helper and rely on rollback. Preserve artifact SHA-256, size, cancellation, path safety and current replacement logic.
+- [x] Add eight isolated offline xUnit checks: valid/missing/empty/directory/nested-only EXE, successful real ZIP download with matching digest, rejected empty-EXE ZIP with staging/temp cleanup, and source ordering before marking an update prepared.
+- [ ] Require 7/7 workflows successful on the exact PR head before merging this Development-only change; check independent post-merge `main` workflows. No installed Windows update/GUI acceptance or physical J2534 test claimed. Do not publish a new Stable release without confirmation.
+
+---
+
 ## Development: reject unsafe DOS ZIP flags before staging (2026-10-27)
 
 - [x] Confirm main `240439c` after PR #519 and successful post-merge CI #3733; published Stable v0.2.4 is frozen at `a9e6188`. Development branch `fix/updater-zip-dos-file-type-attributes` adds a follow-up metadata safety guard.
 - [x] Reject ZIP entries with DOS volume-label (0x08) or device (0x40) attributes, and regular files falsely marked as DOS directories (0x10). Preserve valid directory entries with or without the DOS directory marker, and ordinary hidden/system/archive flags. Existing Unix file-type/reparse-point preflight remains intact.
 - [x] Add eight offline disposable-ZIP tests covering three unsafe DOS categories, late-entry rejection before any staging files, and normal Windows-compatible file/directory behavior. Development-only CI #3735 passed on the feature branch; this does not imply complete PR verification.
-- [ ] Create PR, require **7/7** workflows successful on its exact final head before merge, and independently verify post-merge `main` workflows. Installed Windows 11 LTSC UI/update replacement and physical J2534 are separate acceptance gates; no new Stable release is authorized.
+- [x] [PR #520](https://github.com/vorlocsev/dvinholm/pull/520) merged into `main` as `2a52d12` after **7/7** successful PR-head workflows (CI #3737); **7/7** separate post-merge workflows, including CI #3738, also passed. Installed Windows 11 LTSC UI/update replacement and physical J2534 remain separate acceptance gates; Stable v0.2.4 was not republished.
 
 ---
 
