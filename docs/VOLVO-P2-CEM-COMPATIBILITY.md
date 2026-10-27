@@ -21,6 +21,26 @@ methods, PIN algorithms, DID semantics or write sequences.
 | PIN/service authorization | Verified legitimate model-specific entitlement/acquisition route, exact ECU prerequisites and consent | **Not implemented** |
 | Configuration writes | Confirmed protocol and power, locking, rollback/verification procedure, J2534 and ECU bench test | **Not implemented** |
 
+## User-selected manual CEM identity research JSON inspection (Development)
+
+The **P2 configuration candidates (offline)** viewer now has an
+**Open CEM research JSON...** action. It uses a user-directed Windows
+Open picker and a bounded strict UTF-8 parser to inspect a JSON
+record written by the manual VIDA worksheet's Save As action.
+The preview remains **read-only/unverified**; no import into ECU
+Profiles, no CEM fingerprint enrollment, no vehicle/session connection,
+PIN acquisition, configuration change or unattended persistence.
+Unknown/duplicate JSON properties, unsafe capability flags,
+invalid year or part-number fields, empty/oversized files,
+invalid UTF-8 and BOM-prefixed data are rejected.
+No private paths or source values are logged in status messages.
+
+Eight synthetic tests exercise valid roundtrip, read-only display,
+empty and oversized content, unknown/duplicate JSON fields,
+privilege-escalation flags, invalid UTF-8, BOM and cancellation
+before disk access. Source provenance remains self-reported;
+no hardware identity or transport specification is inferred.
+
 ## VIDA logical CEM node versus physical CAN address (source audit 2026-10-28)
 
 Source tier A, **Volvo's own 2021 Workshop System Requirements 320EN20**
