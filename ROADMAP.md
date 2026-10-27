@@ -1,3 +1,13 @@
+## Development: explicit-consent diagnostic DID snapshot JSON export (2026-10-27)
+
+- [x] [PR #527](https://github.com/vorlocsev/dvinholm/pull/527) merged into Development as `8d6c2b4` after **7/7** successful PR-head workflows (CI #3777). Seven independent post-merge workflows, including CI #3778, were still completing when this export stage began. Published Stable v0.2.4 remains pinned to `a9e6188`.
+- [x] Add a bounded **user-approved JSON snapshot export** serializer with schema v1, stable ordered uppercase hexadecimal DID values, ECU profile/CAN metadata, UTC capture timestamp, explicit sensitive-data marking and `isRestorableBackup: false`. A SHA-256 checksum of the canonical payload detects accidental corruption but is not an authenticity signature.
+- [x] Add a callable backend save method which requires explicit sensitive-data approval, rejects paths inside the running app's installation folder, and reuses existing same-directory atomic report writing to preserve the prior file if validation fails. There is **no automatic saving or WinUI export button** in this stage.
+- [x] Add **8 offline checks** for consent, canonical hash/determinism, provenance flags, malformed/duplicate/oversized DID rejection, count limit, invalid ECU metadata, correct opt-in save and preservation of existing files after blocked or invalid saves.
+- [ ] Require **7/7** green workflows at the PR's exact final SHA before merge and **7/7** independent successful `main` workflows afterward. This export is not a restorable ECU configuration backup, does not validate a physical CEM, and adds no ECU write or PIN operation. A future GUI must require visible consent and an explicit Save As path.
+
+---
+
 ## Development: read-only ECU configuration snapshot diff (2026-10-27)
 
 - [x] [PR #526](https://github.com/vorlocsev/dvinholm/pull/526) merged as `a3eee80` after **7/7** green PR-head checks (CI #3771); independent post-merge `main` CI #3772 was still running when this stage began. Public Stable v0.2.4 remains pinned to `a9e6188`.
