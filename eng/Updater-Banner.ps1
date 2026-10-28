@@ -868,8 +868,8 @@ function SelfTest {
   }
   $installChecks++
   Reset-SyntheticInstall
-  New-SyntheticLite (Join-Path $script:channelRoot
-   'pending-fedcba9876543210fedcba9876543210') 'ci-202' 'Development'
+  $unexpectedPending=Join-Path $script:channelRoot 'pending-fedcba9876543210fedcba9876543210'
+  New-SyntheticLite $unexpectedPending 'ci-202' 'Development'
   Reject {Repair-InterruptedInstall}
   if((Read-ManagedVersion $script:current) -cne 'ci-200' -or
      -not(Test-Path -LiteralPath (Get-InstallTransactionFile))){
