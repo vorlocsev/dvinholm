@@ -40,6 +40,8 @@ internal sealed record EcuIdentityAssessment(
 /// </summary>
 internal static class EcuIdentityEvidenceMatcher
 {
+    internal const int MaximumRules = 128;
+
     internal static EcuIdentityAssessment Assess(
         EcuConfigurationReadSnapshot snapshot,
         IEnumerable<EcuIdentityEvidenceRule> rules)
@@ -51,7 +53,18 @@ internal static class EcuIdentityEvidenceMatcher
             EcuIdentityMatchKind.Unknown, null,
             "No independently verified ECU identity signature matches this readback.");
 
-        if (snapshot.Values is null || snapshot.Values.Count == 0)
+        var maxCanId = snapshot.IsExtended ? 0x1FFFFFFFu : 0x7FFu;
+        if (snapshot.Values is null ||
+            snapshot.Values.Count is < 1 or > EcuConfigurationReadback.MaximumDataIdentifiers ||
+            snapshot.RequestId > maxCanId || snapshot.ResponseId > maxCanId ||
+            snapshot.RequestId == snapshot.ResponseId)
+            return unknown;
+
+        // Materialize at most one entry beyond the bound. An invalid rule
+        // invalidates the whole catalog: silently skipping it could turn
+        // conflicting evidence into an apparently unique "verified" match.
+        var supplied = rules.Take(MaximumRules + 1).ToArray();
+        if (supplied.Length > MaximumRules || supplied.Any(rule => !IsEligible(rule)))
             return unknown;
 
         var observed = new Dictionary<ushort, string>();
@@ -63,10 +76,9 @@ internal static class EcuIdentityEvidenceMatcher
         }
 
         var matches = new List<EcuIdentityEvidenceRule>();
-        foreach (var rule in rules)
+        foreach (var rule in supplied)
         {
-            if (!IsEligible(rule) ||
-                rule.RequestId != snapshot.RequestId ||
+            if (rule.RequestId != snapshot.RequestId ||
                 rule.ResponseId != snapshot.ResponseId ||
                 rule.IsExtended != snapshot.IsExtended)
                 continue;
@@ -94,12 +106,17 @@ internal static class EcuIdentityEvidenceMatcher
     private static bool IsEligible(EcuIdentityEvidenceRule? rule)
     {
         if (rule is null || !rule.IsVerified ||
-            string.IsNullOrWhiteSpace(rule.VariantId) ||
-            string.IsNullOrWhiteSpace(rule.Platform) ||
-            string.IsNullOrWhiteSpace(rule.ModuleName) ||
-            string.IsNullOrWhiteSpace(rule.EvidenceSource) ||
+            !IsValidEvidenceText(rule.VariantId, 120) ||
+            !IsValidEvidenceText(rule.Platform, 64) ||
+            !IsValidEvidenceText(rule.ModuleName, 64) ||
+            !IsValidEvidenceText(rule.EvidenceSource, 512) ||
             rule.RequiredIdentifiers is null ||
             rule.RequiredIdentifiers.Count is < 2 or > EcuConfigurationReadback.MaximumDataIdentifiers)
+            return false;
+
+        var maxCanId = rule.IsExtended ? 0x1FFFFFFFu : 0x7FFu;
+        if (rule.RequestId > maxCanId || rule.ResponseId > maxCanId ||
+            rule.RequestId == rule.ResponseId)
             return false;
 
         var seen = new HashSet<ushort>();
@@ -114,6 +131,10 @@ internal static class EcuIdentityEvidenceMatcher
 
         return true;
     }
+
+    private static bool IsValidEvidenceText(string? value, int maximumLength) =>
+        value is { Length: >= 1 } && value.Length <= maximumLength &&
+        !string.IsNullOrWhiteSpace(value) && !value.Any(char.IsControl);
 
     private static bool IsValidHex(string? value)
     {
