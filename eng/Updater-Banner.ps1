@@ -409,6 +409,98 @@ function SelfTest {
   }
  }
  Write-Host 'Updater Banner 2/2 channel preference checks passed.'
+ $originalChannelRoot=$script:channelRoot
+ $originalCurrent=$script:current
+ $originalBase=$script:base
+ $originalChannel=$script:Channel
+ $originalStateFile=$script:StateFile
+ $testDir=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-rollback-test-'+[guid]::NewGuid().ToString('N'))
+ function New-SyntheticLite([string]$folder,[string]$tag,[string]$channel){
+  [IO.Directory]::CreateDirectory($folder)|Out-Null
+  [byte[]]$pe=New-Object byte[] 512
+  $pe[0]=77;$pe[1]=90
+  [BitConverter]::GetBytes([int]128).CopyTo($pe,60)
+  $pe[128]=80;$pe[129]=69;$pe[132]=76;$pe[133]=1
+  [IO.File]::WriteAllBytes((Join-Path $folder 'Dvinholm.App.exe'),$pe)
+  foreach($file in @('Dvinholm.App.runtimeconfig.json',
+   'Check-Lite-Prerequisites.ps1','Start-Dvinholm-Lite.cmd',
+   'Manage-Lite-Dependencies.ps1')){
+   [IO.File]::WriteAllText((Join-Path $folder $file),'synthetic')
+  }
+  [IO.File]::WriteAllText((Join-Path $folder 'updater-banner.json'),
+   (@{Channel=$channel;Tag=$tag;InstalledUtc='2026-01-01T00:00:00Z'}|ConvertTo-Json))
+ }
+ function Reset-SyntheticLite {
+  if(Test-Path -LiteralPath $script:channelRoot){
+   Remove-Item -LiteralPath $script:channelRoot -Recurse -Force
+  }
+  New-SyntheticLite $script:current 'ci-200' 'Development'
+  New-SyntheticLite (Join-Path $script:channelRoot 'previous') 'ci-199' 'Development'
+ }
+ $rollbackChecks=0
+ try {
+  $script:base=$testDir
+  $script:Channel='Development'
+  $script:channelRoot=Join-Path $testDir 'Development'
+  $script:current=Join-Path $script:channelRoot 'current'
+  $script:StateFile=$null
+  Reset-SyntheticLite
+  if((Read-ManagedVersion $script:current) -cne 'ci-200' -or
+     (Read-ManagedVersion (Join-Path $script:channelRoot 'previous')) -cne 'ci-199'){
+   throw 'Synthetic managed version validation failed.'
+  }
+  $rollbackChecks++
+  Rollback
+  if((Read-ManagedVersion $script:current) -cne 'ci-199' -or
+     (Read-ManagedVersion (Join-Path $script:channelRoot 'previous')) -cne 'ci-200'){
+   throw 'Offline rollback failed to retain the replaced version.'
+  }
+  $rollbackChecks++
+  Rollback
+  if((Read-ManagedVersion $script:current) -cne 'ci-200'){throw 'Reverse rollback failed.'}
+  $rollbackChecks++
+  Reset-SyntheticLite
+  Remove-Item -LiteralPath (Join-Path $script:channelRoot 'previous') -Recurse -Force
+  Reject {Rollback}
+  if((Read-ManagedVersion $script:current) -cne 'ci-200'){throw 'Missing backup changed current.'}
+  $rollbackChecks++
+  Reset-SyntheticLite
+  $backup=Join-Path $script:channelRoot 'previous'
+  [IO.File]::WriteAllText((Join-Path $backup 'updater-banner.json'),
+   (@{Channel='Stable';Tag='v0.2.4'}|ConvertTo-Json))
+  Reject {Rollback}
+  if((Read-ManagedVersion $script:current) -cne 'ci-200'){throw 'Cross-channel rollback changed current.'}
+  $rollbackChecks++
+  Reset-SyntheticLite
+  [IO.File]::WriteAllText((Join-Path $backup 'updater-banner.json'),
+   (@{Channel='Development';Tag='ci-malformed'}|ConvertTo-Json))
+  Reject {Rollback}
+  if((Read-ManagedVersion $script:current) -cne 'ci-200'){throw 'Bad tag changed current.'}
+  $rollbackChecks++
+  Reset-SyntheticLite
+  Remove-Item -LiteralPath (Join-Path $backup 'Start-Dvinholm-Lite.cmd') -Force
+  Reject {Rollback}
+  if((Read-ManagedVersion $script:current) -cne 'ci-200'){throw 'Incomplete backup changed current.'}
+  $rollbackChecks++
+  Reset-SyntheticLite
+  $exe=Join-Path $backup 'Dvinholm.App.exe'
+  $bytes=[IO.File]::ReadAllBytes($exe);$bytes[0]=0
+  [IO.File]::WriteAllBytes($exe,$bytes)
+  Reject {Rollback}
+  if((Read-ManagedVersion $script:current) -cne 'ci-200'){throw 'Non-x86 backup changed current.'}
+  $rollbackChecks++
+  if($rollbackChecks -ne 8){throw 'Wrong rollback test count.'}
+  Write-Host 'Updater Banner 8/8 synthetic offline rollback checks passed.'
+ }finally{
+  $script:StateFile=$originalStateFile
+  $script:base=$originalBase
+  $script:Channel=$originalChannel
+  $script:channelRoot=$originalChannelRoot
+  $script:current=$originalCurrent
+  if(Test-Path -LiteralPath $testDir){
+   Remove-Item -LiteralPath $testDir -Recurse -Force
+  }
+ }
 }
 if($Mode -eq 'SelfTest'){SelfTest;exit 0}
 if($Mode -ne 'UI'){
