@@ -1,3 +1,12 @@
+## Development 0.3.0: compare unverified manual CEM note to proposal (2026-10-28)
+
+- [x] Add an **optional manual reference notation**, clearly labeled **NOT an ECU read**, alongside the existing source-limited early-XC90 offline customer-value proposal. For heated seats, compare LOW/HIGH pairs. Leave the reference blank for the previous single-proposal preview. Changing the parameter clears old values, and editing any input invalidates the previous result.
+- [x] In `VolvoP2CemManualValueComparison`, individually validate BOTH source-scoped user-entered notations and independently claimed model year. Only canonical MY2003-2006 research entries can yield same/different **manual strings**. Do not describe differences as a real configuration change or a physical ECU baseline. Withhold all raw input on invalid/unconfirmed cases.
+- [x] Add **eight synthetic offline tests** for equal/different notes, heater pair dependencies, missing/invalid/secret inputs, unchecked/out-of-scope years, illegal secondary values and permanent denial of CAN/J2534/PIN/ECU read/write. Update [historical parameter research guide](docs/P2-CEM-HISTORICAL-CUSTOMER-PARAMETERS.md). No file writes, configuration snapshots, security operations or new profile actions.
+- [ ] Require 5/5 exact-head PR checks, independent 5/5 postmerge main checks, and later installed Windows WinUI acceptance. Verified revision-specific physical CEM, lawful service transport and backup/recovery acceptance remain outstanding. Published Stable v0.2.4 unchanged; release requires explicit approval.
+
+---
+
 ## Development 0.3.0: ephemeral offline CEM customer-value draft (2026-10-28)
 
 - [x] Add an in-memory **proposed customer value** form to the existing P2 research dialog (not to the seven-button ECU Profile action grid). User types a claimed MY2003-2006 year, self-reports an independent year check, selects one historical customer parameter and enters one value, or LOW/HIGH for heated seats.
