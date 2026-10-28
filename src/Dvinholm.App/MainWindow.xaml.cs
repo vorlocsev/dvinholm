@@ -1378,11 +1378,17 @@ public sealed partial class MainWindow : Window
                     3 => 500_000u,
                     _ => null
                 };
+                var claimedNetwork = (VolvoP2NetworkKind)transportNetwork.SelectedIndex;
+                var claimedInterface = (VolvoP2CemDiagnosticInterface)transportAdapter.SelectedIndex;
+                // Only user-selected offline context. Never read connected adapter
+                // state or convert workshop logical node labels into CAN IDs.
                 transportReport.Text = VolvoP2CemTransportResearchPreflight.BuildReadOnlyReport(
                     year, draftYearCheck.IsChecked == true,
-                    (VolvoP2NetworkKind)transportNetwork.SelectedIndex,
-                    nominalRate,
-                    (VolvoP2CemDiagnosticInterface)transportAdapter.SelectedIndex);
+                    claimedNetwork, nominalRate, claimedInterface)
+                    + Environment.NewLine + Environment.NewLine
+                    + VolvoP2CemReadinessMatrix.BuildOfflineReport(
+                        year, draftYearCheck.IsChecked == true,
+                        claimedNetwork, nominalRate, claimedInterface);
             };
 
             var catalogContent = new StackPanel { Spacing = 8 };

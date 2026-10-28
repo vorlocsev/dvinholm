@@ -4,6 +4,10 @@ Status: **engineering research; no production-ready P2/CEM identity
 fingerprints, authenticated PIN procedures, configuration memory maps or
 ECU writes are validated in Dvinholm**.
 
+The new [offline eight-row readiness matrix](XC90-P2-CEM-READINESS-MATRIX.md)
+combines source-scoped year/transport guidance with explicit missing CEM
+identity, read-mapping and backup requirements. It does not authorize requests.
+
 This document is the initial source-of-truth for the **0.3.0 read-only**
 compatibility gate. It intentionally does not publish guessed CAN IDs, seed/key
 methods, PIN algorithms, DID semantics or write sequences.
