@@ -83,7 +83,7 @@ public sealed class VolvoP2CemManualValueComparisonTests
     public void InvalidProposalNeverLeaksEvenValidReference()
     {
         foreach (var unsafeValue in new[] { "VERY_PRIVATE_PASSWORD",
-                     "YV1CM592771234567", "45", "on", "FLEX_NOTREAL" })
+                     "YV1CM592771234567", "45", "flex_low", "FLEX_NOTREAL" })
         {
             var report = Report("2005", true,
                 VolvoP2CemCustomerParameterKind.DaytimeRunningLamps,
