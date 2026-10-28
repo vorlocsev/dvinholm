@@ -6,7 +6,7 @@ No software installs or updates until the user explicitly confirms.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('UI','Check','Install','Rollback','Probe','SelfTest')][string]$Mode='UI',
+ [ValidateSet('UI','Check','Install','Rollback','Repair','Probe','SelfTest')][string]$Mode='UI',
  [ValidateSet('Stable','Development')][string]$Channel='Development',
  [string]$StateFile
 )
@@ -237,7 +237,59 @@ function Invoke-ChannelExclusive([scriptblock]$action) {
   $mutex.Dispose()
  }
 }
+
+function Get-RollbackStaging {
+ Assert-ManagedFolder $base
+ Assert-ManagedFolder $channelRoot
+ if(-not(Test-Path -LiteralPath $channelRoot -PathType Container)){return @()}
+ return @(Get-ChildItem -LiteralPath $channelRoot -Force -ErrorAction Stop |
+  Where-Object { $_.Name -like 'rollback-*' })
+}
+function Assert-NoInterruptedRollback {
+ if(@(Get-RollbackStaging).Count -ne 0){
+  throw 'Interrupted rollback requires explicit repair before other updates.'
+ }
+}
+function Repair-InterruptedRollback {
+ if(Get-Process -Name 'Dvinholm.App' -ErrorAction SilentlyContinue){
+  throw 'Close the application before repair.'
+ }
+ $staging=@(Get-RollbackStaging)
+ if($staging.Count -ne 1){throw 'Repair requires exactly one interrupted rollback directory.'}
+ $entry=$staging[0]
+ if($entry.Name -cnotmatch '^rollback-[0-9a-f]{32}$' -or
+    -not $entry.PSIsContainer -or
+    ($entry.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){
+  throw 'Untrusted rollback staging directory.'
+ }
+ $swap=[string]$entry.FullName
+ $swapTag=Read-ManagedVersion $swap
+ $previous=Join-Path $channelRoot 'previous'
+ Assert-ManagedFolder $current
+ Assert-ManagedFolder $previous
+ $hasCurrent=Test-Path -LiteralPath $current -PathType Container
+ $hasPrevious=Test-Path -LiteralPath $previous -PathType Container
+ if($hasCurrent -eq $hasPrevious){
+  throw 'Ambiguous interrupted rollback state; no files changed.'
+ }
+ $other=if($hasCurrent){$current}else{$previous}
+ $otherTag=Read-ManagedVersion $other
+ if($otherTag -ceq $swapTag){
+  throw 'Interrupted rollback versions are identical; no files changed.'
+ }
+ Progress ('Restoring original '+$swapTag+' from interrupted rollback...')
+ if($hasCurrent){
+  # On interruption after previous->current, the second rename may
+  # leave current absent. Rerunning Repair then follows the other branch.
+  Move-Item -LiteralPath $current -Destination $previous -ErrorAction Stop
+ }
+ Move-Item -LiteralPath $swap -Destination $current -ErrorAction Stop
+ $script:state.Current=$swapTag
+ $script:state.Available='Not checked'
+ Progress ('Recovered '+$swapTag+'; '+$otherTag+' retained as the previous version.')
+}
 function Rollback {
+ Assert-NoInterruptedRollback
  if(Get-Process -Name 'Dvinholm.App' -ErrorAction SilentlyContinue) {
   throw 'Close the application before rollback.'
  }
@@ -292,6 +344,7 @@ function Probe {
  return $a
 }
 function Install {
+ Assert-NoInterruptedRollback
  if(Get-Process -Name 'Dvinholm.App' -ErrorAction SilentlyContinue){
   throw 'Close the application before update.'
  }
@@ -516,6 +569,8 @@ if($Mode -ne 'UI'){
    Progress ('Latest '+$Channel+' release: '+$r.Tag+'. No changes made.')
   }elseif($Mode -eq 'Rollback'){
    Invoke-ChannelExclusive {Rollback}
+  }elseif($Mode -eq 'Repair'){
+   Invoke-ChannelExclusive {Repair-InterruptedRollback}
   }else{
    Invoke-ChannelExclusive {Install}
   }
@@ -526,6 +581,10 @@ if($Mode -ne 'UI'){
    'Missing Lite prerequisites. Install/update Microsoft components, then retry.'
   }elseif($message -match 'Close the application'){
    'Close Dvinholm, then retry. Managed files were not changed.'
+  }elseif($message -match 'Interrupted rollback requires'){
+   'Interrupted rollback detected. Use Repair rollback before updating or restoring.'
+  }elseif($message -match 'Repair requires|Untrusted rollback|Ambiguous interrupted|versions are identical'){
+   'Cannot safely repair these rollback folders. No additional files were changed.'
   }elseif($message -match 'Another updater operation'){
    'Another updater is already changing this channel. Try again after it finishes.'
   }elseif($message -match 'Rollback interrupted'){
@@ -559,6 +618,9 @@ $choice.SetBounds(18,87,185,29);$form.Controls.Add($choice)
 $rollback=New-Object Windows.Forms.Button
 $rollback.Text='Restore previous';$rollback.SetBounds(215,85,175,33)
 $form.Controls.Add($rollback)
+$repair=New-Object Windows.Forms.Button
+$repair.Text='Repair rollback';$repair.SetBounds(401,85,165,33)
+$form.Controls.Add($repair)
 $installed=Label 'Installed: not checked' 126 25
 $available=Label 'Available: not checked' 151 25
 $deps=Label '.NET x86: ?    WinApp: ?    VC++ x86: ?' 180 26
@@ -582,6 +644,12 @@ $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
 function Begin-Action([string]$action){
  if($script:child -or $script:vendor){return}
+ if($action -eq 'Repair'){
+  if([Windows.Forms.MessageBox]::Show(
+   'Attempt offline repair of an interrupted rollback for the selected channel? The original current build will be restored only when the on-disk state is unambiguous. Close Dvinholm first.',
+   'Confirm rollback recovery',[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
  if($action -eq 'Rollback'){
   if([Windows.Forms.MessageBox]::Show(
    'Restore the previous Lite build of the selected channel, without downloading anything? The currently installed build becomes the backup. Close Dvinholm first.',
@@ -602,7 +670,7 @@ function Begin-Action([string]$action){
   $script:child=Start-Process -FilePath $powershell -ArgumentList $args -WindowStyle Hidden -PassThru
   $bar.MarqueeAnimationSpeed=25
   $choice.Enabled=$false;$install.Enabled=$false;$check.Enabled=$false
-  $rollback.Enabled=$false;$launch.Enabled=$false;$refresh.Enabled=$false
+  $rollback.Enabled=$false;$repair.Enabled=$false;$launch.Enabled=$false;$refresh.Enabled=$false
   $status.Text='Working...'
  }catch{$status.Text='Unable to launch updater helper.'}
 }
@@ -610,6 +678,7 @@ $check.Add_Click({Begin-Action 'Check'})
 $refresh.Add_Click({Begin-Action 'Probe'})
 $install.Add_Click({Begin-Action 'Install'})
 $rollback.Add_Click({Begin-Action 'Rollback'})
+$repair.Add_Click({Begin-Action 'Repair'})
 $launch.Add_Click({
  if($script:child -or $script:vendor){return}
  $target=Join-Path (Join-Path (Join-Path $base $choice.SelectedItem.ToString()) 'current') 'Start-Dvinholm-Lite.cmd'
@@ -653,7 +722,7 @@ $timer.Add_Tick({
  if($script:child -and $script:child.HasExited){
   $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0
   $choice.Enabled=$true;$install.Enabled=$true;$check.Enabled=$true
-  $rollback.Enabled=$true;$launch.Enabled=$true;$refresh.Enabled=$true
+  $rollback.Enabled=$true;$repair.Enabled=$true;$launch.Enabled=$true;$refresh.Enabled=$true
  }
  if($script:vendor -and $script:vendor.HasExited){
   $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0
