@@ -1,3 +1,12 @@
+## Development 0.3.0: bounded Classic CAN read-only DID responses (2026-10-28)
+
+- [x] Limit generic read-only DID data to 4092 bytes, deriving the ceiling from Classic CAN ISO-TP 4095-byte payload less the positive-response SID and two-byte DID echo.
+- [x] Fail closed on an oversized injected reply before hex encoding. Abort a complete capture on second-DID failure; retain cancellation, echo checks, consent-only export and non-restorable semantics.
+- [x] Add eight deterministic synthetic tests and [response boundary documentation](docs/P2-CEM-DID-RESPONSE-LIMITS.md). No physical ECU, CEM transport, PIN or write operations introduced.
+- [ ] Require 5/5 exact-head PR workflows and separate 5/5 postmerge main acceptance; installed Windows and real DiCE/J2534/CEM testing remains outstanding. Stable v0.2.4 frozen.
+
+---
+
 ## Development 0.3.0: source-scoped CEM PIN vendor route exceptions (2026-10-28)
 
 - [x] Distinguish VDASH/VDD vendor PIN decoding claims by claimed XC90 P2 engine: 3.2, V8 4.4 and 147 kW D5 decoding examples/exclusions, versus separate key-programming cautions including 120 kW D5 MY2013+.
