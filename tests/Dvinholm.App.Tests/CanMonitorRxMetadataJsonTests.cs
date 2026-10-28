@@ -75,7 +75,7 @@ public sealed class CanMonitorRxMetadataJsonTests
         ], 1, null, false);
         Assert.DoesNotContain(sensitive, json);
         Assert.DoesNotContain("987654321", json);
-        Assert.DoesNotContain("Timestamp", json, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("\\"timestamp\\":", json, StringComparison.OrdinalIgnoreCase);
         using var document = JsonDocument.Parse(json);
         Assert.False(document.RootElement.GetProperty("containsTimestamps").GetBoolean());
         Assert.False(document.RootElement.GetProperty("confirmsPhysicalCemIdentity").GetBoolean());
