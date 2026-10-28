@@ -1,3 +1,12 @@
+## Development 0.3.0: historical DID evidence scoped to CEM revision (2026-10-28)
+
+- [x] Cross-check two already inspected offline inputs (manual VIDA CEM research card and historic diagnostic DID snapshot) against an explicit, bounded candidate revision support catalog. Require exact multi-DID CAN/year identity match and count **only previously observed, separately documented** DID identifiers; unknown, ambiguous and invalid evidence fails closed.
+- [x] Keep the production CEM catalog empty, never interpret user-created JSON as physical authentication, and never create executable read requests, PIN operations or writes. Add the new redacted evidence-gap summary to the existing paired-research WinUI preview, with no separate picker or hidden persistence.
+- [x] Add eight synthetic tests and [historical DID evidence guide](docs/P2-CEM-HISTORICAL-DID-EVIDENCE-GATE.md).
+- [ ] Complete 5/5 exact-head PR CI and independent 5/5 postmerge main acceptance. Installed Windows and physical CEM/DiCE/J2534 identity/transport tests are outstanding. Stable v0.2.4 unchanged.
+
+---
+
 ## Development 0.3.0: offline source cross-check for a specific CEM revision (2026-10-28)
 
 - [x] Add a user-directed two-file cross-check to the existing XC90 P2 offline candidate viewer: a manually saved VIDA CEM identity card versus a separate source-scoped revision claim JSON. Compare year and three part-number claims only, never assert physical CEM authentication.
