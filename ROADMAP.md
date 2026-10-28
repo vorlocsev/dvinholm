@@ -1,3 +1,12 @@
+## Development 0.3.0: bounded fail-closed ECU identity evidence matcher (2026-10-28)
+
+- [x] Harden the **generic** offline multi-DID identity matcher at its own boundary: maximum 128 independently documented rules, with at most 129 enumerated; reject the **whole** catalog if any rule is invalid, including a nonmatching rule.
+- [x] Validate sourced-rule metadata length/control characters, CAN addressing, and observed snapshot address/DID count before selecting a unique read-only signature. Keep the P2/CEM production identity catalog empty and PIN/configuration actions disabled.
+- [x] Add eight deterministic synthetic tests and [identity matcher boundary notes](docs/P2-CEM-IDENTITY-MATCHER-BOUNDARY.md). No physical ECU or read/write command is added.
+- [ ] Confirm five exact-head PR checks and five independent postmerge `main` workflows. Manual Windows dialog and physical CEM/DiCE/J2534 acceptance still require separate verification. Stable 0.2.4 frozen.
+
+---
+
 ## Development 0.3.0: interactive offline vendor route review (2026-10-28)
 
 - [x] Add a strictly local claimed model-year/engine/VDASH-or-VDD comparison to the existing PIN readiness dialog. This surfaces variant-specific *vendor advertising* only, not a Volvo ECU service or CEM identity.
