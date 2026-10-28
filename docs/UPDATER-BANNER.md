@@ -47,11 +47,32 @@ Managed installation folders are distinct:
     %LOCALAPPDATA%\Dvinholm\UpdaterBanner\Development\current
 
 A successful update leaves one prior version in the channel's
-previous directory. Existing manual Dvinholm installations are **not**
+`previous` directory. Existing manual Dvinholm installations are **not**
 modified automatically. This prevents accidental downgrades when switching
 channels. Application ECU profiles and settings remain in the existing
 separate user-data location. The banner's Start button launches the
 selected Lite build via its dependency-aware startup command.
+
+**Restore previous** performs an offline, separately confirmed rollback of
+the **currently selected channel only**. Close Dvinholm before invoking it.
+The launcher validates both managed versions' manifest channel, expected
+Stable/Development tag syntax, required Lite files and x86 PE header before
+moving anything. It refuses cross-channel, missing, invalid or identical
+backups. A successful rollback swaps `current` and `previous`, allowing
+the replaced build to be restored again. A per-channel Windows mutex prevents
+two banner workers from modifying the same installation simultaneously.
+On an interrupted swap, the launcher attempts to restore the original
+directory names and reports if manual recovery is necessary.
+
+During an ordinary update, the older `previous` backup is retained in a
+temporary channel directory until the new `current` is successfully moved
+into place. Failure before successful replacement restores the prior backup
+where possible. Only one directly selectable prior build is retained after
+a successful update, while cleanup failures can leave an extra `older-*`
+folder for manual review. Rollback itself never downloads files or
+installs dependencies. Windows PowerShell CI includes eight additional
+synthetic offline rollback checks; installed Windows GUI and power-loss
+recovery scenarios require manual acceptance.
 
 **Important:** the banner checks installation/availability, not physical
 J2534 hardware support. A successful offline CI suite cannot prove actual
