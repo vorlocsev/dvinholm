@@ -64,6 +64,26 @@ two banner workers from modifying the same installation simultaneously.
 On an interrupted swap, the launcher attempts to restore the original
 directory names and reports if manual recovery is necessary.
 
+**Repair rollback** is a separate, explicitly confirmed, **offline**
+recovery action for a rollback interrupted by process termination or power loss.
+It never silently repairs a directory on startup. It accepts exactly one
+`rollback-<32 lowercase hexadecimal characters>` staging directory and only
+two recognizable incomplete layouts: either `current` is absent while
+`previous` and the staging directory are valid, or `previous` is absent
+while `current` and the staging directory are valid. It verifies both
+surviving Lite installations and their channel/versions before moving files.
+In either case it restores the original `current` and `previous` pairing.
+If a repair is interrupted midway, the same explicit operation can be retried.
+Normal **Download / Install** and **Restore previous** are refused while any
+`rollback-*` entry exists, so a second operation cannot overwrite recovery
+evidence. Ambiguous, untrusted, duplicate or invalid states are left untouched
+for manual inspection. No GitHub request or Microsoft installer is involved.
+
+This repair covers interrupted **rollback operations only**, not all possible
+interrupted download/install rotations (`older-*`, `pending-*`). Recovery of
+those requires a separate, explicit safety review. CI runs eight synthetic
+offline recovery cases; real power-loss behaviour is still unverified on Windows.
+
 During an ordinary update, the older `previous` backup is retained in a
 temporary channel directory until the new `current` is successfully moved
 into place. Failure before successful replacement restores the prior backup
