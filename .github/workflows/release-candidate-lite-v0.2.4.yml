@@ -1,27 +1,9 @@
 name: Dvinholm 0.2.4 Lite RC (validation only)
 
+# Archived/manual-only validation, not part of active Lite CI.
 on:
-  pull_request:
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/release-candidate-lite-v0.2.4.yml"
-      - "eng/Test-ReleaseCandidate024Lite.ps1"
-      - "eng/Test-WindowsDistribution.ps1"
-      - "eng/Test-WindowsDistributionExtraction.ps1"
-      - "eng/Test-LiteBundledPreflight.ps1"
-      - "eng/Test-LitePrerequisites.ps1"
-      - "eng/Check-Lite-Prerequisites.cmd"
-      - "eng/Package-WindowsDistribution.ps1"
-      - "src/Dvinholm.App/**"
-      - "tests/Dvinholm.Stable.Tests/**"
-      - "tests/Dvinholm.App.Tests/ReleaseCandidate024LiteContractTests.cs"
-      - "docs/RELEASE_CANDIDATE_0.2.4.md"
   workflow_dispatch:
 
-# Read-only validation of framework-dependent Lite candidate.
-# No package installation, update, signing, tag or GitHub release creation.
-# Stable v0.2.3 stays immutable.
 permissions:
   contents: read
 

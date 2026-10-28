@@ -1,38 +1,9 @@
 name: Dvinholm Stable 0.2.4 (staging only, no publish)
 
+# Archived/manual-only validation, not part of active Lite CI.
 on:
-  pull_request:
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/stable-staging-v0.2.4.yml"
-      - "eng/Test-ReleaseCandidate024.ps1"
-      - "eng/Test-ReleaseCandidate024Lite.ps1"
-      - "eng/Test-WindowsDistributionChecksums.ps1"
-      - "eng/Prepare-StableAcceptance024.ps1"
-      - "eng/Start-StableAcceptance024.ps1"
-      - "eng/Write-StableReadiness024.ps1"
-      - "START-STABLE-ACCEPTANCE-024.cmd"
-      - "eng/Test-RealStableUpgrade024.ps1"
-      - "eng/Test-WindowsDistribution.ps1"
-      - "eng/Test-WindowsDistributionExtraction.ps1"
-      - "src/Dvinholm.App/Dvinholm.App.csproj"
-      - "eng/Test-LiteBundledPreflight.ps1"
-      - "eng/Test-LitePrerequisites.ps1"
-      - "eng/Package-WindowsDistribution.ps1"
-      - "src/Dvinholm.App/**"
-      - "tests/Dvinholm.Stable.Tests/**"
-      - "tests/Dvinholm.App.Tests/StableStaging024ContractTests.cs"
-      - "tests/Dvinholm.App.Tests/StableAcceptance024ContractTests.cs"
-      - "tests/Dvinholm.App.Tests/StableAcceptance024LauncherTests.cs"
-      - "tests/Dvinholm.App.Tests/StableReadiness024ContractTests.cs"
-      - "tests/Dvinholm.App.Tests/Published023ToStaged024UpgradeContractTests.cs"
-      - "docs/RELEASE_CANDIDATE_0.2.4.md"
   workflow_dispatch:
 
-# A candidate is not a published release. No signing, installation, tags,
-# releases, automatic updater changes or access to write GitHub contents.
-# Published Stable v0.2.3 remains unchanged.
 permissions:
   contents: read
 
