@@ -47,9 +47,10 @@ if ($release.prerelease -ne $true -or $release.draft -ne $false) {
 }
 
 $names = if ($LiteOnly) { @('Dvinholm-Windows-x86-Lite.zip', 'SHA256SUMS.txt') } else { @('Dvinholm-Windows-x86.zip', 'Dvinholm-Windows-x86-Lite.zip', 'SHA256SUMS.txt') }
+$assetCountWord = if ($LiteOnly) { 'two' } else { 'three' }
 $assets = @($release.assets | Where-Object { $null -ne $_ })
 if ($assets.Count -ne $names.Count) {
-    throw "Published CI release must contain exactly $($names.Count) assets (found $($assets.Count))."
+    throw "Published CI release must contain exactly $assetCountWord assets (found $($assets.Count))."
 }
 $seen = [System.Collections.Generic.HashSet[string]]::new(
     [StringComparer]::OrdinalIgnoreCase)
