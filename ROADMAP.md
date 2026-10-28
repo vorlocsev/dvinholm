@@ -1,3 +1,12 @@
+## Development 0.3.0: pair CEM identity claims with historical DID metadata (2026-10-28)
+
+- [x] Add a separate user-directed **Pair with DID snapshot...** choice to the existing CEM research JSON viewer. Combine an offline manual VIDA card with a separate previously exported diagnostic snapshot, without treating either as an authenticated ECU identity or same-vehicle match.
+- [x] Reuse strict existing 4 KiB identity-card and 4 MiB snapshot inspectors and privacy-reduced snapshot intake. Display claimed year/three CEM P/N fields and historical UTC, CAN IDs, DID names and byte lengths; never echo raw DID bytes, profile names, paths or VIN.
+- [x] Add **8 deterministic synthetic offline tests**, covering valid roundtrip, secrets/profile redaction, user-claimed VIDA origin, falsely verified profile, unrelated model year, 29-bit addressing and fail-closed invalid/unsafe inputs.
+- [ ] Require all exact-head PR CI checks and independently green postmerge `main` before accepting. Manual installed Windows file-picker acceptance remains outstanding. No verified CEM addressing, PIN/security operation, decoded options or configuration write has been added; Stable v0.2.4 unchanged.
+
+---
+
 ## Development 0.3.0: compare manually saved CEM identity claims (2026-10-28)
 
 - [x] Add an explicit second-file selection from the **Open CEM research JSON...** read-only viewer. Compare claimed XC90 model year and three CEM P/N fields without importing either file, choosing a diagnostic profile, connecting to a vehicle or enabling PIN/configuration actions.

@@ -89,6 +89,38 @@ behavior is **not** proven by these unit tests and requires a separate
 manual acceptance check.
 
 
+
+### Pair a saved VIDA identity claim with historical DID metadata
+
+In **P2 configuration candidates (offline)** open an existing CEM research
+JSON and select **Pair with DID snapshot...**. Choose a separate diagnostic
+snapshot JSON previously exported by Dvinholm. The application strictly
+inspects both source files using the existing size/schema/UTF-8 checks
+(4 KiB for the research card, 4 MiB for the snapshot), then displays:
+
+- Claimed XC90 model year and the three manually entered CEM part numbers.
+- Clearly **self-reported**, not authenticated, VIDA origin status.
+- Historical snapshot UTC time, 11/29-bit CAN IDs, DID identifiers and byte
+  **lengths** only. It does not display raw DID bytes, profile name/ID or VIN.
+- A prominent **UNCORRELATED RESEARCH CLAIMS ONLY** verdict.
+
+**Do not interpret this as matching the same real CEM.** The historical
+capture may belong to a different ECU/vehicle, the chosen year is a manual
+claim, DID values have no CEM-specific decoded meanings, and SHA-256 is
+only file integrity, not evidence of origin. No addresses, DIDs, firmware
+compatibility, PIN, configuration read/write authorization, backup or
+service operation can be inferred or enabled. No file is created or
+updated and cancellation has no persistent effect.
+
+Part numbers and CAN/DID metadata may still indirectly identify a
+vehicle. The report is local and is **not automatically copied**. Only
+share material after reviewing it. Eight synthetic offline tests cover
+both inspected formats, privacy redaction, false verified-profile and
+VIDA claims, different years, 29-bit addressing, and forged/invalid
+records. The WinUI file-picker flow still requires installed Windows
+acceptance; physical J2534/CEM testing remains deferred.
+
+
 For privacy, **do not enter** the hardware serial number, VIN,
 immobilizer PIN, credentials, vehicle owner details or raw ECU
 response bytes. The Dvinholm form does not request or store those
