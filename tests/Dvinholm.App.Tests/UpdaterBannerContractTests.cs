@@ -77,7 +77,7 @@ public sealed class UpdaterBannerContractTests
         var source = Read("eng/Updater-Banner.ps1");
         var preflight = source.IndexOf("Check-Lite-Prerequisites.ps1') -LiteDirectory",
             StringComparison.Ordinal);
-        var promote = source.IndexOf("Move-Item $pending $current", StringComparison.Ordinal);
+        var promote = source.IndexOf("Move-Item -LiteralPath $pending -Destination $current", StringComparison.Ordinal);
         Assert.True(preflight >= 0 && promote > preflight);
         Assert.Contains("MessageBoxButtons]::YesNo", source);
         Assert.DoesNotContain("/quiet", source);
