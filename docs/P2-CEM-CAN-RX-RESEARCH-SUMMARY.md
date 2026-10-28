@@ -19,8 +19,10 @@ verified Volvo CEM address, bus or diagnostic service.
    completed monitor subscriptions and subsequent restarts. UNKNOWN means
    no subscription has been observed since Clear or an active counter cannot
    be sampled. Clear rebaselines an active subscription without restarting it.
-4. Press **Copy RX metadata** only when willing to put these CAN IDs/counts
-   on the clipboard. Closing the dialog does not copy or save anything.
+4. Press **Copy RX metadata** for the human-readable text, or
+   **Copy JSON metadata** for a bounded, versioned offline JSON snapshot.
+   Both copy only after an explicit click; closing the dialog does not
+   copy or save anything. CAN IDs and counts can identify a vehicle.
    Existing **CSV log** remains a different, potentially sensitive,
    raw-frame export.
 
@@ -66,3 +68,24 @@ invent a number.
 Eight additional deterministic synthetic tests exercise unknown, active,
 stopped, restarted and cleared sessions, malformed counters, and overflow.
 No ECU service, J2534 command or automatic export is introduced.
+
+## Machine-readable RX metadata (Development 0.3.0)
+
+An explicit **Copy JSON metadata** action copies `dvinholm-can-rx-metadata`
+schema v1 to the clipboard. No automatic JSON file is written, read or imported;
+saving text pasted from the clipboard is a separate user decision.
+
+The JSON includes only source classification (SYNTHETIC vs unverified RX),
+the number of buffered/evicted rows, subscriber queue drops since the last
+Clear (nullable when UNKNOWN), and up to 64 sorted CAN ID+11/29-bit-format
+groups with counts and DLC histograms. Total group count and withheld-group
+count remain visible. It NEVER includes the payload `Data`, timestamps,
+VIN/PIN, raw DIDs, adapter path, or a CEM service command. A maximum 65,536
+character output size applies after existing strict history validation.
+
+A JSON file or copied record is **not** a verified vehicle capture, a working
+CEM address, an authenticated ECU identity, a restorable configuration backup,
+a permission to transmit or evidence of full bus completeness. Treat the
+metadata as vehicle-identifying when sharing it. Eight additional deterministic
+synthetic/virtual J2534 tests cover schema, order, grouping, boundedness,
+redaction, invalid inputs, clear/history evidence and zero CAN transmission.
