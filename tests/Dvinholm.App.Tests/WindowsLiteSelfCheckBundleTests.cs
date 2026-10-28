@@ -44,6 +44,16 @@ public sealed class WindowsLiteSelfCheckBundleTests
                         bytes = Encoding.UTF8.GetBytes("@echo off\r\nexit /b 0\r\n");
                     Add(zip, "Check-Lite-Prerequisites.cmd", bytes);
                 }
+                // A valid Lite distribution now carries two additional
+                // byte-for-byte source-matched setup entrypoints. Negative
+                // scenarios below remain invalid for their original reason.
+                if (flavor == "Lite")
+                {
+                    Add(zip, "Manage-Lite-Dependencies.ps1",
+                        File.ReadAllBytes(FindSource("Manage-Lite-Dependencies.ps1")));
+                    Add(zip, "Start-Dvinholm-Lite.cmd",
+                        File.ReadAllBytes(FindSource("Start-Dvinholm-Lite.cmd")));
+                }
                 if (scenario is not "missing-script" and not "valid-portable"
                     and not "portable-with-launcher")
                 {
