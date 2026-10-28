@@ -1,3 +1,12 @@
+## Development 0.3.0: offline source cross-check for a specific CEM revision (2026-10-28)
+
+- [x] Add a user-directed two-file cross-check to the existing XC90 P2 offline candidate viewer: a manually saved VIDA CEM identity card versus a separate source-scoped revision claim JSON. Compare year and three part-number claims only, never assert physical CEM authentication.
+- [x] Require bounded strict UTF-8/versioned schemas, safe research-only capability flags and canonical VIN-safe part-number syntax. Report SAME/DIFFERENT without echoing part numbers, source reference, path, PIN, credentials or raw DID bytes. No file writes, profile changes or live J2534.
+- [x] Add eight synthetic tests and [source JSON guide](docs/P2-CEM-REVISION-SOURCE-CROSSCHECK.md). The example is synthetic and does not supply a real CEM signature.
+- [ ] Confirm 5/5 exact-head PR workflows, independent 5/5 postmerge workflows, installed Windows dialog and physical DiCE/J2534/CEM verification. Stable 0.2.4 frozen.
+
+---
+
 ## Development 0.3.0: bounded fail-closed ECU identity evidence matcher (2026-10-28)
 
 - [x] Harden the **generic** offline multi-DID identity matcher at its own boundary: maximum 128 independently documented rules, with at most 129 enumerated; reject the **whole** catalog if any rule is invalid, including a nonmatching rule.
