@@ -1036,7 +1036,8 @@ public sealed partial class MainWindow : Window
         {
             var description = new TextBlock
             {
-                Text = review.DescribeCurrent(),
+                Text = review.DescribeCurrent() + Environment.NewLine +
+                    VolvoP2CemVendorPinRouteResearch.BuildOfflineOverview(),
                 TextWrapping = TextWrapping.Wrap,
                 IsTextSelectionEnabled = true
             };
@@ -1056,7 +1057,8 @@ public sealed partial class MainWindow : Window
                     // Keep the dialog open until all four evidence requirements
                     // have been displayed. This is NOT PIN-search progress.
                     args.Cancel = true;
-                    description.Text = review.DescribeCurrent();
+                    description.Text = review.DescribeCurrent() + Environment.NewLine +
+                        VolvoP2CemVendorPinRouteResearch.BuildOfflineOverview();
                     if (review.StepNumber == review.TotalSteps)
                         dialog.PrimaryButtonText = "Finish offline review";
                 }
