@@ -60,6 +60,34 @@ and lawful read-only identity/configuration mechanism, plus authorized
 DiCE/J2534 bench results. Do not enable PIN or writes based on a vendor
 marketing matrix.
 
+## Historical customer parameter values versus CEM vehicle configuration (research 2026-10-28)
+
+The historical [XC90 I CEM customer-parameter workshop reproduction](
+https://diagnostdata.com/volvo/xc90/i-2002-2006/remont/miscellaneous-electrical-design-and-function/reading-off-and-programming-data/reading-off-and-programming-data/)
+lists seat heater, approach-light, post-drying and daytime-light *user*
+parameters with some literal candidate values. A separate historical
+[software product chapter](
+https://lemon-manuals.org.ua/Volvo/2007/XC90%20FWD%20L6-3.2L%20VIN%2098%20B6324S/Repair%20and%20Diagnosis/Testing%20and%20Inspection/Programming%20and%20Relearning/Software%20Downloading/Software%20Products/)
+describes vehicle equipment changes through Volvo software products
+and the vehicle-configuration file in CEM. These are **different
+operational paths**, not a common raw configuration byte map.
+
+The new `VolvoP2CemHistoricalCustomerValuePreflight` exposes only
+historically listed values in the existing **offline configuration
+candidate viewer**. It performs bounded, source-scope comparisons for
+independently confirmed XC90 **MY2003-2006**, including LOW/HIGH seat
+temperature consistency, exact approach-light durations, post-drying
+switch and source-named DRL modes. It does **not** map these values to
+CEM DIDs or memory addresses. The source itself inconsistently mentions
+three customer parameters while enumerating four categories: neither
+firmware coverage nor module ownership should be inferred from it.
+
+[Full value/provenance analysis](P2-CEM-HISTORICAL-CUSTOMER-PARAMETERS.md)
+and **eight synthetic offline tests** document exact limitations and
+permanent denial of live CEM connection, configuration read/write,
+security PIN or J2534 operations. Real revision-specific source and
+authorized hardware validation remain required.
+
 ## User-selected manual CEM identity research JSON inspection (Development)
 
 The **P2 configuration candidates (offline)** viewer now has an
