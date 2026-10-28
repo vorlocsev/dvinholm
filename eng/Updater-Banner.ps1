@@ -789,6 +789,95 @@ function SelfTest {
   $repairChecks++
   if($repairChecks -ne 8){throw 'Wrong interrupted rollback repair test count.'}
   Write-Host 'Updater Banner 8/8 interrupted rollback repair checks passed.'
+  $installChecks=0
+  $installId='0123456789abcdef0123456789abcdef'
+  $newPending=Join-Path $script:channelRoot ('pending-'+$installId)
+  $olderInstall=Join-Path $script:channelRoot ('older-'+$installId)
+  $abandonedInstall=Join-Path $script:channelRoot ('abandoned-'+$installId)
+  function Reset-SyntheticInstall([bool]$withPrevious=$true) {
+   Reset-SyntheticLite
+   if(-not $withPrevious){
+    Remove-Item -LiteralPath (Join-Path $script:channelRoot 'previous') -Recurse -Force
+   }
+   New-SyntheticLite $newPending 'ci-201' 'Development'
+   Write-InstallTransaction $installId 'ci-201'
+  }
+  Reset-SyntheticInstall
+  Reject {Rollback}
+  Repair-InterruptedInstall
+  if((Read-ManagedVersion $script:current) -cne 'ci-200' -or
+     (Read-ManagedVersion (Join-Path $script:channelRoot 'previous')) -cne 'ci-199' -or
+     -not(Test-Path -LiteralPath $abandonedInstall) -or
+     (Test-Path -LiteralPath (Get-InstallTransactionFile))){
+   throw 'Prepared-state install recovery failed.'
+  }
+  $installChecks++
+  Reset-SyntheticInstall
+  Move-Item -LiteralPath (Join-Path $script:channelRoot 'previous') -Destination $olderInstall
+  Repair-InterruptedInstall
+  if((Read-ManagedVersion $script:current) -cne 'ci-200' -or
+     (Read-ManagedVersion (Join-Path $script:channelRoot 'previous')) -cne 'ci-199'){
+   throw 'Previous-relocated install recovery failed.'
+  }
+  $installChecks++
+  Reset-SyntheticInstall
+  Move-Item -LiteralPath (Join-Path $script:channelRoot 'previous') -Destination $olderInstall
+  Move-Item -LiteralPath $script:current -Destination (Join-Path $script:channelRoot 'previous')
+  Repair-InterruptedInstall
+  if((Read-ManagedVersion $script:current) -cne 'ci-200' -or
+     (Read-ManagedVersion (Join-Path $script:channelRoot 'previous')) -cne 'ci-199'){
+   throw 'Current-relocated install recovery failed.'
+  }
+  $installChecks++
+  Reset-SyntheticInstall
+  Move-Item -LiteralPath (Join-Path $script:channelRoot 'previous') -Destination $olderInstall
+  Move-Item -LiteralPath $script:current -Destination (Join-Path $script:channelRoot 'previous')
+  Move-Item -LiteralPath $newPending -Destination $script:current
+  Repair-InterruptedInstall
+  if((Read-ManagedVersion $script:current) -cne 'ci-201' -or
+     (Read-ManagedVersion (Join-Path $script:channelRoot 'previous')) -cne 'ci-200' -or
+     (Test-Path -LiteralPath $olderInstall) -or
+     (Test-Path -LiteralPath (Get-InstallTransactionFile))){
+   throw 'Promoted install reconciliation failed.'
+  }
+  $installChecks++
+  Reset-SyntheticInstall
+  Move-Item -LiteralPath (Join-Path $script:channelRoot 'previous') -Destination $olderInstall
+  Move-Item -LiteralPath $newPending -Destination $abandonedInstall
+  Repair-InterruptedInstall
+  if((Read-ManagedVersion $script:current) -cne 'ci-200' -or
+     (Read-ManagedVersion (Join-Path $script:channelRoot 'previous')) -cne 'ci-199'){
+   throw 'Interrupted repair was not resumable.'
+  }
+  $installChecks++
+  Reset-SyntheticInstall $false
+  Move-Item -LiteralPath $script:current -Destination (Join-Path $script:channelRoot 'previous')
+  Repair-InterruptedInstall
+  if((Read-ManagedVersion $script:current) -cne 'ci-200' -or
+     (Test-Path -LiteralPath (Join-Path $script:channelRoot 'previous'))){
+   throw 'Single-version install recovery failed.'
+  }
+  $installChecks++
+  Reset-SyntheticInstall
+  [IO.File]::WriteAllText((Join-Path $newPending 'updater-banner.json'),
+   (@{Channel='Stable';Tag='v0.2.4'}|ConvertTo-Json))
+  Reject {Repair-InterruptedInstall}
+  if((Read-ManagedVersion $script:current) -cne 'ci-200' -or
+     -not(Test-Path -LiteralPath (Get-InstallTransactionFile))){
+   throw 'Cross-channel install repair mutated managed files.'
+  }
+  $installChecks++
+  Reset-SyntheticInstall
+  New-SyntheticLite (Join-Path $script:channelRoot
+   'pending-fedcba9876543210fedcba9876543210') 'ci-202' 'Development'
+  Reject {Repair-InterruptedInstall}
+  if((Read-ManagedVersion $script:current) -cne 'ci-200' -or
+     -not(Test-Path -LiteralPath (Get-InstallTransactionFile))){
+   throw 'Unexpected staging marker was ignored.'
+  }
+  $installChecks++
+  if($installChecks -ne 8){throw 'Wrong interrupted install recovery test count.'}
+  Write-Host 'Updater Banner 8/8 interrupted install recovery checks passed.'
  }finally{
   $script:StateFile=$originalStateFile
   $script:base=$originalBase
