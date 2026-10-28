@@ -1,3 +1,12 @@
+## Development 0.3.0: ephemeral offline CEM customer-value draft (2026-10-28)
+
+- [x] Add an in-memory **proposed customer value** form to the existing P2 research dialog (not to the seven-button ECU Profile action grid). User types a claimed MY2003-2006 year, self-reports an independent year check, selects one historical customer parameter and enters one value, or LOW/HIGH for heated seats.
+- [x] Preview with source-scoped `VolvoP2CemHistoricalCustomerValuePreflight`. Only show canonical source-listed values; block invalid/unconfirmed years, inconsistent heated-seat levels and extra input. No invalid raw user input echoed (privacy). Even a listed proposal does not establish a current ECU setting or valid firmware mapping. Cancel/Close discard everything.
+- [x] Add **8 deterministic synthetic offline tests** for accepted/prohibited values, invalid years, temporary-only reports and redaction of accidental VIN/PIN-like strings. Extend [historical source instructions](docs/P2-CEM-HISTORICAL-CUSTOMER-PARAMETERS.md); no files, adapter sessions, saved profiles, security access, configuration reads or writes.
+- [ ] Require 5/5 final-head PR CI and independent 5/5 postmerge main CI, then installed Windows WinUI manual form acceptance. Physical CEM/DiCE/J2534 and revision-specific addressing/firmware acceptance remain deferred. Stable 0.2.4 unchanged; no release without approval.
+
+---
+
 ## Development 0.3.0: source-scoped historical CEM customer values (2026-10-28)
 
 - [x] Research reproduced early XC90 CEM workshop descriptions separating **customer-adjustable values**, the **vehicle-configuration file** and **Volvo software-product download**. Avoid inferring raw bytes, addresses, a PIN or a supported CEM firmware revision from descriptions of values or menus. Note the historical source's internal inconsistency on the number of parameter categories.
