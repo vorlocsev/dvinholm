@@ -57,6 +57,13 @@ jobs:
         run: |
           ./eng/Updater-Banner.ps1 -Mode SelfTest
 
+      # Use the actual inbox Windows PowerShell 5.1 and WinForms runtime.
+      # Instantiates the GUI controls without ShowDialog, network or installers.
+      - name: Verify standalone Updater Banner Windows WinForms UI
+        shell: powershell
+        run: |
+          ./eng/Updater-Banner.ps1 -Mode UiSmokeTest
+
       - name: Restore
         run: dotnet restore Dvinholm.sln
 
