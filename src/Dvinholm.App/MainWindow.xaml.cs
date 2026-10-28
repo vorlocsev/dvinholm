@@ -13,6 +13,7 @@ public sealed partial class MainWindow : Window
 {
     private readonly ObservableCollection<CanMonitorRow> _frames = new();
     private readonly CanMonitorHistory _monitorHistory = new();
+    private readonly CanMonitorRxDropTracker _rxDropTracker = new();
     private bool _canRxSummaryBusy;
     private readonly ObservableCollection<J2534Device> _j2534Devices = new();
     private readonly J2534Session _session = new();
@@ -2991,11 +2992,19 @@ public sealed partial class MainWindow : Window
         }
 
         _monitorTask = null;
+        // The prior worker can finish before its UI cleanup callback runs.
+        // Finalize its counter now so a restart does not lose known drops.
+        if (_monitorSubscription is { } previous)
+        {
+            _rxDropTracker.Complete(previous.DroppedFrameCount);
+            _monitorSubscription = null;
+        }
         _cts = new CancellationTokenSource();
         var token = _cts.Token;
         var subscription = _session.Bus.Subscribe();
         _monitorSubscription = subscription;
-        DroppedFrameText.Text = "0 dropped";
+        _rxDropTracker.Start(subscription.DroppedFrameCount);
+        UpdateRxDropCountText();
 
         StartButton.Content = "Stop monitor";
         SetStatus("Monitoring CAN...");
@@ -3012,8 +3021,9 @@ public sealed partial class MainWindow : Window
                 {
                     if (ReferenceEquals(_monitorSubscription, subscription))
                     {
-                        DroppedFrameText.Text = $"{subscription.DroppedFrameCount:N0} dropped";
+                        _rxDropTracker.Complete(subscription.DroppedFrameCount);
                         _monitorSubscription = null;
+                        UpdateRxDropCountText();
                     }
                 });
             }
@@ -3080,7 +3090,7 @@ public sealed partial class MainWindow : Window
             ReferenceEquals(_frames[0], evicted))
             _frames.RemoveAt(0);
 
-        DroppedFrameText.Text = $"{(_monitorSubscription?.DroppedFrameCount ?? 0):N0} dropped";
+        UpdateRxDropCountText();
         if (CanMonitorHistory.MatchesCanIdFilter(IdFilter.Text, frame.Id))
             _frames.Add(frame);
         _total++;
@@ -3097,6 +3107,14 @@ public sealed partial class MainWindow : Window
 
     private void UpdateFrameCountText() =>
         FrameCountText.Text = $"{_frames.Count:N0} shown / {_total:N0} rx";
+
+    private void UpdateRxDropCountText()
+    {
+        var drops = _rxDropTracker.Snapshot(_monitorSubscription?.DroppedFrameCount);
+        DroppedFrameText.Text = drops is long count
+            ? $"{count:N0} dropped since clear"
+            : "drops unknown";
+    }
 
     private void RefreshMonitorFilter()
     {
@@ -3170,6 +3188,8 @@ public sealed partial class MainWindow : Window
 
     private void ResetMonitorView()
     {
+        // Clear the history and its matching drop-count epoch together.
+        _rxDropTracker.Clear(_monitorSubscription?.DroppedFrameCount);
         _monitorHistory.Clear();
         _frames.Clear();
         _total = 0;
@@ -3177,6 +3197,7 @@ public sealed partial class MainWindow : Window
         _rate.Restart();
         FrameRateText.Text = "0 frames/s";
         UpdateFrameCountText();
+        UpdateRxDropCountText();
     }
 
 #if DVINHOLM_DEVELOPMENT_FEATURES
@@ -3295,7 +3316,7 @@ public sealed partial class MainWindow : Window
             var report = CanMonitorRxResearchSummary.Build(
                 _monitorHistory.Filter(""),
                 _monitorHistory.TotalReceived,
-                _monitorSubscription?.DroppedFrameCount,
+                _rxDropTracker.Snapshot(_monitorSubscription?.DroppedFrameCount),
                 synthetic);
 
             var copied = false;
