@@ -27,6 +27,8 @@ internal static class VolvoP2ConfigCandidateDisplay
         text.AppendLine();
         text.Append(VolvoP2CemVidaNodeAdvisory.BuildOfflineOverview());
         text.AppendLine();
+        text.Append(VolvoP2CemThirdPartyScannerCoverage.BuildOfflineOverview());
+        text.AppendLine();
 
         foreach (var option in VolvoP2ConfigOptionCatalog.Entries)
         {

@@ -21,6 +21,45 @@ methods, PIN algorithms, DID semantics or write sequences.
 | PIN/service authorization | Verified legitimate model-specific entitlement/acquisition route, exact ECU prerequisites and consent | **Not implemented** |
 | Configuration writes | Confirmed protocol and power, locking, rollback/verification procedure, J2534 and ECU bench test | **Not implemented** |
 
+## Third-party scanner CEM function labels: MY2005, MY2007, MY2008 (research 2026-10-28)
+
+[Foxwell NT530 Volvo advertised function list, V1.10.001](https://assets.bucketcdn.com/Producten/Foxwell/Foxwell-NT530-Volvo/NT530_Volvo_functions.pdf)
+is **publisher/vendor coverage information**, not a Volvo diagnostic
+protocol, model-year-wide hardware verification or evidence that Dvinholm
+can communicate with a CEM. PDF printed pages are numbered here from 1.
+
+| Exact listed XC90 year and module | Literal advertised function(s) | Source page |
+| --- | --- | --- |
+| MY2005 / CEM | "Reading control unit ID"; "Reading data for vehicle configuration"; "Reading off parameters, immobilizer function" | 184 |
+| MY2007 / CEM | "ECU identification"; "Programmed values" | 128 |
+| MY2007 / CEM-HS (separate module label) | "ECU identification" | 129 |
+| MY2008 / CEM | "ECU identification"; "Programmed values" | 129 |
+| MY2008 / CEM-HS (separate module label) | "ECU identification" | 130 |
+
+The 2005 configuration-data label is **not assumed** to mean the same
+service, data, encoding or permissions as the 2007/2008 "Programmed values"
+label. Likewise the listing's **CEM-HS** and **CEM** entries are separate
+software module labels, not proof of a certain CAN bus, transport address or
+a distinct physical controller. The words "immobilizer function" name a
+scanner menu only, not access to a PIN, security secret or key programming.
+Years outside this deliberately selected excerpt have **unknown coverage**
+in the Dvinholm research index, not confirmed incompatibility.
+
+The backend `VolvoP2CemThirdPartyScannerCoverage` and offline P2 candidate
+viewer show source-scoped labels, exact years, module distinction and page
+references with explicit **all-live-operation flags false**. Eight synthetic
+offline tests reject extrapolation between years/functions, missing
+independent year confirmation, conflating CEM with CEM-HS, and any attempt
+to interpret listed menus as confirmed CEM addresses, PINs or executable
+configuration reads/writes. No raw request IDs, DIDs, service bytes, seed/key
+algorithms, recoverable backups or production CEM fingerprints were added.
+
+**Next evidence required:** an independently documented *specific XC90
+CEM hardware/software revision*, supported physical diagnostic transport
+and lawful read-only identity/configuration mechanism, plus authorized
+DiCE/J2534 bench results. Do not enable PIN or writes based on a vendor
+marketing matrix.
+
 ## User-selected manual CEM identity research JSON inspection (Development)
 
 The **P2 configuration candidates (offline)** viewer now has an

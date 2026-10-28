@@ -1,3 +1,12 @@
+## Development 0.3.0: XC90 CEM function evidence by model year (2026-10-28)
+
+- [x] Review the publicly listed **Foxwell NT530 Volvo V1.10.001** coverage PDF against XC90 P2 **MY2005, MY2007, MY2008** with concrete page references. MY2005/CEM lists "Reading data for vehicle configuration", while MY2007/2008/CEM list "Programmed values"; these **must not** be equated or expanded into a protocol claim.
+- [x] Keep **CEM** and **CEM-HS** as distinct published module labels, not discovered physical CAN IDs. Treat advertised immobilizer-parameter reading as a menu description, not access to PINs or security keys.
+- [x] Add a source-scoped immutable nine-entry research index and **eight deterministic offline tests**; integrate brief evidence into the existing P2 offline candidate viewer, document provenance/limits in the [CEM compatibility register](docs/VOLVO-P2-CEM-COMPATIBILITY.md). All real ECU/PIN/configuration operation flags remain false.
+- [ ] Require 5/5 exact-head PR checks, independent postmerge CI and separate manual installed Windows review. Verified hardware/software CEM identity, independent transport/service documentation and authorized physical bench acceptance remain prerequisites for any real read-only CEM support. Stable v0.2.4 unchanged; no release without approval.
+
+---
+
 ## Development 0.3.0: pair CEM identity claims with historical DID metadata (2026-10-28)
 
 - [x] Add a separate user-directed **Pair with DID snapshot...** choice to the existing CEM research JSON viewer. Combine an offline manual VIDA card with a separate previously exported diagnostic snapshot, without treating either as an authenticated ECU identity or same-vehicle match.
