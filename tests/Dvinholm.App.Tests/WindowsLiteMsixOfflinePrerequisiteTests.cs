@@ -8,6 +8,7 @@ namespace Dvinholm.App.Tests;
 /// Read-only, explicitly simulated Windows LTSC MSIX prerequisite checks.
 /// Does not mutate AppX registration, .NET runtimes, certificates or the OS.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class WindowsLiteMsixOfflinePrerequisiteTests
 {
     [Theory]

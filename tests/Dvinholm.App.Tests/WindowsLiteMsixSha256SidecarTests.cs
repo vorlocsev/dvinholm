@@ -7,6 +7,7 @@ namespace Dvinholm.App.Tests;
 /// Synthetic checksum fixtures. The checksum does not authenticate the
 /// source and the bytes are not an installable MSIX.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class WindowsLiteMsixSha256SidecarTests
 {
     [Theory]

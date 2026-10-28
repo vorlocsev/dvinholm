@@ -5,6 +5,7 @@ namespace Dvinholm.App.Tests;
 /// workflow that builds both ZIP flavors from one SHA without publishing.
 /// No GUI, installed updater, external runtime or real J2534 adapter required.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class StableStaging024ContractTests
 {
     private static string Read(string relativePath)

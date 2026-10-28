@@ -4,6 +4,7 @@ namespace Dvinholm.App.Tests;
 /// Eight offline contracts for the exact-artifact pre-release HOLD report.
 /// GitHub Actions additionally runs the report generator on downloaded ZIPs.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class StableReadiness024ContractTests
 {
     private static string Source(string path)

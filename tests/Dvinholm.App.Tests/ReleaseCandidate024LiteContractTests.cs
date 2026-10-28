@@ -4,6 +4,7 @@ namespace Dvinholm.App.Tests;
 /// Eight offline source contracts for the nonpublishing v0.2.4 Lite RC.
 /// Real ZIP and simulated-host prerequisite checks run on Windows CI.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class ReleaseCandidate024LiteContractTests
 {
     private static string CheckoutFile(string relativePath)

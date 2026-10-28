@@ -8,6 +8,7 @@ namespace Dvinholm.App.Tests;
 /// Uploaded artifact pair validation using disposable synthetic bytes.
 /// Tests neither GitHub access nor MSIX installability or publisher trust.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class WindowsLiteMsixArtifactRoundtripTests
 {
     [Theory]

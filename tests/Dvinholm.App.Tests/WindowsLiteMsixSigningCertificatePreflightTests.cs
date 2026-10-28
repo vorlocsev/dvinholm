@@ -10,6 +10,7 @@ namespace Dvinholm.App.Tests;
 /// Public DER-only signing certificate preflight. Uses disposable in-memory
 /// self-signed certificates; never writes a PFX or changes Windows trust stores.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class WindowsLiteMsixSigningCertificatePreflightTests
 {
     [Theory]

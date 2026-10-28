@@ -4,6 +4,7 @@ namespace Dvinholm.App.Tests;
 /// Eight deterministic offline one-click Stable 0.2.4 acceptance contracts.
 /// Real Windows CMD prepare-only must also run against downloaded staged ZIPs.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class StableAcceptance024LauncherTests
 {
     private static string Read(string path)

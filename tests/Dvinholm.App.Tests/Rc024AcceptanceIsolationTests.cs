@@ -7,6 +7,7 @@ namespace Dvinholm.App.Tests;
 /// compatibility with the previously verified v0.2.3 acceptance receipt.
 /// No J2534 adapter or WinUI launch is required.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class Rc024AcceptanceIsolationTests : IDisposable
 {
     private readonly string _root = Path.Combine(
