@@ -1636,6 +1636,13 @@ public sealed partial class MainWindow : Window
         report += Environment.NewLine +
             VolvoP2CemRevisionEvidencePreflight
                 .BuildReadOnlyReport(manualClaim, snapshot);
+        // A year/part-number research card and checksum-protected historic
+        // DID export do NOT establish a physical CEM. The production
+        // revision/DID evidence catalog is intentionally empty; show the
+        // explicit revision-scoped read-only gap, without any live request.
+        report += Environment.NewLine +
+            VolvoP2CemHistoricalDidEvidence.BuildReadOnlyReport(
+                manualClaim, snapshot, VolvoP2CemSupportMatrix.ProductionEntries);
         var dialog = new ContentDialog
         {
             XamlRoot = RootLayout.XamlRoot,
