@@ -1110,7 +1110,7 @@ public sealed partial class MainWindow : Window
             // change an ECU profile or persist a draft.
             var draftYear = new TextBox
             {
-                Header = "Claimed XC90 model year (2003-2006 research only)",
+                Header = "Claimed XC90 year (2003-2014; customer values 2003-2006)",
                 MaxLength = 4,
                 PlaceholderText = "e.g. 2005"
             };
@@ -1213,6 +1213,86 @@ public sealed partial class MainWindow : Window
                 }
             };
 
+            // This secondary, offline-only check joins the EXISTING
+            // XC90 HS-CAN advisory and Volvo VIDA tool limitation.
+            // It never uses selected adapter state or changes CAN speed.
+            var transportNetwork = new ComboBox
+            {
+                Header = "Claimed network (research only)"
+            };
+            foreach (var name in new[]
+            {
+                "Not identified", "HS-CAN", "LS-CAN", "Other / K-line"
+            })
+                transportNetwork.Items.Add(new ComboBoxItem { Content = name });
+            transportNetwork.SelectedIndex = 0;
+
+            var transportAdapter = new ComboBox
+            {
+                Header = "Claimed interface type (NOT detected)"
+            };
+            foreach (var name in new[]
+            {
+                "Unspecified", "DiCE", "J2534-1", "J2534-2", "Other"
+            })
+                transportAdapter.Items.Add(new ComboBoxItem { Content = name });
+            transportAdapter.SelectedIndex = 0;
+
+            var transportRate = new ComboBox
+            {
+                Header = "Proposed rate (NOT applied to adapter)"
+            };
+            foreach (var name in new[]
+            {
+                "Unspecified", "125 kbit/s", "250 kbit/s", "500 kbit/s"
+            })
+                transportRate.Items.Add(new ComboBoxItem { Content = name });
+            transportRate.SelectedIndex = 0;
+
+            var transportReport = new TextBlock
+            {
+                Text = "Transport not checked; no physical interface was detected.",
+                TextWrapping = TextWrapping.Wrap,
+                IsTextSelectionEnabled = true
+            };
+            var transportReview = new Button
+            {
+                Content = "Review legacy transport risks (offline)"
+            };
+            // Recheck after every change; old results must never be mistaken
+            // for a live adapter setting or a validated vehicle identity.
+            void InvalidateTransport() => transportReport.Text =
+                "Research inputs changed; transport has NOT been verified.";
+            draftYear.TextChanged += (_, _) => InvalidateTransport();
+            draftYearCheck.Checked += (_, _) => InvalidateTransport();
+            draftYearCheck.Unchecked += (_, _) => InvalidateTransport();
+            transportNetwork.SelectionChanged += (_, _) => InvalidateTransport();
+            transportAdapter.SelectionChanged += (_, _) => InvalidateTransport();
+            transportRate.SelectionChanged += (_, _) => InvalidateTransport();
+            transportReview.Click += (_, _) =>
+            {
+                if (_closing)
+                    return;
+                var yearClaim = draftYear.Text;
+                int? year = yearClaim.Length == 4 &&
+                    int.TryParse(yearClaim, System.Globalization.NumberStyles.None,
+                        System.Globalization.CultureInfo.InvariantCulture, out var parsed) &&
+                    yearClaim == parsed.ToString(System.Globalization.CultureInfo.InvariantCulture)
+                    ? parsed : null;
+                uint? nominalRate = transportRate.SelectedIndex switch
+                {
+                    1 => 125_000u,
+                    2 => 250_000u,
+                    3 => 500_000u,
+                    _ => null
+                };
+                transportReport.Text = VolvoP2CemTransportResearchPreflight.BuildReadOnlyReport(
+                    year, draftYearCheck.IsChecked == true,
+                    (VolvoP2NetworkKind)transportNetwork.SelectedIndex,
+                    nominalRate,
+                    (VolvoP2CemDiagnosticInterface)transportAdapter.SelectedIndex);
+            };
+
             var catalogContent = new StackPanel { Spacing = 8 };
             foreach (var control in new UIElement[]
             {
@@ -1224,6 +1304,13 @@ public sealed partial class MainWindow : Window
                 },
                 draftYear, draftYearCheck, draftKind, draftValue,
                 draftHigh, manualNoteValue, manualNoteHigh, draftPreview, draftResult,
+                new TextBlock
+                {
+                    Text = "XC90 P2 CEM LEGACY TRANSPORT RESEARCH (NO CONNECTION)",
+                    TextWrapping = TextWrapping.Wrap
+                },
+                transportNetwork, transportAdapter, transportRate,
+                transportReview, transportReport,
                 new TextBlock
                 {
                     Text = VolvoP2ConfigCandidateDisplay.BuildOverview(),
