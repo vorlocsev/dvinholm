@@ -15,19 +15,18 @@ public sealed class VolvoP2CemHistoricalCustomerValuePreflightTests
     [Fact]
     public void SourceValueSetsAreExactImmutableHistoricalMetadata()
     {
-        var source = VolvoP2CemHistoricalCustomerValuePreflight;
         Assert.Equal(new[] { 0, 10, 28, 30, 31, 32, 33, 34, 35, 36,
                              37, 38, 39, 40, 41, 43 },
-            source.SeatTemperatureCelsius);
-        Assert.Equal(new[] { 0, 30, 60, 90 }, source.ApproachLightSeconds);
-        Assert.Equal(new[] { "OFF", "ON" }, source.SwitchValues);
+            VolvoP2CemHistoricalCustomerValuePreflight.SeatTemperatureCelsius);
+        Assert.Equal(new[] { 0, 30, 60, 90 }, VolvoP2CemHistoricalCustomerValuePreflight.ApproachLightSeconds);
+        Assert.Equal(new[] { "OFF", "ON" }, VolvoP2CemHistoricalCustomerValuePreflight.SwitchValues);
         Assert.Equal(new[] { "FLEX_ZERO", "FLEX_STANDARD", "FLEX_LOW" },
-            source.DaytimeLampModes);
-        var list = Assert.IsAssignableFrom<IList<int>>(source.SeatTemperatureCelsius);
+            VolvoP2CemHistoricalCustomerValuePreflight.DaytimeLampModes);
+        var list = Assert.IsAssignableFrom<IList<int>>(VolvoP2CemHistoricalCustomerValuePreflight.SeatTemperatureCelsius);
         Assert.True(list.IsReadOnly);
         Assert.Throws<NotSupportedException>(() => list.Add(42));
         Assert.Contains("reading-off-and-programming-data",
-            source.Source.Replace("reading-off-and-programming-data/", "reading-off-and-programming-data"));
+            VolvoP2CemHistoricalCustomerValuePreflight.Source);
     }
 
     [Fact]
