@@ -1,3 +1,12 @@
+## Development 0.3.0: revision-specific CEM evidence gap preflight (2026-10-28)
+
+- [x] After the user opens a manual VIDA CEM research card and **explicitly** pairs a historical DID JSON, show the **seven missing evidence gates** required for safe CEM support. The two records remain uncorrelated manual/historical information, NOT a verified physical module fingerprint.
+- [x] Reuse existing fail-closed source-file inspectors and the strictly year-scoped public Foxwell function research. Advertised menus appear as **claimed-year context only**; missing years have unknown coverage, CEM and CEM-HS remain separate and no address/command/option value/PIN is inferred.
+- [x] Add **eight synthetic offline tests** for seven missing gates, 2005/2007/2008 vendor-list limits, unlisted year, false provenance/verification flags, malformed documents, disabled live permissions and redaction. Extend manual worksheet documentation and existing offline paired viewer, no new UI button or unapproved file write.
+- [ ] Accept only after 5/5 exact-head PR workflows and independent postmerge CI. Manual installed Windows File Picker acceptance and real DiCE/J2534/CEM evidence remain outstanding. Do not enable ECU operations or publish Stable without approval.
+
+---
+
 ## Development 0.3.0: XC90 CEM function evidence by model year (2026-10-28)
 
 - [x] Review the publicly listed **Foxwell NT530 Volvo V1.10.001** coverage PDF against XC90 P2 **MY2005, MY2007, MY2008** with concrete page references. MY2005/CEM lists "Reading data for vehicle configuration", while MY2007/2008/CEM list "Programmed values"; these **must not** be equated or expanded into a protocol claim.
