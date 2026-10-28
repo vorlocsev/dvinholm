@@ -3321,11 +3321,14 @@ public sealed partial class MainWindow : Window
 #endif
             // Filter("") reads the retained RX history regardless of the
             // current software view filter. This method never starts CAN.
+            var snapshotRows = _monitorHistory.Filter("");
+            var queueDrops = _rxDropTracker.Snapshot(_monitorSubscription?.DroppedFrameCount);
             var report = CanMonitorRxResearchSummary.Build(
-                _monitorHistory.Filter(""),
-                _monitorHistory.TotalReceived,
-                _rxDropTracker.Snapshot(_monitorSubscription?.DroppedFrameCount),
-                synthetic);
+                snapshotRows, _monitorHistory.TotalReceived, queueDrops, synthetic);
+            // Same UI-thread snapshot, with the same bounded validation and no
+            // CAN payloads, timestamps, file writes or device access.
+            var jsonMetadata = CanMonitorRxMetadataJson.Build(
+                snapshotRows, _monitorHistory.TotalReceived, queueDrops, synthetic);
 
             var copied = false;
             var preview = new ContentDialog
@@ -3343,6 +3346,7 @@ public sealed partial class MainWindow : Window
                     }
                 },
                 PrimaryButtonText = "Copy RX metadata",
+                SecondaryButtonText = "Copy JSON metadata",
                 CloseButtonText = "Close",
                 DefaultButton = ContentDialogButton.Close
             };
@@ -3360,6 +3364,23 @@ public sealed partial class MainWindow : Window
                     args.Cancel = true;
                     if (!_closing)
                         SetStatus("CAN RX metadata could not be copied. No data was exported.");
+                }
+            };
+
+            preview.SecondaryButtonClick += (_, args) =>
+            {
+                try
+                {
+                    var package = new DataPackage();
+                    package.SetText(jsonMetadata);
+                    Clipboard.SetContent(package);
+                    copied = true;
+                }
+                catch (Exception)
+                {
+                    args.Cancel = true;
+                    if (!_closing)
+                        SetStatus("CAN RX JSON could not be copied. No data was exported.");
                 }
             };
 
