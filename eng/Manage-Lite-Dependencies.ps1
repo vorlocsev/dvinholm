@@ -6,7 +6,7 @@
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('Launch','Manage','Install')][string]$Mode = 'Manage',
+    [ValidateSet('Launch','Manage','Install','Probe')][string]$Mode = 'Manage',
     [ValidateSet('DotNet','WinApp','VC')][string]$Component = 'WinApp',
     [string]$LiteDirectory = $PSScriptRoot
 )
@@ -15,8 +15,11 @@ $ErrorActionPreference = 'Stop'
 $root = (Resolve-Path -LiteralPath $LiteDirectory -ErrorAction Stop).Path
 $checker = Join-Path $root 'Check-Lite-Prerequisites.ps1'
 $app = Join-Path $root 'Dvinholm.App.exe'
-if (-not (Test-Path -LiteralPath $checker -PathType Leaf) -or
-    -not (Test-Path -LiteralPath $app -PathType Leaf)) {
+# The standalone Updater Banner can probe or install prerequisites before
+# ANY Dvinholm files exist. Launch still requires the full application.
+if ($Mode -eq 'Launch' -and
+    (-not (Test-Path -LiteralPath $checker -PathType Leaf) -or
+     -not (Test-Path -LiteralPath $app -PathType Leaf))) {
     throw 'The complete Dvinholm Lite distribution must be present beside the dependency manager.'
 }
 
@@ -90,6 +93,18 @@ function Get-Inventory {
         }
     } catch { $vc = $false }
     return [pscustomobject]@{ DotNet=$dotnet; WinApp=$sdk; VC=$vc }
+}
+
+# Read-only, machine-readable inventory for the separate Updater Banner.
+# This path does not read a runtimeconfig, launch WinUI or install software.
+if ($Mode -eq 'Probe') {
+    $inventory = Get-Inventory
+    foreach ($item in @('DotNet','WinApp','VC')) {
+        $key = if ($item -eq 'DotNet') { 'DOTNET' } else { $item.ToUpperInvariant() }
+        $state = if ($inventory.$item) { 'READY' } else { 'MISSING' }
+        Write-Output "$key=$state"
+    }
+    return
 }
 
 function Get-OfficialInstaller {
