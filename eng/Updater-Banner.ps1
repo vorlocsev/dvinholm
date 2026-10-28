@@ -21,7 +21,7 @@ $preferenceFile=Join-Path $base 'channel-preference.txt'
 $channelRoot=Join-Path $base $Channel
 $current=Join-Path $channelRoot 'current'
 $state=[ordered]@{Done=$false;Failed=$false;Current='Not installed';Available='Not checked';
- DotNet='Unknown';WinApp='Unknown';VC='Unknown';Detail='Ready'}
+ DotNet='Unknown';WinApp='Unknown';VC='Unknown';Recovery='Not checked';Detail='Ready'}
 function Save-State {
  if (-not $StateFile) { return }
  $tmp=$StateFile+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
@@ -302,6 +302,31 @@ function Get-InstallMarkerEntries {
  Assert-ManagedFolder $channelRoot
  return @(Get-ChildItem -LiteralPath $channelRoot -Force -ErrorAction Stop |
   Where-Object { $_.Name -like 'pending-*' -or $_.Name -like 'older-*' })
+}
+function Get-ChannelRecoveryState {
+ # Read-only classification. Repair actions separately verify every file.
+ try {
+  Assert-ManagedFolder $base
+  Assert-ManagedFolder $channelRoot
+  $rollbacks=@(Get-RollbackStaging)
+  $installs=@(Get-InstallMarkerEntries)
+  $journal=Test-Path -LiteralPath (Get-InstallTransactionFile)
+  if($rollbacks.Count -gt 0){
+   if($journal -or $installs.Count -gt 0 -or $rollbacks.Count -ne 1){
+    return 'Inspect'
+   }
+   $one=$rollbacks[0]
+   if($one.Name -cmatch '^rollback-[0-9a-f]{32}$' -and
+      $one.PSIsContainer -and
+      ($one.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0){
+    return 'Repair rollback'
+   }
+   return 'Inspect'
+  }
+  if($journal){return 'Repair install'}
+  if($installs.Count -gt 0){return 'Inspect'}
+  return 'Ready'
+ }catch{return 'Inspect'}
 }
 function Assert-NoInterruptedInstall {
  if((Test-Path -LiteralPath (Get-InstallTransactionFile)) -or
@@ -878,6 +903,32 @@ function SelfTest {
   $installChecks++
   if($installChecks -ne 8){throw 'Wrong interrupted install recovery test count.'}
   Write-Host 'Updater Banner 8/8 interrupted install recovery checks passed.'
+  $statusChecks=0
+  Reset-SyntheticLite
+  if((Get-ChannelRecoveryState) -cne 'Ready'){throw 'Clean recovery status incorrect.'}
+  $statusChecks++
+  Reset-SyntheticInstall
+  if((Get-ChannelRecoveryState) -cne 'Repair install'){throw 'Install recovery status incorrect.'}
+  $statusChecks++
+  Reset-SyntheticLite
+  New-SyntheticLite $newPending 'ci-201' 'Development'
+  if((Get-ChannelRecoveryState) -cne 'Inspect'){throw 'Orphan staging was not flagged.'}
+  $statusChecks++
+  Reset-SyntheticLite
+  Move-Item -LiteralPath $script:current -Destination $staged
+  if((Get-ChannelRecoveryState) -cne 'Repair rollback'){throw 'Rollback recovery status incorrect.'}
+  $statusChecks++
+  Reset-SyntheticLite
+  Move-Item -LiteralPath $script:current -Destination $bad
+  if((Get-ChannelRecoveryState) -cne 'Inspect'){throw 'Invalid rollback marker was not flagged.'}
+  $statusChecks++
+  Reset-SyntheticLite
+  Move-Item -LiteralPath $script:current -Destination $staged
+  [IO.File]::WriteAllText((Get-InstallTransactionFile),'unverified')
+  if((Get-ChannelRecoveryState) -cne 'Inspect'){throw 'Mixed recovery markers were not flagged.'}
+  $statusChecks++
+  if($statusChecks -ne 6){throw 'Wrong recovery status check count.'}
+  Write-Host 'Updater Banner 6/6 read-only recovery status checks passed.'
  }finally{
   $script:StateFile=$originalStateFile
   $script:base=$originalBase
@@ -893,12 +944,20 @@ if($Mode -eq 'SelfTest'){SelfTest;exit 0}
 if($Mode -ne 'UI'){
  try{
   $script:state.Current=Installed
+  $script:state.Recovery=Get-ChannelRecoveryState
   $inventory=Probe
   foreach($key in @('DotNet','WinApp','VC')){$script:state[$key]=$inventory[$key]}
   Save-State
   if($Mode -eq 'Probe'){
-   Progress 'Runtime dependencies rechecked locally. No GitHub request made.'
+   if($script:state.Recovery -eq 'Ready'){
+    Progress 'Runtime dependencies rechecked locally. No GitHub request made.'
+   }else{
+    Progress ('Recovery required: '+$script:state.Recovery+'. No GitHub request made.')
+   }
   }elseif($Mode -eq 'Check'){
+   if($script:state.Recovery -ne 'Ready'){
+    throw 'Recovery must be handled before update checks.'
+   }
    $r=Latest;$script:state.Available=$r.Tag
    Progress ('Latest '+$Channel+' release: '+$r.Tag+'. No changes made.')
   }elseif($Mode -eq 'Rollback'){
@@ -910,6 +969,7 @@ if($Mode -ne 'UI'){
   }else{
    Invoke-ChannelExclusive {Install}
   }
+  $script:state.Recovery=Get-ChannelRecoveryState
   $script:state.Done=$true;Save-State;exit 0
  }catch{
   $message=[string]$_.Exception.Message
@@ -917,6 +977,8 @@ if($Mode -ne 'UI'){
    'Missing Lite prerequisites. Install/update Microsoft components, then retry.'
   }elseif($message -match 'Close the application'){
    'Close Dvinholm, then retry. Managed files were not changed.'
+  }elseif($message -match 'Recovery must be handled'){
+   'Recovery required. Use the matching repair button or inspect the managed folders.'
   }elseif($message -match 'Interrupted rollback requires'){
    'Interrupted rollback detected. Use Repair rollback before updating or restoring.'
   }elseif($message -match 'Interrupted install requires'){
@@ -934,6 +996,7 @@ if($Mode -ne 'UI'){
   }elseif($message -match 'SHA|ZIP|digest|manifest|archive|asset|unsafe'){
    'Release integrity/security check failed. Nothing was installed.'
   }else{'Update/check failed. Inspect the managed install directory if a replacement was interrupted.'}
+  $script:state.Recovery=Get-ChannelRecoveryState
   $script:state.Failed=$true;$script:state.Done=$true;Save-State;exit 1
  }
 }
