@@ -8,6 +8,11 @@ The new [offline eight-row readiness matrix](XC90-P2-CEM-READINESS-MATRIX.md)
 combines source-scoped year/transport guidance with explicit missing CEM
 identity, read-mapping and backup requirements. It does not authorize requests.
 
+The [exact-year CEM read-surface index](XC90-P2-CEM-READ-SURFACES.md)
+separates five workshop-described MY2007 VIDA functions from undocumented
+wire formats and vehicle-specific configuration data. It is offline and
+does not enable any CEM request.
+
 This document is the initial source-of-truth for the **0.3.0 read-only**
 compatibility gate. It intentionally does not publish guessed CAN IDs, seed/key
 methods, PIN algorithms, DID semantics or write sequences.
