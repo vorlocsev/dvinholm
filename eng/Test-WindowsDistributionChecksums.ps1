@@ -7,7 +7,8 @@
 param(
     [Parameter(Mandatory)][string]$Directory,
     [switch]$Generate,
-    [switch]$LiteOnly
+    [switch]$LiteOnly,
+    [switch]$WithUpdaterBanner
 )
 
 $ErrorActionPreference = 'Stop'
@@ -31,6 +32,11 @@ if (-not (Test-Path -LiteralPath $root -PathType Container)) {
     throw "Distribution directory does not exist: $root"
 }
 $names = if ($LiteOnly) { @('Dvinholm-Windows-x86-Lite.zip') } else { @('Dvinholm-Windows-x86.zip', 'Dvinholm-Windows-x86-Lite.zip') }
+# Updater Banner is a standalone bootstrap/tool, NOT another app flavor.
+# The Lite-only app policy remains unchanged.
+if ($WithUpdaterBanner) {
+    $names = @($names) + @('Dvinholm-Updater-Banner-Windows-x86.zip')
+}
 $manifest = Join-Path $root 'SHA256SUMS.txt'
 
 if ($Generate) {

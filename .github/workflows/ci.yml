@@ -37,7 +37,7 @@ jobs:
       - name: Parse Windows PowerShell 5.1 distribution scripts
         shell: powershell
         run: |
-          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Manage-Lite-Dependencies.ps1', 'eng/Test-LiteBundledPreflight.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
+          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Manage-Lite-Dependencies.ps1', 'eng/Updater-Banner.ps1', 'eng/Package-Updater-Banner.ps1', 'eng/Test-LiteBundledPreflight.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
             $tokens = $null
             $syntaxErrors = $null
             [System.Management.Automation.Language.Parser]::ParseFile(
@@ -50,6 +50,11 @@ jobs:
             }
             Write-Host "PowerShell 5.1 syntax valid: $path"
           }
+
+      - name: Verify standalone Updater Banner offline safety
+        shell: powershell
+        run: |
+          ./eng/Updater-Banner.ps1 -Mode SelfTest
 
       - name: Restore
         run: dotnet restore Dvinholm.sln
@@ -120,8 +125,9 @@ jobs:
           ./eng/Test-WindowsDistribution.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
           ./eng/Test-WindowsDistributionExtraction.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip -SimulatedLiteHost
           ./eng/Test-LiteBundledPreflight.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
-          ./eng/Test-WindowsDistributionChecksums.ps1 -Directory artifacts -LiteOnly -Generate
-          ./eng/Test-WindowsDistributionChecksums.ps1 -Directory artifacts -LiteOnly
+          ./eng/Package-Updater-Banner.ps1 -ZipPath artifacts/Dvinholm-Updater-Banner-Windows-x86.zip
+          ./eng/Test-WindowsDistributionChecksums.ps1 -Directory artifacts -LiteOnly -WithUpdaterBanner -Generate
+          ./eng/Test-WindowsDistributionChecksums.ps1 -Directory artifacts -LiteOnly -WithUpdaterBanner
           $lite = (Get-Item -LiteralPath artifacts/Dvinholm-Windows-x86-Lite.zip).Length
           "Lite ZIP: $([math]::Round($lite / 1MB, 2)) MiB. Runtime prerequisites required; trimming disabled." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
@@ -133,6 +139,14 @@ jobs:
         with:
           name: Dvinholm-Windows-x86-Lite
           path: artifacts/Dvinholm-Windows-x86-Lite.zip
+          if-no-files-found: error
+          compression-level: 0
+
+      - name: Upload standalone Updater Banner
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-Updater-Banner-Windows-x86
+          path: artifacts/Dvinholm-Updater-Banner-Windows-x86.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -152,7 +166,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86-Lite.zip" "artifacts/SHA256SUMS.txt" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Dvinholm CI #${{ github.run_number }} (Lite)" --notes "Lite-only Windows x86 Development build. Install .NET 10 Desktop x86, Windows App SDK 2.5, VC++ Redistributable x86."
+          gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86-Lite.zip" "artifacts/SHA256SUMS.txt" "artifacts/Dvinholm-Updater-Banner-Windows-x86.zip" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Dvinholm CI #${{ github.run_number }} (Lite)" --notes "Lite-only Windows x86 Development build. Install .NET 10 Desktop x86, Windows App SDK 2.5, VC++ Redistributable x86."
 
       # Re-download release assets and validate that GitHub stored the exact
       # three expected files matching our checksums and commit.
@@ -169,5 +183,5 @@ jobs:
           $meta = Join-Path $downloadDir 'release.json'
           gh api "repos/${{ github.repository }}/releases/tags/ci-${{ github.run_number }}" | Out-File -LiteralPath $meta -Encoding utf8
           if ($LASTEXITCODE -ne 0) { throw 'Failed retrieving published CI metadata.' }
-          ./eng/Test-PublishedDevelopmentRelease.ps1 -LiteOnly -ReleaseMetadataFile $meta -Directory $downloadDir -ExpectedTag "ci-${{ github.run_number }}" -ExpectedCommit "${{ github.sha }}"
+          ./eng/Test-PublishedDevelopmentRelease.ps1 -LiteOnly -WithUpdaterBanner -ReleaseMetadataFile $meta -Directory $downloadDir -ExpectedTag "ci-${{ github.run_number }}" -ExpectedCommit "${{ github.sha }}"
 
