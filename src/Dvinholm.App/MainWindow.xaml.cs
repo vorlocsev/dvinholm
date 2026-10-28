@@ -1534,6 +1534,9 @@ public sealed partial class MainWindow : Window
                     Content = new TextBlock
                     {
                         Text = VolvoP2CemRevisionSourceSetReview
+                            .BuildReadOnlyReport(manual, claims)
+                            + Environment.NewLine
+                            + VolvoP2CemConfigurationReadPreflight
                             .BuildReadOnlyReport(manual, claims),
                         TextWrapping = TextWrapping.Wrap,
                         IsTextSelectionEnabled = true
