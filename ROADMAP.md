@@ -1,3 +1,29 @@
+## Development 0.3.0+: Volvo P2 CEM authorization and vehicle configuration roadmap (2026-10-28)
+
+**Backlog issue:** [#523 — P2/CEM authorization and vehicle configuration](https://github.com/vorlocsev/dvinholm/issues/523). **Status: implementation queued; read-only offline research groundwork already underway.** The public Stable v0.2.4 release is already published; this roadmap section schedules future Development work only, without changing its release assets/tag or authorizing another release. PIN/authentication and configuration read/edit/write are primary product goals.
+
+- [ ] **Phase 1: P2/CEM identification.** Determine exact CEM hardware/firmware and supported J2534 CAN/K-Line service protocols; maintain version-aware compatibility metadata and treat undocumented mappings as unverified.
+- [ ] **Phase 2: configuration read and backup.** Read documented config data, validate size/integrity, preserve original bytes and metadata, and create versioned recovery backups.
+- [ ] **Phase 3: PIN/service authorization.** Research legitimate model-specific PIN workflows and supported service authentication; distinguish configuration authorization from immobilizer credentials. Use authorized access paths only, without brute-force/bypass or speculative extraction commands.
+- [ ] **Phase 4: configuration editor.** Show verified parameter names, constraints, differences, and preview of planned writes; unknown data remain read-only.
+- [ ] **Phase 5: guarded writes.** Require explicit confirmation, validated module identity, power and connection preflight, recovery artifacts, serialized session access, interruption safeguards, and read-after-write verification.
+- [ ] **Phase 6: ECU catalog and module separation.** Independently document supported P2/CEM variants and factor new diagnostic/configuration services out of WinUI where useful; preserve the existing J2534/dispatcher/ISO-TP/UDS behavior.
+
+**SectorV official reference:** https://sectorv.ru/ (direct page inaccessible; user provided a 2026-10-27 homepage screenshot). The compressed **77 × 1536 px** image establishes a public-facing Volvo service site with PIN-related content and grouped capability sections, but the small print cannot be reliably transcribed. Independently, static analysis of the supplied SectorV 1.0.19 ZIP identified P2/P3 PIN-search orchestration, P2 CEM configuration read/write/backup/edit state, P3 CarConfig catalog/decoder/editor, J2534 CAN/K-Line, and signed updates. **Do not confuse homepage presentation, IL evidence or verified hardware compatibility.** Review full-resolution feature pages when accessible; no proprietary code/datasets or protected remote modules may be copied. See [issue #523](https://github.com/vorlocsev/dvinholm/issues/523) for screenshot provenance and further verification tasks.
+
+**SectorV readable screenshots (2026-10-27):** The official site, shown in two legible user screenshots, **advertises** ordinary/fast OBD PIN search without CEM removal; free ordinary P3 search; fast P2 CEM PIN search from **2006 model year**; fast P3 CEM search; and progress/time/result display. Its **P2 configuration** examples target **S60, S80, V70, XC70 and XC90 from MY2006** and include Eberspächer/heater menu, headlamp washers/lighting types, region, front/rear parking sensors, locking/alarm/siren, speed limit, Volvo On Call, service interval, wheel size, auto-neutral and factory equipment. **These are vendor claims, not confirmed compatibility or independently verified algorithms.** New configuration option definitions remain read-only candidates until model-specific independent evidence and physical write acceptance. See [issue #523](https://github.com/vorlocsev/dvinholm/issues/523) for a full itemized list and provenance.
+
+**Reference applications: P3Tool and VDASH** (user-selected benchmarks; use independent implementation, no proprietary code reuse):
+
+- **[P3Tool](https://p3tool.org/faq.html):** study the *P3-only* CarConfig editing experience: comprehensive option/value catalog, readable diff, backups, J2534 compatibility and PIN/authorization status. Do not transfer P3 addresses/configuration assumptions to P2.
+- **[VDASH](https://d5t5.com/wiki/vdash/article-vdash-volvo-diagnostic):** study the P2/P3 service flow for model/ECU identification, supported configuration options, PIN prerequisites, adapter readiness, reporting and managed programming. VDASH lists first-generation XC90 (P2) as supported; exact capabilities are vehicle-dependent. The [CEM PIN documentation](https://d5t5.com/article/volvo-cem-pin-code) describes differing eligibility between P2 variants and P3.
+- [ ] For the first P2 implementation PR, document an XC90 P2 compatibility and benchmark matrix: CEM revision, supported protocols/J2534 drivers, credentials/authorization requirements, safe read/backup/edit/write actions, and evidence status. Mark unverified operations unavailable.
+- [ ] For follow-on P3 work, derive a separate CarConfig model and compatibility matrix instead of sharing P2 assumptions. Keep PIN acquisition and immobilizer credential handling distinct.
+
+**Quality gates:** 6–8 isolated offline/virtual-adapter tests per future PR plus existing Windows CI; never count simulation as successful physical J2534/ECU testing. Actual hardware/vehicle acceptance is required before enabling configuration writes in a Stable release. No Stable publication without separate confirmation.
+
+---
+
 ## Development 0.3.0: passive CAN RX metadata for CEM transport research (2026-10-28)
 
 - [x] Add an explicit **RX summary** in CAN Monitor that uses the existing bounded history, not the current software filter, and summarizes 11/29-bit CAN IDs, per-DLC counts, buffer eviction and known/unknown subscriber drops without copying or displaying frame payload bytes.
