@@ -476,6 +476,9 @@ public sealed partial class MainWindow : Window
         {
             stagedDirectory = await LatestBuildUpdater.DownloadAndPrepareAsync(
                 build, progress, downloadCts.Token);
+            if (build.RequiresLiteRuntime)
+                await LatestBuildUpdater.ValidateStagedLitePrerequisitesAsync(
+                    stagedDirectory, downloadCts.Token);
             // The user may have closed the window while the download awaited.
             // Never start the replacement helper after a close/cancellation.
             downloadCts.Token.ThrowIfCancellationRequested();
