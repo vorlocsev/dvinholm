@@ -116,7 +116,8 @@ public sealed class VolvoP2CemRevisionSourceSetReviewTests
         Assert.True(report.Length < 1700);
         var ui = FindUi();
         Assert.Contains("PickMultipleFilesAsync()", ui);
-        Assert.Contains("VolvoP2CemRevisionSourceSetReview.BuildReadOnlyReport", ui);
+        Assert.Contains("VolvoP2CemRevisionSourceSetReview", ui);
+        Assert.Contains(".BuildReadOnlyReport(manual, claims)", ui);
         Assert.Empty(VolvoP2CemSupportMatrix.ProductionEntries);
     }
 
