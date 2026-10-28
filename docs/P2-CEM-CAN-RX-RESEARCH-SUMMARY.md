@@ -15,8 +15,10 @@ verified Volvo CEM address, bus or diagnostic service.
    of the current software ID filter**. It does not request new frames.
 3. Review the per-ID and 11/29-bit-format frame counts plus DLC
    distribution. The report separately shows how many rows were evicted
-   and the most recently known subscriber drop count, or UNKNOWN when
-   no subscription is active.
+   and tracked subscriber drops **since the last Clear**, including
+   completed monitor subscriptions and subsequent restarts. UNKNOWN means
+   no subscription has been observed since Clear or an active counter cannot
+   be sampled. Clear rebaselines an active subscription without restarting it.
 4. Press **Copy RX metadata** only when willing to put these CAN IDs/counts
    on the clipboard. Closing the dialog does not copy or save anything.
    Existing **CSV log** remains a different, potentially sensitive,
@@ -49,3 +51,18 @@ RX-only virtual J2534 integration with zero transmissions. Physical
 vehicle acceptance and installed Windows UI validation remain future work.
 
 Stable v0.2.4 is not modified or published by this change.
+
+## RX drop accounting correction (Development 0.3.0)
+
+A previously stopped monitor no longer loses its final drop count in the
+research summary. Restarting monitoring adds new subscriber drops to previous
+ones within the same Clear epoch; it does **not** reset the accumulated count
+while retaining older RX history. Clearing the monitor rebaselines the active
+subscription or forgets a completed one. Counts are subscriber queue drops,
+not an exhaustive number of all missed physical bus frames. If counters are
+missing, regress or overflow, the accounting reports UNKNOWN and refuses to
+invent a number.
+
+Eight additional deterministic synthetic tests exercise unknown, active,
+stopped, restarted and cleared sessions, malformed counters, and overflow.
+No ECU service, J2534 command or automatic export is introduced.
