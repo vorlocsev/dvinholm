@@ -1,3 +1,12 @@
+## Development 0.3.0: source-scoped legacy P2/CEM transport risk review (2026-10-28)
+
+- [x] Reuse existing `VolvoP2CemHsCanSpeedAdvisory` and `VolvoP2CemVidaNodeAdvisory` for a combined **OFFLINE-only** proposed XC90 model-year/network/interface/rate review; never call a real adapter, auto-select a speed, or turn logical VIDA nodes into CAN IDs. The historical manual describes **250 kbit/s HS-CAN through 2004** and **500 kbit/s from 2005**, with wrong-year network/DTC hazard; not a CEM diagnostic transport map.
+- [x] Surface claimed network, interface category (DiCE, J2534-1, J2534-2, other) and proposed nominal speed inside the existing P2 research dialog. The year assertion is self-report only; warn explicitly about Volvo's **J2534-1 VIDA diagnostics exclusion** and distinguish J2534-2 software-download scope from proven CEM diagnostic support. All live service/auto-selection flags remain permanently false.
+- [x] Add **eight synthetic offline tests** (year split, mismatched HS-CAN rates, unsupported/unconfirmed year, other networks, unknown speed, J2534-1 limitation, all live permissions denied), with [source and manual UI guide](docs/P2-CEM-LEGACY-TRANSPORT-SAFETY.md). No CAN/J2534/UDS commands, real physical vehicle metadata, PIN, write or backup behavior.
+- [ ] Accept only after 5/5 exact-head PR workflows and independent 5/5 postmerge CI; installed Windows WinUI and real DiCE/J2534 CEM tests remain deferred. **Stable v0.2.4 frozen**, no release until explicit approval.
+
+---
+
 ## Development 0.3.0: compare unverified manual CEM note to proposal (2026-10-28)
 
 - [x] Add an **optional manual reference notation**, clearly labeled **NOT an ECU read**, alongside the existing source-limited early-XC90 offline customer-value proposal. For heated seats, compare LOW/HIGH pairs. Leave the reference blank for the previous single-proposal preview. Changing the parameter clears old values, and editing any input invalidates the previous result.
