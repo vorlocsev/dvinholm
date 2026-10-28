@@ -337,12 +337,30 @@ function Install {
    ($meta|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
   Progress 'Replacing the banner-managed application directory...'
   Assert-ManagedFolder $previous
-  if(Test-Path $previous){Remove-Item $previous -Recurse -Force}
-  if(Test-Path $current){Move-Item $current $previous;$movedOld=$true}
-  try{Move-Item $pending $current}
-  catch{
-   if($movedOld -and -not(Test-Path $current)){Move-Item $previous $current}
+  $older=Join-Path $channelRoot ('older-'+$id)
+  $movedPrevious=$false
+  try {
+   if((Test-Path -LiteralPath $current -PathType Container) -and
+      (Test-Path -LiteralPath $previous -PathType Container)){
+    Move-Item -LiteralPath $previous -Destination $older -ErrorAction Stop
+    $movedPrevious=$true
+   }
+   if(Test-Path -LiteralPath $current -PathType Container) {
+    Move-Item -LiteralPath $current -Destination $previous -ErrorAction Stop
+    $movedOld=$true
+   }
+   Move-Item -LiteralPath $pending -Destination $current -ErrorAction Stop
+  }catch{
+   if($movedOld -and -not(Test-Path -LiteralPath $current)) {
+    Move-Item -LiteralPath $previous -Destination $current -ErrorAction Stop
+   }
+   if($movedPrevious -and -not(Test-Path -LiteralPath $previous)){
+    Move-Item -LiteralPath $older -Destination $previous -ErrorAction Stop
+   }
    throw
+  }
+  if($movedPrevious){
+   Remove-Item -LiteralPath $older -Recurse -Force -ErrorAction SilentlyContinue
   }
   $script:state.Current=$r.Tag
   Progress ('Installed '+$r.Tag+'; previous version retained for rollback.')
@@ -404,17 +422,27 @@ if($Mode -ne 'UI'){
   }elseif($Mode -eq 'Check'){
    $r=Latest;$script:state.Available=$r.Tag
    Progress ('Latest '+$Channel+' release: '+$r.Tag+'. No changes made.')
-  }else{Install}
+  }elseif($Mode -eq 'Rollback'){
+   Invoke-ChannelExclusive {Rollback}
+  }else{
+   Invoke-ChannelExclusive {Install}
+  }
   $script:state.Done=$true;Save-State;exit 0
  }catch{
   $message=[string]$_.Exception.Message
   $script:state.Detail=if($message -match 'prerequisite|runtime|dependency|SDK|VC|Desktop'){
    'Missing Lite prerequisites. Install/update Microsoft components, then retry.'
   }elseif($message -match 'Close the application'){
-   'Close Dvinholm, then retry. Previous files were preserved.'
+   'Close Dvinholm, then retry. Managed files were not changed.'
+  }elseif($message -match 'Another updater operation'){
+   'Another updater is already changing this channel. Try again after it finishes.'
+  }elseif($message -match 'Rollback interrupted'){
+   'Rollback was interrupted. Managed folders retained; manual recovery required.'
+  }elseif($message -match 'rollback|previous|managed version|Managed Lite'){
+   'Rollback unavailable or failed. Check that both managed versions are valid.'
   }elseif($message -match 'SHA|ZIP|digest|manifest|archive|asset|unsafe'){
    'Release integrity/security check failed. Nothing was installed.'
-  }else{'Update/check failed. Existing application files were not modified.'}
+  }else{'Update/check failed. Inspect the managed install directory if a replacement was interrupted.'}
   $script:state.Failed=$true;$script:state.Done=$true;Save-State;exit 1
  }
 }
@@ -436,6 +464,9 @@ $null=Label 'No .NET 10 or WinApp Runtime needed. Stable and Development install
 $choice=New-Object Windows.Forms.ComboBox;$choice.DropDownStyle='DropDownList'
 $choice.Items.AddRange([object[]]@('Development','Stable'))
 $choice.SetBounds(18,87,185,29);$form.Controls.Add($choice)
+$rollback=New-Object Windows.Forms.Button
+$rollback.Text='Restore previous';$rollback.SetBounds(215,85,175,33)
+$form.Controls.Add($rollback)
 $installed=Label 'Installed: not checked' 126 25
 $available=Label 'Available: not checked' 151 25
 $deps=Label '.NET x86: ?    WinApp: ?    VC++ x86: ?' 180 26
@@ -459,6 +490,12 @@ $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
 function Begin-Action([string]$action){
  if($script:child -or $script:vendor){return}
+ if($action -eq 'Rollback'){
+  if([Windows.Forms.MessageBox]::Show(
+   'Restore the previous Lite build of the selected channel, without downloading anything? The currently installed build becomes the backup. Close Dvinholm first.',
+   'Confirm rollback',[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
  if($action -eq 'Install'){
   if([Windows.Forms.MessageBox]::Show(
    'Download the selected Lite ZIP, verify checksums and install into an isolated channel? Existing manual installations will not be changed.',
@@ -473,13 +510,16 @@ function Begin-Action([string]$action){
   $script:child=Start-Process -FilePath $powershell -ArgumentList $args -WindowStyle Hidden -PassThru
   $bar.MarqueeAnimationSpeed=25
   $choice.Enabled=$false;$install.Enabled=$false;$check.Enabled=$false
+  $rollback.Enabled=$false;$launch.Enabled=$false;$refresh.Enabled=$false
   $status.Text='Working...'
  }catch{$status.Text='Unable to launch updater helper.'}
 }
 $check.Add_Click({Begin-Action 'Check'})
 $refresh.Add_Click({Begin-Action 'Probe'})
 $install.Add_Click({Begin-Action 'Install'})
+$rollback.Add_Click({Begin-Action 'Rollback'})
 $launch.Add_Click({
+ if($script:child -or $script:vendor){return}
  $target=Join-Path (Join-Path (Join-Path $base $choice.SelectedItem.ToString()) 'current') 'Start-Dvinholm-Lite.cmd'
  if(-not(Test-Path $target -PathType Leaf)){
   [Windows.Forms.MessageBox]::Show('Channel not installed; choose Download / Install.',
@@ -521,6 +561,7 @@ $timer.Add_Tick({
  if($script:child -and $script:child.HasExited){
   $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0
   $choice.Enabled=$true;$install.Enabled=$true;$check.Enabled=$true
+  $rollback.Enabled=$true;$launch.Enabled=$true;$refresh.Enabled=$true
  }
  if($script:vendor -and $script:vendor.HasExited){
   $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0
