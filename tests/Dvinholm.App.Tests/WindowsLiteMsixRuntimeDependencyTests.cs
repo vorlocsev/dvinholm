@@ -7,6 +7,7 @@ namespace Dvinholm.App.Tests;
 /// Eight isolated unsigned MSIX metadata fixtures for offline deployment
 /// dependency contracts; no certificate, package install, WinUI or adapter.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class WindowsLiteMsixRuntimeDependencyTests
 {
     [Theory]

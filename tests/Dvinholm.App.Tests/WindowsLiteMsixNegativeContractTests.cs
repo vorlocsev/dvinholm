@@ -8,6 +8,7 @@ namespace Dvinholm.App.Tests;
 /// contracts in the experimental, unsigned Lite MSIX package validator.
 /// This checks only archive metadata; no package is installed or launched.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class WindowsLiteMsixNegativeContractTests
 {
     [Theory]

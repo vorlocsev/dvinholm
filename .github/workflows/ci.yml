@@ -65,8 +65,18 @@ jobs:
           dotnet-version: '10.0.401'
           architecture: x86
 
-      - name: Test
-        run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release --no-build --no-restore -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --logger "trx;LogFileName=test-results.trx"
+      # Only the retired RC/staging/MSIX source-fixture contracts are deferred
+      # from PRs. CAN, ISO-TP, UDS, updater security, Lite ZIP checks and
+      # the actual Stable feature smoke gates remain on EVERY PR.
+      - name: Test active behavior (PR)
+        if: github.event_name == 'pull_request'
+        run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release --no-build --no-restore -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --filter "Category!=ArchivedWorkflow" --logger "trx;LogFileName=pr-active-tests.trx"
+
+      # Run the complete suite on main, and on explicit manual CI dispatch.
+      # This includes archived workflow compatibility tests for regression.
+      - name: Test complete regression (main/manual)
+        if: github.event_name != 'pull_request'
+        run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release --no-build --no-restore -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --logger "trx;LogFileName=full-regression.trx"
 
       # The production assembly is compiled separately with all demo/test
       # feature flags OFF. No GUI or J2534 hardware is needed for these tests.

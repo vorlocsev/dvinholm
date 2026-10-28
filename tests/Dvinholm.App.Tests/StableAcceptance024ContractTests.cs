@@ -7,6 +7,7 @@ namespace Dvinholm.App.Tests;
 /// human-acceptance kit. A separate Windows CI job executes the actual
 /// downloaded ZIPs, never opens WinUI or touches installed user data.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class StableAcceptance024ContractTests
 {
     private static string Source(string path)

@@ -7,6 +7,7 @@ namespace Dvinholm.App.Tests;
 /// Eight synthetic test cases for the experimental x86 MSIX identity and
 /// Windows 11 LTSC compatibility metadata. No signature, install or launch.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class WindowsLiteMsixLtscManifestContractTests
 {
     [Theory]

@@ -6,6 +6,7 @@ namespace Dvinholm.App.Tests;
 /// Eight offline source-level fail-closed guards for the validation-only
 /// v0.2.4 release candidate path. They never launch WinUI or publish releases.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class ReleaseCandidate024ContractTests
 {
     private static string CheckoutFile(string relativePath)

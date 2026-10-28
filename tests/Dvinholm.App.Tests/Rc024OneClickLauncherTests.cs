@@ -5,6 +5,7 @@ namespace Dvinholm.App.Tests;
 /// acceptance launcher. GitHub Actions additionally executes the real batch
 /// in --prepare-only mode against a downloaded RC ZIP on Windows x86.
 /// </summary>
+[Trait("Category", "ArchivedWorkflow")]
 public sealed class Rc024OneClickLauncherTests
 {
     private static string Read(string relativePath)
