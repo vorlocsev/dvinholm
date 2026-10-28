@@ -95,8 +95,15 @@ function Get-Inventory {
 function Get-OfficialInstaller {
     param([string]$Name)
     if ($Name -eq 'WinApp') {
+        # Main and Singleton match the OS architecture; x64 runtime installer
+        # also provisions the x86 Framework/DDLM needed by the x86 app.
+        $nativeArch = [Runtime.InteropServices.RuntimeInformation]::OSArchitecture.ToString()
+        if ($nativeArch -notin @('X86','X64','Arm64')) {
+            throw 'Unsupported Windows architecture for the official runtime installer.'
+        }
+        $suffix = $nativeArch.ToLowerInvariant()
         return [pscustomobject]@{
-            Url = 'https://aka.ms/windowsappsdk/2.5/2.5.1/windowsappruntimeinstall-x86.exe'
+            Url = "https://aka.ms/windowsappsdk/2.5/2.5.1/windowsappruntimeinstall-$suffix.exe"
             Hash = $null
         }
     }
