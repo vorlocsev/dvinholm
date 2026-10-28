@@ -1,3 +1,11 @@
+## Development 0.3.0: source-scoped CEM PIN vendor route exceptions (2026-10-28)
+
+- [x] Distinguish VDASH/VDD vendor PIN decoding claims by claimed XC90 P2 engine: 3.2, V8 4.4 and 147 kW D5 decoding examples/exclusions, versus separate key-programming cautions including 120 kW D5 MY2013+.
+- [x] Add offline-only, fail-closed year/engine/tool research classifier and source overview in existing PIN readiness dialog. Never collect secrets, connect to CEM or grant key/PIN/configuration permissions.
+- [x] Eight synthetic tests and source-level explanation in docs/P2-CEM-VENDOR-PIN-ROUTES.md.
+- [ ] Require 5/5 exact-head PR CI and independent 5/5 postmerge main; real WinUI/DiCE/J2534 still untested. Stable 0.2.4 frozen and no publication without approval.
+
+---
 ## Development 0.3.0: source-scoped legacy P2/CEM transport risk review (2026-10-28)
 
 - [x] Reuse existing `VolvoP2CemHsCanSpeedAdvisory` and `VolvoP2CemVidaNodeAdvisory` for a combined **OFFLINE-only** proposed XC90 model-year/network/interface/rate review; never call a real adapter, auto-select a speed, or turn logical VIDA nodes into CAN IDs. The historical manual describes **250 kbit/s HS-CAN through 2004** and **500 kbit/s from 2005**, with wrong-year network/DTC hazard; not a CEM diagnostic transport map.
