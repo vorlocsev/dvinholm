@@ -6,7 +6,7 @@ No software installs or updates until the user explicitly confirms.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('UI','Check','Install','Rollback','Repair','Probe','SelfTest')][string]$Mode='UI',
+ [ValidateSet('UI','Check','Install','Rollback','Repair','RepairInstall','Probe','SelfTest')][string]$Mode='UI',
  [ValidateSet('Stable','Development')][string]$Channel='Development',
  [string]$StateFile
 )
@@ -288,7 +288,170 @@ function Repair-InterruptedRollback {
  $script:state.Available='Not checked'
  Progress ('Recovered '+$swapTag+'; '+$otherTag+' retained as the previous version.')
 }
+
+function Get-InstallTransactionFile {
+ return (Join-Path $channelRoot 'install-transaction.json')
+}
+function Get-OptionalManagedVersion([string]$folder) {
+ if(-not(Test-Path -LiteralPath $folder)){return ''}
+ return (Read-ManagedVersion $folder)
+}
+function Get-InstallMarkerEntries {
+ if(-not(Test-Path -LiteralPath $channelRoot -PathType Container)){return @()}
+ Assert-ManagedFolder $base
+ Assert-ManagedFolder $channelRoot
+ return @(Get-ChildItem -LiteralPath $channelRoot -Force -ErrorAction Stop |
+  Where-Object { $_.Name -like 'pending-*' -or $_.Name -like 'older-*' })
+}
+function Assert-NoInterruptedInstall {
+ if((Test-Path -LiteralPath (Get-InstallTransactionFile)) -or
+    @(Get-InstallMarkerEntries).Count -gt 0){
+  throw 'Interrupted install requires explicit repair before changing managed versions.'
+ }
+}
+function Write-InstallTransaction([string]$id,[string]$targetTag) {
+ Assert-NoInterruptedInstall
+ $previous=Join-Path $channelRoot 'previous'
+ $oldCurrent=Get-OptionalManagedVersion $current
+ $oldPrevious=Get-OptionalManagedVersion $previous
+ if($oldPrevious -and -not $oldCurrent){
+  throw 'Managed backup exists without current; cannot start installation.'
+ }
+ $metadata=@{
+  Channel=$Channel
+  Id=$id
+  TargetTag=$targetTag
+  HadCurrent=[bool]$oldCurrent
+  HadPrevious=[bool]$oldPrevious
+  OriginalCurrentTag=[string]$oldCurrent
+  OriginalPreviousTag=[string]$oldPrevious
+ }
+ $journal=Get-InstallTransactionFile
+ $tmp=$journal+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
+ try {
+  [IO.File]::WriteAllText($tmp,($metadata|ConvertTo-Json -Compress),
+   [Text.UTF8Encoding]::new($false))
+  Move-Item -LiteralPath $tmp -Destination $journal -ErrorAction Stop
+ }finally {
+  if(Test-Path -LiteralPath $tmp){Remove-Item -LiteralPath $tmp -Force}
+ }
+}
+function Repair-InterruptedInstall {
+ if(Get-Process -Name 'Dvinholm.App' -ErrorAction SilentlyContinue){
+  throw 'Close the application before repair.'
+ }
+ Assert-NoInterruptedRollback
+ $journal=Get-InstallTransactionFile
+ if(-not(Test-Path -LiteralPath $journal -PathType Leaf)){
+  throw 'No verifiable install transaction. Preserve orphan staging for manual inspection.'
+ }
+ Assert-ManagedFolder $base
+ Assert-ManagedFolder $channelRoot
+ $item=Get-Item -LiteralPath $journal -Force
+ if($item.Length -gt 4096 -or $item.Length -lt 10 -or
+    ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){
+  throw 'Untrusted install journal.'
+ }
+ try {$m=Get-Content -LiteralPath $journal -Raw | ConvertFrom-Json}
+ catch {throw 'Unreadable install journal.'}
+ $id=[string]$m.Id
+ $targetTag=[string]$m.TargetTag
+ $origCur=[string]$m.OriginalCurrentTag
+ $origPrev=[string]$m.OriginalPreviousTag
+ $tagPattern=if($Channel -ceq 'Stable'){'^v\d+\.\d+\.\d+$'}else{'^ci-[1-9][0-9]{0,8}$'}
+ if([string]$m.Channel -cne $Channel -or
+    $id -cnotmatch '^[0-9a-f]{32}$' -or
+    $targetTag -cnotmatch $tagPattern -or
+    $m.HadCurrent -isnot [bool] -or $m.HadPrevious -isnot [bool] -or
+    [bool]$m.HadCurrent -ne [bool]$origCur -or
+    [bool]$m.HadPrevious -ne [bool]$origPrev -or
+    ($origCur -and $origCur -cnotmatch $tagPattern) -or
+    ($origPrev -and $origPrev -cnotmatch $tagPattern) -or
+    ($m.HadPrevious -and -not $m.HadCurrent)){
+  throw 'Untrusted install journal fields.'
+ }
+ $pending=Join-Path $channelRoot ('pending-'+$id)
+ $abandoned=Join-Path $channelRoot ('abandoned-'+$id)
+ $older=Join-Path $channelRoot ('older-'+$id)
+ $retired=Join-Path $channelRoot ('retired-'+$id)
+ $previous=Join-Path $channelRoot 'previous'
+ $allowed=@('pending-'+$id,'older-'+$id)
+ foreach($marker in @(Get-InstallMarkerEntries)){
+  if($marker.Name -cnotin $allowed){
+   throw 'Unexpected install staging marker.'
+  }
+ }
+ foreach($folder in @($current,$previous,$pending,$abandoned,$older,$retired)){
+  Assert-ManagedFolder $folder
+ }
+ $c=Get-OptionalManagedVersion $current
+ $p=Get-OptionalManagedVersion $previous
+ $n=Get-OptionalManagedVersion $pending
+ $q=Get-OptionalManagedVersion $abandoned
+ $o=Get-OptionalManagedVersion $older
+ $t=Get-OptionalManagedVersion $retired
+ if(($n -and $q) -or ($o -and $t) -or
+    ($n -and $n -cne $targetTag) -or
+    ($q -and $q -cne $targetTag) -or
+    ($o -and $o -cne $origPrev) -or
+    ($t -and $t -cne $origPrev)){
+  throw 'Install staging is inconsistent with transaction journal.'
+ }
+ $phase=''
+ if($c -ceq $targetTag -and $m.HadCurrent -and
+    $p -ceq $origCur -and -not $n -and -not $q -and
+    (($m.HadPrevious -and (($o -ceq $origPrev -and -not $t) -or
+                             ($t -ceq $origPrev -and -not $o))) -or
+     (-not $m.HadPrevious -and -not $o -and -not $t))){
+  $phase='promoted'
+ }elseif($c -ceq $targetTag -and -not $m.HadCurrent -and
+         -not $p -and -not $n -and -not $q -and -not $o -and -not $t){
+  $phase='promoted'
+ }elseif(($n -ceq $targetTag -or $q -ceq $targetTag) -and
+         $c -ceq $origCur -and $p -ceq $origPrev -and
+         -not $o -and -not $t){
+  $phase='prepared'
+ }elseif($m.HadPrevious -and ($n -ceq $targetTag -or $q -ceq $targetTag) -and
+         $c -ceq $origCur -and -not $p -and $o -ceq $origPrev -and -not $t){
+  $phase='previous-moved'
+ }elseif($m.HadPrevious -and ($n -ceq $targetTag -or $q -ceq $targetTag) -and
+         -not $c -and $p -ceq $origCur -and $o -ceq $origPrev -and -not $t){
+  $phase='current-moved'
+ }elseif($m.HadCurrent -and -not $m.HadPrevious -and
+         ($n -ceq $targetTag -or $q -ceq $targetTag) -and
+         -not $c -and $p -ceq $origCur -and -not $o -and -not $t){
+  $phase='current-moved'
+ }
+ if(-not $phase){throw 'Ambiguous interrupted install. Managed files left untouched.'}
+ if($phase -eq 'promoted'){
+  Progress ('Install '+$targetTag+' already promoted. Finalizing safe backup cleanup...')
+  if($o){
+   Move-Item -LiteralPath $older -Destination $retired -ErrorAction Stop
+  }
+ }else{
+  Progress ('Restoring original '+$origCur+' from interrupted installation...')
+  if($n){
+   Move-Item -LiteralPath $pending -Destination $abandoned -ErrorAction Stop
+  }
+  if($phase -eq 'current-moved'){
+   Move-Item -LiteralPath $previous -Destination $current -ErrorAction Stop
+  }
+  if($phase -eq 'current-moved' -or $phase -eq 'previous-moved'){
+   if($m.HadPrevious){
+    Move-Item -LiteralPath $older -Destination $previous -ErrorAction Stop
+   }
+  }
+ }
+ Remove-Item -LiteralPath $journal -Force -ErrorAction Stop
+ if(Test-Path -LiteralPath $retired){
+  Remove-Item -LiteralPath $retired -Recurse -Force -ErrorAction SilentlyContinue
+ }
+ $script:state.Current=Installed
+ $script:state.Available='Not checked'
+ Progress ('Install recovery complete: '+$script:state.Current+'. Staged files retained as abandoned when present.')
+}
 function Rollback {
+ Assert-NoInterruptedInstall
  Assert-NoInterruptedRollback
  if(Get-Process -Name 'Dvinholm.App' -ErrorAction SilentlyContinue) {
   throw 'Close the application before rollback.'
@@ -344,6 +507,7 @@ function Probe {
  return $a
 }
 function Install {
+ Assert-NoInterruptedInstall
  Assert-NoInterruptedRollback
  if(Get-Process -Name 'Dvinholm.App' -ErrorAction SilentlyContinue){
   throw 'Close the application before update.'
