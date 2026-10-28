@@ -99,3 +99,21 @@ so this cannot prove publisher independence or authenticate an ECU. The
 result never includes part numbers, source texts or paths; no files are
 written, no profile is modified, and no diagnostic request or PIN action
 is enabled. Eight synthetic offline tests protect this boundary.
+
+## Configuration-read preflight from the source set (Development 0.3.0)
+
+Following the aggregate revision-source review, the same offline dialog now
+shows a **five-gate read eligibility report**, built using the existing
+`VolvoP2CemServiceCapabilityMatrix` for the `ReadConfiguration` category.
+The report retains mandatory blockers for independent vehicle year,
+authenticated physical CEM revision, documented configuration read mapping,
+authorized physical DiCE/J2534 acceptance and an implemented read service.
+
+Source-file agreement, repeated citations, user-asserted VIDA provenance and
+historical opaque DID snapshots cannot satisfy any of these verification
+gates. The new preflight explicitly reports duplicate/conflicting sources,
+redacts part numbers, citations, CAN IDs, VIN and raw values and never
+constructs a J2534/UDS command. An actual revision-specific CEM protocol,
+configuration DID list, PIN or recoverable backup is **not implemented**.
+Eight synthetic tests cover fail-closed behavior, exact blockers, source
+conflict/deduplication, invalid claims, immutability and WinUI wiring.
