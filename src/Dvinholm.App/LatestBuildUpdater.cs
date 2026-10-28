@@ -526,8 +526,19 @@ internal static class LatestBuildUpdater
         if (!File.Exists(script))
             throw new InvalidDataException("Lite update is missing its prerequisite checker.");
 
+        // This application is win-x86. On x64 Windows, System32 is
+        // redirected to SysWOW64 for an x86 process. The native 64-bit
+        // PowerShell has the complete AppX package registration cmdlets.
         var ps = Path.Combine(Environment.SystemDirectory,
             "WindowsPowerShell", "v1.0", "powershell.exe");
+        if (Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess)
+        {
+            var nativeHost = Path.Combine(
+                Environment.GetFolderPath(Environment.SpecialFolder.Windows),
+                "Sysnative", "WindowsPowerShell", "v1.0", "powershell.exe");
+            if (File.Exists(nativeHost))
+                ps = nativeHost;
+        }
         var startInfo = new ProcessStartInfo
         {
             FileName = ps,
@@ -544,12 +555,16 @@ internal static class LatestBuildUpdater
             ?? throw new InvalidOperationException("Unable to run the Lite dependency check.");
         using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
         timeout.CancelAfter(TimeSpan.FromSeconds(30));
+        string output;
+        string errors;
         try
         {
             var stdout = process.StandardOutput.ReadToEndAsync(timeout.Token);
             var stderr = process.StandardError.ReadToEndAsync(timeout.Token);
             await process.WaitForExitAsync(timeout.Token);
             await Task.WhenAll(stdout, stderr);
+            output = await stdout;
+            errors = await stderr;
         }
         catch (OperationCanceledException)
         {
@@ -559,9 +574,62 @@ internal static class LatestBuildUpdater
         }
         if (process.ExitCode != 0)
             throw new InvalidOperationException(
-                "Lite update blocked: install .NET 10 Desktop Runtime x86, " +
-                "Windows App SDK 2.5 and VC++ Redistributable x86, then retry. " +
-                "Installed application files were not replaced.");
+                ExplainLitePrerequisiteFailure(output, errors));
+    }
+
+    /// <summary>
+    /// Translate a failing host probe into ONE actionable, allowlisted reason.
+    /// Never echo raw PowerShell output, installed paths, registration metadata,
+    /// arbitrary environment strings or user data to the UI/update log.
+    /// Real machine inspection remains mandatory and fail-closed.
+    /// </summary>
+    internal static string ExplainLitePrerequisiteFailure(string? standardOutput,
+        string? standardError)
+    {
+        // We only look for known checker wording. Never display this text.
+        var diagnostic = (standardError ?? string.Empty) + "\n" +
+                         (standardOutput ?? string.Empty);
+        string reason;
+        if (diagnostic.Contains("Missing .NET 10 Desktop Runtime x86",
+                StringComparison.OrdinalIgnoreCase) ||
+            diagnostic.Contains("Missing .NET 10 x86 shared runtime Microsoft.WindowsDesktop.App",
+                StringComparison.OrdinalIgnoreCase))
+            reason = "missing or incompatible .NET 10 Desktop Runtime x86.";
+        else if (diagnostic.Contains("Missing .NET 10 x86 shared runtime Microsoft.NETCore.App",
+                StringComparison.OrdinalIgnoreCase) ||
+                 diagnostic.Contains("Failed to inspect installed .NET x86 runtimes",
+                     StringComparison.OrdinalIgnoreCase))
+            reason = "the .NET 10 x86 runtime could not be verified.";
+        else if (diagnostic.Contains("Missing Windows App SDK package",
+                StringComparison.OrdinalIgnoreCase) ||
+                 diagnostic.Contains("Missing Windows App SDK DDLM",
+                     StringComparison.OrdinalIgnoreCase))
+            reason = "a required Windows App SDK 2.5 runtime package is missing or outdated.";
+        else if (diagnostic.Contains("Missing or invalid Microsoft Visual C++ Redistributable x86",
+                StringComparison.OrdinalIgnoreCase))
+            reason = "Microsoft Visual C++ Redistributable x86 is missing or incompatible.";
+        else if (diagnostic.Contains("Get-AppxPackage",
+                StringComparison.OrdinalIgnoreCase))
+            reason = "Windows App SDK package registration could not be inspected.";
+        else if (diagnostic.Contains("Lite runtimeconfig",
+                StringComparison.OrdinalIgnoreCase) ||
+                 diagnostic.Contains("Lite shared framework",
+                     StringComparison.OrdinalIgnoreCase) ||
+                 diagnostic.Contains("unsupported shared framework",
+                     StringComparison.OrdinalIgnoreCase))
+            reason = "the downloaded Lite .NET runtime manifest is invalid or unsupported.";
+        else if (diagnostic.Contains("bundled .NET files",
+                StringComparison.OrdinalIgnoreCase) ||
+                 diagnostic.Contains("Selected directory",
+                     StringComparison.OrdinalIgnoreCase))
+            reason = "the downloaded folder is not a clean Lite distribution.";
+        else
+            reason = "the Lite host prerequisite check did not complete successfully.";
+
+        return "Lite update blocked: " + reason +
+            " Installed application files were not replaced. " +
+            "Run Check-Lite-Prerequisites.cmd in a separately extracted Lite ZIP " +
+            "to see the full local diagnostic.";
     }
 
     // Verify the extracted application entry before declaring an update ready.
