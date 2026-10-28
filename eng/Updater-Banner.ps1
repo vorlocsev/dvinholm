@@ -310,7 +310,16 @@ function Assert-NoInterruptedInstall {
  }
 }
 function Write-InstallTransaction([string]$id,[string]$targetTag) {
- Assert-NoInterruptedInstall
+ $journal=Get-InstallTransactionFile
+ if(Test-Path -LiteralPath $journal){throw 'Existing install journal prevents promotion.'}
+ $staged=Join-Path $channelRoot ('pending-'+$id)
+ if((Get-OptionalManagedVersion $staged) -cne $targetTag){
+  throw 'Prepared Lite version does not match intended install.'
+ }
+ $markers=@(Get-InstallMarkerEntries)
+ if($markers.Count -ne 1 -or $markers[0].Name -cne ('pending-'+$id)){
+  throw 'Unexpected install staging marker before promotion.'
+ }
  $previous=Join-Path $channelRoot 'previous'
  $oldCurrent=Get-OptionalManagedVersion $current
  $oldPrevious=Get-OptionalManagedVersion $previous
@@ -326,7 +335,6 @@ function Write-InstallTransaction([string]$id,[string]$targetTag) {
   OriginalCurrentTag=[string]$oldCurrent
   OriginalPreviousTag=[string]$oldPrevious
  }
- $journal=Get-InstallTransactionFile
  $tmp=$journal+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
  try {
   [IO.File]::WriteAllText($tmp,($metadata|ConvertTo-Json -Compress),
@@ -515,8 +523,8 @@ function Install {
  $r=Latest
  $script:state.Available=$r.Tag
  Progress 'Downloading GitHub Lite ZIP and SHA256SUMS...'
- New-Item -ItemType Directory -Path $channelRoot -Force | Out-Null
  Assert-ManagedFolder $base;Assert-ManagedFolder $channelRoot
+ New-Item -ItemType Directory -Path $channelRoot -Force | Out-Null
  Assert-ManagedFolder $current
  $id=[guid]::NewGuid().ToString('N')
  $downloads=Join-Path $channelRoot ('download-'+$id)
@@ -553,6 +561,7 @@ function Install {
   [IO.File]::WriteAllText((Join-Path $pending 'updater-banner.json'),
    ($meta|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
   Progress 'Replacing the banner-managed application directory...'
+  Write-InstallTransaction $id $r.Tag
   Assert-ManagedFolder $previous
   $older=Join-Path $channelRoot ('older-'+$id)
   $movedPrevious=$false
@@ -576,14 +585,22 @@ function Install {
    }
    throw
   }
+  $retired=Join-Path $channelRoot ('retired-'+$id)
   if($movedPrevious){
-   Remove-Item -LiteralPath $older -Recurse -Force -ErrorAction SilentlyContinue
+   Move-Item -LiteralPath $older -Destination $retired -ErrorAction Stop
+  }
+  Remove-Item -LiteralPath (Get-InstallTransactionFile) -Force -ErrorAction Stop
+  if($movedPrevious){
+   Remove-Item -LiteralPath $retired -Recurse -Force -ErrorAction SilentlyContinue
   }
   $script:state.Current=$r.Tag
   Progress ('Installed '+$r.Tag+'; previous version retained for rollback.')
  }finally{
   if(Test-Path $downloads){Remove-Item $downloads -Recurse -Force -ErrorAction SilentlyContinue}
-  if(Test-Path $pending){Remove-Item $pending -Recurse -Force -ErrorAction SilentlyContinue}
+  if(-not(Test-Path -LiteralPath (Get-InstallTransactionFile)) -and
+     (Test-Path -LiteralPath $pending)){
+   Remove-Item -LiteralPath $pending -Recurse -Force -ErrorAction SilentlyContinue
+  }
  }
 }
 function SelfTest {
@@ -799,6 +816,8 @@ if($Mode -ne 'UI'){
    Invoke-ChannelExclusive {Rollback}
   }elseif($Mode -eq 'Repair'){
    Invoke-ChannelExclusive {Repair-InterruptedRollback}
+  }elseif($Mode -eq 'RepairInstall'){
+   Invoke-ChannelExclusive {Repair-InterruptedInstall}
   }else{
    Invoke-ChannelExclusive {Install}
   }
@@ -811,6 +830,10 @@ if($Mode -ne 'UI'){
    'Close Dvinholm, then retry. Managed files were not changed.'
   }elseif($message -match 'Interrupted rollback requires'){
    'Interrupted rollback detected. Use Repair rollback before updating or restoring.'
+  }elseif($message -match 'Interrupted install requires'){
+   'Interrupted installation detected. Use Repair install before changing managed versions.'
+  }elseif($message -match 'install transaction|install journal|Install staging|No verifiable|Ambiguous interrupted install'){
+   'Installation cannot be repaired safely from this state. No automatic changes were made.'
   }elseif($message -match 'Repair requires|Untrusted rollback|Ambiguous interrupted|versions are identical'){
    'Cannot safely repair these rollback folders. No additional files were changed.'
   }elseif($message -match 'Another updater operation'){
@@ -849,6 +872,9 @@ $form.Controls.Add($rollback)
 $repair=New-Object Windows.Forms.Button
 $repair.Text='Repair rollback';$repair.SetBounds(401,85,165,33)
 $form.Controls.Add($repair)
+$repairInstall=New-Object Windows.Forms.Button
+$repairInstall.Text='Repair install';$repairInstall.SetBounds(575,85,138,33)
+$form.Controls.Add($repairInstall)
 $installed=Label 'Installed: not checked' 126 25
 $available=Label 'Available: not checked' 151 25
 $deps=Label '.NET x86: ?    WinApp: ?    VC++ x86: ?' 180 26
@@ -872,6 +898,12 @@ $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
 function Begin-Action([string]$action){
  if($script:child -or $script:vendor){return}
+ if($action -eq 'RepairInstall'){
+  if([Windows.Forms.MessageBox]::Show(
+   'Attempt offline recovery of an interrupted Lite installation for the selected channel? Only a verified transaction journal and unambiguous folders will be accepted. Existing staged files are retained. Close Dvinholm first.',
+   'Confirm install recovery',[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
  if($action -eq 'Repair'){
   if([Windows.Forms.MessageBox]::Show(
    'Attempt offline repair of an interrupted rollback for the selected channel? The original current build will be restored only when the on-disk state is unambiguous. Close Dvinholm first.',
@@ -898,7 +930,8 @@ function Begin-Action([string]$action){
   $script:child=Start-Process -FilePath $powershell -ArgumentList $args -WindowStyle Hidden -PassThru
   $bar.MarqueeAnimationSpeed=25
   $choice.Enabled=$false;$install.Enabled=$false;$check.Enabled=$false
-  $rollback.Enabled=$false;$repair.Enabled=$false;$launch.Enabled=$false;$refresh.Enabled=$false
+  $rollback.Enabled=$false;$repair.Enabled=$false;$repairInstall.Enabled=$false
+  $launch.Enabled=$false;$refresh.Enabled=$false
   $status.Text='Working...'
  }catch{$status.Text='Unable to launch updater helper.'}
 }
@@ -907,6 +940,7 @@ $refresh.Add_Click({Begin-Action 'Probe'})
 $install.Add_Click({Begin-Action 'Install'})
 $rollback.Add_Click({Begin-Action 'Rollback'})
 $repair.Add_Click({Begin-Action 'Repair'})
+$repairInstall.Add_Click({Begin-Action 'RepairInstall'})
 $launch.Add_Click({
  if($script:child -or $script:vendor){return}
  $target=Join-Path (Join-Path (Join-Path $base $choice.SelectedItem.ToString()) 'current') 'Start-Dvinholm-Lite.cmd'
@@ -950,7 +984,8 @@ $timer.Add_Tick({
  if($script:child -and $script:child.HasExited){
   $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0
   $choice.Enabled=$true;$install.Enabled=$true;$check.Enabled=$true
-  $rollback.Enabled=$true;$repair.Enabled=$true;$launch.Enabled=$true;$refresh.Enabled=$true
+  $rollback.Enabled=$true;$repair.Enabled=$true;$repairInstall.Enabled=$true
+  $launch.Enabled=$true;$refresh.Enabled=$true
  }
  if($script:vendor -and $script:vendor.HasExited){
   $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0
