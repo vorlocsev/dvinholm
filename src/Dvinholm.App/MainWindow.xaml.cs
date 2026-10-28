@@ -1105,19 +1105,102 @@ public sealed partial class MainWindow : Window
         CompareSnapshotsButton.IsEnabled = false;
         try
         {
+            // Ephemeral user-proposed value review sits WITHIN the existing
+            // offline catalog dialog. It cannot open a vehicle session,
+            // change an ECU profile or persist a draft.
+            var draftYear = new TextBox
+            {
+                Header = "Claimed XC90 model year (2003-2006 research only)",
+                MaxLength = 4,
+                PlaceholderText = "e.g. 2005"
+            };
+            var draftYearCheck = new CheckBox
+            {
+                Content = "I separately checked the vehicle's model year (self-report only)"
+            };
+            var draftKind = new ComboBox
+            {
+                Header = "Historical customer setting"
+            };
+            foreach (var name in new[]
+            {
+                "Heated seat LOW/HIGH (Celsius)",
+                "Approach lighting (seconds)",
+                "Post-drying (ON/OFF)",
+                "Daytime lamps (Flex mode)"
+            })
+                draftKind.Items.Add(new ComboBoxItem { Content = name });
+            draftKind.SelectedIndex = 0;
+
+            var draftValue = new TextBox
+            {
+                Header = "Proposed historical value (LOW for heated seats)",
+                MaxLength = 32,
+                PlaceholderText = "e.g. 37 or 30 or ON or FLEX_STANDARD"
+            };
+            var draftHigh = new TextBox
+            {
+                Header = "Proposed HIGH seat temperature (Celsius)",
+                MaxLength = 3,
+                PlaceholderText = "e.g. 41"
+            };
+            draftKind.SelectionChanged += (_, _) =>
+            {
+                draftHigh.Text = string.Empty;
+                draftHigh.Visibility = draftKind.SelectedIndex == 0
+                    ? Visibility.Visible : Visibility.Collapsed;
+            };
+
+            var draftResult = new TextBlock
+            {
+                Text = "No draft preview yet. Values are not current vehicle readings.",
+                TextWrapping = TextWrapping.Wrap,
+                IsTextSelectionEnabled = true
+            };
+            var draftPreview = new Button
+            {
+                Content = "Review proposed value (offline, no save)"
+            };
+            draftPreview.Click += (_, _) =>
+            {
+                if (_closing)
+                    return;
+                var kind = (VolvoP2CemCustomerParameterKind)draftKind.SelectedIndex;
+                draftResult.Text = VolvoP2CemCustomerValueDraftPreview.Build(
+                    draftYear.Text, draftYearCheck.IsChecked == true,
+                    kind, draftValue.Text,
+                    kind == VolvoP2CemCustomerParameterKind.SeatHeaterLowHighCelsius
+                        ? draftHigh.Text : null);
+            };
+
+            var catalogContent = new StackPanel { Spacing = 8 };
+            foreach (var control in new UIElement[]
+            {
+                new TextBlock
+                {
+                    Text = "UNVERIFIED LOCAL RESEARCH ONLY: proposed historical values, " +
+                           "never live ECU values or write instructions. No VIN/PIN/secret input.",
+                    TextWrapping = TextWrapping.Wrap
+                },
+                draftYear, draftYearCheck, draftKind, draftValue,
+                draftHigh, draftPreview, draftResult,
+                new TextBlock
+                {
+                    Text = VolvoP2ConfigCandidateDisplay.BuildOverview(),
+                    TextWrapping = TextWrapping.Wrap,
+                    IsTextSelectionEnabled = true
+                }
+            })
+                catalogContent.Children.Add(control);
+
             var dialog = new ContentDialog
             {
                 XamlRoot = RootLayout.XamlRoot,
                 Title = "XC90 P2 configuration candidates (offline only)",
                 Content = new ScrollViewer
                 {
-                    MaxHeight = 340,
-                    Content = new TextBlock
-                    {
-                        Text = VolvoP2ConfigCandidateDisplay.BuildOverview(),
-                        TextWrapping = TextWrapping.Wrap,
-                        IsTextSelectionEnabled = true
-                    }
+                    MaxHeight = 380,
+                    Content = catalogContent
                 },
                 PrimaryButtonText = "Enter CEM identity (offline)",
                 SecondaryButtonText = "Open CEM research JSON...",
