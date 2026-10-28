@@ -1144,11 +1144,28 @@ public sealed partial class MainWindow : Window
                 MaxLength = 3,
                 PlaceholderText = "e.g. 41"
             };
+            var manualNoteValue = new TextBox
+            {
+                Header = "Optional MANUAL reference notation (NOT an ECU read)",
+                MaxLength = 32,
+                PlaceholderText = "Leave empty to preview just the proposal"
+            };
+            var manualNoteHigh = new TextBox
+            {
+                Header = "Optional MANUAL reference HIGH (heated seats only)",
+                MaxLength = 3,
+                PlaceholderText = "e.g. 41"
+            };
             draftKind.SelectionChanged += (_, _) =>
             {
+                // Never carry a manual note into another parameter category.
+                draftValue.Text = string.Empty;
                 draftHigh.Text = string.Empty;
+                manualNoteValue.Text = string.Empty;
+                manualNoteHigh.Text = string.Empty;
                 draftHigh.Visibility = draftKind.SelectedIndex == 0
                     ? Visibility.Visible : Visibility.Collapsed;
+                manualNoteHigh.Visibility = draftHigh.Visibility;
             };
 
             var draftResult = new TextBlock
@@ -1159,18 +1176,41 @@ public sealed partial class MainWindow : Window
             };
             var draftPreview = new Button
             {
-                Content = "Review proposed value (offline, no save)"
+                Content = "Preview / compare manual notes (offline, no save)"
             };
+            // A prior review is no longer valid once any field is edited.
+            foreach (var entry in new[]
+                { draftYear, draftValue, draftHigh, manualNoteValue, manualNoteHigh })
+                entry.TextChanged += (_, _) => draftResult.Text =
+                    "Draft changed; review again. Nothing saved or read from the car.";
+            draftYearCheck.Checked += (_, _) => draftResult.Text =
+                "Year claim changed; review again. No vehicle verification.";
+            draftYearCheck.Unchecked += (_, _) => draftResult.Text =
+                "Year claim changed; review again. No vehicle verification.";
+            draftKind.SelectionChanged += (_, _) => draftResult.Text =
+                "Parameter changed; review again. No ECU values are available.";
+
             draftPreview.Click += (_, _) =>
             {
                 if (_closing)
                     return;
                 var kind = (VolvoP2CemCustomerParameterKind)draftKind.SelectedIndex;
-                draftResult.Text = VolvoP2CemCustomerValueDraftPreview.Build(
-                    draftYear.Text, draftYearCheck.IsChecked == true,
-                    kind, draftValue.Text,
-                    kind == VolvoP2CemCustomerParameterKind.SeatHeaterLowHighCelsius
-                        ? draftHigh.Text : null);
+                var seat = kind == VolvoP2CemCustomerParameterKind.SeatHeaterLowHighCelsius;
+                if (!string.IsNullOrEmpty(manualNoteValue.Text) ||
+                    !string.IsNullOrEmpty(manualNoteHigh.Text))
+                {
+                    draftResult.Text = VolvoP2CemManualValueComparison.BuildReadOnlyReport(
+                        draftYear.Text, draftYearCheck.IsChecked == true,
+                        kind, manualNoteValue.Text,
+                        seat ? manualNoteHigh.Text : null,
+                        draftValue.Text, seat ? draftHigh.Text : null);
+                }
+                else
+                {
+                    draftResult.Text = VolvoP2CemCustomerValueDraftPreview.Build(
+                        draftYear.Text, draftYearCheck.IsChecked == true,
+                        kind, draftValue.Text, seat ? draftHigh.Text : null);
+                }
             };
 
             var catalogContent = new StackPanel { Spacing = 8 };
@@ -1183,7 +1223,7 @@ public sealed partial class MainWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 },
                 draftYear, draftYearCheck, draftKind, draftValue,
-                draftHigh, draftPreview, draftResult,
+                draftHigh, manualNoteValue, manualNoteHigh, draftPreview, draftResult,
                 new TextBlock
                 {
                     Text = VolvoP2ConfigCandidateDisplay.BuildOverview(),
