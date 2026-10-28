@@ -1402,6 +1402,16 @@ public sealed partial class MainWindow : Window
             })
                 catalogContent.Children.Add(control);
 
+            // User-triggered additional research comparison. The parent
+            // dialog is hidden before opening either Windows file picker.
+            var revisionCrossCheckButton = new Button
+            {
+                Content = "Cross-check CEM revision source JSON (offline)",
+                HorizontalAlignment = HorizontalAlignment.Stretch
+            };
+            catalogContent.Children.Add(revisionCrossCheckButton);
+            var revisionCrossCheckRequested = false;
+
             var dialog = new ContentDialog
             {
                 XamlRoot = RootLayout.XamlRoot,
@@ -1416,10 +1426,17 @@ public sealed partial class MainWindow : Window
                 CloseButtonText = "Close",
                 DefaultButton = ContentDialogButton.Close
             };
+            revisionCrossCheckButton.Click += (_, _) =>
+            {
+                revisionCrossCheckRequested = true;
+                dialog.Hide();
+            };
             var choice = await dialog.ShowAsync();
             if (_closing)
                 return;
-            if (choice == ContentDialogResult.Primary)
+            if (revisionCrossCheckRequested)
+                await ShowP2CemRevisionSourceComparisonAsync();
+            else if (choice == ContentDialogResult.Primary)
                 await ShowP2CemVidaIdentityWorksheetAsync();
             else if (choice == ContentDialogResult.Secondary)
                 await ShowP2CemIdentityResearchFileAsync();
@@ -1447,6 +1464,77 @@ public sealed partial class MainWindow : Window
         }
     }
 
+
+    /// <summary>
+    /// Compare two explicitly selected, locally inspected unverified
+    /// research files. No profile, CAN/J2534, CEM, PIN or write action.
+    /// </summary>
+    private async Task ShowP2CemRevisionSourceComparisonAsync()
+    {
+        try
+        {
+            var manualPicker = new FileOpenPicker();
+            InitializeWithWindow.Initialize(manualPicker,
+                WindowNative.GetWindowHandle(this));
+            manualPicker.FileTypeFilter.Add(".json");
+            var manualFile = await manualPicker.PickSingleFileAsync();
+            if (manualFile is null || _closing)
+                return;
+
+            var manual = await VolvoP2CemIdentityResearchFileInspection
+                .InspectFileAsync(manualFile.Path);
+            if (_closing)
+                return;
+
+            var sourcePicker = new FileOpenPicker();
+            InitializeWithWindow.Initialize(sourcePicker,
+                WindowNative.GetWindowHandle(this));
+            sourcePicker.FileTypeFilter.Add(".json");
+            var sourceFile = await sourcePicker.PickSingleFileAsync();
+            if (sourceFile is null || _closing)
+                return;
+
+            var claim = await VolvoP2CemRevisionSourceComparison
+                .InspectFileAsync(sourceFile.Path);
+            if (_closing)
+                return;
+
+            var result = new ContentDialog
+            {
+                XamlRoot = RootLayout.XamlRoot,
+                Title = "XC90 P2 CEM revision cross-check (UNVERIFIED)",
+                Content = new ScrollViewer
+                {
+                    MaxHeight = 350,
+                    Content = new TextBlock
+                    {
+                        Text = VolvoP2CemRevisionSourceComparison
+                            .BuildReadOnlyReport(manual, claim),
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true
+                    }
+                },
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close
+            };
+            await result.ShowAsync();
+            if (!_closing)
+                SetStatus("Compared two unverified local CEM revision research files. " +
+                    "No ECU, PIN, adapter or configuration operation.");
+        }
+        catch (InvalidDataException)
+        {
+            if (!_closing)
+                SetStatus("Rejected invalid CEM revision source research JSON. " +
+                    "No file, profile or vehicle changed.");
+        }
+        catch (Exception)
+        {
+            if (!_closing)
+                SetStatus("Could not inspect local CEM revision source research JSON. " +
+                    "No vehicle connection or configuration operation.");
+        }
+    }
 
     /// <summary>
     /// Read-only review of a user-selected, untrusted local JSON research
