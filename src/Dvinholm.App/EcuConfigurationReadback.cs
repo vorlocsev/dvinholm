@@ -30,6 +30,9 @@ internal sealed record EcuConfigurationReadSnapshot(
 internal static class EcuConfigurationReadback
 {
     internal const int MaximumDataIdentifiers = 128;
+    // ISO-TP 4095-byte frame payload includes the positive UDS 0x62 SID
+    // and two echoed DID bytes, leaving 4092 bytes for the value.
+    internal const int MaximumDidValueBytes = IsoTp.MaxPayloadLength - 3;
 
     internal static EcuConfigurationReadSnapshot Capture(
         EcuProfile profile,
@@ -67,6 +70,13 @@ internal static class EcuConfigurationReadback
             if (response is null || response.Length <= 2 ||
                 response[0] != (byte)(did >> 8) || response[1] != (byte)did)
                 throw new InvalidDataException($"ECU configuration DID 0x{did:X4} has no valid echoed DID and value.");
+
+            // An injected reader can return arbitrarily long buffers even
+            // though production Classic CAN ISO-TP enforces its wire ceiling.
+            // Reject before hex conversion; never return a partial baseline.
+            if (response.Length - 2 > MaximumDidValueBytes)
+                throw new InvalidDataException(
+                    $"ECU configuration DID 0x{did:X4} exceeds the Classic CAN ISO-TP value limit.");
 
             // Encode bytes without guessing undocumented ECU encodings.
             // Do not persist, log or export configuration data here.
