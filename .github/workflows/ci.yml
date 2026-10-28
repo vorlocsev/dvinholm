@@ -7,7 +7,6 @@ on:
       - "AI_WORKLOG.md"
   pull_request:
   workflow_dispatch:
-  workflow_dispatch:
 
 permissions:
   contents: write
