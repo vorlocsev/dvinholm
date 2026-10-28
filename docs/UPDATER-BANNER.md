@@ -147,8 +147,14 @@ A physical J2534 adapter is **not** needed. Do not create artificial
    Restore and Start, and refuses ambiguous states. Never delete recovery
    evidence until inspected.
 
-CI verifies synthetic directory states, not a real power outage. Report
-actual Windows checks separately from CI and from physical J2534 tests.
+CI verifies synthetic directory states, not a real power outage. It also
+instantiates the **actual Windows PowerShell 5.1 WinForms controls** in a
+noninteractive `-Mode UiSmokeTest` run and checks seven button-state
+invariants (startup, ready, both repair modes, ambiguous recovery, busy
+helper and construction). This smoke check never calls `ShowDialog`,
+GitHub, Microsoft installers or Dvinholm; it does not prove visible GUI
+rendering on a user's Windows desktop. Report actual Windows checks
+separately from CI and from physical J2534 tests.
 Do not mark this acceptance complete until each check has been performed.
 
 ## Local recovery indication
