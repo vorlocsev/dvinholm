@@ -18,13 +18,18 @@ separate files in sequence:
 
 1. An existing manually saved CEM VIDA research card created from
    **Enter CEM identity (offline)** in the application.
-2. A separate user-authored, source-scoped CEM revision claim JSON, such
-   as the entirely synthetic example below.
+2. One to sixteen separately selected, user-authored, source-scoped CEM
+   revision claim JSON files, such as the entirely synthetic example below.
+   The Windows file picker supports multiple selection. A single source is
+   still supported for compatibility with the original workflow.
 
 The app revalidates both local files. Cancel either picker to leave
 everything unchanged. It shows only the claimed year/year range and
-SAME/DIFFERENT for each of the three part-number fields. It does not
-print individual part numbers, private paths, URLs or raw DID data.
+a redacted aggregate: how many source claims cover the year, how many
+match the three part-number strings, how many contradict them and how many
+fall outside the year range. Duplicate source-reference labels are rejected
+as corroboration even when the underlying strings match. It does not print
+individual part numbers, private paths, URLs or raw DID data.
 Nothing is saved, copied automatically or sent to any device.
 
 The built-in catalog of authenticated CEM revisions is still empty.
@@ -71,3 +76,26 @@ differences, strict JSON, unsafe flags, forged manual identity claims,
 privacy redaction and bounded file reads. Installed Windows UI and
 physical hardware tests are separate future acceptance gates. Stable
 v0.2.4 remains unchanged and no release is authorized by this work.
+
+## Bounded multi-source revision triage (Development 0.3.0)
+
+The new `VolvoP2CemRevisionSourceSetReview` reuses the existing strict
+per-file validator and same-year triple-part-number comparison. It is
+**not** a source-of-truth registry: each source is user-editable. It allows
+1–16 files and refuses oversized source sets, unsafe permission flags,
+malformed records or forged manual identity. The classification is:
+
+- No sources cover the claimed model-year scope.
+- One or multiple in-scope source strings agree with the manually entered
+  part numbers, **unverified only**.
+- At least one in-scope source contradicts the manual claim, **no first-match
+  selection**.
+- Duplicate case-insensitive source-reference labels, **not independent
+  corroboration**.
+
+Out-of-scope records are counted separately and do not themselves imply
+a hardware mismatch. Even distinct labels may derive from one source,
+so this cannot prove publisher independence or authenticate an ECU. The
+result never includes part numbers, source texts or paths; no files are
+written, no profile is modified, and no diagnostic request or PIN action
+is enabled. Eight synthetic offline tests protect this boundary.
