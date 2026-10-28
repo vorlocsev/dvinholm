@@ -242,6 +242,33 @@ deferred. Official guidance:
 https://learn.microsoft.com/en-us/windows/msix/package/signing-package-overview
 https://learn.microsoft.com/en-us/windows/msix/msix-troubleshooting-guide
 
+## Updating a running self-contained installation to Lite (Windows)
+
+An already-running Portable Dvinholm can have a bundled .NET runtime, so a
+successful Portable launch **does not prove** that framework-dependent x86 Lite
+dependencies are present. The updater must check the actual host BEFORE
+replacing installed files. If the dependency probe fails, the current
+application files are preserved; do not disable this safety gate.
+
+A photo of the update menu may show the old generic "install .NET 10 Desktop
+Runtime x86, Windows App SDK 2.5 and VC++ Redistributable x86" error. The
+newer updater reports a single **allowlisted failure category**, including
+inconclusive AppX inspection, instead of instructing users to install all
+three packages blindly. The subprocess stdout/stderr is *never* copied into
+the update UI or shared log. On x64 Windows the x86 updater uses the
+native PowerShell AppX inspection host through Sysnative when available.
+
+For the definitive local detail, manually extract the latest Development
+Lite ZIP into a NEW folder, then run its bundled
+`Check-Lite-Prerequisites.cmd` (read-only, no packages installed). The
+last meaningful error identifies the first missing/incompatible component;
+repair it from official Microsoft packages and rerun. Microsoft sources:
+[.NET 10 Desktop Runtime x86](https://dotnet.microsoft.com/en-us/download/dotnet/10.0),
+[Windows App SDK runtime 2.5 installer](https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads),
+[VC++ x86 runtime](https://aka.ms/vc14/vc_redist.x86.exe).
+Do not mix Lite and Portable in the same directory, and retain the old
+working app until dependency checks and Windows interactive Lite launch pass.
+
 ## Lite host prerequisite inspection (Development)
 
 Extract Lite into its **own directory** and double-click
