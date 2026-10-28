@@ -36,3 +36,26 @@ Before any live support, obtain independent evidence of a specific real
 XC90 CEM hardware/software revision, verified diagnostic interface, exact
 authorized read-only transport, service entitlement and tested recovery.
 Published Stable 0.2.4 remains frozen.
+
+## Interactive offline variant comparison in PIN readiness
+
+Inside **XC90 P2 CEM PIN readiness (offline only)** in Development,
+a user can enter a claimed model year (four ASCII digits), mark whether
+they separately checked it, select an **engine** and choose **VDASH**
+or **VDD** as an advertising source. **Compare vendor claims (offline only)**
+shows the source-scoped classification and an explicitly separate key
+programming caution. The whole comparison uses local strings, no network,
+vehicle, adapter, saved profile, VIN, PIN, credentials, or file.
+
+Any edit to year, checked-state, engine or product invalidates the previous
+result until the user presses Compare again. Unknown, unchecked, invalid,
+out-of-range or unclassified inputs have an UNKNOWN verdict; malformed raw
+year text is never echoed. Even a matching advertisement never proves CEM
+hardware/software revision, supported transport, PIN entitlement or a
+configuration read/write method. The existing four-step readiness checklist
+still finishes **UNSUPPORTED**. No live operation is enabled.
+
+Eight additional synthetic tests cover the V8, 3.2 and D5 variants,
+VDASH/VDD differences, separate MY2013+ key warning, unknown input,
+unsafe text redaction and unconditional denial. Installed Windows GUI
+tests and physical DiCE/J2534/CEM tests remain separate and unperformed.

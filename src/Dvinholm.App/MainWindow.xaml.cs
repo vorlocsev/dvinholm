@@ -1041,11 +1041,91 @@ public sealed partial class MainWindow : Window
                 TextWrapping = TextWrapping.Wrap,
                 IsTextSelectionEnabled = true
             };
+            // Compare only user-claimed year/engine/tool against the
+            // source-limited vendor statements. No secrets or vehicle input,
+            // saved state, adapter access, VIN, PIN or service operations.
+            var routeYear = new TextBox
+            {
+                Header = "Claimed XC90 model year (2005-2014)",
+                MaxLength = 4,
+                PlaceholderText = "e.g. 2007"
+            };
+            var routeYearChecked = new CheckBox
+            {
+                Content = "I checked the model year separately (self-report, NOT authenticated)"
+            };
+            var routeEngine = new ComboBox
+            {
+                Header = "Claimed engine variant"
+            };
+            foreach (var name in new[]
+            {
+                "Unknown / not checked",
+                "Other five-cylinder",
+                "D5 147 kW",
+                "D5 120 kW",
+                "3.2 inline six",
+                "4.4 V8",
+                "Other / unclassified"
+            })
+                routeEngine.Items.Add(new ComboBoxItem { Content = name });
+            routeEngine.SelectedIndex = 0;
+
+            var routeTool = new ComboBox
+            {
+                Header = "Vendor product claim (not a Dvinholm action)"
+            };
+            routeTool.Items.Add(new ComboBoxItem { Content = "VDASH" });
+            routeTool.Items.Add(new ComboBoxItem { Content = "VDD" });
+            routeTool.SelectedIndex = 0;
+
+            var routeResult = new TextBlock
+            {
+                Text = "No variant comparison yet. This is offline vendor research only.",
+                TextWrapping = TextWrapping.Wrap,
+                IsTextSelectionEnabled = true
+            };
+            var routePreview = new Button
+            {
+                Content = "Compare vendor claims (offline only)"
+            };
+            routePreview.Click += (_, _) =>
+            {
+                if (_closing)
+                    return;
+                var engine = routeEngine.SelectedIndex is >= 0 and <= 6
+                    ? (VolvoP2CemClaimedEngine)routeEngine.SelectedIndex
+                    : VolvoP2CemClaimedEngine.Unknown;
+                var tool = routeTool.SelectedIndex == 1
+                    ? VolvoP2CemVendorPinTool.Vdd
+                    : VolvoP2CemVendorPinTool.Vdash;
+                routeResult.Text = VolvoP2CemVendorPinRouteDisplay.Build(
+                    routeYear.Text, routeYearChecked.IsChecked == true,
+                    engine, tool);
+            };
+
+            void InvalidateRoutePreview() => routeResult.Text =
+                "Selection changed. Compare again; no vehicle check was performed.";
+            routeYear.TextChanged += (_, _) => InvalidateRoutePreview();
+            routeYearChecked.Checked += (_, _) => InvalidateRoutePreview();
+            routeYearChecked.Unchecked += (_, _) => InvalidateRoutePreview();
+            routeEngine.SelectionChanged += (_, _) => InvalidateRoutePreview();
+            routeTool.SelectionChanged += (_, _) => InvalidateRoutePreview();
+
+            var content = new StackPanel { Spacing = 9 };
+            content.Children.Add(description);
+            content.Children.Add(routeYear);
+            content.Children.Add(routeYearChecked);
+            content.Children.Add(routeEngine);
+            content.Children.Add(routeTool);
+            content.Children.Add(routePreview);
+            content.Children.Add(routeResult);
+
             var dialog = new ContentDialog
             {
                 XamlRoot = RootLayout.XamlRoot,
                 Title = "XC90 P2 CEM PIN readiness (offline only)",
-                Content = new ScrollViewer { MaxHeight = 330, Content = description },
+                Content = new ScrollViewer { MaxHeight = 430, Content = content },
                 PrimaryButtonText = "Next review step",
                 CloseButtonText = "Cancel review",
                 DefaultButton = ContentDialogButton.Close
