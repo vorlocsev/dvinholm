@@ -383,7 +383,7 @@ function Repair-InterruptedInstall {
  $older=Join-Path $channelRoot ('older-'+$id)
  $retired=Join-Path $channelRoot ('retired-'+$id)
  $previous=Join-Path $channelRoot 'previous'
- $allowed=@('pending-'+$id,'older-'+$id)
+ $allowed=@("pending-$id","older-$id")
  foreach($marker in @(Get-InstallMarkerEntries)){
   if($marker.Name -cnotin $allowed){
    throw 'Unexpected install staging marker.'
