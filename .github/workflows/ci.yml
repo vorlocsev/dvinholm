@@ -45,6 +45,7 @@ jobs:
             if (@($syntaxErrors).Count -gt 0) {
               foreach ($syntaxError in $syntaxErrors) {
                 Write-Host "::error file=$path,line=$($syntaxError.Extent.StartLineNumber)::$($syntaxError.Message)"
+                Write-Host ("PowerShell parse detail: {0}:{1}:{2}: {3}; source={4}" -f $path, $syntaxError.Extent.StartLineNumber, $syntaxError.Extent.StartColumnNumber, $syntaxError.Message, $syntaxError.Extent.Text)
               }
               throw "PowerShell 5.1 syntax failed for $path"
             }
