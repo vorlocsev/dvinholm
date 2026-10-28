@@ -6,7 +6,7 @@ No software installs or updates until the user explicitly confirms.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('UI','Check','Install','SelfTest')][string]$Mode='UI',
+ [ValidateSet('UI','Check','Install','Probe','SelfTest')][string]$Mode='UI',
  [ValidateSet('Stable','Development')][string]$Channel='Development',
  [string]$StateFile
 )
@@ -17,6 +17,7 @@ $zipName='Dvinholm-Windows-x86-Lite.zip'
 $sumsName='SHA256SUMS.txt'
 $manager=Join-Path $PSScriptRoot 'Manage-Lite-Dependencies.ps1'
 $base=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Dvinholm\UpdaterBanner'
+$preferenceFile=Join-Path $base 'channel-preference.txt'
 $channelRoot=Join-Path $base $Channel
 $current=Join-Path $channelRoot 'current'
 $state=[ordered]@{Done=$false;Failed=$false;Current='Not installed';Available='Not checked';
@@ -144,6 +145,41 @@ function Assert-ManagedFolder([string]$path){
     [IO.FileAttributes]::ReparsePoint) -ne 0){throw 'Managed folder is a reparse point.'}
  }
 }
+function Read-ChannelPreference {
+ try {
+  if(-not(Test-Path -LiteralPath $preferenceFile -PathType Leaf)){return $null}
+  $item=Get-Item -LiteralPath $preferenceFile -Force
+  if($item.Length -gt 32 -or
+    ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){return $null}
+  $saved=[IO.File]::ReadAllText($preferenceFile,[Text.Encoding]::ASCII).Trim()
+  if($saved -cin @('Development','Stable')){return $saved}
+ }catch{}
+ return $null
+}
+function Save-ChannelPreference([string]$selected) {
+ if($selected -cnotin @('Development','Stable')){return $false}
+ $temp=$null
+ try {
+  Assert-ManagedFolder (Split-Path -Parent $base)
+  Assert-ManagedFolder $base
+  [IO.Directory]::CreateDirectory($base)|Out-Null
+  if(Test-Path -LiteralPath $preferenceFile) {
+   $item=Get-Item -LiteralPath $preferenceFile -Force
+   if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){
+    return $false
+   }
+  }
+  $temp=Join-Path $base ('channel-preference-'+[guid]::NewGuid().ToString('N')+'.tmp')
+  [IO.File]::WriteAllText($temp,$selected,[Text.Encoding]::ASCII)
+  Move-Item -LiteralPath $temp -Destination $preferenceFile -Force
+  return $true
+ }catch{return $false}
+ finally {
+  if($temp -and (Test-Path -LiteralPath $temp)){
+   Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue
+  }
+ }
+}
 function Probe {
  $a=@{DotNet='Unknown';WinApp='Unknown';VC='Unknown'}
  if(-not(Test-Path $manager -PathType Leaf)){return $a}
@@ -240,6 +276,24 @@ function SelfTest {
  Reject {Validate-Asset $other 'ci-4096' $zipName};$count++
  if($count -ne 8){throw 'Wrong test count.'}
  Write-Host 'Updater Banner 8/8 synthetic offline checks passed.'
+ $originalBase=$script:base
+ $originalPreferenceFile=$script:preferenceFile
+ $testDirectory=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-test-'+[guid]::NewGuid().ToString('N'))
+ try {
+  $script:base=$testDirectory
+  $script:preferenceFile=Join-Path $testDirectory 'channel-preference.txt'
+  if(-not(Save-ChannelPreference 'Stable') -or
+    (Read-ChannelPreference) -cne 'Stable'){throw 'Channel preference roundtrip failed.'}
+  [IO.File]::WriteAllText($script:preferenceFile,'Stable;untrusted',[Text.Encoding]::ASCII)
+  if($null -ne (Read-ChannelPreference)){throw 'Untrusted channel preference accepted.'}
+ }finally{
+  $script:base=$originalBase
+  $script:preferenceFile=$originalPreferenceFile
+  if(Test-Path -LiteralPath $testDirectory){
+   Remove-Item -LiteralPath $testDirectory -Force -Recurse
+  }
+ }
+ Write-Host 'Updater Banner 2/2 channel preference checks passed.'
 }
 if($Mode -eq 'SelfTest'){SelfTest;exit 0}
 if($Mode -ne 'UI'){
@@ -248,7 +302,9 @@ if($Mode -ne 'UI'){
   $inventory=Probe
   foreach($key in @('DotNet','WinApp','VC')){$script:state[$key]=$inventory[$key]}
   Save-State
-  if($Mode -eq 'Check'){
+  if($Mode -eq 'Probe'){
+   Progress 'Runtime dependencies rechecked locally. No GitHub request made.'
+  }elseif($Mode -eq 'Check'){
    $r=Latest;$script:state.Available=$r.Tag
    Progress ('Latest '+$Channel+' release: '+$r.Tag+'. No changes made.')
   }else{Install}
@@ -324,7 +380,7 @@ function Begin-Action([string]$action){
  }catch{$status.Text='Unable to launch updater helper.'}
 }
 $check.Add_Click({Begin-Action 'Check'})
-$refresh.Add_Click({Begin-Action 'Check'})
+$refresh.Add_Click({Begin-Action 'Probe'})
 $install.Add_Click({Begin-Action 'Install'})
 $launch.Add_Click({
  $target=Join-Path (Join-Path (Join-Path $base $choice.SelectedItem.ToString()) 'current') 'Start-Dvinholm-Lite.cmd'
@@ -348,7 +404,12 @@ foreach($b in @($dot,$win,$vc)){
   }catch{$status.Text='Unable to start Microsoft dependency installer.'}
  })
 }
-$choice.Add_SelectedIndexChanged({if(-not $script:child){Begin-Action 'Check'}})
+$choice.Add_SelectedIndexChanged({
+ if($null -ne $choice.SelectedItem){
+  $null=Save-ChannelPreference ([string]$choice.SelectedItem)
+ }
+ if(-not $script:child -and -not $script:vendor){Begin-Action 'Check'}
+})
 $timer=New-Object Windows.Forms.Timer;$timer.Interval=500
 $timer.Add_Tick({
  if(Test-Path $script:statefile){
@@ -370,7 +431,12 @@ $timer.Add_Tick({
  }
 })
 $timer.Start()
-$form.Add_Shown({$choice.SelectedIndex=if($Channel -eq 'Stable'){1}else{0}})
+$startupChannel=$Channel
+if(-not $PSBoundParameters.ContainsKey('Channel')){
+ $savedChannel=Read-ChannelPreference
+ if($null -ne $savedChannel){$startupChannel=$savedChannel}
+}
+$form.Add_Shown({$choice.SelectedIndex=if($startupChannel -eq 'Stable'){1}else{0}})
 try{[void]$form.ShowDialog()}
 finally{
  $timer.Stop();$timer.Dispose()
