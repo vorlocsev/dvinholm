@@ -66,7 +66,7 @@ jobs:
           architecture: x86
 
       - name: Test
-        run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --logger "trx;LogFileName=test-results.trx"
+        run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release --no-build --no-restore -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --logger "trx;LogFileName=test-results.trx"
 
       # The production assembly is compiled separately with all demo/test
       # feature flags OFF. No GUI or J2534 hardware is needed for these tests.
