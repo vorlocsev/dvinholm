@@ -1,3 +1,12 @@
+## Development 0.3.0: passive CAN RX metadata for CEM transport research (2026-10-28)
+
+- [x] Add an explicit **RX summary** in CAN Monitor that uses the existing bounded history, not the current software filter, and summarizes 11/29-bit CAN IDs, per-DLC counts, buffer eviction and known/unknown subscriber drops without copying or displaying frame payload bytes.
+- [x] Keep no active diagnostic request, no background storage, no automatic clipboard copy and no inferred CEM request/response ID. Mark synthetic demo source clearly, restrict output to 64 CAN ID+format groups, validate rows strictly and ask for explicit clipboard approval. This is metadata-only, not proof of passive capture or physical ECU identity.
+- [x] Add eight deterministic synthetic tests, including virtual J2534 RX with **zero transmitted frames**, and [CAN RX summary guide](docs/P2-CEM-CAN-RX-RESEARCH-SUMMARY.md).
+- [ ] Confirm five exact-head PR CI workflows then independent five postmerge workflows. Installed Windows dialog and real authorized DiCE/J2534/CEM observations remain untested. Stable 0.2.4 frozen.
+
+---
+
 ## Development 0.3.0: historical DID evidence scoped to CEM revision (2026-10-28)
 
 - [x] Cross-check two already inspected offline inputs (manual VIDA CEM research card and historic diagnostic DID snapshot) against an explicit, bounded candidate revision support catalog. Require exact multi-DID CAN/year identity match and count **only previously observed, separately documented** DID identifiers; unknown, ambiguous and invalid evidence fails closed.

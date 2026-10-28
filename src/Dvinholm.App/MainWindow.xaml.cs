@@ -13,6 +13,7 @@ public sealed partial class MainWindow : Window
 {
     private readonly ObservableCollection<CanMonitorRow> _frames = new();
     private readonly CanMonitorHistory _monitorHistory = new();
+    private bool _canRxSummaryBusy;
     private readonly ObservableCollection<J2534Device> _j2534Devices = new();
     private readonly J2534Session _session = new();
     private CancellationTokenSource? _cts;
@@ -3271,6 +3272,90 @@ public sealed partial class MainWindow : Window
     }
 
 #endif
+    /// <summary>
+    /// Inspect existing bounded CAN RX history without transmitting,
+    /// opening a file or copying anything until explicit user approval.
+    /// Even CAN IDs/DLC counts can fingerprint a vehicle.
+    /// </summary>
+    private async void CanRxSummary_Click(object sender, RoutedEventArgs e)
+    {
+        if (_closing || _canRxSummaryBusy)
+            return;
+
+        _canRxSummaryBusy = true;
+        try
+        {
+#if DVINHOLM_DEVELOPMENT_FEATURES
+            var synthetic = _demoDataPresent;
+#else
+            const bool synthetic = false;
+#endif
+            // Filter("") reads the retained RX history regardless of the
+            // current software view filter. This method never starts CAN.
+            var report = CanMonitorRxResearchSummary.Build(
+                _monitorHistory.Filter(""),
+                _monitorHistory.TotalReceived,
+                _monitorSubscription?.DroppedFrameCount,
+                synthetic);
+
+            var copied = false;
+            var preview = new ContentDialog
+            {
+                XamlRoot = RootLayout.XamlRoot,
+                Title = "CAN RX research summary (payload hidden)",
+                Content = new ScrollViewer
+                {
+                    MaxHeight = 380,
+                    Content = new TextBlock
+                    {
+                        Text = report,
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true
+                    }
+                },
+                PrimaryButtonText = "Copy RX metadata",
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close
+            };
+            preview.PrimaryButtonClick += (_, args) =>
+            {
+                try
+                {
+                    var package = new DataPackage();
+                    package.SetText(report);
+                    Clipboard.SetContent(package);
+                    copied = true;
+                }
+                catch (Exception)
+                {
+                    args.Cancel = true;
+                    if (!_closing)
+                        SetStatus("CAN RX metadata could not be copied. No data was exported.");
+                }
+            };
+
+            await preview.ShowAsync();
+            if (!_closing)
+                SetStatus(copied
+                    ? "Copied CAN RX ID/DLC metadata after approval. Review before sharing."
+                    : "Reviewed buffered CAN RX metadata without copying or exporting.");
+        }
+        catch (InvalidDataException)
+        {
+            if (!_closing)
+                SetStatus("Invalid CAN RX history metadata; research summary not created.");
+        }
+        catch (Exception)
+        {
+            if (!_closing)
+                SetStatus("Could not display CAN RX metadata. No diagnostic request or file write.");
+        }
+        finally
+        {
+            _canRxSummaryBusy = false;
+        }
+    }
+
     private async void Csv_Click(object sender, RoutedEventArgs e)
     {
         try
