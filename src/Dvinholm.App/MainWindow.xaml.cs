@@ -78,6 +78,17 @@ public sealed partial class MainWindow : Window
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
         UpdateStatusText.Text = $"Current: {LatestBuildUpdater.CurrentDisplayVersion}";
+        // Framework-dependent Lite checks before WinUI via Start-Dvinholm-Lite.cmd.
+        if (File.Exists(Path.Combine(AppContext.BaseDirectory,
+                "Manage-Lite-Dependencies.ps1")) &&
+            !DvinholmUserDataDirectory.IsAcceptanceLaunch)
+            DispatcherQueue.TryEnqueue(async () => await CheckLiteDependenciesAsync());
+        else
+        {
+            LiteDependencyStatusText.Text = "Not a Lite-managed installation.";
+            ManageDependenciesButton.IsEnabled = false;
+            CheckDependenciesButton.IsEnabled = false;
+        }
 #if DVINHOLM_MSIX
         // WindowsApps files are managed by MSIX, not Portable's updater.
         UpdateButton.IsEnabled = false;
@@ -220,6 +231,70 @@ public sealed partial class MainWindow : Window
         UpdateProgressBar.Visibility = Visibility.Collapsed;
         UpdateProgressText.Text = message ?? string.Empty;
         UpdateProgressText.Visibility = message is null ? Visibility.Collapsed : Visibility.Visible;
+    }
+
+    private async void CheckDependenciesButton_Click(object sender, RoutedEventArgs e) =>
+        await CheckLiteDependenciesAsync();
+
+    private async Task CheckLiteDependenciesAsync()
+    {
+        if (_closing || DvinholmUserDataDirectory.IsAcceptanceLaunch)
+            return;
+        if (!File.Exists(Path.Combine(AppContext.BaseDirectory, "Check-Lite-Prerequisites.ps1")))
+        {
+            LiteDependencyStatusText.Text = "Lite inspector unavailable.";
+            return;
+        }
+        CheckDependenciesButton.IsEnabled = false;
+        LiteDependencyStatusText.Text = "Checking .NET 10 x86, Windows App Runtime 2.5 and VC++ x86…";
+        try
+        {
+            await LatestBuildUpdater.ValidateStagedLitePrerequisitesAsync(AppContext.BaseDirectory);
+            if (!_closing) LiteDependencyStatusText.Text = "All Lite runtime dependencies verified.";
+        }
+        catch (Exception e) when (e is InvalidDataException or InvalidOperationException
+            or System.ComponentModel.Win32Exception or OperationCanceledException)
+        {
+            if (!_closing)
+                LiteDependencyStatusText.Text = e is InvalidOperationException
+                    ? e.Message : "Unable to verify Lite dependencies. Open the manager.";
+        }
+        finally { if (!_closing) CheckDependenciesButton.IsEnabled = true; }
+    }
+
+    private void ManageDependenciesButton_Click(object sender, RoutedEventArgs e)
+    {
+        if (_closing || DvinholmUserDataDirectory.IsAcceptanceLaunch) return;
+        var script = Path.Combine(AppContext.BaseDirectory, "Manage-Lite-Dependencies.ps1");
+        if (!File.Exists(script))
+        {
+            LiteDependencyStatusText.Text = "Lite dependency manager missing.";
+            return;
+        }
+        try
+        {
+            var host = Path.Combine(Environment.SystemDirectory,
+                "WindowsPowerShell", "v1.0", "powershell.exe");
+            if (Environment.Is64BitOperatingSystem && !Environment.Is64BitProcess)
+            {
+                var native = Path.Combine(Environment.GetFolderPath(
+                    Environment.SpecialFolder.Windows), "Sysnative",
+                    "WindowsPowerShell", "v1.0", "powershell.exe");
+                if (File.Exists(native)) host = native;
+            }
+            var info = new ProcessStartInfo
+            {
+                FileName = host, UseShellExecute = true,
+                WorkingDirectory = AppContext.BaseDirectory
+            };
+            foreach (var arg in new[] { "-NoLogo", "-NoProfile", "-ExecutionPolicy",
+                "Bypass", "-File", script, "-Mode", "Manage",
+                "-LiteDirectory", AppContext.BaseDirectory })
+                info.ArgumentList.Add(arg);
+            Process.Start(info);
+            LiteDependencyStatusText.Text = "Dependency manager opened. Recheck after installation.";
+        }
+        catch (Exception) { LiteDependencyStatusText.Text = "Could not open dependency manager."; }
     }
 
     private bool UseStableUpdateSource => UpdateSource.SelectedIndex == 1;

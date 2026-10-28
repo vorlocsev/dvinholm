@@ -40,6 +40,12 @@
                                        AutomationProperties.Name="Update progress details"/>
                             <TextBlock Text="Development uses successful CI builds. Stable uses published releases."
                                        TextWrapping="Wrap" Opacity="0.7"/>
+                            <TextBlock Text="Lite runtime dependencies" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="LiteDependencyStatusText" Text="Checking dependencies…" TextWrapping="Wrap" AutomationProperties.Name="Lite dependency status"/>
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <Button x:Name="CheckDependenciesButton" Content="Recheck" Click="CheckDependenciesButton_Click" AutomationProperties.Name="Check Lite runtime dependencies"/>
+                                <Button x:Name="ManageDependenciesButton" Content="Install / update…" Click="ManageDependenciesButton_Click" AutomationProperties.Name="Manage Microsoft runtime dependencies"/>
+                            </StackPanel>
                             <Button x:Name="RunUpdateButton" Content="Check for updates"
                                     Click="UpdateButton_Click" HorizontalAlignment="Stretch"
                                     AutomationProperties.Name="Check or install update"/>

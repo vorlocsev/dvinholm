@@ -269,6 +269,52 @@ repair it from official Microsoft packages and rerun. Microsoft sources:
 Do not mix Lite and Portable in the same directory, and retain the old
 working app until dependency checks and Windows interactive Lite launch pass.
 
+## Lite interactive dependencies and start-before-WinUI launcher
+
+**Open Start-Dvinholm-Lite.cmd** from the extracted Lite folder. Unlike
+Dvinholm.App.exe, this launcher runs on Windows PowerShell 5.1 and .NET
+Framework before the .NET 10 / WinUI application starts. If the existing
+read-only Lite prerequisite gate passes, the launcher starts Dvinholm.
+Otherwise a Windows Forms manager shows three separate dependencies:
+
+- .NET 10 Windows Desktop Runtime **x86**. The latest stable 10.0 release
+  is selected from Microsoft's official release-metadata JSON, and the
+  installer is verified against its **SHA-512** release hash.
+- Windows App Runtime **stable 2.5.1**. The Microsoft installer selected
+  is native to the OS (x64 on x64 Windows, x86 on x86 Windows), so Main
+  and Singleton have the correct native architecture while the x86 app
+  requires the x86 Framework/DDLM.
+- Microsoft Visual C++ Redistributable **x86** (latest Microsoft 14.x).
+
+Buttons **Install / Update** run only after an explicit YES confirmation.
+Downloads use HTTPS Microsoft endpoints; **all EXE files must have a valid
+Microsoft Corporation Authenticode signature** before being executed.
+The Microsoft installers are launched visibly and may request UAC and
+a Windows restart. The manager rechecks after their completion. It does
+not elevate itself, silently install, downgrade a release line, change
+the registry, or add a CEM/ECU permission.
+
+**Within a running Lite app**, the update flyout contains a startup
+dependency status, **Recheck** and **Install / update…**, which opens
+the same manager without installing anything automatically. The
+authoritative Lite prerequisite check still blocks application update
+and Start if any required runtime is missing or verification is inconclusive.
+
+The loader cannot intercept a user who double-clicks Dvinholm.App.exe
+without prerequisites. For the pre-WinUI experience, launch the provided
+CMD entrypoint or make a desktop shortcut pointing to that CMD. The
+historical self-contained Stable v0.2.4 is unchanged.
+
+Microsoft download references:
+https://learn.microsoft.com/en-us/windows/apps/windows-app-sdk/downloads
+https://dotnet.microsoft.com/en-us/download/dotnet/10.0
+https://learn.microsoft.com/en-us/cpp/windows/latest-supported-vc-redist/
+
+Neither GitHub CI nor a successful prereq check proves the program starts
+on a particular physical Windows host. CI verifies source, script syntax,
+ZIP contents and simulated dependencies. Manual start/UAC/install tests
+on Windows 11 LTSC are still pending.
+
 ## Lite host prerequisite inspection (Development)
 
 Extract Lite into its **own directory** and double-click

@@ -33,6 +33,8 @@ try {
     if ($Flavor -eq 'Lite') {
         Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Test-LitePrerequisites.ps1') -Destination (Join-Path $temp 'Check-Lite-Prerequisites.ps1') -Force
         Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Check-Lite-Prerequisites.cmd') -Destination (Join-Path $temp 'Check-Lite-Prerequisites.cmd') -Force
+        Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Manage-Lite-Dependencies.ps1') -Destination (Join-Path $temp 'Manage-Lite-Dependencies.ps1') -Force
+        Copy-Item -LiteralPath (Join-Path $PSScriptRoot 'Start-Dvinholm-Lite.cmd') -Destination (Join-Path $temp 'Start-Dvinholm-Lite.cmd') -Force
     }
 
     # PDBs and diagnostic helpers are not required to run a Release build.
