@@ -55,6 +55,32 @@ credentials arriving through the Volvo central database. This
 is not a documented independent PIN retrieval algorithm or permission
 for Dvinholm to perform security access.
 
+## In-memory proposed-value draft preview (Development)
+
+Open **P2 configuration candidates (offline)**. The top of the existing
+dialog provides a temporary research form: manually enter the *claimed*
+model year, affirm that you checked the year independently (this is still
+a self-report, not authenticated vehicle metadata), choose one historical
+customer-parameter label, and enter its proposed canonical value.
+For heated seats, specify both LOW and HIGH temperatures.
+
+Click **Review proposed value (offline, no save)**. The local preview
+uses `VolvoP2CemHistoricalCustomerValuePreflight` to check exact
+historical source notation and the LOW/HIGH dependency. A valid-looking
+proposal remains `ListedInHistoricalSourceOnly`, never an actual ECU
+value, configuration plan, identified firmware mapping or write
+permission. Missing/invalid/out-of-scope year and values fail closed,
+without echoing arbitrary untrusted input. Even with the year checkbox,
+the information remains user claimed. Cancel/Close discards everything;
+no file is saved, no ECU profile is modified and **no J2534/UDS, PIN or
+vehicle read/write action** occurs.
+
+The 8 synthetic tests check accepted historical seat, lighting,
+post-drying and Flex mode inputs, rejection of reversed/incomplete
+temperature pairs, absent/unconfirmed/wrong years, invalid values and
+redaction of accidentally entered private strings. WinUI behaviour
+on an installed Windows system must be manually accepted separately.
+
 ## Eight offline tests and release boundaries
 
 The synthetic checks cover exact immutable source value sets,
