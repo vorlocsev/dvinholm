@@ -206,7 +206,11 @@
                 <Button Grid.Column="1" Content="Clear" Click="Clear_Click" VerticalAlignment="Bottom"/>
                 <Button x:Name="HardwareFilterButton" Grid.Column="2" Content="Apply HW filter" Click="HardwareFilter_Click" VerticalAlignment="Bottom" IsEnabled="False"/>
                 <Button Grid.Column="3" Content="CSV log" Click="Csv_Click" VerticalAlignment="Bottom"/>
-                <TextBlock x:Name="FrameRateText" Grid.Column="4" VerticalAlignment="Center" Text="0 frames/s"/>
+                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
+                    <Button Content="RX summary" Click="CanRxSummary_Click"
+                            ToolTipService.ToolTip="Review buffered CAN RX ID/DLC counts without frame data. Copy only by explicit approval. No diagnostic requests."/>
+                    <TextBlock x:Name="FrameRateText" VerticalAlignment="Center" Text="0 frames/s"/>
+                </StackPanel>
                 <TextBlock x:Name="FrameCountText" Grid.Column="5" VerticalAlignment="Center" Text="0 shown / 0 rx" HorizontalAlignment="Right"/>
                 <TextBlock x:Name="DroppedFrameText" Grid.Column="6" VerticalAlignment="Center" Text="0 dropped" HorizontalAlignment="Right"/>
             </Grid>
