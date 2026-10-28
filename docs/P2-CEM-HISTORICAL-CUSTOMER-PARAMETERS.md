@@ -81,6 +81,34 @@ temperature pairs, absent/unconfirmed/wrong years, invalid values and
 redaction of accidentally entered private strings. WinUI behaviour
 on an installed Windows system must be manually accepted separately.
 
+### Compare an optional manual note with the proposal (still offline)
+
+In the same **P2 configuration candidates (offline)** research form, optionally
+fill **MANUAL reference notation (NOT an ECU read)**. Heated-seat proposals
+also allow a separate manually entered reference HIGH temperature. If the
+manual reference is omitted, the existing proposal preview works as before.
+If any reference text is entered, **Preview / compare manual notes** evaluates
+both sides independently against the same exact-year historical source rules.
+
+Only two complete canonical research notations can yield **SameManualNotation**
+or **DifferentManualNotation**. Both outcomes describe a difference between
+**two user-typed strings**, not a detected current vehicle setting, verified
+CEM configuration, confirmed ECU mapping or effective write. If the year is
+unchecked, outside the original documented scope, a temperature pair is
+inconsistent, or either notation is not listed, the comparison is blocked
+and both raw inputs are withheld from the report. The year checkbox is a
+self-report, not proof of vehicle identity. Editing any field invalidates
+the previous preview; switching parameter clears both proposals and manual
+references rather than carrying values between unrelated categories.
+
+Eight deterministic offline tests check matching/differing claims, correct
+LOW/HIGH comparisons, absent/invalid/sensitive notes, invalid proposals,
+unconfirmed/out-of-scope model years, extra second fields and all false
+live-ECU/PIN/write permissions. **No file, profile, snapshot, current value,
+PIN, programming command or write plan is created or updated.** This is
+deliberately not a before/after vehicle configuration comparison. Installed
+WinUI acceptance remains a separate manual check.
+
 ## Eight offline tests and release boundaries
 
 The synthetic checks cover exact immutable source value sets,
