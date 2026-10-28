@@ -79,10 +79,33 @@ Normal **Download / Install** and **Restore previous** are refused while any
 evidence. Ambiguous, untrusted, duplicate or invalid states are left untouched
 for manual inspection. No GitHub request or Microsoft installer is involved.
 
-This repair covers interrupted **rollback operations only**, not all possible
-interrupted download/install rotations (`older-*`, `pending-*`). Recovery of
-those requires a separate, explicit safety review. CI runs eight synthetic
-offline recovery cases; real power-loss behaviour is still unverified on Windows.
+**Repair install** handles a second case: interruption during a Lite
+installation after the downloaded ZIP has passed integrity, extraction and
+dependency checks. Before the first directory rename, the updater now writes
+a small per-channel `install-transaction.json` journal identifying the
+original current/previous versions and the target version. A separately
+confirmed offline repair validates this journal, the selected channel,
+staged folders and Lite x86 signatures, then:
+
+- If promotion has not finished, restores the original managed installation
+  and retains the staged candidate under `abandoned-<id>` for manual review.
+- If the new version has already reached `current`, keeps it installed,
+  verifies the previous backup and finishes safe housekeeping.
+- Rejects ambiguous, missing, malicious or cross-channel evidence without
+  guessing. Installation and rollback are blocked until the transaction
+  has been repaired.
+
+Recovery is repeatable if interrupted between recovery moves. The installer
+keeps the journal until promotion is complete; a retired second backup is
+cleaned up **after** the committed installation is safe. The journal does
+not include user ECU profiles or settings. An unjournaled `pending-*` or
+`older-*` from older Banner versions is deliberately **not** repaired
+automatically; preserve those folders for manual analysis.
+
+CI includes eight synthetic offline interrupted-install checks alongside
+eight rollback-repair checks. Real GUI execution and power-cut recovery
+still require Windows acceptance; these checks do not prove hardware-level
+crash consistency.
 
 During an ordinary update, the older `previous` backup is retained in a
 temporary channel directory until the new `current` is successfully moved
