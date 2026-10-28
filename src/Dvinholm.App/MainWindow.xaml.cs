@@ -1537,7 +1537,10 @@ public sealed partial class MainWindow : Window
                             .BuildReadOnlyReport(manual, claims)
                             + Environment.NewLine
                             + VolvoP2CemConfigurationReadPreflight
-                            .BuildReadOnlyReport(manual, claims),
+                            .BuildReadOnlyReport(manual, claims)
+                            + Environment.NewLine
+                            + VolvoP2CemReadSurfaceEvidence
+                            .BuildOfflineReport(manual.ClaimedModelYear),
                         TextWrapping = TextWrapping.Wrap,
                         IsTextSelectionEnabled = true
                     }
