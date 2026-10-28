@@ -1,6 +1,7 @@
 name: Dvinholm Stable 0.2.4 (staging only, no publish)
 
 # Archived/manual-only validation, not part of active Lite CI.
+# No signing, installation, release creation or physical hardware verification.
 on:
   workflow_dispatch:
 
