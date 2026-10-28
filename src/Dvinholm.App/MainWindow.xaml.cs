@@ -1251,6 +1251,11 @@ public sealed partial class MainWindow : Window
 
         var report = VolvoP2CemPairedResearchIntakeDisplay
             .Build(manualClaim, snapshot);
+        // Third-party scanner labels for a claimed year never establish
+        // authenticated CEM revision or permissions. Show exact open gaps.
+        report += Environment.NewLine +
+            VolvoP2CemRevisionEvidencePreflight
+                .BuildReadOnlyReport(manualClaim, snapshot);
         var dialog = new ContentDialog
         {
             XamlRoot = RootLayout.XamlRoot,

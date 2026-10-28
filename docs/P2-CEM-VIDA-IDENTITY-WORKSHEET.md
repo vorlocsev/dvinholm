@@ -112,6 +112,37 @@ compatibility, PIN, configuration read/write authorization, backup or
 service operation can be inferred or enabled. No file is created or
 updated and cancellation has no persistent effect.
 
+### Revision-specific evidence gaps after pairing
+
+The combined review now adds a strict **seven-gate evidence checklist**
+(`VolvoP2CemRevisionEvidencePreflight`). For the *claimed* XC90 model
+year, it displays only the year-exact CEM/CEM-HS feature labels already
+present in the source-scoped third-party Foxwell index. Missing years
+show **unknown**, not unsupported. The advertised menu names do not
+prove actual physical module identity, software applicability,
+diagnostic addressing, an executable read service or a recoverable
+configuration. Even if the profile says "verified" or the user checks
+"transcribed from VIDA", those are assertions, not authenticated proofs.
+
+All seven evidence gates are shown as **MISSING** until a separate,
+independently reviewed and authorized acceptance workflow exists:
+
+1. Independently verify actual XC90 model year and physical CEM/CEM-HS assignment.
+2. Authenticate hardware, application software and diagnostic software revisions.
+3. Obtain reproducible, revision-specific diagnostic network/transport and request/response addresses.
+4. Document actual read-only identity and option mapping, byte meanings and error responses.
+5. Verify a legitimate model-specific PIN/service entitlement and prerequisites.
+6. Validate authorized bench transport, safe power/interruption handling and recovery.
+7. Prove both user-selected files refer to the same real CEM and context.
+
+No part of the checklist can change a vehicle capability state; all
+live CEM/PIN/read/write permissions remain **false**. It adds no
+secret capture, raw DID value display, ECU fingerprint enrollment,
+background copy, connection or file writes. The same two strictly
+inspected source files are reused, and eight synthetic offline tests
+exercise the evidence gaps and fail-closed input validation.
+Actual installed Windows UI and hardware testing are tracked separately.
+
 Part numbers and CAN/DID metadata may still indirectly identify a
 vehicle. The report is local and is **not automatically copied**. Only
 share material after reviewing it. Eight synthetic offline tests cover
