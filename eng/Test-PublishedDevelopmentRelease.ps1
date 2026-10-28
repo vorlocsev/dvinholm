@@ -9,7 +9,8 @@ param(
     [Parameter(Mandatory)][string]$Directory,
     [Parameter(Mandatory)][string]$ExpectedTag,
     [Parameter(Mandatory)][string]$ExpectedCommit,
-    [switch]$LiteOnly
+    [switch]$LiteOnly,
+    [switch]$WithUpdaterBanner
 )
 
 $ErrorActionPreference = 'Stop'
@@ -47,7 +48,10 @@ if ($release.prerelease -ne $true -or $release.draft -ne $false) {
 }
 
 $names = if ($LiteOnly) { @('Dvinholm-Windows-x86-Lite.zip', 'SHA256SUMS.txt') } else { @('Dvinholm-Windows-x86.zip', 'Dvinholm-Windows-x86-Lite.zip', 'SHA256SUMS.txt') }
-$assetCountWord = if ($LiteOnly) { 'two' } else { 'three' }
+if ($WithUpdaterBanner) {
+    $names = @($names) + @('Dvinholm-Updater-Banner-Windows-x86.zip')
+}
+$assetCountWord = switch ($names.Count) { 2 { 'two' } 3 { 'three' } 4 { 'four' } default { 'unexpected' } }
 $assets = @($release.assets | Where-Object { $null -ne $_ })
 if ($assets.Count -ne $names.Count) {
     throw "Published CI release must contain exactly $assetCountWord assets (found $($assets.Count))."
@@ -92,6 +96,6 @@ if ($seen.Count -ne $names.Count) {
 
 # Check the uploaded manifest against downloaded bytes, without
 # regenerating it. The same verifier checks pre-upload files in CI.
-& (Join-Path $PSScriptRoot 'Test-WindowsDistributionChecksums.ps1') -Directory $root -LiteOnly:$LiteOnly
+& (Join-Path $PSScriptRoot 'Test-WindowsDistributionChecksums.ps1') -Directory $root -LiteOnly:$LiteOnly -WithUpdaterBanner:$WithUpdaterBanner
 if (-not $?) { throw 'Published CI checksum verification failed.' }
 Write-Host "Verified three uploaded CI release assets and GitHub SHA-256 digests for $ExpectedTag at $ExpectedCommit."
