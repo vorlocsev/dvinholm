@@ -21,7 +21,7 @@ $preferenceFile=Join-Path $base 'channel-preference.txt'
 $channelRoot=Join-Path $base $Channel
 $current=Join-Path $channelRoot 'current'
 $state=[ordered]@{Done=$false;Failed=$false;Current='Not installed';Available='Not checked';
- DotNet='Unknown';WinApp='Unknown';VC='Unknown';Detail='Ready'}
+ DotNet='Unknown';WinApp='Unknown';VC='Unknown';Recovery='Not checked';Detail='Ready'}
 function Save-State {
  if (-not $StateFile) { return }
  $tmp=$StateFile+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
@@ -302,6 +302,31 @@ function Get-InstallMarkerEntries {
  Assert-ManagedFolder $channelRoot
  return @(Get-ChildItem -LiteralPath $channelRoot -Force -ErrorAction Stop |
   Where-Object { $_.Name -like 'pending-*' -or $_.Name -like 'older-*' })
+}
+function Get-ChannelRecoveryState {
+ # Read-only classification. Repair actions separately verify every file.
+ try {
+  Assert-ManagedFolder $base
+  Assert-ManagedFolder $channelRoot
+  $rollbacks=@(Get-RollbackStaging)
+  $installs=@(Get-InstallMarkerEntries)
+  $journal=Test-Path -LiteralPath (Get-InstallTransactionFile)
+  if($rollbacks.Count -gt 0){
+   if($journal -or $installs.Count -gt 0 -or $rollbacks.Count -ne 1){
+    return 'Inspect'
+   }
+   $one=$rollbacks[0]
+   if($one.Name -cmatch '^rollback-[0-9a-f]{32}$' -and
+      $one.PSIsContainer -and
+      ($one.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0){
+    return 'Repair rollback'
+   }
+   return 'Inspect'
+  }
+  if($journal){return 'Repair install'}
+  if($installs.Count -gt 0){return 'Inspect'}
+  return 'Ready'
+ }catch{return 'Inspect'}
 }
 function Assert-NoInterruptedInstall {
  if((Test-Path -LiteralPath (Get-InstallTransactionFile)) -or
@@ -878,6 +903,32 @@ function SelfTest {
   $installChecks++
   if($installChecks -ne 8){throw 'Wrong interrupted install recovery test count.'}
   Write-Host 'Updater Banner 8/8 interrupted install recovery checks passed.'
+  $statusChecks=0
+  Reset-SyntheticLite
+  if((Get-ChannelRecoveryState) -cne 'Ready'){throw 'Clean recovery status incorrect.'}
+  $statusChecks++
+  Reset-SyntheticInstall
+  if((Get-ChannelRecoveryState) -cne 'Repair install'){throw 'Install recovery status incorrect.'}
+  $statusChecks++
+  Reset-SyntheticLite
+  New-SyntheticLite $newPending 'ci-201' 'Development'
+  if((Get-ChannelRecoveryState) -cne 'Inspect'){throw 'Orphan staging was not flagged.'}
+  $statusChecks++
+  Reset-SyntheticLite
+  Move-Item -LiteralPath $script:current -Destination $staged
+  if((Get-ChannelRecoveryState) -cne 'Repair rollback'){throw 'Rollback recovery status incorrect.'}
+  $statusChecks++
+  Reset-SyntheticLite
+  Move-Item -LiteralPath $script:current -Destination $bad
+  if((Get-ChannelRecoveryState) -cne 'Inspect'){throw 'Invalid rollback marker was not flagged.'}
+  $statusChecks++
+  Reset-SyntheticLite
+  Move-Item -LiteralPath $script:current -Destination $staged
+  [IO.File]::WriteAllText((Get-InstallTransactionFile),'unverified')
+  if((Get-ChannelRecoveryState) -cne 'Inspect'){throw 'Mixed recovery markers were not flagged.'}
+  $statusChecks++
+  if($statusChecks -ne 6){throw 'Wrong recovery status check count.'}
+  Write-Host 'Updater Banner 6/6 read-only recovery status checks passed.'
  }finally{
   $script:StateFile=$originalStateFile
   $script:base=$originalBase
@@ -893,12 +944,20 @@ if($Mode -eq 'SelfTest'){SelfTest;exit 0}
 if($Mode -ne 'UI'){
  try{
   $script:state.Current=Installed
+  $script:state.Recovery=Get-ChannelRecoveryState
   $inventory=Probe
   foreach($key in @('DotNet','WinApp','VC')){$script:state[$key]=$inventory[$key]}
   Save-State
   if($Mode -eq 'Probe'){
-   Progress 'Runtime dependencies rechecked locally. No GitHub request made.'
+   if($script:state.Recovery -eq 'Ready'){
+    Progress 'Runtime dependencies rechecked locally. No GitHub request made.'
+   }else{
+    Progress ('Recovery required: '+$script:state.Recovery+'. No GitHub request made.')
+   }
   }elseif($Mode -eq 'Check'){
+   if($script:state.Recovery -ne 'Ready'){
+    throw 'Recovery must be handled before update checks.'
+   }
    $r=Latest;$script:state.Available=$r.Tag
    Progress ('Latest '+$Channel+' release: '+$r.Tag+'. No changes made.')
   }elseif($Mode -eq 'Rollback'){
@@ -910,6 +969,7 @@ if($Mode -ne 'UI'){
   }else{
    Invoke-ChannelExclusive {Install}
   }
+  $script:state.Recovery=Get-ChannelRecoveryState
   $script:state.Done=$true;Save-State;exit 0
  }catch{
   $message=[string]$_.Exception.Message
@@ -917,6 +977,8 @@ if($Mode -ne 'UI'){
    'Missing Lite prerequisites. Install/update Microsoft components, then retry.'
   }elseif($message -match 'Close the application'){
    'Close Dvinholm, then retry. Managed files were not changed.'
+  }elseif($message -match 'Recovery must be handled'){
+   'Recovery required. Use the matching repair button or inspect the managed folders.'
   }elseif($message -match 'Interrupted rollback requires'){
    'Interrupted rollback detected. Use Repair rollback before updating or restoring.'
   }elseif($message -match 'Interrupted install requires'){
@@ -934,6 +996,7 @@ if($Mode -ne 'UI'){
   }elseif($message -match 'SHA|ZIP|digest|manifest|archive|asset|unsafe'){
    'Release integrity/security check failed. Nothing was installed.'
   }else{'Update/check failed. Inspect the managed install directory if a replacement was interrupted.'}
+  $script:state.Recovery=Get-ChannelRecoveryState
   $script:state.Failed=$true;$script:state.Done=$true;Save-State;exit 1
  }
 }
@@ -941,7 +1004,7 @@ Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 $form=New-Object Windows.Forms.Form
 $form.Text='Dvinholm Updater Banner'
-$form.Size=New-Object Drawing.Size(740,410)
+$form.Size=New-Object Drawing.Size(740,464)
 $form.MinimumSize=$form.Size;$form.MaximumSize=$form.Size
 $form.Font=New-Object Drawing.Font('Segoe UI',10)
 $form.StartPosition='CenterScreen'
@@ -967,26 +1030,43 @@ $form.Controls.Add($repairInstall)
 $installed=Label 'Installed: not checked' 126 25
 $available=Label 'Available: not checked' 151 25
 $deps=Label '.NET x86: ?    WinApp: ?    VC++ x86: ?' 180 26
-$status=Label 'Ready.' 206 46
+$recovery=Label 'Recovery: not checked' 209 23
+$status=Label 'Ready.' 231 45
 $bar=New-Object Windows.Forms.ProgressBar
-$bar.SetBounds(18,257,695,13);$bar.Style='Marquee';$bar.MarqueeAnimationSpeed=0
+$bar.SetBounds(18,286,695,13);$bar.Style='Marquee';$bar.MarqueeAnimationSpeed=0
 $form.Controls.Add($bar)
 function Button([string]$value,[int]$x,[int]$y,[int]$w){
  $b=New-Object Windows.Forms.Button;$b.Text=$value;$b.SetBounds($x,$y,$w,34)
  $form.Controls.Add($b);return $b
 }
-$check=Button 'Check updates' 18 282 158
-$install=Button 'Download / Install' 184 282 185
-$launch=Button 'Start Dvinholm' 377 282 159
-$refresh=Button 'Recheck deps' 544 282 169
-$dot=Button 'Install .NET x86' 18 326 218;$dot.Tag='DotNet'
-$win=Button 'Install WinApp' 252 326 218;$win.Tag='WinApp'
-$vc=Button 'Install VC++ x86' 486 326 227;$vc.Tag='VC'
+$check=Button 'Check updates' 18 311 158
+$install=Button 'Download / Install' 184 311 185
+$launch=Button 'Start Dvinholm' 377 311 159
+$refresh=Button 'Recheck deps' 544 311 169
+$dot=Button 'Install .NET x86' 18 355 218;$dot.Tag='DotNet'
+$win=Button 'Install WinApp' 252 355 218;$win.Tag='WinApp'
+$vc=Button 'Install VC++ x86' 486 355 227;$vc.Tag='VC'
 $script:child=$null;$script:vendor=$null
 $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid]::NewGuid().ToString('N')+'.json')
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+$script:recoveryStatus='Not checked'
+function Update-ActionAvailability {
+ $busy=($null -ne $script:child -or $null -ne $script:vendor)
+ $state=[string]$script:recoveryStatus
+ $ready=($state -ceq 'Ready')
+ $choice.Enabled=-not $busy
+ $check.Enabled=($ready -and -not $busy)
+ $install.Enabled=($ready -and -not $busy)
+ $launch.Enabled=($ready -and -not $busy)
+ $refresh.Enabled=-not $busy
+ $rollback.Enabled=($ready -and -not $busy)
+ $repair.Enabled=($state -ceq 'Repair rollback' -and -not $busy)
+ $repairInstall.Enabled=($state -ceq 'Repair install' -and -not $busy)
+}
 function Begin-Action([string]$action){
  if($script:child -or $script:vendor){return}
+ if($action -in @('Install','Rollback','Check') -and
+    $script:recoveryStatus -cne 'Ready'){return}
  if($action -eq 'RepairInstall'){
   if([Windows.Forms.MessageBox]::Show(
    'Attempt offline recovery of an interrupted Lite installation for the selected channel? Only a verified transaction journal and unambiguous folders will be accepted. Existing staged files are retained. Close Dvinholm first.',
@@ -1018,9 +1098,7 @@ function Begin-Action([string]$action){
  try{
   $script:child=Start-Process -FilePath $powershell -ArgumentList $args -WindowStyle Hidden -PassThru
   $bar.MarqueeAnimationSpeed=25
-  $choice.Enabled=$false;$install.Enabled=$false;$check.Enabled=$false
-  $rollback.Enabled=$false;$repair.Enabled=$false;$repairInstall.Enabled=$false
-  $launch.Enabled=$false;$refresh.Enabled=$false
+  Update-ActionAvailability
   $status.Text='Working...'
  }catch{$status.Text='Unable to launch updater helper.'}
 }
@@ -1031,7 +1109,8 @@ $rollback.Add_Click({Begin-Action 'Rollback'})
 $repair.Add_Click({Begin-Action 'Repair'})
 $repairInstall.Add_Click({Begin-Action 'RepairInstall'})
 $launch.Add_Click({
- if($script:child -or $script:vendor){return}
+ if($script:child -or $script:vendor -or
+    $script:recoveryStatus -cne 'Ready'){return}
  $target=Join-Path (Join-Path (Join-Path $base $choice.SelectedItem.ToString()) 'current') 'Start-Dvinholm-Lite.cmd'
  if(-not(Test-Path $target -PathType Leaf)){
   [Windows.Forms.MessageBox]::Show('Channel not installed; choose Download / Install.',
@@ -1057,7 +1136,12 @@ $choice.Add_SelectedIndexChanged({
  if($null -ne $choice.SelectedItem){
   $null=Save-ChannelPreference ([string]$choice.SelectedItem)
  }
- if(-not $script:child -and -not $script:vendor){Begin-Action 'Check'}
+ if(-not $script:child -and -not $script:vendor){
+  $script:recoveryStatus='Not checked'
+  $recovery.Text='Recovery: checking local state...'
+  Update-ActionAvailability
+  Begin-Action 'Probe'
+ }
 })
 $timer=New-Object Windows.Forms.Timer;$timer.Interval=500
 $timer.Add_Tick({
@@ -1067,21 +1151,24 @@ $timer.Add_Tick({
    $installed.Text='Installed: '+$s.Current
    $available.Text='Available: '+$s.Available
    $deps.Text='.NET x86: '+$s.DotNet+'    WinApp: '+$s.WinApp+'    VC++ x86: '+$s.VC
+   if($s.PSObject.Properties['Recovery']){
+    $script:recoveryStatus=[string]$s.Recovery
+    $recovery.Text='Recovery: '+$script:recoveryStatus
+   }
    $status.Text=[string]$s.Detail
   }catch{}
  }
  if($script:child -and $script:child.HasExited){
   $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0
-  $choice.Enabled=$true;$install.Enabled=$true;$check.Enabled=$true
-  $rollback.Enabled=$true;$repair.Enabled=$true;$repairInstall.Enabled=$true
-  $launch.Enabled=$true;$refresh.Enabled=$true
+  Update-ActionAvailability
  }
  if($script:vendor -and $script:vendor.HasExited){
   $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0
-  Begin-Action 'Check'
+  Begin-Action 'Probe'
  }
 })
 $timer.Start()
+Update-ActionAvailability
 $startupChannel=$Channel
 if(-not $PSBoundParameters.ContainsKey('Channel')){
  $savedChannel=Read-ChannelPreference

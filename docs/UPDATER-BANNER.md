@@ -117,6 +117,51 @@ installs dependencies. Windows PowerShell CI includes eight additional
 synthetic offline rollback checks; installed Windows GUI and power-loss
 recovery scenarios require manual acceptance.
 
+## Windows acceptance (7 checks)
+
+Use the latest **Development** standalone Banner ZIP from the GitHub
+Development prerelease. Extract all three files, then run
+`Updater-Banner.cmd` on the target Windows 11 / IoT LTSC machine.
+A physical J2534 adapter is **not** needed. Do not create artificial
+`pending-*` / `rollback-*` directories in a production installation.
+
+1. **Standalone startup:** the WinForms Banner opens before .NET 10,
+   Windows App SDK or VC++ x86 installation; initial local inventory runs
+   without needing GitHub connectivity.
+2. **Channel selection:** choose Stable, close/reopen, confirm Stable stays
+   selected. Switch back to Development; both roots stay independent.
+3. **Dependencies:** select **Recheck deps** offline, confirm the three
+   statuses refresh; install a missing Microsoft runtime only after the
+   confirmation prompt, then recheck.
+4. **Availability:** use **Check updates** online. Confirm current and
+   available labels reflect the selected channel.
+5. **Lite installation:** confirm **Download / Install**; verify installed
+   version and successful startup with **Start Dvinholm**. Do not
+   interrupt Microsoft installation or an app process.
+6. **Rollback:** after two different Development versions are installed,
+   use **Restore previous**; confirm it works offline and that the
+   replaced version remains in `previous`.
+7. **Recovery indication:** use a disposable test profile or isolated test
+   directory to simulate an interrupted operation. Confirm **Recovery**
+   prompts for **Repair install** or **Repair rollback**, disables Install,
+   Restore and Start, and refuses ambiguous states. Never delete recovery
+   evidence until inspected.
+
+CI verifies synthetic directory states, not a real power outage. Report
+actual Windows checks separately from CI and from physical J2534 tests.
+Do not mark this acceptance complete until each check has been performed.
+
+## Local recovery indication
+
+The banner checks on-disk channel state **before** querying GitHub at
+startup or after switching channels. `Recovery: Ready` enables normal
+operations. `Recovery: Repair install` or `Repair rollback` enables
+only the relevant confirmed recovery action. `Recovery: Inspect` blocks
+install, rollback and launch; preserve the folders for manual inspection.
+The status is advisory: the worker validates journal and file integrity
+again before any repair. **Check updates** is an explicit online action
+and is disabled while unresolved recovery evidence is present.
+
 **Important:** the banner checks installation/availability, not physical
 J2534 hardware support. A successful offline CI suite cannot prove actual
 Windows GUI launch on the Panasonic Toughpad. The App SDK release line is
