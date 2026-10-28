@@ -1506,26 +1506,35 @@ public sealed partial class MainWindow : Window
             InitializeWithWindow.Initialize(sourcePicker,
                 WindowNative.GetWindowHandle(this));
             sourcePicker.FileTypeFilter.Add(".json");
-            var sourceFile = await sourcePicker.PickSingleFileAsync();
-            if (sourceFile is null || _closing)
+            // One or more independent, user-selected research files. A
+            // duplicate source reference is NOT independent confirmation.
+            var sourceFiles = await sourcePicker.PickMultipleFilesAsync();
+            if (sourceFiles is null || sourceFiles.Count == 0 || _closing)
                 return;
-
-            var claim = await VolvoP2CemRevisionSourceComparison
-                .InspectFileAsync(sourceFile.Path);
+            if (sourceFiles.Count > VolvoP2CemRevisionSourceSetReview.MaximumSources)
+                throw new InvalidDataException("Too many CEM revision source files.");
+            var claims = new List<VolvoP2CemRevisionSourceClaim>(sourceFiles.Count);
+            foreach (var sourceFile in sourceFiles)
+            {
+                if (_closing)
+                    return;
+                claims.Add(await VolvoP2CemRevisionSourceComparison
+                    .InspectFileAsync(sourceFile.Path));
+            }
             if (_closing)
                 return;
 
             var result = new ContentDialog
             {
                 XamlRoot = RootLayout.XamlRoot,
-                Title = "XC90 P2 CEM revision cross-check (UNVERIFIED)",
+                Title = "XC90 P2 CEM source-set review (UNVERIFIED)",
                 Content = new ScrollViewer
                 {
                     MaxHeight = 350,
                     Content = new TextBlock
                     {
-                        Text = VolvoP2CemRevisionSourceComparison
-                            .BuildReadOnlyReport(manual, claim),
+                        Text = VolvoP2CemRevisionSourceSetReview
+                            .BuildReadOnlyReport(manual, claims),
                         TextWrapping = TextWrapping.Wrap,
                         IsTextSelectionEnabled = true
                     }
@@ -1535,7 +1544,7 @@ public sealed partial class MainWindow : Window
             };
             await result.ShowAsync();
             if (!_closing)
-                SetStatus("Compared two unverified local CEM revision research files. " +
+                SetStatus("Reviewed unverified local CEM revision source set. " +
                     "No ECU, PIN, adapter or configuration operation.");
         }
         catch (InvalidDataException)
