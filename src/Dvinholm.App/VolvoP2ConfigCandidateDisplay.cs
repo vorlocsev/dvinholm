@@ -25,6 +25,8 @@ internal static class VolvoP2ConfigCandidateDisplay
         text.AppendLine("Current values: unavailable | Desired values: disabled");
         text.AppendLine("PIN/service authentication: unavailable | ECU writing: disabled");
         text.AppendLine();
+        text.Append(VolvoP2CemHistoricalCustomerValuePreflight.BuildOfflineOverview());
+        text.AppendLine();
         text.Append(VolvoP2CemVidaNodeAdvisory.BuildOfflineOverview());
         text.AppendLine();
         text.Append(VolvoP2CemThirdPartyScannerCoverage.BuildOfflineOverview());
