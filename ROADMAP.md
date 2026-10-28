@@ -1,9 +1,18 @@
+## Development 0.3.0: interactive offline vendor route review (2026-10-28)
+
+- [x] Add a strictly local claimed model-year/engine/VDASH-or-VDD comparison to the existing PIN readiness dialog. This surfaces variant-specific *vendor advertising* only, not a Volvo ECU service or CEM identity.
+- [x] Keep a four-step PIN/service evidence checklist and reset the vendor result when any field changes. Unknown, unconfirmed, malformed and unsupported inputs fail closed with no raw invalid input echoed. No VIN/PIN fields, ECU requests, keys, configuration changes, persistence or autosave.
+- [x] Eight synthetic tests and updated [vendor route guide](docs/P2-CEM-VENDOR-PIN-ROUTES.md). Installed Windows UI, real transport/identity verification, PIN entitlement and physical J2534 acceptance are not claimed.
+- [ ] Confirm 5/5 exact-head PR CI and independently 5/5 postmerge main CI; Stable 0.2.4 remains frozen and publishing requires explicit approval.
+
+---
+
 ## Development 0.3.0: bounded Classic CAN read-only DID responses (2026-10-28)
 
 - [x] Limit generic read-only DID data to 4092 bytes, deriving the ceiling from Classic CAN ISO-TP 4095-byte payload less the positive-response SID and two-byte DID echo.
 - [x] Fail closed on an oversized injected reply before hex encoding. Abort a complete capture on second-DID failure; retain cancellation, echo checks, consent-only export and non-restorable semantics.
 - [x] Add eight deterministic synthetic tests and [response boundary documentation](docs/P2-CEM-DID-RESPONSE-LIMITS.md). No physical ECU, CEM transport, PIN or write operations introduced.
-- [ ] Require 5/5 exact-head PR workflows and separate 5/5 postmerge main acceptance; installed Windows and real DiCE/J2534/CEM testing remains outstanding. Stable v0.2.4 frozen.
+- [x] PR #562 exact-head 5/5 (CI #4042, Portable #181, Lite #168, staging #167, Tiny Lite #423), merged as `85f8682`; independent postmerge `main` 5/5 (CI #4043, Portable #182, Lite #169, staging #168, Tiny Lite #424). Installed Windows and physical DiCE/J2534/CEM testing remains outstanding. Stable v0.2.4 frozen.
 
 ---
 
