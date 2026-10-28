@@ -1,3 +1,12 @@
+## Development 0.3.0: source-scoped historical CEM customer values (2026-10-28)
+
+- [x] Research reproduced early XC90 CEM workshop descriptions separating **customer-adjustable values**, the **vehicle-configuration file** and **Volvo software-product download**. Avoid inferring raw bytes, addresses, a PIN or a supported CEM firmware revision from descriptions of values or menus. Note the historical source's internal inconsistency on the number of parameter categories.
+- [x] Add `VolvoP2CemHistoricalCustomerValuePreflight`: **offline-only** values for XC90 MY2003–2006 with independently confirmed year, exact heated-seat LOW/HIGH Celsius ranges and dependency, approach-light duration, post-drying switch, three documented Flex DRL names and country-specific lighting warning. No actual-current-value read, ECU write plan or authorization; all operation flags false.
+- [x] Integrate the documentation into the existing **P2 configuration candidates (offline)** viewer. Add **eight synthetic offline tests** (immutable source rules, out-of-scope years, seat relation, lights, post-drying, DRL and denied J2534/PIN/writes), [source analysis](docs/P2-CEM-HISTORICAL-CUSTOMER-PARAMETERS.md) and [compatibility register](docs/VOLVO-P2-CEM-COMPATIBILITY.md).
+- [ ] Accept only after 5/5 exact-head PR workflows and independent postmerge main CI. Manual installed Windows view remains unverified; physical CEM/J2534 acceptance and firmware/address/byte evidence are outstanding. Stable v0.2.4 frozen, no release without approval.
+
+---
+
 ## Development 0.3.0: revision-specific CEM evidence gap preflight (2026-10-28)
 
 - [x] After the user opens a manual VIDA CEM research card and **explicitly** pairs a historical DID JSON, show the **seven missing evidence gates** required for safe CEM support. The two records remain uncorrelated manual/historical information, NOT a verified physical module fingerprint.
