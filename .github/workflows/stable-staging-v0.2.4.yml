@@ -2,6 +2,8 @@ name: Dvinholm Stable 0.2.4 (staging only, no publish)
 
 # Archived/manual-only validation, not part of active Lite CI.
 # No signing, installation, release creation or physical hardware verification.
+# Published Stable v0.2.3 remains unchanged by this manual-only workflow.
+# This archived dual-variant audit is not part of the current Lite-only Development pipeline.
 on:
   workflow_dispatch:
 
