@@ -909,6 +909,82 @@ public sealed class LatestBuildLookupTests
         Assert.Contains(requests, url => url.Contains("page=2", StringComparison.Ordinal));
     }
 
+    [Theory]
+    [InlineData(false)]
+    [InlineData(true)]
+    public async Task DevelopmentCi_PrefersLiteAndRequiresHostPrerequisites(
+        bool includeHistoricalPortable)
+    {
+        const string sha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
+        using var http = new HttpClient(new QueueHttpMessageHandler(request =>
+        {
+            if (request.RequestUri!.AbsolutePath.EndsWith("/runs", StringComparison.Ordinal))
+            {
+                return JsonResponse("""
+                    {
+                      "workflow_runs": [
+                        { "event": "push", "head_branch": "main",
+                          "status": "completed", "conclusion": "success",
+                          "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                          "id": 120, "run_number": 120,
+                          "created_at": "2026-10-28T11:00:00Z" }
+                      ]
+                    }
+                    """);
+            }
+            const string lite = """
+                { "id": 500, "name": "Dvinholm-Windows-x86-Lite.zip",
+                  "size": 10240,
+                  "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-120/Dvinholm-Windows-x86-Lite.zip",
+                  "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+                """;
+            const string portable = """
+                { "id": 499, "name": "Dvinholm-Windows-x86.zip",
+                  "size": 65536,
+                  "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-120/Dvinholm-Windows-x86.zip",
+                  "digest": "sha256:bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb" }
+                """;
+            // Intentionally place legacy Portable FIRST to prove Lite selection
+            // is not accidentally determined by GitHub asset array order.
+            return JsonResponse("{\"assets\":[" +
+                (includeHistoricalPortable ? portable + "," : "") + lite + "]}");
+        }));
+
+        var build = await LatestBuildUpdater.GetLatestSuccessfulBuildAsync(http);
+        Assert.Equal(sha, build.CommitSha);
+        Assert.True(build.RequiresLiteRuntime);
+        Assert.Equal(10240, build.ArtifactSize);
+        Assert.Equal("https://api.github.com/repos/vorlocsev/dvinholm/releases/assets/500",
+            build.DownloadUrl);
+    }
+
+    [Fact]
+    public async Task HistoricalCiPortableStillResolvesWithoutLiteDependencyGate()
+    {
+        using var http = new HttpClient(new QueueHttpMessageHandler(request =>
+            request.RequestUri!.AbsolutePath.EndsWith("/runs", StringComparison.Ordinal)
+                ? JsonResponse("""
+                    { "workflow_runs": [
+                      { "event": "push", "head_branch": "main",
+                        "status": "completed", "conclusion": "success",
+                        "head_sha": "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa",
+                        "id": 119, "run_number": 119, "created_at": "2026-10-15T11:00:00Z" }
+                    ] }
+                    """)
+                : JsonResponse("""
+                    { "assets": [
+                      { "id": 498, "name": "Dvinholm-Windows-x86.zip",
+                        "size": 65536,
+                        "browser_download_url": "https://github.com/vorlocsev/dvinholm/releases/download/ci-119/Dvinholm-Windows-x86.zip",
+                        "digest": "sha256:aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa" }
+                    ] }
+                    """)
+        ));
+        var build = await LatestBuildUpdater.GetLatestSuccessfulBuildAsync(http);
+        Assert.False(build.RequiresLiteRuntime);
+        Assert.Equal(119, build.RunNumber);
+    }
+
     private static HttpResponseMessage JsonResponse(string json) => new(HttpStatusCode.OK)
     {
         Content = new StringContent(json, Encoding.UTF8, "application/json")

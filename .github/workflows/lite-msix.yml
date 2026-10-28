@@ -1,20 +1,7 @@
 name: Experimental Tiny Lite MSIX
 
+# Archived/manual-only validation, not part of active Lite CI.
 on:
-  push:
-    branches: ["**"]
-    paths:
-      - "src/Dvinholm.App/**"
-      - "eng/New-MsixVisualAssets.ps1"
-      - "eng/Test-LiteMsix.ps1"
-      - "eng/Test-LiteMsixOfflinePrerequisites.ps1"
-      - "eng/Test-LiteMsixSimulatedHost.ps1"
-      - "eng/Test-LiteMsixSigningCertificate.ps1"
-      - "eng/Test-LiteMsixSdkUnpack.ps1"
-      - "eng/Test-LiteMsixSha256.ps1"
-      - "eng/Test-LiteMsixDownloadedArtifact.ps1"
-      - ".github/workflows/lite-msix.yml"
-  pull_request:
   workflow_dispatch:
 
 permissions:

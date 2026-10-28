@@ -6,7 +6,8 @@
 [CmdletBinding()]
 param(
     [Parameter(Mandatory)][string]$Directory,
-    [switch]$Generate
+    [switch]$Generate,
+    [switch]$LiteOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -29,7 +30,7 @@ $root = (Resolve-Path -LiteralPath $Directory -ErrorAction Stop).Path
 if (-not (Test-Path -LiteralPath $root -PathType Container)) {
     throw "Distribution directory does not exist: $root"
 }
-$names = @('Dvinholm-Windows-x86.zip', 'Dvinholm-Windows-x86-Lite.zip')
+$names = if ($LiteOnly) { @('Dvinholm-Windows-x86-Lite.zip') } else { @('Dvinholm-Windows-x86.zip', 'Dvinholm-Windows-x86-Lite.zip') }
 $manifest = Join-Path $root 'SHA256SUMS.txt'
 
 if ($Generate) {

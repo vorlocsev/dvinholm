@@ -8,7 +8,8 @@ param(
     [Parameter(Mandatory)][string]$ReleaseMetadataFile,
     [Parameter(Mandatory)][string]$Directory,
     [Parameter(Mandatory)][string]$ExpectedTag,
-    [Parameter(Mandatory)][string]$ExpectedCommit
+    [Parameter(Mandatory)][string]$ExpectedCommit,
+    [switch]$LiteOnly
 )
 
 $ErrorActionPreference = 'Stop'
@@ -45,11 +46,11 @@ if ($release.prerelease -ne $true -or $release.draft -ne $false) {
     throw 'Published CI release must be a visible prerelease.'
 }
 
-$names = @('Dvinholm-Windows-x86.zip',
-           'Dvinholm-Windows-x86-Lite.zip', 'SHA256SUMS.txt')
+$names = if ($LiteOnly) { @('Dvinholm-Windows-x86-Lite.zip', 'SHA256SUMS.txt') } else { @('Dvinholm-Windows-x86.zip', 'Dvinholm-Windows-x86-Lite.zip', 'SHA256SUMS.txt') }
+$assetCountWord = if ($LiteOnly) { 'two' } else { 'three' }
 $assets = @($release.assets | Where-Object { $null -ne $_ })
 if ($assets.Count -ne $names.Count) {
-    throw "Published CI release must contain exactly three assets (found $($assets.Count))."
+    throw "Published CI release must contain exactly $assetCountWord assets (found $($assets.Count))."
 }
 $seen = [System.Collections.Generic.HashSet[string]]::new(
     [StringComparer]::OrdinalIgnoreCase)
@@ -91,6 +92,6 @@ if ($seen.Count -ne $names.Count) {
 
 # Check the uploaded manifest against downloaded bytes, without
 # regenerating it. The same verifier checks pre-upload files in CI.
-& (Join-Path $PSScriptRoot 'Test-WindowsDistributionChecksums.ps1') -Directory $root
+& (Join-Path $PSScriptRoot 'Test-WindowsDistributionChecksums.ps1') -Directory $root -LiteOnly:$LiteOnly
 if (-not $?) { throw 'Published CI checksum verification failed.' }
 Write-Host "Verified three uploaded CI release assets and GitHub SHA-256 digests for $ExpectedTag at $ExpectedCommit."

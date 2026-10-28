@@ -24,26 +24,30 @@
 </p>
 
 > [!IMPORTANT]
+> **Development CI uses Lite x86 only** starting with the Lite-only pipeline. Historic Stable v0.2.3 remains Portable. Details: [CI Lite-only policy](docs/CI-LITE-ONLY.md).
+>
 > **Hardware validation is pending.** Windows UI and software tests have been exercised without a physical adapter; compatibility with Volvo DiCE, Mongoose, individual drivers, ECUs, or vehicles has not yet been demonstrated. Dvinholm is an independent project and is **not affiliated with or endorsed by Volvo Cars** or any adapter manufacturer.
 
 ## Quick start
 
 **Version channels:** the published, supported Stable remains **v0.2.3**. New `main` Development CI ZIPs identify as **0.2.4** (unreleased, experimental); a green CI does not publish Stable 0.2.4. Development explicitly retains offline demo/test functions while Stable v0.2.3 excludes them.
 
-1. [Download **Dvinholm v0.2.3** for Windows x86](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.3/Dvinholm-Windows-x86.zip) or choose a successful current `main` build from [GitHub Actions](https://github.com/vorlocsev/dvinholm/actions).
-2. **Extract the entire ZIP** into a writable local directory; it is a portable build, not an installer.
-3. Run `Dvinholm.App.exe`. A separate .NET runtime is normally not needed for this self-contained build.
+1. [Download **Dvinholm v0.2.3** for Windows x86](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.3/Dvinholm-Windows-x86.zip) or choose the **Lite x86** ZIP from a successful [Development CI prerelease](https://github.com/vorlocsev/dvinholm/releases) after installing required runtimes.
+2. **Extract the entire ZIP** into a writable local directory; neither historical Portable nor Lite is an installer.
+3. Run `Dvinholm.App.exe`. Historical Stable v0.2.3 bundles its own runtime; **Lite needs .NET 10 Desktop Runtime x86, Windows App SDK 2.5 and VC++ x86**.
 4. For adapter use, install the **32-bit J2534 driver** supplied by the hardware manufacturer, then select the registered DLL or enter its path in Dvinholm.
 5. Start with **passive CAN monitoring** once a compatible adapter and vehicle are available. UDS commands are read-only.
 
 ### Experimental Lite Development build
 
-The separate [Development prereleases](https://github.com/vorlocsev/dvinholm/releases) include
+New [Development prereleases](https://github.com/vorlocsev/dvinholm/releases) distribute **only**
 `Dvinholm-Windows-x86-Lite.zip` for Windows x86 systems with compatible
 **.NET 10 Desktop Runtime x86**, Windows App SDK 2.5 runtime packages and
 Visual C++ x86 runtime already installed. Lite is not the Stable build,
-does **not** support the in-app updater, and must be extracted into a
-separate folder rather than placed over Portable.
+supports Development in-app updates **after passing the real-host prerequisite
+check**. Historic installed Portable clients may need a one-time manual
+migration to Lite because their old updater looks for the discontinued
+Portable CI asset. Never mix Portable and Lite files in the same folder.
 
 1. Download the Lite ZIP and `SHA256SUMS.txt` from the **same** `ci-N` prerelease.
    GitHub Actions artifacts contain an outer download wrapper, whereas the
@@ -58,8 +62,8 @@ separate folder rather than placed over Portable.
    remain deferred.
 
 The [Windows distributions guide](docs/WINDOWS-DISTRIBUTIONS.md) explains
-dependency checks and SHA-256 verification. Use Portable for the default
-supported distribution.
+dependency checks and SHA-256 verification. Use the historical Stable Portable only when you specifically need the
+published Stable v0.2.3; future Development distribution is Lite only.
 
 The branded icon was introduced in v0.2.1 and remains packaged in v0.2.3. A user confirmed it was visible in Windows on 2026-10-19; individual display locations were not separately specified.
 

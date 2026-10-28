@@ -28,18 +28,7 @@ public sealed class Development024VersionContractTests
     }
 
     [Fact]
-    public void DevelopmentPortableBuildCarries024VersionAndExactCiCommit()
-    {
-        var ci = Read(".github/workflows/ci.yml");
-        var portable = ci.Split("      - name: Publish Portable\n", StringSplitOptions.None)[1]
-            .Split("      - name: Publish Lite\n", StringSplitOptions.None)[0];
-        Assert.Contains("-p:Version=0.2.4", portable);
-        Assert.Contains("-p:InformationalVersion=0.2.4+${{ github.sha }}.ci${{ github.run_number }}", portable);
-        Assert.Contains("-p:DvinholmDevelopmentFeatures=true", portable);
-    }
-
-    [Fact]
-    public void ExperimentalLiteMatchesDevelopmentPortableVersionButNotRuntimeModel()
+    public void DevelopmentUsesOnlyFrameworkDependentLiteAndExactCommit()
     {
         var ci = Read(".github/workflows/ci.yml");
         var lite = ci.Split("      - name: Publish Lite\n", StringSplitOptions.None)[1]
@@ -48,6 +37,26 @@ public sealed class Development024VersionContractTests
         Assert.Contains("-p:InformationalVersion=0.2.4+${{ github.sha }}.ci${{ github.run_number }}", lite);
         Assert.Contains("--self-contained false", lite);
         Assert.Contains("-p:DvinholmDevelopmentFeatures=true", lite);
+        Assert.DoesNotContain("      - name: Publish Portable", ci);
+        Assert.DoesNotContain("Dvinholm-Windows-x86.zip", ci);
+    }
+
+    [Fact]
+    public void OtherDistributionWorkflowsAreManualOnly()
+    {
+        foreach (var path in new[]
+        {
+            ".github/workflows/release-candidate-lite-v0.2.4.yml",
+            ".github/workflows/release-candidate-v0.2.4.yml",
+            ".github/workflows/lite-msix.yml",
+            ".github/workflows/stable-staging-v0.2.4.yml"
+        })
+        {
+            var text = Read(path);
+            Assert.Contains("on:\n  workflow_dispatch:", text);
+            Assert.DoesNotContain("  pull_request:", text);
+            Assert.DoesNotContain("  push:", text);
+        }
     }
 
     [Fact]

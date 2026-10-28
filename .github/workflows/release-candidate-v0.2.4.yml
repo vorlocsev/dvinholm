@@ -1,29 +1,9 @@
 name: Dvinholm 0.2.4 RC (validation only)
 
+# Archived/manual-only validation, not part of active Lite CI.
 on:
-  pull_request:
-  push:
-    branches: ["main"]
-    paths:
-      - ".github/workflows/release-candidate-v0.2.4.yml"
-      - "eng/Test-ReleaseCandidate024.ps1"
-      - "eng/Prepare-RcAcceptance024.ps1"
-      - "eng/Test-Rc024LauncherProvenance.ps1"
-      - "START-ACCEPTANCE-024.cmd"
-      - "eng/Package-WindowsDistribution.ps1"
-      - "eng/Test-WindowsDistribution.ps1"
-      - "eng/Test-WindowsDistributionExtraction.ps1"
-      - "src/Dvinholm.App/**"
-      - ".github/release-notes-v0.2.4.md"
-      - "docs/RELEASE_CANDIDATE_0.2.4.md"
-      - "tests/Dvinholm.Stable.Tests/**"
-      - "tests/Dvinholm.App.Tests/ReleaseCandidate024ContractTests.cs"
-      - "tests/Dvinholm.App.Tests/Rc024AcceptanceIsolationTests.cs"
-      - "tests/Dvinholm.App.Tests/Rc024OneClickLauncherTests.cs"
   workflow_dispatch:
 
-# Validation-only, no tag/release creation, signing, installation, or elevated permissions.
-# Published Stable v0.2.3 tag/release/assets are never modified.
 permissions:
   contents: read
 

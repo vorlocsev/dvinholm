@@ -1,13 +1,13 @@
 # Windows distributions
 
-Dvinholm is a WinUI 3 Windows **x86** application. The main distribution remains a no-install Portable ZIP. The optional **Lite** ZIP is a framework-dependent alternative for machines whose runtimes are already installed.
+Dvinholm is a WinUI 3 Windows **x86** application. New Development CI builds ship **Lite only**. The earlier Portable ZIP is preserved as a historical Stable archive; do not overwrite existing released assets.
 
 | Variant | ZIP | Runtime dependencies | Automatic updater |
 |---|---|---|---|
-| Portable (default) | `Dvinholm-Windows-x86.zip` | Bundles .NET and Windows App SDK runtime | Supported; existing updater selects this exact asset name |
-| Lite (experimental CI) | `Dvinholm-Windows-x86-Lite.zip` | Requires .NET **10 Desktop Runtime x86** and the **Windows App SDK runtime** compatible with the build | **Not supported** until separately validated |
+| Portable (historical Stable v0.2.3) | `Dvinholm-Windows-x86.zip` | Bundles .NET and Windows App SDK runtime | Legacy published Stable support only |
+| Lite (only active Development CI distribution) | `Dvinholm-Windows-x86-Lite.zip` | Requires .NET **10 Desktop Runtime x86**, Windows App SDK **2.5** and VC++ x86 | Development updater supports Lite with a mandatory pre-replacement dependency check |
 
-Lite is **not** an independent stable release just because CI publishes a prerelease artifact. Install prerequisites before launching Lite on Windows. It uses the same application and J2534 backend, but its Windows App SDK bootstrap/runtime dependencies still need a real Windows launch smoke test. Never mix Portable and Lite DLLs in the same installation folder.
+Lite is **not** an independent stable release just because CI publishes a prerelease artifact. Older installed clients may require one manual Lite migration because their Portable updater cannot see Lite-only CI assets. Install prerequisites before launching Lite on Windows. It uses the same application and J2534 backend, but its Windows App SDK bootstrap/runtime dependencies still need a real Windows launch smoke test. Never mix Portable and Lite DLLs in the same installation folder.
 
 ## Release/Stable build profile
 

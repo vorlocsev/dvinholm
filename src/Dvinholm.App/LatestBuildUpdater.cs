@@ -15,7 +15,8 @@ internal sealed record LatestBuildInfo(
     long ArtifactSize,
     string? ArtifactDigest,
     string CreatedAt,
-    string? ReleaseTag = null)
+    string? ReleaseTag = null,
+    bool RequiresLiteRuntime = false)
 {
     public string ShortSha => CommitSha.Length >= 7 ? CommitSha[..7] : CommitSha;
     public string DisplayVersion => ReleaseTag is null
@@ -28,6 +29,7 @@ internal static class LatestBuildUpdater
     private const string Repository = "vorlocsev/dvinholm";
     private const long WorkflowId = 378992585;
     private const string ArtifactName = "Dvinholm-Windows-x86";
+    private const string LiteArtifactName = "Dvinholm-Windows-x86-Lite";
     private const long MaximumDownloadBytes = 500L * 1024 * 1024;
     private const long MaximumExpandedBytes = 1_000L * 1024 * 1024;
     // Aggregate bytes alone do not bound an archive containing thousands
@@ -212,9 +214,12 @@ internal static class LatestBuildUpdater
                 if (!releaseJson.RootElement.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array)
                     continue;
 
-                foreach (var asset in assets.EnumerateArray())
+                foreach (var asset in assets.EnumerateArray()
+                    .OrderByDescending(item => ReadString(item, "name") == $"{LiteArtifactName}.zip"))
                 {
-                    if (ReadString(asset, "name") != $"{ArtifactName}.zip")
+                    var assetName = ReadString(asset, "name");
+                    var isLite = assetName == $"{LiteArtifactName}.zip";
+                    if (!isLite && assetName != $"{ArtifactName}.zip")
                         continue;
 
                     var size = ReadInt64(asset, "size");
@@ -226,7 +231,7 @@ internal static class LatestBuildUpdater
                         !string.IsNullOrEmpty(uri.Fragment) ||
                         !string.Equals(
                             uri.AbsolutePath,
-                            $"/{Repository}/releases/download/ci-{runNumber}/{ArtifactName}.zip",
+                            $"/{Repository}/releases/download/ci-{runNumber}/{assetName}",
                             StringComparison.OrdinalIgnoreCase))
                         continue;
 
@@ -270,7 +275,7 @@ internal static class LatestBuildUpdater
                         downloadUrl,
                         size,
                         validatedDigest,
-                        createdAt);
+                        createdAt, RequiresLiteRuntime: isLite);
                 }
             }
 
@@ -315,9 +320,12 @@ internal static class LatestBuildUpdater
         if (!root.TryGetProperty("assets", out var assets) || assets.ValueKind != JsonValueKind.Array)
             throw new InvalidDataException("The stable release contains no asset list.");
 
-        foreach (var asset in assets.EnumerateArray())
+        foreach (var asset in assets.EnumerateArray()
+            .OrderByDescending(item => ReadString(item, "name") == $"{LiteArtifactName}.zip"))
         {
-            if (ReadString(asset, "name") != $"{ArtifactName}.zip")
+            var assetName = ReadString(asset, "name");
+            var isLite = assetName == $"{LiteArtifactName}.zip";
+            if (!isLite && assetName != $"{ArtifactName}.zip")
                 continue;
 
             var size = ReadInt64(asset, "size");
@@ -329,7 +337,7 @@ internal static class LatestBuildUpdater
                 !uri.IsDefaultPort || !string.IsNullOrEmpty(uri.UserInfo) ||
                 !string.IsNullOrEmpty(uri.Query) || !string.IsNullOrEmpty(uri.Fragment) ||
                 !string.Equals(uri.AbsolutePath,
-                    $"/{Repository}/releases/download/{tag}/{ArtifactName}.zip",
+                    $"/{Repository}/releases/download/{tag}/{assetName}",
                     StringComparison.OrdinalIgnoreCase))
                 throw new InvalidDataException("The stable release archive has invalid size or download URL metadata.");
 
@@ -348,10 +356,10 @@ internal static class LatestBuildUpdater
                 sha, 0, 0,
                 $"https://api.github.com/repos/{Repository}/releases/assets/{assetId}",
                 size, digest.ToLowerInvariant(),
-                ReadString(root, "published_at"), tag);
+                ReadString(root, "published_at"), tag, RequiresLiteRuntime: isLite);
         }
 
-        throw new InvalidOperationException("The latest stable release has no Windows x86 portable ZIP.");
+        throw new InvalidOperationException("The latest stable release has no supported Windows x86 ZIP.");
     }
 
     private static async Task<string> ResolvePublishedTagCommitAsync(
@@ -504,6 +512,56 @@ internal static class LatestBuildUpdater
                     File.Delete(archivePath);
             });
         }
+    }
+
+    /// <summary>
+    /// Verify Lite dependencies against the actual installed Windows host
+    /// before replacing the current application. The bundled checker is
+    /// read-only and must report success; no hidden install is attempted.
+    /// </summary>
+    internal static async Task ValidateStagedLitePrerequisitesAsync(
+        string stagingDirectory, CancellationToken cancellationToken = default)
+    {
+        var script = Path.Combine(stagingDirectory, "Check-Lite-Prerequisites.ps1");
+        if (!File.Exists(script))
+            throw new InvalidDataException("Lite update is missing its prerequisite checker.");
+
+        var ps = Path.Combine(Environment.SystemDirectory,
+            "WindowsPowerShell", "v1.0", "powershell.exe");
+        var startInfo = new ProcessStartInfo
+        {
+            FileName = ps,
+            UseShellExecute = false,
+            CreateNoWindow = true,
+            RedirectStandardOutput = true,
+            RedirectStandardError = true
+        };
+        foreach (var arg in new[] { "-NoProfile", "-NonInteractive",
+            "-ExecutionPolicy", "Bypass", "-File", script,
+            "-LiteDirectory", stagingDirectory, "-WindowsAppSdkLine", "2.5" })
+            startInfo.ArgumentList.Add(arg);
+        using var process = Process.Start(startInfo)
+            ?? throw new InvalidOperationException("Unable to run the Lite dependency check.");
+        using var timeout = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken);
+        timeout.CancelAfter(TimeSpan.FromSeconds(30));
+        try
+        {
+            var stdout = process.StandardOutput.ReadToEndAsync(timeout.Token);
+            var stderr = process.StandardError.ReadToEndAsync(timeout.Token);
+            await process.WaitForExitAsync(timeout.Token);
+            await Task.WhenAll(stdout, stderr);
+        }
+        catch (OperationCanceledException)
+        {
+            if (!process.HasExited)
+                process.Kill(entireProcessTree: true);
+            throw;
+        }
+        if (process.ExitCode != 0)
+            throw new InvalidOperationException(
+                "Lite update blocked: install .NET 10 Desktop Runtime x86, " +
+                "Windows App SDK 2.5 and VC++ Redistributable x86, then retry. " +
+                "Installed application files were not replaced.");
     }
 
     // Verify the extracted application entry before declaring an update ready.
