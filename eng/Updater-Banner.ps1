@@ -544,6 +544,70 @@ function SelfTest {
   $rollbackChecks++
   if($rollbackChecks -ne 8){throw 'Wrong rollback test count.'}
   Write-Host 'Updater Banner 8/8 synthetic offline rollback checks passed.'
+  $repairChecks=0
+  $staged=Join-Path $script:channelRoot 'rollback-0123456789abcdef0123456789abcdef'
+  Reset-SyntheticLite
+  Move-Item -LiteralPath $script:current -Destination $staged
+  Reject {Rollback}
+  Reject {Install}
+  Repair-InterruptedRollback
+  if((Read-ManagedVersion $script:current) -cne 'ci-200' -or
+     (Read-ManagedVersion (Join-Path $script:channelRoot 'previous')) -cne 'ci-199' -or
+     (Test-Path -LiteralPath $staged)){throw 'Phase-one recovery failed.'}
+  $repairChecks++
+  Reset-SyntheticLite
+  Move-Item -LiteralPath $script:current -Destination $staged
+  Move-Item -LiteralPath (Join-Path $script:channelRoot 'previous') -Destination $script:current
+  Repair-InterruptedRollback
+  if((Read-ManagedVersion $script:current) -cne 'ci-200' -or
+     (Read-ManagedVersion (Join-Path $script:channelRoot 'previous')) -cne 'ci-199' -or
+     (Test-Path -LiteralPath $staged)){throw 'Phase-two recovery failed.'}
+  $repairChecks++
+  Reset-SyntheticLite
+  Reject {Repair-InterruptedRollback}
+  if((Read-ManagedVersion $script:current) -cne 'ci-200'){throw 'No-marker repair changed current.'}
+  $repairChecks++
+  Reset-SyntheticLite
+  Move-Item -LiteralPath $script:current -Destination $staged
+  $extra=Join-Path $script:channelRoot 'rollback-fedcba9876543210fedcba9876543210'
+  New-SyntheticLite $extra 'ci-201' 'Development'
+  Reject {Repair-InterruptedRollback}
+  if(-not(Test-Path -LiteralPath $staged) -or -not(Test-Path -LiteralPath $extra)){
+   throw 'Multiple-marker repair changed staged folders.'
+  }
+  $repairChecks++
+  Reset-SyntheticLite
+  New-SyntheticLite $staged 'ci-201' 'Development'
+  Reject {Repair-InterruptedRollback}
+  if((Read-ManagedVersion $script:current) -cne 'ci-200' -or
+     (Read-ManagedVersion (Join-Path $script:channelRoot 'previous')) -cne 'ci-199'){
+   throw 'Ambiguous complete-state repair changed versions.'
+  }
+  $repairChecks++
+  Reset-SyntheticLite
+  Move-Item -LiteralPath $script:current -Destination $staged
+  Remove-Item -LiteralPath (Join-Path $script:channelRoot 'previous') -Recurse -Force
+  Reject {Repair-InterruptedRollback}
+  if(-not(Test-Path -LiteralPath $staged)){throw 'Empty-state repair lost staging.'}
+  $repairChecks++
+  Reset-SyntheticLite
+  Move-Item -LiteralPath $script:current -Destination $staged
+  [IO.File]::WriteAllText((Join-Path $staged 'updater-banner.json'),
+    (@{Channel='Stable';Tag='v0.2.4'}|ConvertTo-Json))
+  Reject {Repair-InterruptedRollback}
+  if(-not(Test-Path -LiteralPath $staged) -or
+     (Read-ManagedVersion (Join-Path $script:channelRoot 'previous')) -cne 'ci-199'){
+   throw 'Cross-channel repair mutated managed folders.'
+  }
+  $repairChecks++
+  Reset-SyntheticLite
+  $bad=Join-Path $script:channelRoot 'rollback-untrusted'
+  Move-Item -LiteralPath $script:current -Destination $bad
+  Reject {Repair-InterruptedRollback}
+  if(-not(Test-Path -LiteralPath $bad)){throw 'Invalid staging name was changed.'}
+  $repairChecks++
+  if($repairChecks -ne 8){throw 'Wrong interrupted rollback repair test count.'}
+  Write-Host 'Updater Banner 8/8 interrupted rollback repair checks passed.'
  }finally{
   $script:StateFile=$originalStateFile
   $script:base=$originalBase
