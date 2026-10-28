@@ -120,7 +120,7 @@ function Get-OfficialInstaller {
     }) | Select-Object -First 1
     if ($null -eq $item) { throw 'Microsoft .NET release was not found in its official index.' }
     $files = @($item.windowsdesktop.files | Where-Object {
-        $_.rid -eq 'win-x86' -and $_.name -match '^windowsdesktop-runtime-10\..+-win-x86\.exe$'
+        $_.rid -eq 'win-x86' -and $_.name -eq 'windowsdesktop-runtime-win-x86.exe'
     })
     if ($files.Count -ne 1) { throw 'Cannot select a unique Microsoft .NET Desktop x86 installer.' }
     $file = $files[0]
@@ -245,7 +245,7 @@ foreach ($entry in $rows) {
             [Windows.Forms.MessageBox]::Show('Could not launch the installer session.',
                 'Installation error') | Out-Null
         }
-    }.GetNewClosure())
+    })
 }
 $status = New-Object Windows.Forms.Label
 $status.SetBounds(15,212,615,53)

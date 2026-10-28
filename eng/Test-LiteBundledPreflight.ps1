@@ -19,7 +19,9 @@ $zip = [IO.Compression.ZipFile]::OpenRead(
 try {
     $bundled = @(
         @{ Name = 'Check-Lite-Prerequisites.cmd'; Repo = 'Check-Lite-Prerequisites.cmd' },
-        @{ Name = 'Check-Lite-Prerequisites.ps1'; Repo = 'Test-LitePrerequisites.ps1' }
+        @{ Name = 'Check-Lite-Prerequisites.ps1'; Repo = 'Test-LitePrerequisites.ps1' },
+        @{ Name = 'Manage-Lite-Dependencies.ps1'; Repo = 'Manage-Lite-Dependencies.ps1' },
+        @{ Name = 'Start-Dvinholm-Lite.cmd'; Repo = 'Start-Dvinholm-Lite.cmd' }
     )
     foreach ($tool in $bundled) {
         $entry = $zip.GetEntry($tool.Name)
