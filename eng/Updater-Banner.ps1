@@ -6,7 +6,7 @@ No software installs or updates until the user explicitly confirms.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('UI','Check','Install','Rollback','Repair','RepairInstall','Probe','SelfTest')][string]$Mode='UI',
+ [ValidateSet('UI','UiSmokeTest','Check','Install','Rollback','Repair','RepairInstall','Probe','SelfTest')][string]$Mode='UI',
  [ValidateSet('Stable','Development')][string]$Channel='Development',
  [string]$StateFile
 )
@@ -941,7 +941,7 @@ function SelfTest {
  }
 }
 if($Mode -eq 'SelfTest'){SelfTest;exit 0}
-if($Mode -ne 'UI'){
+if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
  try{
   $script:state.Current=Installed
   $script:state.Recovery=Get-ChannelRecoveryState
@@ -1169,6 +1169,66 @@ $timer.Add_Tick({
 })
 $timer.Start()
 Update-ActionAvailability
+if($Mode -eq 'UiSmokeTest'){
+ # Instantiate the real Windows PowerShell 5.1 WinForms GUI, but do not
+ # display a modal dialog, contact GitHub, launch installers or start Dvinholm.
+ $checks=0
+ try{
+  if($null -eq $form -or
+     $form -isnot [Windows.Forms.Form] -or
+     $choice.Items.Count -ne 2 -or
+     $choice.Items[0] -cne 'Development' -or
+     $choice.Items[1] -cne 'Stable' -or
+     -not $form.Controls.Contains($recovery)){
+   throw 'Standalone WinForms controls were not constructed.'
+  }
+  $checks++
+  # Default: nothing runs until the first local inventory has been checked.
+  if($script:recoveryStatus -cne 'Not checked' -or
+     $install.Enabled -or $check.Enabled -or $launch.Enabled -or
+     $rollback.Enabled -or $repair.Enabled -or $repairInstall.Enabled -or
+     -not $refresh.Enabled){throw 'Startup actions were not locked.'}
+  $checks++
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if(-not $install.Enabled -or -not $check.Enabled -or
+     -not $launch.Enabled -or -not $rollback.Enabled -or
+     $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Ready-state button policy failed.'
+  }
+  $checks++
+  $script:recoveryStatus='Repair install';Update-ActionAvailability
+  if(-not $repairInstall.Enabled -or $repair.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled){throw 'Install recovery was not isolated.'}
+  $checks++
+  $script:recoveryStatus='Repair rollback';Update-ActionAvailability
+  if(-not $repair.Enabled -or $repairInstall.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled){throw 'Rollback recovery was not isolated.'}
+  $checks++
+  $script:recoveryStatus='Inspect';Update-ActionAvailability
+  if($repair.Enabled -or $repairInstall.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled -or -not $refresh.Enabled){
+   throw 'Ambiguous recovery state was not fail-closed.'
+  }
+  $checks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if($choice.Enabled -or $refresh.Enabled -or $install.Enabled -or
+     $rollback.Enabled -or $check.Enabled -or $launch.Enabled -or
+     $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Busy-state buttons were not locked.'
+  }
+  $checks++
+  if($checks -ne 7){throw 'Wrong Windows WinForms smoke check count.'}
+  Write-Host 'Updater Banner 7/7 Windows PowerShell 5.1 WinForms smoke checks passed.'
+ }finally{
+  $script:child=$null
+  $timer.Stop();$timer.Dispose();$form.Dispose()
+ }
+ exit 0
+}
 $startupChannel=$Channel
 if(-not $PSBoundParameters.ContainsKey('Channel')){
  $savedChannel=Read-ChannelPreference
