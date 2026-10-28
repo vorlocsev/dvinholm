@@ -16,6 +16,16 @@ separately confirmed **Download / Install** button and three independent
 Microsoft installer/update buttons. Downloads are only started after
 the user clicks and confirms; Windows UAC and vendor setup UI remain visible.
 
+The banner remembers your last selected channel in the per-user
+`%LOCALAPPDATA%\Dvinholm\UpdaterBanner\channel-preference.txt` file.
+Only the literal values `Stable` and `Development` are accepted; an
+invalid or inaccessible preference falls back to Development. An explicit
+`-Channel` parameter overrides the saved choice when starting the script.
+**Recheck deps** runs only the local dependency inventory, even when the
+computer is offline; it does not query GitHub. Use **Check updates** to
+refresh the available build. The local recheck clears the previously shown
+available-version label until the next explicit or channel-switch check.
+
 - **Stable** resolves the latest public GitHub vX.Y.Z release.
 - **Development** resolves the newest public ci-N prerelease with a
   SHA-pinned main branch target and a Lite archive.
