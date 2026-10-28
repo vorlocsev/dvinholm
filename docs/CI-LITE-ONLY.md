@@ -1,6 +1,6 @@
 # Lite-only Development CI policy
 
-Starting after PR #569, active Development CI uses one Windows x86 workflow
+Starting after PR #570, active Development CI uses one Windows x86 workflow
 (README and frozen Stable release archives retain their historical provenance).
 
 - One solution build, one full App.Tests regression run and one Stable-profile
