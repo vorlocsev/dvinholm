@@ -2201,8 +2201,8 @@ function Poll-WorkerState {
      $null -ne $snapshot -and [string]$snapshot.LauncherDetail){
    $reportText=[string]$snapshot.LauncherDetail
   }
-  if($complete -and $null -ne $snapshot -and
-     $snapshot.PSObject.Properties['DependencyReport']){
+  if($finishedAction -ceq 'Versions' -and $complete -and
+     $null -ne $snapshot -and $snapshot.PSObject.Properties['DependencyReport']){
    $reportText=[string]$snapshot.DependencyReport
   }
   # Close only when launch worker completed successfully AND the dependency
