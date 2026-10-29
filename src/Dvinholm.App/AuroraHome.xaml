@@ -1,0 +1,264 @@
+<UserControl
+    x:Class="Dvinholm.App.AuroraHome"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml">
+    <Grid Background="#071827">
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="216"/>
+            <ColumnDefinition Width="*"/>
+        </Grid.ColumnDefinitions>
+        <Border Background="#0A2038" BorderBrush="#244B73" BorderThickness="0,0,1,0">
+            <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <StackPanel Padding="16,24" Spacing="9">
+                    <StackPanel Spacing="3" Margin="6,0,0,25">
+                        <TextBlock Text="DVINHOLM" FontSize="25" FontWeight="Bold" Foreground="#E8F5FF"/>
+                        <TextBlock Text="DIAGNOSTICS · CONTROL" FontSize="10" Foreground="#8AB9D9"/>
+                    </StackPanel>
+                    <Button Content="⌂  Главная" Background="#0865C7" Foreground="White"
+                            Padding="14,12" HorizontalAlignment="Stretch"
+                            HorizontalContentAlignment="Left" CornerRadius="8"/>
+                    <Button Content="🔒  CEM PIN" Click="CardPin_Click"
+                            Background="Transparent" Foreground="#DAEAFA" Padding="14,12"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"/>
+                    <Button Content="⚙  Конфигурация CEM" Click="CardConfig_Click"
+                            Background="Transparent" Foreground="#DAEAFA" Padding="14,12"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"/>
+                    <Button Content="▣  Блоки ECU" Click="CardEcu_Click"
+                            Background="Transparent" Foreground="#DAEAFA" Padding="14,12"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"/>
+                    <Button Content="⌁  Диагностика" Click="CardDiagnostics_Click"
+                            Background="Transparent" Foreground="#DAEAFA" Padding="14,12"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"/>
+                    <Button Content="≋  CAN монитор" Click="Monitor_Click"
+                            Background="Transparent" Foreground="#DAEAFA" Padding="14,12"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"/>
+                    <Button Content="☷  Профили ECU" Click="Profiles_Click"
+                            Background="Transparent" Foreground="#DAEAFA" Padding="14,12"
+                            HorizontalAlignment="Stretch" HorizontalContentAlignment="Left"/>
+                    <Border Margin="0,23,0,0" Padding="3,15,0,0" BorderThickness="0,1,0,0"
+                            BorderBrush="#254564">
+                        <StackPanel Spacing="5">
+                            <TextBlock Text="WINUI 3  ·  WINDOWS X86" FontSize="10" Foreground="#94BBD8"/>
+                            <TextBlock Text="Обновления: Launcher.exe" FontSize="11"
+                                       Foreground="#A6CCE8"/>
+                        </StackPanel>
+                    </Border>
+                </StackPanel>
+            </ScrollViewer>
+        </Border>
+        <ScrollViewer Grid.Column="1" x:Name="DashboardScroll"
+                      VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Auto">
+            <StackPanel Padding="17" MinWidth="1000" Spacing="14">
+                <Border Height="178" CornerRadius="12" BorderBrush="#246A9D" BorderThickness="1">
+                    <Grid>
+                        <Grid.Background>
+                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                <GradientStop Color="#18456D" Offset="0"/>
+                                <GradientStop Color="#081D37" Offset="0.65"/>
+                                <GradientStop Color="#075277" Offset="1"/>
+                            </LinearGradientBrush>
+                        </Grid.Background>
+                        <Image Source="ms-appx:///Assets/Dvinholm-Banner.webp"
+                               Stretch="UniformToFill" Opacity="0.67"/>
+                        <Border Background="#6505152D"/>
+                        <StackPanel VerticalAlignment="Center" Margin="27,0,0,0" Spacing="7">
+                            <TextBlock Text="DVINHOLM" FontSize="45" FontWeight="Bold"
+                                       CharacterSpacing="185" Foreground="White"/>
+                            <TextBlock Text="DIAGNOSTICS  ·  CONFIGURATION  ·  CONTROL"
+                                       FontSize="12" CharacterSpacing="70" Foreground="#CCE6FF"/>
+                            <TextBlock Text="CEM PIN  /  CEM CONFIG  /  ECU  /  DIAGNOSTICS"
+                                       FontSize="11" Foreground="#88CBFB" Margin="0,10,0,0"/>
+                        </StackPanel>
+                    </Grid>
+                </Border>
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                        <ColumnDefinition Width="*"/><ColumnDefinition Width="*"/>
+                    </Grid.ColumnDefinitions>
+                    <Button x:Name="CemPinCard" Grid.Column="0" Padding="0" Background="#10294A"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                            BorderBrush="#1488EF" BorderThickness="2" CornerRadius="10"
+                            Click="CardPin_Click"
+                            ToolTipService.ToolTip="Только офлайн-проверка готовности P2 CEM. Реальный поиск PIN пока недоступен.">
+                        <Grid Height="253">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="107"/><RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border CornerRadius="8,8,0,0">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#096FDE" Offset="0"/>
+                                        <GradientStop Color="#10254E" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <Grid>
+                                    <FontIcon Glyph="&#xE72E;" FontFamily="Segoe MDL2 Assets"
+                                              FontSize="58" Foreground="#D1EDFF"/>
+                                    <TextBlock Text="01" HorizontalAlignment="Right"
+                                               VerticalAlignment="Top" Margin="0,10,12,0"
+                                               Foreground="#AAD6FF"/>
+                                </Grid>
+                            </Border>
+                            <StackPanel Grid.Row="1" Padding="12,9" Spacing="5">
+                                <TextBlock Text="CEM PIN" FontSize="22" FontWeight="Bold"
+                                           Foreground="White"/>
+                                <TextBlock Text="Подготовка к поиску PIN" FontSize="12"
+                                           Foreground="#D5E7FA" TextWrapping="Wrap"/>
+                                <TextBlock Text="Офлайн-обзор · поиск недоступен"
+                                           FontSize="11" Foreground="#9BC5F2" TextWrapping="Wrap"/>
+                                <TextBlock Text="Открыть обзор  ›" Margin="0,5,0,0"
+                                           Foreground="#89CFFF"/>
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+                    <Button x:Name="CemConfigCard" Grid.Column="1" Padding="0" Background="#10263F"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                            BorderBrush="#32618A" BorderThickness="1" CornerRadius="10"
+                            Click="CardConfig_Click"
+                            ToolTipService.ToolTip="Каталог P2 офлайн, без записи конфигурации автомобиля.">
+                        <Grid Height="253">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="107"/><RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border CornerRadius="8,8,0,0">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#1C5B86" Offset="0"/>
+                                        <GradientStop Color="#101D36" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <FontIcon Glyph="&#xE713;" FontFamily="Segoe MDL2 Assets"
+                                          FontSize="58" Foreground="#C7E7FC"/>
+                            </Border>
+                            <StackPanel Grid.Row="1" Padding="12,9" Spacing="5">
+                                <TextBlock Text="Конфигурация CEM" FontSize="17" FontWeight="Bold"
+                                           Foreground="White" TextWrapping="Wrap"/>
+                                <TextBlock Text="Просмотр вариантов и функций"
+                                           FontSize="12" Foreground="#D5E7FA" TextWrapping="Wrap"/>
+                                <TextBlock Text="Офлайн · запись недоступна"
+                                           FontSize="11" Foreground="#9BC5F2" TextWrapping="Wrap"/>
+                                <TextBlock Text="Открыть каталог  ›" Margin="0,5,0,0"
+                                           Foreground="#89CFFF"/>
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+                    <Button x:Name="EcuCard" Grid.Column="2" Padding="0" Background="#10263F"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                            BorderBrush="#32618A" BorderThickness="1" CornerRadius="10"
+                            Click="CardEcu_Click">
+                        <Grid Height="253">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="107"/><RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border CornerRadius="8,8,0,0">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#136D78" Offset="0"/>
+                                        <GradientStop Color="#0D243A" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <FontIcon Glyph="&#xE950;" FontFamily="Segoe MDL2 Assets"
+                                          FontSize="58" Foreground="#C5FCF1"/>
+                            </Border>
+                            <StackPanel Grid.Row="1" Padding="12,9" Spacing="5">
+                                <TextBlock Text="Блоки (ECU)" FontSize="21" FontWeight="Bold"
+                                           Foreground="White"/>
+                                <TextBlock Text="Обнаружение, чтение, профили"
+                                           FontSize="12" Foreground="#D5E7FA" TextWrapping="Wrap"/>
+                                <TextBlock Text="Работа через J2534"
+                                           FontSize="11" Foreground="#9BC5F2"/>
+                                <TextBlock Text="Открыть блоки  ›" Margin="0,5,0,0"
+                                           Foreground="#89CFFF"/>
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+                    <Button x:Name="DiagnosticsCard" Grid.Column="3" Padding="0" Background="#10263F"
+                            HorizontalAlignment="Stretch" VerticalAlignment="Stretch"
+                            BorderBrush="#32618A" BorderThickness="1" CornerRadius="10"
+                            Click="CardDiagnostics_Click">
+                        <Grid Height="253">
+                            <Grid.RowDefinitions>
+                                <RowDefinition Height="107"/><RowDefinition Height="*"/>
+                            </Grid.RowDefinitions>
+                            <Border CornerRadius="8,8,0,0">
+                                <Border.Background>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                        <GradientStop Color="#98612C" Offset="0"/>
+                                        <GradientStop Color="#152843" Offset="1"/>
+                                    </LinearGradientBrush>
+                                </Border.Background>
+                                <FontIcon Glyph="&#xE9D9;" FontFamily="Segoe MDL2 Assets"
+                                          FontSize="58" Foreground="#FFE7C6"/>
+                            </Border>
+                            <StackPanel Grid.Row="1" Padding="12,9" Spacing="5">
+                                <TextBlock Text="Диагностика" FontSize="20" FontWeight="Bold"
+                                           Foreground="White"/>
+                                <TextBlock Text="VIN, DTC, DID, CAN-монитор"
+                                           FontSize="12" Foreground="#D5E7FA" TextWrapping="Wrap"/>
+                                <TextBlock Text="Требуется подключение"
+                                           FontSize="11" Foreground="#F1C99D"/>
+                                <TextBlock Text="Открыть диагностику  ›" Margin="0,5,0,0"
+                                           Foreground="#89CFFF"/>
+                            </StackPanel>
+                        </Grid>
+                    </Button>
+                </Grid>
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="1.1*"/><ColumnDefinition Width="1.25*"/>
+                        <ColumnDefinition Width="1*"/>
+                    </Grid.ColumnDefinitions>
+                    <Border Grid.Column="0" Background="#102A45" BorderBrush="#295171"
+                            BorderThickness="1" CornerRadius="10" Padding="15">
+                        <StackPanel Spacing="8">
+                            <TextBlock Text="ПОДКЛЮЧЕНИЕ" FontWeight="Bold" Foreground="#B9DFFB"/>
+                            <TextBlock x:Name="ConnectionSummary" Text="Не подключено"
+                                       FontSize="17" Foreground="#F5C58F"/>
+                            <TextBlock x:Name="AdapterSummary" Text="Адаптер не выбран"
+                                       Foreground="#D0E3F5" TextWrapping="Wrap"/>
+                            <TextBlock x:Name="BaudSummary" Text="CAN: неизвестно" Foreground="#C0DBF0"/>
+                            <Button Content="Настроить подключение  ›" Click="Connection_Click"
+                                    Background="#16517F" HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="1" Background="#102A45" BorderBrush="#295171"
+                            BorderThickness="1" CornerRadius="10" Padding="15">
+                        <StackPanel Spacing="9">
+                            <TextBlock Text="ВЫБРАННЫЙ ПРОФИЛЬ ECU" FontWeight="Bold"
+                                       Foreground="#B9DFFB"/>
+                            <TextBlock x:Name="ProfileSummary" Text="Профиль не выбран"
+                                       FontSize="17" Foreground="White" TextWrapping="Wrap"/>
+                            <TextBlock Text="Профиль задаёт CAN ID и DID, но не подтверждает идентичность автомобиля."
+                                       FontSize="11" Foreground="#A2BFDB" TextWrapping="Wrap"/>
+                            <Button Content="Открыть профили  ›" Click="Profiles_Click"
+                                    Background="#16517F" HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                    </Border>
+                    <Border Grid.Column="2" Background="#102A45" BorderBrush="#295171"
+                            BorderThickness="1" CornerRadius="10" Padding="15">
+                        <StackPanel Spacing="7">
+                            <TextBlock Text="БЫСТРЫЕ ДЕЙСТВИЯ" FontWeight="Bold" Foreground="#B9DFFB"/>
+                            <Button Content="Перейти к чтению VIN" Click="CardDiagnostics_Click"
+                                    Background="#16517F" HorizontalAlignment="Stretch"/>
+                            <Button Content="Найти блоки ECU" Click="CardEcu_Click"
+                                    Background="#16517F" HorizontalAlignment="Stretch"/>
+                            <Button Content="CAN монитор" Click="Monitor_Click"
+                                    Background="#16517F" HorizontalAlignment="Stretch"/>
+                        </StackPanel>
+                    </Border>
+                </Grid>
+                <Border Background="#0D243B" CornerRadius="9" Padding="14"
+                        BorderBrush="#245173" BorderThickness="1">
+                    <StackPanel Spacing="5">
+                        <TextBlock Text="ПОСЛЕДНЕЕ СОБЫТИЕ" FontSize="11"
+                                   FontWeight="Bold" Foreground="#9BC6E8"/>
+                        <TextBlock x:Name="ActivitySummary"
+                                   Text="Готово. Работа с автомобилем не начата."
+                                   Foreground="#DBEEFF" TextWrapping="Wrap" MaxLines="3"/>
+                    </StackPanel>
+                </Border>
+            </StackPanel>
+        </ScrollViewer>
+    </Grid>
+</UserControl>
