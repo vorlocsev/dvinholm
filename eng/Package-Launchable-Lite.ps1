@@ -29,7 +29,7 @@ try{
  [IO.Directory]::CreateDirectory($tools)|Out-Null
  [IO.Compression.ZipFile]::ExtractToDirectory($lite,$binary)
  [IO.Compression.ZipFile]::ExtractToDirectory($updater,$tools)
- foreach($name in @('Updater-Banner.ps1','Manage-Lite-Dependencies.ps1','Launcher-AuroraTheme.ps1','J2534-DriverManager.ps1','J2534-DriverUI.ps1','Dvinholm-icon.png')){
+ foreach($name in @('Updater-Banner.ps1','Manage-Lite-Dependencies.ps1','Launcher-AuroraTheme.ps1','J2534-DriverManager.ps1','J2534-DriverUI.ps1','Dvinholm-icon.png','dvinholm-banner.webp')){
   $source=Join-Path (Join-Path $tools 'Binaries') $name
   if(-not(Test-Path -LiteralPath $source -PathType Leaf)){
    throw "Standalone tools package missing $name"
@@ -48,7 +48,7 @@ try{
  foreach($name in @('Dvinholm.App.exe','Dvinholm.App.runtimeconfig.json',
    'Start-Dvinholm-Lite.cmd','Check-Lite-Prerequisites.ps1',
    'Manage-Lite-Dependencies.ps1','Updater-Banner.ps1',
-   'Launcher-AuroraTheme.ps1','Dvinholm-icon.png')){
+   'Launcher-AuroraTheme.ps1','Dvinholm-icon.png','dvinholm-banner.webp')){
   if(-not(Test-Path -LiteralPath (Join-Path $binary $name) -PathType Leaf)){
    throw "Combined Lite bundle is missing Binaries/$name"
   }
