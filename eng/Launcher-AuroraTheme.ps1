@@ -139,6 +139,8 @@ function AuroraCard([int]$x,[int]$y,[int]$w,[int]$h){
  $p=New-Object Windows.Forms.Panel
  $p.SetBounds($x,$y,$w,$h)
  $p.BackColor=[Drawing.Color]::FromArgb(14,34,57)
+ # The old advanced-recovery card is not part of the new compact dashboard.
+ $p.Visible=($y -ne 713)
  $p.BorderStyle=[Windows.Forms.BorderStyle]::FixedSingle
  $form.Controls.Add($p);$p.SendToBack()
 }
