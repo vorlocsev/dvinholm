@@ -69,6 +69,12 @@ available-version label until the next explicit or channel-switch check.
 - Microsoft-only runtime setup is delegated to the existing dependency
   manager. It checks a Microsoft signature on installers, checks .NET
   SHA-512 release metadata, and leaves installers/UAC visible.
+  Windows CI separately checks eight synthetic .NET 10 Desktop x86 installer
+  metadata scenarios through `Manage-Lite-Dependencies.ps1 -Mode SelfTest`:
+  valid selection, missing/preview versions, duplicate matching releases,
+  wrong architecture, duplicate files, untrusted URLs and invalid SHA-512.
+  This test runs without internet access or executing any installer; it does
+  not replace a real dependency-installation test on Windows.
 - No scheduled or unattended install; no elevated or silent commands.
 
 Managed installation folders are distinct:
