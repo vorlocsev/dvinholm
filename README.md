@@ -28,30 +28,32 @@
 >
 > **Hardware validation is pending.** Windows UI and software tests have been exercised without a physical adapter; compatibility with Volvo DiCE, Mongoose, individual drivers, ECUs, or vehicles has not yet been demonstrated. Dvinholm is an independent project and is **not affiliated with or endorsed by Volvo Cars** or any adapter manufacturer.
 
-## New Launcher + Binaries layout (Development)
+## Dvinholm for Windows x86
 
-The new native Windows x86 launcher distribution is
-`Dvinholm-Windows-x86-Launcher-Lite.zip` (available after the corresponding
-Development CI release succeeds). Extract the entire ZIP and run
-**`Launcher.exe`** to check Stable/Development builds, manage Microsoft
-runtimes, download updates and restore a previous version. Use
-**`Dvinholm.exe`** to start the diagnostic application. All Lite application
-files, scripts and logo assets live in **`Binaries/`**. The application
-window no longer has **Check update**.
+**Main Development distribution:** `Dvinholm-Windows-x86.zip` (contains
+`Launcher.exe`, `Dvinholm.exe`, `Binaries/`). This is the earlier
+framework-dependent Lite build, now the single standard distribution,
+**without Lite in its user-facing name**. The Launcher manages .NET Desktop 10
+x86, Windows App Runtime, VC++ x86, Stable/Development updates and rollback.
+The legacy ZIP bearing `-Lite` in its filename remains temporarily as
+a compatibility feed for already-installed updaters, not another edition.
+No separate self-contained Portable is produced.
 
-No Qt or Electron is required. The native launcher starts using Windows
-PowerShell 5.1/WinForms without requiring the diagnostic application's .NET 10
-or Windows App SDK dependencies. The diagnostic program remains Lite x86 and
-still needs its Microsoft runtime prerequisites. The old flat Lite ZIP is
-retained as the signed-off compatibility update input; the launcher validates
-asset digests and SHA256SUMS, performs transactional replacement and retains
-an offline previous build. [Launcher details](docs/UPDATER-BANNER.md).
+The Aurora Launcher also has **Adapter drivers**:
+it detects registered 32-bit J2534 libraries, identifies **MongoosePro JLR**
+registrations, and checks Windows USB/PnP for **Volvo DiCE**. The menu
+provides official vendor support/download pages, lets the user choose a
+manufacturer-signed local installer and requests explicit confirmation.
+Volvo DiCE's VIDA driver does **not** imply J2534 API compatibility with
+Dvinholm. A detected J2534 DLL is not proof that the hardware is connected.
+
+[Distribution and driver details](docs/UPDATER-BANNER.md).
 
 ## Quick start
 
 **Version channels:** the published, supported Stable remains **v0.2.3**. New `main` Development CI ZIPs identify as **0.2.4** (unreleased, experimental); a green CI does not publish Stable 0.2.4. Development explicitly retains offline demo/test functions while Stable v0.2.3 excludes them.
 
-1. [Download **Dvinholm v0.2.3** for Windows x86](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.3/Dvinholm-Windows-x86.zip) or choose the **Lite x86** ZIP from a successful [Development CI prerelease](https://github.com/vorlocsev/dvinholm/releases) after installing required runtimes.
+1. [Download **Dvinholm v0.2.3** for Windows x86](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.3/Dvinholm-Windows-x86.zip) or use **Dvinholm-Windows-x86.zip** from a successful [Development CI prerelease](https://github.com/vorlocsev/dvinholm/releases) after installing required runtimes.
 2. **Extract the entire ZIP** into a writable local directory; neither historical Portable nor Lite is an installer.
 3. Run `Dvinholm.App.exe`. Historical Stable v0.2.3 bundles its own runtime; **Lite needs .NET 10 Desktop Runtime x86, Windows App SDK 2.5 and VC++ x86**.
 4. For adapter use, install the **32-bit J2534 driver** supplied by the hardware manufacturer, then select the registered DLL or enter its path in Dvinholm.

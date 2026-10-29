@@ -1,3 +1,41 @@
+## Основной дистрибутив и драйверы J2534
+
+**Основной дистрибутив Windows x86:** `Dvinholm-Windows-x86.zip`.
+Это прежде называвшаяся Lite-конфигурация (.NET 10 Desktop x86, Windows
+App Runtime и VC++ устанавливаются отдельно через Launcher), теперь
+без слова Lite в пользовательском названии. В архиве два нативных
+исполняемых файла `Launcher.exe`, `Dvinholm.exe` и папка `Binaries/`.
+Файл `Dvinholm-Windows-x86-Lite.zip` пока публикуется *исключительно
+как совместимый канал обновления старых версий Launcher*, не как другая
+сборка приложения. Отдельного self-contained Portable нет.
+
+Раздел **Драйверы адаптеров** в Launcher работает до установки .NET 10.
+Он проверяет регистрацию J2534 в 32-битном реестре, наличие и архитектуру
+DLL, а отдельно обнаруживает USB **Volvo DiCE** по Windows PnP и
+регистрацию **MongoosePro JLR** в J2534. Не вызывает PassThruOpen
+и не утверждает, что проверил реальную работу оборудования.
+
+- **MongoosePro JLR**: официальный каталог загрузок
+  https://opusivs.com/support/product-downloads/ . Для Dvinholm x86
+  требуется зарегистрированная 32-битная J2534 DLL. Запись в реестре
+  и DLL не гарантируют связь с подключённым устройством.
+- **Volvo DiCE**: официальные инструкции
+  https://www.volvospecialtools.com/index.cfm?event=info.dice .
+  Volvo VIDA поддерживает DiCE и J2534 как *различные* интерфейсы;
+  появление USB-драйвера DiCE не делает его J2534 совместимым.
+  Подключение DiCE напрямую к Dvinholm потребует отдельного backend.
+
+Кнопки «Установить ...» требуют локального оригинального пакета
+производителя (.exe/.msi) с действительной и доверенной цифровой подписью,
+для конкретных моделей дополнительно проверяется производитель
+подписи (Volvo либо Drew Technologies/OPUS IVS). Перед запуском видны
+имя файла, издатель и отдельное подтверждение пользователя. Установка
+осуществляется стандартным видимым установщиком и запросом UAC.
+Launcher ничего не скачивает и не устанавливает без запроса,
+не загружает неизвестные DLL, не выполняет поиск VIN/PIN и не
+перепрошивает адаптер или ECU. После установки пользователь повторяет
+сканирование и при необходимости перезагружает компьютер.
+
 # Dvinholm Launcher (native Windows x86)
 
 The new **Launcher.exe** is a small native Windows x86 bootstrap, compiled with
@@ -5,8 +43,8 @@ the static MSVC runtime. It needs only Windows PowerShell 5.1 and the inbox
 .NET Framework WinForms to display the updater; **it does not require .NET 10,
 Windows App SDK, VC++ Redistributable, Qt or Electron** to start.
 
-For a first-time Lite installation, use the public Development asset
-`Dvinholm-Windows-x86-Launcher-Lite.zip` and extract the full directory:
+For a first-time installation, use the **main** Development asset
+`Dvinholm-Windows-x86.zip` and extract the full directory:
 
 ```text
 Dvinholm/

@@ -37,7 +37,7 @@ jobs:
       - name: Parse Windows PowerShell 5.1 distribution scripts
         shell: powershell
         run: |
-          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Manage-Lite-Dependencies.ps1', 'eng/Updater-Banner.ps1', 'eng/Launcher-AuroraTheme.ps1', 'eng/Package-Updater-Banner.ps1', 'eng/Build-Launchers.ps1', 'eng/Package-Launchable-Lite.ps1', 'eng/Test-Launchable-Lite.ps1', 'eng/Test-PackagedUpdaterBanner.ps1', 'eng/Test-LiteBundledPreflight.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
+          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Manage-Lite-Dependencies.ps1', 'eng/Updater-Banner.ps1', 'eng/Launcher-AuroraTheme.ps1', 'eng/J2534-DriverManager.ps1', 'eng/J2534-DriverUI.ps1', 'eng/Package-Updater-Banner.ps1', 'eng/Build-Launchers.ps1', 'eng/Package-Launchable-Lite.ps1', 'eng/Test-Launchable-Lite.ps1', 'eng/Test-PackagedUpdaterBanner.ps1', 'eng/Test-LiteBundledPreflight.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
             $tokens = $null
             $syntaxErrors = $null
             [System.Management.Automation.Language.Parser]::ParseFile(
@@ -59,6 +59,10 @@ jobs:
         shell: powershell
         run: |
           ./eng/Manage-Lite-Dependencies.ps1 -Mode SelfTest
+
+      - name: Check J2534 driver installer safety offline
+        shell: powershell
+        run: ./eng/J2534-DriverManager.ps1 -Mode SelfTest
 
       - name: Verify standalone Updater Banner offline safety
         shell: powershell
@@ -111,7 +115,7 @@ jobs:
           architecture: x64
 
       # Lite x86 is the only automatic Development distribution.
-      - name: Publish Lite
+      - name: Publish application x86
         run: dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --no-restore --self-contained false --runtime win-x86 -p:Platform=x86 -p:WindowsAppSDKSelfContained=false -p:PublishTrimmed=false -p:PublishAot=false -p:DvinholmDevelopmentFeatures=true -p:DebugType=none -p:DebugSymbols=false -p:Version=0.2.4 -p:InformationalVersion=0.2.4+${{ github.sha }}.ci${{ github.run_number }} --output artifacts/app-lite
 
       - name: Verify branded Windows icon is published
@@ -143,7 +147,7 @@ jobs:
         shell: pwsh
         run: ./eng/Build-Launchers.ps1 -OutputDirectory artifacts/native
 
-      - name: Package and validate Lite only
+      - name: Package and validate main application
         shell: pwsh
         run: |
           ./eng/Package-WindowsDistribution.ps1 -Flavor Lite -PublishDirectory artifacts/app-lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
@@ -151,8 +155,8 @@ jobs:
           ./eng/Test-WindowsDistributionExtraction.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip -SimulatedLiteHost
           ./eng/Test-LiteBundledPreflight.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
           ./eng/Package-Updater-Banner.ps1 -ZipPath artifacts/Dvinholm-Updater-Banner-Windows-x86.zip -NativeDirectory artifacts/native
-          ./eng/Package-Launchable-Lite.ps1 -LiteZip artifacts/Dvinholm-Windows-x86-Lite.zip -UpdaterZip artifacts/Dvinholm-Updater-Banner-Windows-x86.zip -NativeDirectory artifacts/native -ZipPath artifacts/Dvinholm-Windows-x86-Launcher-Lite.zip
-          ./eng/Test-Launchable-Lite.ps1 -ZipPath artifacts/Dvinholm-Windows-x86-Launcher-Lite.zip
+          ./eng/Package-Launchable-Lite.ps1 -LiteZip artifacts/Dvinholm-Windows-x86-Lite.zip -UpdaterZip artifacts/Dvinholm-Updater-Banner-Windows-x86.zip -NativeDirectory artifacts/native -ZipPath artifacts/Dvinholm-Windows-x86.zip
+          ./eng/Test-Launchable-Lite.ps1 -ZipPath artifacts/Dvinholm-Windows-x86.zip
           ./eng/Test-WindowsDistributionChecksums.ps1 -Directory artifacts -LiteOnly -WithUpdaterBanner -WithLauncherBundle -Generate
           ./eng/Test-WindowsDistributionChecksums.ps1 -Directory artifacts -LiteOnly -WithUpdaterBanner -WithLauncherBundle
           $lite = (Get-Item -LiteralPath artifacts/Dvinholm-Windows-x86-Lite.zip).Length
@@ -169,7 +173,7 @@ jobs:
       # Upload the exact final ZIP files that were already extracted and
       # SHA-256 verified above. Uploading app/ or app-lite/ instead creates
       # different downloads and wastes CI artifact storage/bandwidth.
-      - name: Upload Lite artifact
+      - name: Upload compatibility update feed
         uses: actions/upload-artifact@v7
         with:
           name: Dvinholm-Windows-x86-Lite
@@ -185,11 +189,11 @@ jobs:
           if-no-files-found: error
           compression-level: 0
 
-      - name: Upload Launcher + Binaries Lite artifact
+      - name: Upload main Dvinholm distribution
         uses: actions/upload-artifact@v7
         with:
-          name: Dvinholm-Windows-x86-Launcher-Lite
-          path: artifacts/Dvinholm-Windows-x86-Launcher-Lite.zip
+          name: Dvinholm-Windows-x86
+          path: artifacts/Dvinholm-Windows-x86.zip
           if-no-files-found: error
           compression-level: 0
 
@@ -209,7 +213,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         shell: pwsh
         run: |
-          gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86-Lite.zip" "artifacts/SHA256SUMS.txt" "artifacts/Dvinholm-Updater-Banner-Windows-x86.zip" "artifacts/Dvinholm-Windows-x86-Launcher-Lite.zip" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Dvinholm CI #${{ github.run_number }} (Lite)" --notes "Lite-only Windows x86 Development build. Install .NET 10 Desktop x86, Windows App SDK 2.5, VC++ Redistributable x86."
+          gh release create "ci-${{ github.run_number }}" "artifacts/Dvinholm-Windows-x86-Lite.zip" "artifacts/SHA256SUMS.txt" "artifacts/Dvinholm-Updater-Banner-Windows-x86.zip" "artifacts/Dvinholm-Windows-x86.zip" --repo "${{ github.repository }}" --target "${{ github.sha }}" --prerelease --title "Dvinholm CI #${{ github.run_number }}" --notes "Windows x86 Dvinholm with native Launcher and Binaries. Microsoft runtime prerequisites are managed in Launcher. The legacy -Lite ZIP is retained temporarily only for existing updater compatibility."
 
       # Re-download release assets and validate that GitHub stored the exact
       # three expected files matching our checksums and commit.

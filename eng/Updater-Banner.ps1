@@ -93,11 +93,11 @@ function Latest {
     $r=$candidate;break
    }
   }
-  if($null -eq $r){throw 'No public Development Lite release found.'}
+  if($null -eq $r){throw 'No public Development release found.'}
  }
  $zip=@($r.assets|Where-Object{$_.name -ceq $zipName})
  $sums=@($r.assets|Where-Object{$_.name -ceq $sumsName})
- if($zip.Count -ne 1 -or $sums.Count -ne 1){throw 'Missing unique Lite ZIP or sums.'}
+ if($zip.Count -ne 1 -or $sums.Count -ne 1){throw 'Missing unique application ZIP or sums.'}
  Validate-Asset $zip[0] $r.tag_name $zipName
  Validate-Asset $sums[0] $r.tag_name $sumsName
  return [pscustomobject]@{Tag=[string]$r.tag_name;Zip=$zip[0];Sums=$sums[0]}
@@ -1446,6 +1446,9 @@ if(-not(Test-Path -LiteralPath $themeFile -PathType Leaf)){
  throw 'Dvinholm Aurora launcher theme file is missing.'
 }
 . $themeFile
+$driverUi=Join-Path $PSScriptRoot 'J2534-DriverUI.ps1'
+if(-not(Test-Path -LiteralPath $driverUi -PathType Leaf)){throw 'Driver UI missing'}
+. $driverUi
 
 $script:child=$null;$script:vendor=$null
 $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid]::NewGuid().ToString('N')+'.json')
@@ -1480,7 +1483,7 @@ function Begin-Action([string]$action){
     $script:recoveryStatus -cne 'Ready'){return}
  if($action -eq 'RepairInstall'){
   if([Windows.Forms.MessageBox]::Show(
-   'Attempt offline recovery of an interrupted Lite installation for the selected channel? Only a verified transaction journal and unambiguous folders will be accepted. Existing staged files are retained. Close Dvinholm first.',
+   'Attempt offline recovery of an interrupted application installation for the selected channel? Only a verified transaction journal and unambiguous folders will be accepted. Existing staged files are retained. Close Dvinholm first.',
    'Confirm install recovery',[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
@@ -1492,13 +1495,13 @@ function Begin-Action([string]$action){
  }
  if($action -eq 'Rollback'){
   if([Windows.Forms.MessageBox]::Show(
-   'Restore the previous Lite build of the selected channel, without downloading anything? The currently installed build becomes the backup. Close Dvinholm first.',
+   'Restore the previous build of the selected channel, without downloading anything? The currently installed build becomes the backup. Close Dvinholm first.',
    'Confirm rollback',[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  if($action -eq 'Install'){
   if([Windows.Forms.MessageBox]::Show(
-   'Download the selected Lite ZIP, verify checksums and install into an isolated channel? Existing manual installations will not be changed.',
+   'Download the selected application ZIP, verify checksums and install into an isolated channel? Existing manual installations will not be changed.',
    'Confirm update',[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
@@ -1786,7 +1789,7 @@ if($Mode -eq 'UiSmokeTest'){
    throw 'Aurora hero banner is absent.'
   }
   $auroraChecks++
-  if($sidebar.Controls.Count -lt 6 -or $script:auroraNav.Count -ne 5){
+  if($sidebar.Controls.Count -lt 6 -or $script:auroraNav.Count -ne 6){
    throw 'Aurora navigation was not built.'
   }
   $auroraChecks++
