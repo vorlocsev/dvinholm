@@ -1586,6 +1586,9 @@ $versionsButton.BackColor=[Drawing.Color]::FromArgb(25,76,114)
 $versionsButton.ForeColor=[Drawing.Color]::White
 $versionsButton.FlatStyle=[Windows.Forms.FlatStyle]::Flat
 $versionsButton.BringToFront()
+# Fit the complete Aurora dashboard inside the available desktop work area,
+# including the Windows taskbar, before showing the fixed-size window.
+Set-AuroraCompactLayout
 
 $script:child=$null;$script:vendor=$null
 $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid]::NewGuid().ToString('N')+'.json')
@@ -1973,12 +1976,14 @@ if($Mode -eq 'UiSmokeTest'){
   # Approved Aurora UI checks use actual WinForms controls, without
   # displaying a window, contacting GitHub, or launching an installer.
   $auroraChecks=0
-  if($form.ClientSize.Width -ne 1180 -or $form.ClientSize.Height -ne 790){
-   throw 'Aurora dashboard has incorrect desktop dimensions.'
+  if($script:auroraScale -gt 0.80 -or $script:auroraScale -lt 0.65 -or
+     $form.ClientSize.Width -ge 1180 -or $form.ClientSize.Height -ge 790){
+   throw 'Aurora dashboard was not reduced to compact dimensions.'
   }
   $auroraChecks++
-  if($hero.Width -ne 1180 -or $brandTitle.Text -cne 'DVINHOLM'){
-   throw 'Aurora hero banner is absent.'
+  if($hero.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
+     $brandTitle.Text -cne 'DVINHOLM'){
+   throw 'Aurora hero banner was not scaled with the dashboard.'
   }
   $auroraChecks++
   if($sidebar.Controls.Count -lt 6 -or $script:auroraNav.Count -ne 6){
@@ -1990,11 +1995,23 @@ if($Mode -eq 'UiSmokeTest'){
    throw 'Aurora channel radio cards are missing.'
   }
   $auroraChecks++
-  if($bar.Width -lt 800 -or $install.Right -gt $form.ClientSize.Width -or
-     $dot.Bottom -gt $form.ClientSize.Height -or
-     $versionsButton.Right -gt $form.ClientSize.Width -or
-     $versionsButton.Top -lt 590){
+  $contentWidth=[int][Math]::Round(1180*$script:auroraScale)
+  $contentHeight=[int][Math]::Round(790*$script:auroraScale)
+  if($bar.Width -lt [int][Math]::Floor(800*$script:auroraScale) -or
+     $install.Right -gt $contentWidth -or $dot.Bottom -gt $contentHeight -or
+     $versionsButton.Right -gt $contentWidth -or
+     $versionsButton.Top -lt [int][Math]::Floor(590*$script:auroraScale)){
    throw 'Aurora dashboard action/progress layout is clipped.'
+  }
+  $auroraChecks++
+  $working=[Windows.Forms.Screen]::FromControl($form).WorkingArea
+  if($form.Width -gt $working.Width-16 -or $form.Height -gt $working.Height-16){
+   throw 'Aurora window still extends beyond the usable desktop work area.'
+  }
+  $auroraChecks++
+  if($repairInstall.Bottom -gt $contentHeight -or $sidebar.Bottom -gt $contentHeight -or
+     ($form.AutoScroll -and $form.ClientSize.Height -ge $contentHeight)){
+   throw 'Compact Aurora lower controls or small-screen scrolling are broken.'
   }
   $auroraChecks++
   $script:child=[pscustomobject]@{HasExited=$false}
@@ -2008,8 +2025,8 @@ if($Mode -eq 'UiSmokeTest'){
    throw 'Aurora channel radios did not recover after updater work.'
   }
   $auroraChecks++
-  if($auroraChecks -ne 6){throw 'Wrong Aurora smoke check count.'}
-  Write-Host 'Aurora Launcher 6/6 Windows WinForms theme smoke checks passed.'
+  if($auroraChecks -ne 8){throw 'Wrong Aurora smoke check count.'}
+  Write-Host 'Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.'
 
  }finally{
   $script:child=$null
