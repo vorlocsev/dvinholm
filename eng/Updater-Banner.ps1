@@ -18,6 +18,19 @@ $sumsName='SHA256SUMS.txt'
 $manager=Join-Path $PSScriptRoot 'Manage-Lite-Dependencies.ps1'
 $base=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Dvinholm\UpdaterBanner'
 $preferenceFile=Join-Path $base 'channel-preference.txt'
+# Dvinholm.exe follows the same remembered channel as Launcher.exe.
+if($Mode -eq 'Launch' -and -not $PSBoundParameters.ContainsKey('Channel')){
+ try {
+  if(Test-Path -LiteralPath $preferenceFile -PathType Leaf){
+   $item=Get-Item -LiteralPath $preferenceFile -Force
+   if($item.Length -le 32 -and
+      ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0){
+    $saved=[IO.File]::ReadAllText($preferenceFile,[Text.Encoding]::ASCII).Trim()
+    if($saved -cin @('Stable','Development')){$Channel=$saved}
+   }
+  }
+ }catch{}
+}
 $channelRoot=Join-Path $base $Channel
 $current=Join-Path $channelRoot 'current'
 $state=[ordered]@{Done=$false;Failed=$false;Current='Not installed';Available='Not checked';
@@ -503,6 +516,35 @@ function Get-VerifiedLaunchTarget {
  if((Get-ChannelRecoveryState) -cne 'Ready'){
   throw 'Launch blocked: recovery or manual inspection is required.'
  }
+ # The combined first-run ZIP carries its verified Lite payload in Binaries.
+ # Once this channel has a managed current version, never fall back to an
+ # obsolete or tampered bundled executable on failure.
+ if(-not(Test-Path -LiteralPath $current) -and
+    (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'Binaries') -PathType Container)){
+  $bundled=Join-Path $PSScriptRoot 'Binaries'
+  Assert-ManagedFolder $bundled
+  foreach($name in @('Dvinholm.App.exe','Dvinholm.App.runtimeconfig.json',
+    'Check-Lite-Prerequisites.ps1','Manage-Lite-Dependencies.ps1',
+    'Start-Dvinholm-Lite.cmd')){
+   $file=Join-Path $bundled $name
+   if(-not(Test-Path -LiteralPath $file -PathType Leaf) -or
+      ((Get-Item -LiteralPath $file -Force).Attributes -band
+       [IO.FileAttributes]::ReparsePoint) -ne 0){
+    throw 'Bundled Lite installation is incomplete or unsafe.'
+   }
+  }
+  $app=[IO.File]::ReadAllBytes((Join-Path $bundled 'Dvinholm.App.exe'))
+  if($app.Length -lt 512 -or $app[0] -ne 77 -or $app[1] -ne 90){
+   throw 'Bundled executable is not a valid x86 PE.'
+  }
+  $offset=[BitConverter]::ToInt32($app,60)
+  if($offset -lt 64 -or $offset+6 -ge $app.Length -or
+     [BitConverter]::ToUInt32($app,$offset) -ne 0x4550 -or
+     [BitConverter]::ToUInt16($app,$offset+4) -ne 0x14c){
+   throw 'Bundled executable is not a valid x86 PE.'
+  }
+  return [pscustomobject]@{Tag='bundled Lite';File=(Join-Path $bundled 'Start-Dvinholm-Lite.cmd')}
+ }
  try {$tag=Read-ManagedVersion $current}
  catch {throw 'Launch blocked: no valid managed Lite x86 installation in this channel.'}
  return [pscustomobject]@{
@@ -512,7 +554,7 @@ function Get-VerifiedLaunchTarget {
 }
 function Launch {
  $target=Get-VerifiedLaunchTarget
- Start-Process -FilePath $target.File -WorkingDirectory $current -ErrorAction Stop
+ Start-Process -FilePath $target.File -WorkingDirectory (Split-Path -Parent $target.File) -ErrorAction Stop
  Progress ('Opened Lite launcher for '+$Channel+' '+$target.Tag+'.')
 }
 function Rollback {
