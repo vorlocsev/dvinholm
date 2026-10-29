@@ -1440,6 +1440,13 @@ $foot=Label 'Stable releases  |  Development CI  |  SHA-256 verification  |  Saf
 $foot.Font=New-Object Drawing.Font('Segoe UI',8)
 $foot.ForeColor=[Drawing.Color]::FromArgb(115,166,184)
 
+# The approved Aurora dashboard is a separate UI-only, source-matched module.
+$themeFile=Join-Path $PSScriptRoot 'Launcher-AuroraTheme.ps1'
+if(-not(Test-Path -LiteralPath $themeFile -PathType Leaf)){
+ throw 'Dvinholm Aurora launcher theme file is missing.'
+}
+. $themeFile
+
 $script:child=$null;$script:vendor=$null
 $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid]::NewGuid().ToString('N')+'.json')
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
@@ -1449,6 +1456,8 @@ function Update-ActionAvailability {
  $state=[string]$script:recoveryStatus
  $ready=($state -ceq 'Ready')
  $choice.Enabled=-not $busy
+ $stableRadio.Enabled=-not $busy
+ $developmentRadio.Enabled=-not $busy
  $check.Enabled=($ready -and -not $busy)
  $install.Enabled=($ready -and -not $busy)
  $launch.Enabled=($ready -and -not $busy)
@@ -1493,6 +1502,7 @@ function Begin-Action([string]$action){
    'Confirm update',[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
+ $downloadPercent.Text=''
  if(Test-Path $script:statefile){Remove-Item $script:statefile -Force}
  $script:recoveryStatus='Not checked'
  $recovery.Text='Recovery: checking local state...'
@@ -1551,6 +1561,7 @@ function Apply-WorkerSnapshot($snapshot) {
  $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
   '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
  $status.Text=[string]$snapshot.Detail
+ $downloadPercent.Text=''
  # The ZIP byte count is read from the actual download, never fabricated.
  if($script:child -and [string]$snapshot.DownloadId -cmatch '^[0-9a-f]{32}$' -and
     [long]$snapshot.DownloadTotal -gt 0){
@@ -1563,6 +1574,7 @@ function Apply-WorkerSnapshot($snapshot) {
      100.0*[double]$bytes/[double]$snapshot.DownloadTotal)))
     $bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
     $bar.Value=$percent
+    $downloadPercent.Text=([string]$percent+'%')
    }
   }
  }
@@ -1601,6 +1613,7 @@ function Poll-WorkerState {
  }
  if($script:vendor -and $script:vendor.HasExited){
   $exitCode=[int]$script:vendor.ExitCode
+  $downloadPercent.Text=''
   $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
   if($exitCode -eq 0){
    # Only successful installer completion triggers an automatic local probe.
@@ -1761,6 +1774,46 @@ if($Mode -eq 'UiSmokeTest'){
   $vendorChecks++
   if($vendorChecks -ne 7){throw 'Wrong Microsoft installer lifecycle test count.'}
   Write-Host 'Updater Banner 7/7 WinForms vendor worker lifecycle checks passed.'
+
+  # Approved Aurora UI checks use actual WinForms controls, without
+  # displaying a window, contacting GitHub, or launching an installer.
+  $auroraChecks=0
+  if($form.ClientSize.Width -ne 1180 -or $form.ClientSize.Height -ne 790){
+   throw 'Aurora dashboard has incorrect desktop dimensions.'
+  }
+  $auroraChecks++
+  if($hero.Width -ne 1180 -or $brandTitle.Text -cne 'DVINHOLM'){
+   throw 'Aurora hero banner is absent.'
+  }
+  $auroraChecks++
+  if($sidebar.Controls.Count -lt 6 -or $script:auroraNav.Count -ne 5){
+   throw 'Aurora navigation was not built.'
+  }
+  $auroraChecks++
+  if($stableRadio.Parent -ne $form -or
+     $developmentRadio.Parent -ne $form -or $choice.Parent -ne $form){
+   throw 'Aurora channel radio cards are missing.'
+  }
+  $auroraChecks++
+  if($bar.Width -lt 800 -or $install.Right -gt $form.ClientSize.Width -or
+     $dot.Bottom -gt $form.ClientSize.Height){
+   throw 'Aurora dashboard action/progress layout is clipped.'
+  }
+  $auroraChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($stableRadio.Enabled -or $developmentRadio.Enabled){
+   throw 'Aurora channel radios were not locked during updater work.'
+  }
+  $script:child=$null
+  Update-ActionAvailability
+  if(-not $stableRadio.Enabled -or -not $developmentRadio.Enabled){
+   throw 'Aurora channel radios did not recover after updater work.'
+  }
+  $auroraChecks++
+  if($auroraChecks -ne 6){throw 'Wrong Aurora smoke check count.'}
+  Write-Host 'Aurora Launcher 6/6 Windows WinForms theme smoke checks passed.'
+
  }finally{
   $script:child=$null
   $timer.Stop();$timer.Dispose();$form.Dispose()

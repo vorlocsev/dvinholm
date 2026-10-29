@@ -23,9 +23,15 @@ Dvinholm/
 
 `Launcher.exe` owns channel selection, checks, downloads, install/rollback,
 recovery and Microsoft dependency management. The WinUI diagnostic application
-**has no Check update button or in-process installer handlers**. The launcher
-has a dark branded banner, Dvinholm logo, status labels and download progress
-based on real ZIP bytes, switching to a busy indicator for non-download steps.
+**has no Check update button or in-process installer handlers**. The launcher uses the approved **Aurora** dashboard: a panoramic northern-lights
+header with a vehicle silhouette, Dvinholm logo, blue-accented cards, a left
+navigation strip, Stable/Development channel radio cards, dependency controls,
+version summaries, and download progress based on real ZIP bytes. Non-download
+phases use a busy indicator. The graphics are drawn with built-in Windows
+GDI+/WinForms rather than Qt, Electron, WebView or a heavyweight image runtime.
+Channel radio cards become disabled during worker operations. This visual
+layer does not change integrity verification, Microsoft installer confirmation,
+separate channel folders, or crash recovery.
 
 A much smaller `Dvinholm-Updater-Banner-Windows-x86.zip` is also published
 for users who need **only the standalone launcher**. It has `Launcher.exe`

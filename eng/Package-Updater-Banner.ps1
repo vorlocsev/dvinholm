@@ -20,6 +20,7 @@ $staging=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-launcher-'+[guid]::NewG
 $files=@{
  'Launcher.exe'=(Join-Path $native 'Launcher.exe')
  'Binaries/Updater-Banner.ps1'=(Join-Path $PSScriptRoot 'Updater-Banner.ps1')
+ 'Binaries/Launcher-AuroraTheme.ps1'=(Join-Path $PSScriptRoot 'Launcher-AuroraTheme.ps1')
  'Binaries/Manage-Lite-Dependencies.ps1'=(Join-Path $PSScriptRoot 'Manage-Lite-Dependencies.ps1')
  'Binaries/Dvinholm-icon.png'=(Join-Path $root 'assets\dvinholm-icon.png')
 }
