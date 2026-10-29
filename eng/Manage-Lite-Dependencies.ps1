@@ -6,7 +6,7 @@
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('Launch','Manage','Install','Probe','SelfTest')][string]$Mode = 'Manage',
+    [ValidateSet('Launch','Manage','Install','Probe','VersionReport','SelfTest')][string]$Mode = 'Manage',
     [ValidateSet('DotNet','WinApp','VC')][string]$Component = 'WinApp',
     [string]$LiteDirectory = $PSScriptRoot
 )
@@ -44,9 +44,10 @@ function Get-Inventory {
         $hostExe = Join-Path $pf 'dotnet\dotnet.exe'
         if (Test-Path -LiteralPath $hostExe -PathType Leaf) {
             $runtimes = @(& $hostExe --list-runtimes 2>$null)
-            $dotnet = (@($runtimes | Where-Object {
-                $_ -match '^Microsoft\.WindowsDesktop\.App\s+10\.\d+\.\d+\s+\['
-            }).Count -gt 0)
+            $dotnet = ($LASTEXITCODE -eq 0 -and
+                @($runtimes | Where-Object {
+                    $_ -match '^Microsoft\.WindowsDesktop\.App\s+10\.\d+\.\d+\s+\['
+                }).Count -gt 0)
         }
     } catch { $dotnet = $false }
     try {
@@ -68,8 +69,11 @@ function Get-Inventory {
             [version]$_.Version -ge [version]'8002.5.0.0'
         }).Count -gt 0
         $ddlm = @($packages | Where-Object {
-            $_.Name -match '^Microsoft\.WinAppRuntime\.DDLM\.2\.5\.' -and
-            $_.Architecture.ToString() -eq 'X86'
+            $match=[regex]::Match([string]$_.Name,
+                '^Microsoft\.WinAppRuntime\.DDLM\.(\d+\.\d+\.\d+\.\d+)-x8$')
+            $match.Success -and $_.Architecture.ToString() -eq 'X86' -and
+            [version]$match.Groups[1].Value -ge [version]'2.5.0.0' -and
+            [version]$_.Version -ge [version]'2.5.0.0'
         }).Count -gt 0
         $sdk = ($framework -and $main -and $singleton -and $ddlm)
     } catch { $sdk = $false }
@@ -85,14 +89,165 @@ function Get-Inventory {
                 $key = $hive.OpenSubKey('SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86')
                 if ($null -ne $key) {
                     try {
+                        $v=[string]$key.GetValue('Version','')
                         if ([int]$key.GetValue('Installed',0) -eq 1 -and
-                            [int]$key.GetValue('Major',0) -ge 14) { $vc = $true }
+                            [int]$key.GetValue('Major',0) -eq 14 -and
+                            $v -match '^v?14\.\d+\.\d+(?:\.\d+)?$') { $vc = $true }
                     } finally { $key.Dispose() }
                 }
             } finally { $hive.Dispose() }
         }
     } catch { $vc = $false }
     return [pscustomobject]@{ DotNet=$dotnet; WinApp=$sdk; VC=$vc }
+}
+
+# Installed versions are informational. The independent preflight still
+# decides whether the exact Dvinholm runtime requirements are satisfied.
+function Get-InstalledComponentVersions {
+ $result=@{DotNet='Not detected';WinApp='Not detected';VC='Not detected'}
+ try {
+  $pf=if([Environment]::Is64BitOperatingSystem){
+   [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
+  }else{[Environment]::GetEnvironmentVariable('ProgramFiles')}
+  if($pf){
+   $hostExe=Join-Path $pf 'dotnet\dotnet.exe'
+   if(Test-Path -LiteralPath $hostExe -PathType Leaf){
+    $lines=@(& $hostExe --list-runtimes 2>$null)
+    if($LASTEXITCODE -eq 0){
+     $matches=@($lines|ForEach-Object{
+      if($_ -match '^Microsoft\.WindowsDesktop\.App\s+(10\.\d+\.\d+)\s+\['){
+       [version]$Matches[1]
+      }
+     }|Sort-Object -Descending)
+     if($matches.Count){$result.DotNet=$matches[0].ToString()}
+    }else{$result.DotNet='Unknown'}
+   }
+  }else{$result.DotNet='Unknown'}
+ }catch{$result.DotNet='Unknown'}
+ try{
+  $versions=@(Get-AppxPackage -Name 'Microsoft.WindowsAppRuntime.2' -ErrorAction Stop |
+   Where-Object{$_.Name -eq 'Microsoft.WindowsAppRuntime.2' -and
+    $_.Architecture.ToString() -eq 'X86'} |
+   ForEach-Object{[version]$_.Version}|Sort-Object -Descending)
+  if($versions.Count){$result.WinApp=$versions[0].ToString()}
+ }catch{$result.WinApp='Unknown'}
+ try{
+  $versions=New-Object Collections.Generic.List[version]
+  $views=@([Microsoft.Win32.RegistryView]::Registry32)
+  if([Environment]::Is64BitOperatingSystem){$views+=[Microsoft.Win32.RegistryView]::Registry64}
+  foreach($view in $views){
+   $hive=[Microsoft.Win32.RegistryKey]::OpenBaseKey(
+    [Microsoft.Win32.RegistryHive]::LocalMachine,$view)
+   try{
+    $key=$hive.OpenSubKey('SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86')
+    if($null -ne $key){
+     try{
+      if([int]$key.GetValue('Installed',0) -eq 1){
+       $v=[string]$key.GetValue('Version','')
+       if($v -match '^v?(14\.\d+\.\d+(?:\.\d+)?)$'){
+        $versions.Add([version]$Matches[1])
+       }
+      }
+     }finally{$key.Dispose()}
+    }
+   }finally{$hive.Dispose()}
+  }
+  if($versions.Count){
+   $result.VC=($versions|Sort-Object -Descending|Select-Object -First 1).ToString()
+  }
+ }catch{$result.VC='Unknown'}
+ return $result
+}
+function Get-VersionDisposition([string]$installed,[string]$latest,[string]$component=''){
+ if($installed -eq 'Not detected'){return 'Missing'}
+ if($installed -eq 'Unknown'){return 'Installed version unknown'}
+ if($latest -eq 'Unknown'){return 'Latest version not verified'}
+ try{
+  $i=[version]$installed;$l=[version]$latest
+  if($component -eq 'WinApp'){
+   # Installed MSIX Framework version is NOT the SDK's servicing version.
+   if($i.Major -lt $l.Major -or
+      ($i.Major -eq $l.Major -and $i.Minor -lt $l.Minor)){
+    return 'Newer SDK line available (compatibility unverified)'
+   }
+   if($i.Major -eq $l.Major -and $i.Minor -eq $l.Minor){
+    return 'Same SDK line; patch status unknown'
+   }
+   return 'Installed newer SDK line'
+  }
+  if($l -gt $i){return 'Update available'}
+  if($l -eq $i){return 'Current'}
+  return 'Installed newer'
+ }catch{return 'Version comparison unavailable'}
+}
+function Get-OfficialLatestVersions {
+ # Read-only requests only when VersionReport was explicitly selected.
+ $latest=@{DotNet='Unknown';WinApp='Unknown';VC='Unknown'}
+ try {
+  $index=Invoke-RestMethod -Uri 'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/10.0/releases.json' -UseBasicParsing -TimeoutSec 20
+  $value=[string]$index.'latest-release'
+  if($value -cmatch '^10\.\d+\.\d+$'){$latest.DotNet=$value}
+ }catch{}
+ try {
+  $headers=@{'User-Agent'='Dvinholm-DependencyVersionCheck';'Accept'='application/vnd.github+json'}
+  $release=Invoke-RestMethod -Uri 'https://api.github.com/repos/microsoft/WindowsAppSDK/releases/latest' -Headers $headers -UseBasicParsing -TimeoutSec 20
+  $tag=[string]$release.tag_name
+  if(-not $release.draft -and -not $release.prerelease -and
+     $tag -cmatch '^v(2\.\d+\.\d+)$'){$latest.WinApp=$Matches[1]}
+ }catch{}
+ # VC++ has an official current-installer permalink, but no trusted
+ # machine-readable latest-version feed. Do not invent an update result.
+ return $latest
+}
+function Get-DependencyVersionReport {
+ $installed=Get-InstalledComponentVersions
+ $ready=Get-Inventory
+ $latest=Get-OfficialLatestVersions
+ $components=[ordered]@{}
+ foreach($key in @('DotNet','WinApp','VC')){
+  $components[$key]=[ordered]@{
+   Installed=[string]$installed[$key]
+   Ready=[bool]$ready.$key
+   Latest=[string]$latest[$key]
+   Status=Get-VersionDisposition ([string]$installed[$key]) ([string]$latest[$key]) $key
+  }
+ }
+ # Windows App SDK latest is advisory, not automatically compatible with
+ # the baseline 2.5.1 app and pinned runtime installer.
+ return [ordered]@{
+  DotNet=$components.DotNet
+  WinApp=$components.WinApp
+  VC=$components.VC
+  WinAppBaseline='2.5.1'
+  VCUpdateNote='Microsoft provides a latest-x86-installer link but not a verified version feed.'
+ }
+}
+function Test-DependencyVersionLogic {
+ $checks=@(
+  @('Not detected','10.0.12','Missing'),
+  @('Unknown','10.0.12','Installed version unknown'),
+  @('10.0.11','Unknown','Latest version not verified'),
+  @('10.0.11','10.0.12','Update available'),
+  @('10.0.12','10.0.12','Current'),
+  @('14.50.0.0','Unknown','Latest version not verified')
+ )
+ foreach($item in $checks){
+  $actual=Get-VersionDisposition $item[0] $item[1]
+  if($actual -cne $item[2]){throw ('Version decision failed for '+$item[0]+' / '+$item[1])}
+ }
+ if((Get-VersionDisposition '2.5.2500.0' '2.6.4' 'WinApp') -cne
+    'Newer SDK line available (compatibility unverified)'){
+  throw 'WinApp newer SDK line was not detected.'
+ }
+ if((Get-VersionDisposition '2.5.2500.0' '2.5.1' 'WinApp') -cne
+    'Same SDK line; patch status unknown'){
+  throw 'WinApp MSIX package version was incorrectly compared with SDK patch.'
+ }
+ Write-Host 'Lite dependency version decisions 8/8 offline checks passed.'
+}
+if($Mode -eq 'VersionReport'){
+ Get-DependencyVersionReport|ConvertTo-Json -Depth 6 -Compress
+ return
 }
 
 # Read-only, machine-readable inventory for the separate Updater Banner.
@@ -199,6 +354,7 @@ function Test-InstallerMetadataOffline {
 }
 if ($Mode -eq 'SelfTest') {
     Test-InstallerMetadataOffline
+    Test-DependencyVersionLogic
     exit 0
 }
 
