@@ -225,7 +225,7 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("$heroHeight=156", theme);
         Assert.Contains("$verticalSaving=232-$heroHeight", theme);
         Assert.Contains("$referenceHeight=790-$verticalSaving", theme);
-        Assert.Contains("$sidebarFooter.SetBounds(22,447,180,42)", theme);
+        Assert.Contains("$sidebarFooter.SetBounds(22,428,180,64)", theme);
         Assert.Contains("$form.AutoScrollMinSize=", theme);
         Assert.Contains("$brandTitle.Text='DVINHOLM'", theme);
     }
