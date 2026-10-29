@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 Service Cockpit v2. Implements the user-approved three-section launcher layout.
 All displayed version/driver states are populated from real worker probes.
@@ -157,6 +157,7 @@ function Update-ServiceDriverInventory {
   $records=@($inventory.Devices|Where-Object{$null -ne $_}).Count
   $dice=[string]$inventory.Targets.VolvoDice.Status
   $mongoose=[string]$inventory.Targets.MongooseJlr.Status
+  $script:driversWereProbed=$true
   $driverStatus.Text=('J2534: '+$records+'  |  DiCE: '+$dice+
     '  |  Mongoose JLR: '+$mongoose)
  }catch{
