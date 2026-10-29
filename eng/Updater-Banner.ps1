@@ -1638,7 +1638,7 @@ function Poll-WorkerState {
    }else{
     $status.Text='Vendor driver installer failed or was cancelled (exit '+$exitCode+').'
     if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
-     $script:driverResultControl.Text='Vendor driver setup did not complete. Check the manufacturer's installer log.'
+     $script:driverResultControl.Text='Vendor driver setup did not complete. Check the vendor installer log.'
     }
    }
    Update-ActionAvailability
