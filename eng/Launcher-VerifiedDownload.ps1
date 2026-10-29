@@ -62,7 +62,7 @@ function Assert-PreparedLauncherArchive {
   if((Get-FileHash -LiteralPath $ZipPath -Algorithm SHA256).Hash.ToLowerInvariant() -cne $ZipSha256){
    throw 'Launcher ZIP changed during staging.'
   }
-  return [pscustomobject]@{Tag=$tag;ZipHash=$realZip;FilesVerified=14}
+  return [pscustomobject]@{Tag=$tag;ZipHash=$realZip;FilesVerified=15}
  }catch{
   # Only the validator or this call created this absent target.
   if($created -and (Test-Path -LiteralPath $StageDirectory)){
