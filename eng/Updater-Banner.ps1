@@ -329,6 +329,15 @@ function Get-ChannelRecoveryState {
   }
   if($journal){return 'Repair install'}
   if($installs.Count -gt 0){return 'Inspect'}
+  # A clean channel must contain either no installation, a validated first
+  # installation, or a valid current/previous pair. An orphan previous or
+  # damaged folder has no unambiguous automatic recovery path.
+  $previous=Join-Path $channelRoot 'previous'
+  $hasCurrent=Test-Path -LiteralPath $current
+  $hasPrevious=Test-Path -LiteralPath $previous
+  if($hasPrevious -and -not $hasCurrent){return 'Inspect'}
+  if($hasCurrent){$null=Read-ManagedVersion $current}
+  if($hasPrevious){$null=Read-ManagedVersion $previous}
   return 'Ready'
  }catch{return 'Inspect'}
 }
@@ -1039,6 +1048,52 @@ function SelfTest {
   $statusChecks++
   if($statusChecks -ne 6){throw 'Wrong recovery status check count.'}
   Write-Host 'Updater Banner 6/6 read-only recovery status checks passed.'
+  $folderChecks=0
+  if(Test-Path -LiteralPath $script:channelRoot){
+   Remove-Item -LiteralPath $script:channelRoot -Recurse -Force
+  }
+  if((Get-ChannelRecoveryState) -cne 'Ready'){
+   throw 'Empty selected channel was not Ready for first installation.'
+  }
+  $folderChecks++
+  Reset-SyntheticLite
+  if((Get-ChannelRecoveryState) -cne 'Ready'){
+   throw 'Valid current and previous versions were not Ready.'
+  }
+  $folderChecks++
+  Reset-SyntheticLite
+  Remove-Item -LiteralPath (Join-Path $script:channelRoot 'previous') -Recurse -Force
+  if((Get-ChannelRecoveryState) -cne 'Ready'){
+   throw 'Valid first Lite version without backup was not Ready.'
+  }
+  $folderChecks++
+  Reset-SyntheticLite
+  Remove-Item -LiteralPath $script:current -Recurse -Force
+  if((Get-ChannelRecoveryState) -cne 'Inspect'){
+   throw 'Orphan previous Lite version was not flagged for manual inspection.'
+  }
+  $folderChecks++
+  Reset-SyntheticLite
+  Remove-Item -LiteralPath (Join-Path $script:current 'Start-Dvinholm-Lite.cmd') -Force
+  if((Get-ChannelRecoveryState) -cne 'Inspect'){
+   throw 'Damaged current Lite version was not flagged for inspection.'
+  }
+  $folderChecks++
+  Reset-SyntheticLite
+  Remove-Item -LiteralPath (Join-Path $script:channelRoot 'previous' 'Manage-Lite-Dependencies.ps1') -Force
+  if((Get-ChannelRecoveryState) -cne 'Inspect'){
+   throw 'Damaged previous Lite version was not flagged for inspection.'
+  }
+  $folderChecks++
+  Reset-SyntheticLite
+  [IO.File]::WriteAllText((Join-Path $script:channelRoot 'previous' 'updater-banner.json'),
+   (@{Channel='Stable';Tag='v0.2.4'}|ConvertTo-Json))
+  if((Get-ChannelRecoveryState) -cne 'Inspect'){
+   throw 'Cross-channel backup was not flagged for manual inspection.'
+  }
+  $folderChecks++
+  if($folderChecks -ne 7){throw 'Wrong managed folder recovery gate test count.'}
+  Write-Host 'Updater Banner 7/7 managed folder recovery gate checks passed.'
   $versionChecks=0
   Reset-SyntheticLite
   if((Installed) -cne 'ci-200'){throw 'Valid Development current version not recognized.'}
