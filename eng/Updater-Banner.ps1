@@ -1663,6 +1663,11 @@ function Poll-WorkerState {
   $script:driverInstallerPending=$false
   $downloadPercent.Text=''
   $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+  # A completed installer must not have its outcome overwritten by an old
+  # updater worker snapshot on the next 500ms timer tick.
+  if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
+   Remove-Item -LiteralPath $script:statefile -Force -ErrorAction SilentlyContinue
+  }
   if($fromDriverInstaller){
    # A vendor setup is independent of .NET/WinApp prerequisites. Do not
    # report driver success by running the generic updater dependency probe.
@@ -1693,8 +1698,15 @@ function Poll-WorkerState {
    }
    Update-ActionAvailability
   }elseif($exitCode -eq 0){
-   # Microsoft runtime installer only: automatically recheck runtime dependencies.
+   # Only plain success permits automatic local dependency rescan.
    Begin-Action 'Probe'
+  }elseif($exitCode -in @(3010,1641)){
+   # Microsoft dependency helper preserved a success-with-restart code.
+   # No automatic re-probe or ready status until Windows is restarted.
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text='Microsoft runtime installed. Restart Windows before rechecking prerequisites (exit '+$exitCode+').'
+   Update-ActionAvailability
   }else{
    # Preserve failure without launching an unrelated dependency probe.
    $script:recoveryStatus='Not checked'
