@@ -520,8 +520,8 @@ function Get-VerifiedLaunchTarget {
  # Once this channel has a managed current version, never fall back to an
  # obsolete or tampered bundled executable on failure.
  if(-not(Test-Path -LiteralPath $current) -and
-    (Test-Path -LiteralPath (Join-Path $PSScriptRoot 'Binaries') -PathType Container)){
-  $bundled=Join-Path $PSScriptRoot 'Binaries'
+    (Test-Path -LiteralPath $PSScriptRoot -PathType Container)){
+  $bundled=$PSScriptRoot
   Assert-ManagedFolder $bundled
   foreach($name in @('Dvinholm.App.exe','Dvinholm.App.runtimeconfig.json',
     'Check-Lite-Prerequisites.ps1','Manage-Lite-Dependencies.ps1',
@@ -1425,7 +1425,7 @@ $brandSub.BackColor=[Drawing.Color]::Transparent
 $brandSub.SetBounds(142,92,570,29)
 $hero.Controls.Add($brandSub)
 $script:brandImage=$null
-$brandFile=Join-Path $PSScriptRoot 'assets\dvinholm-icon.png'
+$brandFile=Join-Path $PSScriptRoot 'Dvinholm-icon.png'
 if(Test-Path -LiteralPath $brandFile -PathType Leaf){
  try{
   $script:brandImage=[Drawing.Image]::FromFile($brandFile)
