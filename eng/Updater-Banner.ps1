@@ -6,7 +6,7 @@ No software installs or updates until the user explicitly confirms.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('UI','UiSmokeTest','Check','CheckLauncher','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
+ [ValidateSet('UI','UiSmokeTest','Check','CheckLauncher','PrepareLauncher','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
  [ValidateSet('Stable','Development')][string]$Channel='Development',
  [string]$StateFile
 )
@@ -110,6 +110,11 @@ if(-not(Test-Path -LiteralPath $releaseHelper -PathType Leaf)){
  throw 'Bundled Launcher release discovery module is missing.'
 }
 . $releaseHelper
+$verifyDownloadHelper=Join-Path $PSScriptRoot 'Launcher-VerifiedDownload.ps1'
+if(-not(Test-Path -LiteralPath $verifyDownloadHelper -PathType Leaf)){
+ throw 'Bundled Launcher verified download module is missing.'
+}
+. $verifyDownloadHelper
 function Entry-Path([string]$name){
  $p=$name.Replace('\','/').TrimEnd('/')
  if(-not $p -or $p.StartsWith('/') -or $p.Contains(':') -or
@@ -1586,6 +1591,8 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    $lines.Add('VC++ current installer version cannot be verified without vendor metadata.')
    $script:state.DependencyReport=[string]::Join([Environment]::NewLine,$lines.ToArray())
    Progress 'Microsoft dependency version check finished. No software changed.'
+  }elseif($Mode -eq 'PrepareLauncher'){
+   Prepare-NativeLauncher
   }elseif($Mode -eq 'CheckLauncher'){
    $script:state.LauncherCurrent=Read-LauncherInstalledBuild
    $latest=LatestLauncher
@@ -1634,7 +1641,7 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    $message
   }elseif($Mode -eq 'Launch'){
    ('Unable to start the selected application: '+$message)
-  }elseif($Mode -eq 'CheckLauncher'){
+  }elseif($Mode -in @('CheckLauncher','PrepareLauncher')){
    ('Launcher update check failed: '+$message)
   }elseif($message -match 'Latest published release is older|Cannot safely determine current Lite version'){
    'Update blocked: installed Lite is newer or cannot be verified. No files were downloaded.'
