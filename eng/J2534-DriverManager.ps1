@@ -77,6 +77,37 @@ function Read-RegisteredDrivers {
  }finally{$machine.Dispose()}
  return @($result.ToArray()|Sort-Object Vendor,Name,Api)
 }
+
+# Model-aware detection only; hardware access and vendor DLL execution are forbidden.
+function Get-TargetDeviceState {
+ $entries=@(Read-RegisteredDrivers)
+ $mongoose=@($entries|Where-Object{
+  (($_.Name+' '+$_.Vendor) -match '(?i)mongoose.*jlr|jlr.*mongoose') -and $_.Compatible
+ })
+ $diceUsb=@()
+ try {
+  if(Get-Command Get-PnpDevice -ErrorAction SilentlyContinue){
+   $diceUsb=@(Get-PnpDevice -PresentOnly -ErrorAction Stop|Where-Object{
+    ($_.FriendlyName -match '(?i)\bDiCE\b|Volvo.*Diagnostic Communication') -or
+    ($_.InstanceId -match '(?i)VID_1782&PID_')
+   })
+  }
+ }catch{}
+ # A Volvo DiCE USB driver is NOT the SAE J2534 FunctionLibrary API.
+ return [pscustomobject]@{
+  MongooseJlr=[pscustomobject]@{
+   Name='MongoosePro JLR';RegisteredX86Dll=($mongoose.Count -gt 0)
+   DllCount=$mongoose.Count
+   Status=if($mongoose.Count){'J2534 x86 registered; hardware untested'}else{'No compatible Mongoose JLR x86 J2534 registration'}
+  }
+  VolvoDice=[pscustomobject]@{
+   Name='Volvo DiCE';UsbDetected=($diceUsb.Count -gt 0)
+   Status=if($diceUsb.Count){'USB device detected; VIDA driver/hardware not verified'}else{'DiCE USB device not detected'}
+   J2534Supported=$false
+  }
+ }
+}
+
 function Test-SignedVendorInstaller([string]$Path) {
  if([string]::IsNullOrWhiteSpace($Path)){throw 'Select the original vendor installer.'}
  $file=Get-Item -LiteralPath $Path -ErrorAction Stop
@@ -112,7 +143,7 @@ function Install-SelectedVendorPackage {
  Write-Output 'Vendor setup finished. Recheck J2534 registry and attach adapter to confirm.'
 }
 if($Mode -eq 'Probe'){
- @(Read-RegisteredDrivers)|ConvertTo-Json -Depth 4 -Compress
+ [pscustomobject]@{Devices=@(Read-RegisteredDrivers);Targets=(Get-TargetDeviceState)}|ConvertTo-Json -Depth 6 -Compress
  return
 }
 if($Mode -eq 'Verify'){
