@@ -1977,11 +1977,12 @@ if($Mode -eq 'UiSmokeTest'){
   # displaying a window, contacting GitHub, or launching an installer.
   $auroraChecks=0
   if($script:auroraScale -gt 0.80 -or $script:auroraScale -lt 0.65 -or
-     $form.ClientSize.Width -ge 1180 -or $form.ClientSize.Height -ge 790){
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 571){
    throw 'Aurora dashboard was not reduced to compact dimensions.'
   }
   $auroraChecks++
   if($hero.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
+     $hero.Height -ne [int][Math]::Round(156*$script:auroraScale) -or
      $brandTitle.Text -cne 'DVINHOLM'){
    throw 'Aurora hero banner was not scaled with the dashboard.'
   }
@@ -1996,11 +1997,11 @@ if($Mode -eq 'UiSmokeTest'){
   }
   $auroraChecks++
   $contentWidth=[int][Math]::Round(1180*$script:auroraScale)
-  $contentHeight=[int][Math]::Round(790*$script:auroraScale)
+  $contentHeight=[int][Math]::Round(714*$script:auroraScale)
   if($bar.Width -lt [int][Math]::Floor(800*$script:auroraScale) -or
      $install.Right -gt $contentWidth -or $dot.Bottom -gt $contentHeight -or
      $versionsButton.Right -gt $contentWidth -or
-     $versionsButton.Top -lt [int][Math]::Floor(590*$script:auroraScale)){
+     $versionsButton.Top -lt [int][Math]::Floor(514*$script:auroraScale)){
    throw 'Aurora dashboard action/progress layout is clipped.'
   }
   $auroraChecks++
@@ -2009,9 +2010,17 @@ if($Mode -eq 'UiSmokeTest'){
    throw 'Aurora window still extends beyond the usable desktop work area.'
   }
   $auroraChecks++
-  if($repairInstall.Bottom -gt $contentHeight -or $sidebar.Bottom -gt $contentHeight -or
+  $footerMeasure=[Windows.Forms.TextRenderer]::MeasureText(
+   $sidebarFooter.Text,$sidebarFooter.Font,
+   [Drawing.Size]::new($sidebarFooter.Width,1000),
+   [Windows.Forms.TextFormatFlags]::WordBreak)
+  if($repairInstall.Bottom -gt $contentHeight-10 -or
+     $sidebar.Bottom -gt $contentHeight-4 -or
+     $sidebarFooter.Bottom -gt $sidebar.ClientSize.Height-12 -or
+     $sidebarFooter.Top -lt $navDrivers.Bottom+12 -or
+     $footerMeasure.Height -gt $sidebarFooter.Height -or
      ($form.AutoScroll -and $form.ClientSize.Height -ge $contentHeight)){
-   throw 'Compact Aurora lower controls or small-screen scrolling are broken.'
+   throw 'Compact Aurora sidebar footer, repair buttons or scrolling are clipped.'
   }
   $auroraChecks++
   $script:child=[pscustomobject]@{HasExited=$false}
