@@ -22,6 +22,7 @@ $names=@(
  'Binaries/Launcher-AuroraTheme.ps1',
  'Binaries/Launcher-ServiceCockpit.ps1',
  'Binaries/Launcher-ReleaseDiscovery.ps1',
+ 'Binaries/Launcher-VerifiedDownload.ps1',
  'Binaries/J2534-DriverManager.ps1',
  'Binaries/J2534-DriverUI.ps1',
  'Binaries/Manage-Lite-Dependencies.ps1',
