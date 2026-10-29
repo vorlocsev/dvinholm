@@ -564,7 +564,12 @@ function Start-VerifiedApplicationHelper([string]$directory) {
  $arguments='-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+
   $helper+'" -Mode Launch -LiteDirectory "'+$directory+'\."'
  try {
-  $process=Start-Process -FilePath $hostExe -ArgumentList $arguments -WorkingDirectory $directory -PassThru -ErrorAction Stop
+  $start=New-Object Diagnostics.ProcessStartInfo
+  $start.FileName=$hostExe
+  $start.Arguments=$arguments
+  $start.WorkingDirectory=$directory
+  $start.UseShellExecute=$false
+  $process=[Diagnostics.Process]::Start($start)
   try {
    # Wait for this helper only. Start-Process -Wait also waits for descendants,
    # which would keep Launcher busy for the entire lifetime of the WinUI app.
