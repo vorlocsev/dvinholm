@@ -28,7 +28,7 @@ public sealed class CiTestScopeContractTests
         Assert.Contains("if: github.event_name != 'pull_request'", ci);
         Assert.Contains("Test complete regression (main/manual)", ci);
         Assert.Contains("Test actual Stable feature profile (eight offline smoke gates)", ci);
-        Assert.Contains("Package and validate Lite only", ci);
+        Assert.Contains("Package and validate main application", ci);
         Assert.Contains("Test-PublishedDevelopmentRelease.ps1 -LiteOnly", ci);
 
         string[] archived =
