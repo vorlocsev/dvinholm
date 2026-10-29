@@ -19,7 +19,7 @@ $hero.SetBounds(0,0,1180,232)
 $hero.Add_Paint({
  $g=$_.Graphics
  $g.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
- $g.ScaleTransform([single]$script:auroraScale,[single]$script:auroraScale)
+ $g.ScaleTransform([single]$script:auroraScale,[single]($script:auroraScale*(156.0/232.0)))
  $sky=[Drawing.Drawing2D.LinearGradientBrush]::new(
   [Drawing.Rectangle]::new(0,0,1180,232),
   [Drawing.Color]::FromArgb(10,30,61),
@@ -264,27 +264,63 @@ function Resize-AuroraControlTree([Windows.Forms.Control]$parent,[double]$factor
  }
 }
 function Set-AuroraCompactLayout {
- # The original 1180x790 dashboard did not fit e.g. 1366x768 desktops
- # after the Windows taskbar and non-client window frame were subtracted.
+ # The 232-pixel hero left too little room for status and repair controls.
+ # Shorten it before scaling; the painted scene is vertically fitted too.
+ # Shift only top-level controls below the hero (nested sidebar links retain
+ # their own coordinates). This executes once when the Launcher is built.
+ $heroHeight=156
+ $verticalSaving=232-$heroHeight
+ $referenceWidth=1180
+ $referenceHeight=790-$verticalSaving
+ $form.SuspendLayout()
+ try {
+  $hero.Height=$heroHeight
+  # Leave a small inset: independent rounding of sidebar Top and Height
+  # otherwise gives a one-pixel overflow at 80% scale.
+  $sidebar.Height=546
+  $brandTitle.SetBounds(210,30,700,62)
+  $brandTitle.Font=[Drawing.Font]::new('Segoe UI',34,[Drawing.FontStyle]::Bold)
+  $brandSub.SetBounds(215,101,700,26)
+  if($null -ne $logo){$logo.SetBounds(44,17,118,119)}
+  foreach($control in @($form.Controls)){
+   if($control -ne $hero -and $control.Top -ge 233){
+    $control.Top-=$verticalSaving
+   }
+  }
+  # The original three-line footer was visibly cut off at the bottom.
+  $sidebarFooter.Text='DVINHOLM'+[Environment]::NewLine+'Windows x86'
+  $sidebarFooter.SetBounds(22,428,180,64)
+ }finally{$form.ResumeLayout($false)}
+ # Account for the Windows taskbar and non-client frame before selecting
+ # final dimensions. Preserve the compact maximum at normal DPI.
  $working=[Windows.Forms.Screen]::FromControl($form).WorkingArea
  $borderW=[int][Math]::Max(0,$form.Width-$form.ClientSize.Width)
  $borderH=[int][Math]::Max(0,$form.Height-$form.ClientSize.Height)
  $maxWidth=[Math]::Max(1,$working.Width-32-$borderW)
  $maxHeight=[Math]::Max(1,$working.Height-32-$borderH)
- $fit=[Math]::Min([double]$maxWidth/1180.0,[double]$maxHeight/790.0)
- # 944 x 632 client pixels is the normal compact maximum.
+ $fit=[Math]::Min([double]$maxWidth/$referenceWidth,[double]$maxHeight/$referenceHeight)
+ # 944 x 571 client pixels is the normal compact maximum.
  # Very small work areas scroll instead of squeezing text to unreadability.
  $factor=[Math]::Max(0.65,[Math]::Min(0.80,$fit))
  $script:auroraScale=$factor
- $fullW=[int][Math]::Round(1180*$factor)
- $fullH=[int][Math]::Round(790*$factor)
+ $fullW=[int][Math]::Round($referenceWidth*$factor)
+ $fullH=[int][Math]::Round($referenceHeight*$factor)
  $form.SuspendLayout()
  try{
   $form.MinimumSize=[Drawing.Size]::Empty
   $form.MaximumSize=[Drawing.Size]::Empty
   $form.AutoScaleMode=[Windows.Forms.AutoScaleMode]::None
   Resize-AuroraControlTree $form $factor
-  $form.AutoScroll=($fullW -gt $maxWidth -or $fullH -gt $maxHeight)
+  $needsScroll=($fullW -gt $maxWidth -or $fullH -gt $maxHeight)
+  # WinForms AutoScrollMinSize implicitly turns AutoScroll back on.
+  # Assign it only for genuinely constrained work areas, then explicitly
+  # set AutoScroll last so ordinary screens never get phantom scrollbars.
+  if($needsScroll){
+   $form.AutoScrollMinSize=[Drawing.Size]::new($fullW,$fullH)
+  }else{
+   $form.AutoScrollMinSize=[Drawing.Size]::Empty
+  }
+  $form.AutoScroll=$needsScroll
   $form.ClientSize=[Drawing.Size]::new(
    [int][Math]::Min($fullW,$maxWidth),[int][Math]::Min($fullH,$maxHeight))
   $form.MinimumSize=$form.Size
