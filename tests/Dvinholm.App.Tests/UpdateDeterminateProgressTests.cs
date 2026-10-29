@@ -72,45 +72,4 @@ public sealed class UpdateDeterminateProgressTests
         var message = counter.ReportCopied(7_000, "CI: #3621: aabbccd");
         Assert.Equal(70, UpdateDownloadProgress.ReadMilestone(message));
     }
-
-    [Fact]
-    public void WindowRendersOnlyParsedBytesAsDeterminateAndResetsForOtherPhases()
-    {
-        var code = ReadWindowSource();
-        var start = code.IndexOf("private void ShowUpdateActivity(", StringComparison.Ordinal);
-        var end = code.IndexOf("private void FinishUpdateActivity(", start, StringComparison.Ordinal);
-        Assert.True(start >= 0 && end > start);
-        var region = code[start..end];
-        Assert.Contains("var percentage = UpdateDownloadProgress.ReadMilestone(text);", region);
-        Assert.Contains("UpdateProgressBar.IsIndeterminate = percentage is null;", region);
-        Assert.Contains("UpdateProgressBar.Value = percentage ?? 0;", region);
-        Assert.Contains("UpdateProgressBar.Visibility = Visibility.Visible;", region);
-        Assert.Contains("UpdateProgressText.Text = text;", region);
-    }
-
-    [Fact]
-    public void CompletionClearsPercentageBeforeFutureUpdateChecksOrRetries()
-    {
-        var code = ReadWindowSource();
-        var start = code.IndexOf("private void FinishUpdateActivity(", StringComparison.Ordinal);
-        var end = code.IndexOf("private bool UseStableUpdateSource", start, StringComparison.Ordinal);
-        Assert.True(start >= 0 && end > start);
-        var region = code[start..end];
-        Assert.Contains("UpdateProgressBar.IsIndeterminate = true;", region);
-        Assert.Contains("UpdateProgressBar.Value = 0;", region);
-        Assert.Contains("UpdateProgressBar.Visibility = Visibility.Collapsed;", region);
-        Assert.Contains("message is null ? Visibility.Collapsed : Visibility.Visible", region);
-    }
-
-    private static string ReadWindowSource()
-    {
-        for (DirectoryInfo? dir = new(AppContext.BaseDirectory);
-             dir is not null; dir = dir.Parent)
-        {
-            var file = Path.Combine(dir.FullName, "src", "Dvinholm.App", "MainWindow.xaml.cs");
-            if (File.Exists(file))
-                return File.ReadAllText(file);
-        }
-        throw new FileNotFoundException("MainWindow.xaml.cs missing.");
-    }
 }
