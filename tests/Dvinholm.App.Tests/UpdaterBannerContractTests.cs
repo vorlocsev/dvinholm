@@ -222,12 +222,14 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("$form.AutoScroll=", theme);
         Assert.Contains("$form.ClientSize=[Drawing.Size]::new(", theme);
         Assert.Contains("$g.ScaleTransform(", theme);
-        Assert.Contains("$heroHeight=156", theme);
+        Assert.Contains("$heroHeight=182", theme);
         Assert.Contains("$verticalSaving=232-$heroHeight", theme);
-        Assert.Contains("$referenceHeight=790-$verticalSaving", theme);
-        Assert.Contains("$sidebarFooter.SetBounds(22,428,180,64)", theme);
+        Assert.Contains("$referenceHeight=790-$verticalSaving-50", theme);
+        Assert.Contains("$sidebarFooter.SetBounds(22,389,180,58)", theme);
         Assert.Contains("$form.AutoScrollMinSize=", theme);
         Assert.Contains("$brandTitle.Text='DVINHOLM'", theme);
+        Assert.Contains("dvinholm-banner.webp", theme);
+        Assert.Contains("$script:heroBackdrop", theme);
     }
 
     [Fact]
@@ -241,7 +243,7 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.", banner);
         Assert.Contains("usable desktop work area", banner);
         Assert.Contains("Compact Aurora clipped:", banner);
-        Assert.Contains("$hero.Height -ne [int][Math]::Round(156*$script:auroraScale)", banner);
+        Assert.Contains("$hero.Height -ne [int][Math]::Round(182*$script:auroraScale)", banner);
         Assert.Contains("$sidebarFooter.Bottom -gt $sidebar.ClientSize.Height-12", banner);
         Assert.Contains("$footerMeasure.Height -gt $sidebarFooter.Height", banner);
     }
