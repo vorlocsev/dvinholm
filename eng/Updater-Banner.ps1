@@ -576,6 +576,25 @@ function Assert-InstallDependencies($inventory) {
   }
  }
 }
+function Get-InstallDisposition([string]$latestTag) {
+ # Compare verified, channel-local versions before any ZIP download or rename.
+ # Never downgrade in-place; Restore previous is the explicit rollback path.
+ $pattern=if($Channel -ceq 'Stable'){'^v\d+\.\d+\.\d+$'}else{'^ci-[1-9][0-9]{0,8}$'}
+ if($latestTag -cnotmatch $pattern){throw 'Invalid latest release tag for selected channel.'}
+ try {$installedTag=Get-OptionalManagedVersion $current}
+ catch {throw 'Cannot safely determine current Lite version.'}
+ if(-not $installedTag){return 'Install'}
+ if($installedTag -ceq $latestTag){return 'Current'}
+ if($Channel -ceq 'Stable'){
+  $installedNumber=[version]($installedTag.Substring(1))
+  $latestNumber=[version]($latestTag.Substring(1))
+ }else{
+  $installedNumber=[long]($installedTag.Substring(3))
+  $latestNumber=[long]($latestTag.Substring(3))
+ }
+ if($latestNumber -lt $installedNumber){return 'Older'}
+ return 'Install'
+}
 function Install {
  Assert-NoInterruptedInstall
  Assert-NoInterruptedRollback
@@ -587,6 +606,14 @@ function Install {
  Assert-InstallDependencies (Probe)
  $r=Latest
  $script:state.Available=Display-Version $r.Tag
+ $decision=Get-InstallDisposition $r.Tag
+ if($decision -eq 'Current'){
+  Progress ('Up to date: '+(Display-Version $r.Tag)+'. No files downloaded or replaced.')
+  return
+ }
+ if($decision -eq 'Older'){
+  throw 'Latest published release is older than installed Lite. No files downloaded.'
+ }
  Progress 'Downloading GitHub Lite ZIP and SHA256SUMS...'
  Assert-ManagedFolder $base;Assert-ManagedFolder $channelRoot
  New-Item -ItemType Directory -Path $channelRoot -Force | Out-Null
@@ -1075,6 +1102,44 @@ function SelfTest {
   $preflightChecks++
   if($preflightChecks -ne 7){throw 'Wrong Lite dependency preflight check count.'}
   Write-Host 'Updater Banner 7/7 offline dependency preflight checks passed.'
+  $decisionChecks=0
+  if((Get-InstallDisposition 'v0.2.4') -cne 'Current'){
+   throw 'Latest Stable version was not treated as already installed.'
+  }
+  $decisionChecks++
+  if((Get-InstallDisposition 'v0.2.5') -cne 'Install'){
+   throw 'Newer Stable release was rejected.'
+  }
+  $decisionChecks++
+  if((Get-InstallDisposition 'v0.2.3') -cne 'Older'){
+   throw 'Stable downgrade candidate was not blocked.'
+  }
+  $decisionChecks++
+  Reject {Get-InstallDisposition 'ci-4124'}
+  $decisionChecks++
+  $script:Channel='Development'
+  $script:channelRoot=Join-Path $testDir 'Development'
+  $script:current=Join-Path $script:channelRoot 'current'
+  Reset-SyntheticLite
+  if((Get-InstallDisposition 'ci-200') -cne 'Current'){
+   throw 'Latest Development CI was not treated as installed.'
+  }
+  $decisionChecks++
+  if((Get-InstallDisposition 'ci-201') -cne 'Install'){
+   throw 'Newer Development CI was rejected.'
+  }
+  $decisionChecks++
+  if((Get-InstallDisposition 'ci-199') -cne 'Older'){
+   throw 'Development CI downgrade candidate was not blocked.'
+  }
+  $decisionChecks++
+  Remove-Item -LiteralPath $script:channelRoot -Recurse -Force
+  if((Get-InstallDisposition 'ci-201') -cne 'Install'){
+   throw 'First Lite installation was incorrectly blocked.'
+  }
+  $decisionChecks++
+  if($decisionChecks -ne 8){throw 'Wrong same-or-older version gate check count.'}
+  Write-Host 'Updater Banner 8/8 same-or-older version gate checks passed.'
  }finally{
   $script:StateFile=$originalStateFile
   $script:base=$originalBase
@@ -1105,7 +1170,15 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
     throw 'Recovery must be handled before update checks.'
    }
    $r=Latest;$script:state.Available=Display-Version $r.Tag
-   Progress ('Latest '+$Channel+' release: '+$r.Tag+'. No changes made.')
+   $decision=Get-InstallDisposition $r.Tag
+   if($decision -eq 'Current'){
+    Progress ('Up to date: '+(Display-Version $r.Tag)+'. No changes made.')
+   }elseif($decision -eq 'Older'){
+    Progress ('Installed version is newer than the published '+$Channel+
+     ' release. Use Restore previous for an intentional rollback.')
+   }else{
+    Progress ('Latest '+$Channel+' release: '+(Display-Version $r.Tag)+'. No changes made.')
+   }
   }elseif($Mode -eq 'Launch'){
    Invoke-ChannelExclusive {Launch}
   }elseif($Mode -eq 'Rollback'){
@@ -1129,6 +1202,8 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    $message
   }elseif($Mode -eq 'Launch'){
    'Unable to open the selected Lite launcher. No installation changes were made.'
+  }elseif($message -match 'Latest published release is older|Cannot safely determine current Lite version'){
+   'Update blocked: installed Lite is newer or cannot be verified. No files were downloaded.'
   }elseif($message -match 'Recovery must be handled'){
    'Recovery required. Use the matching repair button or inspect the managed folders.'
   }elseif($message -match 'Interrupted rollback requires'){
