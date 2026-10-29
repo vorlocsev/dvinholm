@@ -100,15 +100,15 @@ function Read-DicePnpDevices {
  }catch{return @()}
 }
 function Get-DiceUsbClassification([object[]]$Devices) {
- $matches=@($Devices|Where-Object{
+ $diceMatches=@($Devices|Where-Object{
   $instance=[string]$_.InstanceId
   $name=[string]$_.FriendlyName
   # Similar display names on non-USB/virtual devices are not proof of a DiCE.
   $instance -match '(?i)^USB\\' -and
   $name -match '(?i)\bDiCE\b|Volvo.*Diagnostic Communication'
  })
- $good=@($matches|Where-Object{[string]$_.Status -eq 'OK'})
- $bad=@($matches|Where-Object{
+ $good=@($diceMatches|Where-Object{[string]$_.Status -eq 'OK'})
+ $bad=@($diceMatches|Where-Object{
   [string]$_.Status -match '(?i)^(ERROR|DEGRADED|FAIL|PROBLEM)
 
 function Test-SignedVendorInstaller([string]$Path) {
@@ -194,7 +194,7 @@ if($Mode -eq 'SelfTest'){
  })
  $health=if($good.Count -gt 0){'OK'}
          elseif($bad.Count -gt 0){'Problem'}
-         elseif($matches.Count -gt 0){'Unknown'}
+         elseif($diceMatches.Count -gt 0){'Unknown'}
          else{'Absent'}
  $message=switch($health){
   'OK' {'USB DiCE found; Windows reports OK (VIDA communication untested)'}
@@ -203,8 +203,8 @@ if($Mode -eq 'SelfTest'){
   default {'DiCE USB not detected; installed VIDA driver cannot be inferred'}
  }
  return [pscustomobject]@{
-  UsbDetected=($matches.Count -gt 0)
-  UsbCount=$matches.Count
+  UsbDetected=($diceMatches.Count -gt 0)
+  UsbCount=$diceMatches.Count
   DriverStatus=$health
   Status=$message
  }
