@@ -352,4 +352,23 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("default {return $raw}", banner);
     }
 
+    [Fact]
+    public void NativeLauncherAndAppStartersEmbedDistinctBrandedIcons()
+    {
+        var build = Read("eng/Build-Launchers.ps1");
+        var generator = Read("eng/New-LauncherIcon.ps1");
+        var smoke = Read("eng/Test-NativeLauncherIcons.ps1");
+        var workflow = Read(".github/workflows/ci.yml");
+        Assert.Contains("Get-Command 'rc.exe'", build);
+        Assert.Contains("'Launcher.exe';Define='DVINHOLM_UPDATER';Icon=$brandedLauncherIcon", build);
+        Assert.Contains("'Dvinholm.exe';Define='DVINHOLM_DIRECT_LAUNCH';Icon=$brandedAppIcon", build);
+        Assert.Contains("1 ICON", build);
+        Assert.Contains("'assets\\dvinholm-icon.png'", build);
+        Assert.Contains("foreach($size in $sizes)", generator);
+        Assert.Contains("DrawArc", generator);
+        Assert.Contains("RT_GROUP_ICON", smoke);
+        Assert.Contains("Native EXE icons 3/3 offline checks passed.", smoke);
+        Assert.Contains("Verify distinct embedded native EXE icons", workflow);
+    }
+
 }
