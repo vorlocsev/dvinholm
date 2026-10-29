@@ -212,6 +212,33 @@ public sealed class UpdaterBannerContractTests
     }
 
     [Fact]
+    public void AuroraDashboardFitsWorkingAreaAndPreservesBranding()
+    {
+        var theme = Read("eng/Launcher-AuroraTheme.ps1");
+        Assert.Contains("function Set-AuroraCompactLayout", theme);
+        Assert.Contains("function Resize-AuroraControlTree", theme);
+        Assert.Contains("Screen]::FromControl($form).WorkingArea", theme);
+        Assert.Contains("[Math]::Min(0.80,$fit)", theme);
+        Assert.Contains("$form.AutoScroll=", theme);
+        Assert.Contains("$form.ClientSize=[Drawing.Size]::new(", theme);
+        Assert.Contains("$g.ScaleTransform(", theme);
+        Assert.Contains("$brandTitle.Text='DVINHOLM'", theme);
+    }
+
+    [Fact]
+    public void LauncherScalesAllActionsBeforeShowingWindow()
+    {
+        var banner = Read("eng/Updater-Banner.ps1");
+        var button = banner.IndexOf("$versionsButton.BringToFront()", StringComparison.Ordinal);
+        var scale = banner.IndexOf("Set-AuroraCompactLayout", StringComparison.Ordinal);
+        var smoke = banner.IndexOf("if($Mode -eq 'UiSmokeTest')", StringComparison.Ordinal);
+        Assert.True(button >= 0 && scale > button && smoke > scale);
+        Assert.Contains("Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.", banner);
+        Assert.Contains("usable desktop work area", banner);
+        Assert.Contains("small-screen scrolling", banner);
+    }
+
+    [Fact]
     public void NativeLauncherPackageContainsOnlyWindowsInboxDependencies()
     {
         var script = Read("eng/Package-Updater-Banner.ps1");
