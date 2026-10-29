@@ -59,8 +59,16 @@ module, software version and physical adapter.
    only. It rejects mismatched profile IDs, CAN addressing and DID sets;
    matching addresses do not prove the same physical ECU or firmware.
    Neither action changes the live ECU session or transmits requests.
-   Controlled export redaction and verified recovery backups remain future
-   requirements; Windows UI/hardware acceptance is still unperformed.
+   A Development-only, explicitly selected **Save redacted DID inventory TXT**
+   action in the historical **Inspect snapshot** dialog now exports only
+   DID identifiers and payload byte counts, after strict offline JSON
+   validation; VIN/payload bytes, hashes, profile metadata, CAN IDs and
+   capture timestamps are omitted. This is **lossy research metadata**,
+   not an authenticated ECU identity, a restorable backup or a privacy
+   guarantee. The export uses path-only Save As and guarded atomic writing.
+   See [offline redacted report guide](OFFLINE-REDACTED-DID-INVENTORY.md).
+   True recoverable configuration backups, verified CEM mappings and
+   Windows UI/hardware acceptance remain future requirements.
 3. **Authorized PIN workflow research:** map precisely which module, model
    year and authorization proofs are necessary. Keep authentication secrets out
    of logs, exported snapshots and CI fixtures. No PIN guessing, brute-force,
