@@ -27,9 +27,9 @@ function Get-LauncherBuildRelation([string]$selected,[string]$installed,
  $pattern=if($selected -ceq 'Development'){'^ci-([1-9][0-9]{0,8})$'}else{
   '^v([0-9]+\.[0-9]+\.[0-9]+)$'
  }
- if($available -cnotmatch $pattern){return 'Unknown'}
+ if(-not($available -cmatch $pattern)){return 'Unknown'}
  if($installed -ceq $available){return 'Current'}
- if($installed -cnotmatch $pattern){return 'Unverified or other channel'}
+ if(-not($installed -cmatch $pattern)){return 'Unverified or other channel'}
  if($selected -ceq 'Development'){
   $old=[long]$Matches[1]
   $null=$available -cmatch $pattern
