@@ -1344,6 +1344,14 @@ function Update-ActionAvailability {
  $rollback.Enabled=($ready -and -not $busy)
  $repair.Enabled=($state -ceq 'Repair rollback' -and -not $busy)
  $repairInstall.Enabled=($state -ceq 'Repair install' -and -not $busy)
+ foreach($vendorButton in @($dot,$win,$vc)){
+  $vendorButton.Enabled=-not $busy
+ }
+}
+function Get-VendorExitError([int]$exitCode){
+ if($exitCode -eq 0){return ''}
+ return ('Microsoft dependency installer failed or was cancelled (exit code '+
+  $exitCode+'). Use Recheck deps before retrying.')
 }
 function Begin-Action([string]$action){
  if($script:child -or $script:vendor){return}
@@ -1406,7 +1414,9 @@ foreach($b in @($dot,$win,$vc)){
    $which+' -LiteDirectory "'+$PSScriptRoot+'"'
   try{$script:vendor=Start-Process -FilePath $powershell -ArgumentList $args -PassThru
    $status.Text='Microsoft installer opened; follow its prompts.';$bar.MarqueeAnimationSpeed=25
-  }catch{$status.Text='Unable to start Microsoft dependency installer.'}
+   Update-ActionAvailability
+  }catch{$status.Text='Unable to start Microsoft dependency installer.'
+   Update-ActionAvailability}
  })
 }
 $choice.Add_SelectedIndexChanged({
@@ -1463,8 +1473,19 @@ function Poll-WorkerState {
   Update-ActionAvailability
  }
  if($script:vendor -and $script:vendor.HasExited){
+  $exitCode=[int]$script:vendor.ExitCode
   $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0
-  Begin-Action 'Probe'
+  if($exitCode -eq 0){
+   # Only successful installer completion triggers an automatic local probe.
+   Begin-Action 'Probe'
+  }else{
+   # Do not silently erase the installer failure with a subsequent probe.
+   # No installation or network action is started by this handler.
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text=Get-VendorExitError $exitCode
+   Update-ActionAvailability
+  }
  }
 }
 $timer=New-Object Windows.Forms.Timer;$timer.Interval=500
@@ -1573,6 +1594,46 @@ if($Mode -eq 'UiSmokeTest'){
   $snapshotChecks++
   if($snapshotChecks -ne 6){throw 'Wrong worker state synchronization test count.'}
   Write-Host 'Updater Banner 6/6 WinForms worker-state synchronization checks passed.'
+  $vendorChecks=0
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons were disabled when no worker was running.'
+  }
+  $vendorChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($dot.Enabled -or $win.Enabled -or $vc.Enabled){
+   throw 'Microsoft installers were not locked during updater work.'
+  }
+  $vendorChecks++
+  $script:child=$null;Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons did not unlock after updater completion.'
+  }
+  $vendorChecks++
+  $script:vendor=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($dot.Enabled -or $win.Enabled -or $vc.Enabled -or
+     $choice.Enabled -or $refresh.Enabled -or $launch.Enabled -or
+     $install.Enabled){
+   throw 'Parallel Microsoft installer activity was not locked.'
+  }
+  $vendorChecks++
+  $script:vendor=$null;Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons stayed disabled after worker completion.'
+  }
+  $vendorChecks++
+  if((Get-VendorExitError 0) -cne ''){
+   throw 'Successful Microsoft installer completion reported a failure.'
+  }
+  $vendorChecks++
+  if((Get-VendorExitError 1) -cnotmatch 'failed or was cancelled.*exit code 1'){
+   throw 'Failed Microsoft installer completion was not explained.'
+  }
+  $vendorChecks++
+  if($vendorChecks -ne 7){throw 'Wrong Microsoft installer lifecycle test count.'}
+  Write-Host 'Updater Banner 7/7 WinForms vendor worker lifecycle checks passed.'
  }finally{
   $script:child=$null
   $timer.Stop();$timer.Dispose();$form.Dispose()
