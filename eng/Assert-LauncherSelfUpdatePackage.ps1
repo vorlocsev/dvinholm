@@ -27,7 +27,8 @@ $required=@(
  'Binaries/dvinholm-banner.webp',
  'Binaries/launcher-service-cockpit-banner.jpg',
  'Binaries/Assert-LauncherSelfUpdatePackage.ps1',
- 'Binaries/Invoke-LauncherReplacement.ps1'
+ 'Binaries/Invoke-LauncherReplacement.ps1',
+ 'Binaries/launcher-build.txt'
 )
 $allowed=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 foreach($name in $required){[void]$allowed.Add($name)}
