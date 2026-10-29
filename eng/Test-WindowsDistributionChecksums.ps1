@@ -8,7 +8,8 @@ param(
     [Parameter(Mandatory)][string]$Directory,
     [switch]$Generate,
     [switch]$LiteOnly,
-    [switch]$WithUpdaterBanner
+    [switch]$WithUpdaterBanner,
+    [switch]$WithLauncherBundle
 )
 
 $ErrorActionPreference = 'Stop'
@@ -36,6 +37,9 @@ $names = if ($LiteOnly) { @('Dvinholm-Windows-x86-Lite.zip') } else { @('Dvinhol
 # The Lite-only app policy remains unchanged.
 if ($WithUpdaterBanner) {
     $names = @($names) + @('Dvinholm-Updater-Banner-Windows-x86.zip')
+}
+if ($WithLauncherBundle) {
+    $names = @($names) + @('Dvinholm-Windows-x86-Launcher-Lite.zip')
 }
 $manifest = Join-Path $root 'SHA256SUMS.txt'
 
