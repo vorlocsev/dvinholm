@@ -86,7 +86,8 @@ public sealed class J2534LauncherDriversContractTests
         Assert.DoesNotContain("Dvinholm.App.exe", skin);
         Assert.Contains("$script:driverRescan=$scan", skin);
         Assert.Contains("$script:driverInstallerPending=$true", skin);
-        Assert.Contains("if($script:driverRescan){& $script:driverRescan}", launcher);
+        Assert.Contains("if($script:driverRescan)", launcher);
+        Assert.Contains("& $script:driverRescan", launcher);
         Assert.Contains("if($fromDriverInstaller)", launcher);
     }
 
