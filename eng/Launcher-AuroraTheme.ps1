@@ -94,7 +94,7 @@ $hero.Add_Paint({
 $brandTitle.Text='DVINHOLM'
 $brandTitle.Font=[Drawing.Font]::new('Segoe UI',39,[Drawing.FontStyle]::Bold)
 $brandTitle.SetBounds(220,66,700,76)
-$brandSub.Text='DIAGNOSTICS  ·  CONTROL  ·  CONFIGURATION'
+$brandSub.Text='DIAGNOSTICS  ·  CEM  ·  CONFIGURATION'
 $brandSub.Font=[Drawing.Font]::new('Segoe UI',11)
 $brandSub.SetBounds(225,144,700,32)
 if($null -ne $logo){$logo.SetBounds(45,42,145,143)}
@@ -144,19 +144,19 @@ function SelectAuroraNav([Windows.Forms.Button]$item){
  $item.ForeColor=[Drawing.Color]::White
 }
 SelectAuroraNav $navHome
-$navHome.Add_Click({SelectAuroraNav $navHome;$stableRadio.Focus()})
-$navUpdates.Add_Click({SelectAuroraNav $navUpdates;$check.Focus()})
-$navDependencies.Add_Click({SelectAuroraNav $navDependencies;$refresh.Focus()})
-$navSettings.Add_Click({SelectAuroraNav $navSettings;$rollback.Focus()})
+# Every navigation entry performs a real, named action. No focus-only links.
+$navHome.Add_Click({SelectAuroraNav $navHome;Begin-Action 'Launch'})
+$navUpdates.Add_Click({SelectAuroraNav $navUpdates;Begin-Action 'Check'})
+$navDependencies.Add_Click({SelectAuroraNav $navDependencies;Begin-Action 'Probe'})
+$navSettings.Add_Click({SelectAuroraNav $navSettings;Show-LauncherSettings})
 $navAbout.Add_Click({
  SelectAuroraNav $navAbout
- [void][Windows.Forms.MessageBox]::Show(
-  'Dvinholm Launcher: Windows x86. Stable and Development are separate.'+
-  [Environment]::NewLine+'SHA-256 integrity checks and offline rollback are preserved.',
+ [void][Windows.Forms.MessageBox]::Show($form,
+  (Translate 'aboutMessage'),
   'Dvinholm Launcher',[Windows.Forms.MessageBoxButtons]::OK)
 })
 $sidebarFooter=New-Object Windows.Forms.Label
-$sidebarFooter.Text='DVINHOLM LAUNCHER'+[Environment]::NewLine+'WINDOWS X86  ·  DVINHOLM'
+$sidebarFooter.Text='DVINHOLM LAUNCHER'+[Environment]::NewLine+'WINDOWS X86'
 $sidebarFooter.ForeColor=[Drawing.Color]::FromArgb(112,161,193)
 $sidebarFooter.SetBounds(22,502,180,45)
 $sidebar.Controls.Add($sidebarFooter)
@@ -235,6 +235,16 @@ foreach($c in @($installed,$available,$stableRadio,$developmentRadio,$check,
  $dependenciesTitle,$downloadPercent)){
  $c.BringToFront()
 }
+# The existing Aurora artwork remains the prominent top banner. Language
+# selection stays inside the hero so it never creates another bottom row.
+$languageChoice=New-Object Windows.Forms.ComboBox
+$languageChoice.DropDownStyle=[Windows.Forms.ComboBoxStyle]::DropDownList
+[void]$languageChoice.Items.Add('Русский')
+[void]$languageChoice.Items.Add('English')
+$languageChoice.SetBounds(1026,17,134,32)
+$languageChoice.BackColor=[Drawing.Color]::FromArgb(18,46,70)
+$languageChoice.ForeColor=[Drawing.Color]::White
+$hero.Controls.Add($languageChoice)
 $hero.BringToFront()
 $sidebar.BringToFront()
 
