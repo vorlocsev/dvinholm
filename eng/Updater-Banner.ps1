@@ -1273,18 +1273,25 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    if(-not $json){throw 'Dependency version report is unavailable.'}
    $report=ConvertFrom-Json -InputObject $json -ErrorAction Stop
    $lines=New-Object Collections.Generic.List[string]
-   foreach($key in @('DotNet','WinApp','VC')){
+   foreach($key in @('DotNet','DotNetCore','WinApp','VC')){
     $part=$report.$key
     if($null -eq $part){throw 'Incomplete dependency version report.'}
-    $label=switch($key){'DotNet'{'.NET Desktop x86'}'WinApp'{'Windows App Runtime x86'}default{'VC++ Redist x86'}}
-    $readiness=if([bool]$part.Ready){'required components detected'}else{'required components not fully verified'}
+    $label=switch($key){
+     'DotNet'{'.NET Desktop x86'}
+     'DotNetCore'{'.NET Core x86'}
+     'WinApp'{'Windows App Runtime x86'}
+     default{'VC++ Redist x86'}
+    }
+    $readiness=if([bool]$part.Ready){
+     'required components detected; strict launch preflight still applies'
+    }else{
+     'required components not fully verified'
+    }
+    $latestLabel=if($key -eq 'WinApp'){'latest SDK line'}else{'latest'}
     $lines.Add($label+': '+[string]$part.Installed+
-     ' | latest: '+[string]$part.Latest+
+     ' | '+$latestLabel+': '+[string]$part.Latest+
      ' | '+[string]$part.Status+' ('+$readiness+')')
    }
-   # The Desktop x86 runtime alone is not a complete .NET runtime inventory.
-   $lines.Add('.NET Core Runtime x86: '+[string]$report.DotNetCore+
-    ' (required alongside .NET Desktop Runtime)')
    $lines.Add('WinApp 2.5.1 is the tested installer baseline; newer SDK versions are advisory.')
    $lines.Add('VC++ current installer version cannot be verified without vendor metadata.')
    $script:state.DependencyReport=[string]::Join([Environment]::NewLine,$lines.ToArray())

@@ -254,29 +254,88 @@ function Get-OfficialLatestVersions {
  # machine-readable latest-version feed. Do not invent an update result.
  return $latest
 }
-function Get-DependencyVersionReport {
- $installed=Get-InstalledComponentVersions
- $ready=Get-Inventory
- $latest=Get-OfficialLatestVersions
+# Pure projection: both installed x86 .NET shared frameworks use the
+# official .NET 10 servicing feed, but have independent installed versions.
+# 'Ready' reflects the quick offline inventory only, not runtimeconfig policy.
+function ConvertTo-DependencyVersionReport {
+ param(
+  [Collections.IDictionary]$Installed,
+  [object]$Ready,
+  [Collections.IDictionary]$Latest
+ )
  $components=[ordered]@{}
- foreach($key in @('DotNet','WinApp','VC')){
+ foreach($key in @('DotNet','DotNetCore','WinApp','VC')){
+  $releaseKey=if($key -eq 'DotNetCore'){'DotNet'}else{$key}
+  $readyKey=$releaseKey
   $components[$key]=[ordered]@{
-   Installed=[string]$installed[$key]
-   Ready=[bool]$ready.$key
-   Latest=[string]$latest[$key]
-   Status=Get-VersionDisposition ([string]$installed[$key]) ([string]$latest[$key]) $key
+   Installed=[string]$Installed[$key]
+   Ready=[bool]$Ready.$readyKey
+   Latest=[string]$Latest[$releaseKey]
+   Status=Get-VersionDisposition ([string]$Installed[$key]) ([string]$Latest[$releaseKey]) $key
   }
  }
- # Windows App SDK latest is advisory, not automatically compatible with
- # the baseline 2.5.1 app and pinned runtime installer.
+ # WinApp's latest stable SDK tag is not the same versioning scheme as its
+ # MSIX Framework package. It is advisory, not an auto-update target.
  return [ordered]@{
   DotNet=$components.DotNet
-  DotNetCore=[string]$installed.DotNetCore
+  DotNetCore=$components.DotNetCore
   WinApp=$components.WinApp
   VC=$components.VC
   WinAppBaseline='2.5.1'
   VCUpdateNote='Microsoft provides a latest-x86-installer link but not a verified version feed.'
  }
+}
+function Get-DependencyVersionReport {
+ $installed=Get-InstalledComponentVersions
+ $ready=Get-Inventory
+ $latest=Get-OfficialLatestVersions
+ return (ConvertTo-DependencyVersionReport -Installed $installed -Ready $ready -Latest $latest)
+}
+function Test-DependencyReportProjection {
+ # Network, registry and Appx are not used in these synthetic report tests.
+ $latest=@{DotNet='10.0.14';WinApp='2.6.4';VC='Unknown'}
+ $ready=[pscustomobject]@{DotNet=$true;WinApp=$true;VC=$true}
+ $installed=@{DotNet='10.0.14';DotNetCore='10.0.14';WinApp='2.5.2000.0';VC='14.50.0.0'}
+ $checks=0
+ $report=ConvertTo-DependencyVersionReport -Installed $installed -Ready $ready -Latest $latest
+ if($report.DotNetCore.Status -cne 'Current'){throw 'Core current version was lost.'}
+ $checks++
+ if($report.DotNetCore.Latest -cne '10.0.14'){throw 'Core latest .NET release was not mapped.'}
+ $checks++
+ $installed.DotNetCore='10.0.13'
+ $report=ConvertTo-DependencyVersionReport -Installed $installed -Ready $ready -Latest $latest
+ if($report.DotNetCore.Status -cne 'Update available' -or
+    $report.DotNet.Status -cne 'Current'){throw 'Core update availability is incorrect.'}
+ $checks++
+ $installed.DotNetCore='Not detected';$ready.DotNet=$false
+ $report=ConvertTo-DependencyVersionReport -Installed $installed -Ready $ready -Latest $latest
+ if($report.DotNetCore.Status -cne 'Missing' -or $report.DotNet.Ready){
+  throw 'Partial .NET installation was incorrectly marked ready.'
+ }
+ $checks++
+ $installed.DotNetCore='10.0.14';$installed.DotNet='Not detected'
+ $report=ConvertTo-DependencyVersionReport -Installed $installed -Ready $ready -Latest $latest
+ if($report.DotNet.Status -cne 'Missing' -or $report.DotNetCore.Ready){
+  throw 'Missing Desktop x86 was incorrectly marked ready.'
+ }
+ $checks++
+ $installed.DotNet='10.0.14';$latest.DotNet='Unknown';$ready.DotNet=$true
+ $report=ConvertTo-DependencyVersionReport -Installed $installed -Ready $ready -Latest $latest
+ if($report.DotNetCore.Status -cne 'Latest version not verified' -or
+    $report.DotNet.Status -cne 'Latest version not verified'){
+  throw 'Offline .NET latest status was invented.'
+ }
+ $checks++
+ if($report.WinApp.Status -cne 'Newer SDK line available (compatibility unverified)'){
+  throw 'WinApp newer release was treated as compatible by default.'
+ }
+ $checks++
+ if($report.VC.Status -cne 'Latest version not verified'){
+  throw 'Missing official VC latest version was incorrectly certified.'
+ }
+ $checks++
+ if($checks -ne 8){throw 'Wrong runtime version report fixture count.'}
+ Write-Host 'Lite dependency version report 8/8 offline checks passed.'
 }
 function Test-DependencyVersionLogic {
  $checks=@(
@@ -436,6 +495,7 @@ function Test-MicrosoftInstallerExitCodes {
 if ($Mode -eq 'SelfTest') {
     Test-InstallerMetadataOffline
     Test-DependencyVersionLogic
+    Test-DependencyReportProjection
     Test-DotNet10RuntimeInventory
     Test-MicrosoftInstallerExitCodes
     exit 0
