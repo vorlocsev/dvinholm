@@ -572,10 +572,21 @@ $timer = New-Object Windows.Forms.Timer
 $timer.Interval = 1500
 $timer.Add_Tick({
     if ($null -ne $script:currentInstaller -and $script:currentInstaller.HasExited) {
+        $exitCode=[int]$script:currentInstaller.ExitCode
         $script:currentInstaller.Dispose()
         $script:currentInstaller = $null
         foreach ($b in $buttons.Values) { $b.Enabled = $true }
-        Update-View
+        if($exitCode -eq 0){
+            Update-View
+        }elseif($exitCode -in @(3010,1641)){
+            $script:ready=$false
+            $launch.Enabled=$false
+            $status.Text='Microsoft setup finished. Restart Windows before verifying or launching Dvinholm.'
+        }else{
+            $script:ready=$false
+            $launch.Enabled=$false
+            $status.Text='Microsoft installer failed or was cancelled (exit '+$exitCode+').'
+        }
     }
 })
 $timer.Start()
