@@ -109,12 +109,12 @@ $bar.Visible=$true
 $windowsIndex=New-ServiceLabel '02' 454 377 53 35 21 $true '#2BA9F3'
 $windowsHeading=New-ServiceLabel 'Требования Windows' 515 377 625 35 20 $true '#EFF8FF'
 $windowsHint=New-ServiceLabel 'Версии компонентов для Windows x86' 515 414 630 25 11
-$deps.SetBounds(453,450,682,31)
+$deps.SetBounds(453,446,682,27)
 $deps.Font=[Drawing.Font]::new('Segoe UI',10)
 $deps.AutoEllipsis=$true
-$windowsQuick=New-ServiceButton 'Перепроверить' 452 484 219 37
-$depsInstallQuick=New-ServiceButton 'Установить компоненты' 682 484 272 37
-$versionsButton.SetBounds(965,484,178,37)
+$windowsQuick=New-ServiceButton 'Перепроверить' 452 471 219 34
+$depsInstallQuick=New-ServiceButton 'Установить компоненты' 682 471 272 34
+$versionsButton.SetBounds(965,471,178,34)
 $versionsButton.Font=[Drawing.Font]::new('Segoe UI',9,[Drawing.FontStyle]::Bold)
 
 $driversIndex=New-ServiceLabel '03' 454 539 53 35 21 $true '#2BA9F3'
