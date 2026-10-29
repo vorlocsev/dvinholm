@@ -552,10 +552,79 @@ function Get-VerifiedLaunchTarget {
   File=(Join-Path $current 'Start-Dvinholm-Lite.cmd')
  }
 }
+function Start-VerifiedApplicationHelper([string]$directory) {
+ # Execute the same prerequisite-aware entrypoint as Start-Dvinholm-Lite.cmd,
+ # without ShellExecute's .cmd association or a second cmd.exe parser.
+ $helper=Join-Path $directory 'Manage-Lite-Dependencies.ps1'
+ if(-not(Test-Path -LiteralPath $helper -PathType Leaf)){
+  throw 'Launch blocked: application dependency manager is missing.'
+ }
+ $hostExe=Join-Path ([Environment]::GetFolderPath('Windows')) 'System32\WindowsPowerShell\v1.0\powershell.exe'
+ # Append \. so a trailing directory separator cannot escape the closing quote.
+ $arguments='-NoLogo -NoProfile -STA -ExecutionPolicy Bypass -File "'+
+  $helper+'" -Mode Launch -LiteDirectory "'+$directory+'\."'
+ try {
+  $process=Start-Process -FilePath $hostExe -ArgumentList $arguments -WorkingDirectory $directory -PassThru -ErrorAction Stop
+  try {
+   # Wait for this helper only. Start-Process -Wait also waits for descendants,
+   # which would keep Launcher busy for the entire lifetime of the WinUI app.
+   $process.WaitForExit()
+   $exitCode=$process.ExitCode
+  }finally{$process.Dispose()}
+ }catch{
+  throw ('Launch blocked: could not start the application helper. '+$_.Exception.Message)
+ }
+ if($exitCode -ne 0){
+  throw ('Launch blocked: application helper exited with code '+$exitCode+
+   '. Run Start-Dvinholm-Lite.cmd in the selected application folder for details.')
+ }
+}
 function Launch {
  $target=Get-VerifiedLaunchTarget
- Start-Process -FilePath $target.File -WorkingDirectory (Split-Path -Parent $target.File) -ErrorAction Stop
- Progress ('Opened Lite launcher for '+$Channel+' '+$target.Tag+'.')
+ Start-VerifiedApplicationHelper (Split-Path -Parent $target.File)
+ Progress ('Application launch helper completed for '+$Channel+' '+$target.Tag+'.')
+}
+function Test-ApplicationHelperHandoff {
+ $temp=Join-Path ([IO.Path]::GetTempPath()) ('Dvinholm-Handoff-'+[guid]::NewGuid().ToString('N'))
+ [IO.Directory]::CreateDirectory($temp)|Out-Null
+ try{
+  # Exercise real Windows PowerShell argument parsing with a harmless helper.
+  # No application, installer, network or adapter is used.
+  $names=@('plain','with spaces','amp&ersand','percent%PATH%',"quote'and[brackets]",([string][char]0x416+[char]0x44F))
+  foreach($name in $names){
+   $dir=Join-Path $temp $name
+   [IO.Directory]::CreateDirectory($dir)|Out-Null
+   $helper=Join-Path $dir 'Manage-Lite-Dependencies.ps1'
+   $fixture=@'
+param([string]$Mode,[string]$LiteDirectory)
+if($Mode -cne 'Launch'){exit 21}
+$actual=[IO.Path]::GetFullPath($LiteDirectory).TrimEnd('\')
+if($actual -cne $PSScriptRoot.TrimEnd('\')){exit 22}
+[IO.File]::WriteAllText((Join-Path $PSScriptRoot 'observed.txt'),$actual)
+exit 0
+'@
+   [IO.File]::WriteAllText($helper,$fixture,[Text.Encoding]::ASCII)
+   Start-VerifiedApplicationHelper $dir
+   if([IO.File]::ReadAllText((Join-Path $dir 'observed.txt')) -cne $dir){
+    throw 'Application helper directory argument changed.'
+   }
+  }
+  [IO.File]::WriteAllText($helper,'exit 23',[Text.Encoding]::ASCII)
+  $failed=$false
+  try{Start-VerifiedApplicationHelper $dir}catch{
+   if($_.Exception.Message -notmatch 'helper exited with code 23'){throw}
+   $failed=$true
+  }
+  if(-not $failed){throw 'Failed application helper was reported as successful.'}
+  Remove-Item -LiteralPath $helper -Force
+  $missing=$false
+  try{Start-VerifiedApplicationHelper $dir}catch{
+   if($_.Exception.Message -notmatch 'dependency manager is missing'){throw}
+   $missing=$true
+  }
+  if(-not $missing){throw 'Missing application helper was accepted.'}
+  Write-Host 'Application helper handoff 8/8 Windows process checks passed.'
+ }finally{Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue}
 }
 function Rollback {
  Assert-NoInterruptedInstall
@@ -1251,7 +1320,7 @@ function SelfTest {
   }
  }
 }
-if($Mode -eq 'SelfTest'){SelfTest;exit 0}
+if($Mode -eq 'SelfTest'){SelfTest;Test-ApplicationHelperHandoff;exit 0}
 if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
  try{
   $script:state.Current=Installed
@@ -1332,7 +1401,7 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
   }elseif($message -match '^Launch blocked:'){
    $message
   }elseif($Mode -eq 'Launch'){
-   'Unable to open the selected Lite launcher. No installation changes were made.'
+   ('Unable to start the selected application: '+$message)
   }elseif($message -match 'Latest published release is older|Cannot safely determine current Lite version'){
    'Update blocked: installed Lite is newer or cannot be verified. No files were downloaded.'
   }elseif($message -match 'Recovery must be handled'){
