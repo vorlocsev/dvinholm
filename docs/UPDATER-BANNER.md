@@ -43,8 +43,8 @@ the static MSVC runtime. It needs only Windows PowerShell 5.1 and the inbox
 .NET Framework WinForms to display the updater; **it does not require .NET 10,
 Windows App SDK, VC++ Redistributable, Qt or Electron** to start.
 
-For a first-time Lite installation, use the public Development asset
-`Dvinholm-Windows-x86-Launcher-Lite.zip` and extract the full directory:
+For a first-time installation, use the **main** Development asset
+`Dvinholm-Windows-x86.zip` and extract the full directory:
 
 ```text
 Dvinholm/
