@@ -8,6 +8,7 @@ Never loads registered vendor DLLs and never downloads/install automatically.
 param(
  [ValidateSet('Probe','Verify','Install','SelfTest')][string]$Mode='Probe',
  [string]$InstallerPath,
+ [ValidateSet('Generic','VolvoDice','MongooseJlr')][string]$Target='Generic',
  [switch]$Approved
 )
 $ErrorActionPreference='Stop'
@@ -89,7 +90,7 @@ function Get-TargetDeviceState {
   if(Get-Command Get-PnpDevice -ErrorAction SilentlyContinue){
    $diceUsb=@(Get-PnpDevice -PresentOnly -ErrorAction Stop|Where-Object{
     ($_.FriendlyName -match '(?i)\bDiCE\b|Volvo.*Diagnostic Communication') -or
-    ($_.InstanceId -match '(?i)VID_1782&PID_')
+    ($_.InstanceId -match '(?i)Volvo.*DiCE')
    })
   }
  }catch{}
@@ -126,6 +127,12 @@ function Test-SignedVendorInstaller([string]$Path) {
  }
  $publisher=Clean-Text $signature.SignerCertificate.Subject 200
  if(-not $publisher){throw 'Installer publisher is unavailable.'}
+ if($Target -eq 'MongooseJlr' -and $publisher -notmatch '(?i)Drew Technologies|OPUS IVS'){
+  throw 'MongoosePro JLR setup must be signed by Drew Technologies or OPUS IVS.'
+ }
+ if($Target -eq 'VolvoDice' -and $publisher -notmatch '(?i)Volvo'){
+  throw 'Volvo DiCE setup must be signed by Volvo.'
+ }
  return [pscustomobject]@{Path=$file.FullName;Publisher=$publisher;Extension=$file.Extension.ToLowerInvariant()}
 }
 function Install-SelectedVendorPackage {
