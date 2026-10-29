@@ -167,7 +167,7 @@ if($SimulateInterruptionAfter -ne 0 -and -not $OfflineFixture){
 if($OfflineFixture){
  $tempBase=[IO.Path]::GetFullPath([IO.Path]::GetTempPath()).TrimEnd('\')+'\'
  if(-not $root.StartsWith($tempBase,[StringComparison]::OrdinalIgnoreCase) -or
-    $root -notmatch '(?i)[\\/]dvinholm-selfswap-[0-9a-f]{32}[\\/][a-z0-9_-]+){
+     $root -notmatch '(?i)[\\/]dvinholm-selfswap-[0-9a-f]{32}[\\/][a-z0-9_-]+$'){
   throw 'Offline fixture must be under a dedicated temporary test directory.'
  }
 }elseif($WaitForProcessId -le 0){
