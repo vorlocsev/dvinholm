@@ -24,6 +24,17 @@ separately confirmed **Download / Install** button and three independent
 Microsoft installer/update buttons. Downloads are only started after
 the user clicks and confirms; Windows UAC and vendor setup UI remain visible.
 
+The **Download / Install** worker now performs an additional offline
+preflight **before any GitHub release request or ZIP download**. It requires
+positive local detection of .NET 10 Desktop x86, Windows App Runtime and VC++
+x86. If a dependency is missing or cannot be determined, installation stops
+without creating a download/staging directory. Use the corresponding
+Microsoft installer button, then **Recheck deps** and retry. The existing
+checks of the downloaded Lite files and runtimeconfig remain mandatory before
+the installed version is changed. Seven offline negative/positive preflight
+checks run in CI; actual Microsoft installer behavior still requires Windows
+manual acceptance.
+
 The banner remembers your last selected channel in the per-user
 `%LOCALAPPDATA%\Dvinholm\UpdaterBanner\channel-preference.txt` file.
 Only the literal values `Stable` and `Development` are accepted; an
