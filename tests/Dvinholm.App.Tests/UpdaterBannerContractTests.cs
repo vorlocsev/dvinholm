@@ -154,6 +154,29 @@ public sealed class UpdaterBannerContractTests
     }
 
     [Fact]
+    public void RuntimeProbeRequiresBothDesktopAndCoreX86Frameworks()
+    {
+        var manager = Read("eng/Manage-Lite-Dependencies.ps1");
+        Assert.Contains("function Get-DotNet10RuntimeInventory", manager);
+        Assert.Contains("Microsoft\\.WindowsDesktop\\.App", manager);
+        Assert.Contains("Microsoft\\.NETCore\\.App", manager);
+        Assert.Contains("$runtimeInventory.Ready", manager);
+        Assert.Contains("Test-DotNet10RuntimeInventory", manager);
+        Assert.Contains("Desktop/Core x86 inventory 8/8 offline checks passed.", manager);
+        Assert.Contains("DotNetCore=[string]$installed.DotNetCore", manager);
+    }
+
+    [Fact]
+    public void VersionDialogShowsDesktopAndCoreSeparately()
+    {
+        var banner = Read("eng/Updater-Banner.ps1");
+        Assert.Contains("'.NET Core Runtime x86: '", banner);
+        Assert.Contains("$report.DotNetCore", banner);
+        Assert.Contains("required alongside .NET Desktop Runtime", banner);
+        Assert.Contains("Begin-Action 'Versions'", banner);
+    }
+
+    [Fact]
     public void NativeLauncherPackageContainsOnlyWindowsInboxDependencies()
     {
         var script = Read("eng/Package-Updater-Banner.ps1");
