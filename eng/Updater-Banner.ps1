@@ -35,16 +35,20 @@ function Hash([string]$path){
  try{return ([BitConverter]::ToString($h.ComputeHash($s))-replace '-','').ToLowerInvariant()}
  finally{$s.Dispose();$h.Dispose()}
 }
+function Display-Version([string]$tag) {
+ # GitHub release API keeps v0.2.4 as the canonical Stable tag; the GUI
+ # shows 0.2.4 only. Development CI tags must not be transformed.
+ if($Channel -ceq 'Stable' -and $tag -cmatch '^v(\d+\.\d+\.\d+)$'){
+  return $Matches[1]
+ }
+ return $tag
+}
 function Installed {
- $file=Join-Path $current 'updater-banner.json'
- if(-not(Test-Path $file -PathType Leaf)){return 'Not installed'}
- try{
-  $m=Get-Content $file -Raw|ConvertFrom-Json
-  if($m.Channel -eq $Channel -and [string]$m.Tag -match '^(v\d+\.\d+\.\d+|ci-\d+)$'){
-   return [string]$m.Tag
-  }
- }catch{}
- return 'Unverified installation'
+ # Do not report arbitrary metadata as installed. Validate ordinary Lite
+ # files, selected channel, matching tag and Windows x86 executable header.
+ if(-not(Test-Path -LiteralPath $current)){return 'Not installed'}
+ try {return (Display-Version (Read-ManagedVersion $current))}
+ catch {return 'Unverified installation'}
 }
 function Validate-Asset($a,[string]$tag,[string]$filename){
  if($null -eq $a -or $a.name -cne $filename -or
@@ -284,7 +288,7 @@ function Repair-InterruptedRollback {
   Move-Item -LiteralPath $current -Destination $previous -ErrorAction Stop
  }
  Move-Item -LiteralPath $swap -Destination $current -ErrorAction Stop
- $script:state.Current=$swapTag
+ $script:state.Current=Display-Version $swapTag
  $script:state.Available='Not checked'
  Progress ('Recovered '+$swapTag+'; '+$otherTag+' retained as the previous version.')
 }
@@ -540,7 +544,7 @@ function Rollback {
   }
   throw 'Rollback failed; original managed versions restored.'
  }
- $script:state.Current=$restoreTag
+ $script:state.Current=Display-Version $restoreTag
  $script:state.Available='Not checked'
  Progress ('Restored '+$restoreTag+'; '+$oldTag+' retained as the previous version.')
 }
@@ -565,7 +569,7 @@ function Install {
   throw 'Close the application before update.'
  }
  $r=Latest
- $script:state.Available=$r.Tag
+ $script:state.Available=Display-Version $r.Tag
  Progress 'Downloading GitHub Lite ZIP and SHA256SUMS...'
  Assert-ManagedFolder $base;Assert-ManagedFolder $channelRoot
  New-Item -ItemType Directory -Path $channelRoot -Force | Out-Null
@@ -637,7 +641,7 @@ function Install {
   if($movedPrevious){
    Remove-Item -LiteralPath $retired -Recurse -Force -ErrorAction SilentlyContinue
   }
-  $script:state.Current=$r.Tag
+  $script:state.Current=Display-Version $r.Tag
   Progress ('Installed '+$r.Tag+'; previous version retained for rollback.')
  }finally{
   if(Test-Path $downloads){Remove-Item $downloads -Recurse -Force -ErrorAction SilentlyContinue}
@@ -991,6 +995,51 @@ function SelfTest {
   $statusChecks++
   if($statusChecks -ne 6){throw 'Wrong recovery status check count.'}
   Write-Host 'Updater Banner 6/6 read-only recovery status checks passed.'
+  $versionChecks=0
+  Reset-SyntheticLite
+  if((Installed) -cne 'ci-200'){throw 'Valid Development current version not recognized.'}
+  $versionChecks++
+  Reset-SyntheticLite
+  Remove-Item -LiteralPath $script:current -Recurse -Force
+  if((Installed) -cne 'Not installed'){throw 'Missing Lite directory marked as installed.'}
+  $versionChecks++
+  Reset-SyntheticLite
+  Remove-Item -LiteralPath (Join-Path $script:current 'Start-Dvinholm-Lite.cmd') -Force
+  if((Installed) -cne 'Unverified installation'){
+   throw 'Incomplete Lite installation was reported as verified.'
+  }
+  $versionChecks++
+  Reset-SyntheticLite
+  [IO.File]::WriteAllBytes((Join-Path $script:current 'Dvinholm.App.exe'),[byte[]](0,1,2,3))
+  if((Installed) -cne 'Unverified installation'){
+   throw 'Invalid x86 PE was reported as verified.'
+  }
+  $versionChecks++
+  Reset-SyntheticLite
+  [IO.File]::WriteAllText((Join-Path $script:current 'updater-banner.json'),
+   (@{Channel='Stable';Tag='v0.2.4'}|ConvertTo-Json))
+  if((Installed) -cne 'Unverified installation'){
+   throw 'Cross-channel version was reported as installed.'
+  }
+  $versionChecks++
+  if((Display-Version 'ci-4120') -cne 'ci-4120'){
+   throw 'Development CI version was altered.'
+  }
+  $versionChecks++
+  $script:Channel='Stable'
+  $script:channelRoot=Join-Path $testDir 'Stable'
+  $script:current=Join-Path $script:channelRoot 'current'
+  New-SyntheticLite $script:current 'v0.2.4' 'Stable'
+  if((Installed) -cne '0.2.4'){
+   throw 'Stable installed version retained the GitHub v prefix.'
+  }
+  $versionChecks++
+  if((Display-Version 'v0.2.5') -cne '0.2.5'){
+   throw 'Stable available version retained the GitHub v prefix.'
+  }
+  $versionChecks++
+  if($versionChecks -ne 8){throw 'Wrong verified-version display check count.'}
+  Write-Host 'Updater Banner 8/8 verified channel version display checks passed.'
  }finally{
   $script:StateFile=$originalStateFile
   $script:base=$originalBase
@@ -1020,7 +1069,7 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    if($script:state.Recovery -ne 'Ready'){
     throw 'Recovery must be handled before update checks.'
    }
-   $r=Latest;$script:state.Available=$r.Tag
+   $r=Latest;$script:state.Available=Display-Version $r.Tag
    Progress ('Latest '+$Channel+' release: '+$r.Tag+'. No changes made.')
   }elseif($Mode -eq 'Launch'){
    Invoke-ChannelExclusive {Launch}
