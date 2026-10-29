@@ -23,6 +23,13 @@ available versions, three dependency statuses, a check button, a
 separately confirmed **Download / Install** button and three independent
 Microsoft installer/update buttons. Downloads are only started after
 the user clicks and confirms; Windows UAC and vendor setup UI remain visible.
+While a Microsoft installer or any Banner worker is running, all three
+installer buttons, channel selector and update controls are visually disabled.
+Successful Microsoft installer completion triggers an automatic **local-only**
+dependency probe. A failed or cancelled installer shows its exit code and
+requires a manual **Recheck deps** instead of clearing the failure message.
+Windows CI exercises seven synthetic WinForms vendor-worker lifecycle checks;
+a real Microsoft installation and UAC prompt remain manual acceptance steps.
 
 **Already installed:** when the selected channel's verified Lite version
 matches the latest public release, **Check updates** reports *Up to date*,
