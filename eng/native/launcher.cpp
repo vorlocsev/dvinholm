@@ -1,6 +1,7 @@
 #include <windows.h>
 #include <string>
 #include <vector>
+#pragma comment(lib, "user32.lib")
 int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     wchar_t module[32768] = {};
     const DWORD n = GetModuleFileNameW(nullptr, module, 32768);
