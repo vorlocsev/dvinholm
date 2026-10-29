@@ -43,7 +43,7 @@ try{
    Join-Path $native $name
   }
   if(-not(Test-Path -LiteralPath $source -PathType Leaf)){throw "Missing $name"}
-  Copy-Item -LiteralPath $source -Destination (Join-Path $temp 'bundle' $name)
+  Copy-Item -LiteralPath $source -Destination (Join-Path (Join-Path $temp 'bundle') $name)
  }
  foreach($name in @('Dvinholm.App.exe','Dvinholm.App.runtimeconfig.json',
    'Start-Dvinholm-Lite.cmd','Check-Lite-Prerequisites.ps1',
