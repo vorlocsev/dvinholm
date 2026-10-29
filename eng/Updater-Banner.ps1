@@ -1616,14 +1616,37 @@ function Poll-WorkerState {
  }
  if($script:vendor -and $script:vendor.HasExited){
   $exitCode=[int]$script:vendor.ExitCode
+  $fromDriverInstaller=($script:driverInstallerPending -eq $true)
+  $script:driverInstallerPending=$false
   $downloadPercent.Text=''
   $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
-  if($exitCode -eq 0){
-   # Only successful installer completion triggers an automatic local probe.
+  if($fromDriverInstaller){
+   # A vendor setup is independent of .NET/WinApp prerequisites. Do not
+   # report driver success by running the generic updater dependency probe.
+   # Rescan only Windows PnP/registry. Never load the adapter or request CAN.
+   if($exitCode -eq 0){
+    try{
+     if($script:driverRescan){
+      & $script:driverRescan
+      $status.Text='J2534 installer finished. Driver inventory refreshed; hardware untested.'
+     }else{
+      $status.Text='Vendor installer finished. Open Drivers and select Check to verify.'
+     }
+    }catch{
+     $status.Text='Vendor setup finished; driver inventory could not be refreshed.'
+    }
+   }else{
+    $status.Text='Vendor driver installer failed or was cancelled (exit '+$exitCode+').'
+    if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
+     $script:driverResultControl.Text='Vendor driver setup did not complete. Check the vendor installer log.'
+    }
+   }
+   Update-ActionAvailability
+  }elseif($exitCode -eq 0){
+   # Microsoft runtime installer only: automatically recheck runtime dependencies.
    Begin-Action 'Probe'
   }else{
-   # Do not silently erase the installer failure with a subsequent probe.
-   # No installation or network action is started by this handler.
+   # Preserve failure without launching an unrelated dependency probe.
    $script:recoveryStatus='Not checked'
    $recovery.Text='Recovery: not checked'
    $status.Text=Get-VendorExitError $exitCode

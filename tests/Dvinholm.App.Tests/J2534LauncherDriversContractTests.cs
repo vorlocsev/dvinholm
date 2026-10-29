@@ -47,6 +47,10 @@ public sealed class J2534LauncherDriversContractTests
         Assert.Contains("VolvoDice=", script);
         Assert.Contains("J2534Supported=$false", script);
         Assert.Contains("Get-PnpDevice -PresentOnly", script);
+        Assert.Contains("Get-CimInstance -ClassName Win32_PnPEntity", script);
+        Assert.Contains("Get-DiceUsbClassification", script);
+        Assert.Contains("DriverStatus=$dice.DriverStatus", script);
+        Assert.Contains("USB DiCE found; Windows reports a driver/device problem", script);
     }
 
     [Fact]
@@ -80,6 +84,11 @@ public sealed class J2534LauncherDriversContractTests
         Assert.Contains("J2534-DriverManager.ps1", skin);
         Assert.Contains("Драйверы адаптеров", skin);
         Assert.DoesNotContain("Dvinholm.App.exe", skin);
+        Assert.Contains("$script:driverRescan=$scan", skin);
+        Assert.Contains("$script:driverInstallerPending=$true", skin);
+        Assert.Contains("if($script:driverRescan)", launcher);
+        Assert.Contains("& $script:driverRescan", launcher);
+        Assert.Contains("if($fromDriverInstaller)", launcher);
     }
 
     [Fact]

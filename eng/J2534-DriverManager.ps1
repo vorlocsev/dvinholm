@@ -79,22 +79,60 @@ function Read-RegisteredDrivers {
  return @($result.ToArray()|Sort-Object Vendor,Name,Api)
 }
 
-# Model-aware detection only; hardware access and vendor DLL execution are forbidden.
+# Only read Windows Plug-and-Play metadata. No USB opening, vendor library
+# loading or hardware interrogation occurs in either discovery path.
+function Read-DicePnpDevices {
+ try {
+  if(Get-Command Get-PnpDevice -ErrorAction SilentlyContinue){
+   return @(Get-PnpDevice -PresentOnly -ErrorAction Stop |
+    Select-Object FriendlyName,InstanceId,Status)
+  }
+ }catch{}
+ # Some LTSC installations lack Get-PnpDevice; use the inbox CIM provider.
+ try {
+  return @(Get-CimInstance -ClassName Win32_PnPEntity -ErrorAction Stop |
+   Where-Object { $_.Present -ne $false } |
+   ForEach-Object {
+    [pscustomobject]@{FriendlyName=$_.Name;InstanceId=$_.PNPDeviceID;Status=$_.Status}
+   })
+ }catch{return @()}
+}
+function Get-DiceUsbClassification([object[]]$Devices) {
+ $diceMatches=@($Devices|Where-Object{
+  $instance=[string]$_.InstanceId
+  $name=[string]$_.FriendlyName
+  $instance -match '(?i)^USB\\' -and
+  $name -match '(?i)\bDiCE\b|Volvo.*Diagnostic Communication'
+ })
+ $good=@($diceMatches|Where-Object{[string]$_.Status -eq 'OK'})
+ $bad=@($diceMatches|Where-Object{
+  [string]$_.Status -match '(?i)^(ERROR|DEGRADED|FAIL|PROBLEM)$'
+ })
+ $health=if($good.Count -gt 0){'OK'}
+         elseif($bad.Count -gt 0){'Problem'}
+         elseif($diceMatches.Count -gt 0){'Unknown'}
+         else{'Absent'}
+ $message=switch($health){
+  'OK' {'USB DiCE found; Windows reports OK (VIDA communication untested)'}
+  'Problem' {'USB DiCE found; Windows reports a driver/device problem'}
+  'Unknown' {'USB DiCE found; driver status unknown'}
+  default {'DiCE USB not detected; installed VIDA driver cannot be inferred'}
+ }
+ return [pscustomobject]@{
+  UsbDetected=($diceMatches.Count -gt 0)
+  UsbCount=$diceMatches.Count
+  DriverStatus=$health
+  Status=$message
+ }
+}
+# Model-aware detection only; no vehicle access and no assumption that DiCE
+# exposes the SAE J2534 FunctionLibrary API.
 function Get-TargetDeviceState {
  $entries=@(Read-RegisteredDrivers)
  $mongoose=@($entries|Where-Object{
   (($_.Name+' '+$_.Vendor) -match '(?i)mongoose.*jlr|jlr.*mongoose') -and $_.Compatible
  })
- $diceUsb=@()
- try {
-  if(Get-Command Get-PnpDevice -ErrorAction SilentlyContinue){
-   $diceUsb=@(Get-PnpDevice -PresentOnly -ErrorAction Stop|Where-Object{
-    ($_.FriendlyName -match '(?i)\bDiCE\b|Volvo.*Diagnostic Communication') -or
-    ($_.InstanceId -match '(?i)Volvo.*DiCE')
-   })
-  }
- }catch{}
- # A Volvo DiCE USB driver is NOT the SAE J2534 FunctionLibrary API.
+ $dice=Get-DiceUsbClassification @(Read-DicePnpDevices)
  return [pscustomobject]@{
   MongooseJlr=[pscustomobject]@{
    Name='MongoosePro JLR';RegisteredX86Dll=($mongoose.Count -gt 0)
@@ -102,13 +140,13 @@ function Get-TargetDeviceState {
    Status=if($mongoose.Count){'J2534 x86 registered; hardware untested'}else{'No compatible Mongoose JLR x86 J2534 registration'}
   }
   VolvoDice=[pscustomobject]@{
-   Name='Volvo DiCE';UsbDetected=($diceUsb.Count -gt 0)
-   Status=if($diceUsb.Count){'USB device detected; VIDA driver/hardware not verified'}else{'DiCE USB device not detected'}
+   Name='Volvo DiCE';UsbDetected=$dice.UsbDetected
+   UsbCount=$dice.UsbCount;DriverStatus=$dice.DriverStatus
+   Status=$dice.Status
    J2534Supported=$false
   }
  }
 }
-
 function Test-SignedVendorInstaller([string]$Path) {
  if([string]::IsNullOrWhiteSpace($Path)){throw 'Select the original vendor installer.'}
  $file=Get-Item -LiteralPath $Path -ErrorAction Stop
@@ -173,7 +211,18 @@ if($Mode -eq 'SelfTest'){
  try{Install-SelectedVendorPackage}catch{$rejected=$true}
  if($rejected){$count++}else{throw 'Installation without approval accepted'}
  if(([Microsoft.Win32.RegistryView]::Registry32).ToString() -eq 'Registry32'){$count++}else{throw 'No 32-bit registry view'}
- if($count -ne 6){throw 'Wrong offline driver safety check count'}
- Write-Host 'J2534 driver manager 6/6 offline safety checks passed.'
+ $ok=Get-DiceUsbClassification @([pscustomobject]@{
+  FriendlyName='Volvo DiCE';InstanceId='USB\VID_1234&PID_5678';Status='OK'
+ })
+ if($ok.UsbDetected -and $ok.DriverStatus -eq 'OK'){$count++}
+ else{throw 'Healthy USB DiCE classification failed'}
+ $lookalike=Get-DiceUsbClassification @(
+  [pscustomobject]@{FriendlyName='DiCE';InstanceId='ROOT\FAKE';Status='OK'},
+  [pscustomobject]@{FriendlyName='Volvo DiCE';InstanceId='USB\VID_1234';Status='ERROR'}
+ )
+ if($lookalike.UsbCount -eq 1 -and $lookalike.DriverStatus -eq 'Problem'){$count++}
+ else{throw 'Invalid USB DiCE classification was accepted'}
+ if($count -ne 8){throw 'Wrong offline driver safety check count'}
+ Write-Host 'J2534 driver manager 8/8 offline safety checks passed.'
  return
 }
