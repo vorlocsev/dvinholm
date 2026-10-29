@@ -642,10 +642,11 @@ function Get-VerifiedLaunchTarget {
   File=(Join-Path $current 'Start-Dvinholm-Lite.cmd')
  }
 }
-function Start-VerifiedApplicationHelper([string]$directory) {
- # Execute the same prerequisite-aware entrypoint as Start-Dvinholm-Lite.cmd,
- # without ShellExecute's .cmd association or a second cmd.exe parser.
- $helper=Join-Path $directory 'Manage-Lite-Dependencies.ps1'
+function Start-VerifiedApplicationHelper([string]$directory,[string]$testHelper='') {
+ # Use the launcher's own dependency manager, not scripts from a downloaded
+ # application channel. The optional test helper is used only in SelfTest.
+ # Never invoke a .cmd shell association or inherit a channel's scripts.
+ $helper=if($testHelper){$testHelper}else{$manager}
  if(-not(Test-Path -LiteralPath $helper -PathType Leaf)){
   throw 'Launch blocked: application dependency manager is missing.'
  }
@@ -699,21 +700,21 @@ if($actual -cne $PSScriptRoot.TrimEnd('\')){exit 22}
 exit 0
 '@
    [IO.File]::WriteAllText($helper,$fixture,[Text.Encoding]::ASCII)
-   Start-VerifiedApplicationHelper $dir
+   Start-VerifiedApplicationHelper $dir $helper
    if([IO.File]::ReadAllText((Join-Path $dir 'observed.txt')) -cne $dir){
     throw 'Application helper directory argument changed.'
    }
   }
   [IO.File]::WriteAllText($helper,'exit 23',[Text.Encoding]::ASCII)
   $failed=$false
-  try{Start-VerifiedApplicationHelper $dir}catch{
+  try{Start-VerifiedApplicationHelper $dir $helper}catch{
    if($_.Exception.Message -notmatch 'helper exited with code 23'){throw}
    $failed=$true
   }
   if(-not $failed){throw 'Failed application helper was reported as successful.'}
   Remove-Item -LiteralPath $helper -Force
   $missing=$false
-  try{Start-VerifiedApplicationHelper $dir}catch{
+  try{Start-VerifiedApplicationHelper $dir $helper}catch{
    if($_.Exception.Message -notmatch 'dependency manager is missing'){throw}
    $missing=$true
   }
