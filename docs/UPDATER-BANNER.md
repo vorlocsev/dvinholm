@@ -1,3 +1,23 @@
+## Application startup handoff
+
+Launcher starts the selected installation's `Manage-Lite-Dependencies.ps1 -Mode Launch`
+through the Windows system PowerShell executable. It no longer opens the
+`Start-Dvinholm-Lite.cmd` file through its Windows file association. The same
+strict prerequisite check and dependency UI remain in use. Paths are passed
+as literal `-File` arguments; no `cmd.exe` expansion is involved.
+
+The worker waits for the helper process (not the WinUI application's lifetime)
+and preserves a nonzero helper exit code. A completed helper is not proof that
+the main window rendered successfully. A launch failure now includes the
+underlying error instead of only a generic "Unable to open" message.
+
+Eight Windows self-tests cover six path forms (plain, spaces, ampersand,
+percent/environment-variable text, apostrophe/brackets and Unicode), a failed
+helper and a missing helper. They launch only a synthetic PowerShell fixture.
+User acceptance on 2026-10-29: the runtime report was visible and manual
+`Start-Dvinholm-Lite.cmd` startup opened the application after a Windows prompt.
+The repaired Launcher route still needs acceptance on that user's PC.
+
 ## Основной дистрибутив и драйверы J2534
 
 **Основной дистрибутив Windows x86:** `Dvinholm-Windows-x86.zip`.
