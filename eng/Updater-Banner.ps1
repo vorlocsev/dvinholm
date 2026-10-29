@@ -1881,8 +1881,7 @@ function Update-ActionAvailability {
   [string]$choice.SelectedItem
  }else{[string]$Channel}
  $install.Enabled=($ready -and -not $busy -and
-  (Test-CockpitUpdateAvailable $script:lastCurrent $script:lastAvailable
-   $selectedChannel))
+  (Test-CockpitUpdateAvailable $script:lastCurrent $script:lastAvailable $selectedChannel))
  $launch.Enabled=($ready -and -not $busy)
  $refresh.Enabled=-not $busy
  $versionsButton.Enabled=-not $busy
@@ -1906,8 +1905,7 @@ function Begin-Action([string]$action){
   [string]$choice.SelectedItem
  }else{[string]$Channel}
  if($action -ceq 'Install' -and
-    -not(Test-CockpitUpdateAvailable $script:lastCurrent $script:lastAvailable
-      $selectedChannel)){return}
+    -not (Test-CockpitUpdateAvailable $script:lastCurrent $script:lastAvailable $selectedChannel)){return}
  if($action -eq 'RepairInstall'){
   if([Windows.Forms.MessageBox]::Show(
    (Translate 'confirmRepairInstall'),
