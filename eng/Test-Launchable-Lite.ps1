@@ -20,7 +20,7 @@ try{
   'Binaries/Dvinholm.App.runtimeconfig.json',
   'Binaries/Check-Lite-Prerequisites.ps1','Binaries/Start-Dvinholm-Lite.cmd',
   'Binaries/Manage-Lite-Dependencies.ps1','Binaries/Updater-Banner.ps1',
-  'Binaries/Launcher-AuroraTheme.ps1',
+  'Binaries/Launcher-AuroraTheme.ps1','Binaries/Launcher-ServiceCockpit.ps1',
   'Binaries/J2534-DriverManager.ps1','Binaries/J2534-DriverUI.ps1',
   'Binaries/Dvinholm-icon.png','Binaries/dvinholm-banner.webp')){
   if($names -cnotcontains $name){throw "Missing first-run archive member $name"}
