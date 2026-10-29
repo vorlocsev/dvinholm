@@ -50,7 +50,7 @@ public sealed class J2534LauncherDriversContractTests
         Assert.Contains("exit ([int]$process.ExitCode)", manager);
         Assert.Contains("elseif($exitCode -in @(3010,1641))", launcher);
         Assert.Contains("Restart Windows before using the driver", launcher);
-        Assert.Contains("После неё повторите проверку адаптеров", launcher);
+        Assert.Contains("Recheck adapter drivers after restarting Windows", launcher);
         Assert.Contains("if($fromDriverInstaller)", launcher);
     }
 
