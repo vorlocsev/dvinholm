@@ -53,5 +53,6 @@
   </ItemGroup>
   <ItemGroup>
     <None Update="Assets\Dvinholm.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <Content Include="..\..\assets\dvinholm-banner.webp" Link="Assets\Dvinholm-Banner.webp" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

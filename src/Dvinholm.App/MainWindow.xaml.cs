@@ -47,11 +47,17 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        AuroraLanding.NavigationRequested += DashboardNavigate;
+        ProfileSelector.SelectionChanged += (_, _) =>
+            DispatcherQueue.TryEnqueue(RefreshDashboardSummary);
+        J2534Devices.SelectionChanged += (_, _) =>
+            DispatcherQueue.TryEnqueue(RefreshDashboardSummary);
 #if DVINHOLM_DEVELOPMENT_FEATURES
         InitializeDevelopmentControls();
 #endif
         LoadSavedBaudRate();
         BaudRate.SelectionChanged += BaudRate_SelectionChanged;
+        BaudRate.SelectionChanged += (_, _) => RefreshDashboardSummary();
         DllPath.Text = LoadSavedDllPath();
         DllPath.TextChanged += DllPath_TextChanged;
         Title = LatestBuildUpdater.CurrentWindowTitle;
@@ -67,6 +73,7 @@ public sealed partial class MainWindow : Window
         EcusView.ItemsSource = _ecus;
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
+        RefreshDashboardSummary();
         // The standalone launcher owns updates and all Lite runtime management.
         if (DvinholmUserDataDirectory.IsAcceptanceLaunch)
             ConnectButton.IsEnabled = false;
@@ -165,7 +172,74 @@ public sealed partial class MainWindow : Window
         return string.IsNullOrWhiteSpace(detail) ? fallback : detail;
     }
 
-    private void SetStatus(string text) => StatusText.Text = text;
+    private void SetStatus(string text)
+    {
+        StatusText.Text = text;
+        AuroraLanding.UpdateActivity(text);
+        RefreshDashboardSummary();
+    }
+
+    // This navigation never starts J2534, PIN search or configuration writes.
+    // The existing diagnostic workspace and all its tested controls remain intact.
+    private void DashboardNavigate(object? sender, AuroraDestination destination)
+    {
+        if (_closing)
+            return;
+
+        switch (destination)
+        {
+            case AuroraDestination.CemPinReadiness:
+                P2PinReview_Click(this, null!); // Existing offline-only checklist.
+                return;
+            case AuroraDestination.CemConfigurationCatalog:
+                P2ConfigCatalog_Click(this, null!); // Existing offline research.
+                return;
+            case AuroraDestination.EcuWorkspace:
+                ShowDashboardWorkspace();
+                EcuSelector.Focus(FocusState.Programmatic);
+                return;
+            case AuroraDestination.DiagnosticsWorkspace:
+                ShowDashboardWorkspace();
+                UdsRequestId.Focus(FocusState.Programmatic);
+                return;
+            case AuroraDestination.CanMonitor:
+                ShowDashboardWorkspace();
+                IdFilter.Focus(FocusState.Programmatic);
+                return;
+            case AuroraDestination.EcuProfiles:
+                ShowDashboardWorkspace();
+                ProfileSearch.Focus(FocusState.Programmatic);
+                return;
+            case AuroraDestination.J2534Connection:
+                ShowDashboardWorkspace();
+                J2534Devices.Focus(FocusState.Programmatic);
+                return;
+        }
+    }
+
+    private void ShowDashboardWorkspace()
+    {
+        AuroraLanding.Visibility = Visibility.Collapsed;
+        AuroraWorkspaceHost.Visibility = Visibility.Visible;
+    }
+
+    private void DashboardReturn_Click(object sender, RoutedEventArgs e)
+    {
+        AuroraWorkspaceHost.Visibility = Visibility.Collapsed;
+        AuroraLanding.Visibility = Visibility.Visible;
+        RefreshDashboardSummary();
+    }
+
+    private void RefreshDashboardSummary()
+    {
+        if (_closing)
+            return;
+
+        var adapter = (J2534Devices.SelectedItem as J2534Device)?.Label;
+        var baud = (BaudRate.SelectedItem as ComboBoxItem)?.Content?.ToString();
+        AuroraLanding.UpdateConnection(_connected, adapter, baud);
+        AuroraLanding.UpdateProfile((ProfileSelector.SelectedItem as EcuProfile)?.Name);
+    }
 
     private static string ProfileCatalogPath => Path.Combine(
         DvinholmUserDataDirectory.Current,
