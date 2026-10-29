@@ -26,6 +26,7 @@ $files=@{
  'Binaries/J2534-DriverUI.ps1'=(Join-Path $PSScriptRoot 'J2534-DriverUI.ps1')
  'Binaries/Manage-Lite-Dependencies.ps1'=(Join-Path $PSScriptRoot 'Manage-Lite-Dependencies.ps1')
  'Binaries/Assert-LauncherSelfUpdatePackage.ps1'=(Join-Path $PSScriptRoot 'Assert-LauncherSelfUpdatePackage.ps1')
+ 'Binaries/Invoke-LauncherReplacement.ps1'=(Join-Path $PSScriptRoot 'Invoke-LauncherReplacement.ps1')
  'Binaries/Dvinholm-icon.png'=(Join-Path $root 'assets\dvinholm-icon.png')
  'Binaries/dvinholm-banner.webp'=(Join-Path $root 'assets\dvinholm-banner.webp')
  'Binaries/launcher-service-cockpit-banner.jpg'=(Join-Path $root 'assets\launcher-service-cockpit-banner.jpg')
