@@ -258,6 +258,16 @@ function Translate([string]$key) {
    confirmRepairInstall='Восстановить прерванную установку? Закройте Dvinholm.'
    confirmVendor='Скачать и запустить официальный установщик Microsoft? Возможен запрос UAC.'
    confirmTitle='Подтверждение'
+   cockpitReady='ГОТОВ';cockpitCaption='Диагностика и конфигурация автомобиля'
+   channelHeading='Канал обновлений';stableHint='Stable: релиз / Development: сборки CI'
+   afterLaunch='После запуска Dvinholm лаунчер закроется.'
+   updatesHeading='Обновления Dvinholm';updatesHint='Проверка SHA-256, загрузка и установка'
+   windowsHeading='Требования Windows';windowsHint='Проверка компонентов и версий x86'
+   driversHeading='Драйверы адаптеров';driversHint='J2534 · Volvo DiCE · Mongoose JLR'
+   driversUnchecked='Драйверы ещё не проверены';driversScan='Проверить'
+   driversOpen='Открыть драйверы';settingsQuick='Настройки'
+   windowsQuick='Перепроверить';depsInstall='Установить компоненты'
+   componentsTitle='Компоненты Microsoft x86';componentsNotice='Выберите компонент для установки. Будет показано подтверждение.'
   }
   EN=@{
    home='▶  Launch';updates='↻  Updates'
@@ -281,6 +291,16 @@ function Translate([string]$key) {
    confirmRepairInstall='Repair an interrupted installation? Close Dvinholm first.'
    confirmVendor='Download and run the official Microsoft installer? UAC may be requested.'
    confirmTitle='Confirm action'
+   cockpitReady='READY';cockpitCaption='Vehicle diagnostics and configuration'
+   channelHeading='Update channel';stableHint='Stable releases / Development CI builds'
+   afterLaunch='Launcher closes after Dvinholm starts successfully.'
+   updatesHeading='Dvinholm updates';updatesHint='SHA-256 verification, download and installation'
+   windowsHeading='Windows requirements';windowsHint='Check installed x86 components and versions'
+   driversHeading='Adapter drivers';driversHint='J2534 · Volvo DiCE · Mongoose JLR'
+   driversUnchecked='Drivers not checked yet';driversScan='Scan drivers'
+   driversOpen='Open drivers';settingsQuick='Settings'
+   windowsQuick='Recheck';depsInstall='Install components'
+   componentsTitle='Microsoft x86 prerequisites';componentsNotice='Select the component to install. Confirmation is required.'
   }
  }
  $value=$labels[$script:launcherLanguage][$key]
@@ -1677,7 +1697,13 @@ $versionsButton.BackColor=[Drawing.Color]::FromArgb(25,76,114)
 $versionsButton.ForeColor=[Drawing.Color]::White
 $versionsButton.FlatStyle=[Windows.Forms.FlatStyle]::Flat
 $versionsButton.BringToFront()
-# Fit the complete Aurora dashboard inside the available desktop work area,
+# Approved Service Cockpit layout; keeps the existing updater workers intact.
+$serviceTheme=Join-Path $PSScriptRoot 'Launcher-ServiceCockpit.ps1'
+if(-not(Test-Path -LiteralPath $serviceTheme -PathType Leaf)){
+ throw 'Dvinholm Service Cockpit theme missing.'
+}
+. $serviceTheme
+# Fit the complete Service Cockpit dashboard inside the available desktop work area,
 # including the Windows taskbar, before showing the fixed-size window.
 Set-AuroraCompactLayout
 
@@ -1712,6 +1738,26 @@ function Apply-LauncherLanguage {
  $rollback.Text=Translate 'rollback'
  $repair.Text=Translate 'repair'
  $repairInstall.Text=Translate 'repairInstall'
+ # Service Cockpit controls are attached by Launcher-ServiceCockpit.ps1.
+ $serviceHeading.Text='DVINHOLM  ·  '+(Translate 'cockpitReady')
+ $serviceStatus.Text=Translate 'cockpitCaption'
+ $channelLabel.Text=Translate 'channelHeading'
+ $releaseHint.Text=Translate 'stableHint'
+ $startNote.Text=Translate 'afterLaunch'
+ $updateHeading.Text=Translate 'updatesHeading'
+ $updateHint.Text=Translate 'updatesHint'
+ $windowsHeading.Text=Translate 'windowsHeading'
+ $windowsHint.Text=Translate 'windowsHint'
+ $driversHeading.Text=Translate 'driversHeading'
+ $driversHint.Text=Translate 'driversHint'
+ $windowsQuick.Text=Translate 'windowsQuick'
+ $depsInstallQuick.Text=Translate 'depsInstall'
+ $driverQuick.Text=Translate 'driversOpen'
+ $driverScanQuick.Text=Translate 'driversScan'
+ $settingsQuick.Text=Translate 'settingsQuick'
+ if(-not $script:driversWereProbed){
+  $driverStatus.Text=Translate 'driversUnchecked'
+ }
  $form.Text='Dvinholm | '+$(if($script:launcherLanguage -eq 'RU'){'Лаунчер'}else{'Launcher'})
 }
 function Show-LauncherSettings {
@@ -1804,6 +1850,11 @@ function Update-ActionAvailability {
  $navAbout.Enabled=-not $busy
  $navDrivers.Enabled=-not $busy
  $languageChoice.Enabled=-not $busy
+ $settingsQuick.Enabled=-not $busy
+ $windowsQuick.Enabled=-not $busy
+ $depsInstallQuick.Enabled=-not $busy
+ $driverQuick.Enabled=-not $busy
+ $driverScanQuick.Enabled=-not $busy
  $stableRadio.Enabled=-not $busy
  $developmentRadio.Enabled=-not $busy
  $check.Enabled=($ready -and -not $busy)
@@ -1876,23 +1927,66 @@ $rollback.Add_Click({Begin-Action 'Rollback'})
 $repair.Add_Click({Begin-Action 'Repair'})
 $repairInstall.Add_Click({Begin-Action 'RepairInstall'})
 $launch.Add_Click({Begin-Action 'Launch'})
-foreach($b in @($dot,$win,$vc)){
- $b.Add_Click({
-  if($script:child -or $script:vendor){return}
-  $which=[string]$this.Tag
-  if([Windows.Forms.MessageBox]::Show(
-   (Translate 'confirmVendor')+' '+$which,
-   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
-   [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
-  $args='-NoProfile -ExecutionPolicy Bypass -File "'+$manager+'" -Mode Install -Component '+
-   $which+' -LiteDirectory "'+$PSScriptRoot+'"'
-  try{$script:vendor=Start-Process -FilePath $powershell -ArgumentList $args -PassThru
-   $status.Text='Microsoft installer opened; follow its prompts.';$bar.MarqueeAnimationSpeed=25
-   Update-ActionAvailability
-  }catch{$status.Text='Unable to start Microsoft dependency installer.'
-   Update-ActionAvailability}
- })
+function Start-MicrosoftComponent([string]$which) {
+ if($script:child -or $script:vendor){return}
+ if($which -cnotin @('DotNet','WinApp','VC')){return}
+ if([Windows.Forms.MessageBox]::Show($form,
+  (Translate 'confirmVendor')+' '+$which,
+  (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+  [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
+ $args='-NoProfile -ExecutionPolicy Bypass -File "'+$manager+'" -Mode Install -Component '+
+  $which+' -LiteDirectory "'+$PSScriptRoot+'"'
+ try {
+  $script:vendor=Start-Process -FilePath $powershell -ArgumentList $args -PassThru
+  $status.Text='Microsoft installer opened; follow its prompts.'
+  $bar.MarqueeAnimationSpeed=25
+  Update-ActionAvailability
+ }catch{
+  $status.Text='Unable to start Microsoft dependency installer.'
+  Update-ActionAvailability
+ }
 }
+foreach($b in @($dot,$win,$vc)){
+ $b.Add_Click({Start-MicrosoftComponent ([string]$this.Tag)})
+}
+# Full prerequisite controls are reachable via a real dialog.
+function Show-MicrosoftComponents {
+ if($script:child -or $script:vendor){return}
+ $dlg=New-Object Windows.Forms.Form
+ $dlg.Text=Translate 'componentsTitle'
+ $dlg.ClientSize=[Drawing.Size]::new(430,253)
+ $dlg.StartPosition=[Windows.Forms.FormStartPosition]::CenterParent
+ $dlg.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedDialog
+ $dlg.MaximizeBox=$false
+ $dlg.BackColor=[Drawing.Color]::FromArgb(10,31,52)
+ $dlg.ForeColor=[Drawing.Color]::White
+ $dlg.Font=[Drawing.Font]::new('Segoe UI',10)
+ $intro=New-Object Windows.Forms.Label
+ $intro.Text=Translate 'componentsNotice'
+ $intro.SetBounds(17,16,394,40)
+ $dlg.Controls.Add($intro)
+ foreach($entry in @(
+  @{Key='DotNet';Caption='.NET 10 Desktop x86';Y=64},
+  @{Key='WinApp';Caption='Windows App Runtime x86';Y=119},
+  @{Key='VC';Caption='Microsoft VC++ x86';Y=174}
+ )){
+  $b=New-Object Windows.Forms.Button
+  $b.Text=$entry.Caption
+  $b.Tag=$entry.Key
+  $b.SetBounds(17,[int]$entry.Y,394,42)
+  $b.BackColor=[Drawing.Color]::FromArgb(23,77,118)
+  $b.ForeColor=[Drawing.Color]::White
+  $b.FlatStyle=[Windows.Forms.FlatStyle]::Flat
+  $dlg.Controls.Add($b)
+  $b.Add_Click({
+   $component=[string]$this.Tag
+   $dlg.Close()
+   Start-MicrosoftComponent $component
+  })
+ }
+ try{[void]$dlg.ShowDialog($form)}finally{$dlg.Dispose()}
+}
+
 $choice.Add_SelectedIndexChanged({
  if($null -ne $choice.SelectedItem){
   $null=Save-ChannelPreference ([string]$choice.SelectedItem)
