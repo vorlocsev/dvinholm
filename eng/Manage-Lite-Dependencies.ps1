@@ -44,9 +44,10 @@ function Get-Inventory {
         $hostExe = Join-Path $pf 'dotnet\dotnet.exe'
         if (Test-Path -LiteralPath $hostExe -PathType Leaf) {
             $runtimes = @(& $hostExe --list-runtimes 2>$null)
-            $dotnet = (@($runtimes | Where-Object {
-                $_ -match '^Microsoft\.WindowsDesktop\.App\s+10\.\d+\.\d+\s+\['
-            }).Count -gt 0)
+            $dotnet = ($LASTEXITCODE -eq 0 -and
+                @($runtimes | Where-Object {
+                    $_ -match '^Microsoft\.WindowsDesktop\.App\s+10\.\d+\.\d+\s+\['
+                }).Count -gt 0)
         }
     } catch { $dotnet = $false }
     try {
@@ -68,8 +69,11 @@ function Get-Inventory {
             [version]$_.Version -ge [version]'8002.5.0.0'
         }).Count -gt 0
         $ddlm = @($packages | Where-Object {
-            $_.Name -match '^Microsoft\.WinAppRuntime\.DDLM\.2\.5\.' -and
-            $_.Architecture.ToString() -eq 'X86'
+            $match=[regex]::Match([string]$_.Name,
+                '^Microsoft\.WinAppRuntime\.DDLM\.(\d+\.\d+\.\d+\.\d+)-x8$')
+            $match.Success -and $_.Architecture.ToString() -eq 'X86' -and
+            [version]$match.Groups[1].Value -ge [version]'2.5.0.0' -and
+            [version]$_.Version -ge [version]'2.5.0.0'
         }).Count -gt 0
         $sdk = ($framework -and $main -and $singleton -and $ddlm)
     } catch { $sdk = $false }
@@ -85,8 +89,10 @@ function Get-Inventory {
                 $key = $hive.OpenSubKey('SOFTWARE\Microsoft\VisualStudio\14.0\VC\Runtimes\x86')
                 if ($null -ne $key) {
                     try {
+                        $v=[string]$key.GetValue('Version','')
                         if ([int]$key.GetValue('Installed',0) -eq 1 -and
-                            [int]$key.GetValue('Major',0) -ge 14) { $vc = $true }
+                            [int]$key.GetValue('Major',0) -eq 14 -and
+                            $v -match '^v?14\.\d+\.\d+(?:\.\d+)?$') { $vc = $true }
                     } finally { $key.Dispose() }
                 }
             } finally { $hive.Dispose() }
@@ -152,12 +158,23 @@ function Get-InstalledComponentVersions {
  }catch{$result.VC='Unknown'}
  return $result
 }
-function Get-VersionDisposition([string]$installed,[string]$latest){
+function Get-VersionDisposition([string]$installed,[string]$latest,[string]$component=''){
  if($installed -eq 'Not detected'){return 'Missing'}
  if($installed -eq 'Unknown'){return 'Installed version unknown'}
  if($latest -eq 'Unknown'){return 'Latest version not verified'}
  try{
   $i=[version]$installed;$l=[version]$latest
+  if($component -eq 'WinApp'){
+   # Installed MSIX Framework version is NOT the SDK's servicing version.
+   if($i.Major -lt $l.Major -or
+      ($i.Major -eq $l.Major -and $i.Minor -lt $l.Minor)){
+    return 'Newer SDK line available (compatibility unverified)'
+   }
+   if($i.Major -eq $l.Major -and $i.Minor -eq $l.Minor){
+    return 'Same SDK line; patch status unknown'
+   }
+   return 'Installed newer SDK line'
+  }
   if($l -gt $i){return 'Update available'}
   if($l -eq $i){return 'Current'}
   return 'Installed newer'
@@ -192,7 +209,7 @@ function Get-DependencyVersionReport {
    Installed=[string]$installed[$key]
    Ready=[bool]$ready.$key
    Latest=[string]$latest[$key]
-   Status=Get-VersionDisposition ([string]$installed[$key]) ([string]$latest[$key])
+   Status=Get-VersionDisposition ([string]$installed[$key]) ([string]$latest[$key]) $key
   }
  }
  # Windows App SDK latest is advisory, not automatically compatible with
@@ -213,14 +230,22 @@ function Test-DependencyVersionLogic {
   @('10.0.11','10.0.12','Update available'),
   @('10.0.12','10.0.12','Current'),
   @('10.0.13','10.0.12','Installed newer'),
-  @('2.5.1.0','2.6.4','Update available'),
+  @('14.49.0.0','14.50.0.0','Update available'),
   @('14.50.0.0','Unknown','Latest version not verified')
  )
  foreach($item in $checks){
   $actual=Get-VersionDisposition $item[0] $item[1]
   if($actual -cne $item[2]){throw ('Version decision failed for '+$item[0]+' / '+$item[1])}
  }
- Write-Host 'Lite dependency version decisions 8/8 offline checks passed.'
+ if((Get-VersionDisposition '2.5.2500.0' '2.6.4' 'WinApp') -cne
+    'Newer SDK line available (compatibility unverified)'){
+  throw 'WinApp newer SDK line was not detected.'
+ }
+ if((Get-VersionDisposition '2.5.2500.0' '2.5.1' 'WinApp') -cne
+    'Same SDK line; patch status unknown'){
+  throw 'WinApp MSIX package version was incorrectly compared with SDK patch.'
+ }
+ Write-Host 'Lite dependency version decisions 10/10 offline checks passed.'
 }
 if($Mode -eq 'VersionReport'){
  Get-DependencyVersionReport|ConvertTo-Json -Depth 6 -Compress
