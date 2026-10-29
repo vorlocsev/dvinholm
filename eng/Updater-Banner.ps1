@@ -1551,8 +1551,22 @@ function Apply-WorkerSnapshot($snapshot) {
  $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
   '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
  $status.Text=[string]$snapshot.Detail
- # Report actual bytes observed on disk, never a simulated timer percentage.
- if($script:child -and [string]$snapshot.DownloadId -cmatch '^[0-9a-f]{32} $finished=($snapshot.PSObject.Properties['Done'] -and
+ # The ZIP byte count is read from the actual download, never fabricated.
+ if($script:child -and [string]$snapshot.DownloadId -cmatch '^[0-9a-f]{32}$' -and
+    [long]$snapshot.DownloadTotal -gt 0){
+  $selected=[string]$choice.SelectedItem
+  if($selected -cin @('Development','Stable')){
+   $file=Join-Path (Join-Path (Join-Path $base $selected) ('download-'+$snapshot.DownloadId)) $zipName
+   if(Test-Path -LiteralPath $file -PathType Leaf){
+    $bytes=(Get-Item -LiteralPath $file).Length
+    $percent=[int][Math]::Min(99,[Math]::Max(0,[Math]::Floor(
+     100.0*[double]$bytes/[double]$snapshot.DownloadTotal)))
+    $bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+    $bar.Value=$percent
+   }
+  }
+ }
+ $finished=($snapshot.PSObject.Properties['Done'] -and
             $snapshot.Done -is [bool] -and $snapshot.Done -eq $true)
  $valid=($snapshot.PSObject.Properties['Recovery'] -and
          [string]$snapshot.Recovery -cin @('Ready','Repair install',
