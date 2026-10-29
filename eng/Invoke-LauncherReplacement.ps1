@@ -28,7 +28,8 @@ $names=@(
  'Binaries/dvinholm-banner.webp',
  'Binaries/launcher-service-cockpit-banner.jpg',
  'Binaries/Assert-LauncherSelfUpdatePackage.ps1',
- 'Binaries/Invoke-LauncherReplacement.ps1'
+ 'Binaries/Invoke-LauncherReplacement.ps1',
+ 'Binaries/launcher-build.txt'
 )
 $root=[IO.Path]::GetFullPath($InstallationDirectory).TrimEnd('\')
 $txn=Join-Path $root '.launcher-transaction'
