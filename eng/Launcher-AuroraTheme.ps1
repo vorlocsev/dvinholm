@@ -61,6 +61,29 @@ $hero.Add_Paint({
    [Drawing.Point]::new(1100,222),[Drawing.Point]::new(1180,201),
    [Drawing.Point]::new(1180,232),[Drawing.Point]::new(0,232)))
  }finally{$far.Dispose();$near.Dispose();$water.Dispose()}
+ # Minimal automotive silhouette on the right edge of the panoramic fjord.
+ $carBody=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(5,17,29))
+ $glass=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(24,76,106))
+ $rim=[Drawing.Pen]::new([Drawing.Color]::FromArgb(114,166,202),1)
+ try{
+  $g.FillPolygon($carBody,[Drawing.Point[]]@(
+   [Drawing.Point]::new(917,192),[Drawing.Point]::new(934,170),
+   [Drawing.Point]::new(962,159),[Drawing.Point]::new(990,139),
+   [Drawing.Point]::new(1098,139),[Drawing.Point]::new(1127,162),
+   [Drawing.Point]::new(1164,172),[Drawing.Point]::new(1174,195),
+   [Drawing.Point]::new(1170,208),[Drawing.Point]::new(918,208)))
+  $g.FillPolygon($glass,[Drawing.Point[]]@(
+   [Drawing.Point]::new(992,147),[Drawing.Point]::new(1040,145),
+   [Drawing.Point]::new(1040,166),[Drawing.Point]::new(968,166)))
+  $g.FillPolygon($glass,[Drawing.Point[]]@(
+   [Drawing.Point]::new(1048,145),[Drawing.Point]::new(1091,146),
+   [Drawing.Point]::new(1120,166),[Drawing.Point]::new(1048,166)))
+  $g.FillEllipse($carBody,962,196,35,35)
+  $g.FillEllipse($carBody,1116,196,35,35)
+  $g.DrawEllipse($rim,968,203,21,21)
+  $g.DrawEllipse($rim,1123,203,21,21)
+  $g.DrawLine($rim,918,190,1171,190)
+ }finally{$carBody.Dispose();$glass.Dispose();$rim.Dispose()}
 })
 $brandTitle.Text='DVINHOLM'
 $brandTitle.Font=[Drawing.Font]::new('Segoe UI',39,[Drawing.FontStyle]::Bold)
