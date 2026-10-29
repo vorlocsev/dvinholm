@@ -5,6 +5,9 @@ Presentation only: PowerShell 5.1 + inbox WinForms/System.Drawing.
 The updater, dependency inventory, and transaction engine remain unchanged.
 #>
 $form.Text='Dvinholm Launcher'
+# Layout coordinates below describe the 1180 x 790 reference canvas.
+# Apply compact bounds after ALL controls (including Drivers/Versions) exist.
+$script:auroraScale=1.0
 $form.MinimumSize=[Drawing.Size]::Empty
 $form.MaximumSize=[Drawing.Size]::Empty
 $form.ClientSize=[Drawing.Size]::new(1180,790)
@@ -16,6 +19,7 @@ $hero.SetBounds(0,0,1180,232)
 $hero.Add_Paint({
  $g=$_.Graphics
  $g.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
+ $g.ScaleTransform([single]$script:auroraScale,[single]$script:auroraScale)
  $sky=[Drawing.Drawing2D.LinearGradientBrush]::new(
   [Drawing.Rectangle]::new(0,0,1180,232),
   [Drawing.Color]::FromArgb(10,30,61),
@@ -233,3 +237,58 @@ foreach($c in @($installed,$available,$stableRadio,$developmentRadio,$check,
 }
 $hero.BringToFront()
 $sidebar.BringToFront()
+
+# Scale existing WinForms controls once, after themed and auxiliary controls
+# have been added.  Parent/child coordinates are scaled independently so
+# nav buttons, labels, cards, and the runtime-version action keep their layout.
+function Resize-AuroraControlTree([Windows.Forms.Control]$parent,[double]$factor){
+ foreach($control in @($parent.Controls)){
+  $bounds=$control.Bounds
+  $control.SetBounds(
+   [int][Math]::Round($bounds.Left*$factor),
+   [int][Math]::Round($bounds.Top*$factor),
+   [int][Math]::Max(1,[Math]::Round($bounds.Width*$factor)),
+   [int][Math]::Max(1,[Math]::Round($bounds.Height*$factor))
+  )
+  # Avoid chopping text by keeping small text readable while retaining
+  # the original proportional font hierarchy (including the brand title).
+  if($null -ne $control.Font){
+   $oldFont=$control.Font
+   $points=[single][Math]::Max(8.0,$oldFont.Size*$factor)
+   $control.Font=[Drawing.Font]::new(
+    $oldFont.FontFamily,$points,$oldFont.Style,[Drawing.GraphicsUnit]::Point)
+  }
+  if($control.Controls.Count -gt 0){
+   Resize-AuroraControlTree $control $factor
+  }
+ }
+}
+function Set-AuroraCompactLayout {
+ # The original 1180x790 dashboard did not fit e.g. 1366x768 desktops
+ # after the Windows taskbar and non-client window frame were subtracted.
+ $working=[Windows.Forms.Screen]::FromControl($form).WorkingArea
+ $borderW=[int][Math]::Max(0,$form.Width-$form.ClientSize.Width)
+ $borderH=[int][Math]::Max(0,$form.Height-$form.ClientSize.Height)
+ $maxWidth=[Math]::Max(1,$working.Width-32-$borderW)
+ $maxHeight=[Math]::Max(1,$working.Height-32-$borderH)
+ $fit=[Math]::Min([double]$maxWidth/1180.0,[double]$maxHeight/790.0)
+ # 944 x 632 client pixels is the normal compact maximum.
+ # Very small work areas scroll instead of squeezing text to unreadability.
+ $factor=[Math]::Max(0.65,[Math]::Min(0.80,$fit))
+ $script:auroraScale=$factor
+ $fullW=[int][Math]::Round(1180*$factor)
+ $fullH=[int][Math]::Round(790*$factor)
+ $form.SuspendLayout()
+ try{
+  $form.MinimumSize=[Drawing.Size]::Empty
+  $form.MaximumSize=[Drawing.Size]::Empty
+  $form.AutoScaleMode=[Windows.Forms.AutoScaleMode]::None
+  Resize-AuroraControlTree $form $factor
+  $form.AutoScroll=($fullW -gt $maxWidth -or $fullH -gt $maxHeight)
+  $form.ClientSize=[Drawing.Size]::new(
+   [int][Math]::Min($fullW,$maxWidth),[int][Math]::Min($fullH,$maxHeight))
+  $form.MinimumSize=$form.Size
+  $form.MaximumSize=$form.Size
+ }finally{$form.ResumeLayout($true)}
+ $hero.Invalidate()
+}
