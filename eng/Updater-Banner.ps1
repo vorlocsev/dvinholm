@@ -1080,13 +1080,13 @@ function SelfTest {
   }
   $folderChecks++
   Reset-SyntheticLite
-  Remove-Item -LiteralPath (Join-Path $script:channelRoot 'previous' 'Manage-Lite-Dependencies.ps1') -Force
+  Remove-Item -LiteralPath (Join-Path (Join-Path $script:channelRoot 'previous') 'Manage-Lite-Dependencies.ps1') -Force
   if((Get-ChannelRecoveryState) -cne 'Inspect'){
    throw 'Damaged previous Lite version was not flagged for inspection.'
   }
   $folderChecks++
   Reset-SyntheticLite
-  [IO.File]::WriteAllText((Join-Path $script:channelRoot 'previous' 'updater-banner.json'),
+  [IO.File]::WriteAllText((Join-Path (Join-Path $script:channelRoot 'previous') 'updater-banner.json'),
    (@{Channel='Stable';Tag='v0.2.4'}|ConvertTo-Json))
   if((Get-ChannelRecoveryState) -cne 'Inspect'){
    throw 'Cross-channel backup was not flagged for manual inspection.'
