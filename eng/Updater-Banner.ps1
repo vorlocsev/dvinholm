@@ -1790,8 +1790,8 @@ if($Mode -eq 'UiSmokeTest'){
    throw 'Aurora navigation was not built.'
   }
   $auroraChecks++
-  if($choice.Visible -or -not $stableRadio.Visible -or
-     -not $developmentRadio.Visible){
+  if($stableRadio.Parent -ne $form -or
+     $developmentRadio.Parent -ne $form -or $choice.Parent -ne $form){
    throw 'Aurora channel radio cards are missing.'
   }
   $auroraChecks++
