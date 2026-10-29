@@ -152,7 +152,7 @@ $navAbout.Add_Click({
   'Dvinholm Launcher',[Windows.Forms.MessageBoxButtons]::OK)
 })
 $sidebarFooter=New-Object Windows.Forms.Label
-$sidebarFooter.Text='DVINHOLM LAUNCHER'+[Environment]::NewLine+'WINDOWS X86  ·  LITE'
+$sidebarFooter.Text='DVINHOLM LAUNCHER'+[Environment]::NewLine+'WINDOWS X86  ·  DVINHOLM'
 $sidebarFooter.ForeColor=[Drawing.Color]::FromArgb(112,161,193)
 $sidebarFooter.SetBounds(22,502,180,45)
 $sidebar.Controls.Add($sidebarFooter)
