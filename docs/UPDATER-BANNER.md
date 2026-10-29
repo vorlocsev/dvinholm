@@ -1,26 +1,52 @@
-## Launcher-first migration
+# Dvinholm Launcher (native Windows x86)
 
-The Windows x86 diagnostic window no longer presents **Check update**:
-updates and Microsoft runtime management are launcher-owned. Stage 1 keeps
-legacy updater XAML elements **collapsed and disabled** temporarily because
-the existing code-behind still references them. They cannot be opened from
-the UI. Removing their code-behind, changing the package layout to
-`Launcher.exe` + `Binaries/`, and replacing the script entry point with
-a branded dependency-free native launcher are **subsequent, separately
-validated migration steps**. This stage does not yet deliver a
-`Launcher.exe` or the new on-disk layout.
+The new **Launcher.exe** is a small native Windows x86 bootstrap, compiled with
+the static MSVC runtime. It needs only Windows PowerShell 5.1 and the inbox
+.NET Framework WinForms to display the updater; **it does not require .NET 10,
+Windows App SDK, VC++ Redistributable, Qt or Electron** to start.
 
-# Standalone Dvinholm Updater Banner
+For a first-time Lite installation, use the public Development asset
+`Dvinholm-Windows-x86-Launcher-Lite.zip` and extract the full directory:
 
-A separate lightweight GUI for Windows 11 and Windows 11 IoT LTSC.
-It works **before** installing Dvinholm Lite, .NET 10 Desktop,
-Windows App SDK or VC++ x86. The only prerequisites for the banner
-itself are the Windows-provided PowerShell 5.1 and .NET Framework
-WinForms. It uses no third-party PowerShell module.
+```text
+Dvinholm/
+  Launcher.exe           # update/check/repair/runtime management
+  Dvinholm.exe           # opens the selected app (or bundled first-run Lite)
+  Binaries/
+    Dvinholm.App.exe     # WinUI 3 diagnostic application
+    Dvinholm.App.dll
+    ...                  # other Lite runtime files and assets
+    Updater-Banner.ps1
+    Manage-Lite-Dependencies.ps1
+    Dvinholm-icon.png
+```
 
-Download **Dvinholm-Updater-Banner-Windows-x86.zip** from the current
-Development ci-N prerelease. Extract the three files into their own
-directory and double-click **Updater-Banner.cmd**.
+`Launcher.exe` owns channel selection, checks, downloads, install/rollback,
+recovery and Microsoft dependency management. The WinUI diagnostic application
+**has no Check update button or in-process installer handlers**. The launcher
+has a dark branded banner, Dvinholm logo, status labels and download progress
+based on real ZIP bytes, switching to a busy indicator for non-download steps.
+
+A much smaller `Dvinholm-Updater-Banner-Windows-x86.zip` is also published
+for users who need **only the standalone launcher**. It has `Launcher.exe`
+and its support files in `Binaries/`, but no diagnostic app; click
+**Download / Install** to create one. Existing flat
+`Dvinholm-Windows-x86-Lite.zip` remains a compatibility feed for older
+clients and for the launcher's integrity-checked update mechanism.
+
+`Dvinholm.exe` first checks for a verified installed version of the channel
+last selected in Launcher. On a pristine extraction, it can start the bundled
+`Binaries/` Lite app through its prerequisite-aware startup command.
+After updating, the active selected channel's managed copy takes priority.
+The package must be extracted in full; neither executable should be moved
+away from the `Binaries/` folder.
+
+**Where updates are stored:** the existing proven transactional engine keeps
+separate per-channel `current` and `previous` folders under
+`%LOCALAPPDATA%\\Dvinholm\\UpdaterBanner`, while the extracted
+`Binaries/` folder is the initial fallback. This separation allows safe
+rollback without overwriting the running native launcher or a user-supplied
+manual installation. Existing Lite installations are not silently modified.
 
 The **Installed** label is validated against the selected channel's actual
 Lite directory, required ordinary files, metadata and x86 PE header. It
