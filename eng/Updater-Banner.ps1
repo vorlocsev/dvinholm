@@ -1635,6 +1635,13 @@ function Poll-WorkerState {
     }catch{
      $status.Text='Vendor setup finished; driver inventory could not be refreshed.'
     }
+   }elseif($exitCode -in @(3010,1641)){
+    # MSI success requiring reboot is not failure, but the adapter is
+    # not ready until Windows restarts. Do not rescan as a success.
+    $status.Text='Vendor setup finished. Restart Windows before using the driver (exit '+$exitCode+').'
+    if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
+     $script:driverResultControl.Text='Windows restart required. Recheck adapter drivers after restarting Windows.'
+    }
    }else{
     $status.Text='Vendor driver installer failed or was cancelled (exit '+$exitCode+').'
     if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){

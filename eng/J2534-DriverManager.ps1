@@ -12,6 +12,8 @@ param(
  [switch]$Approved
 )
 $ErrorActionPreference='Stop'
+# Header-only sanity check for a registered 32-bit J2534 DLL. This is
+# NOT a LoadLibrary / PassThruOpen test and does not prove driver safety.
 function Test-X86PE([string]$Path) {
  if(-not(Test-Path -LiteralPath $Path -PathType Leaf)){return $false}
  $stream=$null
@@ -20,10 +22,22 @@ function Test-X86PE([string]$Path) {
   if($stream.Length -lt 512){return $false}
   $reader=New-Object IO.BinaryReader($stream)
   if($reader.ReadUInt16() -ne 0x5A4D){return $false}
-  $stream.Position=60;$offset=$reader.ReadInt32()
-  if($offset -lt 64 -or ($offset+6) -ge $stream.Length){return $false}
+  $stream.Position=60
+  $offset=$reader.ReadInt32()
+  if($offset -lt 64 -or $offset -gt ($stream.Length - 26)){return $false}
   $stream.Position=$offset
-  return ($reader.ReadUInt32() -eq 0x4550 -and $reader.ReadUInt16() -eq 0x014c)
+  if($reader.ReadUInt32() -ne 0x4550){return $false}
+  if($reader.ReadUInt16() -ne 0x014c){return $false} # IMAGE_FILE_MACHINE_I386
+  $sections=$reader.ReadUInt16()
+  if($sections -lt 1){return $false}
+  $stream.Position=$offset+20
+  $optionalSize=$reader.ReadUInt16()
+  $characteristics=$reader.ReadUInt16()
+  if(($characteristics -band 0x2000) -eq 0){return $false} # IMAGE_FILE_DLL
+  if($optionalSize -lt 2){return $false}
+  $sectionsEnd=[long]$offset+24+$optionalSize+([long]$sections*40)
+  if($sectionsEnd -gt $stream.Length){return $false}
+  return ($reader.ReadUInt16() -eq 0x010b) # PE32, not PE32+
  } catch{return $false}
  finally{if($stream){$stream.Dispose()}}
 }
@@ -185,6 +199,12 @@ function Install-SelectedVendorPackage {
  if($process.ExitCode -notin @(0,3010,1641)){
   throw ('Vendor installer reported exit code '+$process.ExitCode+'. Check its setup log.')
  }
+ # MSI 3010/1641 are success-with-reboot outcomes. Propagate them to the
+ # native Launcher's worker monitor rather than reporting a ready driver.
+ if($process.ExitCode -in @(3010,1641)){
+  Write-Output 'Vendor setup requires a Windows restart before driver use.'
+  exit ([int]$process.ExitCode)
+ }
  Write-Output 'Vendor setup finished. Recheck J2534 registry and attach adapter to confirm.'
 }
 if($Mode -eq 'Probe'){
@@ -222,7 +242,25 @@ if($Mode -eq 'SelfTest'){
  )
  if($lookalike.UsbCount -eq 1 -and $lookalike.DriverStatus -eq 'Problem'){$count++}
  else{throw 'Invalid USB DiCE classification was accepted'}
- if($count -ne 8){throw 'Wrong offline driver safety check count'}
- Write-Host 'J2534 driver manager 8/8 offline safety checks passed.'
+ # Synthetic PE fixtures exercise DLL/EXE classification without loading code.
+ $fixture=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-j2534-'+[guid]::NewGuid().ToString('N')+'.dll')
+ try {
+  [byte[]]$pe=New-Object byte[] 512
+  [BitConverter]::GetBytes([uint16]0x5A4D).CopyTo($pe,0)
+  [BitConverter]::GetBytes([int]128).CopyTo($pe,60)
+  [BitConverter]::GetBytes([uint32]0x4550).CopyTo($pe,128)
+  [BitConverter]::GetBytes([uint16]0x014c).CopyTo($pe,132)
+  [BitConverter]::GetBytes([uint16]1).CopyTo($pe,134)
+  [BitConverter]::GetBytes([uint16]224).CopyTo($pe,148)
+  [BitConverter]::GetBytes([uint16]0x2002).CopyTo($pe,150)
+  [BitConverter]::GetBytes([uint16]0x010b).CopyTo($pe,152)
+  [IO.File]::WriteAllBytes($fixture,$pe)
+  if(Test-X86PE $fixture){$count++}else{throw 'Synthetic x86 DLL header rejected'}
+  [BitConverter]::GetBytes([uint16]0x0002).CopyTo($pe,150)
+  [IO.File]::WriteAllBytes($fixture,$pe)
+  if(-not(Test-X86PE $fixture)){$count++}else{throw 'x86 EXE incorrectly accepted as DLL'}
+ }finally{Remove-Item -LiteralPath $fixture -Force -ErrorAction SilentlyContinue}
+ if($count -ne 10){throw 'Wrong offline driver safety check count'}
+ Write-Host 'J2534 driver manager 10/10 offline safety checks passed.'
  return
 }

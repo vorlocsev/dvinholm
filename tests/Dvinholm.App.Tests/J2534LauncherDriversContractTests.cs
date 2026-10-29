@@ -31,6 +31,30 @@ public sealed class J2534LauncherDriversContractTests
     }
 
     [Fact]
+    public void RegisteredJ2534DllMustHavePe32DllHeadersNotJustI386Machine()
+    {
+        var script = Read("eng/J2534-DriverManager.ps1");
+        Assert.Contains("IMAGE_FILE_DLL", script);
+        Assert.Contains("($characteristics -band 0x2000) -eq 0", script);
+        Assert.Contains("$reader.ReadUInt16() -eq 0x010b", script);
+        Assert.Contains("Synthetic x86 DLL header rejected", script);
+        Assert.Contains("x86 EXE incorrectly accepted as DLL", script);
+        Assert.Contains("10/10 offline safety checks passed", script);
+    }
+
+    [Fact]
+    public void VendorSetupRebootOutcomeDoesNotClaimDriverReady()
+    {
+        var manager = Read("eng/J2534-DriverManager.ps1");
+        var launcher = Read("eng/Updater-Banner.ps1");
+        Assert.Contains("exit ([int]$process.ExitCode)", manager);
+        Assert.Contains("elseif($exitCode -in @(3010,1641))", launcher);
+        Assert.Contains("Restart Windows before using the driver", launcher);
+        Assert.Contains("Recheck adapter drivers after restarting Windows", launcher);
+        Assert.Contains("if($fromDriverInstaller)", launcher);
+    }
+
+    [Fact]
     public void MongooseJlrIsNotReportedReadyFromUsbAlone()
     {
         var script = Read("eng/J2534-DriverManager.ps1");
