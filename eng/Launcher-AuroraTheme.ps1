@@ -275,6 +275,9 @@ function Set-AuroraCompactLayout {
  $form.SuspendLayout()
  try {
   $hero.Height=$heroHeight
+  # Leave a small inset: independent rounding of sidebar Top and Height
+  # otherwise gives a one-pixel overflow at 80% scale.
+  $sidebar.Height=546
   $brandTitle.SetBounds(210,30,700,62)
   $brandTitle.Font=[Drawing.Font]::new('Segoe UI',34,[Drawing.FontStyle]::Bold)
   $brandSub.SetBounds(215,101,700,26)
