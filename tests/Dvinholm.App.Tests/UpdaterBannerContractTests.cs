@@ -240,12 +240,13 @@ public sealed class UpdaterBannerContractTests
         var scale = banner.IndexOf("Set-AuroraCompactLayout", StringComparison.Ordinal);
         var smoke = banner.IndexOf("if($Mode -eq 'UiSmokeTest')", StringComparison.Ordinal);
         Assert.True(button >= 0 && scale > button && smoke > scale);
-        Assert.Contains("Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.", banner);
-        Assert.Contains("usable desktop work area", banner);
-        Assert.Contains("Compact Aurora clipped:", banner);
+        var cockpit = Read("eng/Launcher-ServiceCockpit.ps1");
+        Assert.Contains("Service Cockpit 8/8 Windows WinForms layout and action smoke checks passed.", banner);
+        Assert.Contains("Screen]::FromControl($form).WorkingArea", cockpit);
+        Assert.Contains("Service Cockpit controls extend past the display boundary.", banner);
         Assert.Contains("$hero.Height -ne [int][Math]::Round(184*$script:auroraScale)", banner);
-        Assert.Contains("$sidebarFooter.Bottom -gt $sidebar.ClientSize.Height-12", banner);
-        Assert.Contains("$footerMeasure.Height -gt $sidebarFooter.Height", banner);
+        Assert.Contains("$script:serviceCardDrivers.Bottom -gt $contentHeight", banner);
+        Assert.Contains("$form.AutoScroll=$needsScroll", cockpit);
     }
 
     [Fact]
