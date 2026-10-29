@@ -243,7 +243,7 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.", banner);
         Assert.Contains("usable desktop work area", banner);
         Assert.Contains("Compact Aurora clipped:", banner);
-        Assert.Contains("$hero.Height -ne [int][Math]::Round(182*$script:auroraScale)", banner);
+        Assert.Contains("$hero.Height -ne [int][Math]::Round(184*$script:auroraScale)", banner);
         Assert.Contains("$sidebarFooter.Bottom -gt $sidebar.ClientSize.Height-12", banner);
         Assert.Contains("$footerMeasure.Height -gt $sidebarFooter.Height", banner);
     }
@@ -297,5 +297,29 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("Begin-Action 'RepairInstall'", banner);
         Assert.Contains("$rollback.Visible=$false", theme);
         Assert.Contains("dvinholm-banner.webp", Read("eng/Package-Updater-Banner.ps1"));
+        Assert.Contains("Launcher-ServiceCockpit.ps1", Read("eng/Package-Updater-Banner.ps1"));
     }
+    [Fact]
+    public void ApprovedServiceCockpitHasRealOperationsAndBilingualLayout()
+    {
+        var service = Read("eng/Launcher-ServiceCockpit.ps1");
+        var banner = Read("eng/Updater-Banner.ps1");
+        Assert.Contains("New-ServiceCard 14 194 405 482", service);
+        Assert.Contains("New-ServiceCard 430 194 736 155", service);
+        Assert.Contains("New-ServiceCard 430 357 736 155", service);
+        Assert.Contains("New-ServiceCard 430 520 736 156", service);
+        Assert.Contains("SetBounds(0,0,$referenceWidth,$heroHeight)", service);
+        Assert.Contains("$heroHeight=184", service);
+        Assert.Contains("$windowsQuick.Add_Click({Begin-Action 'Probe'})", service);
+        Assert.Contains("$driverQuick.Add_Click({Show-J2534Drivers})", service);
+        Assert.Contains("$driverScanQuick.Add_Click({Update-ServiceDriverInventory})", service);
+        Assert.Contains("$settingsQuick.Add_Click({Show-LauncherSettings})", service);
+        Assert.Contains("$depsInstallQuick.Add_Click({Show-MicrosoftComponents})", service);
+        Assert.Contains("function Show-MicrosoftComponents", banner);
+        Assert.Contains("function Start-MicrosoftComponent", banner);
+        Assert.Contains("Service Cockpit 8/8 Windows WinForms layout and action smoke checks passed.", banner);
+        Assert.Contains("componentsTitle='Microsoft x86 prerequisites'", banner);
+        Assert.Contains("componentsTitle='Компоненты Microsoft x86'", banner);
+    }
+
 }
