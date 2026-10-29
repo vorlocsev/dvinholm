@@ -58,11 +58,9 @@ function Get-DotNet10RuntimeInventory {
   }
   if($ready){break}
  }
- return [pscustomobject]@{
-  Desktop=if($desktopVersions.Count){$desktopVersions[0].ToString()}else{'Not detected'}
-  Core=if($coreVersions.Count){$coreVersions[0].ToString()}else{'Not detected'}
-  Ready=$ready
- }
+ $desktopText=if($desktopVersions.Count){$desktopVersions[0].ToString()}else{'Not detected'}
+ $coreText=if($coreVersions.Count){$coreVersions[0].ToString()}else{'Not detected'}
+ return [pscustomobject]@{Desktop=$desktopText;Core=$coreText;Ready=$ready}
 }
 function Test-DotNet10RuntimeInventory {
  $desktop='Microsoft.WindowsDesktop.App 10.0.14 [C:\Program Files (x86)\dotnet\shared\Microsoft.WindowsDesktop.App]'
@@ -177,7 +175,7 @@ function Get-InstalledComponentVersions {
      $inventory=Get-DotNet10RuntimeInventory -RuntimeLines $lines
      $result.DotNet=$inventory.Desktop
      $result.DotNetCore=$inventory.Core
-    }else{$result.DotNet='Unknown'}
+    }else{$result.DotNet='Unknown';$result.DotNetCore='Unknown'}
    }
   }else{$result.DotNet='Unknown';$result.DotNetCore='Unknown'}
  }catch{$result.DotNet='Unknown';$result.DotNetCore='Unknown'}
