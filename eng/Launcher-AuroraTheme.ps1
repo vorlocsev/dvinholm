@@ -164,16 +164,16 @@ $installed.SetBounds(661,289,215,66)
 $available.SetBounds(922,289,227,66)
 $installed.Font=[Drawing.Font]::new('Segoe UI',12,[Drawing.FontStyle]::Bold)
 $available.Font=[Drawing.Font]::new('Segoe UI',12,[Drawing.FontStyle]::Bold)
-$check.SetBounds(256,423,178,37)
-$install.SetBounds(448,423,237,37)
-$launch.SetBounds(699,423,205,37)
-$refresh.SetBounds(918,423,225,37)
+$check.SetBounds(256,446,178,37)
+$install.SetBounds(448,446,237,37)
+$launch.SetBounds(699,446,205,37)
+$refresh.SetBounds(918,446,225,37)
 $install.BackColor=[Drawing.Color]::FromArgb(10,108,219)
 $launch.BackColor=[Drawing.Color]::FromArgb(15,107,134)
-$status.SetBounds(257,466,870,48)
+$status.SetBounds(257,486,870,39)
 $status.AutoEllipsis=$true
-$bar.SetBounds(257,524,867,18)
-$recovery.SetBounds(260,547,853,24)
+$bar.SetBounds(257,531,867,16)
+$recovery.SetBounds(260,552,718,23)
 $deps.SetBounds(258,630,869,28)
 $dot.SetBounds(257,663,270,34)
 $win.SetBounds(543,663,270,34)
@@ -196,7 +196,7 @@ $progressTitle=AuroraText 'ЗАГРУЗКА И УСТАНОВКА' 258 408 370
 $dependenciesTitle=AuroraText 'ЗАВИСИМОСТИ WINDOWS' 258 601 365
 $downloadPercent=New-Object Windows.Forms.Label
 $downloadPercent.Text=''
-$downloadPercent.SetBounds(1021,548,106,25)
+$downloadPercent.SetBounds(1021,550,106,25)
 $downloadPercent.TextAlign=[Drawing.ContentAlignment]::MiddleRight
 $downloadPercent.ForeColor=[Drawing.Color]::FromArgb(106,203,237)
 $form.Controls.Add($downloadPercent)
