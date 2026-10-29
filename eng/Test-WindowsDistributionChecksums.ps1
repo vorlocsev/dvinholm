@@ -39,7 +39,7 @@ if ($WithUpdaterBanner) {
     $names = @($names) + @('Dvinholm-Updater-Banner-Windows-x86.zip')
 }
 if ($WithLauncherBundle) {
-    $names = @($names) + @('Dvinholm-Windows-x86-Launcher-Lite.zip')
+    $names = @($names) + @('Dvinholm-Windows-x86.zip')
 }
 $manifest = Join-Path $root 'SHA256SUMS.txt'
 
