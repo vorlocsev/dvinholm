@@ -280,7 +280,7 @@ function Translate([string]$key) {
    driversOpen='Открыть драйверы';settingsQuick='Настройки'
    windowsQuick='Перепроверить';depsInstall='Установить компоненты'
    componentsTitle='Компоненты Microsoft x86';componentsNotice='Выберите компонент для установки. Будет показано подтверждение.'
-   checkLauncher='Проверить обновление лаунчера'
+   checkLauncher='Проверить лаунчер';prepareLauncher='Скачать и проверить'
   }
   EN=@{
    home='▶  Launch';updates='↻  Updates'
@@ -314,7 +314,7 @@ function Translate([string]$key) {
    driversOpen='Open drivers';settingsQuick='Settings'
    windowsQuick='Recheck';depsInstall='Install components'
    componentsTitle='Microsoft x86 prerequisites';componentsNotice='Select the component to install. Confirmation is required.'
-   checkLauncher='Check Launcher updates'
+   checkLauncher='Check Launcher';prepareLauncher='Download & verify'
   }
  }
  $value=$labels[$script:launcherLanguage][$key]
@@ -1916,9 +1916,14 @@ function Show-LauncherSettings {
  $advanced.SetBounds(18,239,340,24);$dlg.Controls.Add($advanced)
  $checkLauncher=New-Object Windows.Forms.Button
  $checkLauncher.Text=Translate 'checkLauncher'
- $checkLauncher.SetBounds(18,185,335,35)
+ $checkLauncher.SetBounds(18,185,158,35)
  $dlg.Controls.Add($checkLauncher)
  $checkLauncher.Add_Click({$dlg.Close();Begin-Action 'CheckLauncher'})
+ $prepareLauncher=New-Object Windows.Forms.Button
+ $prepareLauncher.Text=Translate 'prepareLauncher'
+ $prepareLauncher.SetBounds(185,185,168,35)
+ $dlg.Controls.Add($prepareLauncher)
+ $prepareLauncher.Add_Click({$dlg.Close();Begin-Action 'PrepareLauncher'})
  $restore=New-Object Windows.Forms.Button
  $restore.Text=Translate 'rollback'
  $restore.SetBounds(18,270,335,28)
@@ -2043,6 +2048,14 @@ function Begin-Action([string]$action){
    (Translate 'confirmRollback'),
    (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'PrepareLauncher'){
+  $confirmation=if($script:launcherLanguage -eq 'RU'){
+   'Скачать архив обновления лаунчера и проверить контрольные суммы? Установленные файлы не изменятся.'
+  }else{'Download and verify the native Launcher ZIP? Installed files will not change.'}
+  if([Windows.Forms.MessageBox]::Show($form,$confirmation,(Translate 'confirmTitle'),
+   [Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  if($action -eq 'Install'){
   if([Windows.Forms.MessageBox]::Show(
@@ -2229,9 +2242,13 @@ function Poll-WorkerState {
  if($script:child -and $script:child.HasExited){
   $reportText=''
   $finishedAction=$script:pendingAction
-  if($finishedAction -ceq 'CheckLauncher' -and $complete -and
+  if($finishedAction -cin @('CheckLauncher','PrepareLauncher') -and $complete -and
      $null -ne $snapshot -and [string]$snapshot.LauncherDetail){
-   $reportText=Format-LauncherCheckReport $snapshot
+   $reportText=if($finishedAction -ceq 'PrepareLauncher'){
+    if($script:launcherLanguage -eq 'RU'){
+     'Архив лаунчера загружен и проверен. Файлы приложения не изменены.'
+    }else{'Launcher archive downloaded and verified. Installed files unchanged.'}
+   }else{Format-LauncherCheckReport $snapshot}
   }
   if($finishedAction -ceq 'Versions' -and $complete -and
      $null -ne $snapshot -and $snapshot.PSObject.Properties['DependencyReport']){
@@ -2257,7 +2274,7 @@ function Poll-WorkerState {
    return
   }
   if($reportText){
-   $reportTitle=if($finishedAction -ceq 'CheckLauncher'){'Dvinholm | Launcher updates'}else{'Dvinholm | Installed and available runtimes'}
+   $reportTitle=if($finishedAction -cin @('CheckLauncher','PrepareLauncher')){'Dvinholm | Launcher updates'}else{'Dvinholm | Installed and available runtimes'}
    [void][Windows.Forms.MessageBox]::Show($form,$reportText,
     $reportTitle,
     [Windows.Forms.MessageBoxButtons]::OK,
