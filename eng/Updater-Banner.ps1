@@ -324,6 +324,12 @@ function Format-LauncherDetail([string]$raw) {
  if($script:launcherLanguage -ne 'RU'){return $raw}
  switch -Regex -CaseSensitive ($raw) {
   '^Ready\.$' {return 'Готово.'}
+  '^Launcher release checked\. No files downloaded or replaced\.$' {
+   return 'Обновления лаунчера проверены. Файлы не изменены.'
+  }
+  '^Launcher update check failed: (.+)$' {
+   return ('Ошибка проверки обновления лаунчера: '+$Matches[1])
+  }
   '^Working\.\.\.$' {return 'Выполняется...'}
   '^Runtime dependencies rechecked locally\. No GitHub request made\.$' {
    return 'Компоненты Windows проверены локально. GitHub не запрашивался.'
@@ -2186,6 +2192,25 @@ function Apply-WorkerSnapshot($snapshot) {
  Update-ActionAvailability
  return $false
 }
+
+function Format-LauncherCheckReport($snapshot) {
+ if($script:launcherLanguage -ne 'RU'){return [string]$snapshot.LauncherDetail}
+ $status=Get-LauncherBuildRelation ([string]$choice.SelectedItem) (
+  [string]$snapshot.LauncherCurrent) ([string]$snapshot.LauncherAvailable)
+ $ru=switch($status){
+  'Current'{'Актуально'}
+  'Newer release available'{'Доступна более новая сборка'}
+  'Installed build newer'{'Установленная сборка новее'}
+  'Unverified or other channel'{'Версия не подтверждена или выбран другой канал'}
+  'Not published'{'Не опубликовано'}
+  default{'Не удалось сравнить'}
+ }
+ return ('Лаунчер ['+[string]$choice.SelectedItem+']'+[Environment]::NewLine+
+  'Установлено: '+[string]$snapshot.LauncherCurrent+[Environment]::NewLine+
+  'Доступно: '+[string]$snapshot.LauncherAvailable+[Environment]::NewLine+
+  'Статус: '+$ru+[Environment]::NewLine+
+  'Проверены только сведения о релизе. Файлы не изменены.')
+}
 function Poll-WorkerState {
  $complete=$false
  if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
@@ -2199,7 +2224,7 @@ function Poll-WorkerState {
   $finishedAction=$script:pendingAction
   if($finishedAction -ceq 'CheckLauncher' -and $complete -and
      $null -ne $snapshot -and [string]$snapshot.LauncherDetail){
-   $reportText=[string]$snapshot.LauncherDetail
+   $reportText=Format-LauncherCheckReport $snapshot
   }
   if($finishedAction -ceq 'Versions' -and $complete -and
      $null -ne $snapshot -and $snapshot.PSObject.Properties['DependencyReport']){
