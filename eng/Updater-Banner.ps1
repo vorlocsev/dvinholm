@@ -2309,7 +2309,7 @@ if($Mode -eq 'UiSmokeTest'){
   if($sidebar.Visible -or -not $choice.Visible -or
      $stableRadio.Visible -or $developmentRadio.Visible -or
      $script:serviceCardLeft -eq $null){
-   throw 'Service Cockpit still shows decorative sidebar or duplicated channel selection.'
+   throw ('Service Cockpit sidebar='+$sidebar.Visible+' choice='+$choice.Visible+' StableRadio='+$stableRadio.Visible+' DevRadio='+$developmentRadio.Visible+' cardNull='+($null -eq $script:serviceCardLeft))
   }
   $auroraChecks++
   if($script:serviceCardUpdates -eq $null -or
