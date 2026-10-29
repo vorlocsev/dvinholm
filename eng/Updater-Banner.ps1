@@ -1774,6 +1774,18 @@ if(-not(Test-Path -LiteralPath $serviceTheme -PathType Leaf)){
 # including the Windows taskbar, before showing the fixed-size window.
 Set-AuroraCompactLayout
 
+# The visible WinForms window belongs to the PowerShell host. Reuse the
+# resource embedded in the native Launcher.exe so its titlebar and taskbar
+# display the same icon as Windows Explorer.
+$script:nativeLauncherIcon=$null
+$nativeLauncherPath=Join-Path (Split-Path -Parent $PSScriptRoot) 'Launcher.exe'
+if(Test-Path -LiteralPath $nativeLauncherPath -PathType Leaf){
+ try{
+  $script:nativeLauncherIcon=[Drawing.Icon]::ExtractAssociatedIcon($nativeLauncherPath)
+  if($null -ne $script:nativeLauncherIcon){$form.Icon=$script:nativeLauncherIcon}
+ }catch{ $script:nativeLauncherIcon=$null }
+}
+
 # Localize labels, shortcuts and all settings controls without changing any
 # Stable/Development worker tokens or validation rules.
 $script:lastCurrent='Not checked'
@@ -2535,4 +2547,5 @@ finally{
  if($script:vendor){$script:vendor.Dispose()}
  if(Test-Path $script:statefile){Remove-Item $script:statefile -Force -ErrorAction SilentlyContinue}
  $form.Dispose()
+ if($null -ne $script:nativeLauncherIcon){$script:nativeLauncherIcon.Dispose()}
 }
