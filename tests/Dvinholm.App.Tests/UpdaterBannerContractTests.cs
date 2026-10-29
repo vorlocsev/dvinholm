@@ -181,6 +181,37 @@ public sealed class UpdaterBannerContractTests
     }
 
     [Fact]
+    public void VersionReportSeparatesFastInventoryFromStrictRuntimeconfigPreflight()
+    {
+        var manager = Read("eng/Manage-Lite-Dependencies.ps1");
+        Assert.Contains("function Get-StrictCompatibilityReport", manager);
+        Assert.Contains("function Get-StrictPreflightDisposition", manager);
+        Assert.Contains("Lite strict preflight disposition 8/8 offline checks passed.", manager);
+        Assert.Contains("Test-StrictPreflightDisposition", manager);
+        Assert.Contains("Check-Lite-Prerequisites.ps1", manager);
+        Assert.Contains("-WindowsAppSdkLine '2.5'", manager);
+        Assert.Contains("StrictPreflight", manager);
+        Assert.Contains("No complete application build selected", manager);
+        Assert.Contains("Strict runtimeconfig, Windows App Runtime and VC++ x86 preflight passed", manager);
+    }
+
+    [Fact]
+    public void VersionDialogAuditsSelectedVerifiedBuildWithoutRunningChannelScripts()
+    {
+        var banner = Read("eng/Updater-Banner.ps1");
+        Assert.Contains("Read-ManagedVersion $current", banner);
+        Assert.Contains("$versionTarget=$current", banner);
+        Assert.Contains("$versionTarget=$PSScriptRoot", banner);
+        Assert.Contains("Strict compatibility [", banner);
+        Assert.Contains("$strictTargetValid=($script:state.Recovery -ceq 'Ready')", banner);
+        Assert.Contains("could not be validated", banner);
+
+        var manager = Read("eng/Manage-Lite-Dependencies.ps1");
+        Assert.Contains("Join-Path $PSScriptRoot 'Check-Lite-Prerequisites.ps1'", manager);
+        Assert.DoesNotContain("Join-Path $TargetDirectory 'Check-Lite-Prerequisites.ps1'", manager);
+    }
+
+    [Fact]
     public void NativeLauncherPackageContainsOnlyWindowsInboxDependencies()
     {
         var script = Read("eng/Package-Updater-Banner.ps1");

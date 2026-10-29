@@ -285,11 +285,86 @@ function ConvertTo-DependencyVersionReport {
   VCUpdateNote='Microsoft provides a latest-x86-installer link but not a verified version feed.'
  }
 }
+# Installed versions and quick inventory do not certify this build's exact
+# runtimeconfig/roll-forward policy. Report the strict preflight separately.
+# Run only a checker bundled beside this manager, never a channel-supplied script.
+function Get-StrictPreflightDisposition {
+ param(
+  [bool]$HasApp,[bool]$HasRuntimeConfig,[bool]$HasTrustedChecker,[bool]$SafePaths,
+  [ValidateSet('Pending','Passed','Failed')][string]$CheckResult='Pending'
+ )
+ if(-not $HasApp -and -not $HasRuntimeConfig){return 'Not installed'}
+ if(-not $HasApp -or -not $HasRuntimeConfig){return 'Incomplete installation'}
+ if(-not $SafePaths -or -not $HasTrustedChecker){return 'Not verified'}
+ if($CheckResult -eq 'Passed'){return 'Compatible'}
+ if($CheckResult -eq 'Failed'){return 'Incompatible'}
+ return 'Check required'
+}
+function Get-StrictCompatibilityReport([string]$TargetDirectory){
+ $appPath=Join-Path $TargetDirectory 'Dvinholm.App.exe'
+ $configPath=Join-Path $TargetDirectory 'Dvinholm.App.runtimeconfig.json'
+ $trustedChecker=Join-Path $PSScriptRoot 'Check-Lite-Prerequisites.ps1'
+ $hasApp=Test-Path -LiteralPath $appPath -PathType Leaf
+ $hasConfig=Test-Path -LiteralPath $configPath -PathType Leaf
+ $hasChecker=Test-Path -LiteralPath $trustedChecker -PathType Leaf
+ $safe=$true
+ try{
+  foreach($path in @($TargetDirectory,$appPath,$configPath,$trustedChecker)){
+   if(Test-Path -LiteralPath $path){
+    if(((Get-Item -LiteralPath $path -Force -ErrorAction Stop).Attributes -band
+        [IO.FileAttributes]::ReparsePoint) -ne 0){$safe=$false;break}
+   }
+  }
+ }catch{$safe=$false}
+ $status=Get-StrictPreflightDisposition -HasApp $hasApp -HasRuntimeConfig $hasConfig -HasTrustedChecker $hasChecker -SafePaths $safe
+ $detail=switch($status){
+  'Not installed' {'No complete application build selected for strict verification.'}
+  'Incomplete installation' {'Application EXE and runtimeconfig.json are not both present.'}
+  'Not verified' {'Trusted prerequisite checker or safe application files unavailable.'}
+  default {''}
+ }
+ if($status -eq 'Check required'){
+  try{
+   # Read-only: no network, installer, WinUI, J2534 or vehicle activity.
+   $null=@(& $trustedChecker -LiteDirectory $TargetDirectory -WindowsAppSdkLine '2.5' 2>&1)
+   $status=Get-StrictPreflightDisposition -HasApp $true -HasRuntimeConfig $true -HasTrustedChecker $true -SafePaths $true -CheckResult 'Passed'
+   $detail='Strict runtimeconfig, Windows App Runtime and VC++ x86 preflight passed; GUI launch untested.'
+  }catch{
+   $status=Get-StrictPreflightDisposition -HasApp $true -HasRuntimeConfig $true -HasTrustedChecker $true -SafePaths $true -CheckResult 'Failed'
+   $detail=[string]$_.Exception.Message
+   if($detail.Length -gt 230){$detail=$detail.Substring(0,230)}
+  }
+ }
+ return [ordered]@{Status=$status;Detail=$detail}
+}
+function Test-StrictPreflightDisposition {
+ $cases=@(
+  @($false,$false,$true,$true,'Pending','Not installed'),
+  @($true,$false,$true,$true,'Pending','Incomplete installation'),
+  @($false,$true,$true,$true,'Pending','Incomplete installation'),
+  @($true,$true,$false,$true,'Pending','Not verified'),
+  @($true,$true,$true,$false,'Pending','Not verified'),
+  @($true,$true,$true,$true,'Pending','Check required'),
+  @($true,$true,$true,$true,'Passed','Compatible'),
+  @($true,$true,$true,$true,'Failed','Incompatible')
+ )
+ $count=0
+ foreach($row in $cases){
+  $actual=Get-StrictPreflightDisposition -HasApp $row[0] -HasRuntimeConfig $row[1] -HasTrustedChecker $row[2] -SafePaths $row[3] -CheckResult $row[4]
+  if($actual -cne $row[5]){throw ('Strict preflight state fixture '+$count+' failed.')}
+  $count++
+ }
+ if($count -ne 8){throw 'Incorrect strict preflight fixture count.'}
+ Write-Host 'Lite strict preflight disposition 8/8 offline checks passed.'
+}
+
 function Get-DependencyVersionReport {
  $installed=Get-InstalledComponentVersions
  $ready=Get-Inventory
  $latest=Get-OfficialLatestVersions
- return (ConvertTo-DependencyVersionReport -Installed $installed -Ready $ready -Latest $latest)
+ $report=ConvertTo-DependencyVersionReport -Installed $installed -Ready $ready -Latest $latest
+ $report['StrictPreflight']=Get-StrictCompatibilityReport -TargetDirectory $root
+ return $report
 }
 function Test-DependencyReportProjection {
  # Network, registry and Appx are not used in these synthetic report tests.
@@ -496,6 +571,7 @@ if ($Mode -eq 'SelfTest') {
     Test-InstallerMetadataOffline
     Test-DependencyVersionLogic
     Test-DependencyReportProjection
+    Test-StrictPreflightDisposition
     Test-DotNet10RuntimeInventory
     Test-MicrosoftInstallerExitCodes
     exit 0

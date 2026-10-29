@@ -1343,7 +1343,21 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    if(-not(Test-Path -LiteralPath $manager -PathType Leaf)){
     throw 'Microsoft dependency version manager is missing.'
    }
-   $json=(& $manager -Mode VersionReport -LiteDirectory $PSScriptRoot|Out-String).Trim()
+   # Prefer the selected, validated channel build for strict runtimeconfig
+   # compatibility, never a partially installed or untrusted managed folder.
+   $versionTarget=$PSScriptRoot
+   $targetLabel='Bundled application (not channel-specific)'
+   $strictTargetValid=($script:state.Recovery -ceq 'Ready')
+   if(Test-Path -LiteralPath $current){
+    try{
+     $null=Read-ManagedVersion $current
+     if($strictTargetValid){
+      $versionTarget=$current
+      $targetLabel='Selected '+$Channel+' channel'
+     }
+    }catch{$strictTargetValid=$false}
+   }
+   $json=(& $manager -Mode VersionReport -LiteDirectory $versionTarget|Out-String).Trim()
    if(-not $json){throw 'Dependency version report is unavailable.'}
    $report=ConvertFrom-Json -InputObject $json -ErrorAction Stop
    $lines=New-Object Collections.Generic.List[string]
@@ -1366,6 +1380,15 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
      ' | '+$latestLabel+': '+[string]$part.Latest+
      ' | '+[string]$part.Status+' ('+$readiness+')')
    }
+   $strict=$report.StrictPreflight
+   if($null -eq $strict){throw 'Strict compatibility result is missing.'}
+   if(-not $strictTargetValid){
+    $strict.Status='Not verified'
+    $strict.Detail='Selected channel needs recovery or its managed installation could not be validated.'
+    $targetLabel='Selected '+$Channel+' channel'
+   }
+   $lines.Add('Strict compatibility ['+$targetLabel+']: '+[string]$strict.Status)
+   $lines.Add('Strict check: '+[string]$strict.Detail)
    $lines.Add('WinApp 2.5.1 is the tested installer baseline; newer SDK versions are advisory.')
    $lines.Add('VC++ current installer version cannot be verified without vendor metadata.')
    $script:state.DependencyReport=[string]::Join([Environment]::NewLine,$lines.ToArray())
