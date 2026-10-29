@@ -20,6 +20,7 @@ $required=@(
  'Binaries/Updater-Banner.ps1',
  'Binaries/Launcher-AuroraTheme.ps1',
  'Binaries/Launcher-ServiceCockpit.ps1',
+ 'Binaries/Launcher-ReleaseDiscovery.ps1',
  'Binaries/J2534-DriverManager.ps1',
  'Binaries/J2534-DriverUI.ps1',
  'Binaries/Manage-Lite-Dependencies.ps1',
@@ -27,7 +28,8 @@ $required=@(
  'Binaries/dvinholm-banner.webp',
  'Binaries/launcher-service-cockpit-banner.jpg',
  'Binaries/Assert-LauncherSelfUpdatePackage.ps1',
- 'Binaries/Invoke-LauncherReplacement.ps1'
+ 'Binaries/Invoke-LauncherReplacement.ps1',
+ 'Binaries/launcher-build.txt'
 )
 $allowed=[Collections.Generic.HashSet[string]]::new([StringComparer]::Ordinal)
 foreach($name in $required){[void]$allowed.Add($name)}

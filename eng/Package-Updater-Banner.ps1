@@ -6,7 +6,8 @@ PowerShell 5.1 updater engine in Binaries. No .NET 10 or WinApp SDK needed.
 [CmdletBinding()]
 param(
  [Parameter(Mandatory)][string]$ZipPath,
- [string]$NativeDirectory='artifacts/native'
+ [string]$NativeDirectory='artifacts/native',
+ [ValidatePattern('^(?:ci-[1-9][0-9]{0,8}|v[0-9]+\.[0-9]+\.[0-9]+|unversioned)$')][string]$BuildTag='unversioned'
 )
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.IO.Compression
@@ -20,6 +21,7 @@ $staging=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-launcher-'+[guid]::NewG
 $files=@{
  'Launcher.exe'=(Join-Path $native 'Launcher.exe')
  'Binaries/Updater-Banner.ps1'=(Join-Path $PSScriptRoot 'Updater-Banner.ps1')
+ 'Binaries/Launcher-ReleaseDiscovery.ps1'=(Join-Path $PSScriptRoot 'Launcher-ReleaseDiscovery.ps1')
  'Binaries/Launcher-AuroraTheme.ps1'=(Join-Path $PSScriptRoot 'Launcher-AuroraTheme.ps1')
  'Binaries/Launcher-ServiceCockpit.ps1'=(Join-Path $PSScriptRoot 'Launcher-ServiceCockpit.ps1')
  'Binaries/J2534-DriverManager.ps1'=(Join-Path $PSScriptRoot 'J2534-DriverManager.ps1')
@@ -32,6 +34,9 @@ $files=@{
  'Binaries/launcher-service-cockpit-banner.jpg'=(Join-Path $root 'assets\launcher-service-cockpit-banner.jpg')
 }
 try{
+ # The launcher and the app have independent version identities.
+ [IO.File]::WriteAllText((Join-Path $staging 'Binaries\launcher-build.txt'),
+  $BuildTag,[Text.Encoding]::ASCII)
  foreach($key in $files.Keys){
   $src=$files[$key]
   if(-not(Test-Path -LiteralPath $src -PathType Leaf)){throw "Missing launcher input: $src"}
@@ -42,7 +47,10 @@ try{
  $zip=[IO.Compression.ZipFile]::OpenRead($target)
  try{
   $actual=@($zip.Entries|Where-Object{-not $_.FullName.EndsWith('/')})
-  if($actual.Count -ne $files.Count){throw 'Unexpected launcher ZIP file count.'}
+  if($actual.Count -ne ($files.Count+1)){throw 'Unexpected launcher ZIP file count.'}
+  if($null -eq $zip.GetEntry('Binaries/launcher-build.txt')){
+   throw 'Missing native launcher build receipt.'
+  }
   foreach($key in $files.Keys){
    $entry=$zip.GetEntry($key)
    if($null -eq $entry){throw "Archive missing $key"}

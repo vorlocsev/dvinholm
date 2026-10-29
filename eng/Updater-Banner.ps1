@@ -6,7 +6,7 @@ No software installs or updates until the user explicitly confirms.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('UI','UiSmokeTest','Check','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
+ [ValidateSet('UI','UiSmokeTest','Check','CheckLauncher','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
  [ValidateSet('Stable','Development')][string]$Channel='Development',
  [string]$StateFile
 )
@@ -15,6 +15,7 @@ $ErrorActionPreference='Stop'
 $repo='vorlocsev/dvinholm'
 $zipName='Dvinholm-Windows-x86-Lite.zip'
 $sumsName='SHA256SUMS.txt'
+$launcherZipName='Dvinholm-Updater-Banner-Windows-x86.zip'
 $manager=Join-Path $PSScriptRoot 'Manage-Lite-Dependencies.ps1'
 $base=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Dvinholm\UpdaterBanner'
 $preferenceFile=Join-Path $base 'channel-preference.txt'
@@ -35,7 +36,8 @@ if($Mode -eq 'Launch' -and -not $PSBoundParameters.ContainsKey('Channel')){
 $channelRoot=Join-Path $base $Channel
 $current=Join-Path $channelRoot 'current'
 $state=[ordered]@{Done=$false;Failed=$false;Current='Not installed';Available='Not checked';
- DotNet='Unknown';WinApp='Unknown';VC='Unknown';DependencyReport='';Recovery='Not checked';Detail='Ready';DownloadId='';DownloadTotal=0}
+ DotNet='Unknown';WinApp='Unknown';VC='Unknown';DependencyReport='';Recovery='Not checked';Detail='Ready';DownloadId='';DownloadTotal=0;
+ LauncherCurrent='Not checked';LauncherAvailable='Not checked';LauncherDetail=''}
 function Save-State {
  if (-not $StateFile) { return }
  $tmp=$StateFile+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
@@ -103,6 +105,11 @@ function Latest {
  Validate-Asset $sums[0] $r.tag_name $sumsName
  return [pscustomobject]@{Tag=[string]$r.tag_name;Zip=$zip[0];Sums=$sums[0]}
 }
+$releaseHelper=Join-Path $PSScriptRoot 'Launcher-ReleaseDiscovery.ps1'
+if(-not(Test-Path -LiteralPath $releaseHelper -PathType Leaf)){
+ throw 'Bundled Launcher release discovery module is missing.'
+}
+. $releaseHelper
 function Entry-Path([string]$name){
  $p=$name.Replace('\','/').TrimEnd('/')
  if(-not $p -or $p.StartsWith('/') -or $p.Contains(':') -or
@@ -268,6 +275,7 @@ function Translate([string]$key) {
    driversOpen='Открыть драйверы';settingsQuick='Настройки'
    windowsQuick='Перепроверить';depsInstall='Установить компоненты'
    componentsTitle='Компоненты Microsoft x86';componentsNotice='Выберите компонент для установки. Будет показано подтверждение.'
+   checkLauncher='Проверить обновление лаунчера'
   }
   EN=@{
    home='▶  Launch';updates='↻  Updates'
@@ -301,6 +309,7 @@ function Translate([string]$key) {
    driversOpen='Open drivers';settingsQuick='Settings'
    windowsQuick='Recheck';depsInstall='Install components'
    componentsTitle='Microsoft x86 prerequisites';componentsNotice='Select the component to install. Confirmation is required.'
+   checkLauncher='Check Launcher updates'
   }
  }
  $value=$labels[$script:launcherLanguage][$key]
@@ -315,6 +324,12 @@ function Format-LauncherDetail([string]$raw) {
  if($script:launcherLanguage -ne 'RU'){return $raw}
  switch -Regex -CaseSensitive ($raw) {
   '^Ready\.$' {return 'Готово.'}
+  '^Launcher release checked\. No files downloaded or replaced\.$' {
+   return 'Обновления лаунчера проверены. Файлы не изменены.'
+  }
+  '^Launcher update check failed: (.+)$' {
+   return ('Ошибка проверки обновления лаунчера: '+$Matches[1])
+  }
   '^Working\.\.\.$' {return 'Выполняется...'}
   '^Runtime dependencies rechecked locally\. No GitHub request made\.$' {
    return 'Компоненты Windows проверены локально. GitHub не запрашивался.'
@@ -1571,6 +1586,17 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    $lines.Add('VC++ current installer version cannot be verified without vendor metadata.')
    $script:state.DependencyReport=[string]::Join([Environment]::NewLine,$lines.ToArray())
    Progress 'Microsoft dependency version check finished. No software changed.'
+  }elseif($Mode -eq 'CheckLauncher'){
+   $script:state.LauncherCurrent=Read-LauncherInstalledBuild
+   $latest=LatestLauncher
+   $script:state.LauncherAvailable=if($latest.Published){[string]$latest.Tag}else{'Not published'}
+   $relation=Get-LauncherBuildRelation $Channel $script:state.LauncherCurrent $script:state.LauncherAvailable
+   $script:state.LauncherDetail=('Launcher ['+$Channel+']'+
+    [Environment]::NewLine+'Installed: '+$script:state.LauncherCurrent+
+    [Environment]::NewLine+'Available: '+$script:state.LauncherAvailable+
+    [Environment]::NewLine+'Status: '+$relation+
+    [Environment]::NewLine+'Read-only metadata check. No files changed.')
+   Progress 'Launcher release checked. No files downloaded or replaced.'
   }elseif($Mode -eq 'Check'){
    if($script:state.Recovery -ne 'Ready'){
     throw 'Recovery must be handled before update checks.'
@@ -1608,6 +1634,8 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    $message
   }elseif($Mode -eq 'Launch'){
    ('Unable to start the selected application: '+$message)
+  }elseif($Mode -eq 'CheckLauncher'){
+   ('Launcher update check failed: '+$message)
   }elseif($message -match 'Latest published release is older|Cannot safely determine current Lite version'){
    'Update blocked: installed Lite is newer or cannot be verified. No files were downloaded.'
   }elseif($message -match 'Recovery must be handled'){
@@ -1845,7 +1873,7 @@ function Show-LauncherSettings {
  if($script:child -or $script:vendor){return}
  $dlg=New-Object Windows.Forms.Form
  $dlg.Text=Translate 'settingsTitle'
- $dlg.ClientSize=[Drawing.Size]::new(375,313)
+ $dlg.ClientSize=[Drawing.Size]::new(375,368)
  $dlg.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedDialog
  $dlg.MaximizeBox=$false;$dlg.MinimizeBox=$false
  $dlg.StartPosition=[Windows.Forms.FormStartPosition]::CenterParent
@@ -1878,20 +1906,25 @@ function Show-LauncherSettings {
  $cancel.SetBounds(269,151,84,30);$dlg.Controls.Add($cancel)
  $advanced=New-Object Windows.Forms.Label
  $advanced.Text=if($script:launcherLanguage -eq 'RU'){'ВОССТАНОВЛЕНИЕ'}else{'RECOVERY'}
- $advanced.SetBounds(18,194,340,24);$dlg.Controls.Add($advanced)
+ $advanced.SetBounds(18,239,340,24);$dlg.Controls.Add($advanced)
+ $checkLauncher=New-Object Windows.Forms.Button
+ $checkLauncher.Text=Translate 'checkLauncher'
+ $checkLauncher.SetBounds(18,185,335,35)
+ $dlg.Controls.Add($checkLauncher)
+ $checkLauncher.Add_Click({$dlg.Close();Begin-Action 'CheckLauncher'})
  $restore=New-Object Windows.Forms.Button
  $restore.Text=Translate 'rollback'
- $restore.SetBounds(18,226,335,28)
+ $restore.SetBounds(18,270,335,28)
  $restore.Enabled=($script:recoveryStatus -ceq 'Ready')
  $dlg.Controls.Add($restore)
  $repairRollback=New-Object Windows.Forms.Button
  $repairRollback.Text=Translate 'repair'
- $repairRollback.SetBounds(18,263,160,28)
+ $repairRollback.SetBounds(18,308,160,28)
  $repairRollback.Enabled=($script:recoveryStatus -ceq 'Repair rollback')
  $dlg.Controls.Add($repairRollback)
  $repairInstallButton=New-Object Windows.Forms.Button
  $repairInstallButton.Text=Translate 'repairInstall'
- $repairInstallButton.SetBounds(188,263,165,28)
+ $repairInstallButton.SetBounds(188,308,165,28)
  $repairInstallButton.Enabled=($script:recoveryStatus -ceq 'Repair install')
  $dlg.Controls.Add($repairInstallButton)
  $restore.Add_Click({$dlg.Close();Begin-Action 'Rollback'})
@@ -2159,6 +2192,25 @@ function Apply-WorkerSnapshot($snapshot) {
  Update-ActionAvailability
  return $false
 }
+
+function Format-LauncherCheckReport($snapshot) {
+ if($script:launcherLanguage -ne 'RU'){return [string]$snapshot.LauncherDetail}
+ $status=Get-LauncherBuildRelation ([string]$choice.SelectedItem) (
+  [string]$snapshot.LauncherCurrent) ([string]$snapshot.LauncherAvailable)
+ $ru=switch($status){
+  'Current'{'Актуально'}
+  'Newer release available'{'Доступна более новая сборка'}
+  'Installed build newer'{'Установленная сборка новее'}
+  'Unverified or other channel'{'Версия не подтверждена или выбран другой канал'}
+  'Not published'{'Не опубликовано'}
+  default{'Не удалось сравнить'}
+ }
+ return ('Лаунчер ['+[string]$choice.SelectedItem+']'+[Environment]::NewLine+
+  'Установлено: '+[string]$snapshot.LauncherCurrent+[Environment]::NewLine+
+  'Доступно: '+[string]$snapshot.LauncherAvailable+[Environment]::NewLine+
+  'Статус: '+$ru+[Environment]::NewLine+
+  'Проверены только сведения о релизе. Файлы не изменены.')
+}
 function Poll-WorkerState {
  $complete=$false
  if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
@@ -2169,13 +2221,17 @@ function Poll-WorkerState {
  }
  if($script:child -and $script:child.HasExited){
   $reportText=''
-  if($complete -and $null -ne $snapshot -and
-     $snapshot.PSObject.Properties['DependencyReport']){
+  $finishedAction=$script:pendingAction
+  if($finishedAction -ceq 'CheckLauncher' -and $complete -and
+     $null -ne $snapshot -and [string]$snapshot.LauncherDetail){
+   $reportText=Format-LauncherCheckReport $snapshot
+  }
+  if($finishedAction -ceq 'Versions' -and $complete -and
+     $null -ne $snapshot -and $snapshot.PSObject.Properties['DependencyReport']){
    $reportText=[string]$snapshot.DependencyReport
   }
   # Close only when launch worker completed successfully AND the dependency
   # helper positively reported creation of the main application process.
-  $finishedAction=$script:pendingAction
   $workerExit=[int]$script:child.ExitCode
   $script:pendingAction=''
   $launchSucceeded=($finishedAction -ceq 'Launch' -and $workerExit -eq 0 -and
@@ -2194,8 +2250,9 @@ function Poll-WorkerState {
    return
   }
   if($reportText){
+   $reportTitle=if($finishedAction -ceq 'CheckLauncher'){'Dvinholm | Launcher updates'}else{'Dvinholm | Installed and available runtimes'}
    [void][Windows.Forms.MessageBox]::Show($form,$reportText,
-    'Dvinholm | Installed and available runtimes',
+    $reportTitle,
     [Windows.Forms.MessageBoxButtons]::OK,
     [Windows.Forms.MessageBoxIcon]::Information)
   }

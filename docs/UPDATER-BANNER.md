@@ -565,3 +565,24 @@ directory. Eight Windows CI tests exercise success, application isolation,
 backup preservation, integrity failure, second-update refusal, deliberate
 interruption, verified recovery and corrupted-backup refusal. Real Windows
 process handoff and restart still require acceptance.
+
+
+## Separate native Launcher version check (Development)
+
+The Settings dialog includes **Check Launcher updates / Проверить обновление лаунчера**.
+This invokes a read-only GitHub release metadata worker for the selected
+Stable or Development channel. It does not download, unpack, replace, execute
+or restart the native launcher. A publication missing the separate launcher
+ZIP (or checksum manifest) is reported **Not published**, not as a usable
+update. Invalid release assets are rejected.
+
+A small `Binaries/launcher-build.txt` receipt, generated at packaging time,
+identifies the native Launcher build separately from the selected application
+build. Older launchers without the receipt report **Unverified**, and version
+comparisons across Stable/Development never claim a safe automatic upgrade.
+The native ZIP and combined Dvinholm ZIP carry the same receipt. Eight offline
+comparison cases test current, newer, older, missing and mixed-channel states.
+
+The journaled replacement helper remains offline and is **not yet wired** to
+this button. Verified download, explicit confirmation, process-exit handoff,
+restart and rollback-rotation are separate subsequent acceptance gates.
