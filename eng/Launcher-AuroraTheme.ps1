@@ -5,6 +5,8 @@ Presentation only: PowerShell 5.1 + inbox WinForms/System.Drawing.
 The updater, dependency inventory, and transaction engine remain unchanged.
 #>
 $form.Text='Dvinholm Launcher'
+$form.MinimumSize=[Drawing.Size]::Empty
+$form.MaximumSize=[Drawing.Size]::Empty
 $form.ClientSize=[Drawing.Size]::new(1180,790)
 $form.MinimumSize=$form.Size;$form.MaximumSize=$form.Size
 $form.BackColor=[Drawing.Color]::FromArgb(8,19,34)
