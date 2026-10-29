@@ -237,9 +237,9 @@ $script:launcherLanguage=Read-LauncherLanguage
 function Translate([string]$key) {
  $labels=@{
   RU=@{
-   home='▶  Запустить Dvinholm';updates='↻  Проверить обновления'
-   dependencies='◈  Проверить компоненты';settings='⚙  Настройки'
-   about='ⓘ  О программе';drivers='▣  Драйверы адаптеров'
+   home='▶  Запуск';updates='↻  Обновления'
+   dependencies='◈  Компоненты';settings='⚙  Настройки'
+   about='ⓘ  О программе';drivers='▣  Драйверы'
    channel='КАНАЛ ОБНОВЛЕНИЙ';progress='ЗАГРУЗКА И УСТАНОВКА'
    prereqs='КОМПОНЕНТЫ WINDOWS';stable='Stable · официальный релиз'
    dev='Development · сборки CI';installed='Установлено';available='Доступно'
@@ -260,9 +260,9 @@ function Translate([string]$key) {
    confirmTitle='Подтверждение'
   }
   EN=@{
-   home='▶  Start Dvinholm';updates='↻  Check updates'
-   dependencies='◈  Check dependencies';settings='⚙  Settings'
-   about='ⓘ  About';drivers='▣  Adapter drivers'
+   home='▶  Launch';updates='↻  Updates'
+   dependencies='◈  Dependencies';settings='⚙  Settings'
+   about='ⓘ  About';drivers='▣  Drivers'
    channel='UPDATE CHANNEL';progress='DOWNLOAD AND INSTALL'
    prereqs='WINDOWS PREREQUISITES';stable='Stable · official release'
    dev='Development · latest CI';installed='Installed';available='Available'
