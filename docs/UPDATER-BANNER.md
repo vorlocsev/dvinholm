@@ -50,8 +50,15 @@ A successful update leaves one prior version in the channel's
 `previous` directory. Existing manual Dvinholm installations are **not**
 modified automatically. This prevents accidental downgrades when switching
 channels. Application ECU profiles and settings remain in the existing
-separate user-data location. The banner's Start button launches the
-selected Lite build via its dependency-aware startup command.
+separate user-data location. The banner's **Start Dvinholm** button now delegates to a separate
+per-channel PowerShell worker, which rechecks recovery markers and validates
+the selected `current` folder's Lite files, channel metadata and x86 PE
+header **immediately before launching** the dependency-aware startup command.
+The GUI does not launch an unchecked `current` batch file directly. A
+missing/corrupt installation, cross-channel metadata, or unresolved
+install/rollback blocks startup without changing installed files. These are
+structural safety checks, not a substitute for cryptographic verification of
+an installation after it has been modified on disk.
 
 **Restore previous** performs an offline, separately confirmed rollback of
 the **currently selected channel only**. Close Dvinholm before invoking it.
@@ -101,6 +108,10 @@ cleaned up **after** the committed installation is safe. The journal does
 not include user ECU profiles or settings. An unjournaled `pending-*` or
 `older-*` from older Banner versions is deliberately **not** repaired
 automatically; preserve those folders for manual analysis.
+
+CI also includes eight isolated launch-candidate checks: valid/current-only
+installations, absent/corrupt files, invalid x86 PE, wrong-channel metadata,
+and both incomplete update and rollback. They do not run Dvinholm itself.
 
 CI includes eight synthetic offline interrupted-install checks alongside
 eight rollback-repair checks. Real GUI execution and power-cut recovery
