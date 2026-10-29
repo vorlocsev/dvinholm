@@ -158,7 +158,7 @@ jobs:
           ./eng/Test-WindowsDistribution.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
           ./eng/Test-WindowsDistributionExtraction.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip -SimulatedLiteHost
           ./eng/Test-LiteBundledPreflight.ps1 -Flavor Lite -ZipPath artifacts/Dvinholm-Windows-x86-Lite.zip
-          ./eng/Package-Updater-Banner.ps1 -ZipPath artifacts/Dvinholm-Updater-Banner-Windows-x86.zip -NativeDirectory artifacts/native
+          ./eng/Package-Updater-Banner.ps1 -ZipPath artifacts/Dvinholm-Updater-Banner-Windows-x86.zip -NativeDirectory artifacts/native -BuildTag "ci-${{ github.run_number }}"
           ./eng/Package-Launchable-Lite.ps1 -LiteZip artifacts/Dvinholm-Windows-x86-Lite.zip -UpdaterZip artifacts/Dvinholm-Updater-Banner-Windows-x86.zip -NativeDirectory artifacts/native -ZipPath artifacts/Dvinholm-Windows-x86.zip
           ./eng/Test-Launchable-Lite.ps1 -ZipPath artifacts/Dvinholm-Windows-x86.zip
           ./eng/Test-WindowsDistributionChecksums.ps1 -Directory artifacts -LiteOnly -WithUpdaterBanner -WithLauncherBundle -Generate
