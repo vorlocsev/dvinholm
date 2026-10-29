@@ -338,4 +338,18 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("$launch.SetBounds(35,528,365,53)", cockpit);
     }
 
+    [Fact]
+    public void LauncherLocalizesWorkerStatusWithoutChangingInternalState()
+    {
+        var banner = Read("eng/Updater-Banner.ps1");
+        Assert.Contains("function Format-LauncherDetail", banner);
+        Assert.Contains("function Format-LauncherRecovery", banner);
+        Assert.Contains("function Set-LauncherDetail", banner);
+        Assert.Contains("$script:lastRawStatus=$raw", banner);
+        Assert.Contains("Set-LauncherDetail ([string]$snapshot.Detail)", banner);
+        Assert.Contains("$status.Text=Format-LauncherDetail $script:lastRawStatus", banner);
+        Assert.Contains("Service Cockpit 8/8 offline RU/EN status translation checks passed.", banner);
+        Assert.Contains("default {return $raw}", banner);
+    }
+
 }
