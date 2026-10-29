@@ -1671,7 +1671,7 @@ if(-not(Test-Path -LiteralPath $driverUi -PathType Leaf)){throw 'Driver UI missi
 
 # Explicit online versions check; local Recheck deps remains offline.
 $versionsButton=Button 'Check runtime versions' 927 596 215
-$versionsButton.SetBounds(918,542,226,30)
+$versionsButton.SetBounds(918,570,226,30)
 $versionsButton.Font=New-Object Drawing.Font('Segoe UI',9)
 $versionsButton.BackColor=[Drawing.Color]::FromArgb(25,76,114)
 $versionsButton.ForeColor=[Drawing.Color]::White
