@@ -48,6 +48,10 @@ public sealed partial class MainWindow : Window
     {
         InitializeComponent();
         AuroraLanding.NavigationRequested += DashboardNavigate;
+        ProfileSelector.SelectionChanged += (_, _) =>
+            DispatcherQueue.TryEnqueue(RefreshDashboardSummary);
+        J2534Devices.SelectionChanged += (_, _) =>
+            DispatcherQueue.TryEnqueue(RefreshDashboardSummary);
 #if DVINHOLM_DEVELOPMENT_FEATURES
         InitializeDevelopmentControls();
 #endif
