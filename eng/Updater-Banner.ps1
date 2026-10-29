@@ -2020,7 +2020,14 @@ if($Mode -eq 'UiSmokeTest'){
      $sidebarFooter.Top -lt $navDrivers.Bottom+12 -or
      $footerMeasure.Height -gt $sidebarFooter.Height -or
      ($form.AutoScroll -and $form.ClientSize.Height -ge $contentHeight)){
-   throw 'Compact Aurora sidebar footer, repair buttons or scrolling are clipped.'
+   throw ('Compact Aurora clipped: repairBottom='+$repairInstall.Bottom+
+    '; contentHeight='+$contentHeight+'; sidebarBottom='+$sidebar.Bottom+
+    '; sidebarClientHeight='+$sidebar.ClientSize.Height+
+    '; footerBottom='+$sidebarFooter.Bottom+
+    '; footerTop='+$sidebarFooter.Top+'; driversBottom='+$navDrivers.Bottom+
+    '; measuredTextHeight='+$footerMeasure.Height+
+    '; footerHeight='+$sidebarFooter.Height+'; autoScroll='+$form.AutoScroll+
+    '; visibleHeight='+$form.ClientSize.Height)
   }
   $auroraChecks++
   $script:child=[pscustomobject]@{HasExited=$false}
