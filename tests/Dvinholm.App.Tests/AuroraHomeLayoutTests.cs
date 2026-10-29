@@ -57,8 +57,14 @@ public sealed class AuroraHomeLayoutTests
         var config = Named(Home, "CemConfigCard");
         Assert.Equal("CardPin_Click", (string?)pin.Attribute("Click"));
         Assert.Equal("CardConfig_Click", (string?)config.Attribute("Click"));
-        Assert.Contains("недоступен", pin.Value, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("офлайн", config.Value, StringComparison.OrdinalIgnoreCase);
+        var pinLabels = string.Join(" ", pin.Descendants()
+            .Where(x => x.Name.LocalName == "TextBlock")
+            .Select(x => (string?)x.Attribute("Text") ?? string.Empty));
+        var configLabels = string.Join(" ", config.Descendants()
+            .Where(x => x.Name.LocalName == "TextBlock")
+            .Select(x => (string?)x.Attribute("Text") ?? string.Empty));
+        Assert.Contains("недоступен", pinLabels, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("офлайн", configLabels, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("без записи", (string?)config.Attribute("ToolTipService.ToolTip"));
     }
 
