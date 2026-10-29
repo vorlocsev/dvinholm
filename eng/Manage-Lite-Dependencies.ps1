@@ -6,7 +6,7 @@
 #>
 [CmdletBinding()]
 param(
-    [ValidateSet('Launch','Manage','Install','Probe')][string]$Mode = 'Manage',
+    [ValidateSet('Launch','Manage','Install','Probe','SelfTest')][string]$Mode = 'Manage',
     [ValidateSet('DotNet','WinApp','VC')][string]$Component = 'WinApp',
     [string]$LiteDirectory = $PSScriptRoot
 )
@@ -107,6 +107,101 @@ if ($Mode -eq 'Probe') {
     return
 }
 
+function Select-DotNetInstaller($index) {
+    # Pure selector: test Microsoft release metadata offline, before making
+    # any installer download, Authenticode check or process launch.
+    if ($null -eq $index) { throw 'Missing Microsoft .NET release metadata.' }
+    $latest = [string]$index.'latest-release'
+    if ($latest -cnotmatch '^10\.\d+\.\d+$') {
+        throw 'Microsoft .NET 10 release metadata has no stable current version.'
+    }
+    $matching = @($index.releases | Where-Object {
+        [string]$_.'release-version' -ceq $latest
+    })
+    if ($matching.Count -ne 1) {
+        throw 'Cannot select one current .NET 10 release from official metadata.'
+    }
+    $files = @($matching[0].windowsdesktop.files | Where-Object {
+        [string]$_.rid -ceq 'win-x86' -and
+        [string]$_.name -ceq 'windowsdesktop-runtime-win-x86.exe'
+    })
+    if ($files.Count -ne 1) {
+        throw 'Cannot select a unique Microsoft .NET Desktop x86 installer.'
+    }
+    $file = $files[0]
+    $uri = [uri]([string]$file.url)
+    if ($uri.Scheme -cne 'https' -or $uri.UserInfo -or $uri.Port -ne 443 -or
+        $uri.Host -cnotin @('builds.dotnet.microsoft.com',
+                           'download.visualstudio.microsoft.com',
+                           'dotnetcli.azureedge.net',
+                           'dotnetcli.blob.core.windows.net')) {
+        throw 'The .NET release index references an unexpected installer host.'
+    }
+    if ([string]$file.hash -cnotmatch '^[a-fA-F0-9]{128}$') {
+        throw 'The official .NET Desktop installer has no usable SHA-512 digest.'
+    }
+    return [pscustomobject]@{
+        Url = $uri.AbsoluteUri
+        Hash = ([string]$file.hash).ToUpperInvariant()
+    }
+}
+function Test-InstallerMetadataOffline {
+    $count = 0
+    function Reject([scriptblock]$action) {
+        $rejected = $false
+        try { & $action | Out-Null } catch { $rejected = $true }
+        if (-not $rejected) { throw 'Unsafe .NET installer metadata was accepted.' }
+    }
+    function Fixture {
+        $file = [pscustomobject]@{
+            rid='win-x86'
+            name='windowsdesktop-runtime-win-x86.exe'
+            url='https://builds.dotnet.microsoft.com/dotnet/WindowsDesktop/10.0.10/windowsdesktop-runtime-10.0.10-win-x86.exe'
+            hash=('ab'*64)
+        }
+        return [pscustomobject]@{
+            'latest-release'='10.0.10'
+            releases=@([pscustomobject]@{
+                'release-version'='10.0.10'
+                windowsdesktop=[pscustomobject]@{files=@($file)}
+            })
+        }
+    }
+    $valid = Fixture
+    $selected = Select-DotNetInstaller $valid
+    if ($selected.Hash -cne ('AB'*64) -or
+        $selected.Url -cne $valid.releases[0].windowsdesktop.files[0].url) {
+        throw 'Valid Microsoft .NET Desktop x86 installer selection failed.'
+    }
+    $count++
+    $invalid = Fixture; $invalid.'latest-release'='11.0.0'
+    Reject {Select-DotNetInstaller $invalid};$count++
+    $invalid = Fixture; $invalid.'latest-release'='10.0.11-preview'
+    Reject {Select-DotNetInstaller $invalid};$count++
+    $invalid = Fixture
+    $invalid.releases=@($invalid.releases[0],$invalid.releases[0])
+    Reject {Select-DotNetInstaller $invalid};$count++
+    $invalid = Fixture
+    $invalid.releases[0].windowsdesktop.files[0].rid='win-x64'
+    Reject {Select-DotNetInstaller $invalid};$count++
+    $invalid = Fixture
+    $file = $invalid.releases[0].windowsdesktop.files[0]
+    $invalid.releases[0].windowsdesktop.files=@($file,$file)
+    Reject {Select-DotNetInstaller $invalid};$count++
+    $invalid = Fixture
+    $invalid.releases[0].windowsdesktop.files[0].url='https://untrusted.example/runtime.exe'
+    Reject {Select-DotNetInstaller $invalid};$count++
+    $invalid = Fixture
+    $invalid.releases[0].windowsdesktop.files[0].hash='invalid'
+    Reject {Select-DotNetInstaller $invalid};$count++
+    if ($count -ne 8) { throw 'Wrong .NET installer metadata test count.' }
+    Write-Host 'Lite dependency manager 8/8 offline installer metadata checks passed.'
+}
+if ($Mode -eq 'SelfTest') {
+    Test-InstallerMetadataOffline
+    exit 0
+}
+
 function Get-OfficialInstaller {
     param([string]$Name)
     if ($Name -eq 'WinApp') {
@@ -133,29 +228,7 @@ function Get-OfficialInstaller {
     # Microsoft official .NET release metadata binds each installer to SHA-512.
     $indexUrl = 'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/10.0/releases.json'
     $index = Invoke-RestMethod -Uri $indexUrl -UseBasicParsing -TimeoutSec 40
-    $latest = [string]$index.'latest-release'
-    if ($latest -notmatch '^10\.\d+\.\d+$') {
-        throw 'Microsoft .NET 10 release metadata has no stable current version.'
-    }
-    $item = @($index.releases | Where-Object {
-        $_.'release-version' -eq $latest
-    }) | Select-Object -First 1
-    if ($null -eq $item) { throw 'Microsoft .NET release was not found in its official index.' }
-    $files = @($item.windowsdesktop.files | Where-Object {
-        $_.rid -eq 'win-x86' -and $_.name -eq 'windowsdesktop-runtime-win-x86.exe'
-    })
-    if ($files.Count -ne 1) { throw 'Cannot select a unique Microsoft .NET Desktop x86 installer.' }
-    $file = $files[0]
-    $uri = [uri]$file.url
-    if ($uri.Scheme -ne 'https' -or $uri.Host -notin @(
-        'builds.dotnet.microsoft.com', 'download.visualstudio.microsoft.com',
-        'dotnetcli.azureedge.net', 'dotnetcli.blob.core.windows.net')) {
-        throw 'The .NET release index references an unexpected installer host.'
-    }
-    if ([string]$file.hash -notmatch '^[a-fA-F0-9]{128}$') {
-        throw 'The official .NET Desktop installer has no usable SHA-512 digest.'
-    }
-    return [pscustomobject]@{ Url = $uri.AbsoluteUri; Hash = ([string]$file.hash).ToUpperInvariant() }
+    return (Select-DotNetInstaller $index)
 }
 
 function Install-Component {
