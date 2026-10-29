@@ -258,7 +258,7 @@ function Translate([string]$key) {
    confirmRepairInstall='Восстановить прерванную установку? Закройте Dvinholm.'
    confirmVendor='Скачать и запустить официальный установщик Microsoft? Возможен запрос UAC.'
    confirmTitle='Подтверждение'
-   cockpitReady='ГОТОВ';cockpitCaption='Диагностика и конфигурация автомобиля'
+   cockpitReady='ГОТОВ';cockpitUnchecked='НЕ ПРОВЕРЕНО';cockpitCaption='Диагностика и конфигурация автомобиля'
    channelHeading='Канал обновлений';stableHint='Stable: релиз / Development: сборки CI'
    afterLaunch='После запуска Dvinholm лаунчер закроется.'
    updatesHeading='Обновления Dvinholm';updatesHint='Проверка SHA-256, загрузка и установка'
@@ -291,7 +291,7 @@ function Translate([string]$key) {
    confirmRepairInstall='Repair an interrupted installation? Close Dvinholm first.'
    confirmVendor='Download and run the official Microsoft installer? UAC may be requested.'
    confirmTitle='Confirm action'
-   cockpitReady='READY';cockpitCaption='Vehicle diagnostics and configuration'
+   cockpitReady='READY';cockpitUnchecked='NOT CHECKED';cockpitCaption='Vehicle diagnostics and configuration'
    channelHeading='Update channel';stableHint='Stable releases / Development CI builds'
    afterLaunch='Launcher closes after Dvinholm starts successfully.'
    updatesHeading='Dvinholm updates';updatesHint='SHA-256 verification, download and installation'
@@ -1712,6 +1712,7 @@ Set-AuroraCompactLayout
 $script:lastCurrent='Not checked'
 $script:lastAvailable='Not checked'
 $script:lastRecovery='Not checked'
+$script:serviceIsReady=$false
 function Apply-LauncherLanguage {
  $navHome.Text=Translate 'home'
  $navUpdates.Text=Translate 'updates'
@@ -1739,7 +1740,7 @@ function Apply-LauncherLanguage {
  $repair.Text=Translate 'repair'
  $repairInstall.Text=Translate 'repairInstall'
  # Service Cockpit controls are attached by Launcher-ServiceCockpit.ps1.
- $serviceHeading.Text='DVINHOLM  ·  '+(Translate 'cockpitReady')
+ $serviceHeading.Text='DVINHOLM  ·  '+(Translate $(if($script:serviceIsReady){'cockpitReady'}else{'cockpitUnchecked'}))
  $serviceStatus.Text=Translate 'cockpitCaption'
  $channelLabel.Text=Translate 'channelHeading'
  $releaseHint.Text=Translate 'stableHint'
@@ -2034,6 +2035,12 @@ function Apply-WorkerSnapshot($snapshot) {
                                            'Repair rollback','Inspect'))
  if($finished -and $valid){
   $script:recoveryStatus=[string]$snapshot.Recovery
+  $script:serviceIsReady=($script:recoveryStatus -ceq 'Ready' -and
+    $script:lastCurrent -cnotin @('Not installed','Not checked','Unverified installation') -and
+    [string]$snapshot.DotNet -ceq 'Installed' -and
+    [string]$snapshot.WinApp -ceq 'Installed' -and
+    [string]$snapshot.VC -ceq 'Installed')
+  $serviceHeading.Text='DVINHOLM  ·  '+(Translate $(if($script:serviceIsReady){'cockpitReady'}else{'cockpitUnchecked'}))
   $script:lastRecovery=$script:recoveryStatus
   $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
   Update-ActionAvailability
