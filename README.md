@@ -28,6 +28,25 @@
 >
 > **Hardware validation is pending.** Windows UI and software tests have been exercised without a physical adapter; compatibility with Volvo DiCE, Mongoose, individual drivers, ECUs, or vehicles has not yet been demonstrated. Dvinholm is an independent project and is **not affiliated with or endorsed by Volvo Cars** or any adapter manufacturer.
 
+## New Launcher + Binaries layout (Development)
+
+The new native Windows x86 launcher distribution is
+`Dvinholm-Windows-x86-Launcher-Lite.zip` (available after the corresponding
+Development CI release succeeds). Extract the entire ZIP and run
+**`Launcher.exe`** to check Stable/Development builds, manage Microsoft
+runtimes, download updates and restore a previous version. Use
+**`Dvinholm.exe`** to start the diagnostic application. All Lite application
+files, scripts and logo assets live in **`Binaries/`**. The application
+window no longer has **Check update**.
+
+No Qt or Electron is required. The native launcher starts using Windows
+PowerShell 5.1/WinForms without requiring the diagnostic application's .NET 10
+or Windows App SDK dependencies. The diagnostic program remains Lite x86 and
+still needs its Microsoft runtime prerequisites. The old flat Lite ZIP is
+retained as the signed-off compatibility update input; the launcher validates
+asset digests and SHA256SUMS, performs transactional replacement and retains
+an offline previous build. [Launcher details](docs/UPDATER-BANNER.md).
+
 ## Quick start
 
 **Version channels:** the published, supported Stable remains **v0.2.3**. New `main` Development CI ZIPs identify as **0.2.4** (unreleased, experimental); a green CI does not publish Stable 0.2.4. Development explicitly retains offline demo/test functions while Stable v0.2.3 excludes them.
