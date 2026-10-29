@@ -1872,14 +1872,16 @@ if($Mode -eq 'UiSmokeTest'){
   }
   $auroraChecks++
   if($bar.Width -lt 800 -or $install.Right -gt $form.ClientSize.Width -or
-     $dot.Bottom -gt $form.ClientSize.Height){
+     $dot.Bottom -gt $form.ClientSize.Height -or
+     $versionsButton.Right -gt $form.ClientSize.Width -or
+     $versionsButton.Top -lt 590){
    throw 'Aurora dashboard action/progress layout is clipped.'
   }
   $auroraChecks++
   $script:child=[pscustomobject]@{HasExited=$false}
   Update-ActionAvailability
-  if($stableRadio.Enabled -or $developmentRadio.Enabled){
-   throw 'Aurora channel radios were not locked during updater work.'
+  if($stableRadio.Enabled -or $developmentRadio.Enabled -or $versionsButton.Enabled){
+   throw 'Aurora channel radios or version check were not locked during updater work.'
   }
   $script:child=$null
   Update-ActionAvailability
