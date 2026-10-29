@@ -29,7 +29,7 @@ try{
  [IO.Directory]::CreateDirectory($tools)|Out-Null
  [IO.Compression.ZipFile]::ExtractToDirectory($lite,$binary)
  [IO.Compression.ZipFile]::ExtractToDirectory($updater,$tools)
- foreach($name in @('Updater-Banner.ps1','Manage-Lite-Dependencies.ps1','Launcher-AuroraTheme.ps1','Launcher-ServiceCockpit.ps1','J2534-DriverManager.ps1','J2534-DriverUI.ps1','Dvinholm-icon.png','dvinholm-banner.webp')){
+ foreach($name in @('Updater-Banner.ps1','Manage-Lite-Dependencies.ps1','Launcher-AuroraTheme.ps1','Launcher-ServiceCockpit.ps1','J2534-DriverManager.ps1','J2534-DriverUI.ps1','Dvinholm-icon.png','dvinholm-banner.webp','launcher-service-cockpit-banner.jpg')){
   $source=Join-Path (Join-Path $tools 'Binaries') $name
   if(-not(Test-Path -LiteralPath $source -PathType Leaf)){
    throw "Standalone tools package missing $name"
