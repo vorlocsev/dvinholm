@@ -132,6 +132,28 @@ public sealed class UpdaterBannerContractTests
     }
 
     [Fact]
+    public void MicrosoftInstallerRestartCodesPropagateThroughHelper()
+    {
+        var manager = Read("eng/Manage-Lite-Dependencies.ps1");
+        Assert.Contains("function Get-MicrosoftInstallerOutcome", manager);
+        Assert.Contains("if($exitCode -in @(3010,1641))", manager);
+        Assert.Contains("Microsoft installer exit classification 6/6 offline checks passed.", manager);
+        Assert.Contains("return [int]$installer.ExitCode", manager);
+        Assert.Contains("exit $exitCode", manager);
+        Assert.Contains("Restart Windows before verifying or launching Dvinholm.", manager);
+    }
+
+    [Fact]
+    public void LauncherReportsMicrosoftRebootWithoutMislabelingFailureOrRescanning()
+    {
+        var banner = Read("eng/Updater-Banner.ps1");
+        Assert.Contains("}elseif($exitCode -in @(3010,1641)){", banner);
+        Assert.Contains("Restart Windows before rechecking prerequisites", banner);
+        Assert.Contains("Remove-Item -LiteralPath $script:statefile -Force", banner);
+        Assert.Contains("Begin-Action 'Probe'", banner);
+    }
+
+    [Fact]
     public void NativeLauncherPackageContainsOnlyWindowsInboxDependencies()
     {
         var script = Read("eng/Package-Updater-Banner.ps1");

@@ -352,9 +352,35 @@ function Test-InstallerMetadataOffline {
     if ($count -ne 8) { throw 'Wrong .NET installer metadata test count.' }
     Write-Host 'Lite dependency manager 8/8 offline installer metadata checks passed.'
 }
+# Preserve Microsoft setup exit semantics across the PowerShell helper boundary.
+# 3010 and 1641 are successful installs that still require a Windows reboot.
+function Get-MicrosoftInstallerOutcome([int]$exitCode) {
+ if($exitCode -eq 0){return 'Completed'}
+ if($exitCode -in @(3010,1641)){return 'RestartRequired'}
+ return 'Failed'
+}
+function Test-MicrosoftInstallerExitCodes {
+ $fixtures=@(
+  @(0,'Completed'),
+  @(3010,'RestartRequired'),
+  @(1641,'RestartRequired'),
+  @(1603,'Failed'),
+  @(1223,'Failed'),
+  @(-1,'Failed')
+ )
+ foreach($fixture in $fixtures){
+  $outcome=Get-MicrosoftInstallerOutcome ([int]$fixture[0])
+  if($outcome -cne [string]$fixture[1]){
+   throw ('Unexpected Microsoft setup exit handling: '+$fixture[0])
+  }
+ }
+ Write-Host 'Microsoft installer exit classification 6/6 offline checks passed.'
+}
+
 if ($Mode -eq 'SelfTest') {
     Test-InstallerMetadataOffline
     Test-DependencyVersionLogic
+    Test-MicrosoftInstallerExitCodes
     exit 0
 }
 
@@ -416,11 +442,16 @@ function Install-Component {
         # The vendor installer owns its UAC elevation and visible UI. No /quiet
         # and no forced package-state change without a user click.
         $installer = Start-Process -FilePath $exe -PassThru -Wait
-        if ($installer.ExitCode -notin @(0,3010)) {
+        $outcome = Get-MicrosoftInstallerOutcome ([int]$installer.ExitCode)
+        if ($outcome -eq 'Failed') {
             throw "The Microsoft installer exited with code $($installer.ExitCode)."
         }
-        Write-Host 'Vendor installer completed. Check the application dependencies again.'
-        if ($installer.ExitCode -eq 3010) { Write-Host 'A Windows restart may be required.' }
+        if ($outcome -eq 'RestartRequired') {
+            Write-Host 'Microsoft installer completed. Restart Windows before rechecking prerequisites.'
+        } else {
+            Write-Host 'Microsoft installer completed. Recheck application dependencies.'
+        }
+        return [int]$installer.ExitCode
     }
     finally {
         Remove-Item -LiteralPath $temp -Recurse -Force -ErrorAction SilentlyContinue
@@ -428,7 +459,7 @@ function Install-Component {
 }
 
 if ($Mode -eq 'Install') {
-    try { Install-Component -Name $Component; exit 0 }
+    try { $exitCode=[int](Install-Component -Name $Component); exit $exitCode }
     catch {
         Write-Host ("Installation failed: " + $_.Exception.Message) -ForegroundColor Red
         Read-Host 'Press Enter to close'
@@ -541,10 +572,21 @@ $timer = New-Object Windows.Forms.Timer
 $timer.Interval = 1500
 $timer.Add_Tick({
     if ($null -ne $script:currentInstaller -and $script:currentInstaller.HasExited) {
+        $exitCode=[int]$script:currentInstaller.ExitCode
         $script:currentInstaller.Dispose()
         $script:currentInstaller = $null
         foreach ($b in $buttons.Values) { $b.Enabled = $true }
-        Update-View
+        if($exitCode -eq 0){
+            Update-View
+        }elseif($exitCode -in @(3010,1641)){
+            $script:ready=$false
+            $launch.Enabled=$false
+            $status.Text='Microsoft setup finished. Restart Windows before verifying or launching Dvinholm.'
+        }else{
+            $script:ready=$false
+            $launch.Enabled=$false
+            $status.Text='Microsoft installer failed or was cancelled (exit '+$exitCode+').'
+        }
     }
 })
 $timer.Start()
