@@ -2416,6 +2416,33 @@ if($Mode -eq 'UiSmokeTest'){
   if($updateChecks -ne 8){throw 'Wrong update gate check count.'}
   Write-Host 'Service Cockpit update buttons 8/8 offline state checks passed.'
 
+  # Eight locale checks with actual worker messages. No network or modal UI.
+  $originalLanguage=$script:launcherLanguage
+  $script:launcherLanguage='RU'
+  $samples=@(
+   @('Ready.','Готово.'),
+   @('Working...','Выполняется...'),
+   @('Runtime dependencies rechecked locally. No GitHub request made.','Компоненты Windows проверены локально. GitHub не запрашивался.'),
+   @('Up to date: ci-4223. No changes made.','Актуальная версия: ci-4223. Изменения не внесены.'),
+   @('Latest Development release: ci-4224. No changes made.','Доступна сборка Development: ci-4224. Изменения не внесены.'),
+   @('Unable to launch updater helper.','Не удалось запустить вспомогательный процесс обновления.'),
+   @('J2534 installer finished. Driver inventory refreshed; hardware untested.','Установщик J2534 завершился, список драйверов обновлён. Оборудование не проверено.'),
+   @('Unknown vendor diagnostic','Unknown vendor diagnostic')
+  )
+  $localeChecks=0
+  foreach($sample in $samples){
+   if((Format-LauncherDetail ([string]$sample[0])) -cne [string]$sample[1]){
+    throw ('Launcher locale translation failed for '+[string]$sample[0])
+   }
+   $localeChecks++
+  }
+  $script:launcherLanguage='EN'
+  if((Format-LauncherDetail 'Ready.') -cne 'Ready.'){throw 'English launcher status was altered.'}
+  $script:launcherLanguage=$originalLanguage
+  Apply-LauncherLanguage
+  if($localeChecks -ne 8){throw 'Wrong launcher locale check count.'}
+  Write-Host 'Service Cockpit 8/8 offline RU/EN status translation checks passed.'
+
   # Eight Windows-only GUI contracts for the approved Service Cockpit.
   # No modal window, network request, installer, or ECU access.
   $auroraChecks=0
