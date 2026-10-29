@@ -16,9 +16,45 @@ $form.BackColor=[Drawing.Color]::FromArgb(8,19,34)
 $form.ForeColor=[Drawing.Color]::FromArgb(228,239,250)
 $form.MaximizeBox=$false
 $hero.SetBounds(0,0,1180,232)
+# This is the original repository banner, bundled for offline use. The Win11
+# WIC decoder may be absent on LTSC systems, so keep the painted Aurora
+# panorama as a fully functional dependency-free fallback.
+$script:heroBackdrop=$null
+$script:heroBackdropStream=$null
+$bannerPath=Join-Path $PSScriptRoot 'dvinholm-banner.webp'
+if(Test-Path -LiteralPath $bannerPath -PathType Leaf){
+ try {
+  Add-Type -AssemblyName PresentationCore -ErrorAction Stop
+  Add-Type -AssemblyName WindowsBase -ErrorAction Stop
+  $source=[Windows.Media.Imaging.BitmapImage]::new()
+  $source.BeginInit()
+  $source.CacheOption=[Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+  $source.UriSource=[Uri]::new($bannerPath)
+  $source.EndInit()
+  $encoder=[Windows.Media.Imaging.PngBitmapEncoder]::new()
+  $encoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($source))
+  $script:heroBackdropStream=New-Object IO.MemoryStream
+  $encoder.Save($script:heroBackdropStream)
+  $script:heroBackdropStream.Position=0
+  $script:heroBackdrop=[Drawing.Image]::FromStream($script:heroBackdropStream)
+ }catch{
+  $script:heroBackdrop=$null
+  if($script:heroBackdropStream){$script:heroBackdropStream.Dispose()}
+  $script:heroBackdropStream=$null
+ }
+}
 $hero.Add_Paint({
  $g=$_.Graphics
  $g.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
+ if($script:heroBackdrop){
+  $image=$script:heroBackdrop
+  $scale=[Math]::Max([double]$hero.Width/$image.Width,[double]$hero.Height/$image.Height)
+  $width=[single]($image.Width*$scale)
+  $height=[single]($image.Height*$scale)
+  $g.DrawImage($image,[Drawing.RectangleF]::new(
+   [single](($hero.Width-$width)/2),[single](($hero.Height-$height)/2),$width,$height))
+  return
+ }
  $g.ScaleTransform([single]$script:auroraScale,[single]($script:auroraScale*(182.0/232.0)))
  $sky=[Drawing.Drawing2D.LinearGradientBrush]::new(
   [Drawing.Rectangle]::new(0,0,1180,232),
