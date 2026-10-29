@@ -1285,8 +1285,8 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 $form=New-Object Windows.Forms.Form
-$form.Text='Dvinholm Updater Banner'
-$form.Size=New-Object Drawing.Size(740,464)
+$form.Text='Dvinholm | Launcher'
+$form.Size=New-Object Drawing.Size(740,604)
 $form.MinimumSize=$form.Size;$form.MaximumSize=$form.Size
 $form.Font=New-Object Drawing.Font('Segoe UI',10)
 $form.StartPosition='CenterScreen'
@@ -1296,7 +1296,7 @@ function Label([string]$value,[int]$top,[int]$height){
 }
 $title=Label 'DVINHOLM   |   UPDATER BANNER' 15 38
 $title.Font=New-Object Drawing.Font('Segoe UI',14,[Drawing.FontStyle]::Bold)
-$null=Label 'No .NET 10 or WinApp Runtime needed. Stable and Development install separately.' 52 26
+$strap=Label 'No .NET 10 or WinApp Runtime needed. Stable and Development install separately.' 52 26
 $choice=New-Object Windows.Forms.ComboBox;$choice.DropDownStyle='DropDownList'
 $choice.Items.AddRange([object[]]@('Development','Stable'))
 $choice.SetBounds(18,87,185,29);$form.Controls.Add($choice)
@@ -1328,6 +1328,73 @@ $refresh=Button 'Recheck deps' 544 311 169
 $dot=Button 'Install .NET x86' 18 355 218;$dot.Tag='DotNet'
 $win=Button 'Install WinApp' 252 355 218;$win.Tag='WinApp'
 $vc=Button 'Install VC++ x86' 486 355 227;$vc.Tag='VC'
+
+# Branded shell: the verified updater engine above remains unchanged.
+# Shift the interactive controls under a gradient hero instead of changing
+# their event handlers or recovery-locking rules.
+$form.BackColor=[Drawing.Color]::FromArgb(10,20,35)
+$form.ForeColor=[Drawing.Color]::FromArgb(235,242,248)
+$form.MaximizeBox=$false
+$form.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedSingle
+foreach($control in @($form.Controls)){
+ $control.Top+=120
+ if($control -is [Windows.Forms.Label]){
+  $control.ForeColor=[Drawing.Color]::FromArgb(217,230,242)
+  $control.BackColor=[Drawing.Color]::Transparent
+ }elseif($control -is [Windows.Forms.Button]){
+  $control.FlatStyle=[Windows.Forms.FlatStyle]::Flat
+  $control.FlatAppearance.BorderSize=1
+  $control.FlatAppearance.BorderColor=[Drawing.Color]::FromArgb(70,115,143)
+  $control.BackColor=[Drawing.Color]::FromArgb(28,56,76)
+  $control.ForeColor=[Drawing.Color]::White
+  $control.Cursor=[Windows.Forms.Cursors]::Hand
+ }elseif($control -is [Windows.Forms.ComboBox]){
+  $control.BackColor=[Drawing.Color]::FromArgb(27,47,65)
+  $control.ForeColor=[Drawing.Color]::White
+ }
+}
+$title.Visible=$false;$strap.Visible=$false
+$install.BackColor=[Drawing.Color]::FromArgb(20,119,135)
+$launch.BackColor=[Drawing.Color]::FromArgb(35,111,89)
+$hero=New-Object Windows.Forms.Panel
+$hero.SetBounds(0,0,740,142)
+$hero.Add_Paint({
+ $rect=New-Object Drawing.Rectangle(0,0,740,142)
+ $left=[Drawing.Color]::FromArgb(24,74,100)
+ $right=[Drawing.Color]::FromArgb(8,27,50)
+ $brush=New-Object Drawing.Drawing2D.LinearGradientBrush($rect,$left,$right,0)
+ try{$_.Graphics.FillRectangle($brush,$rect)}finally{$brush.Dispose()}
+})
+$form.Controls.Add($hero)
+$brandTitle=New-Object Windows.Forms.Label
+$brandTitle.Text='DVINHOLM'
+$brandTitle.Font=New-Object Drawing.Font('Segoe UI',27,[Drawing.FontStyle]::Bold)
+$brandTitle.ForeColor=[Drawing.Color]::White
+$brandTitle.BackColor=[Drawing.Color]::Transparent
+$brandTitle.SetBounds(138,30,550,56)
+$hero.Controls.Add($brandTitle)
+$brandSub=New-Object Windows.Forms.Label
+$brandSub.Text='LAUNCHER  /  WINDOWS X86  /  ECU DIAGNOSTICS'
+$brandSub.ForeColor=[Drawing.Color]::FromArgb(160,211,224)
+$brandSub.BackColor=[Drawing.Color]::Transparent
+$brandSub.SetBounds(142,92,570,29)
+$hero.Controls.Add($brandSub)
+$script:brandImage=$null
+$brandFile=Join-Path $PSScriptRoot 'assets\dvinholm-icon.png'
+if(Test-Path -LiteralPath $brandFile -PathType Leaf){
+ try{
+  $script:brandImage=[Drawing.Image]::FromFile($brandFile)
+  $logo=New-Object Windows.Forms.PictureBox
+  $logo.SetBounds(24,21,104,100)
+  $logo.Image=$script:brandImage
+  $logo.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Zoom
+  $hero.Controls.Add($logo)
+ }catch{$script:brandImage=$null}
+}
+$foot=Label 'Stable releases  |  Development CI  |  SHA-256 verification  |  Safe rollback' 535 23
+$foot.Font=New-Object Drawing.Font('Segoe UI',8)
+$foot.ForeColor=[Drawing.Color]::FromArgb(115,166,184)
+
 $script:child=$null;$script:vendor=$null
 $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid]::NewGuid().ToString('N')+'.json')
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
