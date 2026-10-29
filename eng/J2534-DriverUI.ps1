@@ -42,6 +42,8 @@ function Driver-Install([string]$target,[Windows.Forms.Form]$owner,[Windows.Form
   '" -Mode Install -Approved -Target '+$target+' -InstallerPath "'+$chosen+'"'
  try {
   $script:vendor=Start-Process -FilePath $powershell -ArgumentList $command -PassThru
+  $script:driverInstallerPending=$true
+  $script:driverResultControl=$status
   $status.Text='Установка открыта. Следуйте инструкциям производителя.'
   Update-ActionAvailability
  }catch{
@@ -99,7 +101,10 @@ function Show-J2534Drivers {
  $diceInstall=DriverButton 'Установить Volvo DiCE...' 20 477 407
  $mongooseInstall=DriverButton 'Установить Mongoose JLR...' 443 477 435
  $result=DriverLabel 'Проверка не выполнена. USB и работоспособность адаптеров не тестируются.' 529 27
+ # Capture the dialog controls for the parent's timer-driven post-install rescan.
+ # A completed installer is NOT proof that J2534 communication works.
  $scan={
+  if($dlg.IsDisposed){return}
   $list.Items.Clear()
   try{
    $data=Get-DriverInventory
@@ -117,7 +122,8 @@ function Show-J2534Drivers {
   }catch{
    $result.Text='Не удалось прочитать драйверы J2534. Изменения не внесены.'
   }
- }
+ }.GetNewClosure()
+ $script:driverRescan=$scan
  $probe.Add_Click($scan)
  $diceLink.Add_Click({Start-Process 'https://www.volvospecialtools.com/index.cfm?event=info.dice'})
  $mongooseLink.Add_Click({Start-Process 'https://opusivs.com/support/product-downloads/'})
@@ -125,7 +131,11 @@ function Show-J2534Drivers {
  $mongooseInstall.Add_Click({Driver-Install 'MongooseJlr' $dlg $result})
  $close.Add_Click({$dlg.Close()})
  try{& $scan;[void]$dlg.ShowDialog($form)}
- finally{$dlg.Dispose()}
+ finally{
+  $script:driverRescan=$null
+  $script:driverResultControl=$null
+  $dlg.Dispose()
+ }
 }
 $navDrivers=AuroraNav '▣   Драйверы адаптеров' 325
 $script:auroraNav+=@($navDrivers)
