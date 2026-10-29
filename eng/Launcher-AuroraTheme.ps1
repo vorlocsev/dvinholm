@@ -21,8 +21,21 @@ $hero.SetBounds(0,0,1180,232)
 # panorama as a fully functional dependency-free fallback.
 $script:heroBackdrop=$null
 $script:heroBackdropStream=$null
+$script:serviceBackdropIsApproved=$false
+# The exact upper banner from the approved Service Cockpit reference is a
+# compact local JPEG. GDI+ decodes it without .NET 10, WinApp or WebP codecs.
+$approvedBanner=Join-Path $PSScriptRoot 'launcher-service-cockpit-banner.jpg'
+if(Test-Path -LiteralPath $approvedBanner -PathType Leaf){
+ try {
+  $script:heroBackdrop=[Drawing.Image]::FromFile($approvedBanner)
+  $script:serviceBackdropIsApproved=$true
+ }catch{$script:heroBackdrop=$null}
+}
+# Older launcher packages retain their approved repository WebP banner.
 $bannerPath=Join-Path $PSScriptRoot 'dvinholm-banner.webp'
-if(Test-Path -LiteralPath $bannerPath -PathType Leaf){
+if(-not $script:heroBackdrop -and
+   -not(Test-Path -LiteralPath (Join-Path $PSScriptRoot 'Launcher-ServiceCockpit.ps1') -PathType Leaf) -and
+   (Test-Path -LiteralPath $bannerPath -PathType Leaf)){
  try {
   Add-Type -AssemblyName PresentationCore -ErrorAction Stop
   Add-Type -AssemblyName WindowsBase -ErrorAction Stop
