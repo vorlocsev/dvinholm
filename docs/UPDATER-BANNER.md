@@ -517,12 +517,12 @@ Stable v0.2.4 remains immutable; this feature changes Development only.
 ## Launcher self-update: first safety gate (Development)
 
 The independent native launcher can now **verify and stage**, but not yet
-apply, a replacement from \`Dvinholm-Updater-Banner-Windows-x86.zip\`.
-\`Binaries/Assert-LauncherSelfUpdatePackage.ps1\` requires a caller-provided
+apply, a replacement from `Dvinholm-Updater-Banner-Windows-x86.zip`.
+`Binaries/Assert-LauncherSelfUpdatePackage.ps1` requires a caller-provided
 64-character SHA-256 obtained from independently validated release metadata.
 It checks the whole ZIP before extraction, allows only the expected 11
 files, rejects link/path aliases and Windows case-folding collisions, enforces
-download and extraction limits, and validates the staged \`Launcher.exe\`
+download and extraction limits, and validates the staged `Launcher.exe`
 as a native Windows x86 PE32. The target staging folder must not exist.
 
 The stage-only module makes **no changes to Launcher.exe or to the running
@@ -536,3 +536,32 @@ CI runs eight offline fixture checks against the actual standalone ZIP,
 including digest mismatch, traversal, duplicates, unexpected/missing files
 and a tampered executable with a matching recalculated hash. Real Windows
 self-update and restart acceptance remain pending.
+
+
+## Launcher replacement transaction (offline, not yet enabled in UI)
+
+The next Development safety gate provides
+\`Binaries/Invoke-LauncherReplacement.ps1\` (Apply / Recover) as an isolated
+post-exit worker. Apply requires an independently authenticated launcher ZIP
+and SHA-256 plus the Launcher UI process ID; the worker waits for that
+process to exit before changing the installed native Launcher.exe or support
+files. It never changes Dvinholm.App.exe, application data or J2534 drivers.
+
+The worker revalidates the original ZIP using the trusted packaged staging
+validator, copies and hashes original launcher files into
+\`.launcher-transaction/backup\`, writes a journal **before the first live
+file change**, and installs replacement files through same-volume temporary
+files. A successful update moves the complete verified backup to
+\`.launcher-previous\`. An interrupted update retains its journal and can
+restore originals with \`-Mode Recover\`; corrupt backups are rejected.
+A pre-journal interruption can be discarded without touching live files.
+
+This gate deliberately **does not yet** connect Apply to an automatic
+download, provide a "restart updated Launcher" action, or prune/overwrite
+an existing \`.launcher-previous\` snapshot. A second replacement is blocked
+until a separate, tested rollback/backup-rotation workflow exists.
+The helper must be launched as a trusted copy **outside** its installation
+directory. Eight Windows CI tests exercise success, application isolation,
+backup preservation, integrity failure, second-update refusal, deliberate
+interruption, verified recovery and corrupted-backup refusal. Real Windows
+process handoff and restart still require acceptance.
