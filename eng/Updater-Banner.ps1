@@ -1839,6 +1839,2252 @@ $script:pendingAction=''
 $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid]::NewGuid().ToString('N')+'.json')
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $script:recoveryStatus='Not checked'
+# The install button must reflect a NEWER, verified version in the chosen
+# channel, rather than accepting clicks when update availability is unknown.
+# This is display gating only; the worker repeats all safety/version checks.
+function Test-CockpitUpdateAvailable([string]$currentTag,[string]$availableTag,
+ [string]$channelName) {
+ if($channelName -cnotin @('Stable','Development')){return $false}
+ if($channelName -ceq 'Development'){
+  if($availableTag -cnotmatch '^ci-([1-9][0-9]{0,8})
+ $busy=($null -ne $script:child -or $null -ne $script:vendor)
+ $state=[string]$script:recoveryStatus
+ $ready=($state -ceq 'Ready')
+ $choice.Enabled=-not $busy
+ $navHome.Enabled=($ready -and -not $busy)
+ $navUpdates.Enabled=($ready -and -not $busy)
+ $navDependencies.Enabled=-not $busy
+ $navSettings.Enabled=-not $busy
+ $navAbout.Enabled=-not $busy
+ $navDrivers.Enabled=-not $busy
+ $languageChoice.Enabled=-not $busy
+ $settingsQuick.Enabled=-not $busy
+ $windowsQuick.Enabled=-not $busy
+ $depsInstallQuick.Enabled=-not $busy
+ $driverQuick.Enabled=-not $busy
+ $driverScanQuick.Enabled=-not $busy
+ $stableRadio.Enabled=-not $busy
+ $developmentRadio.Enabled=-not $busy
+ $check.Enabled=($ready -and -not $busy)
+ $install.Enabled=($ready -and -not $busy -and
+  (Test-CockpitUpdateAvailable $script:lastCurrent $script:lastAvailable
+   ([string]$choice.SelectedItem)))
+ $launch.Enabled=($ready -and -not $busy)
+ $refresh.Enabled=-not $busy
+ $versionsButton.Enabled=-not $busy
+ $rollback.Enabled=($ready -and -not $busy)
+ $repair.Enabled=($state -ceq 'Repair rollback' -and -not $busy)
+ $repairInstall.Enabled=($state -ceq 'Repair install' -and -not $busy)
+ foreach($vendorButton in @($dot,$win,$vc)){
+  $vendorButton.Enabled=-not $busy
+ }
+}
+function Get-VendorExitError([int]$exitCode){
+ if($exitCode -eq 0){return ''}
+ return ('Microsoft dependency installer failed or was cancelled (exit code '+
+  $exitCode+'). Use Recheck deps before retrying.')
+}
+function Begin-Action([string]$action){
+ if($script:child -or $script:vendor){return}
+ if($action -in @('Install','Rollback','Check','Launch') -and
+    $script:recoveryStatus -cne 'Ready'){return}
+ if($action -ceq 'Install' -and
+    -not(Test-CockpitUpdateAvailable $script:lastCurrent $script:lastAvailable
+      ([string]$choice.SelectedItem))){return}
+ if($action -eq 'RepairInstall'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmRepairInstall'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'Repair'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmRepair'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'Rollback'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmRollback'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'Install'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmInstall'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ $downloadPercent.Text=''
+ if(Test-Path $script:statefile){Remove-Item $script:statefile -Force}
+ $script:recoveryStatus='Not checked'
+ $script:lastRecovery='Checking'
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ Update-ActionAvailability
+ $args='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+$PSCommandPath+
+  '" -Mode '+$action+' -Channel '+$choice.SelectedItem.ToString()+
+  ' -StateFile "'+$script:statefile+'"'
+ try{
+  $script:child=Start-Process -FilePath $powershell -ArgumentList $args -WindowStyle Hidden -PassThru
+  $script:pendingAction=$action
+  $bar.Style=[Windows.Forms.ProgressBarStyle]::Marquee;$bar.MarqueeAnimationSpeed=25
+  Update-ActionAvailability
+  $status.Text='Working...'
+ }catch{$script:pendingAction='';$status.Text='Unable to launch updater helper.'}
+}
+$check.Add_Click({Begin-Action 'Check'})
+$refresh.Add_Click({Begin-Action 'Probe'})
+$versionsButton.Add_Click({Begin-Action 'Versions'})
+$install.Add_Click({Begin-Action 'Install'})
+$rollback.Add_Click({Begin-Action 'Rollback'})
+$repair.Add_Click({Begin-Action 'Repair'})
+$repairInstall.Add_Click({Begin-Action 'RepairInstall'})
+$launch.Add_Click({Begin-Action 'Launch'})
+function Start-MicrosoftComponent([string]$which) {
+ if($script:child -or $script:vendor){return}
+ if($which -cnotin @('DotNet','WinApp','VC')){return}
+ if([Windows.Forms.MessageBox]::Show($form,
+  (Translate 'confirmVendor')+' '+$which,
+  (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+  [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
+ $args='-NoProfile -ExecutionPolicy Bypass -File "'+$manager+'" -Mode Install -Component '+
+  $which+' -LiteDirectory "'+$PSScriptRoot+'"'
+ try {
+  $script:vendor=Start-Process -FilePath $powershell -ArgumentList $args -PassThru
+  $status.Text='Microsoft installer opened; follow its prompts.'
+  $bar.MarqueeAnimationSpeed=25
+  Update-ActionAvailability
+ }catch{
+  $status.Text='Unable to start Microsoft dependency installer.'
+  Update-ActionAvailability
+ }
+}
+foreach($b in @($dot,$win,$vc)){
+ $b.Add_Click({Start-MicrosoftComponent ([string]$this.Tag)})
+}
+# Full prerequisite controls are reachable via a real dialog.
+function Show-MicrosoftComponents {
+ if($script:child -or $script:vendor){return}
+ $dlg=New-Object Windows.Forms.Form
+ $dlg.Text=Translate 'componentsTitle'
+ $dlg.ClientSize=[Drawing.Size]::new(430,253)
+ $dlg.StartPosition=[Windows.Forms.FormStartPosition]::CenterParent
+ $dlg.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedDialog
+ $dlg.MaximizeBox=$false
+ $dlg.BackColor=[Drawing.Color]::FromArgb(10,31,52)
+ $dlg.ForeColor=[Drawing.Color]::White
+ $dlg.Font=[Drawing.Font]::new('Segoe UI',10)
+ $intro=New-Object Windows.Forms.Label
+ $intro.Text=Translate 'componentsNotice'
+ $intro.SetBounds(17,16,394,40)
+ $dlg.Controls.Add($intro)
+ foreach($entry in @(
+  @{Key='DotNet';Caption='.NET 10 Desktop x86';Y=64},
+  @{Key='WinApp';Caption='Windows App Runtime x86';Y=119},
+  @{Key='VC';Caption='Microsoft VC++ x86';Y=174}
+ )){
+  $b=New-Object Windows.Forms.Button
+  $b.Text=$entry.Caption
+  $b.Tag=$entry.Key
+  $b.SetBounds(17,[int]$entry.Y,394,42)
+  $b.BackColor=[Drawing.Color]::FromArgb(23,77,118)
+  $b.ForeColor=[Drawing.Color]::White
+  $b.FlatStyle=[Windows.Forms.FlatStyle]::Flat
+  $dlg.Controls.Add($b)
+  $b.Add_Click({
+   $component=[string]$this.Tag
+   $dlg.Close()
+   Start-MicrosoftComponent $component
+  })
+ }
+ try{[void]$dlg.ShowDialog($form)}finally{$dlg.Dispose()}
+}
+
+$choice.Add_SelectedIndexChanged({
+ if($null -ne $choice.SelectedItem){
+  $null=Save-ChannelPreference ([string]$choice.SelectedItem)
+ }
+ if(-not $script:child -and -not $script:vendor){
+  $script:recoveryStatus='Not checked'
+  $script:lastRecovery='Checking'
+  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+  Update-ActionAvailability
+  Begin-Action 'Probe'
+ }
+})
+function Apply-WorkerSnapshot($snapshot) {
+ # Worker state is written atomically but may be read while it is still
+ # running. Do not authorize further actions from a partial progress update.
+ if($null -eq $snapshot){return $false}
+ $script:lastCurrent=[string]$snapshot.Current
+ $script:lastAvailable=[string]$snapshot.Available
+ $installed.Text=(Translate 'installed')+': '+$script:lastCurrent
+ $available.Text=(Translate 'available')+': '+$script:lastAvailable
+ $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
+  '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
+ $status.Text=[string]$snapshot.Detail
+ $downloadPercent.Text=''
+ # The ZIP byte count is read from the actual download, never fabricated.
+ if($script:child -and [string]$snapshot.DownloadId -cmatch '^[0-9a-f]{32}$' -and
+    [long]$snapshot.DownloadTotal -gt 0){
+  $selected=[string]$choice.SelectedItem
+  if($selected -cin @('Development','Stable')){
+   $file=Join-Path (Join-Path (Join-Path $base $selected) ('download-'+$snapshot.DownloadId)) $zipName
+   if(Test-Path -LiteralPath $file -PathType Leaf){
+    $bytes=(Get-Item -LiteralPath $file).Length
+    $percent=[int][Math]::Min(99,[Math]::Max(0,[Math]::Floor(
+     100.0*[double]$bytes/[double]$snapshot.DownloadTotal)))
+    $bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+    $bar.Value=$percent
+    $downloadPercent.Text=([string]$percent+'%')
+   }
+  }
+ }
+ $finished=($snapshot.PSObject.Properties['Done'] -and
+            $snapshot.Done -is [bool] -and $snapshot.Done -eq $true)
+ $valid=($snapshot.PSObject.Properties['Recovery'] -and
+         [string]$snapshot.Recovery -cin @('Ready','Repair install',
+                                           'Repair rollback','Inspect'))
+ if($finished -and $valid){
+  $script:recoveryStatus=[string]$snapshot.Recovery
+  $script:serviceIsReady=($script:recoveryStatus -ceq 'Ready' -and
+    $script:lastCurrent -cnotin @('Not installed','Not checked','Unverified installation') -and
+    [string]$snapshot.DotNet -ceq 'Installed' -and
+    [string]$snapshot.WinApp -ceq 'Installed' -and
+    [string]$snapshot.VC -ceq 'Installed')
+  $serviceHeading.Text='DVINHOLM  ·  '+(Translate $(if($script:serviceIsReady){'cockpitReady'}else{'cockpitUnchecked'}))
+  $script:lastRecovery=$script:recoveryStatus
+  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+  Update-ActionAvailability
+  return $true
+ }
+ $script:recoveryStatus='Not checked'
+ $script:lastRecovery='Checking'
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ Update-ActionAvailability
+ return $false
+}
+function Poll-WorkerState {
+ $complete=$false
+ if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
+  try{
+   $snapshot=Get-Content -LiteralPath $script:statefile -Raw | ConvertFrom-Json
+   $complete=Apply-WorkerSnapshot $snapshot
+  }catch{}
+ }
+ if($script:child -and $script:child.HasExited){
+  $reportText=''
+  if($complete -and $null -ne $snapshot -and
+     $snapshot.PSObject.Properties['DependencyReport']){
+   $reportText=[string]$snapshot.DependencyReport
+  }
+  # Close only when launch worker completed successfully AND the dependency
+  # helper positively reported creation of the main application process.
+  $finishedAction=$script:pendingAction
+  $workerExit=[int]$script:child.ExitCode
+  $script:pendingAction=''
+  $launchSucceeded=($finishedAction -ceq 'Launch' -and $workerExit -eq 0 -and
+    $complete -and $null -ne $snapshot -and
+    $snapshot.Done -eq $true -and $snapshot.Failed -eq $false)
+  $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+  if(-not $complete){
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text='Updater helper stopped without a complete status. Use Recheck deps.'
+  }
+  Update-ActionAvailability
+  if($launchSucceeded){
+   $timer.Stop()
+   $form.Close()
+   return
+  }
+  if($reportText){
+   [void][Windows.Forms.MessageBox]::Show($form,$reportText,
+    'Dvinholm | Installed and available runtimes',
+    [Windows.Forms.MessageBoxButtons]::OK,
+    [Windows.Forms.MessageBoxIcon]::Information)
+  }
+ }
+ if($script:vendor -and $script:vendor.HasExited){
+  $exitCode=[int]$script:vendor.ExitCode
+  $fromDriverInstaller=($script:driverInstallerPending -eq $true)
+  $script:driverInstallerPending=$false
+  $downloadPercent.Text=''
+  $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+  # A completed installer must not have its outcome overwritten by an old
+  # updater worker snapshot on the next 500ms timer tick.
+  if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
+   Remove-Item -LiteralPath $script:statefile -Force -ErrorAction SilentlyContinue
+  }
+  if($fromDriverInstaller){
+   # A vendor setup is independent of .NET/WinApp prerequisites. Do not
+   # report driver success by running the generic updater dependency probe.
+   # Rescan only Windows PnP/registry. Never load the adapter or request CAN.
+   if($exitCode -eq 0){
+    try{
+     if($script:driverRescan){
+      & $script:driverRescan
+      $status.Text='J2534 installer finished. Driver inventory refreshed; hardware untested.'
+     }else{
+      $status.Text='Vendor installer finished. Open Drivers and select Check to verify.'
+     }
+    }catch{
+     $status.Text='Vendor setup finished; driver inventory could not be refreshed.'
+    }
+   }elseif($exitCode -in @(3010,1641)){
+    # MSI success requiring reboot is not failure, but the adapter is
+    # not ready until Windows restarts. Do not rescan as a success.
+    $status.Text='Vendor setup finished. Restart Windows before using the driver (exit '+$exitCode+').'
+    if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
+     $script:driverResultControl.Text='Windows restart required. Recheck adapter drivers after restarting Windows.'
+    }
+   }else{
+    $status.Text='Vendor driver installer failed or was cancelled (exit '+$exitCode+').'
+    if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
+     $script:driverResultControl.Text='Vendor driver setup did not complete. Check the vendor installer log.'
+    }
+   }
+   Update-ActionAvailability
+  }elseif($exitCode -eq 0){
+   # Only plain success permits automatic local dependency rescan.
+   Begin-Action 'Probe'
+  }elseif($exitCode -in @(3010,1641)){
+   # Microsoft dependency helper preserved a success-with-restart code.
+   # No automatic re-probe or ready status until Windows is restarted.
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text='Microsoft runtime installed. Restart Windows before rechecking prerequisites (exit '+$exitCode+').'
+   Update-ActionAvailability
+  }else{
+   # Preserve failure without launching an unrelated dependency probe.
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text=Get-VendorExitError $exitCode
+   Update-ActionAvailability
+  }
+ }
+}
+$timer=New-Object Windows.Forms.Timer;$timer.Interval=500
+$timer.Add_Tick({Poll-WorkerState})
+$timer.Start()
+Update-ActionAvailability
+if($Mode -eq 'UiSmokeTest'){
+ # Instantiate the real Windows PowerShell 5.1 WinForms GUI, but do not
+ # display a modal dialog, contact GitHub, launch installers or start Dvinholm.
+ $checks=0
+ try{
+  if($null -eq $form -or
+     $form -isnot [Windows.Forms.Form] -or
+     $choice.Items.Count -ne 2 -or
+     $choice.Items[0] -cne 'Development' -or
+     $choice.Items[1] -cne 'Stable' -or
+     -not $form.Controls.Contains($recovery)){
+   throw 'Standalone WinForms controls were not constructed.'
+  }
+  $checks++
+  # Default: nothing runs until the first local inventory has been checked.
+  if($script:recoveryStatus -cne 'Not checked' -or
+     $install.Enabled -or $check.Enabled -or $launch.Enabled -or
+     $rollback.Enabled -or $repair.Enabled -or $repairInstall.Enabled -or
+     -not $refresh.Enabled){throw 'Startup actions were not locked.'}
+  $checks++
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if($install.Enabled -or -not $check.Enabled -or
+     -not $launch.Enabled -or -not $rollback.Enabled -or
+     $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Ready-state button policy failed: install must await an online version check.'
+  }
+  $checks++
+  $script:recoveryStatus='Repair install';Update-ActionAvailability
+  if(-not $repairInstall.Enabled -or $repair.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled){throw 'Install recovery was not isolated.'}
+  $checks++
+  $script:recoveryStatus='Repair rollback';Update-ActionAvailability
+  if(-not $repair.Enabled -or $repairInstall.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled){throw 'Rollback recovery was not isolated.'}
+  $checks++
+  $script:recoveryStatus='Inspect';Update-ActionAvailability
+  if($repair.Enabled -or $repairInstall.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled -or -not $refresh.Enabled){
+   throw 'Ambiguous recovery state was not fail-closed.'
+  }
+  $checks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if($choice.Enabled -or $refresh.Enabled -or $install.Enabled -or
+     $rollback.Enabled -or $check.Enabled -or $launch.Enabled -or
+     $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Busy-state buttons were not locked.'
+  }
+  $checks++
+  if($checks -ne 7){throw 'Wrong Windows WinForms smoke check count.'}
+  Write-Host 'Updater Banner 7/7 Windows PowerShell 5.1 WinForms smoke checks passed.'
+  $snapshotChecks=0
+  $script:child=$null
+  $completed=[pscustomobject]@{
+   Done=$true;Failed=$false;Recovery='Ready';Current='ci-4118'
+   Available='ci-4119';DotNet='Installed';WinApp='Installed'
+   VC='Installed';Detail='Completed'
+  }
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     -not $install.Enabled -or -not $launch.Enabled){
+   throw 'Completed worker snapshot failed to re-enable Ready actions.'
+  }
+  $snapshotChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     $install.Enabled -or $launch.Enabled -or $refresh.Enabled){
+   throw 'Completed snapshot unlocked actions while helper was still running.'
+  }
+  $snapshotChecks++
+  $script:child=$null
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     -not $install.Enabled -or -not $check.Enabled){
+   throw 'Late snapshot after worker completion did not unlock the UI.'
+  }
+  $snapshotChecks++
+  $incomplete=$completed | Select-Object *
+  $incomplete.Done=$false
+  if((Apply-WorkerSnapshot $incomplete) -or
+     $install.Enabled -or $launch.Enabled -or
+     $script:recoveryStatus -cne 'Not checked'){
+   throw 'Incomplete worker progress unlocked the UI.'
+  }
+  $snapshotChecks++
+  $invalid=$completed | Select-Object *
+  $invalid.Recovery='Untrusted'
+  if((Apply-WorkerSnapshot $invalid) -or
+     $install.Enabled -or $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Untrusted worker recovery field was accepted.'
+  }
+  $snapshotChecks++
+  $repairSnapshot=$completed | Select-Object *
+  $repairSnapshot.Recovery='Repair install'
+  if(-not (Apply-WorkerSnapshot $repairSnapshot) -or
+     -not $repairInstall.Enabled -or $install.Enabled -or $repair.Enabled){
+   throw 'Completed recovery snapshot did not activate the matching repair.'
+  }
+  $snapshotChecks++
+  if($snapshotChecks -ne 6){throw 'Wrong worker state synchronization test count.'}
+  Write-Host 'Updater Banner 6/6 WinForms worker-state synchronization checks passed.'
+  $vendorChecks=0
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons were disabled when no worker was running.'
+  }
+  $vendorChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($dot.Enabled -or $win.Enabled -or $vc.Enabled){
+   throw 'Microsoft installers were not locked during updater work.'
+  }
+  $vendorChecks++
+  $script:child=$null;Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons did not unlock after updater completion.'
+  }
+  $vendorChecks++
+  $script:vendor=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($dot.Enabled -or $win.Enabled -or $vc.Enabled -or
+     $choice.Enabled -or $refresh.Enabled -or $launch.Enabled -or
+     $install.Enabled){
+   throw 'Parallel Microsoft installer activity was not locked.'
+  }
+  $vendorChecks++
+  $script:vendor=$null;Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons stayed disabled after worker completion.'
+  }
+  $vendorChecks++
+  if((Get-VendorExitError 0) -cne ''){
+   throw 'Successful Microsoft installer completion reported a failure.'
+  }
+  $vendorChecks++
+  if((Get-VendorExitError 1) -cnotmatch 'failed or was cancelled.*exit code 1'){
+   throw 'Failed Microsoft installer completion was not explained.'
+  }
+  $vendorChecks++
+  if($vendorChecks -ne 7){throw 'Wrong Microsoft installer lifecycle test count.'}
+  Write-Host 'Updater Banner 7/7 WinForms vendor worker lifecycle checks passed.'
+
+  # Eight deterministic update-button gates without contacting GitHub.
+  $updates=@(
+   @('Development','Not installed','Not checked',$false),
+   @('Development','Not installed','ci-4119',$true),
+   @('Development','ci-4118','ci-4119',$true),
+   @('Development','ci-4119','ci-4119',$false),
+   @('Development','ci-4120','ci-4119',$false),
+   @('Stable','0.2.3','0.2.4',$true),
+   @('Stable','0.2.4','0.2.4',$false),
+   @('Stable','Unverified installation','0.2.4',$false)
+  )
+  $updateChecks=0
+  foreach($item in $updates){
+   $actual=Test-CockpitUpdateAvailable ([string]$item[1]) ([string]$item[2]) ([string]$item[0])
+   if($actual -ne [bool]$item[3]){
+    throw ('Wrong update availability for '+($item[0..2] -join ' / '))
+   }
+   $updateChecks++
+  }
+  if($updateChecks -ne 8){throw 'Wrong update gate check count.'}
+  Write-Host 'Service Cockpit update buttons 8/8 offline state checks passed.'
+
+  # Eight Windows-only GUI contracts for the approved Service Cockpit.
+  # No modal window, network request, installer, or ECU access.
+  $auroraChecks=0
+  if($script:auroraScale -gt 0.80 -or $script:auroraScale -lt 0.65 -or
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552){
+   throw 'Service Cockpit is larger than the compact display envelope.'
+  }
+  $auroraChecks++
+  if($hero.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
+     $hero.Height -ne [int][Math]::Round(184*$script:auroraScale) -or
+     $brandTitle.Text -cne 'DVINHOLM'){
+   throw 'Service Cockpit upper banner is missing or not correctly scaled.'
+  }
+  $auroraChecks++
+  if($choice.Parent -ne $form -or
+     $null -eq $script:serviceCardLeft -or
+     $sidebar.Controls.Count -lt 6 -or $stableRadio.Parent -ne $form){
+   throw 'Service Cockpit root selection or backing layout is missing.'
+  }
+  $auroraChecks++
+  if($script:serviceCardUpdates -eq $null -or
+     $script:serviceCardWindows -eq $null -or
+     $script:serviceCardDrivers -eq $null -or
+     $script:serviceCardUpdates.Top -ge $script:serviceCardWindows.Top -or
+     $script:serviceCardWindows.Top -ge $script:serviceCardDrivers.Top){
+   throw 'Service Cockpit three operation cards are missing or out of order.'
+  }
+  $auroraChecks++
+  $contentWidth=[int][Math]::Round(1180*$script:auroraScale)
+  $contentHeight=[int][Math]::Round(690*$script:auroraScale)
+  if($install.Right -gt $contentWidth -or
+     $versionsButton.Right -gt $contentWidth -or
+     $driverQuick.Right -gt $contentWidth -or
+     $script:serviceCardDrivers.Bottom -gt $contentHeight -or
+     $bar.Width -lt [int][Math]::Floor(650*$script:auroraScale)){
+   throw 'Service Cockpit controls extend past the display boundary.'
+  }
+  $auroraChecks++
+  if($launch.Bottom -ge $recovery.Top -or
+     $recovery.Bottom -ge $startNote.Top){
+   throw 'Service Cockpit Start button overlaps its recovery or help labels.'
+  }
+  $working=[Windows.Forms.Screen]::FromControl($form).WorkingArea
+  if($form.Width -gt $working.Width-16 -or $form.Height -gt $working.Height-16){
+   throw 'Service Cockpit extends beyond the Windows working area.'
+  }
+  $auroraChecks++
+  $currentLanguage=$script:launcherLanguage
+  $script:launcherLanguage='EN';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Windows requirements' -or
+     $driverQuick.Text -cne 'Open drivers'){throw 'English localization did not apply.'}
+  $script:launcherLanguage='RU';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Требования Windows' -or
+     $driverQuick.Text -cne 'Открыть драйверы'){throw 'Russian localization did not apply.'}
+  $script:launcherLanguage=$currentLanguage;Apply-LauncherLanguage
+  $auroraChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($versionsButton.Enabled -or $windowsQuick.Enabled -or
+     $driverQuick.Enabled -or $driverScanQuick.Enabled -or
+     $settingsQuick.Enabled -or $languageChoice.Enabled){
+   throw 'Service Cockpit actions were not locked during updater operation.'
+  }
+  $script:child=$null
+  Update-ActionAvailability
+  if(-not $windowsQuick.Enabled -or -not $driverQuick.Enabled){
+   throw 'Service Cockpit actions did not recover after updater operation.'
+  }
+  $auroraChecks++
+  if($auroraChecks -ne 8){throw 'Wrong Service Cockpit smoke check count.'}
+  Write-Host 'Service Cockpit 8/8 Windows WinForms layout and action smoke checks passed.'
+  Write-Host 'Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.'
+
+ }finally{
+  $script:child=$null
+  $timer.Stop();$timer.Dispose();$form.Dispose()
+ }
+ exit 0
+}
+$startupChannel=$Channel
+if(-not $PSBoundParameters.ContainsKey('Channel')){
+ $savedChannel=Read-ChannelPreference
+ if($null -ne $savedChannel){$startupChannel=$savedChannel}
+}
+$form.Add_Shown({$choice.SelectedIndex=if($startupChannel -eq 'Stable'){1}else{0}})
+try{[void]$form.ShowDialog()}
+finally{
+ $timer.Stop();$timer.Dispose()
+ if($script:child){$script:child.Dispose()}
+ if($script:vendor){$script:vendor.Dispose()}
+ if(Test-Path $script:statefile){Remove-Item $script:statefile -Force -ErrorAction SilentlyContinue}
+ $form.Dispose()
+}
+){return $false}
+  $new=[long]$Matches[1]
+  if($currentTag -ceq 'Not installed'){return $true}
+  if($currentTag -cnotmatch '^ci-([1-9][0-9]{0,8})
+ $busy=($null -ne $script:child -or $null -ne $script:vendor)
+ $state=[string]$script:recoveryStatus
+ $ready=($state -ceq 'Ready')
+ $choice.Enabled=-not $busy
+ $navHome.Enabled=($ready -and -not $busy)
+ $navUpdates.Enabled=($ready -and -not $busy)
+ $navDependencies.Enabled=-not $busy
+ $navSettings.Enabled=-not $busy
+ $navAbout.Enabled=-not $busy
+ $navDrivers.Enabled=-not $busy
+ $languageChoice.Enabled=-not $busy
+ $settingsQuick.Enabled=-not $busy
+ $windowsQuick.Enabled=-not $busy
+ $depsInstallQuick.Enabled=-not $busy
+ $driverQuick.Enabled=-not $busy
+ $driverScanQuick.Enabled=-not $busy
+ $stableRadio.Enabled=-not $busy
+ $developmentRadio.Enabled=-not $busy
+ $check.Enabled=($ready -and -not $busy)
+ $install.Enabled=($ready -and -not $busy)
+ $launch.Enabled=($ready -and -not $busy)
+ $refresh.Enabled=-not $busy
+ $versionsButton.Enabled=-not $busy
+ $rollback.Enabled=($ready -and -not $busy)
+ $repair.Enabled=($state -ceq 'Repair rollback' -and -not $busy)
+ $repairInstall.Enabled=($state -ceq 'Repair install' -and -not $busy)
+ foreach($vendorButton in @($dot,$win,$vc)){
+  $vendorButton.Enabled=-not $busy
+ }
+}
+function Get-VendorExitError([int]$exitCode){
+ if($exitCode -eq 0){return ''}
+ return ('Microsoft dependency installer failed or was cancelled (exit code '+
+  $exitCode+'). Use Recheck deps before retrying.')
+}
+function Begin-Action([string]$action){
+ if($script:child -or $script:vendor){return}
+ if($action -in @('Install','Rollback','Check','Launch') -and
+    $script:recoveryStatus -cne 'Ready'){return}
+ if($action -eq 'RepairInstall'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmRepairInstall'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'Repair'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmRepair'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'Rollback'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmRollback'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'Install'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmInstall'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ $downloadPercent.Text=''
+ if(Test-Path $script:statefile){Remove-Item $script:statefile -Force}
+ $script:recoveryStatus='Not checked'
+ $script:lastRecovery='Checking'
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ Update-ActionAvailability
+ $args='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+$PSCommandPath+
+  '" -Mode '+$action+' -Channel '+$choice.SelectedItem.ToString()+
+  ' -StateFile "'+$script:statefile+'"'
+ try{
+  $script:child=Start-Process -FilePath $powershell -ArgumentList $args -WindowStyle Hidden -PassThru
+  $script:pendingAction=$action
+  $bar.Style=[Windows.Forms.ProgressBarStyle]::Marquee;$bar.MarqueeAnimationSpeed=25
+  Update-ActionAvailability
+  $status.Text='Working...'
+ }catch{$script:pendingAction='';$status.Text='Unable to launch updater helper.'}
+}
+$check.Add_Click({Begin-Action 'Check'})
+$refresh.Add_Click({Begin-Action 'Probe'})
+$versionsButton.Add_Click({Begin-Action 'Versions'})
+$install.Add_Click({Begin-Action 'Install'})
+$rollback.Add_Click({Begin-Action 'Rollback'})
+$repair.Add_Click({Begin-Action 'Repair'})
+$repairInstall.Add_Click({Begin-Action 'RepairInstall'})
+$launch.Add_Click({Begin-Action 'Launch'})
+function Start-MicrosoftComponent([string]$which) {
+ if($script:child -or $script:vendor){return}
+ if($which -cnotin @('DotNet','WinApp','VC')){return}
+ if([Windows.Forms.MessageBox]::Show($form,
+  (Translate 'confirmVendor')+' '+$which,
+  (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+  [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
+ $args='-NoProfile -ExecutionPolicy Bypass -File "'+$manager+'" -Mode Install -Component '+
+  $which+' -LiteDirectory "'+$PSScriptRoot+'"'
+ try {
+  $script:vendor=Start-Process -FilePath $powershell -ArgumentList $args -PassThru
+  $status.Text='Microsoft installer opened; follow its prompts.'
+  $bar.MarqueeAnimationSpeed=25
+  Update-ActionAvailability
+ }catch{
+  $status.Text='Unable to start Microsoft dependency installer.'
+  Update-ActionAvailability
+ }
+}
+foreach($b in @($dot,$win,$vc)){
+ $b.Add_Click({Start-MicrosoftComponent ([string]$this.Tag)})
+}
+# Full prerequisite controls are reachable via a real dialog.
+function Show-MicrosoftComponents {
+ if($script:child -or $script:vendor){return}
+ $dlg=New-Object Windows.Forms.Form
+ $dlg.Text=Translate 'componentsTitle'
+ $dlg.ClientSize=[Drawing.Size]::new(430,253)
+ $dlg.StartPosition=[Windows.Forms.FormStartPosition]::CenterParent
+ $dlg.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedDialog
+ $dlg.MaximizeBox=$false
+ $dlg.BackColor=[Drawing.Color]::FromArgb(10,31,52)
+ $dlg.ForeColor=[Drawing.Color]::White
+ $dlg.Font=[Drawing.Font]::new('Segoe UI',10)
+ $intro=New-Object Windows.Forms.Label
+ $intro.Text=Translate 'componentsNotice'
+ $intro.SetBounds(17,16,394,40)
+ $dlg.Controls.Add($intro)
+ foreach($entry in @(
+  @{Key='DotNet';Caption='.NET 10 Desktop x86';Y=64},
+  @{Key='WinApp';Caption='Windows App Runtime x86';Y=119},
+  @{Key='VC';Caption='Microsoft VC++ x86';Y=174}
+ )){
+  $b=New-Object Windows.Forms.Button
+  $b.Text=$entry.Caption
+  $b.Tag=$entry.Key
+  $b.SetBounds(17,[int]$entry.Y,394,42)
+  $b.BackColor=[Drawing.Color]::FromArgb(23,77,118)
+  $b.ForeColor=[Drawing.Color]::White
+  $b.FlatStyle=[Windows.Forms.FlatStyle]::Flat
+  $dlg.Controls.Add($b)
+  $b.Add_Click({
+   $component=[string]$this.Tag
+   $dlg.Close()
+   Start-MicrosoftComponent $component
+  })
+ }
+ try{[void]$dlg.ShowDialog($form)}finally{$dlg.Dispose()}
+}
+
+$choice.Add_SelectedIndexChanged({
+ if($null -ne $choice.SelectedItem){
+  $null=Save-ChannelPreference ([string]$choice.SelectedItem)
+ }
+ if(-not $script:child -and -not $script:vendor){
+  $script:recoveryStatus='Not checked'
+  $script:lastRecovery='Checking'
+  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+  Update-ActionAvailability
+  Begin-Action 'Probe'
+ }
+})
+function Apply-WorkerSnapshot($snapshot) {
+ # Worker state is written atomically but may be read while it is still
+ # running. Do not authorize further actions from a partial progress update.
+ if($null -eq $snapshot){return $false}
+ $script:lastCurrent=[string]$snapshot.Current
+ $script:lastAvailable=[string]$snapshot.Available
+ $installed.Text=(Translate 'installed')+': '+$script:lastCurrent
+ $available.Text=(Translate 'available')+': '+$script:lastAvailable
+ $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
+  '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
+ $status.Text=[string]$snapshot.Detail
+ $downloadPercent.Text=''
+ # The ZIP byte count is read from the actual download, never fabricated.
+ if($script:child -and [string]$snapshot.DownloadId -cmatch '^[0-9a-f]{32}$' -and
+    [long]$snapshot.DownloadTotal -gt 0){
+  $selected=[string]$choice.SelectedItem
+  if($selected -cin @('Development','Stable')){
+   $file=Join-Path (Join-Path (Join-Path $base $selected) ('download-'+$snapshot.DownloadId)) $zipName
+   if(Test-Path -LiteralPath $file -PathType Leaf){
+    $bytes=(Get-Item -LiteralPath $file).Length
+    $percent=[int][Math]::Min(99,[Math]::Max(0,[Math]::Floor(
+     100.0*[double]$bytes/[double]$snapshot.DownloadTotal)))
+    $bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+    $bar.Value=$percent
+    $downloadPercent.Text=([string]$percent+'%')
+   }
+  }
+ }
+ $finished=($snapshot.PSObject.Properties['Done'] -and
+            $snapshot.Done -is [bool] -and $snapshot.Done -eq $true)
+ $valid=($snapshot.PSObject.Properties['Recovery'] -and
+         [string]$snapshot.Recovery -cin @('Ready','Repair install',
+                                           'Repair rollback','Inspect'))
+ if($finished -and $valid){
+  $script:recoveryStatus=[string]$snapshot.Recovery
+  $script:serviceIsReady=($script:recoveryStatus -ceq 'Ready' -and
+    $script:lastCurrent -cnotin @('Not installed','Not checked','Unverified installation') -and
+    [string]$snapshot.DotNet -ceq 'Installed' -and
+    [string]$snapshot.WinApp -ceq 'Installed' -and
+    [string]$snapshot.VC -ceq 'Installed')
+  $serviceHeading.Text='DVINHOLM  ·  '+(Translate $(if($script:serviceIsReady){'cockpitReady'}else{'cockpitUnchecked'}))
+  $script:lastRecovery=$script:recoveryStatus
+  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+  Update-ActionAvailability
+  return $true
+ }
+ $script:recoveryStatus='Not checked'
+ $script:lastRecovery='Checking'
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ Update-ActionAvailability
+ return $false
+}
+function Poll-WorkerState {
+ $complete=$false
+ if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
+  try{
+   $snapshot=Get-Content -LiteralPath $script:statefile -Raw | ConvertFrom-Json
+   $complete=Apply-WorkerSnapshot $snapshot
+  }catch{}
+ }
+ if($script:child -and $script:child.HasExited){
+  $reportText=''
+  if($complete -and $null -ne $snapshot -and
+     $snapshot.PSObject.Properties['DependencyReport']){
+   $reportText=[string]$snapshot.DependencyReport
+  }
+  # Close only when launch worker completed successfully AND the dependency
+  # helper positively reported creation of the main application process.
+  $finishedAction=$script:pendingAction
+  $workerExit=[int]$script:child.ExitCode
+  $script:pendingAction=''
+  $launchSucceeded=($finishedAction -ceq 'Launch' -and $workerExit -eq 0 -and
+    $complete -and $null -ne $snapshot -and
+    $snapshot.Done -eq $true -and $snapshot.Failed -eq $false)
+  $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+  if(-not $complete){
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text='Updater helper stopped without a complete status. Use Recheck deps.'
+  }
+  Update-ActionAvailability
+  if($launchSucceeded){
+   $timer.Stop()
+   $form.Close()
+   return
+  }
+  if($reportText){
+   [void][Windows.Forms.MessageBox]::Show($form,$reportText,
+    'Dvinholm | Installed and available runtimes',
+    [Windows.Forms.MessageBoxButtons]::OK,
+    [Windows.Forms.MessageBoxIcon]::Information)
+  }
+ }
+ if($script:vendor -and $script:vendor.HasExited){
+  $exitCode=[int]$script:vendor.ExitCode
+  $fromDriverInstaller=($script:driverInstallerPending -eq $true)
+  $script:driverInstallerPending=$false
+  $downloadPercent.Text=''
+  $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+  # A completed installer must not have its outcome overwritten by an old
+  # updater worker snapshot on the next 500ms timer tick.
+  if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
+   Remove-Item -LiteralPath $script:statefile -Force -ErrorAction SilentlyContinue
+  }
+  if($fromDriverInstaller){
+   # A vendor setup is independent of .NET/WinApp prerequisites. Do not
+   # report driver success by running the generic updater dependency probe.
+   # Rescan only Windows PnP/registry. Never load the adapter or request CAN.
+   if($exitCode -eq 0){
+    try{
+     if($script:driverRescan){
+      & $script:driverRescan
+      $status.Text='J2534 installer finished. Driver inventory refreshed; hardware untested.'
+     }else{
+      $status.Text='Vendor installer finished. Open Drivers and select Check to verify.'
+     }
+    }catch{
+     $status.Text='Vendor setup finished; driver inventory could not be refreshed.'
+    }
+   }elseif($exitCode -in @(3010,1641)){
+    # MSI success requiring reboot is not failure, but the adapter is
+    # not ready until Windows restarts. Do not rescan as a success.
+    $status.Text='Vendor setup finished. Restart Windows before using the driver (exit '+$exitCode+').'
+    if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
+     $script:driverResultControl.Text='Windows restart required. Recheck adapter drivers after restarting Windows.'
+    }
+   }else{
+    $status.Text='Vendor driver installer failed or was cancelled (exit '+$exitCode+').'
+    if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
+     $script:driverResultControl.Text='Vendor driver setup did not complete. Check the vendor installer log.'
+    }
+   }
+   Update-ActionAvailability
+  }elseif($exitCode -eq 0){
+   # Only plain success permits automatic local dependency rescan.
+   Begin-Action 'Probe'
+  }elseif($exitCode -in @(3010,1641)){
+   # Microsoft dependency helper preserved a success-with-restart code.
+   # No automatic re-probe or ready status until Windows is restarted.
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text='Microsoft runtime installed. Restart Windows before rechecking prerequisites (exit '+$exitCode+').'
+   Update-ActionAvailability
+  }else{
+   # Preserve failure without launching an unrelated dependency probe.
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text=Get-VendorExitError $exitCode
+   Update-ActionAvailability
+  }
+ }
+}
+$timer=New-Object Windows.Forms.Timer;$timer.Interval=500
+$timer.Add_Tick({Poll-WorkerState})
+$timer.Start()
+Update-ActionAvailability
+if($Mode -eq 'UiSmokeTest'){
+ # Instantiate the real Windows PowerShell 5.1 WinForms GUI, but do not
+ # display a modal dialog, contact GitHub, launch installers or start Dvinholm.
+ $checks=0
+ try{
+  if($null -eq $form -or
+     $form -isnot [Windows.Forms.Form] -or
+     $choice.Items.Count -ne 2 -or
+     $choice.Items[0] -cne 'Development' -or
+     $choice.Items[1] -cne 'Stable' -or
+     -not $form.Controls.Contains($recovery)){
+   throw 'Standalone WinForms controls were not constructed.'
+  }
+  $checks++
+  # Default: nothing runs until the first local inventory has been checked.
+  if($script:recoveryStatus -cne 'Not checked' -or
+     $install.Enabled -or $check.Enabled -or $launch.Enabled -or
+     $rollback.Enabled -or $repair.Enabled -or $repairInstall.Enabled -or
+     -not $refresh.Enabled){throw 'Startup actions were not locked.'}
+  $checks++
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if(-not $install.Enabled -or -not $check.Enabled -or
+     -not $launch.Enabled -or -not $rollback.Enabled -or
+     $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Ready-state button policy failed.'
+  }
+  $checks++
+  $script:recoveryStatus='Repair install';Update-ActionAvailability
+  if(-not $repairInstall.Enabled -or $repair.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled){throw 'Install recovery was not isolated.'}
+  $checks++
+  $script:recoveryStatus='Repair rollback';Update-ActionAvailability
+  if(-not $repair.Enabled -or $repairInstall.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled){throw 'Rollback recovery was not isolated.'}
+  $checks++
+  $script:recoveryStatus='Inspect';Update-ActionAvailability
+  if($repair.Enabled -or $repairInstall.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled -or -not $refresh.Enabled){
+   throw 'Ambiguous recovery state was not fail-closed.'
+  }
+  $checks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if($choice.Enabled -or $refresh.Enabled -or $install.Enabled -or
+     $rollback.Enabled -or $check.Enabled -or $launch.Enabled -or
+     $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Busy-state buttons were not locked.'
+  }
+  $checks++
+  if($checks -ne 7){throw 'Wrong Windows WinForms smoke check count.'}
+  Write-Host 'Updater Banner 7/7 Windows PowerShell 5.1 WinForms smoke checks passed.'
+  $snapshotChecks=0
+  $script:child=$null
+  $completed=[pscustomobject]@{
+   Done=$true;Failed=$false;Recovery='Ready';Current='ci-4118'
+   Available='ci-4118';DotNet='Installed';WinApp='Installed'
+   VC='Installed';Detail='Completed'
+  }
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     -not $install.Enabled -or -not $launch.Enabled){
+   throw 'Completed worker snapshot failed to re-enable Ready actions.'
+  }
+  $snapshotChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     $install.Enabled -or $launch.Enabled -or $refresh.Enabled){
+   throw 'Completed snapshot unlocked actions while helper was still running.'
+  }
+  $snapshotChecks++
+  $script:child=$null
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     -not $install.Enabled -or -not $check.Enabled){
+   throw 'Late snapshot after worker completion did not unlock the UI.'
+  }
+  $snapshotChecks++
+  $incomplete=$completed | Select-Object *
+  $incomplete.Done=$false
+  if((Apply-WorkerSnapshot $incomplete) -or
+     $install.Enabled -or $launch.Enabled -or
+     $script:recoveryStatus -cne 'Not checked'){
+   throw 'Incomplete worker progress unlocked the UI.'
+  }
+  $snapshotChecks++
+  $invalid=$completed | Select-Object *
+  $invalid.Recovery='Untrusted'
+  if((Apply-WorkerSnapshot $invalid) -or
+     $install.Enabled -or $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Untrusted worker recovery field was accepted.'
+  }
+  $snapshotChecks++
+  $repairSnapshot=$completed | Select-Object *
+  $repairSnapshot.Recovery='Repair install'
+  if(-not (Apply-WorkerSnapshot $repairSnapshot) -or
+     -not $repairInstall.Enabled -or $install.Enabled -or $repair.Enabled){
+   throw 'Completed recovery snapshot did not activate the matching repair.'
+  }
+  $snapshotChecks++
+  if($snapshotChecks -ne 6){throw 'Wrong worker state synchronization test count.'}
+  Write-Host 'Updater Banner 6/6 WinForms worker-state synchronization checks passed.'
+  $vendorChecks=0
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons were disabled when no worker was running.'
+  }
+  $vendorChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($dot.Enabled -or $win.Enabled -or $vc.Enabled){
+   throw 'Microsoft installers were not locked during updater work.'
+  }
+  $vendorChecks++
+  $script:child=$null;Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons did not unlock after updater completion.'
+  }
+  $vendorChecks++
+  $script:vendor=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($dot.Enabled -or $win.Enabled -or $vc.Enabled -or
+     $choice.Enabled -or $refresh.Enabled -or $launch.Enabled -or
+     $install.Enabled){
+   throw 'Parallel Microsoft installer activity was not locked.'
+  }
+  $vendorChecks++
+  $script:vendor=$null;Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons stayed disabled after worker completion.'
+  }
+  $vendorChecks++
+  if((Get-VendorExitError 0) -cne ''){
+   throw 'Successful Microsoft installer completion reported a failure.'
+  }
+  $vendorChecks++
+  if((Get-VendorExitError 1) -cnotmatch 'failed or was cancelled.*exit code 1'){
+   throw 'Failed Microsoft installer completion was not explained.'
+  }
+  $vendorChecks++
+  if($vendorChecks -ne 7){throw 'Wrong Microsoft installer lifecycle test count.'}
+  Write-Host 'Updater Banner 7/7 WinForms vendor worker lifecycle checks passed.'
+
+  # Eight Windows-only GUI contracts for the approved Service Cockpit.
+  # No modal window, network request, installer, or ECU access.
+  $auroraChecks=0
+  if($script:auroraScale -gt 0.80 -or $script:auroraScale -lt 0.65 -or
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552){
+   throw 'Service Cockpit is larger than the compact display envelope.'
+  }
+  $auroraChecks++
+  if($hero.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
+     $hero.Height -ne [int][Math]::Round(184*$script:auroraScale) -or
+     $brandTitle.Text -cne 'DVINHOLM'){
+   throw 'Service Cockpit upper banner is missing or not correctly scaled.'
+  }
+  $auroraChecks++
+  if($choice.Parent -ne $form -or
+     $null -eq $script:serviceCardLeft -or
+     $sidebar.Controls.Count -lt 6 -or $stableRadio.Parent -ne $form){
+   throw 'Service Cockpit root selection or backing layout is missing.'
+  }
+  $auroraChecks++
+  if($script:serviceCardUpdates -eq $null -or
+     $script:serviceCardWindows -eq $null -or
+     $script:serviceCardDrivers -eq $null -or
+     $script:serviceCardUpdates.Top -ge $script:serviceCardWindows.Top -or
+     $script:serviceCardWindows.Top -ge $script:serviceCardDrivers.Top){
+   throw 'Service Cockpit three operation cards are missing or out of order.'
+  }
+  $auroraChecks++
+  $contentWidth=[int][Math]::Round(1180*$script:auroraScale)
+  $contentHeight=[int][Math]::Round(690*$script:auroraScale)
+  if($install.Right -gt $contentWidth -or
+     $versionsButton.Right -gt $contentWidth -or
+     $driverQuick.Right -gt $contentWidth -or
+     $script:serviceCardDrivers.Bottom -gt $contentHeight -or
+     $bar.Width -lt [int][Math]::Floor(650*$script:auroraScale)){
+   throw 'Service Cockpit controls extend past the display boundary.'
+  }
+  $auroraChecks++
+  $working=[Windows.Forms.Screen]::FromControl($form).WorkingArea
+  if($form.Width -gt $working.Width-16 -or $form.Height -gt $working.Height-16){
+   throw 'Service Cockpit extends beyond the Windows working area.'
+  }
+  $auroraChecks++
+  $currentLanguage=$script:launcherLanguage
+  $script:launcherLanguage='EN';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Windows requirements' -or
+     $driverQuick.Text -cne 'Open drivers'){throw 'English localization did not apply.'}
+  $script:launcherLanguage='RU';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Требования Windows' -or
+     $driverQuick.Text -cne 'Открыть драйверы'){throw 'Russian localization did not apply.'}
+  $script:launcherLanguage=$currentLanguage;Apply-LauncherLanguage
+  $auroraChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($versionsButton.Enabled -or $windowsQuick.Enabled -or
+     $driverQuick.Enabled -or $driverScanQuick.Enabled -or
+     $settingsQuick.Enabled -or $languageChoice.Enabled){
+   throw 'Service Cockpit actions were not locked during updater operation.'
+  }
+  $script:child=$null
+  Update-ActionAvailability
+  if(-not $windowsQuick.Enabled -or -not $driverQuick.Enabled){
+   throw 'Service Cockpit actions did not recover after updater operation.'
+  }
+  $auroraChecks++
+  if($auroraChecks -ne 8){throw 'Wrong Service Cockpit smoke check count.'}
+  Write-Host 'Service Cockpit 8/8 Windows WinForms layout and action smoke checks passed.'
+  Write-Host 'Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.'
+
+ }finally{
+  $script:child=$null
+  $timer.Stop();$timer.Dispose();$form.Dispose()
+ }
+ exit 0
+}
+$startupChannel=$Channel
+if(-not $PSBoundParameters.ContainsKey('Channel')){
+ $savedChannel=Read-ChannelPreference
+ if($null -ne $savedChannel){$startupChannel=$savedChannel}
+}
+$form.Add_Shown({$choice.SelectedIndex=if($startupChannel -eq 'Stable'){1}else{0}})
+try{[void]$form.ShowDialog()}
+finally{
+ $timer.Stop();$timer.Dispose()
+ if($script:child){$script:child.Dispose()}
+ if($script:vendor){$script:vendor.Dispose()}
+ if(Test-Path $script:statefile){Remove-Item $script:statefile -Force -ErrorAction SilentlyContinue}
+ $form.Dispose()
+}
+){return $false}
+  return ($new -gt [long]$Matches[1])
+ }
+ if($availableTag -cnotmatch '^([0-9]+\.[0-9]+\.[0-9]+)
+ $busy=($null -ne $script:child -or $null -ne $script:vendor)
+ $state=[string]$script:recoveryStatus
+ $ready=($state -ceq 'Ready')
+ $choice.Enabled=-not $busy
+ $navHome.Enabled=($ready -and -not $busy)
+ $navUpdates.Enabled=($ready -and -not $busy)
+ $navDependencies.Enabled=-not $busy
+ $navSettings.Enabled=-not $busy
+ $navAbout.Enabled=-not $busy
+ $navDrivers.Enabled=-not $busy
+ $languageChoice.Enabled=-not $busy
+ $settingsQuick.Enabled=-not $busy
+ $windowsQuick.Enabled=-not $busy
+ $depsInstallQuick.Enabled=-not $busy
+ $driverQuick.Enabled=-not $busy
+ $driverScanQuick.Enabled=-not $busy
+ $stableRadio.Enabled=-not $busy
+ $developmentRadio.Enabled=-not $busy
+ $check.Enabled=($ready -and -not $busy)
+ $install.Enabled=($ready -and -not $busy)
+ $launch.Enabled=($ready -and -not $busy)
+ $refresh.Enabled=-not $busy
+ $versionsButton.Enabled=-not $busy
+ $rollback.Enabled=($ready -and -not $busy)
+ $repair.Enabled=($state -ceq 'Repair rollback' -and -not $busy)
+ $repairInstall.Enabled=($state -ceq 'Repair install' -and -not $busy)
+ foreach($vendorButton in @($dot,$win,$vc)){
+  $vendorButton.Enabled=-not $busy
+ }
+}
+function Get-VendorExitError([int]$exitCode){
+ if($exitCode -eq 0){return ''}
+ return ('Microsoft dependency installer failed or was cancelled (exit code '+
+  $exitCode+'). Use Recheck deps before retrying.')
+}
+function Begin-Action([string]$action){
+ if($script:child -or $script:vendor){return}
+ if($action -in @('Install','Rollback','Check','Launch') -and
+    $script:recoveryStatus -cne 'Ready'){return}
+ if($action -eq 'RepairInstall'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmRepairInstall'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'Repair'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmRepair'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'Rollback'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmRollback'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'Install'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmInstall'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ $downloadPercent.Text=''
+ if(Test-Path $script:statefile){Remove-Item $script:statefile -Force}
+ $script:recoveryStatus='Not checked'
+ $script:lastRecovery='Checking'
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ Update-ActionAvailability
+ $args='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+$PSCommandPath+
+  '" -Mode '+$action+' -Channel '+$choice.SelectedItem.ToString()+
+  ' -StateFile "'+$script:statefile+'"'
+ try{
+  $script:child=Start-Process -FilePath $powershell -ArgumentList $args -WindowStyle Hidden -PassThru
+  $script:pendingAction=$action
+  $bar.Style=[Windows.Forms.ProgressBarStyle]::Marquee;$bar.MarqueeAnimationSpeed=25
+  Update-ActionAvailability
+  $status.Text='Working...'
+ }catch{$script:pendingAction='';$status.Text='Unable to launch updater helper.'}
+}
+$check.Add_Click({Begin-Action 'Check'})
+$refresh.Add_Click({Begin-Action 'Probe'})
+$versionsButton.Add_Click({Begin-Action 'Versions'})
+$install.Add_Click({Begin-Action 'Install'})
+$rollback.Add_Click({Begin-Action 'Rollback'})
+$repair.Add_Click({Begin-Action 'Repair'})
+$repairInstall.Add_Click({Begin-Action 'RepairInstall'})
+$launch.Add_Click({Begin-Action 'Launch'})
+function Start-MicrosoftComponent([string]$which) {
+ if($script:child -or $script:vendor){return}
+ if($which -cnotin @('DotNet','WinApp','VC')){return}
+ if([Windows.Forms.MessageBox]::Show($form,
+  (Translate 'confirmVendor')+' '+$which,
+  (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+  [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
+ $args='-NoProfile -ExecutionPolicy Bypass -File "'+$manager+'" -Mode Install -Component '+
+  $which+' -LiteDirectory "'+$PSScriptRoot+'"'
+ try {
+  $script:vendor=Start-Process -FilePath $powershell -ArgumentList $args -PassThru
+  $status.Text='Microsoft installer opened; follow its prompts.'
+  $bar.MarqueeAnimationSpeed=25
+  Update-ActionAvailability
+ }catch{
+  $status.Text='Unable to start Microsoft dependency installer.'
+  Update-ActionAvailability
+ }
+}
+foreach($b in @($dot,$win,$vc)){
+ $b.Add_Click({Start-MicrosoftComponent ([string]$this.Tag)})
+}
+# Full prerequisite controls are reachable via a real dialog.
+function Show-MicrosoftComponents {
+ if($script:child -or $script:vendor){return}
+ $dlg=New-Object Windows.Forms.Form
+ $dlg.Text=Translate 'componentsTitle'
+ $dlg.ClientSize=[Drawing.Size]::new(430,253)
+ $dlg.StartPosition=[Windows.Forms.FormStartPosition]::CenterParent
+ $dlg.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedDialog
+ $dlg.MaximizeBox=$false
+ $dlg.BackColor=[Drawing.Color]::FromArgb(10,31,52)
+ $dlg.ForeColor=[Drawing.Color]::White
+ $dlg.Font=[Drawing.Font]::new('Segoe UI',10)
+ $intro=New-Object Windows.Forms.Label
+ $intro.Text=Translate 'componentsNotice'
+ $intro.SetBounds(17,16,394,40)
+ $dlg.Controls.Add($intro)
+ foreach($entry in @(
+  @{Key='DotNet';Caption='.NET 10 Desktop x86';Y=64},
+  @{Key='WinApp';Caption='Windows App Runtime x86';Y=119},
+  @{Key='VC';Caption='Microsoft VC++ x86';Y=174}
+ )){
+  $b=New-Object Windows.Forms.Button
+  $b.Text=$entry.Caption
+  $b.Tag=$entry.Key
+  $b.SetBounds(17,[int]$entry.Y,394,42)
+  $b.BackColor=[Drawing.Color]::FromArgb(23,77,118)
+  $b.ForeColor=[Drawing.Color]::White
+  $b.FlatStyle=[Windows.Forms.FlatStyle]::Flat
+  $dlg.Controls.Add($b)
+  $b.Add_Click({
+   $component=[string]$this.Tag
+   $dlg.Close()
+   Start-MicrosoftComponent $component
+  })
+ }
+ try{[void]$dlg.ShowDialog($form)}finally{$dlg.Dispose()}
+}
+
+$choice.Add_SelectedIndexChanged({
+ if($null -ne $choice.SelectedItem){
+  $null=Save-ChannelPreference ([string]$choice.SelectedItem)
+ }
+ if(-not $script:child -and -not $script:vendor){
+  $script:recoveryStatus='Not checked'
+  $script:lastRecovery='Checking'
+  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+  Update-ActionAvailability
+  Begin-Action 'Probe'
+ }
+})
+function Apply-WorkerSnapshot($snapshot) {
+ # Worker state is written atomically but may be read while it is still
+ # running. Do not authorize further actions from a partial progress update.
+ if($null -eq $snapshot){return $false}
+ $script:lastCurrent=[string]$snapshot.Current
+ $script:lastAvailable=[string]$snapshot.Available
+ $installed.Text=(Translate 'installed')+': '+$script:lastCurrent
+ $available.Text=(Translate 'available')+': '+$script:lastAvailable
+ $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
+  '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
+ $status.Text=[string]$snapshot.Detail
+ $downloadPercent.Text=''
+ # The ZIP byte count is read from the actual download, never fabricated.
+ if($script:child -and [string]$snapshot.DownloadId -cmatch '^[0-9a-f]{32}$' -and
+    [long]$snapshot.DownloadTotal -gt 0){
+  $selected=[string]$choice.SelectedItem
+  if($selected -cin @('Development','Stable')){
+   $file=Join-Path (Join-Path (Join-Path $base $selected) ('download-'+$snapshot.DownloadId)) $zipName
+   if(Test-Path -LiteralPath $file -PathType Leaf){
+    $bytes=(Get-Item -LiteralPath $file).Length
+    $percent=[int][Math]::Min(99,[Math]::Max(0,[Math]::Floor(
+     100.0*[double]$bytes/[double]$snapshot.DownloadTotal)))
+    $bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+    $bar.Value=$percent
+    $downloadPercent.Text=([string]$percent+'%')
+   }
+  }
+ }
+ $finished=($snapshot.PSObject.Properties['Done'] -and
+            $snapshot.Done -is [bool] -and $snapshot.Done -eq $true)
+ $valid=($snapshot.PSObject.Properties['Recovery'] -and
+         [string]$snapshot.Recovery -cin @('Ready','Repair install',
+                                           'Repair rollback','Inspect'))
+ if($finished -and $valid){
+  $script:recoveryStatus=[string]$snapshot.Recovery
+  $script:serviceIsReady=($script:recoveryStatus -ceq 'Ready' -and
+    $script:lastCurrent -cnotin @('Not installed','Not checked','Unverified installation') -and
+    [string]$snapshot.DotNet -ceq 'Installed' -and
+    [string]$snapshot.WinApp -ceq 'Installed' -and
+    [string]$snapshot.VC -ceq 'Installed')
+  $serviceHeading.Text='DVINHOLM  ·  '+(Translate $(if($script:serviceIsReady){'cockpitReady'}else{'cockpitUnchecked'}))
+  $script:lastRecovery=$script:recoveryStatus
+  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+  Update-ActionAvailability
+  return $true
+ }
+ $script:recoveryStatus='Not checked'
+ $script:lastRecovery='Checking'
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ Update-ActionAvailability
+ return $false
+}
+function Poll-WorkerState {
+ $complete=$false
+ if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
+  try{
+   $snapshot=Get-Content -LiteralPath $script:statefile -Raw | ConvertFrom-Json
+   $complete=Apply-WorkerSnapshot $snapshot
+  }catch{}
+ }
+ if($script:child -and $script:child.HasExited){
+  $reportText=''
+  if($complete -and $null -ne $snapshot -and
+     $snapshot.PSObject.Properties['DependencyReport']){
+   $reportText=[string]$snapshot.DependencyReport
+  }
+  # Close only when launch worker completed successfully AND the dependency
+  # helper positively reported creation of the main application process.
+  $finishedAction=$script:pendingAction
+  $workerExit=[int]$script:child.ExitCode
+  $script:pendingAction=''
+  $launchSucceeded=($finishedAction -ceq 'Launch' -and $workerExit -eq 0 -and
+    $complete -and $null -ne $snapshot -and
+    $snapshot.Done -eq $true -and $snapshot.Failed -eq $false)
+  $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+  if(-not $complete){
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text='Updater helper stopped without a complete status. Use Recheck deps.'
+  }
+  Update-ActionAvailability
+  if($launchSucceeded){
+   $timer.Stop()
+   $form.Close()
+   return
+  }
+  if($reportText){
+   [void][Windows.Forms.MessageBox]::Show($form,$reportText,
+    'Dvinholm | Installed and available runtimes',
+    [Windows.Forms.MessageBoxButtons]::OK,
+    [Windows.Forms.MessageBoxIcon]::Information)
+  }
+ }
+ if($script:vendor -and $script:vendor.HasExited){
+  $exitCode=[int]$script:vendor.ExitCode
+  $fromDriverInstaller=($script:driverInstallerPending -eq $true)
+  $script:driverInstallerPending=$false
+  $downloadPercent.Text=''
+  $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+  # A completed installer must not have its outcome overwritten by an old
+  # updater worker snapshot on the next 500ms timer tick.
+  if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
+   Remove-Item -LiteralPath $script:statefile -Force -ErrorAction SilentlyContinue
+  }
+  if($fromDriverInstaller){
+   # A vendor setup is independent of .NET/WinApp prerequisites. Do not
+   # report driver success by running the generic updater dependency probe.
+   # Rescan only Windows PnP/registry. Never load the adapter or request CAN.
+   if($exitCode -eq 0){
+    try{
+     if($script:driverRescan){
+      & $script:driverRescan
+      $status.Text='J2534 installer finished. Driver inventory refreshed; hardware untested.'
+     }else{
+      $status.Text='Vendor installer finished. Open Drivers and select Check to verify.'
+     }
+    }catch{
+     $status.Text='Vendor setup finished; driver inventory could not be refreshed.'
+    }
+   }elseif($exitCode -in @(3010,1641)){
+    # MSI success requiring reboot is not failure, but the adapter is
+    # not ready until Windows restarts. Do not rescan as a success.
+    $status.Text='Vendor setup finished. Restart Windows before using the driver (exit '+$exitCode+').'
+    if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
+     $script:driverResultControl.Text='Windows restart required. Recheck adapter drivers after restarting Windows.'
+    }
+   }else{
+    $status.Text='Vendor driver installer failed or was cancelled (exit '+$exitCode+').'
+    if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
+     $script:driverResultControl.Text='Vendor driver setup did not complete. Check the vendor installer log.'
+    }
+   }
+   Update-ActionAvailability
+  }elseif($exitCode -eq 0){
+   # Only plain success permits automatic local dependency rescan.
+   Begin-Action 'Probe'
+  }elseif($exitCode -in @(3010,1641)){
+   # Microsoft dependency helper preserved a success-with-restart code.
+   # No automatic re-probe or ready status until Windows is restarted.
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text='Microsoft runtime installed. Restart Windows before rechecking prerequisites (exit '+$exitCode+').'
+   Update-ActionAvailability
+  }else{
+   # Preserve failure without launching an unrelated dependency probe.
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text=Get-VendorExitError $exitCode
+   Update-ActionAvailability
+  }
+ }
+}
+$timer=New-Object Windows.Forms.Timer;$timer.Interval=500
+$timer.Add_Tick({Poll-WorkerState})
+$timer.Start()
+Update-ActionAvailability
+if($Mode -eq 'UiSmokeTest'){
+ # Instantiate the real Windows PowerShell 5.1 WinForms GUI, but do not
+ # display a modal dialog, contact GitHub, launch installers or start Dvinholm.
+ $checks=0
+ try{
+  if($null -eq $form -or
+     $form -isnot [Windows.Forms.Form] -or
+     $choice.Items.Count -ne 2 -or
+     $choice.Items[0] -cne 'Development' -or
+     $choice.Items[1] -cne 'Stable' -or
+     -not $form.Controls.Contains($recovery)){
+   throw 'Standalone WinForms controls were not constructed.'
+  }
+  $checks++
+  # Default: nothing runs until the first local inventory has been checked.
+  if($script:recoveryStatus -cne 'Not checked' -or
+     $install.Enabled -or $check.Enabled -or $launch.Enabled -or
+     $rollback.Enabled -or $repair.Enabled -or $repairInstall.Enabled -or
+     -not $refresh.Enabled){throw 'Startup actions were not locked.'}
+  $checks++
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if(-not $install.Enabled -or -not $check.Enabled -or
+     -not $launch.Enabled -or -not $rollback.Enabled -or
+     $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Ready-state button policy failed.'
+  }
+  $checks++
+  $script:recoveryStatus='Repair install';Update-ActionAvailability
+  if(-not $repairInstall.Enabled -or $repair.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled){throw 'Install recovery was not isolated.'}
+  $checks++
+  $script:recoveryStatus='Repair rollback';Update-ActionAvailability
+  if(-not $repair.Enabled -or $repairInstall.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled){throw 'Rollback recovery was not isolated.'}
+  $checks++
+  $script:recoveryStatus='Inspect';Update-ActionAvailability
+  if($repair.Enabled -or $repairInstall.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled -or -not $refresh.Enabled){
+   throw 'Ambiguous recovery state was not fail-closed.'
+  }
+  $checks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if($choice.Enabled -or $refresh.Enabled -or $install.Enabled -or
+     $rollback.Enabled -or $check.Enabled -or $launch.Enabled -or
+     $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Busy-state buttons were not locked.'
+  }
+  $checks++
+  if($checks -ne 7){throw 'Wrong Windows WinForms smoke check count.'}
+  Write-Host 'Updater Banner 7/7 Windows PowerShell 5.1 WinForms smoke checks passed.'
+  $snapshotChecks=0
+  $script:child=$null
+  $completed=[pscustomobject]@{
+   Done=$true;Failed=$false;Recovery='Ready';Current='ci-4118'
+   Available='ci-4118';DotNet='Installed';WinApp='Installed'
+   VC='Installed';Detail='Completed'
+  }
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     -not $install.Enabled -or -not $launch.Enabled){
+   throw 'Completed worker snapshot failed to re-enable Ready actions.'
+  }
+  $snapshotChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     $install.Enabled -or $launch.Enabled -or $refresh.Enabled){
+   throw 'Completed snapshot unlocked actions while helper was still running.'
+  }
+  $snapshotChecks++
+  $script:child=$null
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     -not $install.Enabled -or -not $check.Enabled){
+   throw 'Late snapshot after worker completion did not unlock the UI.'
+  }
+  $snapshotChecks++
+  $incomplete=$completed | Select-Object *
+  $incomplete.Done=$false
+  if((Apply-WorkerSnapshot $incomplete) -or
+     $install.Enabled -or $launch.Enabled -or
+     $script:recoveryStatus -cne 'Not checked'){
+   throw 'Incomplete worker progress unlocked the UI.'
+  }
+  $snapshotChecks++
+  $invalid=$completed | Select-Object *
+  $invalid.Recovery='Untrusted'
+  if((Apply-WorkerSnapshot $invalid) -or
+     $install.Enabled -or $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Untrusted worker recovery field was accepted.'
+  }
+  $snapshotChecks++
+  $repairSnapshot=$completed | Select-Object *
+  $repairSnapshot.Recovery='Repair install'
+  if(-not (Apply-WorkerSnapshot $repairSnapshot) -or
+     -not $repairInstall.Enabled -or $install.Enabled -or $repair.Enabled){
+   throw 'Completed recovery snapshot did not activate the matching repair.'
+  }
+  $snapshotChecks++
+  if($snapshotChecks -ne 6){throw 'Wrong worker state synchronization test count.'}
+  Write-Host 'Updater Banner 6/6 WinForms worker-state synchronization checks passed.'
+  $vendorChecks=0
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons were disabled when no worker was running.'
+  }
+  $vendorChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($dot.Enabled -or $win.Enabled -or $vc.Enabled){
+   throw 'Microsoft installers were not locked during updater work.'
+  }
+  $vendorChecks++
+  $script:child=$null;Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons did not unlock after updater completion.'
+  }
+  $vendorChecks++
+  $script:vendor=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($dot.Enabled -or $win.Enabled -or $vc.Enabled -or
+     $choice.Enabled -or $refresh.Enabled -or $launch.Enabled -or
+     $install.Enabled){
+   throw 'Parallel Microsoft installer activity was not locked.'
+  }
+  $vendorChecks++
+  $script:vendor=$null;Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons stayed disabled after worker completion.'
+  }
+  $vendorChecks++
+  if((Get-VendorExitError 0) -cne ''){
+   throw 'Successful Microsoft installer completion reported a failure.'
+  }
+  $vendorChecks++
+  if((Get-VendorExitError 1) -cnotmatch 'failed or was cancelled.*exit code 1'){
+   throw 'Failed Microsoft installer completion was not explained.'
+  }
+  $vendorChecks++
+  if($vendorChecks -ne 7){throw 'Wrong Microsoft installer lifecycle test count.'}
+  Write-Host 'Updater Banner 7/7 WinForms vendor worker lifecycle checks passed.'
+
+  # Eight Windows-only GUI contracts for the approved Service Cockpit.
+  # No modal window, network request, installer, or ECU access.
+  $auroraChecks=0
+  if($script:auroraScale -gt 0.80 -or $script:auroraScale -lt 0.65 -or
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552){
+   throw 'Service Cockpit is larger than the compact display envelope.'
+  }
+  $auroraChecks++
+  if($hero.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
+     $hero.Height -ne [int][Math]::Round(184*$script:auroraScale) -or
+     $brandTitle.Text -cne 'DVINHOLM'){
+   throw 'Service Cockpit upper banner is missing or not correctly scaled.'
+  }
+  $auroraChecks++
+  if($choice.Parent -ne $form -or
+     $null -eq $script:serviceCardLeft -or
+     $sidebar.Controls.Count -lt 6 -or $stableRadio.Parent -ne $form){
+   throw 'Service Cockpit root selection or backing layout is missing.'
+  }
+  $auroraChecks++
+  if($script:serviceCardUpdates -eq $null -or
+     $script:serviceCardWindows -eq $null -or
+     $script:serviceCardDrivers -eq $null -or
+     $script:serviceCardUpdates.Top -ge $script:serviceCardWindows.Top -or
+     $script:serviceCardWindows.Top -ge $script:serviceCardDrivers.Top){
+   throw 'Service Cockpit three operation cards are missing or out of order.'
+  }
+  $auroraChecks++
+  $contentWidth=[int][Math]::Round(1180*$script:auroraScale)
+  $contentHeight=[int][Math]::Round(690*$script:auroraScale)
+  if($install.Right -gt $contentWidth -or
+     $versionsButton.Right -gt $contentWidth -or
+     $driverQuick.Right -gt $contentWidth -or
+     $script:serviceCardDrivers.Bottom -gt $contentHeight -or
+     $bar.Width -lt [int][Math]::Floor(650*$script:auroraScale)){
+   throw 'Service Cockpit controls extend past the display boundary.'
+  }
+  $auroraChecks++
+  $working=[Windows.Forms.Screen]::FromControl($form).WorkingArea
+  if($form.Width -gt $working.Width-16 -or $form.Height -gt $working.Height-16){
+   throw 'Service Cockpit extends beyond the Windows working area.'
+  }
+  $auroraChecks++
+  $currentLanguage=$script:launcherLanguage
+  $script:launcherLanguage='EN';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Windows requirements' -or
+     $driverQuick.Text -cne 'Open drivers'){throw 'English localization did not apply.'}
+  $script:launcherLanguage='RU';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Требования Windows' -or
+     $driverQuick.Text -cne 'Открыть драйверы'){throw 'Russian localization did not apply.'}
+  $script:launcherLanguage=$currentLanguage;Apply-LauncherLanguage
+  $auroraChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($versionsButton.Enabled -or $windowsQuick.Enabled -or
+     $driverQuick.Enabled -or $driverScanQuick.Enabled -or
+     $settingsQuick.Enabled -or $languageChoice.Enabled){
+   throw 'Service Cockpit actions were not locked during updater operation.'
+  }
+  $script:child=$null
+  Update-ActionAvailability
+  if(-not $windowsQuick.Enabled -or -not $driverQuick.Enabled){
+   throw 'Service Cockpit actions did not recover after updater operation.'
+  }
+  $auroraChecks++
+  if($auroraChecks -ne 8){throw 'Wrong Service Cockpit smoke check count.'}
+  Write-Host 'Service Cockpit 8/8 Windows WinForms layout and action smoke checks passed.'
+  Write-Host 'Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.'
+
+ }finally{
+  $script:child=$null
+  $timer.Stop();$timer.Dispose();$form.Dispose()
+ }
+ exit 0
+}
+$startupChannel=$Channel
+if(-not $PSBoundParameters.ContainsKey('Channel')){
+ $savedChannel=Read-ChannelPreference
+ if($null -ne $savedChannel){$startupChannel=$savedChannel}
+}
+$form.Add_Shown({$choice.SelectedIndex=if($startupChannel -eq 'Stable'){1}else{0}})
+try{[void]$form.ShowDialog()}
+finally{
+ $timer.Stop();$timer.Dispose()
+ if($script:child){$script:child.Dispose()}
+ if($script:vendor){$script:vendor.Dispose()}
+ if(Test-Path $script:statefile){Remove-Item $script:statefile -Force -ErrorAction SilentlyContinue}
+ $form.Dispose()
+}
+){return $false}
+ $newVersion=[version]$Matches[1]
+ if($currentTag -ceq 'Not installed'){return $true}
+ if($currentTag -cnotmatch '^([0-9]+\.[0-9]+\.[0-9]+)
+ $busy=($null -ne $script:child -or $null -ne $script:vendor)
+ $state=[string]$script:recoveryStatus
+ $ready=($state -ceq 'Ready')
+ $choice.Enabled=-not $busy
+ $navHome.Enabled=($ready -and -not $busy)
+ $navUpdates.Enabled=($ready -and -not $busy)
+ $navDependencies.Enabled=-not $busy
+ $navSettings.Enabled=-not $busy
+ $navAbout.Enabled=-not $busy
+ $navDrivers.Enabled=-not $busy
+ $languageChoice.Enabled=-not $busy
+ $settingsQuick.Enabled=-not $busy
+ $windowsQuick.Enabled=-not $busy
+ $depsInstallQuick.Enabled=-not $busy
+ $driverQuick.Enabled=-not $busy
+ $driverScanQuick.Enabled=-not $busy
+ $stableRadio.Enabled=-not $busy
+ $developmentRadio.Enabled=-not $busy
+ $check.Enabled=($ready -and -not $busy)
+ $install.Enabled=($ready -and -not $busy)
+ $launch.Enabled=($ready -and -not $busy)
+ $refresh.Enabled=-not $busy
+ $versionsButton.Enabled=-not $busy
+ $rollback.Enabled=($ready -and -not $busy)
+ $repair.Enabled=($state -ceq 'Repair rollback' -and -not $busy)
+ $repairInstall.Enabled=($state -ceq 'Repair install' -and -not $busy)
+ foreach($vendorButton in @($dot,$win,$vc)){
+  $vendorButton.Enabled=-not $busy
+ }
+}
+function Get-VendorExitError([int]$exitCode){
+ if($exitCode -eq 0){return ''}
+ return ('Microsoft dependency installer failed or was cancelled (exit code '+
+  $exitCode+'). Use Recheck deps before retrying.')
+}
+function Begin-Action([string]$action){
+ if($script:child -or $script:vendor){return}
+ if($action -in @('Install','Rollback','Check','Launch') -and
+    $script:recoveryStatus -cne 'Ready'){return}
+ if($action -eq 'RepairInstall'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmRepairInstall'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'Repair'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmRepair'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'Rollback'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmRollback'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'Install'){
+  if([Windows.Forms.MessageBox]::Show(
+   (Translate 'confirmInstall'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ $downloadPercent.Text=''
+ if(Test-Path $script:statefile){Remove-Item $script:statefile -Force}
+ $script:recoveryStatus='Not checked'
+ $script:lastRecovery='Checking'
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ Update-ActionAvailability
+ $args='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+$PSCommandPath+
+  '" -Mode '+$action+' -Channel '+$choice.SelectedItem.ToString()+
+  ' -StateFile "'+$script:statefile+'"'
+ try{
+  $script:child=Start-Process -FilePath $powershell -ArgumentList $args -WindowStyle Hidden -PassThru
+  $script:pendingAction=$action
+  $bar.Style=[Windows.Forms.ProgressBarStyle]::Marquee;$bar.MarqueeAnimationSpeed=25
+  Update-ActionAvailability
+  $status.Text='Working...'
+ }catch{$script:pendingAction='';$status.Text='Unable to launch updater helper.'}
+}
+$check.Add_Click({Begin-Action 'Check'})
+$refresh.Add_Click({Begin-Action 'Probe'})
+$versionsButton.Add_Click({Begin-Action 'Versions'})
+$install.Add_Click({Begin-Action 'Install'})
+$rollback.Add_Click({Begin-Action 'Rollback'})
+$repair.Add_Click({Begin-Action 'Repair'})
+$repairInstall.Add_Click({Begin-Action 'RepairInstall'})
+$launch.Add_Click({Begin-Action 'Launch'})
+function Start-MicrosoftComponent([string]$which) {
+ if($script:child -or $script:vendor){return}
+ if($which -cnotin @('DotNet','WinApp','VC')){return}
+ if([Windows.Forms.MessageBox]::Show($form,
+  (Translate 'confirmVendor')+' '+$which,
+  (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+  [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
+ $args='-NoProfile -ExecutionPolicy Bypass -File "'+$manager+'" -Mode Install -Component '+
+  $which+' -LiteDirectory "'+$PSScriptRoot+'"'
+ try {
+  $script:vendor=Start-Process -FilePath $powershell -ArgumentList $args -PassThru
+  $status.Text='Microsoft installer opened; follow its prompts.'
+  $bar.MarqueeAnimationSpeed=25
+  Update-ActionAvailability
+ }catch{
+  $status.Text='Unable to start Microsoft dependency installer.'
+  Update-ActionAvailability
+ }
+}
+foreach($b in @($dot,$win,$vc)){
+ $b.Add_Click({Start-MicrosoftComponent ([string]$this.Tag)})
+}
+# Full prerequisite controls are reachable via a real dialog.
+function Show-MicrosoftComponents {
+ if($script:child -or $script:vendor){return}
+ $dlg=New-Object Windows.Forms.Form
+ $dlg.Text=Translate 'componentsTitle'
+ $dlg.ClientSize=[Drawing.Size]::new(430,253)
+ $dlg.StartPosition=[Windows.Forms.FormStartPosition]::CenterParent
+ $dlg.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedDialog
+ $dlg.MaximizeBox=$false
+ $dlg.BackColor=[Drawing.Color]::FromArgb(10,31,52)
+ $dlg.ForeColor=[Drawing.Color]::White
+ $dlg.Font=[Drawing.Font]::new('Segoe UI',10)
+ $intro=New-Object Windows.Forms.Label
+ $intro.Text=Translate 'componentsNotice'
+ $intro.SetBounds(17,16,394,40)
+ $dlg.Controls.Add($intro)
+ foreach($entry in @(
+  @{Key='DotNet';Caption='.NET 10 Desktop x86';Y=64},
+  @{Key='WinApp';Caption='Windows App Runtime x86';Y=119},
+  @{Key='VC';Caption='Microsoft VC++ x86';Y=174}
+ )){
+  $b=New-Object Windows.Forms.Button
+  $b.Text=$entry.Caption
+  $b.Tag=$entry.Key
+  $b.SetBounds(17,[int]$entry.Y,394,42)
+  $b.BackColor=[Drawing.Color]::FromArgb(23,77,118)
+  $b.ForeColor=[Drawing.Color]::White
+  $b.FlatStyle=[Windows.Forms.FlatStyle]::Flat
+  $dlg.Controls.Add($b)
+  $b.Add_Click({
+   $component=[string]$this.Tag
+   $dlg.Close()
+   Start-MicrosoftComponent $component
+  })
+ }
+ try{[void]$dlg.ShowDialog($form)}finally{$dlg.Dispose()}
+}
+
+$choice.Add_SelectedIndexChanged({
+ if($null -ne $choice.SelectedItem){
+  $null=Save-ChannelPreference ([string]$choice.SelectedItem)
+ }
+ if(-not $script:child -and -not $script:vendor){
+  $script:recoveryStatus='Not checked'
+  $script:lastRecovery='Checking'
+  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+  Update-ActionAvailability
+  Begin-Action 'Probe'
+ }
+})
+function Apply-WorkerSnapshot($snapshot) {
+ # Worker state is written atomically but may be read while it is still
+ # running. Do not authorize further actions from a partial progress update.
+ if($null -eq $snapshot){return $false}
+ $script:lastCurrent=[string]$snapshot.Current
+ $script:lastAvailable=[string]$snapshot.Available
+ $installed.Text=(Translate 'installed')+': '+$script:lastCurrent
+ $available.Text=(Translate 'available')+': '+$script:lastAvailable
+ $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
+  '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
+ $status.Text=[string]$snapshot.Detail
+ $downloadPercent.Text=''
+ # The ZIP byte count is read from the actual download, never fabricated.
+ if($script:child -and [string]$snapshot.DownloadId -cmatch '^[0-9a-f]{32}$' -and
+    [long]$snapshot.DownloadTotal -gt 0){
+  $selected=[string]$choice.SelectedItem
+  if($selected -cin @('Development','Stable')){
+   $file=Join-Path (Join-Path (Join-Path $base $selected) ('download-'+$snapshot.DownloadId)) $zipName
+   if(Test-Path -LiteralPath $file -PathType Leaf){
+    $bytes=(Get-Item -LiteralPath $file).Length
+    $percent=[int][Math]::Min(99,[Math]::Max(0,[Math]::Floor(
+     100.0*[double]$bytes/[double]$snapshot.DownloadTotal)))
+    $bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+    $bar.Value=$percent
+    $downloadPercent.Text=([string]$percent+'%')
+   }
+  }
+ }
+ $finished=($snapshot.PSObject.Properties['Done'] -and
+            $snapshot.Done -is [bool] -and $snapshot.Done -eq $true)
+ $valid=($snapshot.PSObject.Properties['Recovery'] -and
+         [string]$snapshot.Recovery -cin @('Ready','Repair install',
+                                           'Repair rollback','Inspect'))
+ if($finished -and $valid){
+  $script:recoveryStatus=[string]$snapshot.Recovery
+  $script:serviceIsReady=($script:recoveryStatus -ceq 'Ready' -and
+    $script:lastCurrent -cnotin @('Not installed','Not checked','Unverified installation') -and
+    [string]$snapshot.DotNet -ceq 'Installed' -and
+    [string]$snapshot.WinApp -ceq 'Installed' -and
+    [string]$snapshot.VC -ceq 'Installed')
+  $serviceHeading.Text='DVINHOLM  ·  '+(Translate $(if($script:serviceIsReady){'cockpitReady'}else{'cockpitUnchecked'}))
+  $script:lastRecovery=$script:recoveryStatus
+  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+  Update-ActionAvailability
+  return $true
+ }
+ $script:recoveryStatus='Not checked'
+ $script:lastRecovery='Checking'
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ Update-ActionAvailability
+ return $false
+}
+function Poll-WorkerState {
+ $complete=$false
+ if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
+  try{
+   $snapshot=Get-Content -LiteralPath $script:statefile -Raw | ConvertFrom-Json
+   $complete=Apply-WorkerSnapshot $snapshot
+  }catch{}
+ }
+ if($script:child -and $script:child.HasExited){
+  $reportText=''
+  if($complete -and $null -ne $snapshot -and
+     $snapshot.PSObject.Properties['DependencyReport']){
+   $reportText=[string]$snapshot.DependencyReport
+  }
+  # Close only when launch worker completed successfully AND the dependency
+  # helper positively reported creation of the main application process.
+  $finishedAction=$script:pendingAction
+  $workerExit=[int]$script:child.ExitCode
+  $script:pendingAction=''
+  $launchSucceeded=($finishedAction -ceq 'Launch' -and $workerExit -eq 0 -and
+    $complete -and $null -ne $snapshot -and
+    $snapshot.Done -eq $true -and $snapshot.Failed -eq $false)
+  $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+  if(-not $complete){
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text='Updater helper stopped without a complete status. Use Recheck deps.'
+  }
+  Update-ActionAvailability
+  if($launchSucceeded){
+   $timer.Stop()
+   $form.Close()
+   return
+  }
+  if($reportText){
+   [void][Windows.Forms.MessageBox]::Show($form,$reportText,
+    'Dvinholm | Installed and available runtimes',
+    [Windows.Forms.MessageBoxButtons]::OK,
+    [Windows.Forms.MessageBoxIcon]::Information)
+  }
+ }
+ if($script:vendor -and $script:vendor.HasExited){
+  $exitCode=[int]$script:vendor.ExitCode
+  $fromDriverInstaller=($script:driverInstallerPending -eq $true)
+  $script:driverInstallerPending=$false
+  $downloadPercent.Text=''
+  $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+  # A completed installer must not have its outcome overwritten by an old
+  # updater worker snapshot on the next 500ms timer tick.
+  if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
+   Remove-Item -LiteralPath $script:statefile -Force -ErrorAction SilentlyContinue
+  }
+  if($fromDriverInstaller){
+   # A vendor setup is independent of .NET/WinApp prerequisites. Do not
+   # report driver success by running the generic updater dependency probe.
+   # Rescan only Windows PnP/registry. Never load the adapter or request CAN.
+   if($exitCode -eq 0){
+    try{
+     if($script:driverRescan){
+      & $script:driverRescan
+      $status.Text='J2534 installer finished. Driver inventory refreshed; hardware untested.'
+     }else{
+      $status.Text='Vendor installer finished. Open Drivers and select Check to verify.'
+     }
+    }catch{
+     $status.Text='Vendor setup finished; driver inventory could not be refreshed.'
+    }
+   }elseif($exitCode -in @(3010,1641)){
+    # MSI success requiring reboot is not failure, but the adapter is
+    # not ready until Windows restarts. Do not rescan as a success.
+    $status.Text='Vendor setup finished. Restart Windows before using the driver (exit '+$exitCode+').'
+    if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
+     $script:driverResultControl.Text='Windows restart required. Recheck adapter drivers after restarting Windows.'
+    }
+   }else{
+    $status.Text='Vendor driver installer failed or was cancelled (exit '+$exitCode+').'
+    if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
+     $script:driverResultControl.Text='Vendor driver setup did not complete. Check the vendor installer log.'
+    }
+   }
+   Update-ActionAvailability
+  }elseif($exitCode -eq 0){
+   # Only plain success permits automatic local dependency rescan.
+   Begin-Action 'Probe'
+  }elseif($exitCode -in @(3010,1641)){
+   # Microsoft dependency helper preserved a success-with-restart code.
+   # No automatic re-probe or ready status until Windows is restarted.
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text='Microsoft runtime installed. Restart Windows before rechecking prerequisites (exit '+$exitCode+').'
+   Update-ActionAvailability
+  }else{
+   # Preserve failure without launching an unrelated dependency probe.
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text=Get-VendorExitError $exitCode
+   Update-ActionAvailability
+  }
+ }
+}
+$timer=New-Object Windows.Forms.Timer;$timer.Interval=500
+$timer.Add_Tick({Poll-WorkerState})
+$timer.Start()
+Update-ActionAvailability
+if($Mode -eq 'UiSmokeTest'){
+ # Instantiate the real Windows PowerShell 5.1 WinForms GUI, but do not
+ # display a modal dialog, contact GitHub, launch installers or start Dvinholm.
+ $checks=0
+ try{
+  if($null -eq $form -or
+     $form -isnot [Windows.Forms.Form] -or
+     $choice.Items.Count -ne 2 -or
+     $choice.Items[0] -cne 'Development' -or
+     $choice.Items[1] -cne 'Stable' -or
+     -not $form.Controls.Contains($recovery)){
+   throw 'Standalone WinForms controls were not constructed.'
+  }
+  $checks++
+  # Default: nothing runs until the first local inventory has been checked.
+  if($script:recoveryStatus -cne 'Not checked' -or
+     $install.Enabled -or $check.Enabled -or $launch.Enabled -or
+     $rollback.Enabled -or $repair.Enabled -or $repairInstall.Enabled -or
+     -not $refresh.Enabled){throw 'Startup actions were not locked.'}
+  $checks++
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if(-not $install.Enabled -or -not $check.Enabled -or
+     -not $launch.Enabled -or -not $rollback.Enabled -or
+     $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Ready-state button policy failed.'
+  }
+  $checks++
+  $script:recoveryStatus='Repair install';Update-ActionAvailability
+  if(-not $repairInstall.Enabled -or $repair.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled){throw 'Install recovery was not isolated.'}
+  $checks++
+  $script:recoveryStatus='Repair rollback';Update-ActionAvailability
+  if(-not $repair.Enabled -or $repairInstall.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled){throw 'Rollback recovery was not isolated.'}
+  $checks++
+  $script:recoveryStatus='Inspect';Update-ActionAvailability
+  if($repair.Enabled -or $repairInstall.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled -or -not $refresh.Enabled){
+   throw 'Ambiguous recovery state was not fail-closed.'
+  }
+  $checks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if($choice.Enabled -or $refresh.Enabled -or $install.Enabled -or
+     $rollback.Enabled -or $check.Enabled -or $launch.Enabled -or
+     $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Busy-state buttons were not locked.'
+  }
+  $checks++
+  if($checks -ne 7){throw 'Wrong Windows WinForms smoke check count.'}
+  Write-Host 'Updater Banner 7/7 Windows PowerShell 5.1 WinForms smoke checks passed.'
+  $snapshotChecks=0
+  $script:child=$null
+  $completed=[pscustomobject]@{
+   Done=$true;Failed=$false;Recovery='Ready';Current='ci-4118'
+   Available='ci-4118';DotNet='Installed';WinApp='Installed'
+   VC='Installed';Detail='Completed'
+  }
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     -not $install.Enabled -or -not $launch.Enabled){
+   throw 'Completed worker snapshot failed to re-enable Ready actions.'
+  }
+  $snapshotChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     $install.Enabled -or $launch.Enabled -or $refresh.Enabled){
+   throw 'Completed snapshot unlocked actions while helper was still running.'
+  }
+  $snapshotChecks++
+  $script:child=$null
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     -not $install.Enabled -or -not $check.Enabled){
+   throw 'Late snapshot after worker completion did not unlock the UI.'
+  }
+  $snapshotChecks++
+  $incomplete=$completed | Select-Object *
+  $incomplete.Done=$false
+  if((Apply-WorkerSnapshot $incomplete) -or
+     $install.Enabled -or $launch.Enabled -or
+     $script:recoveryStatus -cne 'Not checked'){
+   throw 'Incomplete worker progress unlocked the UI.'
+  }
+  $snapshotChecks++
+  $invalid=$completed | Select-Object *
+  $invalid.Recovery='Untrusted'
+  if((Apply-WorkerSnapshot $invalid) -or
+     $install.Enabled -or $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Untrusted worker recovery field was accepted.'
+  }
+  $snapshotChecks++
+  $repairSnapshot=$completed | Select-Object *
+  $repairSnapshot.Recovery='Repair install'
+  if(-not (Apply-WorkerSnapshot $repairSnapshot) -or
+     -not $repairInstall.Enabled -or $install.Enabled -or $repair.Enabled){
+   throw 'Completed recovery snapshot did not activate the matching repair.'
+  }
+  $snapshotChecks++
+  if($snapshotChecks -ne 6){throw 'Wrong worker state synchronization test count.'}
+  Write-Host 'Updater Banner 6/6 WinForms worker-state synchronization checks passed.'
+  $vendorChecks=0
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons were disabled when no worker was running.'
+  }
+  $vendorChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($dot.Enabled -or $win.Enabled -or $vc.Enabled){
+   throw 'Microsoft installers were not locked during updater work.'
+  }
+  $vendorChecks++
+  $script:child=$null;Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons did not unlock after updater completion.'
+  }
+  $vendorChecks++
+  $script:vendor=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($dot.Enabled -or $win.Enabled -or $vc.Enabled -or
+     $choice.Enabled -or $refresh.Enabled -or $launch.Enabled -or
+     $install.Enabled){
+   throw 'Parallel Microsoft installer activity was not locked.'
+  }
+  $vendorChecks++
+  $script:vendor=$null;Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons stayed disabled after worker completion.'
+  }
+  $vendorChecks++
+  if((Get-VendorExitError 0) -cne ''){
+   throw 'Successful Microsoft installer completion reported a failure.'
+  }
+  $vendorChecks++
+  if((Get-VendorExitError 1) -cnotmatch 'failed or was cancelled.*exit code 1'){
+   throw 'Failed Microsoft installer completion was not explained.'
+  }
+  $vendorChecks++
+  if($vendorChecks -ne 7){throw 'Wrong Microsoft installer lifecycle test count.'}
+  Write-Host 'Updater Banner 7/7 WinForms vendor worker lifecycle checks passed.'
+
+  # Eight Windows-only GUI contracts for the approved Service Cockpit.
+  # No modal window, network request, installer, or ECU access.
+  $auroraChecks=0
+  if($script:auroraScale -gt 0.80 -or $script:auroraScale -lt 0.65 -or
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552){
+   throw 'Service Cockpit is larger than the compact display envelope.'
+  }
+  $auroraChecks++
+  if($hero.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
+     $hero.Height -ne [int][Math]::Round(184*$script:auroraScale) -or
+     $brandTitle.Text -cne 'DVINHOLM'){
+   throw 'Service Cockpit upper banner is missing or not correctly scaled.'
+  }
+  $auroraChecks++
+  if($choice.Parent -ne $form -or
+     $null -eq $script:serviceCardLeft -or
+     $sidebar.Controls.Count -lt 6 -or $stableRadio.Parent -ne $form){
+   throw 'Service Cockpit root selection or backing layout is missing.'
+  }
+  $auroraChecks++
+  if($script:serviceCardUpdates -eq $null -or
+     $script:serviceCardWindows -eq $null -or
+     $script:serviceCardDrivers -eq $null -or
+     $script:serviceCardUpdates.Top -ge $script:serviceCardWindows.Top -or
+     $script:serviceCardWindows.Top -ge $script:serviceCardDrivers.Top){
+   throw 'Service Cockpit three operation cards are missing or out of order.'
+  }
+  $auroraChecks++
+  $contentWidth=[int][Math]::Round(1180*$script:auroraScale)
+  $contentHeight=[int][Math]::Round(690*$script:auroraScale)
+  if($install.Right -gt $contentWidth -or
+     $versionsButton.Right -gt $contentWidth -or
+     $driverQuick.Right -gt $contentWidth -or
+     $script:serviceCardDrivers.Bottom -gt $contentHeight -or
+     $bar.Width -lt [int][Math]::Floor(650*$script:auroraScale)){
+   throw 'Service Cockpit controls extend past the display boundary.'
+  }
+  $auroraChecks++
+  $working=[Windows.Forms.Screen]::FromControl($form).WorkingArea
+  if($form.Width -gt $working.Width-16 -or $form.Height -gt $working.Height-16){
+   throw 'Service Cockpit extends beyond the Windows working area.'
+  }
+  $auroraChecks++
+  $currentLanguage=$script:launcherLanguage
+  $script:launcherLanguage='EN';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Windows requirements' -or
+     $driverQuick.Text -cne 'Open drivers'){throw 'English localization did not apply.'}
+  $script:launcherLanguage='RU';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Требования Windows' -or
+     $driverQuick.Text -cne 'Открыть драйверы'){throw 'Russian localization did not apply.'}
+  $script:launcherLanguage=$currentLanguage;Apply-LauncherLanguage
+  $auroraChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($versionsButton.Enabled -or $windowsQuick.Enabled -or
+     $driverQuick.Enabled -or $driverScanQuick.Enabled -or
+     $settingsQuick.Enabled -or $languageChoice.Enabled){
+   throw 'Service Cockpit actions were not locked during updater operation.'
+  }
+  $script:child=$null
+  Update-ActionAvailability
+  if(-not $windowsQuick.Enabled -or -not $driverQuick.Enabled){
+   throw 'Service Cockpit actions did not recover after updater operation.'
+  }
+  $auroraChecks++
+  if($auroraChecks -ne 8){throw 'Wrong Service Cockpit smoke check count.'}
+  Write-Host 'Service Cockpit 8/8 Windows WinForms layout and action smoke checks passed.'
+  Write-Host 'Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.'
+
+ }finally{
+  $script:child=$null
+  $timer.Stop();$timer.Dispose();$form.Dispose()
+ }
+ exit 0
+}
+$startupChannel=$Channel
+if(-not $PSBoundParameters.ContainsKey('Channel')){
+ $savedChannel=Read-ChannelPreference
+ if($null -ne $savedChannel){$startupChannel=$savedChannel}
+}
+$form.Add_Shown({$choice.SelectedIndex=if($startupChannel -eq 'Stable'){1}else{0}})
+try{[void]$form.ShowDialog()}
+finally{
+ $timer.Stop();$timer.Dispose()
+ if($script:child){$script:child.Dispose()}
+ if($script:vendor){$script:vendor.Dispose()}
+ if(Test-Path $script:statefile){Remove-Item $script:statefile -Force -ErrorAction SilentlyContinue}
+ $form.Dispose()
+}
+){return $false}
+ return ($newVersion -gt [version]$Matches[1])
+}
 function Update-ActionAvailability {
  $busy=($null -ne $script:child -or $null -ne $script:vendor)
  $state=[string]$script:recoveryStatus
