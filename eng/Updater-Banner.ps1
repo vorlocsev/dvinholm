@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 Standalone Windows 11 updater. Only inbox PowerShell 5.1 and .NET Framework
 WinForms are needed; .NET 10, Windows App SDK and VC x86 are NOT needed to run.
@@ -18,6 +18,7 @@ $sumsName='SHA256SUMS.txt'
 $manager=Join-Path $PSScriptRoot 'Manage-Lite-Dependencies.ps1'
 $base=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Dvinholm\UpdaterBanner'
 $preferenceFile=Join-Path $base 'channel-preference.txt'
+$languageFile=Join-Path $base 'language-preference.txt'
 # Dvinholm.exe follows the same remembered channel as Launcher.exe.
 if($Mode -eq 'Launch' -and -not $PSBoundParameters.ContainsKey('Channel')){
  try {
@@ -196,6 +197,95 @@ function Save-ChannelPreference([string]$selected) {
    Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue
   }
  }
+}
+# RU/EN is a per-user preference, independent of the installed channel.
+# Read small regular files only; never follow an attacker-controlled reparse point.
+function Read-LauncherLanguage {
+ try {
+  if(-not(Test-Path -LiteralPath $languageFile -PathType Leaf)){return 'RU'}
+  $item=Get-Item -LiteralPath $languageFile -Force
+  if($item.Length -gt 8 -or
+     ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){return 'RU'}
+  $value=[IO.File]::ReadAllText($languageFile,[Text.Encoding]::ASCII).Trim()
+  if($value -cin @('RU','EN')){return $value}
+ }catch{}
+ return 'RU'
+}
+function Save-LauncherLanguage([string]$value) {
+ if($value -cnotin @('RU','EN')){return $false}
+ $tmp=$null
+ try {
+  Assert-ManagedFolder (Split-Path -Parent $base)
+  Assert-ManagedFolder $base
+  [IO.Directory]::CreateDirectory($base)|Out-Null
+  if(Test-Path -LiteralPath $languageFile) {
+   $item=Get-Item -LiteralPath $languageFile -Force
+   if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){return $false}
+  }
+  $tmp=Join-Path $base ('language-'+[guid]::NewGuid().ToString('N')+'.tmp')
+  [IO.File]::WriteAllText($tmp,$value,[Text.Encoding]::ASCII)
+  Move-Item -LiteralPath $tmp -Destination $languageFile -Force
+  return $true
+ }catch{return $false}
+ finally{
+  if($tmp -and (Test-Path -LiteralPath $tmp)){
+   Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+  }
+ }
+}
+$script:launcherLanguage=Read-LauncherLanguage
+function Translate([string]$key) {
+ $labels=@{
+  RU=@{
+   home='▶  Запустить Dvinholm';updates='↻  Проверить обновления'
+   dependencies='◈  Проверить компоненты';settings='⚙  Настройки'
+   about='ⓘ  О программе';drivers='▣  Драйверы адаптеров'
+   channel='КАНАЛ ОБНОВЛЕНИЙ';progress='ЗАГРУЗКА И УСТАНОВКА'
+   prereqs='КОМПОНЕНТЫ WINDOWS';stable='Stable · официальный релиз'
+   dev='Development · сборки CI';installed='Установлено';available='Доступно'
+   recovery='Восстановление';check='Проверить обновления'
+   install='Скачать / установить';launch='Запустить Dvinholm'
+   refresh='Перепроверить';versions='Проверить версии компонентов'
+   dot='Установить .NET x86';win='Установить WinApp'
+   vc='Установить VC++ x86';rollback='Предыдущая версия'
+   repair='Исправить откат';repairInstall='Исправить установку'
+   aboutMessage='Dvinholm Launcher · Windows x86. Stable и Development устанавливаются отдельно. Загрузки проверяются SHA-256. Поддерживается откат, проверка компонентов Windows и драйверов J2534. Физический адаптер здесь не тестируется.'
+   settingsTitle='Настройки лаунчера';language='Язык';channelSetting='Канал обновлений'
+   save='Применить';cancel='Отмена'
+   confirmInstall='Скачать архив выбранной версии, проверить SHA-256 и установить в отдельный каталог канала?'
+   confirmRollback='Восстановить предыдущую сборку выбранного канала без загрузки? Закройте Dvinholm.'
+   confirmRepair='Восстановить прерванный откат? Закройте Dvinholm.'
+   confirmRepairInstall='Восстановить прерванную установку? Закройте Dvinholm.'
+   confirmVendor='Скачать и запустить официальный установщик Microsoft? Возможен запрос UAC.'
+   confirmTitle='Подтверждение'
+  }
+  EN=@{
+   home='▶  Start Dvinholm';updates='↻  Check updates'
+   dependencies='◈  Check dependencies';settings='⚙  Settings'
+   about='ⓘ  About';drivers='▣  Adapter drivers'
+   channel='UPDATE CHANNEL';progress='DOWNLOAD AND INSTALL'
+   prereqs='WINDOWS PREREQUISITES';stable='Stable · official release'
+   dev='Development · latest CI';installed='Installed';available='Available'
+   recovery='Recovery';check='Check updates'
+   install='Download / Install';launch='Start Dvinholm'
+   refresh='Recheck dependencies';versions='Check runtime versions'
+   dot='Install .NET x86';win='Install WinApp'
+   vc='Install VC++ x86';rollback='Restore previous'
+   repair='Repair rollback';repairInstall='Repair install'
+   aboutMessage='Dvinholm Launcher · Windows x86. Stable and Development use isolated installs. Downloads are SHA-256 verified. Offline rollback, Windows prerequisites and J2534 driver checks are available. Physical hardware is not tested.'
+   settingsTitle='Launcher settings';language='Language';channelSetting='Update channel'
+   save='Apply';cancel='Cancel'
+   confirmInstall='Download the selected application ZIP, verify SHA-256 and install it into an isolated channel?'
+   confirmRollback='Restore the previous build in the selected channel without downloading? Close Dvinholm first.'
+   confirmRepair='Repair an interrupted rollback? Close Dvinholm first.'
+   confirmRepairInstall='Repair an interrupted installation? Close Dvinholm first.'
+   confirmVendor='Download and run the official Microsoft installer? UAC may be requested.'
+   confirmTitle='Confirm action'
+  }
+ }
+ $value=$labels[$script:launcherLanguage][$key]
+ if($null -eq $value){return $key}
+ return [string]$value
 }
 function Read-ManagedVersion([string]$folder) {
  Assert-ManagedFolder $base
@@ -1590,7 +1680,93 @@ $versionsButton.BringToFront()
 # including the Windows taskbar, before showing the fixed-size window.
 Set-AuroraCompactLayout
 
+# Localize labels, shortcuts and all settings controls without changing any
+# Stable/Development worker tokens or validation rules.
+$script:lastCurrent='Not checked'
+$script:lastAvailable='Not checked'
+$script:lastRecovery='Not checked'
+function Apply-LauncherLanguage {
+ $navHome.Text=Translate 'home'
+ $navUpdates.Text=Translate 'updates'
+ $navDependencies.Text=Translate 'dependencies'
+ $navSettings.Text=Translate 'settings'
+ $navAbout.Text=Translate 'about'
+ $navDrivers.Text=Translate 'drivers'
+ $channelTitle.Text=Translate 'channel'
+ $progressTitle.Text=Translate 'progress'
+ $dependenciesTitle.Text=Translate 'prereqs'
+ $stableRadio.Text=Translate 'stable'
+ $developmentRadio.Text=Translate 'dev'
+ $installed.Text=(Translate 'installed')+': '+$script:lastCurrent
+ $available.Text=(Translate 'available')+': '+$script:lastAvailable
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ $check.Text=Translate 'check'
+ $install.Text=Translate 'install'
+ $launch.Text=Translate 'launch'
+ $refresh.Text=Translate 'refresh'
+ $versionsButton.Text=Translate 'versions'
+ $dot.Text=Translate 'dot'
+ $win.Text=Translate 'win'
+ $vc.Text=Translate 'vc'
+ $rollback.Text=Translate 'rollback'
+ $repair.Text=Translate 'repair'
+ $repairInstall.Text=Translate 'repairInstall'
+ $form.Text='Dvinholm | '+$(if($script:launcherLanguage -eq 'RU'){'Лаунчер'}else{'Launcher'})
+}
+function Show-LauncherSettings {
+ if($script:child -or $script:vendor){return}
+ $dlg=New-Object Windows.Forms.Form
+ $dlg.Text=Translate 'settingsTitle'
+ $dlg.ClientSize=[Drawing.Size]::new(375,195)
+ $dlg.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedDialog
+ $dlg.MaximizeBox=$false;$dlg.MinimizeBox=$false
+ $dlg.StartPosition=[Windows.Forms.FormStartPosition]::CenterParent
+ $dlg.Font=[Drawing.Font]::new('Segoe UI',10)
+ $dlg.BackColor=[Drawing.Color]::FromArgb(12,30,49)
+ $dlg.ForeColor=[Drawing.Color]::White
+ $heading=New-Object Windows.Forms.Label
+ $heading.Text=Translate 'channelSetting'
+ $heading.SetBounds(18,18,330,22);$dlg.Controls.Add($heading)
+ $channelSelect=New-Object Windows.Forms.ComboBox
+ $channelSelect.DropDownStyle='DropDownList'
+ [void]$channelSelect.Items.Add('Development')
+ [void]$channelSelect.Items.Add('Stable')
+ $channelSelect.SelectedIndex=$choice.SelectedIndex
+ $channelSelect.SetBounds(18,43,335,28);$dlg.Controls.Add($channelSelect)
+ $languageHeading=New-Object Windows.Forms.Label
+ $languageHeading.Text=Translate 'language'
+ $languageHeading.SetBounds(18,81,330,22);$dlg.Controls.Add($languageHeading)
+ $languageSelect=New-Object Windows.Forms.ComboBox
+ $languageSelect.DropDownStyle='DropDownList'
+ [void]$languageSelect.Items.Add('Русский')
+ [void]$languageSelect.Items.Add('English')
+ $languageSelect.SelectedIndex=$languageChoice.SelectedIndex
+ $languageSelect.SetBounds(18,106,335,28);$dlg.Controls.Add($languageSelect)
+ $save=New-Object Windows.Forms.Button
+ $save.Text=Translate 'save'
+ $save.SetBounds(174,151,88,30);$dlg.Controls.Add($save)
+ $cancel=New-Object Windows.Forms.Button
+ $cancel.Text=Translate 'cancel'
+ $cancel.SetBounds(269,151,84,30);$dlg.Controls.Add($cancel)
+ $save.Add_Click({
+  if($channelSelect.SelectedIndex -ge 0){$choice.SelectedIndex=$channelSelect.SelectedIndex}
+  if($languageSelect.SelectedIndex -ge 0){$languageChoice.SelectedIndex=$languageSelect.SelectedIndex}
+  $dlg.Close()
+ })
+ $cancel.Add_Click({$dlg.Close()})
+ try{[void]$dlg.ShowDialog($form)}finally{$dlg.Dispose()}
+}
+$languageChoice.Add_SelectedIndexChanged({
+ if($languageChoice.SelectedIndex -lt 0){return}
+ $script:launcherLanguage=if($languageChoice.SelectedIndex -eq 0){'RU'}else{'EN'}
+ $null=Save-LauncherLanguage $script:launcherLanguage
+ Apply-LauncherLanguage
+})
+$languageChoice.SelectedIndex=if($script:launcherLanguage -eq 'EN'){1}else{0}
+Apply-LauncherLanguage
+
 $script:child=$null;$script:vendor=$null
+$script:pendingAction=''
 $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid]::NewGuid().ToString('N')+'.json')
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $script:recoveryStatus='Not checked'
@@ -1599,6 +1775,13 @@ function Update-ActionAvailability {
  $state=[string]$script:recoveryStatus
  $ready=($state -ceq 'Ready')
  $choice.Enabled=-not $busy
+ $navHome.Enabled=($ready -and -not $busy)
+ $navUpdates.Enabled=($ready -and -not $busy)
+ $navDependencies.Enabled=-not $busy
+ $navSettings.Enabled=-not $busy
+ $navAbout.Enabled=-not $busy
+ $navDrivers.Enabled=-not $busy
+ $languageChoice.Enabled=-not $busy
  $stableRadio.Enabled=-not $busy
  $developmentRadio.Enabled=-not $busy
  $check.Enabled=($ready -and -not $busy)
@@ -1624,42 +1807,44 @@ function Begin-Action([string]$action){
     $script:recoveryStatus -cne 'Ready'){return}
  if($action -eq 'RepairInstall'){
   if([Windows.Forms.MessageBox]::Show(
-   'Attempt offline recovery of an interrupted application installation for the selected channel? Only a verified transaction journal and unambiguous folders will be accepted. Existing staged files are retained. Close Dvinholm first.',
-   'Confirm install recovery',[Windows.Forms.MessageBoxButtons]::YesNo,
+   (Translate 'confirmRepairInstall'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  if($action -eq 'Repair'){
   if([Windows.Forms.MessageBox]::Show(
-   'Attempt offline repair of an interrupted rollback for the selected channel? The original current build will be restored only when the on-disk state is unambiguous. Close Dvinholm first.',
-   'Confirm rollback recovery',[Windows.Forms.MessageBoxButtons]::YesNo,
+   (Translate 'confirmRepair'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  if($action -eq 'Rollback'){
   if([Windows.Forms.MessageBox]::Show(
-   'Restore the previous build of the selected channel, without downloading anything? The currently installed build becomes the backup. Close Dvinholm first.',
-   'Confirm rollback',[Windows.Forms.MessageBoxButtons]::YesNo,
+   (Translate 'confirmRollback'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  if($action -eq 'Install'){
   if([Windows.Forms.MessageBox]::Show(
-   'Download the selected application ZIP, verify checksums and install into an isolated channel? Existing manual installations will not be changed.',
-   'Confirm update',[Windows.Forms.MessageBoxButtons]::YesNo,
+   (Translate 'confirmInstall'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  $downloadPercent.Text=''
  if(Test-Path $script:statefile){Remove-Item $script:statefile -Force}
  $script:recoveryStatus='Not checked'
- $recovery.Text='Recovery: checking local state...'
+ $script:lastRecovery='Checking'
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
  Update-ActionAvailability
  $args='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+$PSCommandPath+
   '" -Mode '+$action+' -Channel '+$choice.SelectedItem.ToString()+
   ' -StateFile "'+$script:statefile+'"'
  try{
   $script:child=Start-Process -FilePath $powershell -ArgumentList $args -WindowStyle Hidden -PassThru
+  $script:pendingAction=$action
   $bar.Style=[Windows.Forms.ProgressBarStyle]::Marquee;$bar.MarqueeAnimationSpeed=25
   Update-ActionAvailability
   $status.Text='Working...'
- }catch{$status.Text='Unable to launch updater helper.'}
+ }catch{$script:pendingAction='';$status.Text='Unable to launch updater helper.'}
 }
 $check.Add_Click({Begin-Action 'Check'})
 $refresh.Add_Click({Begin-Action 'Probe'})
@@ -1674,8 +1859,8 @@ foreach($b in @($dot,$win,$vc)){
   if($script:child -or $script:vendor){return}
   $which=[string]$this.Tag
   if([Windows.Forms.MessageBox]::Show(
-   'Download and run the official Microsoft '+$which+' installer? It may request administrator approval.',
-   'Confirm dependency installation',[Windows.Forms.MessageBoxButtons]::YesNo,
+   (Translate 'confirmVendor')+' '+$which,
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
   $args='-NoProfile -ExecutionPolicy Bypass -File "'+$manager+'" -Mode Install -Component '+
    $which+' -LiteDirectory "'+$PSScriptRoot+'"'
@@ -1692,7 +1877,8 @@ $choice.Add_SelectedIndexChanged({
  }
  if(-not $script:child -and -not $script:vendor){
   $script:recoveryStatus='Not checked'
-  $recovery.Text='Recovery: checking local state...'
+  $script:lastRecovery='Checking'
+  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
   Update-ActionAvailability
   Begin-Action 'Probe'
  }
@@ -1701,8 +1887,10 @@ function Apply-WorkerSnapshot($snapshot) {
  # Worker state is written atomically but may be read while it is still
  # running. Do not authorize further actions from a partial progress update.
  if($null -eq $snapshot){return $false}
- $installed.Text='Installed: '+[string]$snapshot.Current
- $available.Text='Available: '+[string]$snapshot.Available
+ $script:lastCurrent=[string]$snapshot.Current
+ $script:lastAvailable=[string]$snapshot.Available
+ $installed.Text=(Translate 'installed')+': '+$script:lastCurrent
+ $available.Text=(Translate 'available')+': '+$script:lastAvailable
  $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
   '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
  $status.Text=[string]$snapshot.Detail
@@ -1730,12 +1918,14 @@ function Apply-WorkerSnapshot($snapshot) {
                                            'Repair rollback','Inspect'))
  if($finished -and $valid){
   $script:recoveryStatus=[string]$snapshot.Recovery
-  $recovery.Text='Recovery: '+$script:recoveryStatus
+  $script:lastRecovery=$script:recoveryStatus
+  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
   Update-ActionAvailability
   return $true
  }
  $script:recoveryStatus='Not checked'
- $recovery.Text='Recovery: checking local state...'
+ $script:lastRecovery='Checking'
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
  Update-ActionAvailability
  return $false
 }
@@ -1753,6 +1943,14 @@ function Poll-WorkerState {
      $snapshot.PSObject.Properties['DependencyReport']){
    $reportText=[string]$snapshot.DependencyReport
   }
+  # Close only when launch worker completed successfully AND the dependency
+  # helper positively reported creation of the main application process.
+  $finishedAction=$script:pendingAction
+  $workerExit=[int]$script:child.ExitCode
+  $script:pendingAction=''
+  $launchSucceeded=($finishedAction -ceq 'Launch' -and $workerExit -eq 0 -and
+    $complete -and $null -ne $snapshot -and
+    $snapshot.Done -eq $true -and $snapshot.Failed -eq $false)
   $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
   if(-not $complete){
    $script:recoveryStatus='Not checked'
@@ -1760,6 +1958,11 @@ function Poll-WorkerState {
    $status.Text='Updater helper stopped without a complete status. Use Recheck deps.'
   }
   Update-ActionAvailability
+  if($launchSucceeded){
+   $timer.Stop()
+   $form.Close()
+   return
+  }
   if($reportText){
    [void][Windows.Forms.MessageBox]::Show($form,$reportText,
     'Dvinholm | Installed and available runtimes',
