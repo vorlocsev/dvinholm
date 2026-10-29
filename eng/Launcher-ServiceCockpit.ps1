@@ -142,6 +142,11 @@ $brandSub.Text='DIAGNOSTICS  ·  CEM  ·  CONFIGURATION'
 $brandSub.SetBounds(45,121,775,30)
 $brandSub.Font=[Drawing.Font]::new('Segoe UI',13,[Drawing.FontStyle]::Regular)
 $brandSub.ForeColor=[Drawing.Color]::FromArgb(177,223,243)
+if($script:serviceBackdropIsApproved){
+ # Artwork already contains Dvinholm branding; do not double-print it.
+ $brandTitle.Visible=$false
+ $brandSub.Visible=$false
+}
 if($null -ne $logo){$logo.Visible=$false}
 
 # A real action for every button. Installations remain confirmation-gated.
