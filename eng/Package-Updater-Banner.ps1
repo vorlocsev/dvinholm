@@ -27,6 +27,7 @@ $files=@{
  'Binaries/Manage-Lite-Dependencies.ps1'=(Join-Path $PSScriptRoot 'Manage-Lite-Dependencies.ps1')
  'Binaries/Dvinholm-icon.png'=(Join-Path $root 'assets\dvinholm-icon.png')
  'Binaries/dvinholm-banner.webp'=(Join-Path $root 'assets\dvinholm-banner.webp')
+ 'Binaries/launcher-service-cockpit-banner.jpg'=(Join-Path $root 'assets\launcher-service-cockpit-banner.jpg')
 }
 try{
  foreach($key in $files.Keys){
