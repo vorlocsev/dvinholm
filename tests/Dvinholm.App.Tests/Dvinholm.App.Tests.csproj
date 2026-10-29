@@ -26,5 +26,7 @@
   <ItemGroup>
     <EmbeddedResource Include="..\..\src\Dvinholm.App\MainWindow.xaml"
                       LogicalName="Dvinholm.App.Tests.MainWindow.xaml" />
+    <EmbeddedResource Include="..\..\src\Dvinholm.App\AuroraHome.xaml"
+                      LogicalName="Dvinholm.App.Tests.AuroraHome.xaml" />
   </ItemGroup>
 </Project>
