@@ -13,6 +13,28 @@
              the selected channel; installation still requires a separate click. -->
         <StackPanel Spacing="4">
 
+            <Button x:Name="UpdateButton" Content="Check update"
+                    Visibility="Collapsed" IsEnabled="False"
+                    AutomationProperties.Name="Legacy update controls disabled">
+                <Button.Flyout>
+                    <Flyout x:Name="UpdateFlyout" Placement="Bottom" Opened="UpdateFlyout_Opened">
+                        <StackPanel Spacing="12" Width="390">
+                            <ComboBox x:Name="UpdateSource" SelectedIndex="0" SelectionChanged="UpdateSource_SelectionChanged">
+                                <ComboBoxItem Content="Development"/>
+                                <ComboBoxItem Content="Stable"/>
+                            </ComboBox>
+                            <TextBlock x:Name="UpdateStatusText"/>
+                            <ProgressBar x:Name="UpdateProgressBar" Visibility="Collapsed"/>
+                            <TextBlock x:Name="UpdateProgressText" Visibility="Collapsed"/>
+                            <TextBlock x:Name="LiteDependencyStatusText"/>
+                            <Button x:Name="CheckDependenciesButton" Content="Recheck" Click="CheckDependenciesButton_Click"/>
+                            <Button x:Name="ManageDependenciesButton" Content="Manage dependencies" Click="ManageDependenciesButton_Click"/>
+                            <Button x:Name="RunUpdateButton" Content="Check for updates" Click="UpdateButton_Click"/>
+                            <Button x:Name="CancelUpdateButton" Content="Cancel" Click="CancelUpdateButton_Click"/>
+                        </StackPanel>
+                    </Flyout>
+                </Button.Flyout>
+            </Button>
         </StackPanel>
 
         <Grid Grid.Row="1" ColumnSpacing="10">
