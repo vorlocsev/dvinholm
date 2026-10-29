@@ -662,7 +662,8 @@ if ($Mode -eq 'Install') {
 
 $initial = Test-Ready
 if ($Mode -eq 'Launch' -and $initial.Ready) {
-    Start-Process -FilePath $app -WorkingDirectory $root
+    # Exit 0 means the OS accepted creation of the application process.
+    Start-Process -FilePath $app -WorkingDirectory $root -ErrorAction Stop
     exit 0
 }
 
@@ -738,6 +739,7 @@ $exit.SetBounds(410,284,200,36)
 $exit.Text = 'Close'
 $form.Controls.Add($exit)
 $script:ready = $false
+$script:appProcessStarted = $false
 function Update-View {
     $inventory = Get-Inventory
     foreach ($entry in $rows) {
@@ -757,8 +759,16 @@ function Update-View {
 $refresh.Add_Click({ Update-View })
 $launch.Add_Click({
     if (-not (Test-Ready).Ready) { Update-View; return }
-    Start-Process -FilePath $app -WorkingDirectory $root
-    $form.Close()
+    try {
+        Start-Process -FilePath $app -WorkingDirectory $root -ErrorAction Stop
+        $script:appProcessStarted = $true
+        $form.Close()
+    } catch {
+        [void][Windows.Forms.MessageBox]::Show($form,
+          'Windows could not start Dvinholm: '+$_.Exception.Message,
+          'Dvinholm',[Windows.Forms.MessageBoxButtons]::OK,
+          [Windows.Forms.MessageBoxIcon]::Error)
+    }
 })
 $exit.Add_Click({ $form.Close() })
 $timer = New-Object Windows.Forms.Timer
@@ -786,3 +796,6 @@ $timer.Start()
 $form.Add_Shown({ Update-View })
 try { [void]$form.ShowDialog() }
 finally { $timer.Stop(); $timer.Dispose(); $form.Dispose() }
+# The updater must not interpret a dismissed prerequisites dialog as a
+# successful application launch. Only Start-Process success is a handoff.
+if ($Mode -eq 'Launch' -and -not $script:appProcessStarted) { exit 41 }
