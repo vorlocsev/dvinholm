@@ -101,12 +101,13 @@ public sealed class LiteDependencyManagerContractTests
     {
         var ui = Read("src/Dvinholm.App/MainWindow.xaml");
         var code = Read("src/Dvinholm.App/MainWindow.xaml.cs");
-        Assert.Contains("x:Name=\"ManageDependenciesButton\"", ui);
-        Assert.Contains("x:Name=\"CheckDependenciesButton\"", ui);
-        Assert.Contains("CheckLiteDependenciesAsync()", code);
-        Assert.Contains("ValidateStagedLitePrerequisitesAsync", code);
+        var launcher = Read("eng/Updater-Banner.ps1");
+        Assert.DoesNotContain("ManageDependenciesButton", ui);
+        Assert.DoesNotContain("CheckDependenciesButton", ui);
+        Assert.DoesNotContain("CheckLiteDependenciesAsync()", code);
         Assert.Contains("DvinholmUserDataDirectory.IsAcceptanceLaunch", code);
-        Assert.Contains("-Mode\", \"Manage\"", code);
+        Assert.Contains("Manage-Lite-Dependencies.ps1", launcher);
+        Assert.Contains("Start-Process -FilePath $powershell", launcher);
         Assert.DoesNotContain("Install-Component", code);
     }
 }
