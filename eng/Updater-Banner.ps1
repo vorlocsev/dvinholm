@@ -1160,6 +1160,9 @@ function Begin-Action([string]$action){
    [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  if(Test-Path $script:statefile){Remove-Item $script:statefile -Force}
+ $script:recoveryStatus='Not checked'
+ $recovery.Text='Recovery: checking local state...'
+ Update-ActionAvailability
  $args='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+$PSCommandPath+
   '" -Mode '+$action+' -Channel '+$choice.SelectedItem.ToString()+
   ' -StateFile "'+$script:statefile+'"'
@@ -1203,30 +1206,55 @@ $choice.Add_SelectedIndexChanged({
   Begin-Action 'Probe'
  }
 })
-$timer=New-Object Windows.Forms.Timer;$timer.Interval=500
-$timer.Add_Tick({
- if(Test-Path $script:statefile){
+function Apply-WorkerSnapshot($snapshot) {
+ # Worker state is written atomically but may be read while it is still
+ # running. Do not authorize further actions from a partial progress update.
+ if($null -eq $snapshot){return $false}
+ $installed.Text='Installed: '+[string]$snapshot.Current
+ $available.Text='Available: '+[string]$snapshot.Available
+ $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
+  '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
+ $status.Text=[string]$snapshot.Detail
+ $finished=($snapshot.PSObject.Properties['Done'] -and
+            $snapshot.Done -is [bool] -and $snapshot.Done -eq $true)
+ $valid=($snapshot.PSObject.Properties['Recovery'] -and
+         [string]$snapshot.Recovery -cin @('Ready','Repair install',
+                                           'Repair rollback','Inspect'))
+ if($finished -and $valid){
+  $script:recoveryStatus=[string]$snapshot.Recovery
+  $recovery.Text='Recovery: '+$script:recoveryStatus
+  Update-ActionAvailability
+  return $true
+ }
+ $script:recoveryStatus='Not checked'
+ $recovery.Text='Recovery: checking local state...'
+ Update-ActionAvailability
+ return $false
+}
+function Poll-WorkerState {
+ $complete=$false
+ if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
   try{
-   $s=Get-Content $script:statefile -Raw|ConvertFrom-Json
-   $installed.Text='Installed: '+$s.Current
-   $available.Text='Available: '+$s.Available
-   $deps.Text='.NET x86: '+$s.DotNet+'    WinApp: '+$s.WinApp+'    VC++ x86: '+$s.VC
-   if($s.PSObject.Properties['Recovery']){
-    $script:recoveryStatus=[string]$s.Recovery
-    $recovery.Text='Recovery: '+$script:recoveryStatus
-   }
-   $status.Text=[string]$s.Detail
+   $snapshot=Get-Content -LiteralPath $script:statefile -Raw | ConvertFrom-Json
+   $complete=Apply-WorkerSnapshot $snapshot
   }catch{}
  }
  if($script:child -and $script:child.HasExited){
   $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0
+  if(-not $complete){
+   $script:recoveryStatus='Not checked'
+   $recovery.Text='Recovery: not checked'
+   $status.Text='Updater helper stopped without a complete status. Use Recheck deps.'
+  }
   Update-ActionAvailability
  }
  if($script:vendor -and $script:vendor.HasExited){
   $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0
   Begin-Action 'Probe'
  }
-})
+}
+$timer=New-Object Windows.Forms.Timer;$timer.Interval=500
+$timer.Add_Tick({Poll-WorkerState})
 $timer.Start()
 Update-ActionAvailability
 if($Mode -eq 'UiSmokeTest'){
@@ -1283,6 +1311,54 @@ if($Mode -eq 'UiSmokeTest'){
   $checks++
   if($checks -ne 7){throw 'Wrong Windows WinForms smoke check count.'}
   Write-Host 'Updater Banner 7/7 Windows PowerShell 5.1 WinForms smoke checks passed.'
+  $snapshotChecks=0
+  $script:child=$null
+  $completed=[pscustomobject]@{
+   Done=$true;Failed=$false;Recovery='Ready';Current='ci-4118'
+   Available='ci-4118';DotNet='Installed';WinApp='Installed'
+   VC='Installed';Detail='Completed'
+  }
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     -not $install.Enabled -or -not $launch.Enabled){
+   throw 'Completed worker snapshot failed to re-enable Ready actions.'
+  }
+  $snapshotChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     $install.Enabled -or $launch.Enabled -or $refresh.Enabled){
+   throw 'Completed snapshot unlocked actions while helper was still running.'
+  }
+  $snapshotChecks++
+  $script:child=$null
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     -not $install.Enabled -or -not $check.Enabled){
+   throw 'Late snapshot after worker completion did not unlock the UI.'
+  }
+  $snapshotChecks++
+  $incomplete=$completed | Select-Object *
+  $incomplete.Done=$false
+  if((Apply-WorkerSnapshot $incomplete) -or
+     $install.Enabled -or $launch.Enabled -or
+     $script:recoveryStatus -cne 'Not checked'){
+   throw 'Incomplete worker progress unlocked the UI.'
+  }
+  $snapshotChecks++
+  $invalid=$completed | Select-Object *
+  $invalid.Recovery='Untrusted'
+  if((Apply-WorkerSnapshot $invalid) -or
+     $install.Enabled -or $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Untrusted worker recovery field was accepted.'
+  }
+  $snapshotChecks++
+  $repairSnapshot=$completed | Select-Object *
+  $repairSnapshot.Recovery='Repair install'
+  if(-not (Apply-WorkerSnapshot $repairSnapshot) -or
+     -not $repairInstall.Enabled -or $install.Enabled -or $repair.Enabled){
+   throw 'Completed recovery snapshot did not activate the matching repair.'
+  }
+  $snapshotChecks++
+  if($snapshotChecks -ne 6){throw 'Wrong worker state synchronization test count.'}
+  Write-Host 'Updater Banner 6/6 WinForms worker-state synchronization checks passed.'
  }finally{
   $script:child=$null
   $timer.Stop();$timer.Dispose();$form.Dispose()

@@ -185,7 +185,14 @@ operations. `Recovery: Repair install` or `Repair rollback` enables
 only the relevant confirmed recovery action. `Recovery: Inspect` blocks
 install, rollback and launch; preserve the folders for manual inspection.
 The status is advisory: the worker validates journal and file integrity
-again before any repair. **Check updates** is an explicit online action
+again before any repair. The GUI now updates button availability whenever a
+**completed** worker-state snapshot is read, even if it arrives after the
+process-exit notification. Intermediate progress snapshots may update text
+but cannot unlock Install, Launch or Restore. Missing, malformed or
+incomplete worker completion leaves these buttons disabled until a fresh
+**Recheck deps**. Windows CI includes six simulated WinForms worker-status
+ordering/validation checks in addition to the seven original button-state
+checks. **Check updates** is an explicit online action
 and is disabled while unresolved recovery evidence is present.
 
 **Important:** the banner checks installation/availability, not physical
