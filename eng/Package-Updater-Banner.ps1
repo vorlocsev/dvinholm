@@ -25,6 +25,7 @@ $files=@{
  'Binaries/J2534-DriverUI.ps1'=(Join-Path $PSScriptRoot 'J2534-DriverUI.ps1')
  'Binaries/Manage-Lite-Dependencies.ps1'=(Join-Path $PSScriptRoot 'Manage-Lite-Dependencies.ps1')
  'Binaries/Dvinholm-icon.png'=(Join-Path $root 'assets\dvinholm-icon.png')
+ 'Binaries/dvinholm-banner.webp'=(Join-Path $root 'assets\dvinholm-banner.webp')
 }
 try{
  foreach($key in $files.Keys){
