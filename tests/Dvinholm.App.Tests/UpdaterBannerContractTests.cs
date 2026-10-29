@@ -240,7 +240,7 @@ public sealed class UpdaterBannerContractTests
         Assert.True(button >= 0 && scale > button && smoke > scale);
         Assert.Contains("Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.", banner);
         Assert.Contains("usable desktop work area", banner);
-        Assert.Contains("small-screen scrolling", banner);
+        Assert.Contains("Compact Aurora clipped:", banner);
         Assert.Contains("$hero.Height -ne [int][Math]::Round(156*$script:auroraScale)", banner);
         Assert.Contains("$sidebarFooter.Bottom -gt $sidebar.ClientSize.Height-12", banner);
         Assert.Contains("$footerMeasure.Height -gt $sidebarFooter.Height", banner);
