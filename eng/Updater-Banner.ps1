@@ -307,6 +307,73 @@ function Translate([string]$key) {
  if($null -eq $value){return $key}
  return [string]$value
 }
+# Keep diagnostic/worker tokens unchanged; localize only the GUI text.
+# Retaining the English source permits an immediate RU/EN switch even after
+# an operation finishes without rerunning the worker or accessing GitHub.
+$script:lastRawStatus='Ready.'
+function Format-LauncherDetail([string]$raw) {
+ if($script:launcherLanguage -ne 'RU'){return $raw}
+ switch -Regex -CaseSensitive ($raw) {
+  '^Ready\.$' {return 'Готово.'}
+  '^Working\.\.\.$' {return 'Выполняется...'}
+  '^Runtime dependencies rechecked locally\. No GitHub request made\.$' {
+   return 'Компоненты Windows проверены локально. GitHub не запрашивался.'
+  }
+  '^Up to date: (.+)\. No changes made\.$' {
+   return ('Актуальная версия: '+$Matches[1]+'. Изменения не внесены.')
+  }
+  '^Latest (Stable|Development) release: (.+)\. No changes made\.$' {
+   return ('Доступна сборка '+$Matches[1]+': '+$Matches[2]+'. Изменения не внесены.')
+  }
+  '^Installed version is newer than the published (Stable|Development) release\.' {
+   return 'Установленная версия новее опубликованной. Для отката используйте «Предыдущая версия».'
+  }
+  '^Microsoft installer opened; follow its prompts\.$' {
+   return 'Запущен установщик Microsoft. Следуйте инструкциям.'
+  }
+  '^Unable to start Microsoft dependency installer\.$' {
+   return 'Не удалось запустить установщик компонентов Microsoft.'
+  }
+  '^Unable to launch updater helper\.$' {
+   return 'Не удалось запустить вспомогательный процесс обновления.'
+  }
+  '^Updater helper stopped without a complete status\.' {
+   return 'Процесс обновления завершился без итогового статуса. Перепроверьте компоненты.'
+  }
+  '^Microsoft runtime installed\. Restart Windows before rechecking prerequisites \(exit (\d+)\)\.$' {
+   return ('Компонент Microsoft установлен. Перезагрузите Windows и повторите проверку (код '+$Matches[1]+').')
+  }
+  '^J2534 installer finished\. Driver inventory refreshed; hardware untested\.$' {
+   return 'Установщик J2534 завершился, список драйверов обновлён. Оборудование не проверено.'
+  }
+  '^Vendor installer finished\. Open Drivers and select Check to verify\.$' {
+   return 'Установщик производителя завершился. Откройте «Драйверы» и нажмите «Проверить».'
+  }
+  '^Vendor driver installer failed or was cancelled \(exit (\d+)\)\.$' {
+   return ('Установка драйвера завершилась ошибкой или была отменена (код '+$Matches[1]+').')
+  }
+  '^Missing Lite prerequisites\.' {
+   return 'Не найдены необходимые компоненты Windows. Установите их и повторите проверку.'
+  }
+  default {return $raw}
+ }
+}
+function Format-LauncherRecovery([string]$raw) {
+ if($script:launcherLanguage -ne 'RU'){return $raw}
+ switch -CaseSensitive ($raw) {
+  'Ready' {return 'Готово'}
+  'Not checked' {return 'Не проверено'}
+  'Checking' {return 'Проверка'}
+  'Repair install' {return 'Восстановить установку'}
+  'Repair rollback' {return 'Восстановить откат'}
+  'Inspect' {return 'Требуется проверка'}
+  default {return $raw}
+ }
+}
+function Set-LauncherDetail([string]$raw){
+ $script:lastRawStatus=$raw
+ $status.Text=Format-LauncherDetail $raw
+}
 function Read-ManagedVersion([string]$folder) {
  Assert-ManagedFolder $base
  Assert-ManagedFolder $channelRoot
@@ -1727,7 +1794,7 @@ function Apply-LauncherLanguage {
  $developmentRadio.Text=Translate 'dev'
  $installed.Text=(Translate 'installed')+': '+$script:lastCurrent
  $available.Text=(Translate 'available')+': '+$script:lastAvailable
- $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ $recovery.Text=(Translate 'recovery')+': '+(Format-LauncherRecovery $script:lastRecovery)
  $check.Text=Translate 'check'
  $install.Text=Translate 'install'
  $launch.Text=Translate 'launch'
@@ -1759,6 +1826,7 @@ function Apply-LauncherLanguage {
  if(-not $script:driversWereProbed){
   $driverStatus.Text=Translate 'driversUnchecked'
  }
+ $status.Text=Format-LauncherDetail $script:lastRawStatus
  $form.Text='Dvinholm | '+$(if($script:launcherLanguage -eq 'RU'){'Лаунчер'}else{'Launcher'})
 }
 function Show-LauncherSettings {
@@ -1934,7 +2002,7 @@ function Begin-Action([string]$action){
  if(Test-Path $script:statefile){Remove-Item $script:statefile -Force}
  $script:recoveryStatus='Not checked'
  $script:lastRecovery='Checking'
- $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ $recovery.Text=(Translate 'recovery')+': '+(Format-LauncherRecovery $script:lastRecovery)
  Update-ActionAvailability
  $args='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+$PSCommandPath+
   '" -Mode '+$action+' -Channel '+$choice.SelectedItem.ToString()+
@@ -1944,8 +2012,8 @@ function Begin-Action([string]$action){
   $script:pendingAction=$action
   $bar.Style=[Windows.Forms.ProgressBarStyle]::Marquee;$bar.MarqueeAnimationSpeed=25
   Update-ActionAvailability
-  $status.Text='Working...'
- }catch{$script:pendingAction='';$status.Text='Unable to launch updater helper.'}
+  Set-LauncherDetail 'Working...'
+ }catch{$script:pendingAction='';Set-LauncherDetail 'Unable to launch updater helper.'}
 }
 $check.Add_Click({Begin-Action 'Check'})
 $refresh.Add_Click({Begin-Action 'Probe'})
@@ -1966,11 +2034,11 @@ function Start-MicrosoftComponent([string]$which) {
   $which+' -LiteDirectory "'+$PSScriptRoot+'"'
  try {
   $script:vendor=Start-Process -FilePath $powershell -ArgumentList $args -PassThru
-  $status.Text='Microsoft installer opened; follow its prompts.'
+  Set-LauncherDetail 'Microsoft installer opened; follow its prompts.'
   $bar.MarqueeAnimationSpeed=25
   Update-ActionAvailability
  }catch{
-  $status.Text='Unable to start Microsoft dependency installer.'
+  Set-LauncherDetail 'Unable to start Microsoft dependency installer.'
   Update-ActionAvailability
  }
 }
@@ -2022,7 +2090,7 @@ $choice.Add_SelectedIndexChanged({
  if(-not $script:child -and -not $script:vendor){
   $script:recoveryStatus='Not checked'
   $script:lastRecovery='Checking'
-  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+  $recovery.Text=(Translate 'recovery')+': '+(Format-LauncherRecovery $script:lastRecovery)
   Update-ActionAvailability
   Begin-Action 'Probe'
  }
@@ -2037,7 +2105,7 @@ function Apply-WorkerSnapshot($snapshot) {
  $available.Text=(Translate 'available')+': '+$script:lastAvailable
  $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
   '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
- $status.Text=[string]$snapshot.Detail
+ Set-LauncherDetail ([string]$snapshot.Detail)
  $downloadPercent.Text=''
  # The ZIP byte count is read from the actual download, never fabricated.
  if($script:child -and [string]$snapshot.DownloadId -cmatch '^[0-9a-f]{32}$' -and
@@ -2069,13 +2137,13 @@ function Apply-WorkerSnapshot($snapshot) {
     [string]$snapshot.VC -ceq 'Installed')
   $serviceHeading.Text='DVINHOLM  ·  '+(Translate $(if($script:serviceIsReady){'cockpitReady'}else{'cockpitUnchecked'}))
   $script:lastRecovery=$script:recoveryStatus
-  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+  $recovery.Text=(Translate 'recovery')+': '+(Format-LauncherRecovery $script:lastRecovery)
   Update-ActionAvailability
   return $true
  }
  $script:recoveryStatus='Not checked'
  $script:lastRecovery='Checking'
- $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ $recovery.Text=(Translate 'recovery')+': '+(Format-LauncherRecovery $script:lastRecovery)
  Update-ActionAvailability
  return $false
 }
@@ -2105,7 +2173,7 @@ function Poll-WorkerState {
   if(-not $complete){
    $script:recoveryStatus='Not checked'
    $recovery.Text='Recovery: not checked'
-   $status.Text='Updater helper stopped without a complete status. Use Recheck deps.'
+   Set-LauncherDetail 'Updater helper stopped without a complete status. Use Recheck deps.'
   }
   Update-ActionAvailability
   if($launchSucceeded){
@@ -2139,22 +2207,22 @@ function Poll-WorkerState {
     try{
      if($script:driverRescan){
       & $script:driverRescan
-      $status.Text='J2534 installer finished. Driver inventory refreshed; hardware untested.'
+      Set-LauncherDetail 'J2534 installer finished. Driver inventory refreshed; hardware untested.'
      }else{
-      $status.Text='Vendor installer finished. Open Drivers and select Check to verify.'
+      Set-LauncherDetail 'Vendor installer finished. Open Drivers and select Check to verify.'
      }
     }catch{
-     $status.Text='Vendor setup finished; driver inventory could not be refreshed.'
+     Set-LauncherDetail 'Vendor setup finished; driver inventory could not be refreshed.'
     }
    }elseif($exitCode -in @(3010,1641)){
     # MSI success requiring reboot is not failure, but the adapter is
     # not ready until Windows restarts. Do not rescan as a success.
-    $status.Text='Vendor setup finished. Restart Windows before using the driver (exit '+$exitCode+').'
+    Set-LauncherDetail ('Vendor setup finished. Restart Windows before using the driver (exit '+$exitCode+').')
     if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
      $script:driverResultControl.Text='Windows restart required. Recheck adapter drivers after restarting Windows.'
     }
    }else{
-    $status.Text='Vendor driver installer failed or was cancelled (exit '+$exitCode+').'
+    Set-LauncherDetail ('Vendor driver installer failed or was cancelled (exit '+$exitCode+').')
     if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
      $script:driverResultControl.Text='Vendor driver setup did not complete. Check the vendor installer log.'
     }
@@ -2168,13 +2236,13 @@ function Poll-WorkerState {
    # No automatic re-probe or ready status until Windows is restarted.
    $script:recoveryStatus='Not checked'
    $recovery.Text='Recovery: not checked'
-   $status.Text='Microsoft runtime installed. Restart Windows before rechecking prerequisites (exit '+$exitCode+').'
+   Set-LauncherDetail ('Microsoft runtime installed. Restart Windows before rechecking prerequisites (exit '+$exitCode+').')
    Update-ActionAvailability
   }else{
    # Preserve failure without launching an unrelated dependency probe.
    $script:recoveryStatus='Not checked'
    $recovery.Text='Recovery: not checked'
-   $status.Text=Get-VendorExitError $exitCode
+   Set-LauncherDetail (Get-VendorExitError $exitCode)
    Update-ActionAvailability
   }
  }
@@ -2347,6 +2415,33 @@ if($Mode -eq 'UiSmokeTest'){
   }
   if($updateChecks -ne 8){throw 'Wrong update gate check count.'}
   Write-Host 'Service Cockpit update buttons 8/8 offline state checks passed.'
+
+  # Eight locale checks with actual worker messages. No network or modal UI.
+  $originalLanguage=$script:launcherLanguage
+  $script:launcherLanguage='RU'
+  $samples=@(
+   @('Ready.','Готово.'),
+   @('Working...','Выполняется...'),
+   @('Runtime dependencies rechecked locally. No GitHub request made.','Компоненты Windows проверены локально. GitHub не запрашивался.'),
+   @('Up to date: ci-4223. No changes made.','Актуальная версия: ci-4223. Изменения не внесены.'),
+   @('Latest Development release: ci-4224. No changes made.','Доступна сборка Development: ci-4224. Изменения не внесены.'),
+   @('Unable to launch updater helper.','Не удалось запустить вспомогательный процесс обновления.'),
+   @('J2534 installer finished. Driver inventory refreshed; hardware untested.','Установщик J2534 завершился, список драйверов обновлён. Оборудование не проверено.'),
+   @('Unknown vendor diagnostic','Unknown vendor diagnostic')
+  )
+  $localeChecks=0
+  foreach($sample in $samples){
+   if((Format-LauncherDetail ([string]$sample[0])) -cne [string]$sample[1]){
+    throw ('Launcher locale translation failed for '+[string]$sample[0])
+   }
+   $localeChecks++
+  }
+  $script:launcherLanguage='EN'
+  if((Format-LauncherDetail 'Ready.') -cne 'Ready.'){throw 'English launcher status was altered.'}
+  $script:launcherLanguage=$originalLanguage
+  Apply-LauncherLanguage
+  if($localeChecks -ne 8){throw 'Wrong launcher locale check count.'}
+  Write-Host 'Service Cockpit 8/8 offline RU/EN status translation checks passed.'
 
   # Eight Windows-only GUI contracts for the approved Service Cockpit.
   # No modal window, network request, installer, or ECU access.
