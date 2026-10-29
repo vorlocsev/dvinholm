@@ -1774,6 +1774,46 @@ if($Mode -eq 'UiSmokeTest'){
   $vendorChecks++
   if($vendorChecks -ne 7){throw 'Wrong Microsoft installer lifecycle test count.'}
   Write-Host 'Updater Banner 7/7 WinForms vendor worker lifecycle checks passed.'
+
+  # Approved Aurora UI checks use actual WinForms controls, without
+  # displaying a window, contacting GitHub, or launching an installer.
+  $auroraChecks=0
+  if($form.ClientSize.Width -ne 1180 -or $form.ClientSize.Height -ne 790){
+   throw 'Aurora dashboard has incorrect desktop dimensions.'
+  }
+  $auroraChecks++
+  if($hero.Width -ne 1180 -or $brandTitle.Text -cne 'DVINHOLM'){
+   throw 'Aurora hero banner is absent.'
+  }
+  $auroraChecks++
+  if($sidebar.Controls.Count -lt 6 -or $script:auroraNav.Count -ne 5){
+   throw 'Aurora navigation was not built.'
+  }
+  $auroraChecks++
+  if($choice.Visible -or -not $stableRadio.Visible -or
+     -not $developmentRadio.Visible){
+   throw 'Aurora channel radio cards are missing.'
+  }
+  $auroraChecks++
+  if($bar.Width -lt 800 -or $install.Right -gt $form.ClientSize.Width -or
+     $dot.Bottom -gt $form.ClientSize.Height){
+   throw 'Aurora dashboard action/progress layout is clipped.'
+  }
+  $auroraChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($stableRadio.Enabled -or $developmentRadio.Enabled){
+   throw 'Aurora channel radios were not locked during updater work.'
+  }
+  $script:child=$null
+  Update-ActionAvailability
+  if(-not $stableRadio.Enabled -or -not $developmentRadio.Enabled){
+   throw 'Aurora channel radios did not recover after updater work.'
+  }
+  $auroraChecks++
+  if($auroraChecks -ne 6){throw 'Wrong Aurora smoke check count.'}
+  Write-Host 'Aurora Launcher 6/6 Windows WinForms theme smoke checks passed.'
+
  }finally{
   $script:child=$null
   $timer.Stop();$timer.Dispose();$form.Dispose()
