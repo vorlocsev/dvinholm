@@ -24,6 +24,17 @@ separately confirmed **Download / Install** button and three independent
 Microsoft installer/update buttons. Downloads are only started after
 the user clicks and confirms; Windows UAC and vendor setup UI remain visible.
 
+**Already installed:** when the selected channel's verified Lite version
+matches the latest public release, **Check updates** reports *Up to date*,
+and **Download / Install** performs no download or file replacement. If the
+latest published version is numerically **older** than the managed
+installation, installation is blocked; **Restore previous** is the separate,
+explicitly confirmed offline rollback path. Stable compares semantic
+`vX.Y.Z` versions, while Development compares numeric `ci-N` build
+numbers. Only the currently selected channel's managed installation is
+considered. CI covers eight offline current/newer/older/first-install and
+wrong-channel-tag conditions; no real Windows GUI acceptance is implied.
+
 The **Download / Install** worker now performs an additional offline
 preflight **before any GitHub release request or ZIP download**. It requires
 positive local detection of .NET 10 Desktop x86, Windows App Runtime and VC++
