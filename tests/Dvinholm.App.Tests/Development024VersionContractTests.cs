@@ -31,14 +31,15 @@ public sealed class Development024VersionContractTests
     public void DevelopmentUsesOnlyFrameworkDependentLiteAndExactCommit()
     {
         var ci = Read(".github/workflows/ci.yml");
-        var lite = ci.Split("      - name: Publish Lite\n", StringSplitOptions.None)[1]
+        var lite = ci.Split("      - name: Publish application x86\n", StringSplitOptions.None)[1]
             .Split("      - name: Verify branded Windows icon is published\n", StringSplitOptions.None)[0];
         Assert.Contains("-p:Version=0.2.4", lite);
         Assert.Contains("-p:InformationalVersion=0.2.4+${{ github.sha }}.ci${{ github.run_number }}", lite);
         Assert.Contains("--self-contained false", lite);
         Assert.Contains("-p:DvinholmDevelopmentFeatures=true", lite);
         Assert.DoesNotContain("      - name: Publish Portable", ci);
-        Assert.DoesNotContain("Dvinholm-Windows-x86.zip", ci);
+        Assert.Contains("Dvinholm-Windows-x86.zip", ci);
+        Assert.DoesNotContain("      - name: Publish Portable", ci);
     }
 
     [Fact]
