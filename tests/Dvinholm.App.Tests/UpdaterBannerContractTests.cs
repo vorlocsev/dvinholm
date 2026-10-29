@@ -99,6 +99,39 @@ public sealed class UpdaterBannerContractTests
     }
 
     [Fact]
+    public void RuntimeVersionReportKeepsLocalProbeOfflineAndUsesVerifiedSources()
+    {
+        var manager = Read("eng/Manage-Lite-Dependencies.ps1");
+        Assert.Contains("VersionReport", manager);
+        Assert.Contains("Get-InstalledComponentVersions", manager);
+        Assert.Contains("Get-OfficialLatestVersions", manager);
+        Assert.Contains("dotnet/release-metadata/10.0/releases.json", manager);
+        Assert.Contains("microsoft/WindowsAppSDK/releases/latest", manager);
+        Assert.Contains("VCUpdateNote", manager);
+        Assert.Contains("Latest version not verified", manager);
+        Assert.Contains("Same SDK line; patch status unknown", manager);
+        Assert.Contains("version decisions 8/8 offline checks passed.", manager);
+        var probe = manager.IndexOf("if ($Mode -eq 'Probe')", StringComparison.Ordinal);
+        var report = manager.IndexOf("if($Mode -eq 'VersionReport')", StringComparison.Ordinal);
+        Assert.True(probe > 0 && report > 0);
+        Assert.DoesNotContain("Invoke-WebRequest -Uri $source.Url", manager[..probe]);
+    }
+
+    [Fact]
+    public void LauncherOffersExplicitNonInstallingRuntimeVersionCheck()
+    {
+        var banner = Read("eng/Updater-Banner.ps1");
+        Assert.Contains("Button 'Check runtime versions'", banner);
+        Assert.Contains("Begin-Action 'Versions'", banner);
+        Assert.Contains("-Mode VersionReport", banner);
+        Assert.Contains("DependencyReport", banner);
+        Assert.Contains("WinApp 2.5.1 is the tested installer baseline", banner);
+        Assert.Contains("$refresh.Add_Click({Begin-Action 'Probe'})", banner);
+        Assert.Contains("$versionsButton.Enabled=-not $busy", banner);
+        Assert.DoesNotContain("Begin-Action 'Install'",$"{"Check runtime versions"}");
+    }
+
+    [Fact]
     public void NativeLauncherPackageContainsOnlyWindowsInboxDependencies()
     {
         var script = Read("eng/Package-Updater-Banner.ps1");
