@@ -1839,6 +1839,24 @@ $script:pendingAction=''
 $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid]::NewGuid().ToString('N')+'.json')
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $script:recoveryStatus='Not checked'
+# Enable installation only after a NEWER build was checked for this channel.
+# All transactions still repeat version and signature verification in worker.
+function Test-CockpitUpdateAvailable([string]$currentTag,[string]$availableTag,
+ [string]$channelName) {
+ if($channelName -cnotin @('Stable','Development')){return $false}
+ if($channelName -ceq 'Development'){
+  if(-not($availableTag -cmatch '^ci-([1-9][0-9]{0,8})$')){return $false}
+  $new=[long]$Matches[1]
+  if($currentTag -ceq 'Not installed'){return $true}
+  if(-not($currentTag -cmatch '^ci-([1-9][0-9]{0,8})$')){return $false}
+  return ($new -gt [long]$Matches[1])
+ }
+ if(-not($availableTag -cmatch '^([0-9]{1,8}\.[0-9]{1,8}\.[0-9]{1,8})$')){return $false}
+ $newVersion=[version]$Matches[1]
+ if($currentTag -ceq 'Not installed'){return $true}
+ if(-not($currentTag -cmatch '^([0-9]{1,8}\.[0-9]{1,8}\.[0-9]{1,8})$')){return $false}
+ return ($newVersion -gt [version]$Matches[1])
+}
 function Update-ActionAvailability {
  $busy=($null -ne $script:child -or $null -ne $script:vendor)
  $state=[string]$script:recoveryStatus
@@ -1859,7 +1877,11 @@ function Update-ActionAvailability {
  $stableRadio.Enabled=-not $busy
  $developmentRadio.Enabled=-not $busy
  $check.Enabled=($ready -and -not $busy)
- $install.Enabled=($ready -and -not $busy)
+ $selectedChannel=if($null -ne $choice.SelectedItem){
+  [string]$choice.SelectedItem
+ }else{[string]$Channel}
+ $install.Enabled=($ready -and -not $busy -and
+  (Test-CockpitUpdateAvailable $script:lastCurrent $script:lastAvailable $selectedChannel))
  $launch.Enabled=($ready -and -not $busy)
  $refresh.Enabled=-not $busy
  $versionsButton.Enabled=-not $busy
@@ -1879,6 +1901,11 @@ function Begin-Action([string]$action){
  if($script:child -or $script:vendor){return}
  if($action -in @('Install','Rollback','Check','Launch') -and
     $script:recoveryStatus -cne 'Ready'){return}
+ $selectedChannel=if($null -ne $choice.SelectedItem){
+  [string]$choice.SelectedItem
+ }else{[string]$Channel}
+ if($action -ceq 'Install' -and
+    -not (Test-CockpitUpdateAvailable $script:lastCurrent $script:lastAvailable $selectedChannel)){return}
  if($action -eq 'RepairInstall'){
   if([Windows.Forms.MessageBox]::Show(
    (Translate 'confirmRepairInstall'),
@@ -2177,10 +2204,10 @@ if($Mode -eq 'UiSmokeTest'){
      -not $refresh.Enabled){throw 'Startup actions were not locked.'}
   $checks++
   $script:recoveryStatus='Ready';Update-ActionAvailability
-  if(-not $install.Enabled -or -not $check.Enabled -or
+  if($install.Enabled -or -not $check.Enabled -or
      -not $launch.Enabled -or -not $rollback.Enabled -or
      $repair.Enabled -or $repairInstall.Enabled){
-   throw 'Ready-state button policy failed.'
+   throw 'Ready-state button policy failed: install must await a version check.'
   }
   $checks++
   $script:recoveryStatus='Repair install';Update-ActionAvailability
@@ -2214,7 +2241,7 @@ if($Mode -eq 'UiSmokeTest'){
   $script:child=$null
   $completed=[pscustomobject]@{
    Done=$true;Failed=$false;Recovery='Ready';Current='ci-4118'
-   Available='ci-4118';DotNet='Installed';WinApp='Installed'
+   Available='ci-4119';DotNet='Installed';WinApp='Installed'
    VC='Installed';Detail='Completed'
   }
   if(-not (Apply-WorkerSnapshot $completed) -or
@@ -2299,6 +2326,28 @@ if($Mode -eq 'UiSmokeTest'){
   if($vendorChecks -ne 7){throw 'Wrong Microsoft installer lifecycle test count.'}
   Write-Host 'Updater Banner 7/7 WinForms vendor worker lifecycle checks passed.'
 
+  # Eight deterministic update-button gates, no network or installers.
+  $updates=@(
+   @('Development','Not installed','Not checked',$false),
+   @('Development','Not installed','ci-4119',$true),
+   @('Development','ci-4118','ci-4119',$true),
+   @('Development','ci-4119','ci-4119',$false),
+   @('Development','ci-4120','ci-4119',$false),
+   @('Stable','0.2.3','0.2.4',$true),
+   @('Stable','0.2.4','0.2.4',$false),
+   @('Stable','Unverified installation','0.2.4',$false)
+  )
+  $updateChecks=0
+  foreach($item in $updates){
+   $actual=Test-CockpitUpdateAvailable ([string]$item[1]) ([string]$item[2]) ([string]$item[0])
+   if($actual -ne [bool]$item[3]){
+    throw ('Wrong update availability for '+($item[0..2] -join ' / '))
+   }
+   $updateChecks++
+  }
+  if($updateChecks -ne 8){throw 'Wrong update gate check count.'}
+  Write-Host 'Service Cockpit update buttons 8/8 offline state checks passed.'
+
   # Eight Windows-only GUI contracts for the approved Service Cockpit.
   # No modal window, network request, installer, or ECU access.
   $auroraChecks=0
@@ -2337,6 +2386,10 @@ if($Mode -eq 'UiSmokeTest'){
    throw 'Service Cockpit controls extend past the display boundary.'
   }
   $auroraChecks++
+  if($launch.Bottom -ge $recovery.Top -or
+     $recovery.Bottom -ge $startNote.Top){
+   throw 'Service Cockpit Start button overlaps its recovery or help labels.'
+  }
   $working=[Windows.Forms.Screen]::FromControl($form).WorkingArea
   if($form.Width -gt $working.Width-16 -or $form.Height -gt $working.Height-16){
    throw 'Service Cockpit extends beyond the Windows working area.'

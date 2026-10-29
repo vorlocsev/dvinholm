@@ -87,7 +87,8 @@ $status.SetBounds(35,481,365,44)
 $status.AutoEllipsis=$true
 $status.Font=[Drawing.Font]::new('Segoe UI',10)
 $status.ForeColor=[Drawing.Color]::FromArgb(91,215,186)
-$recovery.SetBounds(35,570,365,33)
+# Keep recovery state below the primary Start action, not over its bottom edge.
+$recovery.SetBounds(35,586,365,24)
 $recovery.Font=[Drawing.Font]::new('Segoe UI',9)
 $recovery.AutoEllipsis=$true
 $launch.SetBounds(35,528,365,53)
