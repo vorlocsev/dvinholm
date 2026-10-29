@@ -494,7 +494,7 @@ function Get-VerifiedLaunchTarget {
  catch {throw 'Launch blocked: no valid managed Lite x86 installation in this channel.'}
  return [pscustomobject]@{
   Tag=$tag
-  File=Join-Path $current 'Start-Dvinholm-Lite.cmd'
+  File=(Join-Path $current 'Start-Dvinholm-Lite.cmd')
  }
 }
 function Launch {
