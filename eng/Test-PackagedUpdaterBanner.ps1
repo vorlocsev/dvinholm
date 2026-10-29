@@ -10,7 +10,8 @@ Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zipFile=(Resolve-Path -LiteralPath $ZipPath).Path
 $expected=@('Launcher.exe','Binaries/Updater-Banner.ps1',
- 'Binaries/Manage-Lite-Dependencies.ps1','Binaries/Dvinholm-icon.png')
+ 'Binaries/Manage-Lite-Dependencies.ps1',
+ 'Binaries/Launcher-AuroraTheme.ps1','Binaries/Dvinholm-icon.png')
 $source=(Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $root=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-native-smoke-'+[guid]::NewGuid().ToString('N'))
 $ps=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
@@ -60,7 +61,8 @@ try{
  foreach($entry in @(
   @('Binaries/Updater-Banner.ps1','eng/Updater-Banner.ps1'),
   @('Binaries/Manage-Lite-Dependencies.ps1','eng/Manage-Lite-Dependencies.ps1'),
-  @('Binaries/Dvinholm-icon.png','assets/dvinholm-icon.png')
+  @('Binaries/Dvinholm-icon.png','assets/dvinholm-icon.png'),
+  @('Binaries/Launcher-AuroraTheme.ps1','eng/Launcher-AuroraTheme.ps1')
  )){
   $a=(Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $root $entry[0])).Hash
   $b=(Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $source $entry[1])).Hash
