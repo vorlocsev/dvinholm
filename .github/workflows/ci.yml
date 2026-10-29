@@ -52,6 +52,14 @@ jobs:
             Write-Host "PowerShell 5.1 syntax valid: $path"
           }
 
+      # Exercise the real .NET 10 Desktop x86 installer metadata selector
+      # with synthetic Microsoft release-index fixtures. No network,
+      # download, installer launch, admin elevation or app runtime needed.
+      - name: Verify Lite dependency manager offline installer metadata
+        shell: powershell
+        run: |
+          ./eng/Manage-Lite-Dependencies.ps1 -Mode SelfTest
+
       - name: Verify standalone Updater Banner offline safety
         shell: powershell
         run: |
