@@ -2019,7 +2019,8 @@ if($Mode -eq 'UiSmokeTest'){
      $sidebarFooter.Bottom -gt $sidebar.ClientSize.Height-12 -or
      $sidebarFooter.Top -lt $navDrivers.Bottom+12 -or
      $footerMeasure.Height -gt $sidebarFooter.Height -or
-     ($form.AutoScroll -and $form.ClientSize.Height -ge $contentHeight)){
+     ($form.AutoScroll -and $form.ClientSize.Width -ge $contentWidth -and
+      $form.ClientSize.Height -ge $contentHeight)){
    throw ('Compact Aurora clipped: repairBottom='+$repairInstall.Bottom+
     '; contentHeight='+$contentHeight+'; sidebarBottom='+$sidebar.Bottom+
     '; sidebarClientHeight='+$sidebar.ClientSize.Height+
@@ -2027,6 +2028,7 @@ if($Mode -eq 'UiSmokeTest'){
     '; footerTop='+$sidebarFooter.Top+'; driversBottom='+$navDrivers.Bottom+
     '; measuredTextHeight='+$footerMeasure.Height+
     '; footerHeight='+$sidebarFooter.Height+'; autoScroll='+$form.AutoScroll+
+    '; visibleWidth='+$form.ClientSize.Width+
     '; visibleHeight='+$form.ClientSize.Height)
   }
   $auroraChecks++
