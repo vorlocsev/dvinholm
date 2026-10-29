@@ -128,7 +128,7 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("WinApp 2.5.1 is the tested installer baseline", banner);
         Assert.Contains("$refresh.Add_Click({Begin-Action 'Probe'})", banner);
         Assert.Contains("$versionsButton.Enabled=-not $busy", banner);
-        Assert.DoesNotContain("Begin-Action 'Install'",$"{"Check runtime versions"}");
+        Assert.DoesNotContain("-Mode Install -Component Auto", banner);
     }
 
     [Fact]
