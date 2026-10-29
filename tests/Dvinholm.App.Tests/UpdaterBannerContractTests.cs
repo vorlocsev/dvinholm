@@ -19,9 +19,10 @@ public sealed class UpdaterBannerContractTests
     [Fact]
     public void IndependentLauncherDoesNotRequireDvinholmOrDotNetTen()
     {
-        var source = Read("eng/Updater-Banner.cmd");
-        Assert.Contains("WindowsPowerShell", source);
+        var source = Read("eng/native/launcher.cpp");
+        Assert.Contains("CreateProcessW", source);
         Assert.Contains("Updater-Banner.ps1", source);
+        Assert.Contains("Binaries", source);
         Assert.DoesNotContain("Dvinholm.App.exe", source);
         Assert.DoesNotContain("dotnet.exe", source);
         Assert.DoesNotContain("WinAppRuntime", source);
@@ -98,13 +99,15 @@ public sealed class UpdaterBannerContractTests
     }
 
     [Fact]
-    public void PackageContainsOnlyThreeNoRuntimeFiles()
+    public void NativeLauncherPackageContainsOnlyWindowsInboxDependencies()
     {
         var script = Read("eng/Package-Updater-Banner.ps1");
-        Assert.Contains("Updater-Banner.cmd", script);
+        Assert.Contains("Launcher.exe", script);
+        Assert.Contains("Binaries/", script);
+        Assert.Contains("Dvinholm-icon.png", script);
         Assert.Contains("Updater-Banner.ps1", script);
         Assert.Contains("Manage-Lite-Dependencies.ps1", script);
-        Assert.Contains("250KB", script);
+        Assert.Contains("750KB", script);
         Assert.DoesNotContain("Dvinholm.App.exe", script);
         Assert.DoesNotContain("coreclr.dll", script);
         Assert.DoesNotContain("WindowsAppRuntime.dll", script);
