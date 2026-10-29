@@ -7,10 +7,10 @@
     xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
     mc:Ignorable="d">
     <Grid x:Name="RootLayout" Padding="20" RowSpacing="14">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
-        <!-- Updates are managed by the separate Launcher.exe. -->
-        <Grid Grid.Row="0" ColumnSpacing="10">
+        <!-- Update controls belong exclusively to Launcher.exe. -->
+        <Grid Grid.Row="1" ColumnSpacing="10">
             <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="240"/><ColumnDefinition Width="86"/><ColumnDefinition Width="130"/><ColumnDefinition Width="110"/><ColumnDefinition Width="130"/></Grid.ColumnDefinitions>
             <TextBox x:Name="DllPath" PlaceholderText="Path to 32-bit J2534 DLL" Header="J2534 DLL"/>
             <ComboBox x:Name="J2534Devices" Grid.Column="1" Header="Registered adapters" DisplayMemberPath="Label" PlaceholderText="Select adapter" SelectionChanged="J2534Device_SelectionChanged"/>
@@ -23,7 +23,7 @@
             <Button x:Name="StartButton" Grid.Column="5" Content="Start monitor" Click="Start_Click" VerticalAlignment="Bottom" IsEnabled="False"/>
         </Grid>
 
-        <Grid Grid.Row="1" ColumnSpacing="10">
+        <Grid Grid.Row="2" ColumnSpacing="10">
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="120"/>
                 <ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/><ColumnDefinition Width="110"/>
@@ -41,7 +41,7 @@
             <Button x:Name="CancelUdsButton" Grid.Column="7" Content="Cancel UDS" IsEnabled="False" Click="CancelUds_Click" VerticalAlignment="Bottom"/>
         </Grid>
 
-        <Grid Grid.Row="2" RowSpacing="10">
+        <Grid Grid.Row="3" RowSpacing="10">
             <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
             <Grid Grid.Row="0" ColumnSpacing="10">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="130"/><ColumnDefinition Width="130"/><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
@@ -50,11 +50,11 @@
                 <TextBlock x:Name="DiscoveryStatus" Grid.Column="2" VerticalAlignment="Center" Text="Not scanned"/>
                 <Button x:Name="CancelDiscoveryButton" Grid.Column="3" Content="Cancel scan" Click="CancelDiscovery_Click" IsEnabled="False"/>
             </Grid>
-            <ListView x:Name="EcusView" Grid.Row="0" Height="76" SelectionMode="Single" SelectionChanged="Ecu_SelectionChanged">
+            <ListView x:Name="EcusView" Grid.Row="1" Height="76" SelectionMode="Single" SelectionChanged="Ecu_SelectionChanged">
                 <ListView.Header><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Response"/><TextBlock Grid.Column="1" Text="Request"/><TextBlock Grid.Column="2" Text="Type"/><TextBlock Grid.Column="3" Text="Frames"/><TextBlock Grid.Column="4" Text="Max payload"/></Grid></ListView.Header>
                 <ListView.ItemTemplate><DataTemplate><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Response}"/><TextBlock Grid.Column="1" Text="{Binding Request}"/><TextBlock Grid.Column="2" Text="{Binding Type}"/><TextBlock Grid.Column="3" Text="{Binding Frames}"/><TextBlock Grid.Column="4" Text="{Binding MaxPayload}"/></Grid></DataTemplate></ListView.ItemTemplate>
             </ListView>
-            <Border Grid.Row="1" Padding="8" Margin="0" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <Border Grid.Row="2" Padding="8" Margin="0" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
                 <!-- Separate filtering from actions; keep the metadata scrollable
                      and the CAN monitor visible in a compact window. -->
                 <Grid RowSpacing="6">
@@ -87,7 +87,7 @@
                     <!-- Two compact action rows replace a seven-button horizontal
                          strip which overflowed narrower app windows. All controls
                          stay reachable without horizontal scrolling. -->
-                    <Grid x:Name="ProfileActionsPanel" Grid.Row="0" RowSpacing="6" ColumnSpacing="8">
+                    <Grid x:Name="ProfileActionsPanel" Grid.Row="1" RowSpacing="6" ColumnSpacing="8">
                         <Grid.RowDefinitions>
                             <RowDefinition Height="Auto"/>
                             <RowDefinition Height="Auto"/>
@@ -110,21 +110,21 @@
                         <Button Grid.Row="0" Grid.Column="3"
                                 Content="Export JSON" HorizontalAlignment="Stretch"
                                 Click="ExportProfiles_Click"/>
-                        <Button x:Name="CaptureSnapshotButton" Grid.Row="0"
+                        <Button x:Name="CaptureSnapshotButton" Grid.Row="1"
                                 Grid.Column="0" Grid.ColumnSpan="2"
                                 Content="Read + save snapshot" HorizontalAlignment="Stretch"
                                 ToolTipService.ToolTip="Read selected profile DIDs and explicitly save a diagnostic JSON file. Not a restorable ECU backup."
                                 Click="CaptureSnapshot_Click" IsEnabled="False"/>
-                        <Button x:Name="InspectSnapshotButton" Grid.Row="0" Grid.Column="2"
+                        <Button x:Name="InspectSnapshotButton" Grid.Row="1" Grid.Column="2"
                                 Content="Inspect snapshot" HorizontalAlignment="Stretch"
                                 ToolTipService.ToolTip="Inspect local DID JSON without connecting, transmitting CAN, or restoring ECU data."
                                 Click="InspectSnapshot_Click"/>
-                        <Button x:Name="CompareSnapshotsButton" Grid.Row="0" Grid.Column="3"
+                        <Button x:Name="CompareSnapshotsButton" Grid.Row="1" Grid.Column="3"
                                 Content="Compare snapshots" HorizontalAlignment="Stretch"
                                 ToolTipService.ToolTip="Compare two local diagnostic JSON snapshots offline. Show only changed DID numbers, not their data."
                                 Click="CompareSnapshots_Click"/>
                     </Grid>
-                    <ScrollViewer Grid.Row="1" MaxHeight="76"
+                    <ScrollViewer Grid.Row="2" MaxHeight="76"
                                   VerticalScrollBarVisibility="Auto"
                                   HorizontalScrollBarVisibility="Disabled">
                         <TextBlock x:Name="EcuInfoText"
@@ -132,19 +132,19 @@
                                    TextWrapping="Wrap"
                                    IsTextSelectionEnabled="True"/>
                     </ScrollViewer>
-                    <Button x:Name="P2ConfigCatalogButton" Grid.Row="2"
+                    <Button x:Name="P2ConfigCatalogButton" Grid.Row="3"
                             Content="P2 configuration candidates (offline)"
                             HorizontalAlignment="Stretch"
                             ToolTipService.ToolTip="View vendor-advertised Volvo XC90 P2 option names offline; no vehicle queries, PIN, editing or writes."
                             Click="P2ConfigCatalog_Click"/>
-                    <Button x:Name="P2PinReviewButton" Grid.Row="3"
+                    <Button x:Name="P2PinReviewButton" Grid.Row="4"
                             Content="P2 CEM PIN readiness (offline review)"
                             HorizontalAlignment="Stretch"
                             ToolTipService.ToolTip="Cancellable offline evidence checklist only. No PIN extraction, credential entry or vehicle operation."
                             Click="P2PinReview_Click"/>
                 </Grid>
             </Border>
-            <Grid Grid.Row="2">
+            <Grid Grid.Row="3">
             <Grid.RowDefinitions>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
@@ -157,7 +157,7 @@
                     <ColumnDefinition Width="*"/>
                 </Grid.ColumnDefinitions>
             </Grid>
-            <Grid Grid.Row="0" ColumnSpacing="10" Margin="0,0,0,10">
+            <Grid Grid.Row="1" ColumnSpacing="10" Margin="0,0,0,10">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="75"/><ColumnDefinition Width="125"/><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/><ColumnDefinition Width="150"/><ColumnDefinition Width="100"/></Grid.ColumnDefinitions>
                 <TextBox x:Name="IdFilter" Header="ID filter (hex)" PlaceholderText="7E0,7E8" TextChanged="Filter_Changed"/>
                 <Button Grid.Column="1" Content="Clear" Click="Clear_Click" VerticalAlignment="Bottom"/>
@@ -171,14 +171,14 @@
                 <TextBlock x:Name="FrameCountText" Grid.Column="5" VerticalAlignment="Center" Text="0 shown / 0 rx" HorizontalAlignment="Right"/>
                 <TextBlock x:Name="DroppedFrameText" Grid.Column="6" VerticalAlignment="Center" Text="0 dropped" HorizontalAlignment="Right"/>
             </Grid>
-            <ListView x:Name="FramesView" Grid.Row="1" SelectionMode="None">
+            <ListView x:Name="FramesView" Grid.Row="2" SelectionMode="None">
                 <ListView.Header><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="90"/><ColumnDefinition Width="80"/><ColumnDefinition Width="55"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Timestamp (ms)"/><TextBlock Grid.Column="1" Text="ID"/><TextBlock Grid.Column="2" Text="Type"/><TextBlock Grid.Column="3" Text="DLC"/><TextBlock Grid.Column="4" Text="Data"/></Grid></ListView.Header>
                 <ListView.ItemTemplate><DataTemplate><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="90"/><ColumnDefinition Width="80"/><ColumnDefinition Width="55"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Timestamp}"/><TextBlock Grid.Column="1" Text="{Binding Id}" FontFamily="Consolas"/><TextBlock Grid.Column="2" Text="{Binding Type}"/><TextBlock Grid.Column="3" Text="{Binding Dlc}"/><TextBlock Grid.Column="4" Text="{Binding Data}" FontFamily="Consolas"/></Grid></DataTemplate></ListView.ItemTemplate>
             </ListView>
             </Grid>
         </Grid>
 
-        <Border Grid.Row="3" Padding="10" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+        <Border Grid.Row="4" Padding="10" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
             <StackPanel x:Name="StatusPanel" Spacing="6">
                 <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <TextBlock x:Name="StatusText" Text="Disconnected" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
