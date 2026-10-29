@@ -2306,10 +2306,10 @@ if($Mode -eq 'UiSmokeTest'){
    throw 'Service Cockpit upper banner is missing or not correctly scaled.'
   }
   $auroraChecks++
-  if($sidebar.Visible -or -not $choice.Visible -or
-     $stableRadio.Visible -or $developmentRadio.Visible -or
-     $script:serviceCardLeft -eq $null){
-   throw ('Service Cockpit sidebar='+$sidebar.Visible+' choice='+$choice.Visible+' StableRadio='+$stableRadio.Visible+' DevRadio='+$developmentRadio.Visible+' cardNull='+($null -eq $script:serviceCardLeft))
+  if($choice.Parent -ne $form -or
+     $null -eq $script:serviceCardLeft -or
+     $sidebar.Controls.Count -lt 6 -or $stableRadio.Parent -ne $form){
+   throw 'Service Cockpit root selection or backing layout is missing.'
   }
   $auroraChecks++
   if($script:serviceCardUpdates -eq $null -or
