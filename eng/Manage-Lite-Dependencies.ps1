@@ -33,6 +33,66 @@ function Test-Ready {
     }
 }
 
+# The x86 dotnet host can list Desktop and Core independently. A Desktop
+# row alone does not prove that the Core framework required for launch exists.
+# This is an offline inventory, not a runtimeconfig roll-forward simulation.
+function Get-DotNet10RuntimeInventory {
+ param([string[]]$RuntimeLines)
+ $desktopVersions=@($RuntimeLines | ForEach-Object {
+  $match=[regex]::Match([string]$_,
+   '^\s*Microsoft\.WindowsDesktop\.App\s+(10\.\d+\.\d+)\s+\[[^\]]+\]\s*$')
+  if($match.Success){[version]$match.Groups[1].Value}
+ } | Sort-Object -Descending)
+ $coreVersions=@($RuntimeLines | ForEach-Object {
+  $match=[regex]::Match([string]$_,
+   '^\s*Microsoft\.NETCore\.App\s+(10\.\d+\.\d+)\s+\[[^\]]+\]\s*$')
+  if($match.Success){[version]$match.Groups[1].Value}
+ } | Sort-Object -Descending)
+ $ready=$false
+ foreach($desktopVersion in $desktopVersions){
+  foreach($coreVersion in $coreVersions){
+   # The two shared frameworks must have a common major/minor line. Exact
+   # required patch/roll-forward is checked later from runtimeconfig.json.
+   if($desktopVersion.Major -eq $coreVersion.Major -and
+      $desktopVersion.Minor -eq $coreVersion.Minor){$ready=$true;break}
+  }
+  if($ready){break}
+ }
+ return [pscustomobject]@{
+  Desktop=if($desktopVersions.Count){$desktopVersions[0].ToString()}else{'Not detected'}
+  Core=if($coreVersions.Count){$coreVersions[0].ToString()}else{'Not detected'}
+  Ready=$ready
+ }
+}
+function Test-DotNet10RuntimeInventory {
+ $desktop='Microsoft.WindowsDesktop.App 10.0.14 [C:\Program Files (x86)\dotnet\shared\Microsoft.WindowsDesktop.App]'
+ $core='Microsoft.NETCore.App 10.0.14 [C:\Program Files (x86)\dotnet\shared\Microsoft.NETCore.App]'
+ $coreOlder='Microsoft.NETCore.App 10.0.13 [C:\Program Files (x86)\dotnet\shared\Microsoft.NETCore.App]'
+ $coreMinor='Microsoft.NETCore.App 10.1.0 [C:\Program Files (x86)\dotnet\shared\Microsoft.NETCore.App]'
+ $desktopOld='Microsoft.WindowsDesktop.App 9.0.20 [C:\Program Files (x86)\dotnet\shared\Microsoft.WindowsDesktop.App]'
+ $coreOld='Microsoft.NETCore.App 9.0.20 [C:\Program Files (x86)\dotnet\shared\Microsoft.NETCore.App]'
+ $fixtures=@(
+  @{Lines=@($desktop,$core);Expected=$true},
+  @{Lines=@($desktop);Expected=$false},
+  @{Lines=@($core);Expected=$false},
+  @{Lines=@($desktop,$coreOld);Expected=$false},
+  @{Lines=@($desktopOld,$core);Expected=$false},
+  @{Lines=@($desktop,$coreMinor);Expected=$false},
+  @{Lines=@($desktop,$coreOlder);Expected=$true},
+  @{Lines=@($desktop,$core,'ignored unknown runtime line');Expected=$true}
+ )
+ $count=0
+ foreach($fixture in $fixtures){
+  $actual=Get-DotNet10RuntimeInventory -RuntimeLines $fixture.Lines
+  if([bool]$actual.Ready -ne [bool]$fixture.Expected){
+   throw ('Unexpected Desktop/Core x86 inventory readiness in fixture '+$count)
+  }
+  $count++
+ }
+ if($count -ne 8){throw 'Wrong Desktop/Core x86 inventory fixture count.'}
+ Write-Host 'Lite Desktop/Core x86 inventory 8/8 offline checks passed.'
+}
+
 function Get-Inventory {
     $dotnet = $false
     $sdk = $false
@@ -44,10 +104,10 @@ function Get-Inventory {
         $hostExe = Join-Path $pf 'dotnet\dotnet.exe'
         if (Test-Path -LiteralPath $hostExe -PathType Leaf) {
             $runtimes = @(& $hostExe --list-runtimes 2>$null)
-            $dotnet = ($LASTEXITCODE -eq 0 -and
-                @($runtimes | Where-Object {
-                    $_ -match '^Microsoft\.WindowsDesktop\.App\s+10\.\d+\.\d+\s+\['
-                }).Count -gt 0)
+            if($LASTEXITCODE -eq 0){
+                $runtimeInventory=Get-DotNet10RuntimeInventory -RuntimeLines $runtimes
+                $dotnet=[bool]$runtimeInventory.Ready
+            }
         }
     } catch { $dotnet = $false }
     try {
@@ -104,7 +164,7 @@ function Get-Inventory {
 # Installed versions are informational. The independent preflight still
 # decides whether the exact Dvinholm runtime requirements are satisfied.
 function Get-InstalledComponentVersions {
- $result=@{DotNet='Not detected';WinApp='Not detected';VC='Not detected'}
+ $result=@{DotNet='Not detected';DotNetCore='Not detected';WinApp='Not detected';VC='Not detected'}
  try {
   $pf=if([Environment]::Is64BitOperatingSystem){
    [Environment]::GetEnvironmentVariable('ProgramFiles(x86)')
@@ -114,16 +174,13 @@ function Get-InstalledComponentVersions {
    if(Test-Path -LiteralPath $hostExe -PathType Leaf){
     $lines=@(& $hostExe --list-runtimes 2>$null)
     if($LASTEXITCODE -eq 0){
-     $matches=@($lines|ForEach-Object{
-      if($_ -match '^Microsoft\.WindowsDesktop\.App\s+(10\.\d+\.\d+)\s+\['){
-       [version]$Matches[1]
-      }
-     }|Sort-Object -Descending)
-     if($matches.Count){$result.DotNet=$matches[0].ToString()}
+     $inventory=Get-DotNet10RuntimeInventory -RuntimeLines $lines
+     $result.DotNet=$inventory.Desktop
+     $result.DotNetCore=$inventory.Core
     }else{$result.DotNet='Unknown'}
    }
-  }else{$result.DotNet='Unknown'}
- }catch{$result.DotNet='Unknown'}
+  }else{$result.DotNet='Unknown';$result.DotNetCore='Unknown'}
+ }catch{$result.DotNet='Unknown';$result.DotNetCore='Unknown'}
  try{
   $versions=@(Get-AppxPackage -Name 'Microsoft.WindowsAppRuntime.2' -ErrorAction Stop |
    Where-Object{$_.Name -eq 'Microsoft.WindowsAppRuntime.2' -and
@@ -216,6 +273,7 @@ function Get-DependencyVersionReport {
  # the baseline 2.5.1 app and pinned runtime installer.
  return [ordered]@{
   DotNet=$components.DotNet
+  DotNetCore=[string]$installed.DotNetCore
   WinApp=$components.WinApp
   VC=$components.VC
   WinAppBaseline='2.5.1'
@@ -380,6 +438,7 @@ function Test-MicrosoftInstallerExitCodes {
 if ($Mode -eq 'SelfTest') {
     Test-InstallerMetadataOffline
     Test-DependencyVersionLogic
+    Test-DotNet10RuntimeInventory
     Test-MicrosoftInstallerExitCodes
     exit 0
 }
