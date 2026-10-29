@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 Approved Aurora concept for the Dvinholm Launcher.
 Presentation only: PowerShell 5.1 + inbox WinForms/System.Drawing.
