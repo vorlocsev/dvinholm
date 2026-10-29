@@ -53,7 +53,7 @@ if ($WithUpdaterBanner) {
     $names = @($names) + @('Dvinholm-Updater-Banner-Windows-x86.zip')
 }
 if ($WithLauncherBundle) {
-    $names = @($names) + @('Dvinholm-Windows-x86-Launcher-Lite.zip')
+    $names = @($names) + @('Dvinholm-Windows-x86.zip')
 }
 $assetCountWord = switch ($names.Count) { 2 { 'two' } 3 { 'three' } 4 { 'four' } 5 { 'five' } default { 'unexpected' } }
 $assets = @($release.assets | Where-Object { $null -ne $_ })
