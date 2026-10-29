@@ -311,8 +311,16 @@ function Set-AuroraCompactLayout {
   $form.MaximumSize=[Drawing.Size]::Empty
   $form.AutoScaleMode=[Windows.Forms.AutoScaleMode]::None
   Resize-AuroraControlTree $form $factor
-  $form.AutoScroll=($fullW -gt $maxWidth -or $fullH -gt $maxHeight)
-  $form.AutoScrollMinSize=[Drawing.Size]::new($fullW,$fullH)
+  $needsScroll=($fullW -gt $maxWidth -or $fullH -gt $maxHeight)
+  # WinForms AutoScrollMinSize implicitly turns AutoScroll back on.
+  # Assign it only for genuinely constrained work areas, then explicitly
+  # set AutoScroll last so ordinary screens never get phantom scrollbars.
+  if($needsScroll){
+   $form.AutoScrollMinSize=[Drawing.Size]::new($fullW,$fullH)
+  }else{
+   $form.AutoScrollMinSize=[Drawing.Size]::Empty
+  }
+  $form.AutoScroll=$needsScroll
   $form.ClientSize=[Drawing.Size]::new(
    [int][Math]::Min($fullW,$maxWidth),[int][Math]::Min($fullH,$maxHeight))
   $form.MinimumSize=$form.Size
