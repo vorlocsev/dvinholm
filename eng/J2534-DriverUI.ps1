@@ -37,7 +37,7 @@ function Driver-Install([string]$target,[Windows.Forms.Form]$owner,[Windows.Form
  $message=(DriverText 'Издатель: ' 'Publisher: ')+$checked.Publisher+[Environment]::NewLine+
    (DriverText 'Файл: ' 'File: ')+[IO.Path]::GetFileName($chosen)+[Environment]::NewLine+
    (DriverText 'Запустить установку? Windows может запросить права администратора.' 'Run installer? Windows may require administrator approval.')
- if([Windows.Forms.MessageBox]::Show($owner,$message,'Подтверждение установки J2534',
+ if([Windows.Forms.MessageBox]::Show($owner,$message,(DriverText 'Подтверждение установки J2534' 'Confirm J2534 installation'),
     [Windows.Forms.MessageBoxButtons]::YesNo,[Windows.Forms.MessageBoxIcon]::Question) -ne
    [Windows.Forms.DialogResult]::Yes){return}
  # A separate visible Windows PowerShell process delegates to the signed
@@ -48,10 +48,10 @@ function Driver-Install([string]$target,[Windows.Forms.Form]$owner,[Windows.Form
   $script:vendor=Start-Process -FilePath $powershell -ArgumentList $command -PassThru
   $script:driverInstallerPending=$true
   $script:driverResultControl=$status
-  $status.Text='Установка открыта. Следуйте инструкциям производителя.'
+  $status.Text=DriverText 'Установка открыта. Следуйте инструкциям производителя.' 'Installer opened. Follow the manufacturer instructions.'
   Update-ActionAvailability
  }catch{
-  $status.Text='Не удалось запустить установщик производителя.'
+  $status.Text=DriverText 'Не удалось запустить установщик производителя.' 'Could not start the manufacturer installer.'
   Update-ActionAvailability
  }
 }
