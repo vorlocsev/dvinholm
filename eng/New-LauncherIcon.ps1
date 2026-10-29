@@ -14,10 +14,10 @@ Add-Type -AssemblyName System.Drawing
 
 $source=[Drawing.Image]::FromFile((Resolve-Path -LiteralPath $LogoPath).Path)
 $sizes=@(16,24,32,48,64,128,256)
-$frames=New-Object 'System.Collections.Generic.List[byte[]]'
+$frames=[Collections.Generic.List[byte[]]]::new()
 try{
  # Draw once at high resolution; downsampling retains the neon strokes.
- $master=New-Object Drawing.Bitmap(256,256,
+ $master=[Drawing.Bitmap]::new(256,256,
   [Drawing.Imaging.PixelFormat]::Format32bppArgb)
  try{
   $g=[Drawing.Graphics]::FromImage($master)
@@ -27,11 +27,11 @@ try{
    $g.PixelOffsetMode=[Drawing.Drawing2D.PixelOffsetMode]::HighQuality
    $g.DrawImage($source,0,0,256,256)
    # Small badge on top of the established Dvinholm road-and-arrow mark.
-   $badge=New-Object Drawing.Rectangle(163,162,80,80)
-   $bg=New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(243,4,30,57))
-   $border=New-Object Drawing.Pen([Drawing.Color]::FromArgb(255,23,206,246),6)
-   $stroke=New-Object Drawing.Pen([Drawing.Color]::White,6)
-   $fill=New-Object Drawing.SolidBrush([Drawing.Color]::FromArgb(255,72,233,251))
+   $badge=[Drawing.Rectangle]::new(163,162,80,80)
+   $bg=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(243,4,30,57))
+   $border=[Drawing.Pen]::new([Drawing.Color]::FromArgb(255,23,206,246),6)
+   $stroke=[Drawing.Pen]::new([Drawing.Color]::White,6)
+   $fill=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(255,72,233,251))
    try{
     $g.FillEllipse($bg,$badge)
     $g.DrawEllipse($border,$badge)
@@ -46,7 +46,7 @@ try{
    }finally{$bg.Dispose();$border.Dispose();$stroke.Dispose();$fill.Dispose()}
   }finally{$g.Dispose()}
   foreach($size in $sizes){
-   $frame=New-Object Drawing.Bitmap($size,$size,
+   $frame=[Drawing.Bitmap]::new($size,$size,
     [Drawing.Imaging.PixelFormat]::Format32bppArgb)
    try{
     $scaled=[Drawing.Graphics]::FromImage($frame)
@@ -56,7 +56,7 @@ try{
      $scaled.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
      $scaled.DrawImage($master,0,0,$size,$size)
     }finally{$scaled.Dispose()}
-    $ms=New-Object IO.MemoryStream
+    $ms=[IO.MemoryStream]::new()
     try{
      $frame.Save($ms,[Drawing.Imaging.ImageFormat]::Png)
      $frames.Add($ms.ToArray())
@@ -67,7 +67,7 @@ try{
 }finally{$source.Dispose()}
 $directory=[IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($IconPath))
 [IO.Directory]::CreateDirectory($directory)|Out-Null
-$writer=New-Object IO.BinaryWriter([IO.File]::Create([IO.Path]::GetFullPath($IconPath)))
+$writer=[IO.BinaryWriter]::new([IO.File]::Create([IO.Path]::GetFullPath($IconPath)))
 try{
  $writer.Write([uint16]0)
  $writer.Write([uint16]1)
