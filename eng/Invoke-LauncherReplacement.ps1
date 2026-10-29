@@ -68,16 +68,21 @@ function Put-File([string]$from,[string]$to){
  [IO.Directory]::CreateDirectory($parent)|Out-Null
  Assert-Ordinary $to
  $temp=Join-Path $parent ('.dvinholm-new-'+[guid]::NewGuid().ToString('N')+'.tmp')
+ $replacedBackup=Join-Path $parent ('.dvinholm-old-'+[guid]::NewGuid().ToString('N')+'.tmp')
  try{
   [IO.File]::Copy($from,$temp,$false)
   if(Test-Path -LiteralPath $to){
-   [IO.File]::Replace($temp,$to,$null)
+   # .NET Framework 4.x requires a valid backup path on some Windows hosts.
+   # The independent verified transaction/backup remains the recovery source.
+   [IO.File]::Replace($temp,$to,$replacedBackup)
   }else{
    [IO.File]::Move($temp,$to)
   }
  }finally{
-  if(Test-Path -LiteralPath $temp){
-   Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue
+  foreach($leftover in @($temp,$replacedBackup)){
+   if(Test-Path -LiteralPath $leftover){
+    Remove-Item -LiteralPath $leftover -Force -ErrorAction SilentlyContinue
+   }
   }
  }
 }
