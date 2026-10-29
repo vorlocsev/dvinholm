@@ -48,6 +48,14 @@ separate per-channel `current` and `previous` folders under
 rollback without overwriting the running native launcher or a user-supplied
 manual installation. Existing Lite installations are not silently modified.
 
+While a Microsoft installer or any Banner worker is running, all three
+installer buttons, channel selector and update controls are visually disabled.
+Successful Microsoft installer completion triggers an automatic **local-only**
+dependency probe. A failed or cancelled installer shows its exit code and
+requires a manual **Recheck deps** instead of clearing the failure message.
+Windows CI exercises seven synthetic WinForms vendor-worker lifecycle checks;
+a real Microsoft installation and UAC prompt remain manual acceptance steps.
+
 The **Installed** label is validated against the selected channel's actual
 Lite directory, required ordinary files, metadata and x86 PE header. It
 reports **Unverified installation** rather than trusting a stale manifest if
