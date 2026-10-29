@@ -1866,9 +1866,12 @@ function Test-CockpitUpdateAvailable([string]$currentTag,[string]$availableTag,
  $stableRadio.Enabled=-not $busy
  $developmentRadio.Enabled=-not $busy
  $check.Enabled=($ready -and -not $busy)
+ $selectedChannel=if($null -ne $choice.SelectedItem){
+  [string]$choice.SelectedItem
+ }else{[string]$Channel}
  $install.Enabled=($ready -and -not $busy -and
   (Test-CockpitUpdateAvailable $script:lastCurrent $script:lastAvailable
-   ([string]$choice.SelectedItem)))
+   $selectedChannel))
  $launch.Enabled=($ready -and -not $busy)
  $refresh.Enabled=-not $busy
  $versionsButton.Enabled=-not $busy
@@ -1888,9 +1891,12 @@ function Begin-Action([string]$action){
  if($script:child -or $script:vendor){return}
  if($action -in @('Install','Rollback','Check','Launch') -and
     $script:recoveryStatus -cne 'Ready'){return}
+ $selectedChannel=if($null -ne $choice.SelectedItem){
+  [string]$choice.SelectedItem
+ }else{[string]$Channel}
  if($action -ceq 'Install' -and
     -not(Test-CockpitUpdateAvailable $script:lastCurrent $script:lastAvailable
-      ([string]$choice.SelectedItem))){return}
+      $selectedChannel)){return}
  if($action -eq 'RepairInstall'){
   if([Windows.Forms.MessageBox]::Show(
    (Translate 'confirmRepairInstall'),
