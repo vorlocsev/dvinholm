@@ -369,6 +369,9 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("RT_GROUP_ICON", smoke);
         Assert.Contains("Native EXE icons 3/3 offline checks passed.", smoke);
         Assert.Contains("Verify distinct embedded native EXE icons", workflow);
+        var banner = Read("eng/Updater-Banner.ps1");
+        Assert.Contains("ExtractAssociatedIcon($nativeLauncherPath)", banner);
+        Assert.Contains("$form.Icon=$script:nativeLauncherIcon", banner);
     }
 
 }
