@@ -562,12 +562,29 @@ function Probe {
  }catch{}
  return $a
 }
+function Assert-InstallDependencies($inventory) {
+ # The download is pointless if the same Windows host cannot run Lite.
+ # Fail closed on an absent manager, partial inventory, or unknown values.
+ if($null -eq $inventory -or $inventory -isnot [Collections.IDictionary]){
+  throw 'Missing Lite prerequisites. Recheck Microsoft runtimes first.'
+ }
+ foreach($key in @('DotNet','WinApp','VC')){
+  if(-not $inventory.Contains($key) -or
+     [string]$inventory[$key] -cne 'Installed'){
+   throw ('Missing Lite prerequisites: '+$key+
+    '. Install/update Microsoft components, then recheck.')
+  }
+ }
+}
 function Install {
  Assert-NoInterruptedInstall
  Assert-NoInterruptedRollback
  if(Get-Process -Name 'Dvinholm.App' -ErrorAction SilentlyContinue){
   throw 'Close the application before update.'
  }
+ # No GitHub API, ZIP download or install staging until all three
+ # runtime prerequisites are positively identified on this host.
+ Assert-InstallDependencies (Probe)
  $r=Latest
  $script:state.Available=Display-Version $r.Tag
  Progress 'Downloading GitHub Lite ZIP and SHA256SUMS...'
@@ -1040,6 +1057,24 @@ function SelfTest {
   $versionChecks++
   if($versionChecks -ne 8){throw 'Wrong verified-version display check count.'}
   Write-Host 'Updater Banner 8/8 verified channel version display checks passed.'
+  $preflightChecks=0
+  $allInstalled=@{DotNet='Installed';WinApp='Installed';VC='Installed'}
+  Assert-InstallDependencies $allInstalled
+  $preflightChecks++
+  foreach($key in @('DotNet','WinApp','VC')){
+   $missing=@{DotNet='Installed';WinApp='Installed';VC='Installed'}
+   $missing[$key]='Missing'
+   Reject {Assert-InstallDependencies $missing}
+   $preflightChecks++
+  }
+  Reject {Assert-InstallDependencies @{DotNet='Unknown';WinApp='Installed';VC='Installed'}}
+  $preflightChecks++
+  Reject {Assert-InstallDependencies @{DotNet='Installed';VC='Installed'}}
+  $preflightChecks++
+  Reject {Assert-InstallDependencies 'Installed'}
+  $preflightChecks++
+  if($preflightChecks -ne 7){throw 'Wrong Lite dependency preflight check count.'}
+  Write-Host 'Updater Banner 7/7 offline dependency preflight checks passed.'
  }finally{
   $script:StateFile=$originalStateFile
   $script:base=$originalBase
