@@ -1440,6 +1440,13 @@ $foot=Label 'Stable releases  |  Development CI  |  SHA-256 verification  |  Saf
 $foot.Font=New-Object Drawing.Font('Segoe UI',8)
 $foot.ForeColor=[Drawing.Color]::FromArgb(115,166,184)
 
+# The approved Aurora dashboard is a separate UI-only, source-matched module.
+$themeFile=Join-Path $PSScriptRoot 'Launcher-AuroraTheme.ps1'
+if(-not(Test-Path -LiteralPath $themeFile -PathType Leaf)){
+ throw 'Dvinholm Aurora launcher theme file is missing.'
+}
+. $themeFile
+
 $script:child=$null;$script:vendor=$null
 $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid]::NewGuid().ToString('N')+'.json')
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
@@ -1449,6 +1456,8 @@ function Update-ActionAvailability {
  $state=[string]$script:recoveryStatus
  $ready=($state -ceq 'Ready')
  $choice.Enabled=-not $busy
+ $stableRadio.Enabled=-not $busy
+ $developmentRadio.Enabled=-not $busy
  $check.Enabled=($ready -and -not $busy)
  $install.Enabled=($ready -and -not $busy)
  $launch.Enabled=($ready -and -not $busy)
@@ -1493,6 +1502,7 @@ function Begin-Action([string]$action){
    'Confirm update',[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
+ $downloadPercent.Text=''
  if(Test-Path $script:statefile){Remove-Item $script:statefile -Force}
  $script:recoveryStatus='Not checked'
  $recovery.Text='Recovery: checking local state...'
@@ -1551,6 +1561,7 @@ function Apply-WorkerSnapshot($snapshot) {
  $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
   '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
  $status.Text=[string]$snapshot.Detail
+ $downloadPercent.Text=''
  # The ZIP byte count is read from the actual download, never fabricated.
  if($script:child -and [string]$snapshot.DownloadId -cmatch '^[0-9a-f]{32}$' -and
     [long]$snapshot.DownloadTotal -gt 0){
@@ -1563,6 +1574,7 @@ function Apply-WorkerSnapshot($snapshot) {
      100.0*[double]$bytes/[double]$snapshot.DownloadTotal)))
     $bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
     $bar.Value=$percent
+    $downloadPercent.Text=([string]$percent+'%')
    }
   }
  }
@@ -1601,6 +1613,7 @@ function Poll-WorkerState {
  }
  if($script:vendor -and $script:vendor.HasExited){
   $exitCode=[int]$script:vendor.ExitCode
+  $downloadPercent.Text=''
   $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
   if($exitCode -eq 0){
    # Only successful installer completion triggers an automatic local probe.
