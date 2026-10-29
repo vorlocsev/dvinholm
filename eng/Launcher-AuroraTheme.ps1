@@ -16,10 +16,59 @@ $form.BackColor=[Drawing.Color]::FromArgb(8,19,34)
 $form.ForeColor=[Drawing.Color]::FromArgb(228,239,250)
 $form.MaximizeBox=$false
 $hero.SetBounds(0,0,1180,232)
+# This is the original repository banner, bundled for offline use. The Win11
+# WIC decoder may be absent on LTSC systems, so keep the painted Aurora
+# panorama as a fully functional dependency-free fallback.
+$script:heroBackdrop=$null
+$script:heroBackdropStream=$null
+$script:serviceBackdropIsApproved=$false
+# The exact upper banner from the approved Service Cockpit reference is a
+# compact local JPEG. GDI+ decodes it without .NET 10, WinApp or WebP codecs.
+$approvedBanner=Join-Path $PSScriptRoot 'launcher-service-cockpit-banner.jpg'
+if(Test-Path -LiteralPath $approvedBanner -PathType Leaf){
+ try {
+  $script:heroBackdrop=[Drawing.Image]::FromFile($approvedBanner)
+  $script:serviceBackdropIsApproved=$true
+ }catch{$script:heroBackdrop=$null}
+}
+# Older launcher packages retain their approved repository WebP banner.
+$bannerPath=Join-Path $PSScriptRoot 'dvinholm-banner.webp'
+if(-not $script:heroBackdrop -and
+   -not(Test-Path -LiteralPath (Join-Path $PSScriptRoot 'Launcher-ServiceCockpit.ps1') -PathType Leaf) -and
+   (Test-Path -LiteralPath $bannerPath -PathType Leaf)){
+ try {
+  Add-Type -AssemblyName PresentationCore -ErrorAction Stop
+  Add-Type -AssemblyName WindowsBase -ErrorAction Stop
+  $source=[Windows.Media.Imaging.BitmapImage]::new()
+  $source.BeginInit()
+  $source.CacheOption=[Windows.Media.Imaging.BitmapCacheOption]::OnLoad
+  $source.UriSource=[Uri]::new($bannerPath)
+  $source.EndInit()
+  $encoder=[Windows.Media.Imaging.PngBitmapEncoder]::new()
+  $encoder.Frames.Add([Windows.Media.Imaging.BitmapFrame]::Create($source))
+  $script:heroBackdropStream=New-Object IO.MemoryStream
+  $encoder.Save($script:heroBackdropStream)
+  $script:heroBackdropStream.Position=0
+  $script:heroBackdrop=[Drawing.Image]::FromStream($script:heroBackdropStream)
+ }catch{
+  $script:heroBackdrop=$null
+  if($script:heroBackdropStream){$script:heroBackdropStream.Dispose()}
+  $script:heroBackdropStream=$null
+ }
+}
 $hero.Add_Paint({
  $g=$_.Graphics
  $g.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
- $g.ScaleTransform([single]$script:auroraScale,[single]($script:auroraScale*(156.0/232.0)))
+ if($script:heroBackdrop){
+  $image=$script:heroBackdrop
+  $scale=[Math]::Max([double]$hero.Width/$image.Width,[double]$hero.Height/$image.Height)
+  $width=[single]($image.Width*$scale)
+  $height=[single]($image.Height*$scale)
+  $g.DrawImage($image,[Drawing.RectangleF]::new(
+   [single](($hero.Width-$width)/2),[single](($hero.Height-$height)/2),$width,$height))
+  return
+ }
+ $g.ScaleTransform([single]$script:auroraScale,[single]($script:auroraScale*(182.0/232.0)))
  $sky=[Drawing.Drawing2D.LinearGradientBrush]::new(
   [Drawing.Rectangle]::new(0,0,1180,232),
   [Drawing.Color]::FromArgb(10,30,61),
@@ -94,7 +143,7 @@ $hero.Add_Paint({
 $brandTitle.Text='DVINHOLM'
 $brandTitle.Font=[Drawing.Font]::new('Segoe UI',39,[Drawing.FontStyle]::Bold)
 $brandTitle.SetBounds(220,66,700,76)
-$brandSub.Text='DIAGNOSTICS  ·  CONTROL  ·  CONFIGURATION'
+$brandSub.Text='DIAGNOSTICS  ·  CEM  ·  CONFIGURATION'
 $brandSub.Font=[Drawing.Font]::new('Segoe UI',11)
 $brandSub.SetBounds(225,144,700,32)
 if($null -ne $logo){$logo.SetBounds(45,42,145,143)}
@@ -103,6 +152,8 @@ function AuroraCard([int]$x,[int]$y,[int]$w,[int]$h){
  $p=New-Object Windows.Forms.Panel
  $p.SetBounds($x,$y,$w,$h)
  $p.BackColor=[Drawing.Color]::FromArgb(14,34,57)
+ # The old advanced-recovery card is not part of the new compact dashboard.
+ $p.Visible=($y -ne 713)
  $p.BorderStyle=[Windows.Forms.BorderStyle]::FixedSingle
  $form.Controls.Add($p);$p.SendToBack()
 }
@@ -144,19 +195,19 @@ function SelectAuroraNav([Windows.Forms.Button]$item){
  $item.ForeColor=[Drawing.Color]::White
 }
 SelectAuroraNav $navHome
-$navHome.Add_Click({SelectAuroraNav $navHome;$stableRadio.Focus()})
-$navUpdates.Add_Click({SelectAuroraNav $navUpdates;$check.Focus()})
-$navDependencies.Add_Click({SelectAuroraNav $navDependencies;$refresh.Focus()})
-$navSettings.Add_Click({SelectAuroraNav $navSettings;$rollback.Focus()})
+# Every navigation entry performs a real, named action. No focus-only links.
+$navHome.Add_Click({SelectAuroraNav $navHome;Begin-Action 'Launch'})
+$navUpdates.Add_Click({SelectAuroraNav $navUpdates;Begin-Action 'Check'})
+$navDependencies.Add_Click({SelectAuroraNav $navDependencies;Begin-Action 'Probe'})
+$navSettings.Add_Click({SelectAuroraNav $navSettings;Show-LauncherSettings})
 $navAbout.Add_Click({
  SelectAuroraNav $navAbout
- [void][Windows.Forms.MessageBox]::Show(
-  'Dvinholm Launcher: Windows x86. Stable and Development are separate.'+
-  [Environment]::NewLine+'SHA-256 integrity checks and offline rollback are preserved.',
+ [void][Windows.Forms.MessageBox]::Show($form,
+  (Translate 'aboutMessage'),
   'Dvinholm Launcher',[Windows.Forms.MessageBoxButtons]::OK)
 })
 $sidebarFooter=New-Object Windows.Forms.Label
-$sidebarFooter.Text='DVINHOLM LAUNCHER'+[Environment]::NewLine+'WINDOWS X86  ·  DVINHOLM'
+$sidebarFooter.Text='DVINHOLM LAUNCHER'+[Environment]::NewLine+'WINDOWS X86'
 $sidebarFooter.ForeColor=[Drawing.Color]::FromArgb(112,161,193)
 $sidebarFooter.SetBounds(22,502,180,45)
 $sidebar.Controls.Add($sidebarFooter)
@@ -210,6 +261,11 @@ $vc.SetBounds(828,663,310,34)
 $rollback.SetBounds(257,730,265,35)
 $repair.SetBounds(535,730,285,35)
 $repairInstall.SetBounds(833,730,300,35)
+# Recovery is an advanced action in the working Settings dialog, not an
+# always-visible row stealing space from the approved Aurora banner.
+$rollback.Visible=$false
+$repair.Visible=$false
+$repairInstall.Visible=$false
 $foot.Visible=$false;$title.Visible=$false;$strap.Visible=$false
 
 function AuroraText([string]$text,[int]$x,[int]$y,[int]$w){
@@ -235,6 +291,16 @@ foreach($c in @($installed,$available,$stableRadio,$developmentRadio,$check,
  $dependenciesTitle,$downloadPercent)){
  $c.BringToFront()
 }
+# The existing Aurora artwork remains the prominent top banner. Language
+# selection stays inside the hero so it never creates another bottom row.
+$languageChoice=New-Object Windows.Forms.ComboBox
+$languageChoice.DropDownStyle=[Windows.Forms.ComboBoxStyle]::DropDownList
+[void]$languageChoice.Items.Add('Русский')
+[void]$languageChoice.Items.Add('English')
+$languageChoice.SetBounds(1026,17,134,32)
+$languageChoice.BackColor=[Drawing.Color]::FromArgb(18,46,70)
+$languageChoice.ForeColor=[Drawing.Color]::White
+$hero.Controls.Add($languageChoice)
 $hero.BringToFront()
 $sidebar.BringToFront()
 
@@ -268,16 +334,19 @@ function Set-AuroraCompactLayout {
  # Shorten it before scaling; the painted scene is vertically fitted too.
  # Shift only top-level controls below the hero (nested sidebar links retain
  # their own coordinates). This executes once when the Launcher is built.
- $heroHeight=156
+ $heroHeight=182
  $verticalSaving=232-$heroHeight
  $referenceWidth=1180
- $referenceHeight=790-$verticalSaving
+ # Remove the old 50px bottom recovery row to give the banner real height.
+ $referenceHeight=790-$verticalSaving-50
  $form.SuspendLayout()
  try {
   $hero.Height=$heroHeight
+  # The original Aurora panorama and Dvinholm emblem remain visible.
   # Leave a small inset: independent rounding of sidebar Top and Height
   # otherwise gives a one-pixel overflow at 80% scale.
-  $sidebar.Height=546
+  $sidebar.Top=183
+  $sidebar.Height=502
   $brandTitle.SetBounds(210,30,700,62)
   $brandTitle.Font=[Drawing.Font]::new('Segoe UI',34,[Drawing.FontStyle]::Bold)
   $brandSub.SetBounds(215,101,700,26)
@@ -287,9 +356,9 @@ function Set-AuroraCompactLayout {
     $control.Top-=$verticalSaving
    }
   }
-  # The original three-line footer was visibly cut off at the bottom.
+  # Keep the footer clear of working driver navigation at 80% scaling.
   $sidebarFooter.Text='DVINHOLM'+[Environment]::NewLine+'Windows x86'
-  $sidebarFooter.SetBounds(22,428,180,64)
+  $sidebarFooter.SetBounds(22,392,180,58)
  }finally{$form.ResumeLayout($false)}
  # Account for the Windows taskbar and non-client frame before selecting
  # final dimensions. Preserve the compact maximum at normal DPI.

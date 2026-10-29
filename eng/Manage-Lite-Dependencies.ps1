@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
   Standalone Dvinholm Lite dependency manager (Windows PowerShell / .NET Framework).
   Runs BEFORE the WinUI/.NET 10 app when started with Start-Dvinholm-Lite.cmd.
@@ -662,21 +662,40 @@ if ($Mode -eq 'Install') {
 
 $initial = Test-Ready
 if ($Mode -eq 'Launch' -and $initial.Ready) {
-    Start-Process -FilePath $app -WorkingDirectory $root
+    # Exit 0 means the OS accepted creation of the application process.
+    Start-Process -FilePath $app -WorkingDirectory $root -ErrorAction Stop
     exit 0
 }
 
+# Read the optional launcher language without invoking its UI or network.
+# The mode continues to work standalone when no launcher preference exists.
+$script:depLanguage='EN'
+try {
+ $langFile=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Dvinholm\UpdaterBanner\language-preference.txt'
+ if(Test-Path -LiteralPath $langFile -PathType Leaf){
+  $item=Get-Item -LiteralPath $langFile -Force
+  if($item.Length -le 8 -and
+     ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0){
+   $lang=[IO.File]::ReadAllText($langFile,[Text.Encoding]::ASCII).Trim()
+   if($lang -cin @('RU','EN')){$script:depLanguage=$lang}
+  }
+ }
+}catch{}
+function DialogText([string]$ru,[string]$en){
+ if($script:depLanguage -eq 'RU'){return $ru}
+ return $en
+}
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 $form = New-Object Windows.Forms.Form
-$form.Text = 'Dvinholm Lite - Dependencies'
+$form.Text = DialogText 'Dvinholm · Компоненты Windows' 'Dvinholm · Windows dependencies'
 $form.Size = New-Object Drawing.Size(660,390)
 $form.MinimumSize = New-Object Drawing.Size(660,390)
 $form.StartPosition = 'CenterScreen'
 $form.Font = New-Object Drawing.Font('Segoe UI',10)
 $intro = New-Object Windows.Forms.Label
 $intro.SetBounds(15,15,610,42)
-$intro.Text = 'Install or update Microsoft components for Dvinholm Lite x86. Downloads start only after confirmation. Windows may request administrator approval.'
+$intro.Text = DialogText 'Установите необходимые компоненты Microsoft x86. Загрузка только по подтверждению; возможен запрос UAC.' 'Install Microsoft x86 components for Dvinholm. Downloads start only after confirmation; UAC may appear.'
 $form.Controls.Add($intro)
 
 $rows = @(
@@ -695,7 +714,7 @@ foreach ($entry in $rows) {
     $labels[$name] = $label
     $button = New-Object Windows.Forms.Button
     $button.SetBounds(370,$entry.Top-5,240,35)
-    $button.Text = 'Install / Update'
+    $button.Text = DialogText 'Установить / обновить' 'Install / Update'
     $button.Tag = $name
     $form.Controls.Add($button)
     $buttons[$name] = $button
@@ -727,38 +746,47 @@ $status.SetBounds(15,212,615,53)
 $form.Controls.Add($status)
 $refresh = New-Object Windows.Forms.Button
 $refresh.SetBounds(15,284,160,36)
-$refresh.Text = 'Recheck'
+$refresh.Text = DialogText 'Перепроверить' 'Recheck'
 $form.Controls.Add($refresh)
 $launch = New-Object Windows.Forms.Button
 $launch.SetBounds(185,284,215,36)
-$launch.Text = 'Start Dvinholm'
+$launch.Text = DialogText 'Запустить Dvinholm' 'Start Dvinholm'
 $form.Controls.Add($launch)
 $exit = New-Object Windows.Forms.Button
 $exit.SetBounds(410,284,200,36)
-$exit.Text = 'Close'
+$exit.Text = DialogText 'Закрыть' 'Close'
 $form.Controls.Add($exit)
 $script:ready = $false
+$script:appProcessStarted = $false
 function Update-View {
     $inventory = Get-Inventory
     foreach ($entry in $rows) {
         $ok = [bool]$inventory.($entry.Name)
         $labels[$entry.Name].Text = $entry.Text + '   ' +
-            $(if ($ok) { 'Detected' } else { 'Not verified' })
+            $(if ($ok) { DialogText 'Обнаружено' 'Detected' } else { DialogText 'Не проверено' 'Not verified' })
     }
     $check = Test-Ready
     $script:ready = [bool]$check.Ready
     $status.Text = if ($script:ready) {
-        'Ready: exact Lite prerequisite checker passed. You can start Dvinholm.'
+        (DialogText 'Готово: проверка компонентов выполнена. Можно запустить Dvinholm.' 'Ready: exact Lite prerequisite checker passed. You can start Dvinholm.')
     } else {
-        'Not ready: ' + [string]$check.Reason
+        (DialogText 'Не готово: ' 'Not ready: ') + [string]$check.Reason
     }
     $launch.Enabled = $script:ready
 }
 $refresh.Add_Click({ Update-View })
 $launch.Add_Click({
     if (-not (Test-Ready).Ready) { Update-View; return }
-    Start-Process -FilePath $app -WorkingDirectory $root
-    $form.Close()
+    try {
+        Start-Process -FilePath $app -WorkingDirectory $root -ErrorAction Stop
+        $script:appProcessStarted = $true
+        $form.Close()
+    } catch {
+        [void][Windows.Forms.MessageBox]::Show($form,
+          'Windows could not start Dvinholm: '+$_.Exception.Message,
+          'Dvinholm',[Windows.Forms.MessageBoxButtons]::OK,
+          [Windows.Forms.MessageBoxIcon]::Error)
+    }
 })
 $exit.Add_Click({ $form.Close() })
 $timer = New-Object Windows.Forms.Timer
@@ -786,3 +814,6 @@ $timer.Start()
 $form.Add_Shown({ Update-View })
 try { [void]$form.ShowDialog() }
 finally { $timer.Stop(); $timer.Dispose(); $form.Dispose() }
+# The updater must not interpret a dismissed prerequisites dialog as a
+# successful application launch. Only Start-Process success is a handoff.
+if ($Mode -eq 'Launch' -and -not $script:appProcessStarted) { exit 41 }

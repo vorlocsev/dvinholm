@@ -1,4 +1,4 @@
-#requires -Version 5.1
+﻿#requires -Version 5.1
 <#
 Standalone Windows 11 updater. Only inbox PowerShell 5.1 and .NET Framework
 WinForms are needed; .NET 10, Windows App SDK and VC x86 are NOT needed to run.
@@ -18,6 +18,7 @@ $sumsName='SHA256SUMS.txt'
 $manager=Join-Path $PSScriptRoot 'Manage-Lite-Dependencies.ps1'
 $base=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Dvinholm\UpdaterBanner'
 $preferenceFile=Join-Path $base 'channel-preference.txt'
+$languageFile=Join-Path $base 'language-preference.txt'
 # Dvinholm.exe follows the same remembered channel as Launcher.exe.
 if($Mode -eq 'Launch' -and -not $PSBoundParameters.ContainsKey('Channel')){
  try {
@@ -196,6 +197,115 @@ function Save-ChannelPreference([string]$selected) {
    Remove-Item -LiteralPath $temp -Force -ErrorAction SilentlyContinue
   }
  }
+}
+# RU/EN is a per-user preference, independent of the installed channel.
+# Read small regular files only; never follow an attacker-controlled reparse point.
+function Read-LauncherLanguage {
+ try {
+  if(-not(Test-Path -LiteralPath $languageFile -PathType Leaf)){return 'RU'}
+  $item=Get-Item -LiteralPath $languageFile -Force
+  if($item.Length -gt 8 -or
+     ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){return 'RU'}
+  $value=[IO.File]::ReadAllText($languageFile,[Text.Encoding]::ASCII).Trim()
+  if($value -cin @('RU','EN')){return $value}
+ }catch{}
+ return 'RU'
+}
+function Save-LauncherLanguage([string]$value) {
+ if($value -cnotin @('RU','EN')){return $false}
+ $tmp=$null
+ try {
+  Assert-ManagedFolder (Split-Path -Parent $base)
+  Assert-ManagedFolder $base
+  [IO.Directory]::CreateDirectory($base)|Out-Null
+  if(Test-Path -LiteralPath $languageFile) {
+   $item=Get-Item -LiteralPath $languageFile -Force
+   if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){return $false}
+  }
+  $tmp=Join-Path $base ('language-'+[guid]::NewGuid().ToString('N')+'.tmp')
+  [IO.File]::WriteAllText($tmp,$value,[Text.Encoding]::ASCII)
+  Move-Item -LiteralPath $tmp -Destination $languageFile -Force
+  return $true
+ }catch{return $false}
+ finally{
+  if($tmp -and (Test-Path -LiteralPath $tmp)){
+   Remove-Item -LiteralPath $tmp -Force -ErrorAction SilentlyContinue
+  }
+ }
+}
+$script:launcherLanguage=Read-LauncherLanguage
+function Translate([string]$key) {
+ $labels=@{
+  RU=@{
+   home='▶  Запуск';updates='↻  Обновления'
+   dependencies='◈  Компоненты';settings='⚙  Настройки'
+   about='ⓘ  О программе';drivers='▣  Драйверы'
+   channel='КАНАЛ ОБНОВЛЕНИЙ';progress='ЗАГРУЗКА И УСТАНОВКА'
+   prereqs='КОМПОНЕНТЫ WINDOWS';stable='Stable · официальный релиз'
+   dev='Development · сборки CI';installed='Установлено';available='Доступно'
+   recovery='Восстановление';check='Проверить обновления'
+   install='Скачать / установить';launch='Запустить Dvinholm'
+   refresh='Перепроверить';versions='Проверить версии компонентов'
+   dot='Установить .NET x86';win='Установить WinApp'
+   vc='Установить VC++ x86';rollback='Предыдущая версия'
+   repair='Исправить откат';repairInstall='Исправить установку'
+   aboutMessage='Dvinholm Launcher · Windows x86. Stable и Development устанавливаются отдельно. Загрузки проверяются SHA-256. Поддерживается откат, проверка компонентов Windows и драйверов J2534. Физический адаптер здесь не тестируется.'
+   settingsTitle='Настройки лаунчера';language='Язык';channelSetting='Канал обновлений'
+   save='Применить';cancel='Отмена'
+   confirmInstall='Скачать архив выбранной версии, проверить SHA-256 и установить в отдельный каталог канала?'
+   confirmRollback='Восстановить предыдущую сборку выбранного канала без загрузки? Закройте Dvinholm.'
+   confirmRepair='Восстановить прерванный откат? Закройте Dvinholm.'
+   confirmRepairInstall='Восстановить прерванную установку? Закройте Dvinholm.'
+   confirmVendor='Скачать и запустить официальный установщик Microsoft? Возможен запрос UAC.'
+   confirmTitle='Подтверждение'
+   cockpitReady='ГОТОВ';cockpitUnchecked='НЕ ПРОВЕРЕНО';cockpitCaption='Диагностика и конфигурация автомобиля'
+   channelHeading='Канал обновлений';stableHint='Stable: релиз / Development: сборки CI'
+   afterLaunch='После запуска Dvinholm лаунчер закроется.'
+   updatesHeading='Обновления Dvinholm';updatesHint='Проверка SHA-256, загрузка и установка'
+   windowsHeading='Требования Windows';windowsHint='Проверка компонентов и версий x86'
+   driversHeading='Драйверы адаптеров';driversHint='J2534 · Volvo DiCE · Mongoose JLR'
+   driversUnchecked='Драйверы ещё не проверены';driversScan='Проверить'
+   driversOpen='Открыть драйверы';settingsQuick='Настройки'
+   windowsQuick='Перепроверить';depsInstall='Установить компоненты'
+   componentsTitle='Компоненты Microsoft x86';componentsNotice='Выберите компонент для установки. Будет показано подтверждение.'
+  }
+  EN=@{
+   home='▶  Launch';updates='↻  Updates'
+   dependencies='◈  Dependencies';settings='⚙  Settings'
+   about='ⓘ  About';drivers='▣  Drivers'
+   channel='UPDATE CHANNEL';progress='DOWNLOAD AND INSTALL'
+   prereqs='WINDOWS PREREQUISITES';stable='Stable · official release'
+   dev='Development · latest CI';installed='Installed';available='Available'
+   recovery='Recovery';check='Check updates'
+   install='Download / Install';launch='Start Dvinholm'
+   refresh='Recheck dependencies';versions='Check runtime versions'
+   dot='Install .NET x86';win='Install WinApp'
+   vc='Install VC++ x86';rollback='Restore previous'
+   repair='Repair rollback';repairInstall='Repair install'
+   aboutMessage='Dvinholm Launcher · Windows x86. Stable and Development use isolated installs. Downloads are SHA-256 verified. Offline rollback, Windows prerequisites and J2534 driver checks are available. Physical hardware is not tested.'
+   settingsTitle='Launcher settings';language='Language';channelSetting='Update channel'
+   save='Apply';cancel='Cancel'
+   confirmInstall='Download the selected application ZIP, verify SHA-256 and install it into an isolated channel?'
+   confirmRollback='Restore the previous build in the selected channel without downloading? Close Dvinholm first.'
+   confirmRepair='Repair an interrupted rollback? Close Dvinholm first.'
+   confirmRepairInstall='Repair an interrupted installation? Close Dvinholm first.'
+   confirmVendor='Download and run the official Microsoft installer? UAC may be requested.'
+   confirmTitle='Confirm action'
+   cockpitReady='READY';cockpitUnchecked='NOT CHECKED';cockpitCaption='Vehicle diagnostics and configuration'
+   channelHeading='Update channel';stableHint='Stable releases / Development CI builds'
+   afterLaunch='Launcher closes after Dvinholm starts successfully.'
+   updatesHeading='Dvinholm updates';updatesHint='SHA-256 verification, download and installation'
+   windowsHeading='Windows requirements';windowsHint='Check installed x86 components and versions'
+   driversHeading='Adapter drivers';driversHint='J2534 · Volvo DiCE · Mongoose JLR'
+   driversUnchecked='Drivers not checked yet';driversScan='Scan drivers'
+   driversOpen='Open drivers';settingsQuick='Settings'
+   windowsQuick='Recheck';depsInstall='Install components'
+   componentsTitle='Microsoft x86 prerequisites';componentsNotice='Select the component to install. Confirmation is required.'
+  }
+ }
+ $value=$labels[$script:launcherLanguage][$key]
+ if($null -eq $value){return $key}
+ return [string]$value
 }
 function Read-ManagedVersion([string]$folder) {
  Assert-ManagedFolder $base
@@ -552,10 +662,11 @@ function Get-VerifiedLaunchTarget {
   File=(Join-Path $current 'Start-Dvinholm-Lite.cmd')
  }
 }
-function Start-VerifiedApplicationHelper([string]$directory) {
- # Execute the same prerequisite-aware entrypoint as Start-Dvinholm-Lite.cmd,
- # without ShellExecute's .cmd association or a second cmd.exe parser.
- $helper=Join-Path $directory 'Manage-Lite-Dependencies.ps1'
+function Start-VerifiedApplicationHelper([string]$directory,[string]$testHelper='') {
+ # Use the launcher's own dependency manager, not scripts from a downloaded
+ # application channel. The optional test helper is used only in SelfTest.
+ # Never invoke a .cmd shell association or inherit a channel's scripts.
+ $helper=if($testHelper){$testHelper}else{$manager}
  if(-not(Test-Path -LiteralPath $helper -PathType Leaf)){
   throw 'Launch blocked: application dependency manager is missing.'
  }
@@ -609,21 +720,21 @@ if($actual -cne $PSScriptRoot.TrimEnd('\')){exit 22}
 exit 0
 '@
    [IO.File]::WriteAllText($helper,$fixture,[Text.Encoding]::ASCII)
-   Start-VerifiedApplicationHelper $dir
+   Start-VerifiedApplicationHelper $dir $helper
    if([IO.File]::ReadAllText((Join-Path $dir 'observed.txt')) -cne $dir){
     throw 'Application helper directory argument changed.'
    }
   }
   [IO.File]::WriteAllText($helper,'exit 23',[Text.Encoding]::ASCII)
   $failed=$false
-  try{Start-VerifiedApplicationHelper $dir}catch{
+  try{Start-VerifiedApplicationHelper $dir $helper}catch{
    if($_.Exception.Message -notmatch 'helper exited with code 23'){throw}
    $failed=$true
   }
   if(-not $failed){throw 'Failed application helper was reported as successful.'}
   Remove-Item -LiteralPath $helper -Force
   $missing=$false
-  try{Start-VerifiedApplicationHelper $dir}catch{
+  try{Start-VerifiedApplicationHelper $dir $helper}catch{
    if($_.Exception.Message -notmatch 'dependency manager is missing'){throw}
    $missing=$true
   }
@@ -1580,17 +1691,151 @@ if(-not(Test-Path -LiteralPath $driverUi -PathType Leaf)){throw 'Driver UI missi
 
 # Explicit online versions check; local Recheck deps remains offline.
 $versionsButton=Button 'Check runtime versions' 927 596 215
-$versionsButton.SetBounds(918,598,226,30)
+$versionsButton.SetBounds(918,570,226,30)
 $versionsButton.Font=New-Object Drawing.Font('Segoe UI',9)
 $versionsButton.BackColor=[Drawing.Color]::FromArgb(25,76,114)
 $versionsButton.ForeColor=[Drawing.Color]::White
 $versionsButton.FlatStyle=[Windows.Forms.FlatStyle]::Flat
 $versionsButton.BringToFront()
-# Fit the complete Aurora dashboard inside the available desktop work area,
+# Approved Service Cockpit layout; keeps the existing updater workers intact.
+$serviceTheme=Join-Path $PSScriptRoot 'Launcher-ServiceCockpit.ps1'
+if(-not(Test-Path -LiteralPath $serviceTheme -PathType Leaf)){
+ throw 'Dvinholm Service Cockpit theme missing.'
+}
+. $serviceTheme
+# Fit the complete Service Cockpit dashboard inside the available desktop work area,
 # including the Windows taskbar, before showing the fixed-size window.
 Set-AuroraCompactLayout
 
+# Localize labels, shortcuts and all settings controls without changing any
+# Stable/Development worker tokens or validation rules.
+$script:lastCurrent='Not checked'
+$script:lastAvailable='Not checked'
+$script:lastRecovery='Not checked'
+$script:serviceIsReady=$false
+function Apply-LauncherLanguage {
+ $navHome.Text=Translate 'home'
+ $navUpdates.Text=Translate 'updates'
+ $navDependencies.Text=Translate 'dependencies'
+ $navSettings.Text=Translate 'settings'
+ $navAbout.Text=Translate 'about'
+ $navDrivers.Text=Translate 'drivers'
+ $channelTitle.Text=Translate 'channel'
+ $progressTitle.Text=Translate 'progress'
+ $dependenciesTitle.Text=Translate 'prereqs'
+ $stableRadio.Text=Translate 'stable'
+ $developmentRadio.Text=Translate 'dev'
+ $installed.Text=(Translate 'installed')+': '+$script:lastCurrent
+ $available.Text=(Translate 'available')+': '+$script:lastAvailable
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
+ $check.Text=Translate 'check'
+ $install.Text=Translate 'install'
+ $launch.Text=Translate 'launch'
+ $refresh.Text=Translate 'refresh'
+ $versionsButton.Text=Translate 'versions'
+ $dot.Text=Translate 'dot'
+ $win.Text=Translate 'win'
+ $vc.Text=Translate 'vc'
+ $rollback.Text=Translate 'rollback'
+ $repair.Text=Translate 'repair'
+ $repairInstall.Text=Translate 'repairInstall'
+ # Service Cockpit controls are attached by Launcher-ServiceCockpit.ps1.
+ $serviceHeading.Text='DVINHOLM  ·  '+(Translate $(if($script:serviceIsReady){'cockpitReady'}else{'cockpitUnchecked'}))
+ $serviceStatus.Text=Translate 'cockpitCaption'
+ $channelLabel.Text=Translate 'channelHeading'
+ $releaseHint.Text=Translate 'stableHint'
+ $startNote.Text=Translate 'afterLaunch'
+ $updateHeading.Text=Translate 'updatesHeading'
+ $updateHint.Text=Translate 'updatesHint'
+ $windowsHeading.Text=Translate 'windowsHeading'
+ $windowsHint.Text=Translate 'windowsHint'
+ $driversHeading.Text=Translate 'driversHeading'
+ $driversHint.Text=Translate 'driversHint'
+ $windowsQuick.Text=Translate 'windowsQuick'
+ $depsInstallQuick.Text=Translate 'depsInstall'
+ $driverQuick.Text=Translate 'driversOpen'
+ $driverScanQuick.Text=Translate 'driversScan'
+ $settingsQuick.Text=Translate 'settingsQuick'
+ if(-not $script:driversWereProbed){
+  $driverStatus.Text=Translate 'driversUnchecked'
+ }
+ $form.Text='Dvinholm | '+$(if($script:launcherLanguage -eq 'RU'){'Лаунчер'}else{'Launcher'})
+}
+function Show-LauncherSettings {
+ if($script:child -or $script:vendor){return}
+ $dlg=New-Object Windows.Forms.Form
+ $dlg.Text=Translate 'settingsTitle'
+ $dlg.ClientSize=[Drawing.Size]::new(375,313)
+ $dlg.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedDialog
+ $dlg.MaximizeBox=$false;$dlg.MinimizeBox=$false
+ $dlg.StartPosition=[Windows.Forms.FormStartPosition]::CenterParent
+ $dlg.Font=[Drawing.Font]::new('Segoe UI',10)
+ $dlg.BackColor=[Drawing.Color]::FromArgb(12,30,49)
+ $dlg.ForeColor=[Drawing.Color]::White
+ $heading=New-Object Windows.Forms.Label
+ $heading.Text=Translate 'channelSetting'
+ $heading.SetBounds(18,18,330,22);$dlg.Controls.Add($heading)
+ $channelSelect=New-Object Windows.Forms.ComboBox
+ $channelSelect.DropDownStyle='DropDownList'
+ [void]$channelSelect.Items.Add('Development')
+ [void]$channelSelect.Items.Add('Stable')
+ $channelSelect.SelectedIndex=$choice.SelectedIndex
+ $channelSelect.SetBounds(18,43,335,28);$dlg.Controls.Add($channelSelect)
+ $languageHeading=New-Object Windows.Forms.Label
+ $languageHeading.Text=Translate 'language'
+ $languageHeading.SetBounds(18,81,330,22);$dlg.Controls.Add($languageHeading)
+ $languageSelect=New-Object Windows.Forms.ComboBox
+ $languageSelect.DropDownStyle='DropDownList'
+ [void]$languageSelect.Items.Add('Русский')
+ [void]$languageSelect.Items.Add('English')
+ $languageSelect.SelectedIndex=$languageChoice.SelectedIndex
+ $languageSelect.SetBounds(18,106,335,28);$dlg.Controls.Add($languageSelect)
+ $save=New-Object Windows.Forms.Button
+ $save.Text=Translate 'save'
+ $save.SetBounds(174,151,88,30);$dlg.Controls.Add($save)
+ $cancel=New-Object Windows.Forms.Button
+ $cancel.Text=Translate 'cancel'
+ $cancel.SetBounds(269,151,84,30);$dlg.Controls.Add($cancel)
+ $advanced=New-Object Windows.Forms.Label
+ $advanced.Text=if($script:launcherLanguage -eq 'RU'){'ВОССТАНОВЛЕНИЕ'}else{'RECOVERY'}
+ $advanced.SetBounds(18,194,340,24);$dlg.Controls.Add($advanced)
+ $restore=New-Object Windows.Forms.Button
+ $restore.Text=Translate 'rollback'
+ $restore.SetBounds(18,226,335,28)
+ $restore.Enabled=($script:recoveryStatus -ceq 'Ready')
+ $dlg.Controls.Add($restore)
+ $repairRollback=New-Object Windows.Forms.Button
+ $repairRollback.Text=Translate 'repair'
+ $repairRollback.SetBounds(18,263,160,28)
+ $repairRollback.Enabled=($script:recoveryStatus -ceq 'Repair rollback')
+ $dlg.Controls.Add($repairRollback)
+ $repairInstallButton=New-Object Windows.Forms.Button
+ $repairInstallButton.Text=Translate 'repairInstall'
+ $repairInstallButton.SetBounds(188,263,165,28)
+ $repairInstallButton.Enabled=($script:recoveryStatus -ceq 'Repair install')
+ $dlg.Controls.Add($repairInstallButton)
+ $restore.Add_Click({$dlg.Close();Begin-Action 'Rollback'})
+ $repairRollback.Add_Click({$dlg.Close();Begin-Action 'Repair'})
+ $repairInstallButton.Add_Click({$dlg.Close();Begin-Action 'RepairInstall'})
+ $save.Add_Click({
+  if($channelSelect.SelectedIndex -ge 0){$choice.SelectedIndex=$channelSelect.SelectedIndex}
+  if($languageSelect.SelectedIndex -ge 0){$languageChoice.SelectedIndex=$languageSelect.SelectedIndex}
+  $dlg.Close()
+ })
+ $cancel.Add_Click({$dlg.Close()})
+ try{[void]$dlg.ShowDialog($form)}finally{$dlg.Dispose()}
+}
+$languageChoice.Add_SelectedIndexChanged({
+ if($languageChoice.SelectedIndex -lt 0){return}
+ $script:launcherLanguage=if($languageChoice.SelectedIndex -eq 0){'RU'}else{'EN'}
+ $null=Save-LauncherLanguage $script:launcherLanguage
+ Apply-LauncherLanguage
+})
+$languageChoice.SelectedIndex=if($script:launcherLanguage -eq 'EN'){1}else{0}
+Apply-LauncherLanguage
+
 $script:child=$null;$script:vendor=$null
+$script:pendingAction=''
 $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid]::NewGuid().ToString('N')+'.json')
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $script:recoveryStatus='Not checked'
@@ -1599,6 +1844,18 @@ function Update-ActionAvailability {
  $state=[string]$script:recoveryStatus
  $ready=($state -ceq 'Ready')
  $choice.Enabled=-not $busy
+ $navHome.Enabled=($ready -and -not $busy)
+ $navUpdates.Enabled=($ready -and -not $busy)
+ $navDependencies.Enabled=-not $busy
+ $navSettings.Enabled=-not $busy
+ $navAbout.Enabled=-not $busy
+ $navDrivers.Enabled=-not $busy
+ $languageChoice.Enabled=-not $busy
+ $settingsQuick.Enabled=-not $busy
+ $windowsQuick.Enabled=-not $busy
+ $depsInstallQuick.Enabled=-not $busy
+ $driverQuick.Enabled=-not $busy
+ $driverScanQuick.Enabled=-not $busy
  $stableRadio.Enabled=-not $busy
  $developmentRadio.Enabled=-not $busy
  $check.Enabled=($ready -and -not $busy)
@@ -1624,42 +1881,44 @@ function Begin-Action([string]$action){
     $script:recoveryStatus -cne 'Ready'){return}
  if($action -eq 'RepairInstall'){
   if([Windows.Forms.MessageBox]::Show(
-   'Attempt offline recovery of an interrupted application installation for the selected channel? Only a verified transaction journal and unambiguous folders will be accepted. Existing staged files are retained. Close Dvinholm first.',
-   'Confirm install recovery',[Windows.Forms.MessageBoxButtons]::YesNo,
+   (Translate 'confirmRepairInstall'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  if($action -eq 'Repair'){
   if([Windows.Forms.MessageBox]::Show(
-   'Attempt offline repair of an interrupted rollback for the selected channel? The original current build will be restored only when the on-disk state is unambiguous. Close Dvinholm first.',
-   'Confirm rollback recovery',[Windows.Forms.MessageBoxButtons]::YesNo,
+   (Translate 'confirmRepair'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  if($action -eq 'Rollback'){
   if([Windows.Forms.MessageBox]::Show(
-   'Restore the previous build of the selected channel, without downloading anything? The currently installed build becomes the backup. Close Dvinholm first.',
-   'Confirm rollback',[Windows.Forms.MessageBoxButtons]::YesNo,
+   (Translate 'confirmRollback'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  if($action -eq 'Install'){
   if([Windows.Forms.MessageBox]::Show(
-   'Download the selected application ZIP, verify checksums and install into an isolated channel? Existing manual installations will not be changed.',
-   'Confirm update',[Windows.Forms.MessageBoxButtons]::YesNo,
+   (Translate 'confirmInstall'),
+   (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  $downloadPercent.Text=''
  if(Test-Path $script:statefile){Remove-Item $script:statefile -Force}
  $script:recoveryStatus='Not checked'
- $recovery.Text='Recovery: checking local state...'
+ $script:lastRecovery='Checking'
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
  Update-ActionAvailability
  $args='-NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+$PSCommandPath+
   '" -Mode '+$action+' -Channel '+$choice.SelectedItem.ToString()+
   ' -StateFile "'+$script:statefile+'"'
  try{
   $script:child=Start-Process -FilePath $powershell -ArgumentList $args -WindowStyle Hidden -PassThru
+  $script:pendingAction=$action
   $bar.Style=[Windows.Forms.ProgressBarStyle]::Marquee;$bar.MarqueeAnimationSpeed=25
   Update-ActionAvailability
   $status.Text='Working...'
- }catch{$status.Text='Unable to launch updater helper.'}
+ }catch{$script:pendingAction='';$status.Text='Unable to launch updater helper.'}
 }
 $check.Add_Click({Begin-Action 'Check'})
 $refresh.Add_Click({Begin-Action 'Probe'})
@@ -1669,30 +1928,74 @@ $rollback.Add_Click({Begin-Action 'Rollback'})
 $repair.Add_Click({Begin-Action 'Repair'})
 $repairInstall.Add_Click({Begin-Action 'RepairInstall'})
 $launch.Add_Click({Begin-Action 'Launch'})
-foreach($b in @($dot,$win,$vc)){
- $b.Add_Click({
-  if($script:child -or $script:vendor){return}
-  $which=[string]$this.Tag
-  if([Windows.Forms.MessageBox]::Show(
-   'Download and run the official Microsoft '+$which+' installer? It may request administrator approval.',
-   'Confirm dependency installation',[Windows.Forms.MessageBoxButtons]::YesNo,
-   [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
-  $args='-NoProfile -ExecutionPolicy Bypass -File "'+$manager+'" -Mode Install -Component '+
-   $which+' -LiteDirectory "'+$PSScriptRoot+'"'
-  try{$script:vendor=Start-Process -FilePath $powershell -ArgumentList $args -PassThru
-   $status.Text='Microsoft installer opened; follow its prompts.';$bar.MarqueeAnimationSpeed=25
-   Update-ActionAvailability
-  }catch{$status.Text='Unable to start Microsoft dependency installer.'
-   Update-ActionAvailability}
- })
+function Start-MicrosoftComponent([string]$which) {
+ if($script:child -or $script:vendor){return}
+ if($which -cnotin @('DotNet','WinApp','VC')){return}
+ if([Windows.Forms.MessageBox]::Show($form,
+  (Translate 'confirmVendor')+' '+$which,
+  (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
+  [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
+ $args='-NoProfile -ExecutionPolicy Bypass -File "'+$manager+'" -Mode Install -Component '+
+  $which+' -LiteDirectory "'+$PSScriptRoot+'"'
+ try {
+  $script:vendor=Start-Process -FilePath $powershell -ArgumentList $args -PassThru
+  $status.Text='Microsoft installer opened; follow its prompts.'
+  $bar.MarqueeAnimationSpeed=25
+  Update-ActionAvailability
+ }catch{
+  $status.Text='Unable to start Microsoft dependency installer.'
+  Update-ActionAvailability
+ }
 }
+foreach($b in @($dot,$win,$vc)){
+ $b.Add_Click({Start-MicrosoftComponent ([string]$this.Tag)})
+}
+# Full prerequisite controls are reachable via a real dialog.
+function Show-MicrosoftComponents {
+ if($script:child -or $script:vendor){return}
+ $dlg=New-Object Windows.Forms.Form
+ $dlg.Text=Translate 'componentsTitle'
+ $dlg.ClientSize=[Drawing.Size]::new(430,253)
+ $dlg.StartPosition=[Windows.Forms.FormStartPosition]::CenterParent
+ $dlg.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedDialog
+ $dlg.MaximizeBox=$false
+ $dlg.BackColor=[Drawing.Color]::FromArgb(10,31,52)
+ $dlg.ForeColor=[Drawing.Color]::White
+ $dlg.Font=[Drawing.Font]::new('Segoe UI',10)
+ $intro=New-Object Windows.Forms.Label
+ $intro.Text=Translate 'componentsNotice'
+ $intro.SetBounds(17,16,394,40)
+ $dlg.Controls.Add($intro)
+ foreach($entry in @(
+  @{Key='DotNet';Caption='.NET 10 Desktop x86';Y=64},
+  @{Key='WinApp';Caption='Windows App Runtime x86';Y=119},
+  @{Key='VC';Caption='Microsoft VC++ x86';Y=174}
+ )){
+  $b=New-Object Windows.Forms.Button
+  $b.Text=$entry.Caption
+  $b.Tag=$entry.Key
+  $b.SetBounds(17,[int]$entry.Y,394,42)
+  $b.BackColor=[Drawing.Color]::FromArgb(23,77,118)
+  $b.ForeColor=[Drawing.Color]::White
+  $b.FlatStyle=[Windows.Forms.FlatStyle]::Flat
+  $dlg.Controls.Add($b)
+  $b.Add_Click({
+   $component=[string]$this.Tag
+   $dlg.Close()
+   Start-MicrosoftComponent $component
+  })
+ }
+ try{[void]$dlg.ShowDialog($form)}finally{$dlg.Dispose()}
+}
+
 $choice.Add_SelectedIndexChanged({
  if($null -ne $choice.SelectedItem){
   $null=Save-ChannelPreference ([string]$choice.SelectedItem)
  }
  if(-not $script:child -and -not $script:vendor){
   $script:recoveryStatus='Not checked'
-  $recovery.Text='Recovery: checking local state...'
+  $script:lastRecovery='Checking'
+  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
   Update-ActionAvailability
   Begin-Action 'Probe'
  }
@@ -1701,8 +2004,10 @@ function Apply-WorkerSnapshot($snapshot) {
  # Worker state is written atomically but may be read while it is still
  # running. Do not authorize further actions from a partial progress update.
  if($null -eq $snapshot){return $false}
- $installed.Text='Installed: '+[string]$snapshot.Current
- $available.Text='Available: '+[string]$snapshot.Available
+ $script:lastCurrent=[string]$snapshot.Current
+ $script:lastAvailable=[string]$snapshot.Available
+ $installed.Text=(Translate 'installed')+': '+$script:lastCurrent
+ $available.Text=(Translate 'available')+': '+$script:lastAvailable
  $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
   '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
  $status.Text=[string]$snapshot.Detail
@@ -1730,12 +2035,20 @@ function Apply-WorkerSnapshot($snapshot) {
                                            'Repair rollback','Inspect'))
  if($finished -and $valid){
   $script:recoveryStatus=[string]$snapshot.Recovery
-  $recovery.Text='Recovery: '+$script:recoveryStatus
+  $script:serviceIsReady=($script:recoveryStatus -ceq 'Ready' -and
+    $script:lastCurrent -cnotin @('Not installed','Not checked','Unverified installation') -and
+    [string]$snapshot.DotNet -ceq 'Installed' -and
+    [string]$snapshot.WinApp -ceq 'Installed' -and
+    [string]$snapshot.VC -ceq 'Installed')
+  $serviceHeading.Text='DVINHOLM  ·  '+(Translate $(if($script:serviceIsReady){'cockpitReady'}else{'cockpitUnchecked'}))
+  $script:lastRecovery=$script:recoveryStatus
+  $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
   Update-ActionAvailability
   return $true
  }
  $script:recoveryStatus='Not checked'
- $recovery.Text='Recovery: checking local state...'
+ $script:lastRecovery='Checking'
+ $recovery.Text=(Translate 'recovery')+': '+$script:lastRecovery
  Update-ActionAvailability
  return $false
 }
@@ -1753,6 +2066,14 @@ function Poll-WorkerState {
      $snapshot.PSObject.Properties['DependencyReport']){
    $reportText=[string]$snapshot.DependencyReport
   }
+  # Close only when launch worker completed successfully AND the dependency
+  # helper positively reported creation of the main application process.
+  $finishedAction=$script:pendingAction
+  $workerExit=[int]$script:child.ExitCode
+  $script:pendingAction=''
+  $launchSucceeded=($finishedAction -ceq 'Launch' -and $workerExit -eq 0 -and
+    $complete -and $null -ne $snapshot -and
+    $snapshot.Done -eq $true -and $snapshot.Failed -eq $false)
   $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
   if(-not $complete){
    $script:recoveryStatus='Not checked'
@@ -1760,6 +2081,11 @@ function Poll-WorkerState {
    $status.Text='Updater helper stopped without a complete status. Use Recheck deps.'
   }
   Update-ActionAvailability
+  if($launchSucceeded){
+   $timer.Stop()
+   $form.Close()
+   return
+  }
   if($reportText){
    [void][Windows.Forms.MessageBox]::Show($form,$reportText,
     'Dvinholm | Installed and available runtimes',
@@ -1973,77 +2299,73 @@ if($Mode -eq 'UiSmokeTest'){
   if($vendorChecks -ne 7){throw 'Wrong Microsoft installer lifecycle test count.'}
   Write-Host 'Updater Banner 7/7 WinForms vendor worker lifecycle checks passed.'
 
-  # Approved Aurora UI checks use actual WinForms controls, without
-  # displaying a window, contacting GitHub, or launching an installer.
+  # Eight Windows-only GUI contracts for the approved Service Cockpit.
+  # No modal window, network request, installer, or ECU access.
   $auroraChecks=0
   if($script:auroraScale -gt 0.80 -or $script:auroraScale -lt 0.65 -or
-     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 571){
-   throw 'Aurora dashboard was not reduced to compact dimensions.'
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552){
+   throw 'Service Cockpit is larger than the compact display envelope.'
   }
   $auroraChecks++
   if($hero.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
-     $hero.Height -ne [int][Math]::Round(156*$script:auroraScale) -or
+     $hero.Height -ne [int][Math]::Round(184*$script:auroraScale) -or
      $brandTitle.Text -cne 'DVINHOLM'){
-   throw 'Aurora hero banner was not scaled with the dashboard.'
+   throw 'Service Cockpit upper banner is missing or not correctly scaled.'
   }
   $auroraChecks++
-  if($sidebar.Controls.Count -lt 6 -or $script:auroraNav.Count -ne 6){
-   throw 'Aurora navigation was not built.'
+  if($choice.Parent -ne $form -or
+     $null -eq $script:serviceCardLeft -or
+     $sidebar.Controls.Count -lt 6 -or $stableRadio.Parent -ne $form){
+   throw 'Service Cockpit root selection or backing layout is missing.'
   }
   $auroraChecks++
-  if($stableRadio.Parent -ne $form -or
-     $developmentRadio.Parent -ne $form -or $choice.Parent -ne $form){
-   throw 'Aurora channel radio cards are missing.'
+  if($script:serviceCardUpdates -eq $null -or
+     $script:serviceCardWindows -eq $null -or
+     $script:serviceCardDrivers -eq $null -or
+     $script:serviceCardUpdates.Top -ge $script:serviceCardWindows.Top -or
+     $script:serviceCardWindows.Top -ge $script:serviceCardDrivers.Top){
+   throw 'Service Cockpit three operation cards are missing or out of order.'
   }
   $auroraChecks++
   $contentWidth=[int][Math]::Round(1180*$script:auroraScale)
-  $contentHeight=[int][Math]::Round(714*$script:auroraScale)
-  if($bar.Width -lt [int][Math]::Floor(800*$script:auroraScale) -or
-     $install.Right -gt $contentWidth -or $dot.Bottom -gt $contentHeight -or
+  $contentHeight=[int][Math]::Round(690*$script:auroraScale)
+  if($install.Right -gt $contentWidth -or
      $versionsButton.Right -gt $contentWidth -or
-     $versionsButton.Top -lt [int][Math]::Floor(514*$script:auroraScale)){
-   throw 'Aurora dashboard action/progress layout is clipped.'
+     $driverQuick.Right -gt $contentWidth -or
+     $script:serviceCardDrivers.Bottom -gt $contentHeight -or
+     $bar.Width -lt [int][Math]::Floor(650*$script:auroraScale)){
+   throw 'Service Cockpit controls extend past the display boundary.'
   }
   $auroraChecks++
   $working=[Windows.Forms.Screen]::FromControl($form).WorkingArea
   if($form.Width -gt $working.Width-16 -or $form.Height -gt $working.Height-16){
-   throw 'Aurora window still extends beyond the usable desktop work area.'
+   throw 'Service Cockpit extends beyond the Windows working area.'
   }
   $auroraChecks++
-  $footerMeasure=[Windows.Forms.TextRenderer]::MeasureText(
-   $sidebarFooter.Text,$sidebarFooter.Font,
-   [Drawing.Size]::new($sidebarFooter.Width,1000),
-   [Windows.Forms.TextFormatFlags]::WordBreak)
-  if($repairInstall.Bottom -gt $contentHeight-10 -or
-     $sidebar.Bottom -gt $contentHeight-4 -or
-     $sidebarFooter.Bottom -gt $sidebar.ClientSize.Height-12 -or
-     $sidebarFooter.Top -lt $navDrivers.Bottom+12 -or
-     $footerMeasure.Height -gt $sidebarFooter.Height -or
-     ($form.AutoScroll -and $form.ClientSize.Width -ge $contentWidth -and
-      $form.ClientSize.Height -ge $contentHeight)){
-   throw ('Compact Aurora clipped: repairBottom='+$repairInstall.Bottom+
-    '; contentHeight='+$contentHeight+'; sidebarBottom='+$sidebar.Bottom+
-    '; sidebarClientHeight='+$sidebar.ClientSize.Height+
-    '; footerBottom='+$sidebarFooter.Bottom+
-    '; footerTop='+$sidebarFooter.Top+'; driversBottom='+$navDrivers.Bottom+
-    '; measuredTextHeight='+$footerMeasure.Height+
-    '; footerHeight='+$sidebarFooter.Height+'; autoScroll='+$form.AutoScroll+
-    '; visibleWidth='+$form.ClientSize.Width+
-    '; visibleHeight='+$form.ClientSize.Height)
-  }
+  $currentLanguage=$script:launcherLanguage
+  $script:launcherLanguage='EN';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Windows requirements' -or
+     $driverQuick.Text -cne 'Open drivers'){throw 'English localization did not apply.'}
+  $script:launcherLanguage='RU';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Требования Windows' -or
+     $driverQuick.Text -cne 'Открыть драйверы'){throw 'Russian localization did not apply.'}
+  $script:launcherLanguage=$currentLanguage;Apply-LauncherLanguage
   $auroraChecks++
   $script:child=[pscustomobject]@{HasExited=$false}
   Update-ActionAvailability
-  if($stableRadio.Enabled -or $developmentRadio.Enabled -or $versionsButton.Enabled){
-   throw 'Aurora channel radios or version check were not locked during updater work.'
+  if($versionsButton.Enabled -or $windowsQuick.Enabled -or
+     $driverQuick.Enabled -or $driverScanQuick.Enabled -or
+     $settingsQuick.Enabled -or $languageChoice.Enabled){
+   throw 'Service Cockpit actions were not locked during updater operation.'
   }
   $script:child=$null
   Update-ActionAvailability
-  if(-not $stableRadio.Enabled -or -not $developmentRadio.Enabled){
-   throw 'Aurora channel radios did not recover after updater work.'
+  if(-not $windowsQuick.Enabled -or -not $driverQuick.Enabled){
+   throw 'Service Cockpit actions did not recover after updater operation.'
   }
   $auroraChecks++
-  if($auroraChecks -ne 8){throw 'Wrong Aurora smoke check count.'}
+  if($auroraChecks -ne 8){throw 'Wrong Service Cockpit smoke check count.'}
+  Write-Host 'Service Cockpit 8/8 Windows WinForms layout and action smoke checks passed.'
   Write-Host 'Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.'
 
  }finally{

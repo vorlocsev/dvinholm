@@ -37,7 +37,7 @@ jobs:
       - name: Parse Windows PowerShell 5.1 distribution scripts
         shell: powershell
         run: |
-          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Manage-Lite-Dependencies.ps1', 'eng/Updater-Banner.ps1', 'eng/Launcher-AuroraTheme.ps1', 'eng/J2534-DriverManager.ps1', 'eng/J2534-DriverUI.ps1', 'eng/Package-Updater-Banner.ps1', 'eng/Build-Launchers.ps1', 'eng/Package-Launchable-Lite.ps1', 'eng/Test-Launchable-Lite.ps1', 'eng/Test-PackagedUpdaterBanner.ps1', 'eng/Test-LiteBundledPreflight.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
+          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Manage-Lite-Dependencies.ps1', 'eng/Updater-Banner.ps1', 'eng/Launcher-AuroraTheme.ps1', 'eng/Launcher-ServiceCockpit.ps1', 'eng/J2534-DriverManager.ps1', 'eng/J2534-DriverUI.ps1', 'eng/Package-Updater-Banner.ps1', 'eng/Build-Launchers.ps1', 'eng/Package-Launchable-Lite.ps1', 'eng/Test-Launchable-Lite.ps1', 'eng/Test-PackagedUpdaterBanner.ps1', 'eng/Test-LiteBundledPreflight.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
             $tokens = $null
             $syntaxErrors = $null
             [System.Management.Automation.Language.Parser]::ParseFile(

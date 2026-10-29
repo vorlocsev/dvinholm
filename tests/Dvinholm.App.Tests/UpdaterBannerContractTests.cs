@@ -222,12 +222,14 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("$form.AutoScroll=", theme);
         Assert.Contains("$form.ClientSize=[Drawing.Size]::new(", theme);
         Assert.Contains("$g.ScaleTransform(", theme);
-        Assert.Contains("$heroHeight=156", theme);
+        Assert.Contains("$heroHeight=182", theme);
         Assert.Contains("$verticalSaving=232-$heroHeight", theme);
-        Assert.Contains("$referenceHeight=790-$verticalSaving", theme);
-        Assert.Contains("$sidebarFooter.SetBounds(22,428,180,64)", theme);
+        Assert.Contains("$referenceHeight=790-$verticalSaving-50", theme);
+        Assert.Contains("$sidebarFooter.SetBounds(22,392,180,58)", theme);
         Assert.Contains("$form.AutoScrollMinSize=", theme);
         Assert.Contains("$brandTitle.Text='DVINHOLM'", theme);
+        Assert.Contains("dvinholm-banner.webp", theme);
+        Assert.Contains("$script:heroBackdrop", theme);
     }
 
     [Fact]
@@ -238,12 +240,13 @@ public sealed class UpdaterBannerContractTests
         var scale = banner.IndexOf("Set-AuroraCompactLayout", StringComparison.Ordinal);
         var smoke = banner.IndexOf("if($Mode -eq 'UiSmokeTest')", StringComparison.Ordinal);
         Assert.True(button >= 0 && scale > button && smoke > scale);
-        Assert.Contains("Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.", banner);
-        Assert.Contains("usable desktop work area", banner);
-        Assert.Contains("Compact Aurora clipped:", banner);
-        Assert.Contains("$hero.Height -ne [int][Math]::Round(156*$script:auroraScale)", banner);
-        Assert.Contains("$sidebarFooter.Bottom -gt $sidebar.ClientSize.Height-12", banner);
-        Assert.Contains("$footerMeasure.Height -gt $sidebarFooter.Height", banner);
+        var cockpit = Read("eng/Launcher-ServiceCockpit.ps1");
+        Assert.Contains("Service Cockpit 8/8 Windows WinForms layout and action smoke checks passed.", banner);
+        Assert.Contains("Screen]::FromControl($form).WorkingArea", cockpit);
+        Assert.Contains("Service Cockpit controls extend past the display boundary.", banner);
+        Assert.Contains("$hero.Height -ne [int][Math]::Round(184*$script:auroraScale)", banner);
+        Assert.Contains("$script:serviceCardDrivers.Bottom -gt $contentHeight", banner);
+        Assert.Contains("$form.AutoScroll=$needsScroll", cockpit);
     }
 
     [Fact]
@@ -260,4 +263,64 @@ public sealed class UpdaterBannerContractTests
         Assert.DoesNotContain("coreclr.dll", script);
         Assert.DoesNotContain("WindowsAppRuntime.dll", script);
     }
+
+    [Fact]
+    public void LauncherOnlyClosesOnVerifiedApplicationProcessHandoff()
+    {
+        var banner = Read("eng/Updater-Banner.ps1");
+        var manager = Read("eng/Manage-Lite-Dependencies.ps1");
+        Assert.Contains("$script:pendingAction=$action", banner);
+        Assert.Contains("$finishedAction -ceq 'Launch'", banner);
+        Assert.Contains("$snapshot.Done -eq $true", banner);
+        Assert.Contains("$snapshot.Failed -eq $false", banner);
+        Assert.Contains("if($launchSucceeded)", banner);
+        Assert.Contains("$form.Close()", banner);
+        Assert.Contains("$helper=if($testHelper){$testHelper}else{$manager}", banner);
+        Assert.Contains("$script:appProcessStarted = $true", manager);
+        Assert.Contains("if ($Mode -eq 'Launch' -and -not $script:appProcessStarted) { exit 41 }", manager);
+    }
+
+    [Fact]
+    public void AuroraNavigationHasActionsAndPersistedBilingualSettings()
+    {
+        var theme = Read("eng/Launcher-AuroraTheme.ps1");
+        var banner = Read("eng/Updater-Banner.ps1");
+        Assert.Contains("Begin-Action 'Launch'", theme);
+        Assert.Contains("Begin-Action 'Check'", theme);
+        Assert.Contains("Begin-Action 'Probe'", theme);
+        Assert.Contains("Show-LauncherSettings", theme);
+        Assert.Contains("languageChoice", theme);
+        Assert.Contains("language-preference.txt", banner);
+        Assert.Contains("Save-LauncherLanguage", banner);
+        Assert.Contains("Apply-LauncherLanguage", banner);
+        Assert.Contains("RU=@", banner);
+        Assert.Contains("EN=@", banner);
+        Assert.Contains("Begin-Action 'RepairInstall'", banner);
+        Assert.Contains("$rollback.Visible=$false", theme);
+        Assert.Contains("dvinholm-banner.webp", Read("eng/Package-Updater-Banner.ps1"));
+        Assert.Contains("Launcher-ServiceCockpit.ps1", Read("eng/Package-Updater-Banner.ps1"));
+    }
+    [Fact]
+    public void ApprovedServiceCockpitHasRealOperationsAndBilingualLayout()
+    {
+        var service = Read("eng/Launcher-ServiceCockpit.ps1");
+        var banner = Read("eng/Updater-Banner.ps1");
+        Assert.Contains("New-ServiceCard 14 194 405 482", service);
+        Assert.Contains("New-ServiceCard 430 194 736 155", service);
+        Assert.Contains("New-ServiceCard 430 357 736 155", service);
+        Assert.Contains("New-ServiceCard 430 520 736 156", service);
+        Assert.Contains("SetBounds(0,0,$referenceWidth,$heroHeight)", service);
+        Assert.Contains("$heroHeight=184", service);
+        Assert.Contains("$windowsQuick.Add_Click({Begin-Action 'Probe'})", service);
+        Assert.Contains("$driverQuick.Add_Click({Show-J2534Drivers})", service);
+        Assert.Contains("$driverScanQuick.Add_Click({Update-ServiceDriverInventory})", service);
+        Assert.Contains("$settingsQuick.Add_Click({Show-LauncherSettings})", service);
+        Assert.Contains("$depsInstallQuick.Add_Click({Show-MicrosoftComponents})", service);
+        Assert.Contains("function Show-MicrosoftComponents", banner);
+        Assert.Contains("function Start-MicrosoftComponent", banner);
+        Assert.Contains("Service Cockpit 8/8 Windows WinForms layout and action smoke checks passed.", banner);
+        Assert.Contains("componentsTitle='Microsoft x86 prerequisites'", banner);
+        Assert.Contains("componentsTitle='Компоненты Microsoft x86'", banner);
+    }
+
 }
