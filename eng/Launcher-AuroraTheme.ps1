@@ -343,7 +343,7 @@ function Set-AuroraCompactLayout {
   }
   # Keep the footer clear of working driver navigation at 80% scaling.
   $sidebarFooter.Text='DVINHOLM'+[Environment]::NewLine+'Windows x86'
-  $sidebarFooter.SetBounds(22,389,180,58)
+  $sidebarFooter.SetBounds(22,392,180,58)
  }finally{$form.ResumeLayout($false)}
  # Account for the Windows taskbar and non-client frame before selecting
  # final dimensions. Preserve the compact maximum at normal DPI.
