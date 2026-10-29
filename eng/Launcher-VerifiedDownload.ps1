@@ -71,3 +71,67 @@ function Assert-PreparedLauncherArchive {
   throw
  }
 }
+
+
+# The UI calls this only from a separate worker after user confirmation.
+# It prepares an immutable snapshot for a future *independent* installation
+# transaction and never touches the running Launcher.exe.
+function Prepare-NativeLauncher {
+ $script:state.LauncherCurrent=Read-LauncherInstalledBuild
+ $release=LatestLauncher
+ if(-not $release.Published){
+  throw 'No independent native Launcher package published for this channel.'
+ }
+ $script:state.LauncherAvailable=[string]$release.Tag
+ $relation=Get-LauncherBuildRelation $Channel $script:state.LauncherCurrent $script:state.LauncherAvailable
+ if($relation -cin @('Current','Installed build newer')){
+  throw 'No newer native Launcher release to prepare.'
+ }
+ $store=Join-Path $base 'LauncherUpdates'
+ $channelStore=Join-Path $store $Channel
+ foreach($folder in @((Split-Path -Parent $base),$base,$store,$channelStore)){
+  Assert-ManagedFolder $folder
+ }
+ [IO.Directory]::CreateDirectory($channelStore)|Out-Null
+ $ready=Join-Path $channelStore 'prepared'
+ if(Test-Path -LiteralPath $ready){
+  throw 'A prepared Launcher package already exists; inspect it before downloading another.'
+ }
+ $id=[guid]::NewGuid().ToString('N')
+ $pending=Join-Path $channelStore ('download-'+$id)
+ [IO.Directory]::CreateDirectory($pending)|Out-Null
+ try{
+  $archive=Join-Path $pending $launcherZipName
+  $manifest=Join-Path $pending $sumsName
+  $script:state.DownloadId=$id
+  $script:state.DownloadTotal=[long]$release.Zip.size
+  Save-State
+  Progress 'Downloading native Launcher ZIP and release checksums...'
+  Invoke-WebRequest -Uri $release.Zip.browser_download_url -UseBasicParsing -OutFile $archive -TimeoutSec 300
+  Invoke-WebRequest -Uri $release.Sums.browser_download_url -UseBasicParsing -OutFile $manifest -TimeoutSec 60
+  if((Get-Item -LiteralPath $archive).Length -ne [long]$release.Zip.size -or
+     (Get-Item -LiteralPath $manifest).Length -ne [long]$release.Sums.size){
+   throw 'Downloaded native Launcher asset size differs from release metadata.'
+  }
+  Progress 'Verifying native Launcher asset digests, manifest and staged files...'
+  $digest=[string]$release.Zip.digest
+  $sumDigest=[string]$release.Sums.digest
+  $validated=Assert-PreparedLauncherArchive -ZipPath $archive -SumsPath $manifest -ZipSha256 $digest.Substring(7) -SumsSha256 $sumDigest.Substring(7) -ExpectedTag $release.Tag -StageDirectory (Join-Path $pending 'staged')
+  $receipt=@{Channel=$Channel;Tag=$validated.Tag;ZipSha256=$validated.ZipHash;
+   CreatedUtc=[DateTime]::UtcNow.ToString('o');Applied=$false}
+  [IO.File]::WriteAllText((Join-Path $pending 'prepared.json'),
+   ($receipt|ConvertTo-Json -Compress),[Text.UTF8Encoding]::new($false))
+  # Same-parent rename is the commit boundary; never replace running files.
+  Move-Item -LiteralPath $pending -Destination $ready -ErrorAction Stop
+  $script:state.LauncherDetail=('Native Launcher '+$release.Tag+
+   ' downloaded and verified. Staged only; no installation performed.')
+  Progress ('Native Launcher '+$release.Tag+' prepared safely. No installed files changed.')
+ }finally{
+  if(Test-Path -LiteralPath $pending){
+   Remove-Item -LiteralPath $pending -Recurse -Force -ErrorAction SilentlyContinue
+  }
+  $script:state.DownloadId=''
+  $script:state.DownloadTotal=0
+  Save-State
+ }
+}
