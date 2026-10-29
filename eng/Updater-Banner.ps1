@@ -1671,7 +1671,7 @@ if(-not(Test-Path -LiteralPath $driverUi -PathType Leaf)){throw 'Driver UI missi
 
 # Explicit online versions check; local Recheck deps remains offline.
 $versionsButton=Button 'Check runtime versions' 927 596 215
-$versionsButton.SetBounds(918,598,226,30)
+$versionsButton.SetBounds(918,542,226,30)
 $versionsButton.Font=New-Object Drawing.Font('Segoe UI',9)
 $versionsButton.BackColor=[Drawing.Color]::FromArgb(25,76,114)
 $versionsButton.ForeColor=[Drawing.Color]::White
@@ -1718,7 +1718,7 @@ function Show-LauncherSettings {
  if($script:child -or $script:vendor){return}
  $dlg=New-Object Windows.Forms.Form
  $dlg.Text=Translate 'settingsTitle'
- $dlg.ClientSize=[Drawing.Size]::new(375,195)
+ $dlg.ClientSize=[Drawing.Size]::new(375,313)
  $dlg.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedDialog
  $dlg.MaximizeBox=$false;$dlg.MinimizeBox=$false
  $dlg.StartPosition=[Windows.Forms.FormStartPosition]::CenterParent
@@ -1749,6 +1749,27 @@ function Show-LauncherSettings {
  $cancel=New-Object Windows.Forms.Button
  $cancel.Text=Translate 'cancel'
  $cancel.SetBounds(269,151,84,30);$dlg.Controls.Add($cancel)
+ $advanced=New-Object Windows.Forms.Label
+ $advanced.Text=if($script:launcherLanguage -eq 'RU'){'ВОССТАНОВЛЕНИЕ'}else{'RECOVERY'}
+ $advanced.SetBounds(18,194,340,24);$dlg.Controls.Add($advanced)
+ $restore=New-Object Windows.Forms.Button
+ $restore.Text=Translate 'rollback'
+ $restore.SetBounds(18,226,335,28)
+ $restore.Enabled=($script:recoveryStatus -ceq 'Ready')
+ $dlg.Controls.Add($restore)
+ $repairRollback=New-Object Windows.Forms.Button
+ $repairRollback.Text=Translate 'repair'
+ $repairRollback.SetBounds(18,263,160,28)
+ $repairRollback.Enabled=($script:recoveryStatus -ceq 'Repair rollback')
+ $dlg.Controls.Add($repairRollback)
+ $repairInstallButton=New-Object Windows.Forms.Button
+ $repairInstallButton.Text=Translate 'repairInstall'
+ $repairInstallButton.SetBounds(188,263,165,28)
+ $repairInstallButton.Enabled=($script:recoveryStatus -ceq 'Repair install')
+ $dlg.Controls.Add($repairInstallButton)
+ $restore.Add_Click({$dlg.Close();Begin-Action 'Rollback'})
+ $repairRollback.Add_Click({$dlg.Close();Begin-Action 'Repair'})
+ $repairInstallButton.Add_Click({$dlg.Close();Begin-Action 'RepairInstall'})
  $save.Add_Click({
   if($channelSelect.SelectedIndex -ge 0){$choice.SelectedIndex=$channelSelect.SelectedIndex}
   if($languageSelect.SelectedIndex -ge 0){$languageChoice.SelectedIndex=$languageSelect.SelectedIndex}
@@ -2181,12 +2202,12 @@ if($Mode -eq 'UiSmokeTest'){
   # displaying a window, contacting GitHub, or launching an installer.
   $auroraChecks=0
   if($script:auroraScale -gt 0.80 -or $script:auroraScale -lt 0.65 -or
-     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 571){
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552){
    throw 'Aurora dashboard was not reduced to compact dimensions.'
   }
   $auroraChecks++
   if($hero.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
-     $hero.Height -ne [int][Math]::Round(156*$script:auroraScale) -or
+     $hero.Height -ne [int][Math]::Round(182*$script:auroraScale) -or
      $brandTitle.Text -cne 'DVINHOLM'){
    throw 'Aurora hero banner was not scaled with the dashboard.'
   }
@@ -2201,7 +2222,7 @@ if($Mode -eq 'UiSmokeTest'){
   }
   $auroraChecks++
   $contentWidth=[int][Math]::Round(1180*$script:auroraScale)
-  $contentHeight=[int][Math]::Round(714*$script:auroraScale)
+  $contentHeight=[int][Math]::Round(690*$script:auroraScale)
   if($bar.Width -lt [int][Math]::Floor(800*$script:auroraScale) -or
      $install.Right -gt $contentWidth -or $dot.Bottom -gt $contentHeight -or
      $versionsButton.Right -gt $contentWidth -or
@@ -2218,7 +2239,7 @@ if($Mode -eq 'UiSmokeTest'){
    $sidebarFooter.Text,$sidebarFooter.Font,
    [Drawing.Size]::new($sidebarFooter.Width,1000),
    [Windows.Forms.TextFormatFlags]::WordBreak)
-  if($repairInstall.Bottom -gt $contentHeight-10 -or
+  if($repairInstall.Visible -or $repair.Visible -or $rollback.Visible -or
      $sidebar.Bottom -gt $contentHeight-4 -or
      $sidebarFooter.Bottom -gt $sidebar.ClientSize.Height-12 -or
      $sidebarFooter.Top -lt $navDrivers.Bottom+12 -or
