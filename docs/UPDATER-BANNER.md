@@ -10,6 +10,14 @@ Download **Dvinholm-Updater-Banner-Windows-x86.zip** from the current
 Development ci-N prerelease. Extract the three files into their own
 directory and double-click **Updater-Banner.cmd**.
 
+The **Installed** label is validated against the selected channel's actual
+Lite directory, required ordinary files, metadata and x86 PE header. It
+reports **Unverified installation** rather than trusting a stale manifest if
+files are missing, corrupt or from another channel. Stable displays only the
+version number (for example, `0.2.4`) for both Installed and Available;
+Development continues to display `ci-N`. Canonical GitHub tags like
+`v0.2.4` are still used for download verification and transaction journals.
+
 The banner provides a **Stable / Development** selector, installed and
 available versions, three dependency statuses, a check button, a
 separately confirmed **Download / Install** button and three independent
