@@ -19,7 +19,7 @@ $hero.SetBounds(0,0,1180,232)
 $hero.Add_Paint({
  $g=$_.Graphics
  $g.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
- $g.ScaleTransform([single]$script:auroraScale,[single]($script:auroraScale*(156.0/232.0)))
+ $g.ScaleTransform([single]$script:auroraScale,[single]($script:auroraScale*(182.0/232.0)))
  $sky=[Drawing.Drawing2D.LinearGradientBrush]::new(
   [Drawing.Rectangle]::new(0,0,1180,232),
   [Drawing.Color]::FromArgb(10,30,61),
@@ -210,6 +210,11 @@ $vc.SetBounds(828,663,310,34)
 $rollback.SetBounds(257,730,265,35)
 $repair.SetBounds(535,730,285,35)
 $repairInstall.SetBounds(833,730,300,35)
+# Recovery is an advanced action in the working Settings dialog, not an
+# always-visible row stealing space from the approved Aurora banner.
+$rollback.Visible=$false
+$repair.Visible=$false
+$repairInstall.Visible=$false
 $foot.Visible=$false;$title.Visible=$false;$strap.Visible=$false
 
 function AuroraText([string]$text,[int]$x,[int]$y,[int]$w){
@@ -278,16 +283,19 @@ function Set-AuroraCompactLayout {
  # Shorten it before scaling; the painted scene is vertically fitted too.
  # Shift only top-level controls below the hero (nested sidebar links retain
  # their own coordinates). This executes once when the Launcher is built.
- $heroHeight=156
+ $heroHeight=182
  $verticalSaving=232-$heroHeight
  $referenceWidth=1180
- $referenceHeight=790-$verticalSaving
+ # Remove the old 50px bottom recovery row to give the banner real height.
+ $referenceHeight=790-$verticalSaving-50
  $form.SuspendLayout()
  try {
   $hero.Height=$heroHeight
+  # The original Aurora panorama and Dvinholm emblem remain visible.
   # Leave a small inset: independent rounding of sidebar Top and Height
   # otherwise gives a one-pixel overflow at 80% scale.
-  $sidebar.Height=546
+  $sidebar.Top=183
+  $sidebar.Height=502
   $brandTitle.SetBounds(210,30,700,62)
   $brandTitle.Font=[Drawing.Font]::new('Segoe UI',34,[Drawing.FontStyle]::Bold)
   $brandSub.SetBounds(215,101,700,26)
@@ -297,9 +305,9 @@ function Set-AuroraCompactLayout {
     $control.Top-=$verticalSaving
    }
   }
-  # The original three-line footer was visibly cut off at the bottom.
+  # Keep the footer clear of working driver navigation at 80% scaling.
   $sidebarFooter.Text='DVINHOLM'+[Environment]::NewLine+'Windows x86'
-  $sidebarFooter.SetBounds(22,428,180,64)
+  $sidebarFooter.SetBounds(22,389,180,58)
  }finally{$form.ResumeLayout($false)}
  # Account for the Windows taskbar and non-client frame before selecting
  # final dimensions. Preserve the compact maximum at normal DPI.
