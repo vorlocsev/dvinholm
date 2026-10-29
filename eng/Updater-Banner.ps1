@@ -1640,7 +1640,7 @@ function Poll-WorkerState {
     # not ready until Windows restarts. Do not rescan as a success.
     $status.Text='Vendor setup finished. Restart Windows before using the driver (exit '+$exitCode+').'
     if($script:driverResultControl -and -not $script:driverResultControl.IsDisposed){
-     $script:driverResultControl.Text='Требуется перезагрузка Windows. После неё повторите проверку адаптеров.'
+     $script:driverResultControl.Text='Windows restart required. Recheck adapter drivers after restarting Windows.'
     }
    }else{
     $status.Text='Vendor driver installer failed or was cancelled (exit '+$exitCode+').'
