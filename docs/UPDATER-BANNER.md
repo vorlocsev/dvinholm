@@ -107,6 +107,16 @@ two banner workers from modifying the same installation simultaneously.
 On an interrupted swap, the launcher attempts to restore the original
 directory names and reports if manual recovery is necessary.
 
+Before enabling updates, launches or rollback in an ordinary clean
+channel, the banner also verifies the on-disk **current** and **previous**
+Lite folders. A broken x86 executable, missing Lite file, wrong-channel
+metadata or orphaned `previous` without `current` yields
+**Recovery: Inspect**, not **Ready**. This is a read-only guard: it does not
+erase or automatically repair the folders. A clean first installation
+without any `previous` remains supported, as does an empty channel.
+Seven synthetic offline folder-state checks cover these cases; actual
+recovery and installed Windows UI behavior remain separate.
+
 **Repair rollback** is a separate, explicitly confirmed, **offline**
 recovery action for a rollback interrupted by process termination or power loss.
 It never silently repairs a directory on startup. It accepts exactly one
