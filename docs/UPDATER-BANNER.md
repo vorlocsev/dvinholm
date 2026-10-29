@@ -80,7 +80,12 @@ x86, Windows App Runtime и VC++ Redistributable x86. Для установки 
 
 - **.NET Desktop Runtime 10 x86:** установленную версию считываем
   через x86 `dotnet.exe --list-runtimes`, актуальную стабильную 10.x
-  через официальный Microsoft `releases.json`.
+  через официальный Microsoft `releases.json`. Отдельно показываем
+  **Microsoft.NETCore.App x86**; для локального статуса `READY` должны
+  присутствовать обе среды общей линии 10.x (Desktop + Core). Только
+  наличие Desktop больше не считается достаточным. Точная совместимость
+  с политикой `rollForward` и минимальной версией по-прежнему
+  определяется строгим `Check-Lite-Prerequisites.ps1` при запуске.
 - **Windows App Runtime x86:** установленная версия показывается по
   x86 MSIX Framework `Microsoft.WindowsAppRuntime.2`; актуальная
   стабильная версия SDK берётся из официального GitHub
