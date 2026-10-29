@@ -323,4 +323,19 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("componentsTitle='Компоненты Microsoft x86'", banner);
     }
 
+    [Fact]
+    public void ServiceCockpitInstallActionAndRecoveryLabelStaySafe()
+    {
+        var banner = Read("eng/Updater-Banner.ps1");
+        var cockpit = Read("eng/Launcher-ServiceCockpit.ps1");
+
+        Assert.Contains("function Test-CockpitUpdateAvailable", banner);
+        Assert.Contains("Service Cockpit update buttons 8/8 offline state checks passed.", banner);
+        Assert.Contains("Test-CockpitUpdateAvailable $script:lastCurrent $script:lastAvailable", banner);
+        Assert.Contains("if($action -ceq 'Install' -and", banner);
+        Assert.Contains("Service Cockpit Start button overlaps its recovery or help labels.", banner);
+        Assert.Contains("$recovery.SetBounds(35,586,365,24)", cockpit);
+        Assert.Contains("$launch.SetBounds(35,528,365,53)", cockpit);
+    }
+
 }
