@@ -163,16 +163,20 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("$runtimeInventory.Ready", manager);
         Assert.Contains("Test-DotNet10RuntimeInventory", manager);
         Assert.Contains("Desktop/Core x86 inventory 8/8 offline checks passed.", manager);
-        Assert.Contains("DotNetCore=[string]$installed.DotNetCore", manager);
+        Assert.Contains("DotNetCore=$components.DotNetCore", manager);
+        Assert.Contains("function ConvertTo-DependencyVersionReport", manager);
+        Assert.Contains("Lite dependency version report 8/8 offline checks passed.", manager);
     }
 
     [Fact]
     public void VersionDialogShowsDesktopAndCoreSeparately()
     {
         var banner = Read("eng/Updater-Banner.ps1");
-        Assert.Contains("'.NET Core Runtime x86: '", banner);
-        Assert.Contains("$report.DotNetCore", banner);
-        Assert.Contains("required alongside .NET Desktop Runtime", banner);
+        Assert.Contains("'DotNetCore'{'.NET Core x86'}", banner);
+        Assert.Contains("foreach($key in @('DotNet','DotNetCore','WinApp','VC'))", banner);
+        Assert.Contains("$part=$report.$key", banner);
+        Assert.Contains("latest SDK line", banner);
+        Assert.Contains("strict launch preflight still applies", banner);
         Assert.Contains("Begin-Action 'Versions'", banner);
     }
 
