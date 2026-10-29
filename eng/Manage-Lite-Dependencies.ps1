@@ -352,6 +352,31 @@ function Test-InstallerMetadataOffline {
     if ($count -ne 8) { throw 'Wrong .NET installer metadata test count.' }
     Write-Host 'Lite dependency manager 8/8 offline installer metadata checks passed.'
 }
+# Preserve Microsoft setup exit semantics across the PowerShell helper boundary.
+# 3010 and 1641 are successful installs that still require a Windows reboot.
+function Get-MicrosoftInstallerOutcome([int]$exitCode) {
+ if($exitCode -eq 0){return 'Completed'}
+ if($exitCode -in @(3010,1641)){return 'RestartRequired'}
+ return 'Failed'
+}
+function Test-MicrosoftInstallerExitCodes {
+ $fixtures=@(
+  @(0,'Completed'),
+  @(3010,'RestartRequired'),
+  @(1641,'RestartRequired'),
+  @(1603,'Failed'),
+  @(1223,'Failed'),
+  @(-1,'Failed')
+ )
+ foreach($fixture in $fixtures){
+  $outcome=Get-MicrosoftInstallerOutcome ([int]$fixture[0])
+  if($outcome -cne [string]$fixture[1]){
+   throw ('Unexpected Microsoft setup exit handling: '+$fixture[0])
+  }
+ }
+ Write-Host 'Microsoft installer exit classification 6/6 offline checks passed.'
+}
+
 if ($Mode -eq 'SelfTest') {
     Test-InstallerMetadataOffline
     Test-DependencyVersionLogic
@@ -386,31 +411,6 @@ function Get-OfficialInstaller {
     $indexUrl = 'https://dotnetcli.blob.core.windows.net/dotnet/release-metadata/10.0/releases.json'
     $index = Invoke-RestMethod -Uri $indexUrl -UseBasicParsing -TimeoutSec 40
     return (Select-DotNetInstaller $index)
-}
-
-# Preserve Microsoft setup exit semantics across the PowerShell helper boundary.
-# 3010 and 1641 are successful installs that still require a Windows reboot.
-function Get-MicrosoftInstallerOutcome([int]$exitCode) {
- if($exitCode -eq 0){return 'Completed'}
- if($exitCode -in @(3010,1641)){return 'RestartRequired'}
- return 'Failed'
-}
-function Test-MicrosoftInstallerExitCodes {
- $fixtures=@(
-  @(0,'Completed'),
-  @(3010,'RestartRequired'),
-  @(1641,'RestartRequired'),
-  @(1603,'Failed'),
-  @(1223,'Failed'),
-  @(-1,'Failed')
- )
- foreach($fixture in $fixtures){
-  $outcome=Get-MicrosoftInstallerOutcome ([int]$fixture[0])
-  if($outcome -cne [string]$fixture[1]){
-   throw ('Unexpected Microsoft setup exit handling: '+$fixture[0])
-  }
- }
- Write-Host 'Microsoft installer exit classification 6/6 offline checks passed.'
 }
 
 function Install-Component {
