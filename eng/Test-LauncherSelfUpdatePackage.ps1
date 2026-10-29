@@ -35,7 +35,8 @@ function Mutate([string]$kind){
  $dst=[IO.Compression.ZipFile]::Open($result,[IO.Compression.ZipArchiveMode]::Create)
  try{
   foreach($entry in $src.Entries){
-   if($kind -eq 'missing' -and $entry.FullName -ceq 'Binaries/Launcher-ServiceCockpit.ps1'){
+   if(($kind -eq 'missing' -and $entry.FullName -ceq 'Binaries/Launcher-ServiceCockpit.ps1') -or
+      ($kind -in @('duplicate','extra') -and $entry.FullName -ceq 'Binaries/launcher-service-cockpit-banner.jpg')){
     continue
    }
    $name=$entry.FullName
@@ -57,7 +58,7 @@ function Mutate([string]$kind){
    }finally{$to.Dispose();$from.Dispose()}
   }
   if($kind -in @('duplicate','extra')){
-   $name=if($kind -eq 'duplicate'){'LAUNCHER.EXE'}else{'Binaries/unknown-helper.ps1'}
+   $name=if($kind -eq 'duplicate'){'Launcher.exe'}else{'Binaries/unknown-helper.ps1'}
    $entry=$dst.CreateEntry($name)
    $stream=$entry.Open()
    try{
