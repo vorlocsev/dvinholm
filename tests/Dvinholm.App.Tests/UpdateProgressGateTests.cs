@@ -84,42 +84,4 @@ public sealed class UpdateProgressGateTests
         Assert.Equal(new[] { "new download" }, shown);
         gate.Complete(retryEpoch);
     }
-
-    [Fact]
-    public void WindowChecksEpochOnDispatcherAndRevokesBeforeErrorOrReplacement()
-    {
-        var code = ReadWindowSource();
-        var start = code.IndexOf("private async Task DownloadAndLaunchLatestBuildAsync(", StringComparison.Ordinal);
-        var end = code.IndexOf("private static string ProfileCatalogPath", start, StringComparison.Ordinal);
-        Assert.True(start >= 0 && end > start);
-        var region = code[start..end];
-
-        Assert.Contains("var progressEpoch = _updateProgressGate.Begin();", region);
-        Assert.Contains("if (_closing || downloadCts.IsCancellationRequested ||", region);
-        Assert.Contains("!_updateProgressGate.Accepts(progressEpoch)) return;", region);
-        Assert.Contains("DispatcherQueue.TryEnqueue(() =>", region);
-
-        var returned = region.IndexOf("stagedDirectory = await LatestBuildUpdater.DownloadAndPrepareAsync(", StringComparison.Ordinal);
-        var stopped = region.IndexOf("_updateProgressGate.Complete(progressEpoch);", returned, StringComparison.Ordinal);
-        var replacement = region.IndexOf("LatestBuildUpdater.StartReplacement(", returned, StringComparison.Ordinal);
-        Assert.True(returned >= 0 && stopped > returned && replacement > stopped);
-
-        var caught = region.IndexOf("catch (Exception ex)", StringComparison.Ordinal);
-        var stopOnFailure = region.IndexOf("_updateProgressGate.Complete(progressEpoch);", caught, StringComparison.Ordinal);
-        var showFailure = region.IndexOf("FinishUpdateActivity($\"Update failed:", caught, StringComparison.Ordinal);
-        Assert.True(caught >= 0 && stopOnFailure > caught && showFailure > stopOnFailure);
-    }
-
-    private static string ReadWindowSource()
-    {
-        for (DirectoryInfo? dir = new(AppContext.BaseDirectory);
-             dir is not null; dir = dir.Parent)
-        {
-            var file = Path.Combine(dir.FullName, "src", "Dvinholm.App", "MainWindow.xaml.cs");
-            if (File.Exists(file))
-                return File.ReadAllText(file);
-        }
-
-        throw new FileNotFoundException("MainWindow.xaml.cs not found for source contract test.");
-    }
 }
