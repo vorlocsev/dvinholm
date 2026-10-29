@@ -225,7 +225,7 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("$heroHeight=182", theme);
         Assert.Contains("$verticalSaving=232-$heroHeight", theme);
         Assert.Contains("$referenceHeight=790-$verticalSaving-50", theme);
-        Assert.Contains("$sidebarFooter.SetBounds(22,389,180,58)", theme);
+        Assert.Contains("$sidebarFooter.SetBounds(22,392,180,58)", theme);
         Assert.Contains("$form.AutoScrollMinSize=", theme);
         Assert.Contains("$brandTitle.Text='DVINHOLM'", theme);
         Assert.Contains("dvinholm-banner.webp", theme);
@@ -261,5 +261,41 @@ public sealed class UpdaterBannerContractTests
         Assert.DoesNotContain("Dvinholm.App.exe", script);
         Assert.DoesNotContain("coreclr.dll", script);
         Assert.DoesNotContain("WindowsAppRuntime.dll", script);
+    }
+
+    [Fact]
+    public void LauncherOnlyClosesOnVerifiedApplicationProcessHandoff()
+    {
+        var banner = Read("eng/Updater-Banner.ps1");
+        var manager = Read("eng/Manage-Lite-Dependencies.ps1");
+        Assert.Contains("$script:pendingAction=$action", banner);
+        Assert.Contains("$finishedAction -ceq 'Launch'", banner);
+        Assert.Contains("$snapshot.Done -eq $true", banner);
+        Assert.Contains("$snapshot.Failed -eq $false", banner);
+        Assert.Contains("if($launchSucceeded)", banner);
+        Assert.Contains("$form.Close()", banner);
+        Assert.Contains("$helper=if($testHelper){$testHelper}else{$manager}", banner);
+        Assert.Contains("$script:appProcessStarted = $true", manager);
+        Assert.Contains("if ($Mode -eq 'Launch' -and -not $script:appProcessStarted) { exit 41 }", manager);
+    }
+
+    [Fact]
+    public void AuroraNavigationHasActionsAndPersistedBilingualSettings()
+    {
+        var theme = Read("eng/Launcher-AuroraTheme.ps1");
+        var banner = Read("eng/Updater-Banner.ps1");
+        Assert.Contains("Begin-Action 'Launch'", theme);
+        Assert.Contains("Begin-Action 'Check'", theme);
+        Assert.Contains("Begin-Action 'Probe'", theme);
+        Assert.Contains("Show-LauncherSettings", theme);
+        Assert.Contains("languageChoice", theme);
+        Assert.Contains("language-preference.txt", banner);
+        Assert.Contains("Save-LauncherLanguage", banner);
+        Assert.Contains("Apply-LauncherLanguage", banner);
+        Assert.Contains("RU=@", banner);
+        Assert.Contains("EN=@", banner);
+        Assert.Contains("Begin-Action 'RepairInstall'", banner);
+        Assert.Contains("$rollback.Visible=$false", theme);
+        Assert.Contains("dvinholm-banner.webp", Read("eng/Package-Updater-Banner.ps1"));
     }
 }
