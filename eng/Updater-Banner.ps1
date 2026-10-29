@@ -18,10 +18,23 @@ $sumsName='SHA256SUMS.txt'
 $manager=Join-Path $PSScriptRoot 'Manage-Lite-Dependencies.ps1'
 $base=Join-Path ([Environment]::GetFolderPath('LocalApplicationData')) 'Dvinholm\UpdaterBanner'
 $preferenceFile=Join-Path $base 'channel-preference.txt'
+# Dvinholm.exe follows the same remembered channel as Launcher.exe.
+if($Mode -eq 'Launch' -and -not $PSBoundParameters.ContainsKey('Channel')){
+ try {
+  if(Test-Path -LiteralPath $preferenceFile -PathType Leaf){
+   $item=Get-Item -LiteralPath $preferenceFile -Force
+   if($item.Length -le 32 -and
+      ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0){
+    $saved=[IO.File]::ReadAllText($preferenceFile,[Text.Encoding]::ASCII).Trim()
+    if($saved -cin @('Stable','Development')){$Channel=$saved}
+   }
+  }
+ }catch{}
+}
 $channelRoot=Join-Path $base $Channel
 $current=Join-Path $channelRoot 'current'
 $state=[ordered]@{Done=$false;Failed=$false;Current='Not installed';Available='Not checked';
- DotNet='Unknown';WinApp='Unknown';VC='Unknown';Recovery='Not checked';Detail='Ready'}
+ DotNet='Unknown';WinApp='Unknown';VC='Unknown';Recovery='Not checked';Detail='Ready';DownloadId='';DownloadTotal=0}
 function Save-State {
  if (-not $StateFile) { return }
  $tmp=$StateFile+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
@@ -503,6 +516,35 @@ function Get-VerifiedLaunchTarget {
  if((Get-ChannelRecoveryState) -cne 'Ready'){
   throw 'Launch blocked: recovery or manual inspection is required.'
  }
+ # The combined first-run ZIP carries its verified Lite payload in Binaries.
+ # Once this channel has a managed current version, never fall back to an
+ # obsolete or tampered bundled executable on failure.
+ if(-not(Test-Path -LiteralPath $current) -and
+    (Test-Path -LiteralPath $PSScriptRoot -PathType Container)){
+  $bundled=$PSScriptRoot
+  Assert-ManagedFolder $bundled
+  foreach($name in @('Dvinholm.App.exe','Dvinholm.App.runtimeconfig.json',
+    'Check-Lite-Prerequisites.ps1','Manage-Lite-Dependencies.ps1',
+    'Start-Dvinholm-Lite.cmd')){
+   $file=Join-Path $bundled $name
+   if(-not(Test-Path -LiteralPath $file -PathType Leaf) -or
+      ((Get-Item -LiteralPath $file -Force).Attributes -band
+       [IO.FileAttributes]::ReparsePoint) -ne 0){
+    throw 'Bundled Lite installation is incomplete or unsafe.'
+   }
+  }
+  $app=[IO.File]::ReadAllBytes((Join-Path $bundled 'Dvinholm.App.exe'))
+  if($app.Length -lt 512 -or $app[0] -ne 77 -or $app[1] -ne 90){
+   throw 'Bundled executable is not a valid x86 PE.'
+  }
+  $offset=[BitConverter]::ToInt32($app,60)
+  if($offset -lt 64 -or $offset+6 -ge $app.Length -or
+     [BitConverter]::ToUInt32($app,$offset) -ne 0x4550 -or
+     [BitConverter]::ToUInt16($app,$offset+4) -ne 0x14c){
+   throw 'Bundled executable is not a valid x86 PE.'
+  }
+  return [pscustomobject]@{Tag='bundled Lite';File=(Join-Path $bundled 'Start-Dvinholm-Lite.cmd')}
+ }
  try {$tag=Read-ManagedVersion $current}
  catch {throw 'Launch blocked: no valid managed Lite x86 installation in this channel.'}
  return [pscustomobject]@{
@@ -512,7 +554,7 @@ function Get-VerifiedLaunchTarget {
 }
 function Launch {
  $target=Get-VerifiedLaunchTarget
- Start-Process -FilePath $target.File -WorkingDirectory $current -ErrorAction Stop
+ Start-Process -FilePath $target.File -WorkingDirectory (Split-Path -Parent $target.File) -ErrorAction Stop
  Progress ('Opened Lite launcher for '+$Channel+' '+$target.Tag+'.')
 }
 function Rollback {
@@ -628,6 +670,9 @@ function Install {
  New-Item -ItemType Directory -Path $channelRoot -Force | Out-Null
  Assert-ManagedFolder $current
  $id=[guid]::NewGuid().ToString('N')
+ $script:state.DownloadId=$id
+ $script:state.DownloadTotal=[long]$r.Zip.size
+ Save-State
  $downloads=Join-Path $channelRoot ('download-'+$id)
  $pending=Join-Path $channelRoot ('pending-'+$id)
  $previous=Join-Path $channelRoot 'previous'
@@ -1285,8 +1330,8 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
 Add-Type -AssemblyName System.Windows.Forms
 Add-Type -AssemblyName System.Drawing
 $form=New-Object Windows.Forms.Form
-$form.Text='Dvinholm Updater Banner'
-$form.Size=New-Object Drawing.Size(740,464)
+$form.Text='Dvinholm | Launcher'
+$form.Size=New-Object Drawing.Size(740,604)
 $form.MinimumSize=$form.Size;$form.MaximumSize=$form.Size
 $form.Font=New-Object Drawing.Font('Segoe UI',10)
 $form.StartPosition='CenterScreen'
@@ -1296,7 +1341,7 @@ function Label([string]$value,[int]$top,[int]$height){
 }
 $title=Label 'DVINHOLM   |   UPDATER BANNER' 15 38
 $title.Font=New-Object Drawing.Font('Segoe UI',14,[Drawing.FontStyle]::Bold)
-$null=Label 'No .NET 10 or WinApp Runtime needed. Stable and Development install separately.' 52 26
+$strap=Label 'No .NET 10 or WinApp Runtime needed. Stable and Development install separately.' 52 26
 $choice=New-Object Windows.Forms.ComboBox;$choice.DropDownStyle='DropDownList'
 $choice.Items.AddRange([object[]]@('Development','Stable'))
 $choice.SetBounds(18,87,185,29);$form.Controls.Add($choice)
@@ -1315,7 +1360,7 @@ $deps=Label '.NET x86: ?    WinApp: ?    VC++ x86: ?' 180 26
 $recovery=Label 'Recovery: not checked' 209 23
 $status=Label 'Ready.' 231 45
 $bar=New-Object Windows.Forms.ProgressBar
-$bar.SetBounds(18,286,695,13);$bar.Style='Marquee';$bar.MarqueeAnimationSpeed=0
+$bar.SetBounds(18,286,695,13);$bar.Style='Marquee';$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
 $form.Controls.Add($bar)
 function Button([string]$value,[int]$x,[int]$y,[int]$w){
  $b=New-Object Windows.Forms.Button;$b.Text=$value;$b.SetBounds($x,$y,$w,34)
@@ -1328,6 +1373,73 @@ $refresh=Button 'Recheck deps' 544 311 169
 $dot=Button 'Install .NET x86' 18 355 218;$dot.Tag='DotNet'
 $win=Button 'Install WinApp' 252 355 218;$win.Tag='WinApp'
 $vc=Button 'Install VC++ x86' 486 355 227;$vc.Tag='VC'
+
+# Branded shell: the verified updater engine above remains unchanged.
+# Shift the interactive controls under a gradient hero instead of changing
+# their event handlers or recovery-locking rules.
+$form.BackColor=[Drawing.Color]::FromArgb(10,20,35)
+$form.ForeColor=[Drawing.Color]::FromArgb(235,242,248)
+$form.MaximizeBox=$false
+$form.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedSingle
+foreach($control in @($form.Controls)){
+ $control.Top+=120
+ if($control -is [Windows.Forms.Label]){
+  $control.ForeColor=[Drawing.Color]::FromArgb(217,230,242)
+  $control.BackColor=[Drawing.Color]::Transparent
+ }elseif($control -is [Windows.Forms.Button]){
+  $control.FlatStyle=[Windows.Forms.FlatStyle]::Flat
+  $control.FlatAppearance.BorderSize=1
+  $control.FlatAppearance.BorderColor=[Drawing.Color]::FromArgb(70,115,143)
+  $control.BackColor=[Drawing.Color]::FromArgb(28,56,76)
+  $control.ForeColor=[Drawing.Color]::White
+  $control.Cursor=[Windows.Forms.Cursors]::Hand
+ }elseif($control -is [Windows.Forms.ComboBox]){
+  $control.BackColor=[Drawing.Color]::FromArgb(27,47,65)
+  $control.ForeColor=[Drawing.Color]::White
+ }
+}
+$title.Visible=$false;$strap.Visible=$false
+$install.BackColor=[Drawing.Color]::FromArgb(20,119,135)
+$launch.BackColor=[Drawing.Color]::FromArgb(35,111,89)
+$hero=New-Object Windows.Forms.Panel
+$hero.SetBounds(0,0,740,142)
+$hero.Add_Paint({
+ $rect=New-Object Drawing.Rectangle(0,0,740,142)
+ $left=[Drawing.Color]::FromArgb(24,74,100)
+ $right=[Drawing.Color]::FromArgb(8,27,50)
+ $brush=New-Object Drawing.Drawing2D.LinearGradientBrush($rect,$left,$right,0)
+ try{$_.Graphics.FillRectangle($brush,$rect)}finally{$brush.Dispose()}
+})
+$form.Controls.Add($hero)
+$brandTitle=New-Object Windows.Forms.Label
+$brandTitle.Text='DVINHOLM'
+$brandTitle.Font=New-Object Drawing.Font('Segoe UI',27,[Drawing.FontStyle]::Bold)
+$brandTitle.ForeColor=[Drawing.Color]::White
+$brandTitle.BackColor=[Drawing.Color]::Transparent
+$brandTitle.SetBounds(138,30,550,56)
+$hero.Controls.Add($brandTitle)
+$brandSub=New-Object Windows.Forms.Label
+$brandSub.Text='LAUNCHER  /  WINDOWS X86  /  ECU DIAGNOSTICS'
+$brandSub.ForeColor=[Drawing.Color]::FromArgb(160,211,224)
+$brandSub.BackColor=[Drawing.Color]::Transparent
+$brandSub.SetBounds(142,92,570,29)
+$hero.Controls.Add($brandSub)
+$script:brandImage=$null
+$brandFile=Join-Path $PSScriptRoot 'Dvinholm-icon.png'
+if(Test-Path -LiteralPath $brandFile -PathType Leaf){
+ try{
+  $script:brandImage=[Drawing.Image]::FromFile($brandFile)
+  $logo=New-Object Windows.Forms.PictureBox
+  $logo.SetBounds(24,21,104,100)
+  $logo.Image=$script:brandImage
+  $logo.SizeMode=[Windows.Forms.PictureBoxSizeMode]::Zoom
+  $hero.Controls.Add($logo)
+ }catch{$script:brandImage=$null}
+}
+$foot=Label 'Stable releases  |  Development CI  |  SHA-256 verification  |  Safe rollback' 535 23
+$foot.Font=New-Object Drawing.Font('Segoe UI',8)
+$foot.ForeColor=[Drawing.Color]::FromArgb(115,166,184)
+
 $script:child=$null;$script:vendor=$null
 $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid]::NewGuid().ToString('N')+'.json')
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
@@ -1390,7 +1502,7 @@ function Begin-Action([string]$action){
   ' -StateFile "'+$script:statefile+'"'
  try{
   $script:child=Start-Process -FilePath $powershell -ArgumentList $args -WindowStyle Hidden -PassThru
-  $bar.MarqueeAnimationSpeed=25
+  $bar.Style=[Windows.Forms.ProgressBarStyle]::Marquee;$bar.MarqueeAnimationSpeed=25
   Update-ActionAvailability
   $status.Text='Working...'
  }catch{$status.Text='Unable to launch updater helper.'}
@@ -1439,6 +1551,21 @@ function Apply-WorkerSnapshot($snapshot) {
  $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
   '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
  $status.Text=[string]$snapshot.Detail
+ # The ZIP byte count is read from the actual download, never fabricated.
+ if($script:child -and [string]$snapshot.DownloadId -cmatch '^[0-9a-f]{32}$' -and
+    [long]$snapshot.DownloadTotal -gt 0){
+  $selected=[string]$choice.SelectedItem
+  if($selected -cin @('Development','Stable')){
+   $file=Join-Path (Join-Path (Join-Path $base $selected) ('download-'+$snapshot.DownloadId)) $zipName
+   if(Test-Path -LiteralPath $file -PathType Leaf){
+    $bytes=(Get-Item -LiteralPath $file).Length
+    $percent=[int][Math]::Min(99,[Math]::Max(0,[Math]::Floor(
+     100.0*[double]$bytes/[double]$snapshot.DownloadTotal)))
+    $bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
+    $bar.Value=$percent
+   }
+  }
+ }
  $finished=($snapshot.PSObject.Properties['Done'] -and
             $snapshot.Done -is [bool] -and $snapshot.Done -eq $true)
  $valid=($snapshot.PSObject.Properties['Recovery'] -and
@@ -1464,7 +1591,7 @@ function Poll-WorkerState {
   }catch{}
  }
  if($script:child -and $script:child.HasExited){
-  $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0
+  $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
   if(-not $complete){
    $script:recoveryStatus='Not checked'
    $recovery.Text='Recovery: not checked'
@@ -1474,7 +1601,7 @@ function Poll-WorkerState {
  }
  if($script:vendor -and $script:vendor.HasExited){
   $exitCode=[int]$script:vendor.ExitCode
-  $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0
+  $script:vendor.Dispose();$script:vendor=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
   if($exitCode -eq 0){
    # Only successful installer completion triggers an automatic local probe.
    Begin-Action 'Probe'

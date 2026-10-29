@@ -1,14 +1,60 @@
-# Standalone Dvinholm Updater Banner
+# Dvinholm Launcher (native Windows x86)
 
-A separate lightweight GUI for Windows 11 and Windows 11 IoT LTSC.
-It works **before** installing Dvinholm Lite, .NET 10 Desktop,
-Windows App SDK or VC++ x86. The only prerequisites for the banner
-itself are the Windows-provided PowerShell 5.1 and .NET Framework
-WinForms. It uses no third-party PowerShell module.
+The new **Launcher.exe** is a small native Windows x86 bootstrap, compiled with
+the static MSVC runtime. It needs only Windows PowerShell 5.1 and the inbox
+.NET Framework WinForms to display the updater; **it does not require .NET 10,
+Windows App SDK, VC++ Redistributable, Qt or Electron** to start.
 
-Download **Dvinholm-Updater-Banner-Windows-x86.zip** from the current
-Development ci-N prerelease. Extract the three files into their own
-directory and double-click **Updater-Banner.cmd**.
+For a first-time Lite installation, use the public Development asset
+`Dvinholm-Windows-x86-Launcher-Lite.zip` and extract the full directory:
+
+```text
+Dvinholm/
+  Launcher.exe           # update/check/repair/runtime management
+  Dvinholm.exe           # opens the selected app (or bundled first-run Lite)
+  Binaries/
+    Dvinholm.App.exe     # WinUI 3 diagnostic application
+    Dvinholm.App.dll
+    ...                  # other Lite runtime files and assets
+    Updater-Banner.ps1
+    Manage-Lite-Dependencies.ps1
+    Dvinholm-icon.png
+```
+
+`Launcher.exe` owns channel selection, checks, downloads, install/rollback,
+recovery and Microsoft dependency management. The WinUI diagnostic application
+**has no Check update button or in-process installer handlers**. The launcher
+has a dark branded banner, Dvinholm logo, status labels and download progress
+based on real ZIP bytes, switching to a busy indicator for non-download steps.
+
+A much smaller `Dvinholm-Updater-Banner-Windows-x86.zip` is also published
+for users who need **only the standalone launcher**. It has `Launcher.exe`
+and its support files in `Binaries/`, but no diagnostic app; click
+**Download / Install** to create one. Existing flat
+`Dvinholm-Windows-x86-Lite.zip` remains a compatibility feed for older
+clients and for the launcher's integrity-checked update mechanism.
+
+`Dvinholm.exe` first checks for a verified installed version of the channel
+last selected in Launcher. On a pristine extraction, it can start the bundled
+`Binaries/` Lite app through its prerequisite-aware startup command.
+After updating, the active selected channel's managed copy takes priority.
+The package must be extracted in full; neither executable should be moved
+away from the `Binaries/` folder.
+
+**Where updates are stored:** the existing proven transactional engine keeps
+separate per-channel `current` and `previous` folders under
+`%LOCALAPPDATA%\\Dvinholm\\UpdaterBanner`, while the extracted
+`Binaries/` folder is the initial fallback. This separation allows safe
+rollback without overwriting the running native launcher or a user-supplied
+manual installation. Existing Lite installations are not silently modified.
+
+While a Microsoft installer or any Banner worker is running, all three
+installer buttons, channel selector and update controls are visually disabled.
+Successful Microsoft installer completion triggers an automatic **local-only**
+dependency probe. A failed or cancelled installer shows its exit code and
+requires a manual **Recheck deps** instead of clearing the failure message.
+Windows CI exercises seven synthetic WinForms vendor-worker lifecycle checks;
+a real Microsoft installation and UAC prompt remain manual acceptance steps.
 
 The **Installed** label is validated against the selected channel's actual
 Lite directory, required ordinary files, metadata and x86 PE header. It
@@ -23,13 +69,6 @@ available versions, three dependency statuses, a check button, a
 separately confirmed **Download / Install** button and three independent
 Microsoft installer/update buttons. Downloads are only started after
 the user clicks and confirms; Windows UAC and vendor setup UI remain visible.
-While a Microsoft installer or any Banner worker is running, all three
-installer buttons, channel selector and update controls are visually disabled.
-Successful Microsoft installer completion triggers an automatic **local-only**
-dependency probe. A failed or cancelled installer shows its exit code and
-requires a manual **Recheck deps** instead of clearing the failure message.
-Windows CI exercises seven synthetic WinForms vendor-worker lifecycle checks;
-a real Microsoft installation and UAC prompt remain manual acceptance steps.
 
 **Already installed:** when the selected channel's verified Lite version
 matches the latest public release, **Check updates** reports *Up to date*,

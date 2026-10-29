@@ -1,96 +1,82 @@
 #requires -Version 5.1
 <#
-  Run the *packaged* standalone Updater Banner from a fresh extraction.
-  Windows PowerShell 5.1 and inbox .NET Framework only. No UI modal dialog,
-  download, installation or Dvinholm process is started.
+Offline Windows smoke of the real extracted native launcher package.
+No GUI dialog, GitHub request, runtime installation or ECU access.
 #>
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$ZipPath)
-
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$zipFile=(Resolve-Path -LiteralPath $ZipPath -ErrorAction Stop).Path
-$expected=@('Updater-Banner.cmd','Updater-Banner.ps1','Manage-Lite-Dependencies.ps1')
-$source=(Resolve-Path -LiteralPath $PSScriptRoot).Path
-$testRoot=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-zip-smoke-'+[guid]::NewGuid().ToString('N'))
-$psExe=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
+$zipFile=(Resolve-Path -LiteralPath $ZipPath).Path
+$expected=@('Launcher.exe','Binaries/Updater-Banner.ps1',
+ 'Binaries/Manage-Lite-Dependencies.ps1','Binaries/Dvinholm-icon.png')
+$source=(Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+$root=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-native-smoke-'+[guid]::NewGuid().ToString('N'))
+$ps=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
 $checks=0
-
-function Start-PackagedMode([string]$mode,[string]$expectedMessage) {
- $psi=New-Object System.Diagnostics.ProcessStartInfo
- $psi.FileName=$psExe
- $psi.Arguments='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+
-  (Join-Path $testRoot 'Updater-Banner.ps1')+'" -Mode '+$mode+' -Channel Development'
- $psi.WorkingDirectory=$testRoot
- $psi.UseShellExecute=$false
- $psi.CreateNoWindow=$true
- $psi.RedirectStandardOutput=$true
- $psi.RedirectStandardError=$true
- $p=[Diagnostics.Process]::Start($psi)
- if($null -eq $p){throw "Packaged $mode process failed to start."}
- try {
-  if(-not $p.WaitForExit(90000)){
-   try{$p.Kill()}catch{}
-   throw "Packaged $mode process exceeded the 90-second safety limit."
-  }
+function Invoke-Mode([string]$mode,[string]$marker) {
+ $script=Join-Path $root 'Binaries\Updater-Banner.ps1'
+ $info=New-Object Diagnostics.ProcessStartInfo
+ $info.FileName=$ps
+ $info.Arguments='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+$script+'" -Mode '+$mode+' -Channel Development'
+ $info.UseShellExecute=$false;$info.CreateNoWindow=$true
+ $info.RedirectStandardOutput=$true;$info.RedirectStandardError=$true
+ $p=[Diagnostics.Process]::Start($info)
+ if($null -eq $p){throw "Unable to start $mode"}
+ try{
+  if(-not $p.WaitForExit(90000)){try{$p.Kill()}catch{};throw "$mode timed out"}
   $stdout=$p.StandardOutput.ReadToEnd()
   $stderr=$p.StandardError.ReadToEnd()
-  if($p.ExitCode -ne 0){
-   throw "Packaged $mode exited with $($p.ExitCode): $stderr $stdout"
-  }
-  if($expectedMessage -and -not $stdout.Contains($expectedMessage)){
-   throw "Packaged $mode did not report the expected checks: $stdout"
+  if($p.ExitCode -ne 0 -or ($marker -and -not $stdout.Contains($marker))){
+   throw "$mode failed: $stdout $stderr"
   }
  }finally{$p.Dispose()}
 }
-try {
- $zip=[IO.Compression.ZipFile]::OpenRead($zipFile)
- try {
-  $entries=@($zip.Entries)
-  if($entries.Count -ne $expected.Count){throw 'Unexpected standalone ZIP entry count.'}
-  $actual=@($entries|ForEach-Object { [string]$_.FullName })
-  foreach($name in $actual){
-   if($name -cnotin $expected){throw "Unexpected archive entry: $name"}
-  }
-  if(@($actual|Select-Object -Unique).Count -ne $expected.Count){
-   throw 'Duplicate entries in packaged standalone ZIP.'
+try{
+ $z=[IO.Compression.ZipFile]::OpenRead($zipFile)
+ try{
+  $files=@($z.Entries|Where-Object{-not $_.FullName.EndsWith('/')})
+  if($files.Count -ne $expected.Count){throw 'Unexpected launcher package entries'}
+  foreach($e in $files){
+   if($e.FullName -cnotin $expected){throw "Unexpected launcher path $($e.FullName)"}
   }
   $checks++
- }finally{$zip.Dispose()}
- [IO.Directory]::CreateDirectory($testRoot)|Out-Null
- [IO.Compression.ZipFile]::ExtractToDirectory($zipFile,$testRoot)
+ }finally{$z.Dispose()}
+ [IO.Compression.ZipFile]::ExtractToDirectory($zipFile,$root)
  foreach($name in $expected){
-  if(-not(Test-Path -LiteralPath (Join-Path $testRoot $name) -PathType Leaf)){
-   throw "Extracted ZIP missing $name."
+  if(-not(Test-Path -LiteralPath (Join-Path $root $name.Replace('/','\')) -PathType Leaf)){
+   throw "Missing extracted $name"
   }
  }
  $checks++
- foreach($name in $expected){
-  $a=(Get-FileHash -LiteralPath (Join-Path $source $name) -Algorithm SHA256).Hash
-  $b=(Get-FileHash -LiteralPath (Join-Path $testRoot $name) -Algorithm SHA256).Hash
-  if($a -cne $b){throw "Extracted standalone file differs from source: $name"}
+ $exe=[IO.File]::ReadAllBytes((Join-Path $root 'Launcher.exe'))
+ $pe=[BitConverter]::ToInt32($exe,60)
+ if($exe.Length -lt 512 -or $exe[0] -ne 77 -or $exe[1] -ne 90 -or
+    $pe -lt 64 -or [BitConverter]::ToUInt16($exe,$pe+4) -ne 0x14c){
+  throw 'Launcher.exe is not a native x86 PE'
  }
  $checks++
- $launcher=Get-Content -LiteralPath (Join-Path $testRoot 'Updater-Banner.cmd') -Raw
- if(-not $launcher.Contains('%~dp0Updater-Banner.ps1') -or
-    -not $launcher.Contains('-Mode UI')){
-  throw 'Extracted CMD does not launch its adjacent standalone PowerShell script.'
+ foreach($entry in @(
+  @('Binaries/Updater-Banner.ps1','eng/Updater-Banner.ps1'),
+  @('Binaries/Manage-Lite-Dependencies.ps1','eng/Manage-Lite-Dependencies.ps1'),
+  @('Binaries/Dvinholm-icon.png','assets/dvinholm-icon.png')
+ )){
+  $a=(Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $root $entry[0])).Hash
+  $b=(Get-FileHash -Algorithm SHA256 -LiteralPath (Join-Path $source $entry[1])).Hash
+  if($a -cne $b){throw "Bundled file differs from repository: $($entry[0])"}
  }
  $checks++
- if(-not(Test-Path -LiteralPath $psExe -PathType Leaf)){
-  throw 'Inbox Windows PowerShell 5.1 host not found.'
- }
- Start-PackagedMode 'SelfTest' '8/8 interrupted install recovery checks passed'
+ Invoke-Mode 'SelfTest' '8/8 interrupted install recovery checks passed'
  $checks++
- Start-PackagedMode 'UiSmokeTest' '7/7 Windows PowerShell 5.1 WinForms smoke checks passed'
+ Invoke-Mode 'UiSmokeTest' '7/7 Windows PowerShell 5.1 WinForms smoke checks passed'
  $checks++
- Start-PackagedMode 'Probe' ''
+ Invoke-Mode 'Probe' ''
  $checks++
- if($checks -ne 7){throw 'Wrong packaged Updater Banner smoke check count.'}
- Write-Host 'Packaged Updater Banner 7/7 isolated Windows smoke checks passed.'
+ if($checks -ne 7){throw 'Wrong launcher smoke test count'}
+ Write-Host 'Native launcher ZIP: 7/7 offline Windows smoke checks passed.'
 }finally{
- if(Test-Path -LiteralPath $testRoot){
-  Remove-Item -LiteralPath $testRoot -Recurse -Force -ErrorAction SilentlyContinue
+ if(Test-Path -LiteralPath $root){
+  Remove-Item -LiteralPath $root -Recurse -Force -ErrorAction SilentlyContinue
  }
 }

@@ -1,51 +1,57 @@
 #requires -Version 5.1
 <#
-  Build a separate ~20 KiB updater GUI archive. Requires ONLY inbox
-  Windows PowerShell 5.1 + .NET Framework on the target computer.
-  Does not package Dvinholm.App or any .NET 10/WinApp runtime.
+Create a dependency-free native x86 Launcher.exe with the existing verified
+PowerShell 5.1 updater engine in Binaries. No .NET 10 or WinApp SDK needed.
 #>
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$ZipPath)
+param(
+ [Parameter(Mandatory)][string]$ZipPath,
+ [string]$NativeDirectory='artifacts/native'
+)
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
-$root=(Resolve-Path -LiteralPath $PSScriptRoot).Path
-$names=@('Updater-Banner.cmd','Updater-Banner.ps1','Manage-Lite-Dependencies.ps1')
+$root=(Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
+$native=[IO.Path]::GetFullPath($NativeDirectory)
 $target=[IO.Path]::GetFullPath($ZipPath)
-$parent=Split-Path -Parent $target
-New-Item -ItemType Directory -Path $parent -Force|Out-Null
-$temp=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-package-'+[guid]::NewGuid().ToString('N'))
-New-Item -ItemType Directory -Path $temp|Out-Null
+[IO.Directory]::CreateDirectory([IO.Path]::GetDirectoryName($target))|Out-Null
+$staging=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-launcher-'+[guid]::NewGuid().ToString('N'))
+[IO.Directory]::CreateDirectory((Join-Path $staging 'Binaries'))|Out-Null
+$files=@{
+ 'Launcher.exe'=(Join-Path $native 'Launcher.exe')
+ 'Binaries/Updater-Banner.ps1'=(Join-Path $PSScriptRoot 'Updater-Banner.ps1')
+ 'Binaries/Manage-Lite-Dependencies.ps1'=(Join-Path $PSScriptRoot 'Manage-Lite-Dependencies.ps1')
+ 'Binaries/Dvinholm-icon.png'=(Join-Path $root 'assets\dvinholm-icon.png')
+}
 try{
- foreach($name in $names){
-  Copy-Item -LiteralPath (Join-Path $root $name) -Destination (Join-Path $temp $name)
+ foreach($key in $files.Keys){
+  $src=$files[$key]
+  if(-not(Test-Path -LiteralPath $src -PathType Leaf)){throw "Missing launcher input: $src"}
+  Copy-Item -LiteralPath $src -Destination (Join-Path $staging $key.Replace('/','\'))
  }
- if(Test-Path $target){Remove-Item -LiteralPath $target -Force}
- Compress-Archive -Path (Join-Path $temp '*') -DestinationPath $target -CompressionLevel Optimal
+ if(Test-Path -LiteralPath $target){Remove-Item -LiteralPath $target -Force}
+ [IO.Compression.ZipFile]::CreateFromDirectory($staging,$target,[IO.Compression.CompressionLevel]::Optimal,$false)
  $zip=[IO.Compression.ZipFile]::OpenRead($target)
  try{
-  if($zip.Entries.Count -ne $names.Count){
-   throw 'Standalone updater archive has an unexpected file count.'
-  }
-  foreach($name in $names){
-   $entry=$zip.GetEntry($name)
-   if($null -eq $entry){throw "Updater archive is missing $name."}
-   $stream=$entry.Open();$memory=[IO.MemoryStream]::new()
-   try{$stream.CopyTo($memory);$bytes=$memory.ToArray()}
-   finally{$stream.Dispose();$memory.Dispose()}
-   $expected=[IO.File]::ReadAllBytes((Join-Path $root $name))
-   if($bytes.Length -ne $expected.Length){
-    throw "Updater banner script content mismatch: $name"
-   }
-   for($i=0;$i -lt $expected.Length;$i++){
-    if($bytes[$i] -ne $expected[$i]){throw "Updater bundle content mismatch: $name"}
+  $actual=@($zip.Entries|Where-Object{-not $_.FullName.EndsWith('/')})
+  if($actual.Count -ne $files.Count){throw 'Unexpected launcher ZIP file count.'}
+  foreach($key in $files.Keys){
+   $entry=$zip.GetEntry($key)
+   if($null -eq $entry){throw "Archive missing $key"}
+   $expected=[IO.File]::ReadAllBytes($files[$key])
+   $s=$entry.Open();$mem=New-Object IO.MemoryStream
+   try{$s.CopyTo($mem);$result=$mem.ToArray()}
+   finally{$s.Dispose();$mem.Dispose()}
+   if($result.Length -ne $expected.Length){throw "Archive file size mismatch: $key"}
+   if(([Convert]::ToBase64String($result)) -cne ([Convert]::ToBase64String($expected))){
+    throw "Archive file content mismatch: $key"
    }
   }
  }finally{$zip.Dispose()}
- if((Get-Item $target).Length -gt 250KB){
-  throw 'Updater Banner archive is not lightweight (limit: 250 KiB).'
+ if((Get-Item -LiteralPath $target).Length -gt 750KB){
+  throw 'Standalone native launcher package exceeded 750 KiB.'
  }
- Write-Host "Verified standalone Updater Banner ZIP: $($names.Count) source-matched files."
+ Write-Host 'Verified native x86 Launcher.exe, two bundled PS files and Dvinholm logo.'
 }finally{
- if(Test-Path $temp){Remove-Item $temp -Recurse -Force}
+ if(Test-Path -LiteralPath $staging){Remove-Item -LiteralPath $staging -Recurse -Force}
 }
