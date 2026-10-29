@@ -20,6 +20,7 @@ $staging=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-launcher-'+[guid]::NewG
 $files=@{
  'Launcher.exe'=(Join-Path $native 'Launcher.exe')
  'Binaries/Updater-Banner.ps1'=(Join-Path $PSScriptRoot 'Updater-Banner.ps1')
+ 'Binaries/Launcher-ReleaseDiscovery.ps1'=(Join-Path $PSScriptRoot 'Launcher-ReleaseDiscovery.ps1')
  'Binaries/Launcher-AuroraTheme.ps1'=(Join-Path $PSScriptRoot 'Launcher-AuroraTheme.ps1')
  'Binaries/Launcher-ServiceCockpit.ps1'=(Join-Path $PSScriptRoot 'Launcher-ServiceCockpit.ps1')
  'Binaries/J2534-DriverManager.ps1'=(Join-Path $PSScriptRoot 'J2534-DriverManager.ps1')
