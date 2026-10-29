@@ -586,3 +586,26 @@ comparison cases test current, newer, older, missing and mixed-channel states.
 The journaled replacement helper remains offline and is **not yet wired** to
 this button. Verified download, explicit confirmation, process-exit handoff,
 restart and rollback-rotation are separate subsequent acceptance gates.
+
+
+## Prepare native Launcher update (explicit, offline-safe boundary)
+
+Settings now offers two separate bilingual native Launcher actions: check for
+release metadata, and **Download & verify / Скачать и проверить**. The second
+requires explicit user confirmation. The worker fetches the public, validated
+GitHub standalone ZIP and SHA256SUMS only after confirmation. It checks both
+asset sizes and API-provided SHA-256 digests, exactly one matching manifest
+entry, the strict 15-file native package allowlist and the internal
+launcher-build.txt receipt against the selected release tag.
+
+Successful preparation atomically records a separate verified snapshot under
+\`%LOCALAPPDATA%\Dvinholm\UpdaterBanner\LauncherUpdates\<channel>\prepared\`.
+An existing prepared snapshot is never overwritten. A failed preparation
+cleans its uniquely named partial download folder. Eight CI checks use the
+actual packaged ZIP and checksum manifest, including tampering, incorrect
+release identity, repeated manifest entries and preexisting staging.
+
+**No live Launcher.exe, Binaries files, app, drivers or runtimes are changed
+by preparation.** Applying the snapshot and restarting the launcher are still
+separate safety gates, not yet exposed in the UI. These operations do not
+perform physical J2534 testing.
