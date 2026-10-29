@@ -153,7 +153,16 @@ noninteractive `-Mode UiSmokeTest` run and checks seven button-state
 invariants (startup, ready, both repair modes, ambiguous recovery, busy
 helper and construction). This smoke check never calls `ShowDialog`,
 GitHub, Microsoft installers or Dvinholm; it does not prove visible GUI
-rendering on a user's Windows desktop. Report actual Windows checks
+rendering on a user's Windows desktop.
+
+After packaging, Windows CI also extracts the **actual standalone ZIP** into
+a temporary directory and runs seven checks against its shipped bytes:
+exactly three expected files, successful extraction, SHA-256 source matches,
+a local sibling launcher, offline self-tests, the WinForms smoke checks,
+and read-only dependency inventory. The isolated directory is removed.
+This guards against shipping an archive that matches the source at packaging
+time but cannot execute as a standalone distribution. It still does **not**
+substitute for manual Windows GUI acceptance or a real power-cut test. Report actual Windows checks
 separately from CI and from physical J2534 tests.
 Do not mark this acceptance complete until each check has been performed.
 
