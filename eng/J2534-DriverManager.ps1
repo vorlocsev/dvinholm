@@ -6,7 +6,7 @@ Never loads registered vendor DLLs and never downloads/install automatically.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('Probe','Install','SelfTest')][string]$Mode='Probe',
+ [ValidateSet('Probe','Verify','Install','SelfTest')][string]$Mode='Probe',
  [string]$InstallerPath,
  [switch]$Approved
 )
@@ -113,6 +113,10 @@ function Install-SelectedVendorPackage {
 }
 if($Mode -eq 'Probe'){
  @(Read-RegisteredDrivers)|ConvertTo-Json -Depth 4 -Compress
+ return
+}
+if($Mode -eq 'Verify'){
+ Test-SignedVendorInstaller $InstallerPath |ConvertTo-Json -Compress
  return
 }
 if($Mode -eq 'Install'){
