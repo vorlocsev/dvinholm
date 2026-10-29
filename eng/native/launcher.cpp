@@ -36,6 +36,21 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
         return 14;
     }
     CloseHandle(pi.hThread);
+#ifdef DVINHOLM_DIRECT_LAUNCH
+    // A failed dependency check must not disappear in a hidden console.
+    WaitForSingleObject(pi.hProcess, INFINITE);
+    DWORD code = 1;
+    if (!GetExitCodeProcess(pi.hProcess, &code)) code = 1;
+    CloseHandle(pi.hProcess);
+    if (code != 0) {
+        MessageBoxW(nullptr,
+            L"Unable to start Dvinholm. Open Launcher.exe to check "
+            L"the installed channel and Microsoft dependencies.",
+            L"Dvinholm", MB_OK | MB_ICONWARNING);
+    }
+    return static_cast<int>(code);
+#else
     CloseHandle(pi.hProcess);
     return 0;
+#endif
 }
