@@ -512,3 +512,27 @@ cannot launch; it is free of **additional** runtime prerequisites, not
 free of Windows OS components.
 
 Stable v0.2.4 remains immutable; this feature changes Development only.
+
+
+## Launcher self-update: first safety gate (Development)
+
+The independent native launcher can now **verify and stage**, but not yet
+apply, a replacement from \`Dvinholm-Updater-Banner-Windows-x86.zip\`.
+\`Binaries/Assert-LauncherSelfUpdatePackage.ps1\` requires a caller-provided
+64-character SHA-256 obtained from independently validated release metadata.
+It checks the whole ZIP before extraction, allows only the expected 11
+files, rejects link/path aliases and Windows case-folding collisions, enforces
+download and extraction limits, and validates the staged \`Launcher.exe\`
+as a native Windows x86 PE32. The target staging folder must not exist.
+
+The stage-only module makes **no changes to Launcher.exe or to the running
+Binaries directory**, launches no archive code and cannot install drivers,
+runtime packages, or applications. The future swapper must wait for the old
+native launcher and its PowerShell GUI process to exit, revalidate the
+staged bytes, use a crash-recoverable journal and preserve rollback.
+It must never treat staging alone as a successful self-update.
+
+CI runs eight offline fixture checks against the actual standalone ZIP,
+including digest mismatch, traversal, duplicates, unexpected/missing files
+and a tampered executable with a matching recalculated hash. Real Windows
+self-update and restart acceptance remain pending.
