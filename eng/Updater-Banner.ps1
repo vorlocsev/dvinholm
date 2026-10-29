@@ -6,7 +6,7 @@ No software installs or updates until the user explicitly confirms.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('UI','UiSmokeTest','Check','Install','Rollback','Repair','RepairInstall','Probe','SelfTest')][string]$Mode='UI',
+ [ValidateSet('UI','UiSmokeTest','Check','Install','Rollback','Repair','RepairInstall','Launch','Probe','SelfTest')][string]$Mode='UI',
  [ValidateSet('Stable','Development')][string]$Channel='Development',
  [string]$StateFile
 )
@@ -483,6 +483,25 @@ function Repair-InterruptedInstall {
  $script:state.Available='Not checked'
  Progress ('Install recovery complete: '+$script:state.Current+'. Staged files retained as abandoned when present.')
 }
+function Get-VerifiedLaunchTarget {
+ # Called in the channel worker, not in the GUI's default Development context.
+ # Refuse any unresolved install/rollback and revalidate the selected channel
+ # immediately before launching its dependency-aware Lite command.
+ if((Get-ChannelRecoveryState) -cne 'Ready'){
+  throw 'Launch blocked: recovery or manual inspection is required.'
+ }
+ try {$tag=Read-ManagedVersion $current}
+ catch {throw 'Launch blocked: no valid managed Lite x86 installation in this channel.'}
+ return [pscustomobject]@{
+  Tag=$tag
+  File=Join-Path $current 'Start-Dvinholm-Lite.cmd'
+ }
+}
+function Launch {
+ $target=Get-VerifiedLaunchTarget
+ Start-Process -FilePath $target.File -WorkingDirectory $current -ErrorAction Stop
+ Progress ('Opened Lite launcher for '+$Channel+' '+$target.Tag+'.')
+}
 function Rollback {
  Assert-NoInterruptedInstall
  Assert-NoInterruptedRollback
@@ -903,6 +922,49 @@ function SelfTest {
   $installChecks++
   if($installChecks -ne 8){throw 'Wrong interrupted install recovery test count.'}
   Write-Host 'Updater Banner 8/8 interrupted install recovery checks passed.'
+  $launchChecks=0
+  Reset-SyntheticLite
+  $validLaunch=Get-VerifiedLaunchTarget
+  if($validLaunch.Tag -cne 'ci-200' -or
+     $validLaunch.File -cne (Join-Path $script:current 'Start-Dvinholm-Lite.cmd')){
+   throw 'Valid Development launch candidate was not selected.'
+  }
+  $launchChecks++
+  Reset-SyntheticLite
+  Remove-Item -LiteralPath $script:current -Recurse -Force
+  Reject {Get-VerifiedLaunchTarget}
+  $launchChecks++
+  Reset-SyntheticLite
+  Remove-Item -LiteralPath (Join-Path $script:current 'Start-Dvinholm-Lite.cmd') -Force
+  Reject {Get-VerifiedLaunchTarget}
+  $launchChecks++
+  Reset-SyntheticLite
+  [IO.File]::WriteAllBytes((Join-Path $script:current 'Dvinholm.App.exe'),[byte[]](0,1,2,3))
+  Reject {Get-VerifiedLaunchTarget}
+  $launchChecks++
+  Reset-SyntheticLite
+  [IO.File]::WriteAllText((Join-Path $script:current 'updater-banner.json'),
+   (@{Channel='Stable';Tag='v0.2.4'}|ConvertTo-Json))
+  Reject {Get-VerifiedLaunchTarget}
+  $launchChecks++
+  Reset-SyntheticInstall
+  Reject {Get-VerifiedLaunchTarget}
+  if((Test-Path -LiteralPath (Get-InstallTransactionFile)) -eq $false){
+   throw 'Launch validation mutated the install journal.'
+  }
+  $launchChecks++
+  Reset-SyntheticLite
+  Move-Item -LiteralPath $script:current -Destination $staged
+  Reject {Get-VerifiedLaunchTarget}
+  $launchChecks++
+  Reset-SyntheticLite
+  Remove-Item -LiteralPath (Join-Path $script:channelRoot 'previous') -Recurse -Force
+  if((Get-VerifiedLaunchTarget).Tag -cne 'ci-200'){
+   throw 'First installed version could not launch without a backup.'
+  }
+  $launchChecks++
+  if($launchChecks -ne 8){throw 'Wrong managed launch candidate test count.'}
+  Write-Host 'Updater Banner 8/8 verified Lite launch candidate checks passed.'
   $statusChecks=0
   Reset-SyntheticLite
   if((Get-ChannelRecoveryState) -cne 'Ready'){throw 'Clean recovery status incorrect.'}
@@ -960,6 +1022,8 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    }
    $r=Latest;$script:state.Available=$r.Tag
    Progress ('Latest '+$Channel+' release: '+$r.Tag+'. No changes made.')
+  }elseif($Mode -eq 'Launch'){
+   Invoke-ChannelExclusive {Launch}
   }elseif($Mode -eq 'Rollback'){
    Invoke-ChannelExclusive {Rollback}
   }elseif($Mode -eq 'Repair'){
@@ -977,6 +1041,10 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    'Missing Lite prerequisites. Install/update Microsoft components, then retry.'
   }elseif($message -match 'Close the application'){
    'Close Dvinholm, then retry. Managed files were not changed.'
+  }elseif($message -match '^Launch blocked:'){
+   $message
+  }elseif($Mode -eq 'Launch'){
+   'Unable to open the selected Lite launcher. No installation changes were made.'
   }elseif($message -match 'Recovery must be handled'){
    'Recovery required. Use the matching repair button or inspect the managed folders.'
   }elseif($message -match 'Interrupted rollback requires'){
@@ -1065,7 +1133,7 @@ function Update-ActionAvailability {
 }
 function Begin-Action([string]$action){
  if($script:child -or $script:vendor){return}
- if($action -in @('Install','Rollback','Check') -and
+ if($action -in @('Install','Rollback','Check','Launch') -and
     $script:recoveryStatus -cne 'Ready'){return}
  if($action -eq 'RepairInstall'){
   if([Windows.Forms.MessageBox]::Show(
@@ -1108,15 +1176,7 @@ $install.Add_Click({Begin-Action 'Install'})
 $rollback.Add_Click({Begin-Action 'Rollback'})
 $repair.Add_Click({Begin-Action 'Repair'})
 $repairInstall.Add_Click({Begin-Action 'RepairInstall'})
-$launch.Add_Click({
- if($script:child -or $script:vendor -or
-    $script:recoveryStatus -cne 'Ready'){return}
- $target=Join-Path (Join-Path (Join-Path $base $choice.SelectedItem.ToString()) 'current') 'Start-Dvinholm-Lite.cmd'
- if(-not(Test-Path $target -PathType Leaf)){
-  [Windows.Forms.MessageBox]::Show('Channel not installed; choose Download / Install.',
-   'No managed installation')|Out-Null
- }else{Start-Process -FilePath $target -WorkingDirectory (Split-Path $target -Parent)}
-})
+$launch.Add_Click({Begin-Action 'Launch'})
 foreach($b in @($dot,$win,$vc)){
  $b.Add_Click({
   if($script:child -or $script:vendor){return}
