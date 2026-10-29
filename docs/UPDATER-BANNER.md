@@ -1,3 +1,15 @@
+## Launcher-first migration
+
+The Windows x86 diagnostic window no longer presents **Check update**:
+updates and Microsoft runtime management are launcher-owned. Stage 1 keeps
+legacy updater XAML elements **collapsed and disabled** temporarily because
+the existing code-behind still references them. They cannot be opened from
+the UI. Removing their code-behind, changing the package layout to
+`Launcher.exe` + `Binaries/`, and replacing the script entry point with
+a branded dependency-free native launcher are **subsequent, separately
+validated migration steps**. This stage does not yet deliver a
+`Launcher.exe` or the new on-disk layout.
+
 # Standalone Dvinholm Updater Banner
 
 A separate lightweight GUI for Windows 11 and Windows 11 IoT LTSC.
