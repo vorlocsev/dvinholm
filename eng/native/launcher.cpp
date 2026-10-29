@@ -7,9 +7,9 @@ int WINAPI wWinMain(HINSTANCE, HINSTANCE, PWSTR, int) {
     if (!n || n >= 32768) return 10;
     std::wstring base(module, n);
     base.erase(base.find_last_of(L"\\/") + 1);
-    const std::wstring script = base + L"Updater-Banner.ps1";
+    const std::wstring script = base + L"Binaries\\Updater-Banner.ps1";
     if (GetFileAttributesW(script.c_str()) == INVALID_FILE_ATTRIBUTES) {
-        MessageBoxW(nullptr,L"Updater-Banner.ps1 is missing.",L"Dvinholm",MB_OK|MB_ICONERROR);
+        MessageBoxW(nullptr,L"Binaries\\Updater-Banner.ps1 is missing.",L"Dvinholm",MB_OK|MB_ICONERROR);
         return 11;
     }
     wchar_t win[MAX_PATH] = {};
