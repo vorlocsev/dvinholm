@@ -2292,77 +2292,73 @@ if($Mode -eq 'UiSmokeTest'){
   if($vendorChecks -ne 7){throw 'Wrong Microsoft installer lifecycle test count.'}
   Write-Host 'Updater Banner 7/7 WinForms vendor worker lifecycle checks passed.'
 
-  # Approved Aurora UI checks use actual WinForms controls, without
-  # displaying a window, contacting GitHub, or launching an installer.
+  # Eight Windows-only GUI contracts for the approved Service Cockpit.
+  # No modal window, network request, installer, or ECU access.
   $auroraChecks=0
   if($script:auroraScale -gt 0.80 -or $script:auroraScale -lt 0.65 -or
      $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552){
-   throw 'Aurora dashboard was not reduced to compact dimensions.'
+   throw 'Service Cockpit is larger than the compact display envelope.'
   }
   $auroraChecks++
   if($hero.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
-     $hero.Height -ne [int][Math]::Round(182*$script:auroraScale) -or
+     $hero.Height -ne [int][Math]::Round(184*$script:auroraScale) -or
      $brandTitle.Text -cne 'DVINHOLM'){
-   throw 'Aurora hero banner was not scaled with the dashboard.'
+   throw 'Service Cockpit upper banner is missing or not correctly scaled.'
   }
   $auroraChecks++
-  if($sidebar.Controls.Count -lt 6 -or $script:auroraNav.Count -ne 6){
-   throw 'Aurora navigation was not built.'
+  if($sidebar.Visible -or -not $choice.Visible -or
+     $stableRadio.Visible -or $developmentRadio.Visible -or
+     $script:serviceCardLeft -eq $null){
+   throw 'Service Cockpit still shows decorative sidebar or duplicated channel selection.'
   }
   $auroraChecks++
-  if($stableRadio.Parent -ne $form -or
-     $developmentRadio.Parent -ne $form -or $choice.Parent -ne $form){
-   throw 'Aurora channel radio cards are missing.'
+  if($script:serviceCardUpdates -eq $null -or
+     $script:serviceCardWindows -eq $null -or
+     $script:serviceCardDrivers -eq $null -or
+     $script:serviceCardUpdates.Top -ge $script:serviceCardWindows.Top -or
+     $script:serviceCardWindows.Top -ge $script:serviceCardDrivers.Top){
+   throw 'Service Cockpit three operation cards are missing or out of order.'
   }
   $auroraChecks++
   $contentWidth=[int][Math]::Round(1180*$script:auroraScale)
   $contentHeight=[int][Math]::Round(690*$script:auroraScale)
-  if($bar.Width -lt [int][Math]::Floor(800*$script:auroraScale) -or
-     $install.Right -gt $contentWidth -or $dot.Bottom -gt $contentHeight -or
+  if($install.Right -gt $contentWidth -or
      $versionsButton.Right -gt $contentWidth -or
-     $versionsButton.Top -lt [int][Math]::Floor(514*$script:auroraScale)){
-   throw 'Aurora dashboard action/progress layout is clipped.'
+     $driverQuick.Right -gt $contentWidth -or
+     $script:serviceCardDrivers.Bottom -gt $contentHeight -or
+     $bar.Width -lt [int][Math]::Floor(650*$script:auroraScale)){
+   throw 'Service Cockpit controls extend past the display boundary.'
   }
   $auroraChecks++
   $working=[Windows.Forms.Screen]::FromControl($form).WorkingArea
   if($form.Width -gt $working.Width-16 -or $form.Height -gt $working.Height-16){
-   throw 'Aurora window still extends beyond the usable desktop work area.'
+   throw 'Service Cockpit extends beyond the Windows working area.'
   }
   $auroraChecks++
-  $footerMeasure=[Windows.Forms.TextRenderer]::MeasureText(
-   $sidebarFooter.Text,$sidebarFooter.Font,
-   [Drawing.Size]::new($sidebarFooter.Width,1000),
-   [Windows.Forms.TextFormatFlags]::WordBreak)
-  if($repairInstall.Visible -or $repair.Visible -or $rollback.Visible -or
-     $sidebar.Bottom -gt $contentHeight-4 -or
-     $sidebarFooter.Bottom -gt $sidebar.ClientSize.Height-12 -or
-     $sidebarFooter.Top -lt $navDrivers.Bottom+12 -or
-     $footerMeasure.Height -gt $sidebarFooter.Height -or
-     ($form.AutoScroll -and $form.ClientSize.Width -ge $contentWidth -and
-      $form.ClientSize.Height -ge $contentHeight)){
-   throw ('Compact Aurora clipped: repairBottom='+$repairInstall.Bottom+
-    '; contentHeight='+$contentHeight+'; sidebarBottom='+$sidebar.Bottom+
-    '; sidebarClientHeight='+$sidebar.ClientSize.Height+
-    '; footerBottom='+$sidebarFooter.Bottom+
-    '; footerTop='+$sidebarFooter.Top+'; driversBottom='+$navDrivers.Bottom+
-    '; measuredTextHeight='+$footerMeasure.Height+
-    '; footerHeight='+$sidebarFooter.Height+'; autoScroll='+$form.AutoScroll+
-    '; visibleWidth='+$form.ClientSize.Width+
-    '; visibleHeight='+$form.ClientSize.Height)
-  }
+  $currentLanguage=$script:launcherLanguage
+  $script:launcherLanguage='EN';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Windows requirements' -or
+     $driverQuick.Text -cne 'Open drivers'){throw 'English localization did not apply.'}
+  $script:launcherLanguage='RU';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Требования Windows' -or
+     $driverQuick.Text -cne 'Открыть драйверы'){throw 'Russian localization did not apply.'}
+  $script:launcherLanguage=$currentLanguage;Apply-LauncherLanguage
   $auroraChecks++
   $script:child=[pscustomobject]@{HasExited=$false}
   Update-ActionAvailability
-  if($stableRadio.Enabled -or $developmentRadio.Enabled -or $versionsButton.Enabled){
-   throw 'Aurora channel radios or version check were not locked during updater work.'
+  if($versionsButton.Enabled -or $windowsQuick.Enabled -or
+     $driverQuick.Enabled -or $driverScanQuick.Enabled -or
+     $settingsQuick.Enabled -or $languageChoice.Enabled){
+   throw 'Service Cockpit actions were not locked during updater operation.'
   }
   $script:child=$null
   Update-ActionAvailability
-  if(-not $stableRadio.Enabled -or -not $developmentRadio.Enabled){
-   throw 'Aurora channel radios did not recover after updater work.'
+  if(-not $windowsQuick.Enabled -or -not $driverQuick.Enabled){
+   throw 'Service Cockpit actions did not recover after updater operation.'
   }
   $auroraChecks++
-  if($auroraChecks -ne 8){throw 'Wrong Aurora smoke check count.'}
+  if($auroraChecks -ne 8){throw 'Wrong Service Cockpit smoke check count.'}
+  Write-Host 'Service Cockpit 8/8 Windows WinForms layout and action smoke checks passed.'
   Write-Host 'Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.'
 
  }finally{
