@@ -1626,8 +1626,12 @@ function Poll-WorkerState {
    # Rescan only Windows PnP/registry. Never load the adapter or request CAN.
    if($exitCode -eq 0){
     try{
-     if($script:driverRescan){& $script:driverRescan}
-     $status.Text='J2534 installer finished. Driver inventory refreshed; hardware untested.'
+     if($script:driverRescan){
+      & $script:driverRescan
+      $status.Text='J2534 installer finished. Driver inventory refreshed; hardware untested.'
+     }else{
+      $status.Text='Vendor installer finished. Open Drivers and select Check to verify.'
+     }
     }catch{
      $status.Text='Vendor setup finished; driver inventory could not be refreshed.'
     }
