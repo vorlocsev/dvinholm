@@ -63,6 +63,7 @@ try{
   @('Binaries/Updater-Banner.ps1','eng/Updater-Banner.ps1'),
   @('Binaries/Manage-Lite-Dependencies.ps1','eng/Manage-Lite-Dependencies.ps1'),
   @('Binaries/Dvinholm-icon.png','assets/dvinholm-icon.png'),
+  @('Binaries/dvinholm-banner.webp','assets/dvinholm-banner.webp'),
   @('Binaries/Launcher-AuroraTheme.ps1','eng/Launcher-AuroraTheme.ps1'),
   @('Binaries/J2534-DriverManager.ps1','eng/J2534-DriverManager.ps1'),
   @('Binaries/J2534-DriverUI.ps1','eng/J2534-DriverUI.ps1')
