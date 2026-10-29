@@ -89,7 +89,7 @@ public sealed class UpdaterBannerContractTests
     public void IndependentRuntimeInventoryAndVendorInstallerRemainExplicit()
     {
         var manager = Read("eng/Manage-Lite-Dependencies.ps1");
-        Assert.Contains("ValidateSet('Launch','Manage','Install','Probe','SelfTest')", manager);
+        Assert.Contains("ValidateSet('Launch','Manage','Install','Probe','VersionReport','SelfTest')", manager);
         Assert.Contains("if ($Mode -eq 'SelfTest')", manager);
         Assert.Contains("Select-DotNetInstaller $index", manager);
         Assert.Contains("if ($Mode -eq 'Probe')", manager);
