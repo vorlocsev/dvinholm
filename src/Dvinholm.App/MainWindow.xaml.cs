@@ -1620,6 +1620,7 @@ public sealed partial class MainWindow : Window
                     }
                 },
                 PrimaryButtonText = "Copy sanitized research metadata",
+                SecondaryButtonText = "Save redacted DID inventory TXT",
                 CloseButtonText = "Close",
                 DefaultButton = ContentDialogButton.Close
             };
@@ -1643,7 +1644,33 @@ public sealed partial class MainWindow : Window
                 }
             };
 
-            await dialog.ShowAsync();
+            var choice = await dialog.ShowAsync();
+            if (_closing)
+                return;
+
+            if (choice == ContentDialogResult.Secondary)
+            {
+                // Path-only Save As and guarded atomic writer. No empty file
+                // on Cancel, no automatic persistence, no ECU request.
+                var destination = ReportSavePathPicker.PickPath(
+                    WindowNative.GetWindowHandle(this),
+                    "did-inventory-redacted", ".txt", "Text");
+                if (destination is null || _closing)
+                {
+                    if (!_closing)
+                        SetStatus("Redacted DID report cancelled. No file was created.");
+                    return;
+                }
+
+                await EcuSanitizedDidReport.SaveAsync(
+                    inspected, destination, AppContext.BaseDirectory);
+                if (!_closing)
+                    SetStatus("Saved a redacted historical DID inventory. " +
+                        "No raw DID bytes, profile metadata, CAN addresses or VIN were exported. " +
+                        "Review DID identifiers and lengths before sharing.");
+                return;
+            }
+
             if (!_closing)
                 SetStatus(copiedResearchSummary
                     ? "Copied historical CEM research metadata (CAN and DID lengths). " +
@@ -1660,8 +1687,8 @@ public sealed partial class MainWindow : Window
         {
             // Do not echo untrusted paths, raw DID values or exception content
             // into the application's global status line.
-            SetStatus("Could not inspect the selected diagnostic snapshot. " +
-                "Check the file, access permissions and disk.");
+            SetStatus("Could not inspect or save the selected diagnostic snapshot report. " +
+                "Check the file, access permissions and disk. No ECU operation occurred.");
         }
         finally
         {
