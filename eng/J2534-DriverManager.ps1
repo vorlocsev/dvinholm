@@ -33,6 +33,12 @@ function Clean-Text([string]$value,[int]$limit=100) {
  if($safe.Length -gt $limit){return $safe.Substring(0,$limit)}
  return $safe
 }
+function Get-AdapterFamily([string]$Name,[string]$Vendor) {
+ $label=($Name+' '+$Vendor).ToLowerInvariant()
+ if($label -match 'volvo.{0,20}dice|dice.{0,20}volvo|diagnostic communication equipment|\\bdice\\b'){return 'Volvo DiCE'}
+ if($label -match 'mongoose.{0,25}jlr|jlr.{0,25}mongoose|mongoose.{0,25}pro|jlr.{0,25}pro'){return 'Mongoose JLR Pro'}
+ return 'Other J2534'
+}
 function Read-RegisteredDrivers {
  $result=New-Object Collections.Generic.List[object]
  $roots=@(
@@ -67,7 +73,7 @@ function Read-RegisteredDrivers {
               elseif(-not $x86){'Not a valid x86 DLL'}
               else{'Registered x86 DLL (not hardware-tested)'}
       $result.Add([pscustomobject]@{
-       Name=$name;Vendor=$vendor;Api=$spec.Version
+       Name=$name;Vendor=$vendor;Family=(Get-AdapterFamily $name $vendor);Api=$spec.Version
        Registered=$true;DllPath=(Clean-Text $normalized 350)
        Compatible=[bool]($spec.Compatible -and $x86);Status=$status
       })
