@@ -101,13 +101,15 @@ function Show-J2534Drivers {
  $diceInstall=DriverButton 'Установить Volvo DiCE...' 20 477 407
  $mongooseInstall=DriverButton 'Установить Mongoose JLR...' 443 477 435
  $result=DriverLabel 'Проверка не выполнена. USB и работоспособность адаптеров не тестируются.' 529 27
- # Capture the dialog controls for the parent's timer-driven post-install rescan.
+ # Capture the dialog controls and inventory helper for the parent's
+ # timer-driven post-install rescan. GetNewClosure has its own script scope.
  # A completed installer is NOT proof that J2534 communication works.
+ $inventoryCommand=${function:Get-DriverInventory}
  $scan={
   if($dlg.IsDisposed){return}
   $list.Items.Clear()
   try{
-   $data=Get-DriverInventory
+   $data=& $inventoryCommand
    $dice.Text='Volvo DiCE: '+[string]$data.Targets.VolvoDice.Status
    $mongoose.Text='MongoosePro JLR: '+[string]$data.Targets.MongooseJlr.Status
    foreach($device in @($data.Devices|Where-Object{$null -ne $_})){
