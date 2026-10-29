@@ -288,8 +288,8 @@ function Set-AuroraCompactLayout {
    }
   }
   # The original three-line footer was visibly cut off at the bottom.
-  $sidebarFooter.Text='DVINHOLM LAUNCHER'+[Environment]::NewLine+'WINDOWS X86'
-  $sidebarFooter.SetBounds(22,447,180,42)
+  $sidebarFooter.Text='DVINHOLM'+[Environment]::NewLine+'Windows x86'
+  $sidebarFooter.SetBounds(22,428,180,64)
  }finally{$form.ResumeLayout($false)}
  # Account for the Windows taskbar and non-client frame before selecting
  # final dimensions. Preserve the compact maximum at normal DPI.
