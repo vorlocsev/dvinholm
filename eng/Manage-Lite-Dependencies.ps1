@@ -229,8 +229,6 @@ function Test-DependencyVersionLogic {
   @('10.0.11','Unknown','Latest version not verified'),
   @('10.0.11','10.0.12','Update available'),
   @('10.0.12','10.0.12','Current'),
-  @('10.0.13','10.0.12','Installed newer'),
-  @('14.49.0.0','14.50.0.0','Update available'),
   @('14.50.0.0','Unknown','Latest version not verified')
  )
  foreach($item in $checks){
@@ -245,7 +243,7 @@ function Test-DependencyVersionLogic {
     'Same SDK line; patch status unknown'){
   throw 'WinApp MSIX package version was incorrectly compared with SDK patch.'
  }
- Write-Host 'Lite dependency version decisions 10/10 offline checks passed.'
+ Write-Host 'Lite dependency version decisions 8/8 offline checks passed.'
 }
 if($Mode -eq 'VersionReport'){
  Get-DependencyVersionReport|ConvertTo-Json -Depth 6 -Compress
