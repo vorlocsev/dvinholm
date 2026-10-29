@@ -1282,6 +1282,9 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
      ' | latest: '+[string]$part.Latest+
      ' | '+[string]$part.Status+' ('+$readiness+')')
    }
+   # The Desktop x86 runtime alone is not a complete .NET runtime inventory.
+   $lines.Add('.NET Core Runtime x86: '+[string]$report.DotNetCore+
+    ' (required alongside .NET Desktop Runtime)')
    $lines.Add('WinApp 2.5.1 is the tested installer baseline; newer SDK versions are advisory.')
    $lines.Add('VC++ current installer version cannot be verified without vendor metadata.')
    $script:state.DependencyReport=[string]::Join([Environment]::NewLine,$lines.ToArray())
