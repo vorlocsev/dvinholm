@@ -1789,7 +1789,7 @@ if($Mode -eq 'UiSmokeTest'){
    throw 'Aurora hero banner is absent.'
   }
   $auroraChecks++
-  if($sidebar.Controls.Count -lt 6 -or $script:auroraNav.Count -ne 5){
+  if($sidebar.Controls.Count -lt 6 -or $script:auroraNav.Count -ne 6){
    throw 'Aurora navigation was not built.'
   }
   $auroraChecks++
