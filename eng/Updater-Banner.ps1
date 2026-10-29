@@ -6,7 +6,7 @@ No software installs or updates until the user explicitly confirms.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('UI','UiSmokeTest','Check','Install','Rollback','Repair','RepairInstall','Launch','Probe','SelfTest')][string]$Mode='UI',
+ [ValidateSet('UI','UiSmokeTest','Check','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
  [ValidateSet('Stable','Development')][string]$Channel='Development',
  [string]$StateFile
 )
@@ -34,7 +34,7 @@ if($Mode -eq 'Launch' -and -not $PSBoundParameters.ContainsKey('Channel')){
 $channelRoot=Join-Path $base $Channel
 $current=Join-Path $channelRoot 'current'
 $state=[ordered]@{Done=$false;Failed=$false;Current='Not installed';Available='Not checked';
- DotNet='Unknown';WinApp='Unknown';VC='Unknown';Recovery='Not checked';Detail='Ready';DownloadId='';DownloadTotal=0}
+ DotNet='Unknown';WinApp='Unknown';VC='Unknown';DependencyReport='';Recovery='Not checked';Detail='Ready';DownloadId='';DownloadTotal=0}
 function Save-State {
  if (-not $StateFile) { return }
  $tmp=$StateFile+'.'+[guid]::NewGuid().ToString('N')+'.tmp'
@@ -1265,6 +1265,27 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    }else{
     Progress ('Recovery required: '+$script:state.Recovery+'. No GitHub request made.')
    }
+  }elseif($Mode -eq 'Versions'){
+   if(-not(Test-Path -LiteralPath $manager -PathType Leaf)){
+    throw 'Microsoft dependency version manager is missing.'
+   }
+   $json=(& $manager -Mode VersionReport -LiteDirectory $PSScriptRoot|Out-String).Trim()
+   if(-not $json){throw 'Dependency version report is unavailable.'}
+   $report=ConvertFrom-Json -InputObject $json -ErrorAction Stop
+   $lines=New-Object Collections.Generic.List[string]
+   foreach($key in @('DotNet','WinApp','VC')){
+    $part=$report.$key
+    if($null -eq $part){throw 'Incomplete dependency version report.'}
+    $label=switch($key){'DotNet'{'.NET Desktop x86'}'WinApp'{'Windows App Runtime x86'}default{'VC++ Redist x86'}}
+    $readiness=if([bool]$part.Ready){'required components detected'}else{'required components not fully verified'}
+    $lines.Add($label+': '+[string]$part.Installed+
+     ' | latest: '+[string]$part.Latest+
+     ' | '+[string]$part.Status+' ('+$readiness+')')
+   }
+   $lines.Add('WinApp 2.5.1 is the tested installer baseline; newer SDK versions are advisory.')
+   $lines.Add('VC++ current installer version cannot be verified without vendor metadata.')
+   $script:state.DependencyReport=[string]::Join([Environment]::NewLine,$lines.ToArray())
+   Progress 'Microsoft dependency version check finished. No software changed.'
   }elseif($Mode -eq 'Check'){
    if($script:state.Recovery -ne 'Ready'){
     throw 'Recovery must be handled before update checks.'
@@ -1450,6 +1471,15 @@ $driverUi=Join-Path $PSScriptRoot 'J2534-DriverUI.ps1'
 if(-not(Test-Path -LiteralPath $driverUi -PathType Leaf)){throw 'Driver UI missing'}
 . $driverUi
 
+# Explicit online versions check; local Recheck deps remains offline.
+$versionsButton=Button 'Check runtime versions' 927 596 215
+$versionsButton.SetBounds(918,598,226,30)
+$versionsButton.Font=New-Object Drawing.Font('Segoe UI',9)
+$versionsButton.BackColor=[Drawing.Color]::FromArgb(25,76,114)
+$versionsButton.ForeColor=[Drawing.Color]::White
+$versionsButton.FlatStyle=[Windows.Forms.FlatStyle]::Flat
+$versionsButton.BringToFront()
+
 $script:child=$null;$script:vendor=$null
 $script:statefile=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-banner-'+[guid]::NewGuid().ToString('N')+'.json')
 $powershell=Join-Path $env:WINDIR 'System32\WindowsPowerShell\v1.0\powershell.exe'
@@ -1465,6 +1495,7 @@ function Update-ActionAvailability {
  $install.Enabled=($ready -and -not $busy)
  $launch.Enabled=($ready -and -not $busy)
  $refresh.Enabled=-not $busy
+ $versionsButton.Enabled=-not $busy
  $rollback.Enabled=($ready -and -not $busy)
  $repair.Enabled=($state -ceq 'Repair rollback' -and -not $busy)
  $repairInstall.Enabled=($state -ceq 'Repair install' -and -not $busy)
@@ -1522,6 +1553,7 @@ function Begin-Action([string]$action){
 }
 $check.Add_Click({Begin-Action 'Check'})
 $refresh.Add_Click({Begin-Action 'Probe'})
+$versionsButton.Add_Click({Begin-Action 'Versions'})
 $install.Add_Click({Begin-Action 'Install'})
 $rollback.Add_Click({Begin-Action 'Rollback'})
 $repair.Add_Click({Begin-Action 'Repair'})
@@ -1606,6 +1638,11 @@ function Poll-WorkerState {
   }catch{}
  }
  if($script:child -and $script:child.HasExited){
+  $reportText=''
+  if($complete -and $null -ne $snapshot -and
+     $snapshot.PSObject.Properties['DependencyReport']){
+   $reportText=[string]$snapshot.DependencyReport
+  }
   $script:child.Dispose();$script:child=$null;$bar.MarqueeAnimationSpeed=0;$bar.Style=[Windows.Forms.ProgressBarStyle]::Continuous
   if(-not $complete){
    $script:recoveryStatus='Not checked'
@@ -1613,6 +1650,12 @@ function Poll-WorkerState {
    $status.Text='Updater helper stopped without a complete status. Use Recheck deps.'
   }
   Update-ActionAvailability
+  if($reportText){
+   [void][Windows.Forms.MessageBox]::Show($form,$reportText,
+    'Dvinholm | Installed and available runtimes',
+    [Windows.Forms.MessageBoxButtons]::OK,
+    [Windows.Forms.MessageBoxIcon]::Information)
+  }
  }
  if($script:vendor -and $script:vendor.HasExited){
   $exitCode=[int]$script:vendor.ExitCode
