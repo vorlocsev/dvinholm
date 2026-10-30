@@ -68,7 +68,7 @@ public sealed class VolvoP2CemVariantPreReadGateTests
     {
         var result = Review(Claim(), Claim("other") with
         {
-            ClaimedSoftwarePartNumber = "SW-OTHER"
+            ClaimedSoftwarePartNumber = "SW-002"
         });
         Assert.Equal(VolvoP2CemSourceSetKind.ConflictingInScopeClaims, result.SourceKind);
         Assert.Equal(VolvoP2CemPreReadFinding.ConflictingSourceClaims,
