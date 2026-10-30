@@ -863,3 +863,34 @@ including invoking the standalone updater in its new inspection mode
 in a temporary installation. CI cannot verify that the graphical
 Windows 11 window appears after a real restart; desktop acceptance and
 physical J2534 testing remain separate.
+
+
+## Last sign-in recovery outcome in Launcher Settings (Development)
+
+The trusted outside-install **Launcher-RebootRecovery.ps1** helper now
+records a bounded, minimal attempt receipt in its own worker folder:
+**recovery-last.json**. It is written on entry to Resume, after successful
+verified restoration/restart, or on a blocked attempt. The record contains
+only format version, **SHA-256-derived installation key** (not a path),
+UTC timestamp, outcome (Started, Succeeded or Blocked), and one fixed
+reason code (such as BackupCorrupt, StartupMismatch, RestartFailed,
+CommittedVerified, RollbackRestored or NoTransaction). No Windows
+username, installation path, registry command or raw exception is
+included. It does not report a reboot as successfully completed merely
+because a sign-in attempt started.
+
+The existing **Settings > Recovery status / Настройки > Статус
+восстановления** action reads the latest matching bounded receipt,
+validates its format and installation token, and displays its outcome
+and reason in English or Russian alongside the current live status.
+Missing, damaged or unrelated receipts are ignored. They **cannot**
+change the security decision, enable rollback or clear startup entries.
+A blocked attempt leaves its verified checkpoint, original backup
+and HKCU Run marker intact for inspection or a later sign-in retry.
+
+The receipt is advisory evidence, not a proof of a real Windows 11
+reboot, power loss or GUI launch. Eight Windows offline regression
+cases exercise initial/no receipt, arming, clean restart, interrupted
+rollback, committed verification, damaged backup, altered HKCU startup
+and a failed restart followed by success. The real Windows acceptance
+check remains separate; Stable 0.2.4 and physical J2534 are untouched.
