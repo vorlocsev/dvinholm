@@ -299,3 +299,20 @@ Record the vehicle/ECU identification, adapter and DLL versions, bus rate, reque
 - [Development history](docs/DEVELOPMENT_HISTORY.md) — archived MVP and historical version plans.
 - [Engineering handoff log](AI_WORKLOG.md) — detailed CI evidence and project notes.
 - [Changelog](CHANGELOG.md) — release history.
+
+
+## Strict recovery audit receipt validation (Development)
+
+The read-only native **Recovery status / Статус восстановления** inspector
+displays only a recent, well-formed sign-in recovery receipt matching the
+current installation. It validates a real UTC calendar timestamp, rejects
+records more than 30 days old or over 5 minutes ahead of the current clock,
+and requires a consistent outcome and reason: Started/AttemptStarted,
+Succeeded/(RollbackRestored, CommittedVerified, NoTransaction), or
+Blocked/(a known failure reason). Invalid records are omitted, not repaired
+or trusted. The receipt remains advisory and cannot authorize restoration
+or deletion. Eight Windows PowerShell 5.1 offline acceptance fixtures
+cover valid success/blocked reports, impossible dates, future/stale
+timestamps, contradictory outcomes, mismatched installation keys and
+mixed worker folders. This is not evidence of an actual Windows reboot,
+interactive GUI start or J2534 vehicle test. Stable v0.2.4 is unchanged.
