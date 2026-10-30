@@ -91,6 +91,9 @@ $hasRun=($startup.Length -gt 0)
 $checkpoints=New-Object Collections.Generic.List[object]
 $invalidWorkers=0
 $auditEntries=New-Object Collections.Generic.List[object]
+# Advisory receipts are ignored if dates or outcome/reason pairings are invalid.
+$auditNotBefore=[DateTime]::UtcNow.AddDays(-30)
+$auditNotAfter=[DateTime]::UtcNow.AddMinutes(5)
 if(Test-Path -LiteralPath $handoff -PathType Container){
  $folders=@(Get-ChildItem -LiteralPath $handoff -Directory -Force -ErrorAction Stop)
  if($folders.Count -gt 128){throw 'Too many native Launcher handoff folders for bounded inspection.'}
@@ -107,18 +110,31 @@ if(Test-Path -LiteralPath $handoff -PathType Container){
    try{
     $audit=Get-Content -LiteralPath $auditFile -Raw -ErrorAction Stop|
      ConvertFrom-Json -ErrorAction Stop
+    $outcome=[string]$audit.Outcome
+    $code=[string]$audit.Code
+    $when=[string]$audit.AttemptUtc
+    $parsedTime=[DateTime]::MinValue
+    $dateValid=($when -cmatch '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$' -and
+     [DateTime]::TryParseExact($when,"yyyy-MM-ddTHH:mm:ss.fff'Z'",
+      [Globalization.CultureInfo]::InvariantCulture,
+      ([Globalization.DateTimeStyles]::AssumeUniversal -bor
+       [Globalization.DateTimeStyles]::AdjustToUniversal),[ref]$parsedTime))
+    $pairValid=(
+     ($outcome -ceq 'Started' -and $code -ceq 'AttemptStarted') -or
+     ($outcome -ceq 'Succeeded' -and
+      $code -cin @('RollbackRestored','CommittedVerified','NoTransaction')) -or
+     ($outcome -ceq 'Blocked' -and
+      $code -cin @('StartupMismatch','CheckpointInvalid','BackupCorrupt',
+       'CommittedMismatch','UpdaterBusy','ApplicationRunning',
+       'RestartFailed','UnexpectedError')))
     if([int]$audit.Version -eq 1 -and
        [string]$audit.InstallationKey -ceq $token -and
-       [string]$audit.AttemptUtc -cmatch '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$' -and
-       [string]$audit.Outcome -cin @('Started','Succeeded','Blocked') -and
-       [string]$audit.Code -cin @('AttemptStarted','RollbackRestored',
-        'CommittedVerified','NoTransaction','StartupMismatch',
-        'CheckpointInvalid','BackupCorrupt','CommittedMismatch',
-        'UpdaterBusy','ApplicationRunning','RestartFailed','UnexpectedError')){
+       $dateValid -and $parsedTime -ge $auditNotBefore -and
+       $parsedTime -le $auditNotAfter -and $pairValid){
      $auditEntries.Add([pscustomobject]@{
-      AttemptUtc=[string]$audit.AttemptUtc
-      Outcome=[string]$audit.Outcome
-      Code=[string]$audit.Code
+      AttemptUtc=$when
+      Outcome=$outcome
+      Code=$code
      })
     }
    }catch{}
