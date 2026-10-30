@@ -667,3 +667,42 @@ unknown retired files. Tests do **not** establish actual Windows reboot
 or power-loss recovery. Existing downloaded `prepared` packages are
 not automatically discarded by this action; managing obsolete download
 snapshots is a separate step. Stable 0.2.4 is unchanged.
+
+
+## Explicit local Launcher download cleanup (Development)
+
+Settings provides **Clean obsolete downloads / Очистить устаревшие
+загрузки**, with separate confirmation and an RU/EN completion report.
+This is an opt-in local-only PowerShell 5.1 worker, with no GitHub
+download, installer, driver interaction, native EXE launch or managed
+application modification.
+
+For the selected channel, it can discard only three bounded types:
+
+- An interrupted `download-<32 lowercase hexadecimal>` directory whose
+  last-write timestamp is older than 48 hours.
+- A `prepared` directory with a valid channel/tag receipt, but only
+  when the installed native Launcher tag is **equal or newer** within
+  the same channel. Unknown or mixed-channel versions are preserved.
+- A `discard-<32 lowercase hexadecimal>` directory left by an
+  interrupted previously confirmed cleanup.
+
+Before any recursive deletion, every entry must match the native
+Launcher package allowlist, be an ordinary non-link file or directory,
+and stay inside a strict total size / file count budget. An
+installation-scoped mutex prevents cleanup during native update or
+backup finalization. The cleanup renames selected directories to
+`discard-<guid>` first, allowing an interrupted deletion to be
+completed explicitly later.
+
+Other channels, newer prepared updates, unknown names and files,
+reparse points, active-looking downloads and native installation
+backups are not removed. The eight deterministic Windows offline tests
+cover stale/recent downloads, current/newer and mismatched prepared
+packages, unknown files, interrupted cleanup, and channel isolation.
+No automatic deletion takes place at boot.
+
+**Power-loss recovery of an interrupted native file replacement remains
+a separate acceptance gate.** The journaled recovery helper exists,
+but unattended reboot recovery and physical Windows acceptance are not
+claimed by this cleanup stage.
