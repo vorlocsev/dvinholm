@@ -65,7 +65,9 @@ public sealed class VolvoP2CemCatalogSearchTests
         Assert.Empty(Find("service headlamp"));
         var oem = Find("XC90 service", VolvoP2CemCatalogEvidenceTier.VolvoPublishedServiceMenu);
         Assert.Equal(6, oem.Count);
-        Assert.Empty(Find("XC90 service", VolvoP2CemCatalogEvidenceTier.VendorAdvertisement));
+        var vendor = Assert.Single(Find("XC90 service",
+            VolvoP2CemCatalogEvidenceTier.VendorAdvertisement));
+        Assert.Equal("p2.xc90.service-interval", vendor.ResearchId);
     }
 
     [Fact]
