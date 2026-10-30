@@ -5,7 +5,8 @@ and in-memory-equivalent registry files in a dedicated temporary fixture;
 never registers HKCU Run, launches Launcher.exe, or modifies installed app.
 #>
 [CmdletBinding()]
-param([Parameter(Mandatory)][string]$ZipPath)
+param([Parameter(Mandatory)][string]$ZipPath,
+ [Parameter(Mandatory)][string]$ExpectedTag)
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
@@ -39,16 +40,16 @@ function Fixture([string]$name){
 }
 $fixtureParents=New-Object Collections.Generic.List[string]
 function Boot($fixture,[string]$mode){
- & $fixture.Recovery -Mode $mode -InstallationDirectory $fixture.Root -ExpectedTag ci-4255 -OfflineFixture -FixtureRegistryDirectory $fixture.Registry|Out-Null
+ & $fixture.Recovery -Mode $mode -InstallationDirectory $fixture.Root -ExpectedTag $ExpectedTag -OfflineFixture -FixtureRegistryDirectory $fixture.Registry|Out-Null
 }
 function Apply($fixture,[int]$crash=0){
  & $fixture.Replacement -Mode Apply -InstallationDirectory $fixture.Root -ZipPath $zip -ExpectedSha256 $archiveHash -OfflineFixture -SimulateInterruptionAfter $crash|Out-Null
 }
-function Refuse([scriptblock]$operation){
+function Refuse([scriptblock]$operation,[bool]$count=$true){
  $failed=$false
  try{& $operation|Out-Null}catch{$failed=$true}
  if(-not $failed){throw 'Invalid native reboot recovery state was accepted.'}
- $script:checks++
+ if($count){$script:checks++}
 }
 function RegistryEntry($fixture){
  return @(Get-ChildItem -LiteralPath $fixture.Registry -File -ErrorAction SilentlyContinue)
@@ -72,7 +73,7 @@ try{
  # 3. An interrupted update is restored by an independent sign-in run.
  $crash=Fixture 'interrupted'
  Boot $crash 'Arm'
- Refuse {Apply $crash 2}
+ Refuse {Apply $crash 2} $false
  Boot $crash 'Resume'
  if((Test-Path (Join-Path $crash.Root '.launcher-transaction')) -or
   (Get-FileHash -LiteralPath $crash.ScriptPath -Algorithm SHA256).Hash -cne $crash.OriginalHash -or
@@ -93,7 +94,7 @@ try{
  # 5. Corrupt original backups block recovery and preserve startup entry.
  $damaged=Fixture 'corrupt-backup'
  Boot $damaged 'Arm'
- Refuse {Apply $damaged 2}
+ Refuse {Apply $damaged 2} $false
  [IO.File]::AppendAllText((Join-Path $damaged.Root '.launcher-transaction\backup\Launcher.exe'),'tamper')
  Refuse {Boot $damaged 'Resume'}
  if(-not(Test-Path (Join-Path $damaged.Root '.launcher-transaction\journal.json')) -or
