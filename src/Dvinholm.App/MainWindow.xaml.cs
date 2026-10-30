@@ -79,12 +79,12 @@ public sealed partial class MainWindow : Window
         // The standalone launcher owns updates and all Lite runtime management.
         if (DvinholmUserDataDirectory.IsAcceptanceLaunch)
             ConnectButton.IsEnabled = false;
-        _session.ReadError += ex => DispatcherQueue.TryEnqueue(() =>
+        _session.ReadError += _ => DispatcherQueue.TryEnqueue(() =>
         {
-            var detail = J2534Native.SanitizeDriverDiagnostic(ex.Message);
-            SetStatus(string.IsNullOrWhiteSpace(detail)
-                ? "Read error: unexpected adapter error."
-                : "Read error: " + detail);
+            // The worker may report a late error after disconnect/close.
+            // Neither vendor exception data nor stale errors belong on Aurora.
+            if (!_closing && _connected)
+                SetStatus(J2534ConnectionPresentation.ReadErrorActivity);
         });
         Closed += (_, _) =>
         {
@@ -2827,6 +2827,7 @@ public sealed partial class MainWindow : Window
             }
 
             ClearDiagnosticReadResult();
+            AdapterMetadataText.Text = J2534ConnectionPresentation.DisconnectedDetails;
             ConnectButton.IsEnabled = false;
             HardwareFilterButton.IsEnabled = false;
             StartButton.IsEnabled = false;
@@ -2899,6 +2900,8 @@ public sealed partial class MainWindow : Window
 
         var dllPath = DllPath.Text.Trim();
         ClearDiagnosticReadResult();
+        // Stale information must not survive a failed replacement connection.
+        AdapterMetadataText.Text = J2534ConnectionPresentation.DisconnectedDetails;
         ConnectButton.IsEnabled = false;
         StartButton.IsEnabled = false;
         SetUdsEnabled(false);
@@ -2928,15 +2931,11 @@ public sealed partial class MainWindow : Window
             StartButton.IsEnabled = true;
             SetUdsEnabled(true);
             DiscoverButton.IsEnabled = true;
-            var version = _session.AdapterVersion;
-            var capabilities = _session.AdapterCapabilities;
-            var versionText = version is null
-                ? (string.IsNullOrWhiteSpace(_session.AdapterVersionStatus) ? "version unavailable" : _session.AdapterVersionStatus)
-                : $"API {version.Api} · DLL {version.Dll} · FW {version.Firmware}";
-            var capabilityText = capabilities is null
-                ? string.Empty
-                : $" · HW filters {(capabilities.HardwareCanFilters ? "available" : "unavailable")} · version query {(capabilities.VersionQuery ? "available" : "unavailable")}";
-            SetStatus("Connected · J2534 · CAN · " + versionText + capabilityText);
+            // Keep vendor-supplied version strings in the dedicated local
+            // adapter area. The same SetStatus text is shared with Aurora home.
+            AdapterMetadataText.Text = J2534ConnectionPresentation.LocalDetails(
+                _session.AdapterVersion, _session.AdapterCapabilities);
+            SetStatus(J2534ConnectionPresentation.ConnectedActivity);
         }
         catch (Exception)
         {
