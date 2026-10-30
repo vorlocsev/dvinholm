@@ -102,6 +102,11 @@ try{
  if(-not(Test-Path -LiteralPath (Join-Path $badRetired.Root '.launcher-retired\unrelated.dat'))){
   throw 'Unexpected retired content was removed.'
  }
+ $blocked=$false
+ try{
+  & $replace -Mode Apply -InstallationDirectory $badRetired.Root -ZipPath $zip -ExpectedSha256 $zipHash -OfflineFixture|Out-Null
+ }catch{$blocked=$true}
+ if(-not $blocked){throw 'New native Launcher update started during unfinished retirement.'}
  if($checks -ne 8){throw 'Expected eight native Launcher backup retirement checks.'}
  Write-Host 'Native Launcher backup finalization: 8/8 offline checks passed.'
 }finally{
