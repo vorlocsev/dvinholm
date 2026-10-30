@@ -2249,6 +2249,10 @@ public sealed partial class MainWindow : Window
             DiagnosticResultText.Text = UdsDiagnosticReadResultPresentation.NoCompletedResult;
             DiagnosticResultExpander.IsExpanded = false;
         }
+        // Input edits may happen while the worker is still in flight.
+        // Update activity now; a late success/failure must not overwrite it.
+        if (_udsCts is not null)
+            SetStatus("Diagnostic context changed; pending UDS output will be discarded.");
         return generation;
     }
 
@@ -2623,11 +2627,14 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        // Keep the generation in scope for every completion path, including
+        // cancellation, negative responses, timeouts and unexpected faults.
+        long resultGeneration = 0;
         try
         {
             // Each request owns a generation of diagnostic input context.
             // A failed/cancelled attempt cannot retain an old result.
-            var resultGeneration = ClearDiagnosticReadResult();
+            resultGeneration = ClearDiagnosticReadResult();
             if (!TryGetUdsClient(out var client, out var error) || client is null)
             {
                 SetStatus(error);
@@ -2647,11 +2654,10 @@ public sealed partial class MainWindow : Window
             var data = await Task.Run(() => action(client, cts.Token));
             // Users may edit request/response IDs, DID or CAN format, or press
             // Clear while the asynchronous read is still running.
+            // Never replace a more recent Clear, cancellation, or changed
+            // ECU/DID status after the user invalidated this request.
             if (!_udsResultLifetime.CanDisplay(resultGeneration))
-            {
-                SetStatus(operation + " finished, but inputs changed or the result was cleared. Output discarded.");
                 return;
-            }
             // Data is displayed ONLY in the explicit result panel. SetStatus
             // also updates Aurora last-event, so never forward payload there.
             var presentation = UdsDiagnosticReadResultPresentation.Completed(kind, data);
@@ -2661,21 +2667,25 @@ public sealed partial class MainWindow : Window
         }
         catch (OperationCanceledException)
         {
-            SetStatus(operation + " cancelled.");
+            if (_udsResultLifetime.CanDisplay(resultGeneration))
+                SetStatus(operation + " cancelled.");
         }
         catch (UdsNegativeResponseException ex)
         {
-            // Preserve the NRC explanation supplied by UdsClient so the UI
-            // shows a useful reason instead of only the hexadecimal code.
-            SetStatus(operation + " rejected: " + ex.Message);
+            // Preserve an NRC explanation only while it belongs to the
+            // currently selected request. A late failure is stale as well.
+            if (_udsResultLifetime.CanDisplay(resultGeneration))
+                SetStatus(operation + " rejected: " + ex.Message);
         }
         catch (TimeoutException ex)
         {
-            SetStatus(operation + " timeout: " + ex.Message);
+            if (_udsResultLifetime.CanDisplay(resultGeneration))
+                SetStatus(operation + " timeout: " + ex.Message);
         }
         catch (Exception ex)
         {
-            SetStatus(operation + " failed: " + FormatSafeException(ex, "unexpected diagnostic error."));
+            if (_udsResultLifetime.CanDisplay(resultGeneration))
+                SetStatus(operation + " failed: " + FormatSafeException(ex, "unexpected diagnostic error."));
         }
         finally
         {
@@ -2691,9 +2701,15 @@ public sealed partial class MainWindow : Window
 
     private void CancelUds_Click(object sender, RoutedEventArgs e)
     {
-        _udsCts?.Cancel();
+        if (_udsCts is not { } cts)
+            return;
+
+        // Cancellation is cooperative. Even a worker that races cancellation
+        // and returns normally must not publish VIN, DID or DTC output.
+        ClearDiagnosticReadResult();
+        cts.Cancel();
         CancelUdsButton.IsEnabled = false;
-        SetStatus("Cancelling UDS request...");
+        SetStatus("UDS cancellation requested; late output will be discarded.");
     }
 
     private async void Connect_Click(object sender, RoutedEventArgs e)
