@@ -277,6 +277,9 @@ if($OfflineFixture){
 }elseif($WaitForProcessId -le 0){
  throw 'Apply requires the Launcher UI process ID to wait for its exit.'
 }
+if(Test-Path -LiteralPath $retired){
+ throw 'Unfinished native Launcher backup retirement must be finalized before another update.'
+}
 if(Test-Path -LiteralPath $txn){throw 'Interrupted transaction requires Recover first.'}
 if(Test-Path -LiteralPath $previous){
  throw 'Launcher backup already exists; preserve it until rollback management is available.'
