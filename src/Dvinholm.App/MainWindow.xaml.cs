@@ -1062,6 +1062,61 @@ public sealed partial class MainWindow : Window
                         claimedNetwork, nominalRate, claimedInterface);
             };
 
+            // A compact, live-filtered OFFLINE label index, deliberately
+            // separating vendor advertisements from Volvo service-menu text.
+            // Search input is ephemeral and never sent to a vehicle or saved.
+            var candidateSearch = new TextBox
+            {
+                Header = "Find CEM research labels (not VIN / PIN / secrets)",
+                MaxLength = VolvoP2CemCatalogSearch.MaximumQueryCharacters,
+                PlaceholderText = "e.g. lighting, locking, heater"
+            };
+            var candidateEvidenceTier = new ComboBox
+            {
+                Header = "Research evidence source (not ECU support)"
+            };
+            foreach (var name in new[]
+            {
+                "All research labels", "Vendor-advertised labels",
+                "Volvo-documented service-menu labels"
+            })
+                candidateEvidenceTier.Items.Add(new ComboBoxItem { Content = name });
+            candidateEvidenceTier.SelectedIndex = 0;
+            var candidateResults = new TextBlock
+            {
+                TextWrapping = TextWrapping.Wrap,
+                IsTextSelectionEnabled = true
+            };
+            void RefreshCandidates()
+            {
+                if (_closing) return;
+                var tier = candidateEvidenceTier.SelectedIndex switch
+                {
+                    1 => VolvoP2CemCatalogEvidenceTier.VendorAdvertisement,
+                    2 => VolvoP2CemCatalogEvidenceTier.VolvoPublishedServiceMenu,
+                    _ => VolvoP2CemCatalogEvidenceTier.All
+                };
+                candidateResults.Text = VolvoP2CemCatalogSearch.BuildReadOnlyReport(
+                    candidateSearch.Text, tier);
+            }
+            candidateSearch.TextChanged += (_, _) => RefreshCandidates();
+            candidateEvidenceTier.SelectionChanged += (_, _) => RefreshCandidates();
+            RefreshCandidates();
+
+            // Preserve the complete legacy notes without overwhelming the
+            // filter results or pushing other dialog actions off screen.
+            var fullCatalogNotes = new Expander
+            {
+                Header = "Show complete historical CEM research notes (offline)",
+                IsExpanded = false,
+                Content = new TextBlock
+                {
+                    Text = VolvoP2ConfigCandidateDisplay.BuildOverview(),
+                    TextWrapping = TextWrapping.Wrap,
+                    IsTextSelectionEnabled = true
+                }
+            };
+
             var catalogContent = new StackPanel { Spacing = 8 };
             foreach (var control in new UIElement[]
             {
@@ -1071,6 +1126,7 @@ public sealed partial class MainWindow : Window
                            "never live ECU values or write instructions. No VIN/PIN/secret input.",
                     TextWrapping = TextWrapping.Wrap
                 },
+                candidateSearch, candidateEvidenceTier, candidateResults,
                 draftYear, draftYearCheck, draftKind, draftValue,
                 draftHigh, manualNoteValue, manualNoteHigh, draftPreview, draftResult,
                 new TextBlock
@@ -1079,13 +1135,7 @@ public sealed partial class MainWindow : Window
                     TextWrapping = TextWrapping.Wrap
                 },
                 transportNetwork, transportAdapter, transportRate,
-                transportReview, transportReport,
-                new TextBlock
-                {
-                    Text = VolvoP2ConfigCandidateDisplay.BuildOverview(),
-                    TextWrapping = TextWrapping.Wrap,
-                    IsTextSelectionEnabled = true
-                }
+                transportReview, transportReport, fullCatalogNotes
             })
                 catalogContent.Children.Add(control);
 
