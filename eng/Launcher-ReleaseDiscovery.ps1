@@ -71,5 +71,5 @@ function LatestLauncher {
  Validate-Asset $asset[0] $release.tag_name $launcherZipName
  Validate-Asset $sums[0] $release.tag_name $sumsName
  if([long]$asset[0].size -gt 2MB){throw 'Launcher release ZIP exceeds size budget.'}
- return [pscustomobject]@{Tag=[string]$release.tag_name;Published=$true}
+ return [pscustomobject]@{Tag=[string]$release.tag_name;Published=$true;Zip=$asset[0];Sums=$sums[0]}
 }

@@ -6,7 +6,7 @@ No software installs or updates until the user explicitly confirms.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('UI','UiSmokeTest','Check','CheckLauncher','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
+ [ValidateSet('UI','UiSmokeTest','Check','CheckLauncher','PrepareLauncher','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
  [ValidateSet('Stable','Development')][string]$Channel='Development',
  [string]$StateFile
 )
@@ -110,6 +110,11 @@ if(-not(Test-Path -LiteralPath $releaseHelper -PathType Leaf)){
  throw 'Bundled Launcher release discovery module is missing.'
 }
 . $releaseHelper
+$verifyDownloadHelper=Join-Path $PSScriptRoot 'Launcher-VerifiedDownload.ps1'
+if(-not(Test-Path -LiteralPath $verifyDownloadHelper -PathType Leaf)){
+ throw 'Bundled Launcher verified download module is missing.'
+}
+. $verifyDownloadHelper
 function Entry-Path([string]$name){
  $p=$name.Replace('\','/').TrimEnd('/')
  if(-not $p -or $p.StartsWith('/') -or $p.Contains(':') -or
@@ -275,7 +280,7 @@ function Translate([string]$key) {
    driversOpen='Открыть драйверы';settingsQuick='Настройки'
    windowsQuick='Перепроверить';depsInstall='Установить компоненты'
    componentsTitle='Компоненты Microsoft x86';componentsNotice='Выберите компонент для установки. Будет показано подтверждение.'
-   checkLauncher='Проверить обновление лаунчера'
+   checkLauncher='Проверить лаунчер';prepareLauncher='Скачать и проверить'
   }
   EN=@{
    home='▶  Launch';updates='↻  Updates'
@@ -309,7 +314,7 @@ function Translate([string]$key) {
    driversOpen='Open drivers';settingsQuick='Settings'
    windowsQuick='Recheck';depsInstall='Install components'
    componentsTitle='Microsoft x86 prerequisites';componentsNotice='Select the component to install. Confirmation is required.'
-   checkLauncher='Check Launcher updates'
+   checkLauncher='Check Launcher';prepareLauncher='Download & verify'
   }
  }
  $value=$labels[$script:launcherLanguage][$key]
@@ -1586,6 +1591,8 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    $lines.Add('VC++ current installer version cannot be verified without vendor metadata.')
    $script:state.DependencyReport=[string]::Join([Environment]::NewLine,$lines.ToArray())
    Progress 'Microsoft dependency version check finished. No software changed.'
+  }elseif($Mode -eq 'PrepareLauncher'){
+   Prepare-NativeLauncher
   }elseif($Mode -eq 'CheckLauncher'){
    $script:state.LauncherCurrent=Read-LauncherInstalledBuild
    $latest=LatestLauncher
@@ -1634,7 +1641,7 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    $message
   }elseif($Mode -eq 'Launch'){
    ('Unable to start the selected application: '+$message)
-  }elseif($Mode -eq 'CheckLauncher'){
+  }elseif($Mode -in @('CheckLauncher','PrepareLauncher')){
    ('Launcher update check failed: '+$message)
   }elseif($message -match 'Latest published release is older|Cannot safely determine current Lite version'){
    'Update blocked: installed Lite is newer or cannot be verified. No files were downloaded.'
@@ -1909,9 +1916,14 @@ function Show-LauncherSettings {
  $advanced.SetBounds(18,239,340,24);$dlg.Controls.Add($advanced)
  $checkLauncher=New-Object Windows.Forms.Button
  $checkLauncher.Text=Translate 'checkLauncher'
- $checkLauncher.SetBounds(18,185,335,35)
+ $checkLauncher.SetBounds(18,185,158,35)
  $dlg.Controls.Add($checkLauncher)
  $checkLauncher.Add_Click({$dlg.Close();Begin-Action 'CheckLauncher'})
+ $prepareLauncher=New-Object Windows.Forms.Button
+ $prepareLauncher.Text=Translate 'prepareLauncher'
+ $prepareLauncher.SetBounds(185,185,168,35)
+ $dlg.Controls.Add($prepareLauncher)
+ $prepareLauncher.Add_Click({$dlg.Close();Begin-Action 'PrepareLauncher'})
  $restore=New-Object Windows.Forms.Button
  $restore.Text=Translate 'rollback'
  $restore.SetBounds(18,270,335,28)
@@ -2036,6 +2048,14 @@ function Begin-Action([string]$action){
    (Translate 'confirmRollback'),
    (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'PrepareLauncher'){
+  $confirmation=if($script:launcherLanguage -eq 'RU'){
+   'Скачать архив обновления лаунчера и проверить контрольные суммы? Установленные файлы не изменятся.'
+  }else{'Download and verify the native Launcher ZIP? Installed files will not change.'}
+  if([Windows.Forms.MessageBox]::Show($form,$confirmation,(Translate 'confirmTitle'),
+   [Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Question) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  if($action -eq 'Install'){
   if([Windows.Forms.MessageBox]::Show(
@@ -2222,9 +2242,13 @@ function Poll-WorkerState {
  if($script:child -and $script:child.HasExited){
   $reportText=''
   $finishedAction=$script:pendingAction
-  if($finishedAction -ceq 'CheckLauncher' -and $complete -and
+  if($finishedAction -cin @('CheckLauncher','PrepareLauncher') -and $complete -and
      $null -ne $snapshot -and [string]$snapshot.LauncherDetail){
-   $reportText=Format-LauncherCheckReport $snapshot
+   $reportText=if($finishedAction -ceq 'PrepareLauncher'){
+    if($script:launcherLanguage -eq 'RU'){
+     'Архив лаунчера загружен и проверен. Файлы приложения не изменены.'
+    }else{'Launcher archive downloaded and verified. Installed files unchanged.'}
+   }else{Format-LauncherCheckReport $snapshot}
   }
   if($finishedAction -ceq 'Versions' -and $complete -and
      $null -ne $snapshot -and $snapshot.PSObject.Properties['DependencyReport']){
@@ -2250,7 +2274,7 @@ function Poll-WorkerState {
    return
   }
   if($reportText){
-   $reportTitle=if($finishedAction -ceq 'CheckLauncher'){'Dvinholm | Launcher updates'}else{'Dvinholm | Installed and available runtimes'}
+   $reportTitle=if($finishedAction -cin @('CheckLauncher','PrepareLauncher')){'Dvinholm | Launcher updates'}else{'Dvinholm | Installed and available runtimes'}
    [void][Windows.Forms.MessageBox]::Show($form,$reportText,
     $reportTitle,
     [Windows.Forms.MessageBoxButtons]::OK,

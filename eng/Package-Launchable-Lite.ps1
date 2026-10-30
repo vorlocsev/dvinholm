@@ -29,7 +29,7 @@ try{
  [IO.Directory]::CreateDirectory($tools)|Out-Null
  [IO.Compression.ZipFile]::ExtractToDirectory($lite,$binary)
  [IO.Compression.ZipFile]::ExtractToDirectory($updater,$tools)
- foreach($name in @('Updater-Banner.ps1','Manage-Lite-Dependencies.ps1','Launcher-AuroraTheme.ps1','Launcher-ServiceCockpit.ps1','Launcher-ReleaseDiscovery.ps1','Assert-LauncherSelfUpdatePackage.ps1','Invoke-LauncherReplacement.ps1','launcher-build.txt','J2534-DriverManager.ps1','J2534-DriverUI.ps1','Dvinholm-icon.png','dvinholm-banner.webp','launcher-service-cockpit-banner.jpg')){
+ foreach($name in @('Updater-Banner.ps1','Manage-Lite-Dependencies.ps1','Launcher-AuroraTheme.ps1','Launcher-ServiceCockpit.ps1','Launcher-ReleaseDiscovery.ps1','Launcher-VerifiedDownload.ps1','Assert-LauncherSelfUpdatePackage.ps1','Invoke-LauncherReplacement.ps1','launcher-build.txt','J2534-DriverManager.ps1','J2534-DriverUI.ps1','Dvinholm-icon.png','dvinholm-banner.webp','launcher-service-cockpit-banner.jpg')){
   $source=Join-Path (Join-Path $tools 'Binaries') $name
   if(-not(Test-Path -LiteralPath $source -PathType Leaf)){
    throw "Standalone tools package missing $name"
