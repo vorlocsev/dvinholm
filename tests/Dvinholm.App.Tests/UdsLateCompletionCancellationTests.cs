@@ -90,7 +90,7 @@ public sealed class UdsLateCompletionCancellationTests
         var read = ReadOperation(MainWindowSource());
         var errors = new[]
         {
-            "catch (OperationCanceledException)",
+            "catch (OperationCanceledException ex)",
             "catch (UdsNegativeResponseException ex)",
             "catch (TimeoutException ex)",
             "catch (Exception ex)",
