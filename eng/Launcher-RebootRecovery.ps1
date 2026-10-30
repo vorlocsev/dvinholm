@@ -156,6 +156,60 @@ function Verify-Commit($data) {
   throw 'Committed native Launcher tag is not expected release.'
  }
 }
+# A best-effort privacy-minimal receipt, stored with the trusted external
+# worker. No paths, registry commands, user identifiers or raw exceptions.
+# A failed log write must never change the verified recovery decision.
+function Write-RecoveryAudit([string]$outcome,[string]$code){
+ if($Mode -cne 'Resume'){return}
+ try{
+  Assert-RecoveryAncestors $PSScriptRoot
+  $last=Join-Path $PSScriptRoot 'recovery-last.json'
+  if(Test-Path -LiteralPath $last){
+   $item=Get-Item -LiteralPath $last -Force
+   if($item.PSIsContainer -or
+     ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){
+    return
+   }
+  }
+  $record=@{Version=1;InstallationKey=$key;
+   AttemptUtc=[DateTime]::UtcNow.ToString('yyyy-MM-ddTHH:mm:ss.fffZ');
+   Outcome=$outcome;Code=$code}
+  $temporary=Join-Path $PSScriptRoot ('recovery-audit-'+[guid]::NewGuid().ToString('N')+'.tmp')
+  try{
+   [IO.File]::WriteAllText($temporary,($record|ConvertTo-Json -Compress),
+    [Text.UTF8Encoding]::new($false))
+   Move-Item -LiteralPath $temporary -Destination $last -Force -ErrorAction Stop
+  }finally{
+   if(Test-Path -LiteralPath $temporary){
+    Remove-Item -LiteralPath $temporary -Force -ErrorAction SilentlyContinue
+   }
+  }
+ }catch{
+  # Optional diagnostics never alter rollback, restart, or retry semantics.
+ }
+}
+function Get-RecoveryAuditCode([string]$reason){
+ if($reason -match 'registry entry does not match|startup entry does not match'){
+  return 'StartupMismatch'
+ }
+ if($reason -match 'checkpoint|helper has changed'){
+  return 'CheckpointInvalid'
+ }
+ if($reason -match 'backup.*(missing|corrupt)|original.*(missing|corrupt)'){
+  return 'BackupCorrupt'
+ }
+ if($reason -match 'Committed.*mismatch|content mismatch|release|tag.*not expected'){
+  return 'CommittedMismatch'
+ }
+ if($reason -match 'already running|updater is still running'){
+  return 'UpdaterBusy'
+ }
+ if($reason -match 'Close Dvinholm'){return 'ApplicationRunning'}
+ if($reason -match 'restart|start.*Launcher'){return 'RestartFailed'}
+ return 'UnexpectedError'
+}
+try{
+ if($Mode -eq 'Resume'){Write-RecoveryAudit 'Started' 'AttemptStarted'}
 Assert-RecoveryAncestors $root
 Assert-RecoveryAncestors $PSScriptRoot
 Assert-RegistryFixture
@@ -235,9 +289,16 @@ try{
  # Nothing to recover before a journal is committed: no live file changed.
  Remove-Startup
  Remove-Item -LiteralPath $checkpoint -Force
+ Write-RecoveryAudit 'Succeeded' $(if($hasTransaction){'RollbackRestored'}elseif($hasCommitted){'CommittedVerified'}else{'NoTransaction'})
  Write-Host ('Native Launcher sign-in recovery resolved: '+
   $(if($hasTransaction){'rolled back'}elseif($hasCommitted){'verified committed'}else{'no transaction'}))
 }finally{
  if($owned){$mutex.ReleaseMutex()}
  $mutex.Dispose()
+}
+}catch{
+ if($Mode -eq 'Resume'){
+  Write-RecoveryAudit 'Blocked' (Get-RecoveryAuditCode ([string]$_.Exception.Message))
+ }
+ throw
 }
