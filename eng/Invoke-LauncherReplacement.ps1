@@ -7,7 +7,7 @@ or request privileges. The normal UI does not invoke it yet.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('Apply','Recover','Undo')][string]$Mode='Recover',
+ [ValidateSet('Apply','Recover','Undo','Finalize')][string]$Mode='Recover',
  [Parameter(Mandatory)][string]$InstallationDirectory,
  [string]$ZipPath,
  [ValidatePattern('^[0-9a-f]{64}$')][string]$ExpectedSha256,
@@ -37,6 +37,7 @@ $names=@(
 $root=[IO.Path]::GetFullPath($InstallationDirectory).TrimEnd('\')
 $txn=Join-Path $root '.launcher-transaction'
 $previous=Join-Path $root '.launcher-previous'
+$retired=Join-Path $root '.launcher-retired'
 $journal=Join-Path $txn 'journal.json'
 $stage=Join-Path $txn 'stage'
 $backup=Join-Path $txn 'backup'
@@ -155,6 +156,34 @@ function Recover-Interrupted {
  Remove-Item -LiteralPath $txn -Recurse -Force
  Write-Host 'Interrupted launcher replacement recovered from verified backups.'
 }
+function Assert-RetiredContents([string]$folder){
+ # This validator is also usable after the journal itself was deleted in
+ # an interrupted clean-up: it never needs to trust partially deleted JSON.
+ Assert-Ancestors $folder
+ Assert-Ordinary $folder $true
+ $allowed=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+ foreach($prefix in @('stage','backup')){
+  [void]$allowed.Add($prefix)
+  foreach($name in $names){
+   $parts=($name.Replace('/','\')).Split('\')
+   $relative=$prefix
+   foreach($part in $parts){
+    $relative+='\' + $part
+    [void]$allowed.Add($relative)
+   }
+  }
+ }
+ [void]$allowed.Add('journal.json')
+ foreach($item in @(Get-ChildItem -LiteralPath $folder -Recurse -Force -ErrorAction Stop)){
+  if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){
+   throw 'Native Launcher backup contains a reparse point; refusing deletion.'
+  }
+  $relative=$item.FullName.Substring($folder.Length).TrimStart('\')
+  if(-not $allowed.Contains($relative)){
+   throw 'Native Launcher backup contains an unrecognized entry; refusing deletion.'
+  }
+ }
+}
 Assert-Ancestors $root
 if(-not(Test-Path -LiteralPath $root -PathType Container) -or
    -not(Test-Path -LiteralPath (Join-Path $root 'Binaries') -PathType Container)){
@@ -163,6 +192,56 @@ if(-not(Test-Path -LiteralPath $root -PathType Container) -or
 Assert-Ordinary (Join-Path $root 'Binaries') $true
 Assert-Ordinary $txn $true
 Assert-Ordinary $previous $true
+Assert-Ordinary $retired $true
+if($Mode -eq 'Finalize'){
+ if(Test-Path -LiteralPath $txn){
+  throw 'Interrupted replacement must be recovered before finalization.'
+ }
+ # The rename to .launcher-retired is the durable commit point. The
+ # older backup may be partially deleted after abrupt termination, so
+ # allow explicitly retrying only this bounded cleanup.
+ if(Test-Path -LiteralPath $retired){
+  if(Test-Path -LiteralPath $previous){
+   throw 'Conflicting native Launcher backup and retired snapshot.'
+  }
+  Assert-RetiredContents $retired
+  Remove-Item -LiteralPath $retired -Recurse -Force -ErrorAction Stop
+  Write-Host 'Finished interrupted native Launcher backup retirement.'
+  exit 0
+ }
+ if(-not(Test-Path -LiteralPath $previous -PathType Container)){
+  throw 'No committed native Launcher backup exists.'
+ }
+ # Journal must describe exactly this release's protected files.
+ $txn=$previous
+ $journal=Join-Path $txn 'journal.json'
+ $stage=Join-Path $txn 'stage'
+ $backup=Join-Path $txn 'backup'
+ $data=Read-Journal
+ if($null -eq $data){throw 'Cannot retire a backup without a verified journal.'}
+ foreach($part in $data.Entries){
+  $currentPath=Child $root ([string]$part.Name)
+  Assert-Ordinary $currentPath
+  if(-not(Test-Path -LiteralPath $currentPath -PathType Leaf) -or
+     (Fingerprint $currentPath) -cne [string]$part.NewHash){
+   throw 'Installed native Launcher files no longer match the committed update.'
+  }
+  if([string]$part.OldHash){
+   $saved=Child $backup ([string]$part.Name)
+   Assert-Ordinary $saved
+   if(-not(Test-Path -LiteralPath $saved -PathType Leaf) -or
+      (Fingerprint $saved) -cne [string]$part.OldHash){
+    throw 'Original native Launcher backup is corrupt or missing.'
+   }
+  }
+ }
+ Assert-RetiredContents $previous
+ Move-Item -LiteralPath $previous -Destination $retired -ErrorAction Stop
+ # Retry of Finalize can finish this step if interrupted.
+ Remove-Item -LiteralPath $retired -Recurse -Force -ErrorAction Stop
+ Write-Host 'Verified native Launcher backup retired. Another update may be prepared.'
+ exit 0
+}
 if($Mode -eq 'Undo'){
  # The committed backup is a verified journal with original hashes.
  # Only an explicit out-of-process rollback may revert the most recent swap.
