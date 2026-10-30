@@ -200,6 +200,19 @@
 
         <Border Grid.Row="4" Padding="10" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
             <StackPanel x:Name="StatusPanel" Spacing="6">
+                <!-- Explicit diagnostic payloads stay inside the workspace.
+                     The Aurora last-event summary sees only payload-free status. -->
+                <Expander x:Name="DiagnosticResultExpander"
+                          Header="Diagnostic read result (VIN / DID / DTC, review before sharing)"
+                          IsExpanded="False">
+                    <ScrollViewer MaxHeight="170" VerticalScrollBarVisibility="Auto"
+                                  HorizontalScrollBarVisibility="Disabled">
+                        <TextBlock x:Name="DiagnosticResultText"
+                                   Text="No completed UDS read in this session."
+                                   TextWrapping="Wrap" IsTextSelectionEnabled="True"
+                                   FontFamily="Consolas"/>
+                    </ScrollViewer>
+                </Expander>
                 <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <TextBlock x:Name="StatusText" Text="Disconnected" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
                 </ScrollViewer>
