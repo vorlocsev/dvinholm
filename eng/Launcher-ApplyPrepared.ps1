@@ -104,7 +104,7 @@ function Invoke-LauncherWorker {
    $failure=[string]$_.Exception.Message
    # Recover interrupted writes or undo an already committed swap when
    # spawning the replacement fails. Never start from unverified backups.
-   if(Test-Path -LiteralPath (Join-Path $install '.launcher-transaction\journal.json')){
+   if(Test-Path -LiteralPath (Join-Path $install '.launcher-transaction')){
     & $replace -Mode Recover -InstallationDirectory $install|Out-Null
    }elseif(Test-Path -LiteralPath (Join-Path $install '.launcher-previous\journal.json')){
     & $replace -Mode Undo -InstallationDirectory $install|Out-Null
@@ -203,6 +203,15 @@ if($ApplyMode -eq 'Worker'){
   $detail=('Native Launcher '+$ExpectedTag+' applied.')
  }catch{
   $detail=[string]$_.Exception.Message
+  if(-not $OfflineFixture){
+   try{
+    $root=[IO.Path]::GetFullPath($InstallationDirectory).TrimEnd('\')
+    if(-not(Test-Path -LiteralPath (Join-Path $root '.launcher-transaction')) -and
+       -not(Test-Path -LiteralPath (Join-Path $root '.launcher-previous'))){
+     Start-Process -FilePath (Join-Path $root 'Launcher.exe') -WorkingDirectory $root -ErrorAction Stop|Out-Null
+    }
+   }catch{}
+  }
   throw
  }finally{
   try{
