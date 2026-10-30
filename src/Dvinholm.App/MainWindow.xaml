@@ -29,6 +29,14 @@
             <Grid x:Name="RootLayout" Grid.Row="1" Padding="20" RowSpacing="14">
         <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
 
+        <!-- Adapter diagnostics remain visible only in the local workspace.
+             Do not mirror driver-supplied version strings to Aurora activity. -->
+        <TextBlock x:Name="AdapterMetadataText" Grid.Row="0"
+                   Text="J2534 adapter details: disconnected."
+                   FontSize="12" Foreground="#C1D7E8"
+                   TextWrapping="Wrap" IsTextSelectionEnabled="True"
+                   ToolTipService.ToolTip="Unverified values returned by the driver. Local diagnostic details, not an ECU identity or authorization." />
+
         <!-- Update controls belong exclusively to Launcher.exe. -->
         <Grid Grid.Row="1" ColumnSpacing="10">
             <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="240"/><ColumnDefinition Width="86"/><ColumnDefinition Width="130"/><ColumnDefinition Width="110"/><ColumnDefinition Width="130"/></Grid.ColumnDefinitions>
