@@ -2533,19 +2533,19 @@ public sealed partial class MainWindow : Window
     {
         if (!TryParseDid(out var did)) return;
 
-        await RunUdsOperationAsync("Read DID", (client, token) =>
+        await RunUdsOperationAsync(UdsReadResultKind.Did, (client, token) =>
             UdsDidDisplayFormatter.Format(did, client.ReadDataByIdentifier(did, token)));
     }
 
     private async void ReadVin_Click(object sender, RoutedEventArgs e)
     {
-        await RunUdsOperationAsync("Read VIN", (client, token) => client.ReadVin(token));
+        await RunUdsOperationAsync(UdsReadResultKind.Vin, (client, token) => client.ReadVin(token));
     }
 
     private async void ReadDtc_Click(object sender, RoutedEventArgs e)
     {
         const byte statusMask = 0xFF;
-        await RunUdsOperationAsync("Read DTC", (client, token) =>
+        await RunUdsOperationAsync(UdsReadResultKind.Dtc, (client, token) =>
         {
             var records = client.ReadDtcByStatusMask(statusMask, token);
             return UdsDtcDisplayFormatter.Format(records, statusMask);
@@ -2570,9 +2570,10 @@ public sealed partial class MainWindow : Window
     }
 
     private async Task RunUdsOperationAsync(
-        string operation,
+        UdsReadResultKind kind,
         Func<UdsClient, CancellationToken, string> action)
     {
+        var operation = UdsDiagnosticReadResultPresentation.OperationName(kind);
         if (!await _udsGate.WaitAsync(0))
         {
             SetStatus("Another UDS request is already running.");
@@ -2581,6 +2582,11 @@ public sealed partial class MainWindow : Window
 
         try
         {
+            // Invalidate a previous result before any connection check.
+            // A failed/cancelled attempt must not leave stale VIN or DID
+            // bytes appearing to belong to the new request.
+            DiagnosticResultText.Text = UdsDiagnosticReadResultPresentation.NoCompletedResult;
+            DiagnosticResultExpander.IsExpanded = false;
             if (!TryGetUdsClient(out var client, out var error) || client is null)
             {
                 SetStatus(error);
@@ -2598,7 +2604,12 @@ public sealed partial class MainWindow : Window
             SetStatus(operation + "...");
 
             var data = await Task.Run(() => action(client, cts.Token));
-            SetStatus(operation + ": " + data);
+            // Data is displayed ONLY in the explicit result panel. SetStatus
+            // also updates Aurora last-event, so never forward payload there.
+            var presentation = UdsDiagnosticReadResultPresentation.Completed(kind, data);
+            DiagnosticResultText.Text = presentation.Details;
+            DiagnosticResultExpander.IsExpanded = true;
+            SetStatus(presentation.Activity);
         }
         catch (OperationCanceledException)
         {
