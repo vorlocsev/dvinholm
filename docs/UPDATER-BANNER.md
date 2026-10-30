@@ -706,3 +706,43 @@ No automatic deletion takes place at boot.
 a separate acceptance gate.** The journaled recovery helper exists,
 but unattended reboot recovery and physical Windows acceptance are not
 claimed by this cleanup stage.
+
+
+## Opt-in native Launcher recovery at next Windows sign-in (Development)
+
+After explicit confirmation of a native Launcher update, the detached
+trusted worker now registers a **per-installation HKCU Run checkpoint**
+**before any installed native file changes**. Its standalone PowerShell
+5.1 recovery script and replacement helper live in a verified copy
+outside the installation directory. Registration must succeed before
+replacement begins; failure leaves the current installation unchanged.
+
+The startup command is scoped to the exact validated installation path
+and checks a private checkpoint containing the trusted replacement
+helper SHA-256 hash, expected native build tag and unique registry entry.
+It takes the same cross-process installation mutex as apply/cleanup,
+never downloads code, and cannot silently overwrite an existing
+registration. A replacement completed normally removes the registration
+and checkpoint. Successful verified rollback also disarms it.
+
+If the update process or Windows stops unexpectedly, the next sign-in
+runs the trusted external recovery script. An interrupted transaction
+with original verified backups is restored using the existing journal
+and atomic file-copy procedures, then the recovered native Launcher is
+started. If a completed transaction was committed but not acknowledged,
+every current native file must match the committed journal and the
+build receipt before the new Launcher may start. A checkpoint with no
+native transaction is removed without changing installed files.
+
+Corrupt backups, invalid startup metadata, changed helper scripts or
+another live updater cause a fail-closed error. The journal and startup
+checkpoint are retained for later inspection/retry rather than deleting
+or executing uncertain contents. The recovery script performs no
+vehicle, ECU, CAN or physical J2534 operations.
+
+Eight CI offline fixtures use fake HKCU Run files under isolated
+Windows temporary directories, including interruption, committed
+transaction, corrupted backup, tampered helper and mismatched startup
+entry. **Real interactive Windows reboot and abrupt power-loss behavior
+are not yet hardware/desktop accepted**; HKCU Run depends on user
+sign-in and registry availability. Stable 0.2.4 is not republished.

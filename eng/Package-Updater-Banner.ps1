@@ -24,6 +24,7 @@ $files=@{
  'Binaries/Launcher-ReleaseDiscovery.ps1'=(Join-Path $PSScriptRoot 'Launcher-ReleaseDiscovery.ps1')
  'Binaries/Launcher-VerifiedDownload.ps1'=(Join-Path $PSScriptRoot 'Launcher-VerifiedDownload.ps1')
  'Binaries/Launcher-ApplyPrepared.ps1'=(Join-Path $PSScriptRoot 'Launcher-ApplyPrepared.ps1')
+ 'Binaries/Launcher-RebootRecovery.ps1'=(Join-Path $PSScriptRoot 'Launcher-RebootRecovery.ps1')
  'Binaries/Launcher-AuroraTheme.ps1'=(Join-Path $PSScriptRoot 'Launcher-AuroraTheme.ps1')
  'Binaries/Launcher-ServiceCockpit.ps1'=(Join-Path $PSScriptRoot 'Launcher-ServiceCockpit.ps1')
  'Binaries/J2534-DriverManager.ps1'=(Join-Path $PSScriptRoot 'J2534-DriverManager.ps1')

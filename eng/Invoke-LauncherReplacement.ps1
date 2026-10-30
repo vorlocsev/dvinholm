@@ -24,6 +24,7 @@ $names=@(
  'Binaries/Launcher-ReleaseDiscovery.ps1',
  'Binaries/Launcher-VerifiedDownload.ps1',
  'Binaries/Launcher-ApplyPrepared.ps1',
+ 'Binaries/Launcher-RebootRecovery.ps1',
  'Binaries/J2534-DriverManager.ps1',
  'Binaries/J2534-DriverUI.ps1',
  'Binaries/Manage-Lite-Dependencies.ps1',
