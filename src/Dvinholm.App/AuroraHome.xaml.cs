@@ -45,6 +45,12 @@ public sealed partial class AuroraHome : UserControl
             ? "Готово. Работа с автомобилем не начата."
             : activity;
 
+    // The Home item is visible only on the landing view. Make it useful:
+    // return to the banner after the user has scrolled through the cards.
+    // This does not change connection state or start any diagnostic request.
+    private void Home_Click(object sender, RoutedEventArgs e) =>
+        DashboardScroll.ChangeView(null, 0.0, null);
+
     private void Navigate(AuroraDestination destination) =>
         NavigationRequested?.Invoke(this, destination);
 
