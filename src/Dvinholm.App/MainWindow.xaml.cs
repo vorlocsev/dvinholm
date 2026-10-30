@@ -2665,27 +2665,27 @@ public sealed partial class MainWindow : Window
             DiagnosticResultExpander.IsExpanded = true;
             SetStatus(presentation.Activity);
         }
-        catch (OperationCanceledException)
+        catch (OperationCanceledException ex)
         {
             if (_udsResultLifetime.CanDisplay(resultGeneration))
-                SetStatus(operation + " cancelled.");
+                SetStatus(UdsDiagnosticReadResultPresentation.Error(kind, ex));
         }
         catch (UdsNegativeResponseException ex)
         {
-            // Preserve an NRC explanation only while it belongs to the
-            // currently selected request. A late failure is stale as well.
+            // Error activity goes to Aurora home too. Use only the trusted
+            // structured UDS service/NRC values, never exception.Message.
             if (_udsResultLifetime.CanDisplay(resultGeneration))
-                SetStatus(operation + " rejected: " + ex.Message);
+                SetStatus(UdsDiagnosticReadResultPresentation.Error(kind, ex));
         }
         catch (TimeoutException ex)
         {
             if (_udsResultLifetime.CanDisplay(resultGeneration))
-                SetStatus(operation + " timeout: " + ex.Message);
+                SetStatus(UdsDiagnosticReadResultPresentation.Error(kind, ex));
         }
         catch (Exception ex)
         {
             if (_udsResultLifetime.CanDisplay(resultGeneration))
-                SetStatus(operation + " failed: " + FormatSafeException(ex, "unexpected diagnostic error."));
+                SetStatus(UdsDiagnosticReadResultPresentation.Error(kind, ex));
         }
         finally
         {

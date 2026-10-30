@@ -31,6 +31,28 @@ internal static class UdsDiagnosticReadResultPresentation
         _ => throw new ArgumentOutOfRangeException(nameof(kind))
     };
 
+    /// <summary>
+    /// Public activity is also shown on the Aurora home screen. Exception
+    /// messages can contain adapter paths, raw transport responses or VIN/DID
+    /// data, so never route an arbitrary Exception.Message into that activity.
+    /// Only the structured UDS service/NRC bytes and a trusted fixed glossary
+    /// may be shown for a negative response.
+    /// </summary>
+    internal static string Error(UdsReadResultKind kind, Exception exception)
+    {
+        ArgumentNullException.ThrowIfNull(exception);
+        var operation = OperationName(kind);
+        return exception switch
+        {
+            UdsNegativeResponseException nrc =>
+                $"{operation} rejected: UDS 0x{nrc.RequestedService:X2}, NRC 0x{nrc.NegativeResponseCode:X2} " +
+                $"({UdsNegativeResponseException.DescribeNegativeResponseCode(nrc.NegativeResponseCode)}).",
+            OperationCanceledException => operation + " cancelled.",
+            TimeoutException => operation + " timeout. Check the adapter and selected ECU addresses.",
+            _ => operation + " failed. Check the adapter connection and diagnostic settings."
+        };
+    }
+
     internal static UdsDiagnosticReadPresentation Completed(
         UdsReadResultKind kind, string formattedResponse)
     {
