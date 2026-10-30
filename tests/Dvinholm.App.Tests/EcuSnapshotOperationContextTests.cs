@@ -105,6 +105,8 @@ public sealed class EcuSnapshotOperationContextTests
         Assert.DoesNotContain("SetStatus(\"ECU DID snapshot rejected: \" + ex.Message)", handler);
         Assert.DoesNotContain("FormatSafeException(ex,", handler);
         Assert.DoesNotContain("Path.GetFileName(destinationPath)", handler);
+        Assert.DoesNotContain("SetStatus(error);", handler);
+        Assert.Contains("TryGetUdsClient(out var client, out _)", handler);
         Assert.Contains("saved a sensitive diagnostic snapshot to the selected file", handler);
 
         var save = handler.IndexOf(
