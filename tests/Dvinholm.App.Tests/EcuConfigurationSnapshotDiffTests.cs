@@ -25,7 +25,7 @@ public sealed class EcuConfigurationSnapshotDiffTests
             Snapshot((0xF187, "00AC"), (0xF189, "01")));
 
         Assert.Equal(1, comparison.ChangedCount);
-        var change = Assert.Single(comparison.Values.Where(x => x.HasChanged));
+        var change = Assert.Single(comparison.Values, x => x.HasChanged);
         Assert.Equal((ushort)0xF187, change.DataIdentifier);
         Assert.Equal("00AB", change.OriginalValueHex);
         Assert.Equal("00AC", change.CurrentValueHex);
