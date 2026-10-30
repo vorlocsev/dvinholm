@@ -64,12 +64,14 @@ function Invoke-LauncherWorker {
  # A separate temporary stage re-verifies all files, digest and tag. The
  # earlier "prepared/staged" folder is intentionally never trusted.
  $validation=Join-Path $PSScriptRoot ('checked-'+[guid]::NewGuid().ToString('N'))
- $mutexName='Local\Dvinholm.NativeLauncher.'+
-  ([BitConverter]::ToString([Security.Cryptography.SHA256]::Create().ComputeHash(
-   [Text.Encoding]::UTF8.GetBytes($install.ToLowerInvariant())))-replace '-','').Substring(0,24)
+ $hasher=[Security.Cryptography.SHA256]::Create()
+ try{
+  $digest=$hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes($install.ToLowerInvariant()))
+ }finally{$hasher.Dispose()}
+ $key=([BitConverter]::ToString($digest)-replace '-','').Substring(0,24)
+ $mutexName='Local\Dvinholm.NativeLauncher.'+$key
  $mutex=[Threading.Mutex]::new($false,$mutexName)
  $owned=$false
- $committed=$false
  try{
   try{$owned=$mutex.WaitOne(0)}catch[Threading.AbandonedMutexException]{$owned=$true}
   if(-not $owned){throw 'Another native Launcher replacement is already running.'}
@@ -91,7 +93,6 @@ function Invoke-LauncherWorker {
    if([IO.File]::ReadAllText($built,[Text.Encoding]::ASCII).Trim() -cne $ExpectedTag){
     throw 'Installed native Launcher build receipt mismatch.'
    }
-   $committed=$true
    if(-not $OfflineFixture){
     $exe=Join-Path $install 'Launcher.exe'
     $next=Start-Process -FilePath $exe -WorkingDirectory $install -PassThru -ErrorAction Stop
@@ -107,6 +108,12 @@ function Invoke-LauncherWorker {
     & $replace -Mode Recover -InstallationDirectory $install|Out-Null
    }elseif(Test-Path -LiteralPath (Join-Path $install '.launcher-previous\journal.json')){
     & $replace -Mode Undo -InstallationDirectory $install|Out-Null
+   }
+   if(-not $OfflineFixture -and
+      -not(Test-Path -LiteralPath (Join-Path $install '.launcher-transaction'))){
+    # The original launcher can be started again only after the failed
+    # transaction is absent or its verified rollback completed.
+    try{Start-Process -FilePath (Join-Path $install 'Launcher.exe') -WorkingDirectory $install -ErrorAction Stop|Out-Null}catch{}
    }
    throw ('Native Launcher apply failed; verified rollback attempted: '+$failure)
   }
@@ -140,6 +147,7 @@ function Start-LauncherPreparedHandoff {
  }
  # The selected release and digests are fetched AGAIN from trusted GitHub
  # metadata immediately before handoff, not accepted from mutable local JSON.
+ $script:Channel=$ChannelName
  $release=LatestLauncher
  if(-not $release.Published){throw 'No published native Launcher package for this channel.'}
  $relation=Get-LauncherBuildRelation $ChannelName (Read-LauncherInstalledBuild) $release.Tag
@@ -186,4 +194,24 @@ function Start-LauncherPreparedHandoff {
   throw
  }
 }
-if($Mode -eq 'Worker'){Invoke-LauncherWorker}
+if($Mode -eq 'Worker'){
+ $result='failure'
+ $detail='Unknown native Launcher worker error.'
+ try{
+  Invoke-LauncherWorker
+  $result='success'
+  $detail=('Native Launcher '+$ExpectedTag+' applied.')
+ }catch{
+  $detail=[string]$_.Exception.Message
+  throw
+ }finally{
+  try{
+   # Persist a minimal success/error record for the next launcher session.
+   $logRoot=[IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($PreparedDirectory))
+   Assert-LauncherFolder $logRoot
+   [IO.File]::WriteAllText((Join-Path $logRoot 'last-apply.log'),
+    ([DateTime]::UtcNow.ToString('o')+' | '+$result+' | '+$detail),
+    [Text.UTF8Encoding]::new($false))
+  }catch{}
+ }
+}
