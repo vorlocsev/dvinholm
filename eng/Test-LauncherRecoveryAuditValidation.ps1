@@ -79,11 +79,11 @@ try{
  Check $impossible 'NotRecorded' 'NotRecorded'
  # 4. Future timestamps beyond five minutes cannot overshadow valid history.
  $future=New-Fixture
- Write-Receipt $future (Stamp $now.AddMinutes(10)) 'Succeeded' 'NoTransaction'
+ Write-Receipt $future (Stamp ($now.AddMinutes(10))) 'Succeeded' 'NoTransaction'
  Check $future 'NotRecorded' 'NotRecorded'
  # 5. Recovery outcomes older than 30 days are not presented as recent.
  $stale=New-Fixture
- Write-Receipt $stale (Stamp $now.AddDays(-31)) 'Succeeded' 'NoTransaction'
+ Write-Receipt $stale (Stamp ($now.AddDays(-31))) 'Succeeded' 'NoTransaction'
  Check $stale 'NotRecorded' 'NotRecorded'
  # 6. Success cannot be paired with a failure-only reason code.
  $mismatch=New-Fixture
@@ -95,11 +95,11 @@ try{
  Check $other 'NotRecorded' 'NotRecorded'
  # 8. Multiple workers: latest valid entry wins; invalid newer entry skipped.
  $mixed=New-Fixture
- Write-Receipt $mixed (Stamp $now.AddHours(-1)) 'Succeeded' 'NoTransaction'
+ Write-Receipt $mixed (Stamp ($now.AddHours(-1))) 'Succeeded' 'NoTransaction'
  $newer=Join-Path $mixed.Handoff ('worker-'+[guid]::NewGuid().ToString('N'))
  Write-Receipt $mixed $valid 'Started' 'AttemptStarted' '' $newer
  $bad=Join-Path $mixed.Handoff ('worker-'+[guid]::NewGuid().ToString('N'))
- Write-Receipt $mixed (Stamp $now.AddMinutes(1)) 'Blocked' 'NoTransaction' '' $bad
+ Write-Receipt $mixed (Stamp ($now.AddMinutes(1))) 'Blocked' 'NoTransaction' '' $bad
  Check $mixed 'Started' 'AttemptStarted'
  if($checks -ne 8){throw ('Expected 8 audit validation gates; observed '+$checks)}
  Write-Host 'Launcher recovery audit strict validation: 8/8 offline gates passed.'
