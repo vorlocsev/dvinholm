@@ -115,6 +115,11 @@ if(-not(Test-Path -LiteralPath $verifyDownloadHelper -PathType Leaf)){
  throw 'Bundled Launcher verified download module is missing.'
 }
 . $verifyDownloadHelper
+$nativeApplyHelper=Join-Path $PSScriptRoot 'Launcher-ApplyPrepared.ps1'
+if(-not(Test-Path -LiteralPath $nativeApplyHelper -PathType Leaf)){
+ throw 'Bundled native Launcher apply helper is missing.'
+}
+. $nativeApplyHelper
 function Entry-Path([string]$name){
  $p=$name.Replace('\','/').TrimEnd('/')
  if(-not $p -or $p.StartsWith('/') -or $p.Contains(':') -or
@@ -280,7 +285,7 @@ function Translate([string]$key) {
    driversOpen='Открыть драйверы';settingsQuick='Настройки'
    windowsQuick='Перепроверить';depsInstall='Установить компоненты'
    componentsTitle='Компоненты Microsoft x86';componentsNotice='Выберите компонент для установки. Будет показано подтверждение.'
-   checkLauncher='Проверить лаунчер';prepareLauncher='Скачать и проверить'
+   checkLauncher='Проверить лаунчер';prepareLauncher='Скачать и проверить';applyLauncher='Установить и перезапустить'
   }
   EN=@{
    home='▶  Launch';updates='↻  Updates'
@@ -314,7 +319,7 @@ function Translate([string]$key) {
    driversOpen='Open drivers';settingsQuick='Settings'
    windowsQuick='Recheck';depsInstall='Install components'
    componentsTitle='Microsoft x86 prerequisites';componentsNotice='Select the component to install. Confirmation is required.'
-   checkLauncher='Check Launcher';prepareLauncher='Download & verify'
+   checkLauncher='Check Launcher';prepareLauncher='Download & verify';applyLauncher='Install & restart'
   }
  }
  $value=$labels[$script:launcherLanguage][$key]
@@ -1876,11 +1881,36 @@ function Apply-LauncherLanguage {
  $status.Text=Format-LauncherDetail $script:lastRawStatus
  $form.Text='Dvinholm | '+$(if($script:launcherLanguage -eq 'RU'){'Лаунчер'}else{'Launcher'})
 }
+function Begin-LauncherApplyHandoff {
+ if($script:child -or $script:vendor){return}
+ $selected=[string]$choice.SelectedItem
+ if($selected -cnotin @('Stable','Development')){return}
+ $prompt=if($script:launcherLanguage -eq 'RU'){
+  'Установить проверенную сборку Launcher? Интерфейс закроется, файлы будут заменены после выхода процесса и новый Launcher запустится автоматически. При ошибке выполняется откат.'
+ }else{
+  'Install the verified Launcher update? This window will close. Files will be replaced after the UI process exits, then Launcher restarts. Failed replacement triggers rollback.'
+ }
+ if([Windows.Forms.MessageBox]::Show($form,$prompt,(Translate 'confirmTitle'),
+   [Windows.Forms.MessageBoxButtons]::YesNo,
+   [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ try{
+  # The native launcher EXE already exited after spawning this PowerShell
+  # GUI. The detached worker must wait for THIS process, never Launcher.exe.
+  $null=Start-LauncherPreparedHandoff -ChannelName $selected -GuiProcessId $PID
+  $timer.Stop()
+  $form.Close()
+ }catch{
+  [void][Windows.Forms.MessageBox]::Show($form,
+   ([string]$_.Exception.Message),
+   (Translate 'settingsTitle'),[Windows.Forms.MessageBoxButtons]::OK,
+   [Windows.Forms.MessageBoxIcon]::Warning)
+ }
+}
 function Show-LauncherSettings {
  if($script:child -or $script:vendor){return}
  $dlg=New-Object Windows.Forms.Form
  $dlg.Text=Translate 'settingsTitle'
- $dlg.ClientSize=[Drawing.Size]::new(375,368)
+ $dlg.ClientSize=[Drawing.Size]::new(375,413)
  $dlg.FormBorderStyle=[Windows.Forms.FormBorderStyle]::FixedDialog
  $dlg.MaximizeBox=$false;$dlg.MinimizeBox=$false
  $dlg.StartPosition=[Windows.Forms.FormStartPosition]::CenterParent
@@ -1913,7 +1943,7 @@ function Show-LauncherSettings {
  $cancel.SetBounds(269,151,84,30);$dlg.Controls.Add($cancel)
  $advanced=New-Object Windows.Forms.Label
  $advanced.Text=if($script:launcherLanguage -eq 'RU'){'ВОССТАНОВЛЕНИЕ'}else{'RECOVERY'}
- $advanced.SetBounds(18,239,340,24);$dlg.Controls.Add($advanced)
+ $advanced.SetBounds(18,277,340,24);$dlg.Controls.Add($advanced)
  $checkLauncher=New-Object Windows.Forms.Button
  $checkLauncher.Text=Translate 'checkLauncher'
  $checkLauncher.SetBounds(18,185,158,35)
@@ -1924,19 +1954,27 @@ function Show-LauncherSettings {
  $prepareLauncher.SetBounds(185,185,168,35)
  $dlg.Controls.Add($prepareLauncher)
  $prepareLauncher.Add_Click({$dlg.Close();Begin-Action 'PrepareLauncher'})
+ $applyLauncher=New-Object Windows.Forms.Button
+ $applyLauncher.Text=Translate 'applyLauncher'
+ $applyLauncher.SetBounds(18,226,335,34)
+ $selectedNativeChannel=[string]$choice.SelectedItem
+ $preparedNative=Join-Path (Join-Path (Join-Path $base 'LauncherUpdates') $selectedNativeChannel) 'prepared\prepared.json'
+ $applyLauncher.Enabled=(Test-Path -LiteralPath $preparedNative -PathType Leaf)
+ $dlg.Controls.Add($applyLauncher)
+ $applyLauncher.Add_Click({$dlg.Close();Begin-LauncherApplyHandoff})
  $restore=New-Object Windows.Forms.Button
  $restore.Text=Translate 'rollback'
- $restore.SetBounds(18,270,335,28)
+ $restore.SetBounds(18,306,335,28)
  $restore.Enabled=($script:recoveryStatus -ceq 'Ready')
  $dlg.Controls.Add($restore)
  $repairRollback=New-Object Windows.Forms.Button
  $repairRollback.Text=Translate 'repair'
- $repairRollback.SetBounds(18,308,160,28)
+ $repairRollback.SetBounds(18,345,160,28)
  $repairRollback.Enabled=($script:recoveryStatus -ceq 'Repair rollback')
  $dlg.Controls.Add($repairRollback)
  $repairInstallButton=New-Object Windows.Forms.Button
  $repairInstallButton.Text=Translate 'repairInstall'
- $repairInstallButton.SetBounds(188,308,165,28)
+ $repairInstallButton.SetBounds(188,345,165,28)
  $repairInstallButton.Enabled=($script:recoveryStatus -ceq 'Repair install')
  $dlg.Controls.Add($repairInstallButton)
  $restore.Add_Click({$dlg.Close();Begin-Action 'Rollback'})
