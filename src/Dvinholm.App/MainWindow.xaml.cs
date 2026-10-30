@@ -38,6 +38,7 @@ public sealed partial class MainWindow : Window
     private Task<IReadOnlyList<UdsEcuCandidate>>? _discoveryTask;
     private CancellationTokenSource? _udsCts;
     private readonly ObservableCollection<EcuRow> _ecus = new();
+    private bool _ecuScanComplete;
     private EcuProfileCatalog _profileCatalog = new();
     private bool _snapshotInspectionBusy;
     private bool _loadingProfiles;
@@ -2069,6 +2070,7 @@ public sealed partial class MainWindow : Window
         public string Type => Candidate.IsExtended ? "29-bit" : "11-bit";
         public int Frames => Candidate.ResponseCount;
         public string MaxPayload => Candidate.MaxDataLength?.ToString() ?? "-";
+        public string RequestBasis => Candidate.RequestId is null ? "Unknown" : "Inferred";
 
         internal EcuRow(UdsEcuCandidate candidate) => Candidate = candidate;
     }
@@ -2094,8 +2096,7 @@ public sealed partial class MainWindow : Window
         ConnectButton.IsEnabled = false;
         SetUdsEnabled(false);
         DiscoveryStatus.Text = "Scanning...";
-        _ecus.Clear();
-        EcuSelector.Items.Clear();
+        ClearPassiveDiscoverySelection();
 
         try
         {
@@ -2103,27 +2104,25 @@ public sealed partial class MainWindow : Window
             _discoveryTask = discovery.ScanAsync(TimeSpan.FromSeconds(8), cts.Token);
             var found = await _discoveryTask;
 
-            ShowDiscoveredEcus(found);
-            DiscoveryStatus.Text = found.Count == 0
-                ? "No UDS responses observed"
-                : $"{found.Count} ECU(s) found";
+            ShowDiscoveredEcus(found, complete: true);
+            DiscoveryStatus.Text = UdsPassiveEcuListPresentation.ScanSummary(found.Count, true);
 
             SetStatus("ECU discovery complete.");
         }
         catch (UdsEcuDiscoveryCancelledException ex)
         {
-            ShowDiscoveredEcus(ex.Candidates);
-            DiscoveryStatus.Text = ex.Candidates.Count == 0
-                ? "Cancelled · no ECUs observed"
-                : $"Cancelled · {ex.Candidates.Count} ECU(s) observed; scan incomplete";
+            ShowDiscoveredEcus(ex.Candidates, complete: false);
+            DiscoveryStatus.Text = "Cancelled · " +
+                UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false);
             if (ex.DroppedFrameCount > 0)
                 DiscoveryStatus.Text += $" · {ex.DroppedFrameCount} frame(s) dropped";
             SetStatus(ex.Message);
         }
         catch (UdsEcuDiscoveryIncompleteException ex)
         {
-            ShowDiscoveredEcus(ex.Candidates);
-            DiscoveryStatus.Text = $"Incomplete · {ex.Candidates.Count} ECU(s) observed · {ex.DroppedFrameCount} frame(s) dropped";
+            ShowDiscoveredEcus(ex.Candidates, complete: false);
+            DiscoveryStatus.Text = UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false) +
+                $" · {ex.DroppedFrameCount} frame(s) dropped";
             SetStatus(ex.Message);
         }
         catch (OperationCanceledException)
@@ -2150,25 +2149,37 @@ public sealed partial class MainWindow : Window
         }
     }
 
-    private void ShowDiscoveredEcus(IReadOnlyList<UdsEcuCandidate> found)
+    private void ClearPassiveDiscoverySelection()
     {
+        // Never carry a guessed address across scans or adapter sessions.
+        _ecuScanComplete = false;
+        EcusView.IsEnabled = false;
+        EcuSelector.IsEnabled = false;
+        EcusView.SelectedIndex = -1;
+        EcuSelector.SelectedIndex = -1;
         _ecus.Clear();
         EcuSelector.Items.Clear();
+        UdsRequestId.Text = string.Empty;
+        UdsResponseId.Text = string.Empty;
+        EcuSelectionInfo.Text = "No verified ECU selection. Passive observations do not identify a module.";
+    }
 
+    private void ShowDiscoveredEcus(IReadOnlyList<UdsEcuCandidate> found, bool complete)
+    {
+        ClearPassiveDiscoverySelection();
         foreach (var candidate in found)
         {
             var row = new EcuRow(candidate);
             _ecus.Add(row);
-            EcuSelector.Items.Add(row.Candidate.RequestId is null
-                ? $"{row.Request} → {row.Response} (request ID unknown)"
-                : $"{row.Request} → {row.Response} (inferred)");
+            EcuSelector.Items.Add(UdsPassiveEcuListPresentation.SelectorLabel(candidate, complete));
         }
 
-        if (found.Count > 0)
-        {
-            EcusView.SelectedIndex = 0;
-            EcuSelector.SelectedIndex = 0;
-        }
+        // Incomplete scans are visible but never selectable; complete scans
+        // require explicit selection and manual TX address verification.
+        _ecuScanComplete = complete;
+        EcusView.IsEnabled = complete && found.Count > 0;
+        EcuSelector.IsEnabled = complete && found.Count > 0;
+        EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.ScanSummary(found.Count, complete);
     }
 
     private void CancelDiscovery_Click(object sender, RoutedEventArgs e)
@@ -2180,7 +2191,7 @@ public sealed partial class MainWindow : Window
 
     private void Ecu_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (EcusView.SelectedItem is not EcuRow row)
+        if (!_ecuScanComplete || EcusView.SelectedItem is not EcuRow row)
             return;
 
         ApplyEcuSelection(row, EcusView.SelectedIndex);
@@ -2189,7 +2200,7 @@ public sealed partial class MainWindow : Window
     private void EcuSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         var index = EcuSelector.SelectedIndex;
-        if (index < 0 || index >= _ecus.Count)
+        if (!_ecuScanComplete || index < 0 || index >= _ecus.Count)
             return;
 
         EcusView.SelectedIndex = index;
@@ -2198,22 +2209,20 @@ public sealed partial class MainWindow : Window
 
     private void ApplyEcuSelection(EcuRow row, int index)
     {
-        // A candidate without a supported inferred request ID must not leave
-        // the previous ECU's request ID in the input field.
-        UdsRequestId.Text = row.Candidate.RequestIdText;
-        UdsResponseId.Text = row.Candidate.ResponseId.ToString(row.Candidate.IsExtended ? "X8" : "X3");
+        if (!_ecuScanComplete || index < 0 || index >= _ecus.Count ||
+            !ReferenceEquals(_ecus[index], row))
+            return;
+
+        // The passive scan only observed the RX ID; the inferred TX ID
+        // stays BLANK until independently verified and manually entered.
+        UdsRequestId.Text = string.Empty;
+        UdsResponseId.Text = UdsPassiveEcuListPresentation.Hex(
+            row.Candidate.ResponseId, row.Candidate.IsExtended);
         CanIdFormat.SelectedIndex = row.Candidate.IsExtended ? 1 : 0;
+        EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.SelectionDetails(row.Candidate);
 
         if (EcuSelector.SelectedIndex != index)
             EcuSelector.SelectedIndex = index;
-
-        EcuInfoText.Text =
-            $"Request: {(row.Candidate.RequestId is uint ? $"0x{row.Candidate.RequestId.Value:X}" : "unknown")}  ·  " +
-            $"Response: 0x{row.Candidate.ResponseId:X}  ·  " +
-            $"Type: {(row.Candidate.IsExtended ? "29-bit" : "11-bit")}  ·  " +
-            $"Observed frames: {row.Candidate.ResponseCount}  ·  " +
-            $"Max payload: {row.Candidate.MaxDataLength?.ToString() ?? "-"} bytes" + Environment.NewLine +
-            row.RequestNote;
     }
 
     private void SetUdsEnabled(bool enabled)
@@ -2703,6 +2712,7 @@ public sealed partial class MainWindow : Window
             {
                 await disconnectTask;
                 _connected = false;
+                ClearPassiveDiscoverySelection();
                 _activeHardwareFilterId = null;
                 HardwareFilterButton.Content = "Apply HW filter";
                 HardwareFilterButton.IsEnabled = false;
@@ -2716,6 +2726,7 @@ public sealed partial class MainWindow : Window
                 // against a bus that may already be disposed; the next Connect
                 // attempt will first retry session cleanup.
                 _connected = false;
+                ClearPassiveDiscoverySelection();
                 _activeHardwareFilterId = null;
                 HardwareFilterButton.Content = "Apply HW filter";
                 HardwareFilterButton.IsEnabled = false;
