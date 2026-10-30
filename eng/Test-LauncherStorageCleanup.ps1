@@ -13,13 +13,13 @@ $root=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-storage-fixtures-'+[guid]:
 $now=[datetime]'2026-10-30T12:00:00Z'
 $checks=0
 function Fixture([string]$name,[string]$channel='Development'){
- $home=Join-Path $root $name
- $storage=Join-Path $home 'LauncherUpdates'
+ $caseRoot=Join-Path $root $name
+ $storage=Join-Path $caseRoot 'LauncherUpdates'
  $folder=Join-Path $storage $channel
  [IO.Directory]::CreateDirectory($folder)|Out-Null
- $install=Join-Path $home 'installation'
+ $install=Join-Path $caseRoot 'installation'
  [IO.Directory]::CreateDirectory($install)|Out-Null
- return [pscustomobject]@{Home=$home;Storage=$storage;Folder=$folder;Install=$install;Channel=$channel}
+ return [pscustomobject]@{Home=$caseRoot;Storage=$storage;Folder=$folder;Install=$install;Channel=$channel}
 }
 function Cleanup($fixture,[string]$build='ci-120'){
  return Invoke-NativeLauncherStorageCleanup -StorageRoot $fixture.Storage -SelectedChannel $fixture.Channel -InstalledBuild $build -InstallationDirectory $fixture.Install -NowUtc $now
