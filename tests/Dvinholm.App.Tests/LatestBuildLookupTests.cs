@@ -37,7 +37,6 @@ public sealed class LatestBuildLookupTests
     [Fact]
     public void DifferentCommitSha_StatusShowsAvailableBuild()
     {
-        const string currentSha = "aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa";
         const string latestSha = "bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb";
         var latest = new LatestBuildInfo(
             latestSha, 1752, 38830474549,
