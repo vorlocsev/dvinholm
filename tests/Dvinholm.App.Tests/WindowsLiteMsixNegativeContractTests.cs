@@ -4,10 +4,21 @@ using System.IO.Compression;
 namespace Dvinholm.App.Tests;
 
 /// <summary>
+/// An archived validator starts a separate Windows PowerShell 5.1 host per
+/// scenario. These subprocess fixtures must not compete with other xUnit
+/// collections on the same CI runner.
+/// </summary>
+[CollectionDefinition("Archived MSIX validator process isolation", DisableParallelization = true)]
+public sealed class WindowsLiteMsixNegativeProcessCollection
+{
+}
+
+/// <summary>
 /// Eight deterministic invalid MSIX archives exercise all eight rejection
 /// contracts in the experimental, unsigned Lite MSIX package validator.
 /// This checks only archive metadata; no package is installed or launched.
 /// </summary>
+[Collection("Archived MSIX validator process isolation")]
 [Trait("Category", "ArchivedWorkflow")]
 public sealed class WindowsLiteMsixNegativeContractTests
 {
@@ -54,7 +65,40 @@ public sealed class WindowsLiteMsixNegativeContractTests
             var stdout = process.StandardOutput.ReadToEndAsync();
             var stderr = process.StandardError.ReadToEndAsync();
             using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
-            await process.WaitForExitAsync(timeout.Token);
+            try
+            {
+                await process.WaitForExitAsync(timeout.Token);
+            }
+            catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+            {
+                // A hung PowerShell process must not leak into later tests or
+                // keep the disposable fixture locked for the cleanup retries.
+                try
+                {
+                    if (!process.HasExited)
+                        process.Kill(entireProcessTree: true);
+                }
+                catch (InvalidOperationException)
+                {
+                    // It exited while we were requesting termination.
+                }
+
+                using var cleanupTimeout = new CancellationTokenSource(
+                    TimeSpan.FromSeconds(5));
+                try
+                {
+                    await process.WaitForExitAsync(cleanupTimeout.Token);
+                }
+                catch (OperationCanceledException)
+                {
+                    // Preserve the original timeout instead of waiting without
+                    // a bound on an unhealthy Windows runner.
+                }
+
+                throw new TimeoutException(
+                    $"Lite MSIX negative validator did not exit within 60 seconds (scenario: {scenario}).");
+            }
+
             var output = await stdout + await stderr;
             Assert.NotEqual(0, process.ExitCode);
             Assert.Contains($"MSIX check {expectedCheck}:", output);
