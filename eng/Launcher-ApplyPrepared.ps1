@@ -20,7 +20,8 @@ param(
 )
 $ErrorActionPreference='Stop'
 $launcherHandoffFiles=@('Launcher-ApplyPrepared.ps1','Invoke-LauncherReplacement.ps1',
- 'Assert-LauncherSelfUpdatePackage.ps1','Launcher-VerifiedDownload.ps1')
+ 'Assert-LauncherSelfUpdatePackage.ps1','Launcher-VerifiedDownload.ps1',
+ 'Launcher-RebootRecovery.ps1')
 function Assert-LauncherFolder([string]$path){
  $full=[IO.Path]::GetFullPath($path)
  $at=$full
@@ -60,6 +61,7 @@ function Invoke-LauncherWorker {
  }
  $verify=Join-Path $PSScriptRoot 'Launcher-VerifiedDownload.ps1'
  $replace=Join-Path $PSScriptRoot 'Invoke-LauncherReplacement.ps1'
+ $recovery=Join-Path $PSScriptRoot 'Launcher-RebootRecovery.ps1'
  . $verify
  # A separate temporary stage re-verifies all files, digest and tag. The
  # earlier "prepared/staged" folder is intentionally never trusted.
@@ -83,6 +85,11 @@ function Invoke-LauncherWorker {
    $arguments.OfflineFixture=$true
    if($SimulateInterruptionAfter -gt 0){$arguments.SimulateInterruptionAfter=$SimulateInterruptionAfter}
   }
+  if(-not $OfflineFixture){
+   # Register a trusted outside-install HKCU Run recovery before mutating
+   # any live Launcher file; abort entirely if registration is unavailable.
+   & $recovery -Mode Arm -InstallationDirectory $install -ExpectedTag $ExpectedTag|Out-Null
+  }
   try{
    & $replace @arguments|Out-Null
    $backup=Join-Path $install '.launcher-previous\journal.json'
@@ -99,6 +106,9 @@ function Invoke-LauncherWorker {
     if($null -eq $next){throw 'Restarting native Launcher failed.'}
     $next.Dispose()
    }
+   if(-not $OfflineFixture){
+    & $recovery -Mode Disarm -InstallationDirectory $install|Out-Null
+   }
    Write-Host ('Native Launcher '+$ExpectedTag+' installed and '+$(if($OfflineFixture){'verified offline.'}else{'restarted.'}))
   }catch{
    $failure=[string]$_.Exception.Message
@@ -114,6 +124,12 @@ function Invoke-LauncherWorker {
     # The original launcher can be started again only after the failed
     # transaction is absent or its verified rollback completed.
     try{Start-Process -FilePath (Join-Path $install 'Launcher.exe') -WorkingDirectory $install -ErrorAction Stop|Out-Null}catch{}
+   }
+   if(-not $OfflineFixture -and
+      -not(Test-Path -LiteralPath (Join-Path $install '.launcher-transaction'))){
+    try{& $recovery -Mode Disarm -InstallationDirectory $install|Out-Null}catch{
+     throw ('Native update failed, but recovery is still armed for next sign-in: '+$failure)
+    }
    }
    throw ('Native Launcher apply failed; verified rollback attempted: '+$failure)
   }
