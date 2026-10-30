@@ -2813,16 +2813,16 @@ public sealed partial class MainWindow : Window
             // the task if its worker has not fully unwound. Do not dispose the
             // session/bus until that subscriber has exited.
             var monitorTask = _monitorTask;
-            string? monitorWarning = null;
+            var monitorFailed = false;
             StopMonitor();
             if (monitorTask is not null)
             {
                 try { await monitorTask; }
-                catch (Exception ex)
+                catch (Exception)
                 {
-                    // A monitor failure must not prevent session cleanup, but
-                    // preserve its diagnostic hint in the disconnect status.
-                    monitorWarning = FormatSafeException(ex, "unexpected monitor error.");
+                    // A failed reader must not prevent session cleanup.
+                    // Its vendor exception text is unsafe for public activity.
+                    monitorFailed = true;
                 }
             }
 
@@ -2832,9 +2832,9 @@ public sealed partial class MainWindow : Window
             StartButton.IsEnabled = false;
             SetUdsEnabled(false);
             DiscoverButton.IsEnabled = false;
-            SetStatus(monitorWarning is null
-                ? "Disconnecting J2534..."
-                : "Disconnecting J2534... CAN monitor warning: " + monitorWarning);
+            SetStatus(monitorFailed
+                ? J2534PublicFailureActivity.Message(J2534PublicFailure.MonitorFaultDuringDisconnect)
+                : "Disconnecting J2534...");
             var disconnectTask = Task.Run(() => _session.Disconnect());
             _disconnectTask = disconnectTask;
             try
@@ -2848,7 +2848,7 @@ public sealed partial class MainWindow : Window
                 ConnectButton.Content = "Connect";
                 SetStatus("Disconnected");
             }
-            catch (Exception ex)
+            catch (Exception)
             {
                 // Disconnect may have partially torn down the native session
                 // before a vendor API throws. Do not leave controls enabled
@@ -2863,7 +2863,7 @@ public sealed partial class MainWindow : Window
                 SetUdsEnabled(false);
                 DiscoverButton.IsEnabled = false;
                 ConnectButton.Content = "Connect";
-                SetStatus("Disconnect failed; session state reset. Retry Connect to reinitialize the adapter. " + FormatSafeException(ex, "unexpected adapter error."));
+                SetStatus(J2534PublicFailureActivity.Message(J2534PublicFailure.DisconnectFault));
             }
             finally
             {
@@ -2918,7 +2918,7 @@ public sealed partial class MainWindow : Window
             if (_closing) return;
             if (!result.connected)
             {
-                SetStatus("Connection failed: " + result.error);
+                SetStatus(J2534PublicFailureActivity.Message(J2534PublicFailure.ConnectionRejected));
                 return;
             }
 
@@ -2938,10 +2938,10 @@ public sealed partial class MainWindow : Window
                 : $" · HW filters {(capabilities.HardwareCanFilters ? "available" : "unavailable")} · version query {(capabilities.VersionQuery ? "available" : "unavailable")}";
             SetStatus("Connected · J2534 · CAN · " + versionText + capabilityText);
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             if (!_closing)
-                SetStatus("Connection failed: " + FormatSafeException(ex, "unexpected adapter error."));
+                SetStatus(J2534PublicFailureActivity.Message(J2534PublicFailure.ConnectionFault));
         }
         finally
         {
@@ -2982,9 +2982,23 @@ public sealed partial class MainWindow : Window
             _rxDropTracker.Complete(previous.DroppedFrameCount);
             _monitorSubscription = null;
         }
-        _cts = new CancellationTokenSource();
-        var token = _cts.Token;
-        var subscription = _session.Bus.Subscribe();
+        // Subscription creation can throw after a native adapter teardown.
+        // Do not leave _cts armed or the Start button stuck in Stop state.
+        var monitorCts = new CancellationTokenSource();
+        CanRxDispatcher.Subscription subscription;
+        try
+        {
+            subscription = _session.Bus.Subscribe();
+        }
+        catch (Exception)
+        {
+            monitorCts.Dispose();
+            SetStatus(J2534PublicFailureActivity.Message(J2534PublicFailure.MonitorStartFault));
+            return;
+        }
+
+        _cts = monitorCts;
+        var token = monitorCts.Token;
         _monitorSubscription = subscription;
         _rxDropTracker.Start(subscription.DroppedFrameCount);
         UpdateRxDropCountText();
@@ -3119,12 +3133,14 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        try
+        {
         var bus = _session.Bus;
         if (_activeHardwareFilterId is uint activeFilterId)
         {
             if (!bus.StopCanFilter(activeFilterId, out var stopError))
             {
-                SetStatus("Could not remove hardware filter: " + stopError);
+                SetStatus(J2534PublicFailureActivity.Message(J2534PublicFailure.FilterRemoveRejected));
                 return;
             }
 
@@ -3157,13 +3173,20 @@ public sealed partial class MainWindow : Window
 
         if (!bus.StartCanIdFilter(id, extended, out var filterId, out var startError))
         {
-            SetStatus("J2534 hardware filter could not be applied: " + startError);
+            SetStatus(J2534PublicFailureActivity.Message(J2534PublicFailure.FilterApplyRejected));
             return;
         }
 
         _activeHardwareFilterId = filterId;
         HardwareFilterButton.Content = "Remove HW filter";
         SetStatus($"J2534 hardware filter active for 0x{id:X} ({(extended ? "29-bit" : "11-bit")}).");
+        }
+        catch (Exception)
+        {
+            // Preserve the existing filter ID on failure. Never leak a vendor
+            // error, driver path or raw adapter text to Aurora home activity.
+            SetStatus(J2534PublicFailureActivity.Message(J2534PublicFailure.FilterUnexpected));
+        }
     }
 
     private void Filter_Changed(object sender, TextChangedEventArgs e) =>
