@@ -7,8 +7,8 @@ No downloaded PowerShell script is executed before installation.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('Library','Worker')][string]$Mode='Library',
- [ValidateSet('Development','Stable')][string]$Channel='Development',
+ [ValidateSet('Library','Worker')][string]$ApplyMode='Library',
+ [ValidateSet('Development','Stable')][string]$ApplyChannel='Development',
  [string]$InstallationDirectory,
  [string]$PreparedDirectory,
  [int]$WaitForProcessId=0,
@@ -52,7 +52,7 @@ function Invoke-LauncherWorker {
   throw 'Invalid launcher preparation receipt.'
  }
  $record=Get-Content -LiteralPath $recordPath -Raw|ConvertFrom-Json
- if([string]$record.Channel -cne $Channel -or
+ if([string]$record.Channel -cne $ApplyChannel -or
     [string]$record.Tag -cne $ExpectedTag -or
     [string]$record.ZipSha256 -cne $ExpectedZipSha256 -or
     [bool]$record.Applied){
@@ -178,7 +178,7 @@ function Start-LauncherPreparedHandoff {
   }
   $script=Join-Path $handoff 'Launcher-ApplyPrepared.ps1'
   $args='-NoLogo -NoProfile -NonInteractive -ExecutionPolicy Bypass -File "'+$script+
-    '" -Mode Worker -Channel '+$ChannelName+' -InstallationDirectory "'+$install+
+    '" -ApplyMode Worker -ApplyChannel '+$ChannelName+' -InstallationDirectory "'+$install+
     '" -PreparedDirectory "'+$ready+'" -WaitForProcessId '+$GuiProcessId+
     ' -ExpectedTag '+$release.Tag+' -ExpectedZipSha256 '+$expectedZip+
     ' -ExpectedSumsSha256 '+$expectedSums
@@ -194,7 +194,7 @@ function Start-LauncherPreparedHandoff {
   throw
  }
 }
-if($Mode -eq 'Worker'){
+if($ApplyMode -eq 'Worker'){
  $result='failure'
  $detail='Unknown native Launcher worker error.'
  try{
