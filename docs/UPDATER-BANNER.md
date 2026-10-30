@@ -826,3 +826,40 @@ recorded as real Windows 11 power-loss or interactive GUI acceptance. CI tests
 all six status classes plus compromised startup and helper configurations
 without writing a real HKCU Run value. Stable 0.2.4 and physical J2534
 interfaces are unaffected.
+
+
+## Launcher recovery status in Settings (Development)
+
+The Windows x86 Launcher package now includes the same **read-only**
+recovery inspector as the repository's Windows 11 acceptance tooling.
+Under **Settings / Настройки**, choose **Recovery status / Статус
+восстановления** next to **Clean downloads / Очистить загрузки**.
+Both controls share the existing compact row: the window height is
+unchanged.
+
+A separate Windows PowerShell 5.1 background process reads the current
+native Launcher build, native backup and interrupted transaction markers,
+and the **current user's** associated HKCU Run recovery checkpoint.
+It reports the status on-screen in Russian or English:
+
+- Clean / Без ошибок
+- Backup available / Резервная копия доступна
+- Recovery pending / Требуется восстановление
+- Restart pending / Ожидается запуск
+- Retirement pending / Очистка копии не завершена
+- Needs inspection / Требуется ручная проверка
+
+The action is strictly **read-only**: it does not trigger recovery, delete
+a backup, execute a checkpoint, download anything, launch an installer or
+modify startup entries. A status of "Needs inspection" is not silently
+repaired. Use the separate verified recovery path only after checking
+the journal.
+
+The inspector script is part of the **strictly validated native
+Launcher self-update allowlist**, the combined Windows x86 distribution
+and the recovery journal's complete 18-member checksum set.
+CI additionally performs eight checks with the actual packaged ZIP,
+including invoking the standalone updater in its new inspection mode
+in a temporary installation. CI cannot verify that the graphical
+Windows 11 window appears after a real restart; desktop acceptance and
+physical J2534 testing remain separate.
