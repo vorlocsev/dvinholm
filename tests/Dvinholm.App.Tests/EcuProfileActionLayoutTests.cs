@@ -111,8 +111,8 @@ public sealed class EcuProfileActionLayoutTests
         var names = buttons.Select(x => Attr(x, "Click")).ToArray();
         Assert.DoesNotContain(names, string.IsNullOrWhiteSpace);
         Assert.Equal(7, names.Distinct(StringComparer.Ordinal).Count());
-        Assert.Empty(Actions().Descendants().Where(x =>
-            x.Name.LocalName is "ScrollViewer" or "ScrollBar"));
+        Assert.DoesNotContain(Actions().Descendants(), x =>
+            x.Name.LocalName is "ScrollViewer" or "ScrollBar");
     }
 
     private static XDocument Load()
