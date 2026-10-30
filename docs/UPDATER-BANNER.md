@@ -638,3 +638,32 @@ tampering and interrupted replacement against the real packaged ZIP.
 They do not claim real Windows interactive handoff, forced shutdown,
 power-loss recovery, or physical J2534/ECU acceptance. Stable 0.2.4 is
 unchanged.
+
+## Explicit native Launcher backup finalization (Development)
+
+A successful native self-update retains the old version in
+`.launcher-previous` for possible recovery. Settings offers
+**Release previous Launcher backup / Удалить прежнюю копию лаунчера**
+with a separate destructive-action confirmation. No automatic cleanup
+occurs while a rollback snapshot is still required.
+
+The Windows PowerShell 5.1 worker acquires the same installation-scoped
+mutex as self-update, refuses an active `.launcher-transaction`, verifies
+the complete committed journal, SHA-256 of **all current native files**,
+and SHA-256 of every saved original before retiring the backup. It
+refuses unknown contents or reparse paths; application binaries remain
+outside the native file allowlist.
+
+Retirement atomically renames `.launcher-previous` to
+`.launcher-retired`, then deletes only the bounded native snapshot.
+If the process stops during deletion, an explicit repeat of the action
+can safely clean the partially retired folder, even if its journal was
+already removed. Unknown entries and conflicting folders fail closed.
+
+Eight isolated tests cover successful retirement, a subsequent
+transaction, corrupted backups, modified installed files, active
+transactions, unknown backup files, resumed partial retirement and
+unknown retired files. Tests do **not** establish actual Windows reboot
+or power-loss recovery. Existing downloaded `prepared` packages are
+not automatically discarded by this action; managing obsolete download
+snapshots is a separate step. Stable 0.2.4 is unchanged.
