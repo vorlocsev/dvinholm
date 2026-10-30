@@ -102,7 +102,7 @@ public sealed class VolvoP2CemManualValueComparisonTests
             var report = Report(year, true,
                 VolvoP2CemCustomerParameterKind.PostDrying,
                 "OFF", null, "ON", null);
-            Assert.Equal(false, report.Contains("Proposed research notation:", StringComparison.Ordinal));
+            Assert.False(report.Contains("Proposed research notation:", StringComparison.Ordinal));
         }
         Assert.Equal(VolvoP2CemManualValueComparisonKind.ReferenceInvalidOrUnconfirmed,
             Check("2005", false, VolvoP2CemCustomerParameterKind.PostDrying,
