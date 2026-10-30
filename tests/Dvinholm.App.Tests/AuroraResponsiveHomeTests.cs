@@ -122,8 +122,9 @@ public sealed class AuroraResponsiveHomeTests
             }
         }
         Assert.Equal("12", setters["PrimaryCardsGrid.RowSpacing"]);
-        Assert.Equal(4, Named(Home(), "PrimaryCardsGrid").Descendants()
-            .Count(e => e.Name.LocalName == "RowDefinition"));
+        var rows = Named(Home(), "PrimaryCardsGrid").Elements()
+            .Single(e => e.Name.LocalName == "Grid.RowDefinitions");
+        Assert.Equal(4, rows.Elements().Count(e => e.Name.LocalName == "RowDefinition"));
     }
 
     [Fact]
