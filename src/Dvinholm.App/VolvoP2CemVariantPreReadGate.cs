@@ -68,7 +68,7 @@ internal static class VolvoP2CemVariantPreReadGate
                 VolvoP2ServiceEvidenceGap.OperationalServiceNotImplemented))
             throw new InvalidOperationException("CEM pre-read operation gate is missing.");
 
-        var yearFinding = source.Kind == VolvoP2CemSourceSetKind.NoInScopeClaims
+        var yearFinding = source.YearScopedClaims == 0
             ? VolvoP2CemPreReadFinding.SourceEvidenceMissing
             : VolvoP2CemPreReadFinding.UnverifiedClaimOnly;
         var revisionFinding = source.Kind switch
