@@ -1087,18 +1087,68 @@ public sealed partial class MainWindow : Window
                 TextWrapping = TextWrapping.Wrap,
                 IsTextSelectionEnabled = true
             };
-            void RefreshCandidates()
+            var candidateSummary = new TextBlock
             {
-                if (_closing) return;
-                var tier = candidateEvidenceTier.SelectedIndex switch
+                TextWrapping = TextWrapping.Wrap
+            };
+            var candidateDetailPicker = new ComboBox
+            {
+                Header = "Choose a research label for evidence and capability details",
+                HorizontalAlignment = HorizontalAlignment.Stretch,
+                PlaceholderText = "Select a matching research label"
+            };
+            var candidateDetailReport = new TextBlock
+            {
+                Text = "Select a research label. No live CEM values are available.",
+                TextWrapping = TextWrapping.Wrap,
+                IsTextSelectionEnabled = true
+            };
+            var matchingCatalogNotes = new Expander
+            {
+                Header = "Show all matching research labels (offline)",
+                IsExpanded = false,
+                Content = candidateResults
+            };
+
+            VolvoP2CemCatalogEvidenceTier SelectedCandidateTier() =>
+                candidateEvidenceTier.SelectedIndex switch
                 {
                     1 => VolvoP2CemCatalogEvidenceTier.VendorAdvertisement,
                     2 => VolvoP2CemCatalogEvidenceTier.VolvoPublishedServiceMenu,
                     _ => VolvoP2CemCatalogEvidenceTier.All
                 };
+
+            void RefreshCandidates()
+            {
+                if (_closing) return;
+                var tier = SelectedCandidateTier();
+                var matches = VolvoP2CemCatalogSearch.Find(candidateSearch.Text, tier);
                 candidateResults.Text = VolvoP2CemCatalogSearch.BuildReadOnlyReport(
                     candidateSearch.Text, tier);
+                // Never retain a detail card after the query/source changes;
+                // the previously selected label may no longer be in scope.
+                candidateDetailPicker.Items.Clear();
+                candidateDetailPicker.SelectedIndex = -1;
+                candidateDetailReport.Text = "Select a research label. No live CEM values are available.";
+                foreach (var row in matches)
+                    candidateDetailPicker.Items.Add(new ComboBoxItem
+                    {
+                        Content = row.DisplayName + " [" + row.Tier + "]",
+                        Tag = row.ResearchId
+                    });
+                candidateSummary.Text = matches.Count + " offline research labels match. " +
+                    "Select one to see source evidence, unknowns, and disabled operations.";
             }
+            candidateDetailPicker.SelectionChanged += (_, _) =>
+            {
+                if (_closing) return;
+                if (candidateDetailPicker.SelectedItem is ComboBoxItem { Tag: string researchId })
+                    candidateDetailReport.Text = VolvoP2CemCandidateDetail.BuildReadOnlyReport(
+                        researchId, SelectedCandidateTier());
+                else
+                    candidateDetailReport.Text =
+                        "Select a research label. No live CEM values are available.";
+            };
             candidateSearch.TextChanged += (_, _) => RefreshCandidates();
             candidateEvidenceTier.SelectionChanged += (_, _) => RefreshCandidates();
             RefreshCandidates();
@@ -1126,7 +1176,8 @@ public sealed partial class MainWindow : Window
                            "never live ECU values or write instructions. No VIN/PIN/secret input.",
                     TextWrapping = TextWrapping.Wrap
                 },
-                candidateSearch, candidateEvidenceTier, candidateResults,
+                candidateSearch, candidateEvidenceTier, candidateSummary,
+                candidateDetailPicker, candidateDetailReport, matchingCatalogNotes,
                 draftYear, draftYearCheck, draftKind, draftValue,
                 draftHigh, manualNoteValue, manualNoteHigh, draftPreview, draftResult,
                 new TextBlock
