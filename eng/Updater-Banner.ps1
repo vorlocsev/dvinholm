@@ -6,7 +6,7 @@ No software installs or updates until the user explicitly confirms.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('UI','UiSmokeTest','Check','CheckLauncher','PrepareLauncher','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
+ [ValidateSet('UI','UiSmokeTest','Check','CheckLauncher','PrepareLauncher','FinalizeLauncher','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
  [ValidateSet('Stable','Development')][string]$Channel='Development',
  [string]$StateFile
 )
@@ -285,7 +285,7 @@ function Translate([string]$key) {
    driversOpen='Открыть драйверы';settingsQuick='Настройки'
    windowsQuick='Перепроверить';depsInstall='Установить компоненты'
    componentsTitle='Компоненты Microsoft x86';componentsNotice='Выберите компонент для установки. Будет показано подтверждение.'
-   checkLauncher='Проверить лаунчер';prepareLauncher='Скачать и проверить';applyLauncher='Установить и перезапустить'
+   checkLauncher='Проверить лаунчер';prepareLauncher='Скачать и проверить';applyLauncher='Установить и перезапустить';finalizeLauncher='Удалить прежнюю копию лаунчера'
   }
   EN=@{
    home='▶  Launch';updates='↻  Updates'
@@ -319,7 +319,7 @@ function Translate([string]$key) {
    driversOpen='Open drivers';settingsQuick='Settings'
    windowsQuick='Recheck';depsInstall='Install components'
    componentsTitle='Microsoft x86 prerequisites';componentsNotice='Select the component to install. Confirmation is required.'
-   checkLauncher='Check Launcher';prepareLauncher='Download & verify';applyLauncher='Install & restart'
+   checkLauncher='Check Launcher';prepareLauncher='Download & verify';applyLauncher='Install & restart';finalizeLauncher='Release previous Launcher backup'
   }
  }
  $value=$labels[$script:launcherLanguage][$key]
@@ -1026,6 +1026,27 @@ function Install {
   }
  }
 }
+function Finalize-NativeLauncherBackup {
+ # Same per-installation mutex as the detached native worker.
+ $install=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..')).TrimEnd('\')
+ $hasher=[Security.Cryptography.SHA256]::Create()
+ try{
+  $digest=$hasher.ComputeHash([Text.Encoding]::UTF8.GetBytes($install.ToLowerInvariant()))
+ }finally{$hasher.Dispose()}
+ $key=([BitConverter]::ToString($digest)-replace '-','').Substring(0,24)
+ $mutex=[Threading.Mutex]::new($false,('Local\Dvinholm.NativeLauncher.'+$key))
+ $owned=$false
+ try{
+  try{$owned=$mutex.WaitOne(0)}catch [Threading.AbandonedMutexException]{$owned=$true}
+  if(-not $owned){throw 'Another native Launcher operation is active.'}
+  $native=Join-Path $PSScriptRoot 'Invoke-LauncherReplacement.ps1'
+  & $native -Mode Finalize -InstallationDirectory $install | Out-Null
+  Progress 'Native Launcher backup finalized. Installed files remained unchanged.'
+ }finally{
+  if($owned){$mutex.ReleaseMutex()}
+  $mutex.Dispose()
+ }
+}
 function SelfTest {
  $count=0
  function Reject([scriptblock]$action){
@@ -1596,6 +1617,8 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    $lines.Add('VC++ current installer version cannot be verified without vendor metadata.')
    $script:state.DependencyReport=[string]::Join([Environment]::NewLine,$lines.ToArray())
    Progress 'Microsoft dependency version check finished. No software changed.'
+  }elseif($Mode -eq 'FinalizeLauncher'){
+   Finalize-NativeLauncherBackup
   }elseif($Mode -eq 'PrepareLauncher'){
    Prepare-NativeLauncher
   }elseif($Mode -eq 'CheckLauncher'){
@@ -1646,6 +1669,8 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    $message
   }elseif($Mode -eq 'Launch'){
    ('Unable to start the selected application: '+$message)
+  }elseif($Mode -eq 'FinalizeLauncher'){
+   ('Launcher backup finalization failed: '+$message)
   }elseif($Mode -in @('CheckLauncher','PrepareLauncher')){
    ('Launcher update check failed: '+$message)
   }elseif($message -match 'Latest published release is older|Cannot safely determine current Lite version'){
@@ -1943,7 +1968,7 @@ function Show-LauncherSettings {
  $cancel.SetBounds(269,151,84,30);$dlg.Controls.Add($cancel)
  $advanced=New-Object Windows.Forms.Label
  $advanced.Text=if($script:launcherLanguage -eq 'RU'){'ВОССТАНОВЛЕНИЕ'}else{'RECOVERY'}
- $advanced.SetBounds(18,277,340,24);$dlg.Controls.Add($advanced)
+ $advanced.SetBounds(18,302,340,24);$dlg.Controls.Add($advanced)
  $checkLauncher=New-Object Windows.Forms.Button
  $checkLauncher.Text=Translate 'checkLauncher'
  $checkLauncher.SetBounds(18,185,158,35)
@@ -1962,19 +1987,29 @@ function Show-LauncherSettings {
  $applyLauncher.Enabled=(Test-Path -LiteralPath $preparedNative -PathType Leaf)
  $dlg.Controls.Add($applyLauncher)
  $applyLauncher.Add_Click({$dlg.Close();Begin-LauncherApplyHandoff})
+ $finalizeLauncher=New-Object Windows.Forms.Button
+ $finalizeLauncher.Text=Translate 'finalizeLauncher'
+ $finalizeLauncher.SetBounds(18,265,335,29)
+ $nativeRoot=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..')).TrimEnd('')
+ $finalizeLauncher.Enabled=(
+  -not(Test-Path -LiteralPath (Join-Path $nativeRoot '.launcher-transaction')) -and
+  ((Test-Path -LiteralPath (Join-Path $nativeRoot '.launcher-previous')) -or
+   (Test-Path -LiteralPath (Join-Path $nativeRoot '.launcher-retired'))))
+ $dlg.Controls.Add($finalizeLauncher)
+ $finalizeLauncher.Add_Click({$dlg.Close();Begin-Action 'FinalizeLauncher'})
  $restore=New-Object Windows.Forms.Button
  $restore.Text=Translate 'rollback'
- $restore.SetBounds(18,306,335,28)
+ $restore.SetBounds(18,331,335,28)
  $restore.Enabled=($script:recoveryStatus -ceq 'Ready')
  $dlg.Controls.Add($restore)
  $repairRollback=New-Object Windows.Forms.Button
  $repairRollback.Text=Translate 'repair'
- $repairRollback.SetBounds(18,345,160,28)
+ $repairRollback.SetBounds(18,368,160,28)
  $repairRollback.Enabled=($script:recoveryStatus -ceq 'Repair rollback')
  $dlg.Controls.Add($repairRollback)
  $repairInstallButton=New-Object Windows.Forms.Button
  $repairInstallButton.Text=Translate 'repairInstall'
- $repairInstallButton.SetBounds(188,345,165,28)
+ $repairInstallButton.SetBounds(188,368,165,28)
  $repairInstallButton.Enabled=($script:recoveryStatus -ceq 'Repair install')
  $dlg.Controls.Add($repairInstallButton)
  $restore.Add_Click({$dlg.Close();Begin-Action 'Rollback'})
@@ -2086,6 +2121,16 @@ function Begin-Action([string]$action){
    (Translate 'confirmRollback'),
    (Translate 'confirmTitle'),[Windows.Forms.MessageBoxButtons]::YesNo,
    [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
+ }
+ if($action -eq 'FinalizeLauncher'){
+  $question=if($script:launcherLanguage -eq 'RU'){
+   'Удалить прежнюю версию Launcher? После завершения откат на неё станет невозможен. Текущие файлы будут сначала проверены.'
+  }else{
+   'Permanently release the previous Launcher backup? Rollback to that version will no longer be possible. Current files are verified first.'
+  }
+  if([Windows.Forms.MessageBox]::Show($form,$question,(Translate 'confirmTitle'),
+    [Windows.Forms.MessageBoxButtons]::YesNo,
+    [Windows.Forms.MessageBoxIcon]::Warning) -ne [Windows.Forms.DialogResult]::Yes){return}
  }
  if($action -eq 'PrepareLauncher'){
   $confirmation=if($script:launcherLanguage -eq 'RU'){
@@ -2280,9 +2325,12 @@ function Poll-WorkerState {
  if($script:child -and $script:child.HasExited){
   $reportText=''
   $finishedAction=$script:pendingAction
-  if($finishedAction -cin @('CheckLauncher','PrepareLauncher') -and $complete -and
+  if($finishedAction -cin @('CheckLauncher','PrepareLauncher','FinalizeLauncher') -and $complete -and
      $null -ne $snapshot -and [string]$snapshot.LauncherDetail){
-   $reportText=if($finishedAction -ceq 'PrepareLauncher'){
+   $reportText=if($finishedAction -ceq 'FinalizeLauncher'){
+    if($script:launcherLanguage -eq 'RU'){'Резервная копия Launcher удалена после проверки. Установленные файлы не изменены.'}
+    else{'Verified Launcher backup released. Installed files unchanged.'}
+   }elseif($finishedAction -ceq 'PrepareLauncher'){
     if($script:launcherLanguage -eq 'RU'){
      'Архив лаунчера загружен и проверен. Файлы приложения не изменены.'
     }else{'Launcher archive downloaded and verified. Installed files unchanged.'}
@@ -2312,7 +2360,7 @@ function Poll-WorkerState {
    return
   }
   if($reportText){
-   $reportTitle=if($finishedAction -cin @('CheckLauncher','PrepareLauncher')){'Dvinholm | Launcher updates'}else{'Dvinholm | Installed and available runtimes'}
+   $reportTitle=if($finishedAction -cin @('CheckLauncher','PrepareLauncher','FinalizeLauncher')){'Dvinholm | Launcher updates'}else{'Dvinholm | Installed and available runtimes'}
    [void][Windows.Forms.MessageBox]::Show($form,$reportText,
     $reportTitle,
     [Windows.Forms.MessageBoxButtons]::OK,
