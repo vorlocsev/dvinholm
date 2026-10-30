@@ -102,12 +102,12 @@ public sealed class UdsReadResultLifetimeTests
         var end = code.IndexOf("private void CancelUds_Click(", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
         var region = code[start..end];
-        var acquire = region.IndexOf("var resultGeneration = ClearDiagnosticReadResult()", StringComparison.Ordinal);
+        var acquire = region.IndexOf("resultGeneration = ClearDiagnosticReadResult()", StringComparison.Ordinal);
         var awaited = region.IndexOf("var data = await Task.Run(", StringComparison.Ordinal);
         var guard = region.IndexOf("if (!_udsResultLifetime.CanDisplay(resultGeneration))", StringComparison.Ordinal);
         var reveal = region.IndexOf("DiagnosticResultText.Text = presentation.Details", StringComparison.Ordinal);
         Assert.True(0 <= acquire && acquire < awaited && awaited < guard && guard < reveal);
-        Assert.Contains("Output discarded.", region);
+        Assert.DoesNotContain("SetStatus(", region[guard..reveal]);
         Assert.Contains("return;", region[guard..reveal]);
         Assert.Contains("SetStatus(presentation.Activity)", region);
         Assert.DoesNotContain("SetStatus(presentation.Details)", region);
