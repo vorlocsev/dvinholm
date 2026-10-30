@@ -136,8 +136,10 @@ internal static class VolvoP2ConfigDependencyResearch
             // undirected assertion; duplicate relationship kinds also fail.
             if (leftKnown && rightKnown && relationKnown)
             {
-                var left = claim.CandidateId;
-                var right = claim.RelatedCandidateId;
+                // leftKnown/rightKnown above already reject null and unknown IDs.
+                // The non-null assertion is confined to this guarded branch.
+                var left = claim.CandidateId!;
+                var right = claim.RelatedCandidateId!;
                 if (claim.Relation == VolvoP2ConfigDependencyRelation.PotentialConflict &&
                     string.CompareOrdinal(left, right) > 0)
                     (left, right) = (right, left);
