@@ -220,13 +220,15 @@ try{
   # installed files before treating this as a fully committed update.
   Verify-Commit $data
  }
+ # A registered attempt may also have stopped before the journal existed.
+ # In that case retry launches the unchanged original Launcher on next sign-in.
  # Restart must succeed BEFORE clearing the durable sign-in retry marker.
  # If the native EXE cannot start, the next sign-in can try again without
  # allowing arbitrary file changes, because the journal was verified first.
- if($SimulateRestartFailure -and ($hasTransaction -or $hasCommitted)){
+ if($SimulateRestartFailure){
   throw 'Simulated Launcher restart failure after verified recovery.'
  }
- if(($hasTransaction -or $hasCommitted) -and -not $OfflineFixture){
+ if(-not $OfflineFixture){
   Start-Process -FilePath (Join-Path $root 'Launcher.exe') -WorkingDirectory $root -ErrorAction Stop|Out-Null
  }
  # Nothing to recover before a journal is committed: no live file changed.
