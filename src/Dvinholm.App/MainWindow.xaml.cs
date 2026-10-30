@@ -2503,14 +2503,15 @@ public sealed partial class MainWindow : Window
         }
 
         using var cts = new CancellationTokenSource();
-        _udsCts = cts;
         long captureGeneration = 0;
         try
         {
-            // A snapshot owns the same input lifetime as the VIN/DID/DTC
-            // panel. Editing addresses, selecting another profile or pressing
-            // Cancel invalidates export eligibility before another await.
+            // Invalidate any previous diagnostic result before arming Cancel.
+            // Starting a snapshot itself is not a mid-flight context edit.
             captureGeneration = ClearDiagnosticReadResult();
+            _udsCts = cts;
+            // Editing addresses, selecting another profile or pressing
+            // Cancel invalidates export eligibility before another await.
             SetUdsEnabled(false);
             DiscoverButton.IsEnabled = false;
             ConnectButton.IsEnabled = false;
