@@ -66,15 +66,25 @@
             <Grid Grid.Row="0" ColumnSpacing="10">
                 <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="130"/><ColumnDefinition Width="130"/><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
                 <Button x:Name="DiscoverButton" Content="Discover ECUs" Click="Discover_Click" IsEnabled="False"/>
-                <ComboBox x:Name="EcuSelector" Grid.Column="1" PlaceholderText="Select ECU" SelectionChanged="EcuSelector_SelectionChanged"/>
+                <ComboBox x:Name="EcuSelector" Grid.Column="1" PlaceholderText="Observed response"
+                          IsEnabled="False" SelectionChanged="EcuSelector_SelectionChanged"
+                          ToolTipService.ToolTip="Selection does not send a request or verify the inferred request address."/>
                 <TextBlock x:Name="DiscoveryStatus" Grid.Column="2" VerticalAlignment="Center" Text="Not scanned"/>
                 <Button x:Name="CancelDiscoveryButton" Grid.Column="3" Content="Cancel scan" Click="CancelDiscovery_Click" IsEnabled="False"/>
             </Grid>
-            <ListView x:Name="EcusView" Grid.Row="1" Height="76" SelectionMode="Single" SelectionChanged="Ecu_SelectionChanged">
-                <ListView.Header><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Response"/><TextBlock Grid.Column="1" Text="Request"/><TextBlock Grid.Column="2" Text="Type"/><TextBlock Grid.Column="3" Text="Frames"/><TextBlock Grid.Column="4" Text="Max payload"/></Grid></ListView.Header>
-                <ListView.ItemTemplate><DataTemplate><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Response}"/><TextBlock Grid.Column="1" Text="{Binding Request}"/><TextBlock Grid.Column="2" Text="{Binding Type}"/><TextBlock Grid.Column="3" Text="{Binding Frames}"/><TextBlock Grid.Column="4" Text="{Binding MaxPayload}"/></Grid></DataTemplate></ListView.ItemTemplate>
+            <ListView x:Name="EcusView" Grid.Row="1" Height="76" SelectionMode="Single"
+                      IsEnabled="False" SelectionChanged="Ecu_SelectionChanged"
+                      ToolTipService.ToolTip="Passive response observations only. No verified ECU identity or request ID.">
+                <ListView.Header><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Observed RX"/><TextBlock Grid.Column="1" Text="Guessed TX"/><TextBlock Grid.Column="2" Text="Type"/><TextBlock Grid.Column="3" Text="Frames"/><TextBlock Grid.Column="4" Text="Max bytes / ID basis"/></Grid></ListView.Header>
+                <ListView.ItemTemplate><DataTemplate><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Response}"/><TextBlock Grid.Column="1" Text="{Binding Request}"/><TextBlock Grid.Column="2" Text="{Binding Type}"/><TextBlock Grid.Column="3" Text="{Binding Frames}"/><StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8"><TextBlock Text="{Binding MaxPayload}"/><TextBlock Text="{Binding RequestBasis}"/></StackPanel></Grid></DataTemplate></ListView.ItemTemplate>
             </ListView>
-            <Border Grid.Row="2" Padding="8" Margin="0" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
+            <ScrollViewer Grid.Row="2" MaxHeight="86" VerticalScrollBarVisibility="Auto"
+                          HorizontalScrollBarVisibility="Disabled">
+                <TextBlock x:Name="EcuSelectionInfo"
+                           Text="Passive scan only. Select a completed observation; verify and enter the request ID manually."
+                           TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+            </ScrollViewer>
+            <Border Grid.Row="3" Padding="8" Margin="0" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
                 <!-- Separate filtering from actions; keep the metadata scrollable
                      and the CAN monitor visible in a compact window. -->
                 <Grid RowSpacing="6">
@@ -166,6 +176,7 @@
             </Border>
             <Grid Grid.Row="3">
             <Grid.RowDefinitions>
+                <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="Auto"/>
                 <RowDefinition Height="*"/>
