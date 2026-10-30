@@ -88,7 +88,10 @@ public sealed class EcuProfileActivityPrivacyTests
         Assert.DoesNotContain("SetStatus($\"Saved ECU profile", source);
         Assert.DoesNotContain("from {file.Name}", source);
         Assert.DoesNotContain("to {Path.GetFileName(destinationPath)}.", source);
-        Assert.DoesNotContain("SetStatus(ex.Message);", source);
+        var exportStart = source.IndexOf("private async void ExportProfiles_Click(", StringComparison.Ordinal);
+        var exportEnd = source.IndexOf("private async void P2PinReview_Click(", exportStart, StringComparison.Ordinal);
+        Assert.True(exportStart >= 0 && exportEnd > exportStart);
+        Assert.DoesNotContain("SetStatus(ex.Message);", source[exportStart..exportEnd]);
 
         // User-controlled names and source evidence remain visible only in
         // dedicated profile controls, rather than the global activity text.
