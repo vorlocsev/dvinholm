@@ -125,13 +125,14 @@ function Verify-Commit($data) {
   throw 'Unsafe native recovery committed journal.'
  }
  $record=Get-Content -LiteralPath $journal -Raw|ConvertFrom-Json -ErrorAction Stop
- if([int]$record.Version -ne 1 -or @($record.Entries).Count -ne 16){
+ if([int]$record.Version -ne 1 -or @($record.Entries).Count -ne 17){
   throw 'Invalid committed native recovery journal.'
  }
  $names=@('Launcher.exe','Binaries/Updater-Banner.ps1',
   'Binaries/Launcher-AuroraTheme.ps1','Binaries/Launcher-ServiceCockpit.ps1',
   'Binaries/Launcher-ReleaseDiscovery.ps1','Binaries/Launcher-VerifiedDownload.ps1',
-  'Binaries/Launcher-ApplyPrepared.ps1','Binaries/J2534-DriverManager.ps1',
+  'Binaries/Launcher-ApplyPrepared.ps1','Binaries/Launcher-RebootRecovery.ps1',
+  'Binaries/J2534-DriverManager.ps1',
   'Binaries/J2534-DriverUI.ps1','Binaries/Manage-Lite-Dependencies.ps1',
   'Binaries/Dvinholm-icon.png','Binaries/dvinholm-banner.webp',
   'Binaries/launcher-service-cockpit-banner.jpg',
