@@ -73,7 +73,7 @@ function Invoke-LauncherWorker {
  $mutex=[Threading.Mutex]::new($false,$mutexName)
  $owned=$false
  try{
-  try{$owned=$mutex.WaitOne(0)}catch[Threading.AbandonedMutexException]{$owned=$true}
+  try{$owned=$mutex.WaitOne(0)}catch [Threading.AbandonedMutexException]{$owned=$true}
   if(-not $owned){throw 'Another native Launcher replacement is already running.'}
   Assert-PreparedLauncherArchive -ZipPath $archive -SumsPath $manifest -ZipSha256 $ExpectedZipSha256 -SumsSha256 $ExpectedSumsSha256 -ExpectedTag $ExpectedTag -StageDirectory $validation|Out-Null
   # Must wait for the PowerShell GUI PID, not the short-lived native EXE.
