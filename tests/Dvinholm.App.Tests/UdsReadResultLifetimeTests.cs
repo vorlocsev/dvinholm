@@ -107,7 +107,7 @@ public sealed class UdsReadResultLifetimeTests
         var guard = region.IndexOf("if (!_udsResultLifetime.CanDisplay(resultGeneration))", StringComparison.Ordinal);
         var reveal = region.IndexOf("DiagnosticResultText.Text = presentation.Details", StringComparison.Ordinal);
         Assert.True(0 <= acquire && acquire < awaited && awaited < guard && guard < reveal);
-        Assert.Contains("Output discarded.", region);
+        Assert.DoesNotContain("SetStatus(", region[guard..reveal]);
         Assert.Contains("return;", region[guard..reveal]);
         Assert.Contains("SetStatus(presentation.Activity)", region);
         Assert.DoesNotContain("SetStatus(presentation.Details)", region);
