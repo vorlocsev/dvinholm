@@ -3135,51 +3135,51 @@ public sealed partial class MainWindow : Window
 
         try
         {
-        var bus = _session.Bus;
-        if (_activeHardwareFilterId is uint activeFilterId)
-        {
-            if (!bus.StopCanFilter(activeFilterId, out var stopError))
+            var bus = _session.Bus;
+            if (_activeHardwareFilterId is uint activeFilterId)
             {
-                SetStatus(J2534PublicFailureActivity.Message(J2534PublicFailure.FilterRemoveRejected));
+                if (!bus.StopCanFilter(activeFilterId, out _))
+                {
+                    SetStatus(J2534PublicFailureActivity.Message(J2534PublicFailure.FilterRemoveRejected));
+                    return;
+                }
+
+                _activeHardwareFilterId = null;
+                HardwareFilterButton.Content = "Apply HW filter";
+                SetStatus("J2534 hardware filter removed.");
                 return;
             }
 
-            _activeHardwareFilterId = null;
-            HardwareFilterButton.Content = "Apply HW filter";
-            SetStatus("J2534 hardware filter removed.");
-            return;
-        }
+            if (CanIdFormat.SelectedIndex is not (0 or 1))
+            {
+                SetStatus("Select 11-bit or 29-bit CAN ID format before applying a hardware filter.");
+                return;
+            }
 
-        if (CanIdFormat.SelectedIndex is not (0 or 1))
-        {
-            SetStatus("Select 11-bit or 29-bit CAN ID format before applying a hardware filter.");
-            return;
-        }
+            // A multi-ID query is a display filter only. J2534 hardware filters
+            // are deliberately restricted to one exact arbitration identifier.
+            if (IdFilter.Text.Contains(','))
+            {
+                SetStatus("Hardware filter requires one CAN ID; comma-separated IDs are software-only.");
+                return;
+            }
 
-        // A multi-ID query is a display filter only. J2534 hardware filters
-        // are deliberately restricted to one exact arbitration identifier.
-        if (IdFilter.Text.Contains(','))
-        {
-            SetStatus("Hardware filter requires one CAN ID; comma-separated IDs are software-only.");
-            return;
-        }
+            var extended = CanIdFormat.SelectedIndex == 1;
+            if (!TryParseCanId(IdFilter.Text, extended, out var id, out var parseError))
+            {
+                SetStatus(parseError);
+                return;
+            }
 
-        var extended = CanIdFormat.SelectedIndex == 1;
-        if (!TryParseCanId(IdFilter.Text, extended, out var id, out var parseError))
-        {
-            SetStatus(parseError);
-            return;
-        }
+            if (!bus.StartCanIdFilter(id, extended, out var filterId, out _))
+            {
+                SetStatus(J2534PublicFailureActivity.Message(J2534PublicFailure.FilterApplyRejected));
+                return;
+            }
 
-        if (!bus.StartCanIdFilter(id, extended, out var filterId, out var startError))
-        {
-            SetStatus(J2534PublicFailureActivity.Message(J2534PublicFailure.FilterApplyRejected));
-            return;
-        }
-
-        _activeHardwareFilterId = filterId;
-        HardwareFilterButton.Content = "Remove HW filter";
-        SetStatus($"J2534 hardware filter active for 0x{id:X} ({(extended ? "29-bit" : "11-bit")}).");
+            _activeHardwareFilterId = filterId;
+            HardwareFilterButton.Content = "Remove HW filter";
+            SetStatus($"J2534 hardware filter active for 0x{id:X} ({(extended ? "29-bit" : "11-bit")}).");
         }
         catch (Exception)
         {
