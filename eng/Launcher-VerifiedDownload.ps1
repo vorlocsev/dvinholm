@@ -135,3 +135,151 @@ function Prepare-NativeLauncher {
   Save-State
  }
 }
+
+
+# Explicit local storage maintenance. No network calls, execution of staged
+# members, replacement of installed files or automatic startup deletion.
+$launcherStorageFiles=@(
+ 'Launcher.exe',
+ 'Binaries/Updater-Banner.ps1',
+ 'Binaries/Launcher-AuroraTheme.ps1',
+ 'Binaries/Launcher-ServiceCockpit.ps1',
+ 'Binaries/Launcher-ReleaseDiscovery.ps1',
+ 'Binaries/Launcher-VerifiedDownload.ps1',
+ 'Binaries/Launcher-ApplyPrepared.ps1',
+ 'Binaries/J2534-DriverManager.ps1',
+ 'Binaries/J2534-DriverUI.ps1',
+ 'Binaries/Manage-Lite-Dependencies.ps1',
+ 'Binaries/Dvinholm-icon.png',
+ 'Binaries/dvinholm-banner.webp',
+ 'Binaries/launcher-service-cockpit-banner.jpg',
+ 'Binaries/Assert-LauncherSelfUpdatePackage.ps1',
+ 'Binaries/Invoke-LauncherReplacement.ps1',
+ 'Binaries/launcher-build.txt'
+)
+function Assert-NativeCleanupFolder([string]$path) {
+ $p=[IO.Path]::GetFullPath($path)
+ while($p){
+  if(Test-Path -LiteralPath $p){
+   $item=Get-Item -LiteralPath $p -Force
+   if(-not $item.PSIsContainer -or
+      ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){
+    throw 'Unsafe native Launcher storage directory.'
+   }
+  }
+  $next=[IO.Path]::GetDirectoryName($p)
+  if(-not $next -or $next -ceq $p){break}
+  $p=$next
+ }
+}
+function Assert-NativeCleanupTree([string]$folder) {
+ Assert-NativeCleanupFolder $folder
+ if(-not(Test-Path -LiteralPath $folder -PathType Container)){
+  throw 'Native Launcher cleanup target is not an ordinary directory.'
+ }
+ $allowed=[Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+ foreach($name in @('Dvinholm-Updater-Banner-Windows-x86.zip','SHA256SUMS.txt','prepared.json','staged','staged/Binaries')){
+  [void]$allowed.Add($name.Replace('/','\'))
+ }
+ foreach($name in $launcherStorageFiles){
+  [void]$allowed.Add(('staged/'+$name).Replace('/','\'))
+ }
+ $entries=@(Get-ChildItem -LiteralPath $folder -Recurse -Force -ErrorAction Stop)
+ if($entries.Count -gt 45){throw 'Native Launcher cleanup directory has too many entries.'}
+ $total=[long]0
+ foreach($item in $entries){
+  if(($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){
+   throw 'Native Launcher cleanup refuses reparse points.'
+  }
+  $rel=$item.FullName.Substring($folder.Length).TrimStart('\')
+  if(-not $allowed.Contains($rel)){
+   throw ('Native Launcher cleanup refuses unexpected entry: '+$rel)
+  }
+  if(-not $item.PSIsContainer){
+   $total+=[long]$item.Length
+   if($item.Length -gt 2MB -or $total -gt 8MB){
+    throw 'Native Launcher cleanup size budget exceeded.'
+   }
+  }
+ }
+}
+function Invoke-NativeLauncherStorageCleanup {
+ [CmdletBinding()]
+ param(
+  [Parameter(Mandatory)][string]$StorageRoot,
+  [Parameter(Mandatory)][ValidateSet('Development','Stable')][string]$SelectedChannel,
+  [Parameter(Mandatory)][string]$InstalledBuild,
+  [Parameter(Mandatory)][string]$InstallationDirectory,
+  [datetime]$NowUtc=[DateTime]::UtcNow
+ )
+ $channelFolder=Join-Path $StorageRoot $SelectedChannel
+ Assert-NativeCleanupFolder $StorageRoot
+ Assert-NativeCleanupFolder $channelFolder
+ if(-not(Test-Path -LiteralPath $channelFolder -PathType Container)){
+  return [pscustomobject]@{Discarded=0;ObsoletePrepared=0;Preserved=0}
+ }
+ # Serialize with installation/undo/finalize worker. Reuse exactly the
+ # installation-scoped mutex name used by Launcher-ApplyPrepared.ps1.
+ $install=[IO.Path]::GetFullPath($InstallationDirectory).TrimEnd('\')
+ $sha=[Security.Cryptography.SHA256]::Create()
+ try{$digest=$sha.ComputeHash([Text.Encoding]::UTF8.GetBytes($install.ToLowerInvariant()))}
+ finally{$sha.Dispose()}
+ $key=([BitConverter]::ToString($digest)-replace '-','').Substring(0,24)
+ $mutex=[Threading.Mutex]::new($false,('Local\Dvinholm.NativeLauncher.'+$key))
+ $owned=$false
+ $discarded=0;$obsolete=0;$preserved=0
+ try{
+  try{$owned=$mutex.WaitOne(0)}catch [Threading.AbandonedMutexException]{$owned=$true}
+  if(-not $owned){throw 'Native Launcher update is active. Cleanup blocked.'}
+  $directories=@(Get-ChildItem -LiteralPath $channelFolder -Directory -Force -ErrorAction Stop)
+  foreach($dir in $directories){
+   if(($dir.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){
+    throw 'Native Launcher storage contains a directory link.'
+   }
+   $name=[string]$dir.Name
+   $ready=($name -ceq 'prepared')
+   $oldDownload=($name -cmatch '^download-[0-9a-f]{32}$' -and
+      $dir.LastWriteTimeUtc -lt $NowUtc.ToUniversalTime().AddHours(-48))
+   $discard=($name -cmatch '^discard-[0-9a-f]{32}$')
+   $targetObsolete=$false
+   if($ready){
+    $recordPath=Join-Path $dir.FullName 'prepared.json'
+    if(Test-Path -LiteralPath $recordPath -PathType Leaf){
+     $recordItem=Get-Item -LiteralPath $recordPath -Force
+     if($recordItem.Length -gt 0 -and $recordItem.Length -le 4096 -and
+        ($recordItem.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0){
+      try{
+       $receipt=Get-Content -LiteralPath $recordPath -Raw -ErrorAction Stop|ConvertFrom-Json -ErrorAction Stop
+       if([string]$receipt.Channel -ceq $SelectedChannel -and
+          [string]$receipt.Tag -cmatch '^(?:ci-[1-9][0-9]{0,8}|v[0-9]+\.[0-9]+\.[0-9]+)$'){
+        $relation=Get-LauncherBuildRelation $SelectedChannel $InstalledBuild ([string]$receipt.Tag)
+        # No missing or unverified installed build can retire a usable update.
+        $targetObsolete=($relation -cin @('Current','Installed build newer'))
+       }
+      }catch{}
+     }
+    }
+   }
+   if(-not($oldDownload -or $discard -or $targetObsolete)){
+    $preserved++
+    continue
+   }
+   Assert-NativeCleanupTree $dir.FullName
+   if(-not $discard){
+    $newName= 'discard-'+[guid]::NewGuid().ToString('N')
+    $newPath=Join-Path $channelFolder $newName
+    Move-Item -LiteralPath $dir.FullName -Destination $newPath -ErrorAction Stop
+   }else{$newPath=$dir.FullName}
+   # If deletion is interrupted, the bounded discard-* directory is safe
+   # to inspect and retry explicitly on the next launch.
+   Assert-NativeCleanupTree $newPath
+   Remove-Item -LiteralPath $newPath -Recurse -Force -ErrorAction Stop
+   $discarded++
+   if($targetObsolete){$obsolete++}
+  }
+  return [pscustomobject]@{Discarded=$discarded;ObsoletePrepared=$obsolete;Preserved=$preserved}
+ }finally{
+  if($owned){$mutex.ReleaseMutex()}
+  $mutex.Dispose()
+ }
+}
