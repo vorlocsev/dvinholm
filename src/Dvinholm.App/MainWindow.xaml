@@ -54,7 +54,7 @@
                 <ComboBoxItem Content="11-bit" Tag="standard"/>
                 <ComboBoxItem Content="29-bit" Tag="extended"/>
             </ComboBox>
-            <TextBox x:Name="UdsDid" Grid.Column="3" Header="DID (hex)" Text="F190" PlaceholderText="e.g. F190"/>
+            <TextBox x:Name="UdsDid" Grid.Column="3" Header="DID (hex)" Text="F190" PlaceholderText="e.g. F190" TextChanged="UdsDid_TextChanged"/>
             <Button Grid.Column="4" Content="Read DID" Click="ReadDid_Click" VerticalAlignment="Bottom" x:Name="ReadDidButton" IsEnabled="False"/>
             <Button x:Name="ReadVinButton" Grid.Column="5" Content="Read VIN" IsEnabled="False" Click="ReadVin_Click" VerticalAlignment="Bottom"/>
             <Button x:Name="ReadDtcButton" Grid.Column="6" Content="Read DTC" IsEnabled="False" Click="ReadDtc_Click" VerticalAlignment="Bottom"/>
@@ -224,6 +224,11 @@
                                    FontFamily="Consolas"/>
                     </ScrollViewer>
                 </Expander>
+                <Button x:Name="ClearDiagnosticResultButton"
+                        Content="Clear diagnostic result"
+                        HorizontalAlignment="Right"
+                        Click="ClearDiagnosticResult_Click"
+                        ToolTipService.ToolTip="Clear the last VIN/DID/DTC payload and ignore any pending result. Does not contact the ECU."/>
                 <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <TextBlock x:Name="StatusText" Text="Disconnected" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
                 </ScrollViewer>

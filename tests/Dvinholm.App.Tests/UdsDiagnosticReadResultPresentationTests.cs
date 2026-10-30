@@ -120,8 +120,10 @@ public sealed class UdsDiagnosticReadResultPresentationTests
         var end = code.IndexOf("private void CancelUds_Click(", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
         var region = code[start..end];
-        Assert.Contains("DiagnosticResultText.Text = UdsDiagnosticReadResultPresentation.NoCompletedResult", region);
-        Assert.Contains("DiagnosticResultExpander.IsExpanded = false", region);
+        Assert.Contains("var resultGeneration = ClearDiagnosticReadResult()", region);
+        Assert.Contains("if (!_udsResultLifetime.CanDisplay(resultGeneration))", region);
+        Assert.Contains("DiagnosticResultText.Text = UdsDiagnosticReadResultPresentation.NoCompletedResult", code);
+        Assert.Contains("DiagnosticResultExpander.IsExpanded = false", code);
         Assert.Contains("DiagnosticResultText.Text = presentation.Details", region);
         Assert.Contains("DiagnosticResultExpander.IsExpanded = true", region);
         Assert.Contains("SetStatus(presentation.Activity)", region);

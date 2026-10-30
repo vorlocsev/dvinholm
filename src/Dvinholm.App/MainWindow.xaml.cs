@@ -38,6 +38,7 @@ public sealed partial class MainWindow : Window
     private Task<IReadOnlyList<UdsEcuCandidate>>? _discoveryTask;
     private CancellationTokenSource? _udsCts;
     private readonly ObservableCollection<EcuRow> _ecus = new();
+    private readonly UdsReadResultLifetime _udsResultLifetime = new();
     private bool _ecuScanComplete;
     private EcuProfileCatalog _profileCatalog = new();
     private bool _snapshotInspectionBusy;
@@ -226,6 +227,7 @@ public sealed partial class MainWindow : Window
 
     private void DashboardReturn_Click(object sender, RoutedEventArgs e)
     {
+        ClearDiagnosticReadResult();
         AuroraWorkspaceHost.Visibility = Visibility.Collapsed;
         AuroraLanding.Visibility = Visibility.Visible;
         RefreshDashboardSummary();
@@ -2096,6 +2098,7 @@ public sealed partial class MainWindow : Window
         ConnectButton.IsEnabled = false;
         SetUdsEnabled(false);
         DiscoveryStatus.Text = "Scanning...";
+        ClearDiagnosticReadResult();
         ClearPassiveDiscoverySelection();
 
         try
@@ -2213,6 +2216,8 @@ public sealed partial class MainWindow : Window
             !ReferenceEquals(_ecus[index], row))
             return;
 
+        // Selection invalidates any read result of the prior response ID.
+        ClearDiagnosticReadResult();
         // The passive scan only observed the RX ID; the inferred TX ID
         // stays BLANK until independently verified and manually entered.
         UdsRequestId.Text = string.Empty;
@@ -2233,11 +2238,40 @@ public sealed partial class MainWindow : Window
         RefreshSnapshotCaptureAvailability();
     }
 
-    private void SnapshotCanIdTextChanged(object sender, TextChangedEventArgs e) =>
-        RefreshSnapshotCaptureAvailability();
+    private long ClearDiagnosticReadResult()
+    {
+        // All handlers below run on the UI dispatcher. Invalidate the in-flight
+        // generation before clearing so a late UDS completion cannot redisplay
+        // sensitive VIN, DID bytes or DTCs under changed ECU inputs.
+        var generation = _udsResultLifetime.Invalidate();
+        if (DiagnosticResultText is not null && DiagnosticResultExpander is not null)
+        {
+            DiagnosticResultText.Text = UdsDiagnosticReadResultPresentation.NoCompletedResult;
+            DiagnosticResultExpander.IsExpanded = false;
+        }
+        return generation;
+    }
 
-    private void SnapshotCanIdFormatChanged(object sender, SelectionChangedEventArgs e) =>
+    private void ClearDiagnosticResult_Click(object sender, RoutedEventArgs e)
+    {
+        ClearDiagnosticReadResult();
+        SetStatus("Diagnostic result cleared. Pending output will be discarded; no ECU command sent.");
+    }
+
+    private void SnapshotCanIdTextChanged(object sender, TextChangedEventArgs e)
+    {
+        ClearDiagnosticReadResult();
         RefreshSnapshotCaptureAvailability();
+    }
+
+    private void SnapshotCanIdFormatChanged(object sender, SelectionChangedEventArgs e)
+    {
+        ClearDiagnosticReadResult();
+        RefreshSnapshotCaptureAvailability();
+    }
+
+    private void UdsDid_TextChanged(object sender, TextChangedEventArgs e) =>
+        ClearDiagnosticReadResult();
 
     private bool CanCaptureSelectedSnapshot(EcuProfile? profile, bool busy)
     {
@@ -2591,11 +2625,9 @@ public sealed partial class MainWindow : Window
 
         try
         {
-            // Invalidate a previous result before any connection check.
-            // A failed/cancelled attempt must not leave stale VIN or DID
-            // bytes appearing to belong to the new request.
-            DiagnosticResultText.Text = UdsDiagnosticReadResultPresentation.NoCompletedResult;
-            DiagnosticResultExpander.IsExpanded = false;
+            // Each request owns a generation of diagnostic input context.
+            // A failed/cancelled attempt cannot retain an old result.
+            var resultGeneration = ClearDiagnosticReadResult();
             if (!TryGetUdsClient(out var client, out var error) || client is null)
             {
                 SetStatus(error);
@@ -2613,6 +2645,13 @@ public sealed partial class MainWindow : Window
             SetStatus(operation + "...");
 
             var data = await Task.Run(() => action(client, cts.Token));
+            // Users may edit request/response IDs, DID or CAN format, or press
+            // Clear while the asynchronous read is still running.
+            if (!_udsResultLifetime.CanDisplay(resultGeneration))
+            {
+                SetStatus(operation + " finished, but inputs changed or the result was cleared. Output discarded.");
+                return;
+            }
             // Data is displayed ONLY in the explicit result panel. SetStatus
             // also updates Aurora last-event, so never forward payload there.
             var presentation = UdsDiagnosticReadResultPresentation.Completed(kind, data);
@@ -2698,6 +2737,7 @@ public sealed partial class MainWindow : Window
                 }
             }
 
+            ClearDiagnosticReadResult();
             ConnectButton.IsEnabled = false;
             HardwareFilterButton.IsEnabled = false;
             StartButton.IsEnabled = false;
@@ -2769,6 +2809,7 @@ public sealed partial class MainWindow : Window
 #endif
 
         var dllPath = DllPath.Text.Trim();
+        ClearDiagnosticReadResult();
         ConnectButton.IsEnabled = false;
         StartButton.IsEnabled = false;
         SetUdsEnabled(false);
