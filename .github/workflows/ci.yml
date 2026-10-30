@@ -37,7 +37,7 @@ jobs:
       - name: Parse Windows PowerShell 5.1 distribution scripts
         shell: powershell
         run: |
-          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Manage-Lite-Dependencies.ps1', 'eng/Updater-Banner.ps1', 'eng/Launcher-AuroraTheme.ps1', 'eng/Launcher-ServiceCockpit.ps1', 'eng/Launcher-ReleaseDiscovery.ps1', 'eng/Test-LauncherReleaseDiscovery.ps1', 'eng/Launcher-VerifiedDownload.ps1', 'eng/Test-LauncherVerifiedDownload.ps1', 'eng/Test-LauncherStorageCleanup.ps1', 'eng/Launcher-ApplyPrepared.ps1', 'eng/Test-LauncherApplyPrepared.ps1', 'eng/Launcher-RebootRecovery.ps1', 'eng/Test-LauncherRebootRecovery.ps1', 'eng/Test-LauncherBackupFinalization.ps1', 'eng/J2534-DriverManager.ps1', 'eng/J2534-DriverUI.ps1', 'eng/Package-Updater-Banner.ps1', 'eng/Build-Launchers.ps1', 'eng/New-LauncherIcon.ps1', 'eng/Test-NativeLauncherIcons.ps1', 'eng/Assert-LauncherSelfUpdatePackage.ps1', 'eng/Test-LauncherSelfUpdatePackage.ps1', 'eng/Invoke-LauncherReplacement.ps1', 'eng/Test-LauncherReplacement.ps1', 'eng/Package-Launchable-Lite.ps1', 'eng/Test-Launchable-Lite.ps1', 'eng/Test-PackagedUpdaterBanner.ps1', 'eng/Test-LiteBundledPreflight.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
+          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Manage-Lite-Dependencies.ps1', 'eng/Updater-Banner.ps1', 'eng/Launcher-AuroraTheme.ps1', 'eng/Launcher-ServiceCockpit.ps1', 'eng/Launcher-ReleaseDiscovery.ps1', 'eng/Test-LauncherReleaseDiscovery.ps1', 'eng/Launcher-VerifiedDownload.ps1', 'eng/Test-LauncherVerifiedDownload.ps1', 'eng/Test-LauncherStorageCleanup.ps1', 'eng/Launcher-ApplyPrepared.ps1', 'eng/Test-LauncherApplyPrepared.ps1', 'eng/Launcher-RebootRecovery.ps1', 'eng/Test-LauncherRebootRecovery.ps1', 'eng/Test-LauncherRecoveryProcesses.ps1', 'eng/Test-LauncherBackupFinalization.ps1', 'eng/J2534-DriverManager.ps1', 'eng/J2534-DriverUI.ps1', 'eng/Package-Updater-Banner.ps1', 'eng/Build-Launchers.ps1', 'eng/New-LauncherIcon.ps1', 'eng/Test-NativeLauncherIcons.ps1', 'eng/Assert-LauncherSelfUpdatePackage.ps1', 'eng/Test-LauncherSelfUpdatePackage.ps1', 'eng/Invoke-LauncherReplacement.ps1', 'eng/Test-LauncherReplacement.ps1', 'eng/Package-Launchable-Lite.ps1', 'eng/Test-Launchable-Lite.ps1', 'eng/Test-PackagedUpdaterBanner.ps1', 'eng/Test-LiteBundledPreflight.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
             $tokens = $null
             $syntaxErrors = $null
             [System.Management.Automation.Language.Parser]::ParseFile(
@@ -198,6 +198,13 @@ jobs:
       - name: Verify native Launcher next-sign-in recovery offline
         shell: powershell
         run: ./eng/Test-LauncherRebootRecovery.ps1 -ZipPath artifacts/Dvinholm-Updater-Banner-Windows-x86.zip -ExpectedTag "ci-${{ github.run_number }}"
+
+      # Eight subprocess tests on the real Windows PowerShell 5.1 host.
+      # One dedicated HKCU Run registry entry is scoped to the isolated
+      # runner fixture and removed in finally, even when validation fails.
+      - name: Verify native Launcher recovery across real Windows processes
+        shell: powershell
+        run: ./eng/Test-LauncherRecoveryProcesses.ps1 -ZipPath artifacts/Dvinholm-Updater-Banner-Windows-x86.zip -ExpectedTag "ci-${{ github.run_number }}"
 
       # Explicit post-update backup retirement, no live installation touched.
       - name: Verify native Launcher backup finalization offline
