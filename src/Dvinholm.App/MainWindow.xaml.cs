@@ -2476,6 +2476,14 @@ public sealed partial class MainWindow : Window
     }
 
 #endif
+    private bool IsSnapshotContextCurrent(EcuProfile? startedProfile, long generation) =>
+        EcuSnapshotOperationContext.IsCurrent(
+            startedProfile,
+            ProfileSelector.SelectedItem as EcuProfile,
+            generation,
+            _udsResultLifetime.Generation,
+            CanCaptureSelectedSnapshot(startedProfile, busy: false));
+
     private async void CaptureSnapshot_Click(object sender, RoutedEventArgs e)
     {
         var profile = ProfileSelector.SelectedItem as EcuProfile;
@@ -2496,8 +2504,13 @@ public sealed partial class MainWindow : Window
 
         using var cts = new CancellationTokenSource();
         _udsCts = cts;
+        long captureGeneration = 0;
         try
         {
+            // A snapshot owns the same input lifetime as the VIN/DID/DTC
+            // panel. Editing addresses, selecting another profile or pressing
+            // Cancel invalidates export eligibility before another await.
+            captureGeneration = ClearDiagnosticReadResult();
             SetUdsEnabled(false);
             DiscoverButton.IsEnabled = false;
             ConnectButton.IsEnabled = false;
@@ -2523,16 +2536,17 @@ public sealed partial class MainWindow : Window
 
             if (await consent.ShowAsync() != ContentDialogResult.Primary)
             {
-                SetStatus("ECU snapshot cancelled. No diagnostic request was sent.");
+                if (IsSnapshotContextCurrent(profile, captureGeneration))
+                    SetStatus("ECU snapshot cancelled. No diagnostic request was sent.");
                 return;
             }
 
             cts.Token.ThrowIfCancellationRequested();
-            if (_closing || !_connected ||
-                !ReferenceEquals(ProfileSelector.SelectedItem, profile) ||
-                !CanCaptureSelectedSnapshot(profile, busy: false))
+            if (!IsSnapshotContextCurrent(profile, captureGeneration))
             {
-                SetStatus("ECU snapshot cancelled: session, profile or CAN addressing changed.");
+                // The newer input activity must win over this old operation.
+                if (_udsResultLifetime.CanDisplay(captureGeneration))
+                    SetStatus("ECU snapshot cancelled: session, profile or CAN addressing changed.");
                 return;
             }
 
@@ -2548,9 +2562,10 @@ public sealed partial class MainWindow : Window
                 EcuConfigurationReadback.Capture(profile!, udsClient, cts.Token));
 
             cts.Token.ThrowIfCancellationRequested();
-            if (_closing || !_connected)
+            if (!IsSnapshotContextCurrent(profile, captureGeneration))
             {
-                SetStatus("ECU snapshot discarded because the session closed.");
+                if (_udsResultLifetime.CanDisplay(captureGeneration))
+                    SetStatus("ECU snapshot discarded because the session or profile changed.");
                 return;
             }
 
@@ -2560,34 +2575,45 @@ public sealed partial class MainWindow : Window
                 "ecu-did-snapshot", ".json", "JSON");
             if (destinationPath is null)
             {
-                SetStatus("ECU DID snapshot read, but export was cancelled. No file was saved.");
+                if (IsSnapshotContextCurrent(profile, captureGeneration))
+                    SetStatus("ECU DID snapshot read, but export was cancelled. No file was saved.");
                 return;
             }
 
             cts.Token.ThrowIfCancellationRequested();
-            if (_closing || !_connected)
+            if (!IsSnapshotContextCurrent(profile, captureGeneration))
             {
-                SetStatus("ECU snapshot export cancelled because the session closed.");
+                if (_udsResultLifetime.CanDisplay(captureGeneration))
+                    SetStatus("ECU snapshot export cancelled because the session or profile changed.");
                 return;
             }
 
+            // No file write begins after the UI context changes. Export is
+            // atomic, but once its write starts, a later cancellation cannot
+            // promise to undo a committed file on disk.
             await EcuConfigurationSnapshotExport.SaveToUserSelectedPathAsync(
                 snapshot, destinationPath, AppContext.BaseDirectory,
                 userApprovedSensitiveExport: true);
-            SetStatus($"Read {snapshot.Values.Count} ECU DID(s) and saved a sensitive diagnostic snapshot to {Path.GetFileName(destinationPath)}. Not a restorable backup.");
+            if (IsSnapshotContextCurrent(profile, captureGeneration))
+                SetStatus($"Read {snapshot.Values.Count} ECU DID(s) and saved a sensitive diagnostic snapshot to the selected file. Not a restorable backup.");
         }
         catch (OperationCanceledException)
         {
-            SetStatus("ECU DID snapshot cancelled. No file was saved.");
+            if (_udsResultLifetime.CanDisplay(captureGeneration))
+                SetStatus("ECU DID snapshot cancelled. Check the selected file if saving had started.");
         }
         catch (UdsNegativeResponseException ex)
         {
-            SetStatus("ECU DID snapshot rejected: " + ex.Message);
+            if (_udsResultLifetime.CanDisplay(captureGeneration))
+                SetStatus("ECU snapshot " +
+                    UdsDiagnosticReadResultPresentation.Error(UdsReadResultKind.Did, ex));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            SetStatus("ECU snapshot read/export failed: " +
-                FormatSafeException(ex, "check the selected profile, adapter and destination."));
+            // Never copy vendor, transport, local path or raw ECU exception
+            // messages to the global status / Aurora home activity.
+            if (_udsResultLifetime.CanDisplay(captureGeneration))
+                SetStatus("ECU snapshot read/export failed. Check adapter, profile and destination.");
         }
         finally
         {
