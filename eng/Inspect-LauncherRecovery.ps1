@@ -90,6 +90,7 @@ $startup=Read-RunEntry
 $hasRun=($startup.Length -gt 0)
 $checkpoints=New-Object Collections.Generic.List[object]
 $invalidWorkers=0
+$auditEntries=New-Object Collections.Generic.List[object]
 if(Test-Path -LiteralPath $handoff -PathType Container){
  $folders=@(Get-ChildItem -LiteralPath $handoff -Directory -Force -ErrorAction Stop)
  if($folders.Count -gt 128){throw 'Too many native Launcher handoff folders for bounded inspection.'}
@@ -98,6 +99,29 @@ if(Test-Path -LiteralPath $handoff -PathType Container){
   if(($worker.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){
    $invalidWorkers++
    continue
+  }
+  # Optional outcome receipts never influence trust or repair decisions.
+  # A partial/invalid file is ignored; no raw exception details are shown.
+  $auditFile=Join-Path $worker.FullName 'recovery-last.json'
+  if(Plain-File $auditFile 2048){
+   try{
+    $audit=Get-Content -LiteralPath $auditFile -Raw -ErrorAction Stop|
+     ConvertFrom-Json -ErrorAction Stop
+    if([int]$audit.Version -eq 1 -and
+       [string]$audit.InstallationKey -ceq $token -and
+       [string]$audit.AttemptUtc -cmatch '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$' -and
+       [string]$audit.Outcome -cin @('Started','Succeeded','Blocked') -and
+       [string]$audit.Code -cin @('AttemptStarted','RollbackRestored',
+        'CommittedVerified','NoTransaction','StartupMismatch',
+        'CheckpointInvalid','BackupCorrupt','CommittedMismatch',
+        'UpdaterBusy','ApplicationRunning','RestartFailed','UnexpectedError')){
+     $auditEntries.Add([pscustomobject]@{
+      AttemptUtc=[string]$audit.AttemptUtc
+      Outcome=[string]$audit.Outcome
+      Code=[string]$audit.Code
+     })
+    }
+   }catch{}
   }
   $recordPath=Join-Path $worker.FullName 'launcher-recovery.json'
   if(-not(Test-Path -LiteralPath $recordPath)){continue}
@@ -157,6 +181,10 @@ if($hasTxn){
  $status='Clean'
  $detail='No native update transaction, committed backup or startup recovery registration.'
 }
+$recentAudit=$null
+if($auditEntries.Count -gt 0){
+ $recentAudit=@($auditEntries|Sort-Object -Property AttemptUtc -Descending)[0]
+}
 $report=[ordered]@{
  Status=$status
  Detail=$detail
@@ -167,6 +195,9 @@ $report=[ordered]@{
  StartupEntryPresent=[bool]$hasRun
  MatchingCheckpointCount=[int]$checkpoints.Count
  CheckpointTrusted=[bool]$trusted
+ LastAttemptUtc=$(if($null -ne $recentAudit){[string]$recentAudit.AttemptUtc}else{''})
+ LastAttemptOutcome=$(if($null -ne $recentAudit){[string]$recentAudit.Outcome}else{'NotRecorded'})
+ LastAttemptCode=$(if($null -ne $recentAudit){[string]$recentAudit.Code}else{'NotRecorded'})
 }
 if($Format -ceq 'Text'){
  Write-Output ("Native Launcher recovery: "+$status)
@@ -174,6 +205,8 @@ if($Format -ceq 'Text'){
  Write-Output $detail
  Write-Output ("Transaction: "+$hasTxn+"; backup: "+$hasPrev+
   "; retirement: "+$hasRetired+"; Run entry: "+$hasRun)
+ Write-Output ("Last sign-in recovery: "+[string]$report.LastAttemptOutcome+
+  " / "+[string]$report.LastAttemptCode+" / "+[string]$report.LastAttemptUtc)
 }else{
  $report|ConvertTo-Json -Compress
 }

@@ -2360,6 +2360,35 @@ function Format-LauncherCheckReport($snapshot) {
   'Статус: '+$ru+[Environment]::NewLine+
   'Проверены только сведения о релизе. Файлы не изменены.')
 }
+function Format-LauncherAuditSummary($data){
+ $outcome=[string]$data.LastAttemptOutcome
+ $code=[string]$data.LastAttemptCode
+ $when=[string]$data.LastAttemptUtc
+ if($outcome -cnotin @('Started','Succeeded','Blocked')){return ''}
+ if($code -cnotin @('AttemptStarted','RollbackRestored','CommittedVerified',
+  'NoTransaction','StartupMismatch','CheckpointInvalid','BackupCorrupt',
+  'CommittedMismatch','UpdaterBusy','ApplicationRunning','RestartFailed',
+  'UnexpectedError')){return ''}
+ if($when -cnotmatch '^\d{4}-\d\d-\d\dT\d\d:\d\d:\d\d\.\d{3}Z$'){
+  return ''
+ }
+ if($script:launcherLanguage -eq 'RU'){
+  $names=@{
+   AttemptStarted='Начата попытка';RollbackRestored='Откат выполнен'
+   CommittedVerified='Новая версия проверена';NoTransaction='Изменений не потребовалось'
+   StartupMismatch='Изменена запись автозапуска'
+   CheckpointInvalid='Недостоверные данные восстановления'
+   BackupCorrupt='Повреждена резервная копия'
+   CommittedMismatch='Установленные файлы изменены'
+   UpdaterBusy='Обновление выполняется';ApplicationRunning='Dvinholm запущен'
+   RestartFailed='Перезапуск не удался';UnexpectedError='Другая ошибка'
+  }
+  $result=@{Started='Начато';Succeeded='Успешно';Blocked='Заблокировано'}
+  return ('Последняя попытка: '+$result[$outcome]+' · '+$names[$code]+
+   ' ('+$when+' UTC)')
+ }
+ return ('Last recovery: '+$outcome+' · '+$code+' ('+$when+' UTC)')
+}
 function Format-LauncherRecoveryReport([string]$json) {
  $data=ConvertFrom-Json -InputObject $json -ErrorAction Stop
  $status=[string]$data.Status
@@ -2382,6 +2411,7 @@ function Format-LauncherRecoveryReport([string]$json) {
    '; копия: '+(& $yes $data.BackupPresent)+[Environment]::NewLine+
    'Автозапуск восстановления: '+(& $yes $data.StartupEntryPresent)+
    '; доверенная запись: '+(& $yes $data.CheckpointTrusted)+
+   [Environment]::NewLine+(Format-LauncherAuditSummary $data)+
    [Environment]::NewLine+'Проверка только для чтения. Изменений нет.')
  }
  return ('Launcher recovery: '+$status+[Environment]::NewLine+
@@ -2390,6 +2420,7 @@ function Format-LauncherRecoveryReport([string]$json) {
   '; backup: '+(& $boolean $data.BackupPresent)+[Environment]::NewLine+
   'Recovery startup: '+(& $boolean $data.StartupEntryPresent)+
   '; trusted checkpoint: '+(& $boolean $data.CheckpointTrusted)+
+  [Environment]::NewLine+(Format-LauncherAuditSummary $data)+
   [Environment]::NewLine+'Read-only inspection. No files changed.')
 }
 function Poll-WorkerState {
