@@ -62,7 +62,7 @@ function Assert-PreparedLauncherArchive {
   if((Get-FileHash -LiteralPath $ZipPath -Algorithm SHA256).Hash.ToLowerInvariant() -cne $ZipSha256){
    throw 'Launcher ZIP changed during staging.'
   }
-  return [pscustomobject]@{Tag=$tag;ZipHash=$realZip;FilesVerified=15}
+  return [pscustomobject]@{Tag=$tag;ZipHash=$realZip;FilesVerified=16}
  }catch{
   # Only the validator or this call created this absent target.
   if($created -and (Test-Path -LiteralPath $StageDirectory)){
@@ -147,6 +147,7 @@ $launcherStorageFiles=@(
  'Binaries/Launcher-ReleaseDiscovery.ps1',
  'Binaries/Launcher-VerifiedDownload.ps1',
  'Binaries/Launcher-ApplyPrepared.ps1',
+ 'Binaries/Launcher-RebootRecovery.ps1',
  'Binaries/J2534-DriverManager.ps1',
  'Binaries/J2534-DriverUI.ps1',
  'Binaries/Manage-Lite-Dependencies.ps1',
