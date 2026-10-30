@@ -1204,7 +1204,10 @@ public sealed partial class MainWindow : Window
                     MaxHeight = 350,
                     Content = new TextBlock
                     {
-                        Text = VolvoP2CemRevisionSourceSetReview
+                        Text = VolvoP2CemVariantPreReadGate
+                            .BuildReadOnlyReport(manual, claims)
+                            + Environment.NewLine
+                            + VolvoP2CemRevisionSourceSetReview
                             .BuildReadOnlyReport(manual, claims)
                             + Environment.NewLine
                             + VolvoP2CemConfigurationReadPreflight
