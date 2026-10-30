@@ -746,3 +746,33 @@ transaction, corrupted backup, tampered helper and mismatched startup
 entry. **Real interactive Windows reboot and abrupt power-loss behavior
 are not yet hardware/desktop accepted**; HKCU Run depends on user
 sign-in and registry availability. Stable 0.2.4 is not republished.
+
+
+## Windows separate-process recovery acceptance (Development)
+
+Eight additional process-level Windows PowerShell 5.1 checks start the
+trusted Arm, Apply, Resume and Disarm scripts using **separate OS
+processes**, not dot-sourced calls. The checks use isolated temporary
+native Launcher installations and the same real standalone ZIP.
+
+One test exercises the Windows HKCU Run registry provider with a
+uniquely named, per-fixture recovery value; it confirms the expected
+entry, removes it by invoking Disarm in a second process, and has a
+narrowly scoped cleanup in a `finally` block even on failure. It
+does not reboot Windows, change another Run entry or open the Launcher
+GUI. Other scenarios test a crash midway through an update, an already
+committed update, damaged backups, damaged committed files, tampered
+startup commands and restart retry.
+
+The recovery script now attempts to start `Launcher.exe` **before**
+removing the Run entry and checkpoint. If the start fails, both
+markers remain so a later sign-in can retry; a previously completed
+rollback with no remaining journal is also eligible for another
+launcher restart. This closes a gap in the earlier process flow.
+The synthetic restart failure is strictly restricted to isolated
+offline CI fixtures and cannot be enabled for real installations.
+
+A successful process-level CI run is **not** equivalent to an actual
+Windows reboot, power loss, or GUI acceptance on the owner's PC.
+Stable 0.2.4, the managed application and physical J2534 interfaces
+remain unaffected.
