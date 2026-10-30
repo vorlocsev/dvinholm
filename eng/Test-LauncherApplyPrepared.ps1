@@ -40,7 +40,7 @@ function New-Fixture([string]$suffix){
    OriginalHash=(Get-FileHash -LiteralPath $original -Algorithm SHA256).Hash}
 }
 function Apply($fixture,[string]$tag,[string]$digest,[string]$sum,[int]$crash=0) {
- & $script -Mode Worker -Channel Development -InstallationDirectory $fixture.Install -PreparedDirectory $fixture.Prepared -ExpectedTag $tag -ExpectedZipSha256 $digest -ExpectedSumsSha256 $sum -OfflineFixture -SimulateInterruptionAfter $crash |Out-Null
+ & $script -ApplyMode Worker -ApplyChannel Development -InstallationDirectory $fixture.Install -PreparedDirectory $fixture.Prepared -ExpectedTag $tag -ExpectedZipSha256 $digest -ExpectedSumsSha256 $sum -OfflineFixture -SimulateInterruptionAfter $crash |Out-Null
 }
 function Reject([scriptblock]$action){
  $rejected=$false
