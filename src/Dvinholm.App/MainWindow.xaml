@@ -43,13 +43,16 @@
             <Button x:Name="StartButton" Grid.Column="5" Content="Start monitor" Click="Start_Click" VerticalAlignment="Bottom" IsEnabled="False"/>
         </Grid>
 
-        <Grid Grid.Row="2" ColumnSpacing="10">
+        <Grid Grid.Row="2" ColumnSpacing="10" RowSpacing="5">
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="120"/>
                 <ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/><ColumnDefinition Width="110"/>
             </Grid.ColumnDefinitions>
-            <TextBox x:Name="UdsRequestId" Header="UDS request ID" Text="7E0" PlaceholderText="e.g. 7E0" TextChanged="SnapshotCanIdTextChanged"/>
-            <TextBox x:Name="UdsResponseId" Grid.Column="1" Header="UDS response ID" Text="7E8" PlaceholderText="e.g. 7E8" TextChanged="SnapshotCanIdTextChanged"/>
+            <TextBox x:Name="UdsRequestId" Header="UDS request ID" Text="" PlaceholderText="enter verified TX ID" TextChanged="SnapshotCanIdTextChanged"
+                     ToolTipService.ToolTip="No request ID is selected by default. Enter a source-verified ID manually; passive ECU scanning does not prove a TX address."/>
+            <TextBox x:Name="UdsResponseId" Grid.Column="1" Header="UDS response ID" Text="" PlaceholderText="enter RX ID" TextChanged="SnapshotCanIdTextChanged"
+                     ToolTipService.ToolTip="Enter an independently verified response ID or explicitly select an observed passive response; observation alone does not identify an ECU."/>
             <ComboBox x:Name="CanIdFormat" Grid.Column="2" Header="CAN ID format" SelectedIndex="0" SelectionChanged="SnapshotCanIdFormatChanged">
                 <ComboBoxItem Content="11-bit" Tag="standard"/>
                 <ComboBoxItem Content="29-bit" Tag="extended"/>
@@ -59,6 +62,10 @@
             <Button x:Name="ReadVinButton" Grid.Column="5" Content="Read VIN" IsEnabled="False" Click="ReadVin_Click" VerticalAlignment="Bottom"/>
             <Button x:Name="ReadDtcButton" Grid.Column="6" Content="Read DTC" IsEnabled="False" Click="ReadDtc_Click" VerticalAlignment="Bottom"/>
             <Button x:Name="CancelUdsButton" Grid.Column="7" Content="Cancel UDS" IsEnabled="False" Click="CancelUds_Click" VerticalAlignment="Bottom"/>
+            <TextBlock x:Name="UdsReadinessHint" Grid.Row="1" Grid.ColumnSpan="8"
+                       Text="Read-only UDS disabled until connected with manually checked request and response CAN IDs."
+                       TextWrapping="Wrap" IsTextSelectionEnabled="True"
+                       ToolTipService.ToolTip="Valid CAN ID syntax does not verify ECU identity, model, protocol or service access."/>
         </Grid>
 
         <Grid Grid.Row="3" RowSpacing="10">
