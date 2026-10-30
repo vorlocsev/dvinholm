@@ -88,7 +88,7 @@ if(Plain-File $build 48){
 }
 $startup=Read-RunEntry
 $hasRun=($startup.Length -gt 0)
-$matches=New-Object Collections.Generic.List[object]
+$checkpoints=New-Object Collections.Generic.List[object]
 $invalidWorkers=0
 if(Test-Path -LiteralPath $handoff -PathType Container){
  $folders=@(Get-ChildItem -LiteralPath $handoff -Directory -Force -ErrorAction Stop)
@@ -125,15 +125,15 @@ if(Test-Path -LiteralPath $handoff -PathType Container){
     $actual=(Get-FileHash -LiteralPath $helper -Algorithm SHA256).Hash.ToLowerInvariant()
     $valid=($actual -ceq [string]$data.HelperHash)
    }
-   $matches.Add([pscustomobject]@{
+   $checkpoints.Add([pscustomobject]@{
     Trusted=[bool]$valid;Command=[string]$data.RunCommand;
     Tag=[string]$data.ExpectedTag
    })
   }catch{$invalidWorkers++}
  }
 }
-$trusted=($matches.Count -eq 1 -and [bool]$matches[0].Trusted -and
-  $hasRun -and $startup -ceq [string]$matches[0].Command -and
+$trusted=($checkpoints.Count -eq 1 -and [bool]$checkpoints[0].Trusted -and
+  $hasRun -and $startup -ceq [string]$checkpoints[0].Command -and
   $invalidWorkers -eq 0)
 $status='NeedsInspection'
 $detail='Unexpected or conflicting native recovery state; do not delete journals or startup entries.'
@@ -142,7 +142,7 @@ if($hasTxn){
   $status='RecoveryPending'
   $detail='Interrupted native update with a matching trusted sign-in recovery checkpoint.'
  }
-}elseif($hasRun -or $matches.Count -gt 0 -or $invalidWorkers -gt 0){
+}elseif($hasRun -or $checkpoints.Count -gt 0 -or $invalidWorkers -gt 0){
  if($trusted -and -not $hasRetired){
   $status='RestartPending'
   $detail='Trusted recovery is armed; verify it completes at next Windows sign-in.'
@@ -165,7 +165,7 @@ $report=[ordered]@{
  BackupPresent=[bool]$hasPrev
  RetiredPresent=[bool]$hasRetired
  StartupEntryPresent=[bool]$hasRun
- MatchingCheckpointCount=[int]$matches.Count
+ MatchingCheckpointCount=[int]$checkpoints.Count
  CheckpointTrusted=[bool]$trusted
 }
 if($Format -ceq 'Text'){
