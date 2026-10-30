@@ -6,7 +6,7 @@ No software installs or updates until the user explicitly confirms.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('UI','UiSmokeTest','Check','CheckLauncher','PrepareLauncher','FinalizeLauncher','CleanLauncherStorage','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
+ [ValidateSet('UI','UiSmokeTest','Check','CheckLauncher','PrepareLauncher','FinalizeLauncher','CleanLauncherStorage','InspectLauncher','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
  [ValidateSet('Stable','Development')][string]$Channel='Development',
  [string]$StateFile
 )
@@ -285,7 +285,7 @@ function Translate([string]$key) {
    driversOpen='Открыть драйверы';settingsQuick='Настройки'
    windowsQuick='Перепроверить';depsInstall='Установить компоненты'
    componentsTitle='Компоненты Microsoft x86';componentsNotice='Выберите компонент для установки. Будет показано подтверждение.'
-   checkLauncher='Проверить лаунчер';prepareLauncher='Скачать и проверить';applyLauncher='Установить и перезапустить';finalizeLauncher='Удалить прежнюю копию лаунчера';cleanLauncher='Очистить устаревшие загрузки'
+   checkLauncher='Проверить лаунчер';prepareLauncher='Скачать и проверить';applyLauncher='Установить и перезапустить';finalizeLauncher='Удалить прежнюю копию лаунчера';cleanLauncher='Очистить загрузки';inspectLauncher='Статус восстановления'
   }
   EN=@{
    home='▶  Launch';updates='↻  Updates'
@@ -319,7 +319,7 @@ function Translate([string]$key) {
    driversOpen='Open drivers';settingsQuick='Settings'
    windowsQuick='Recheck';depsInstall='Install components'
    componentsTitle='Microsoft x86 prerequisites';componentsNotice='Select the component to install. Confirmation is required.'
-   checkLauncher='Check Launcher';prepareLauncher='Download & verify';applyLauncher='Install & restart';finalizeLauncher='Release previous Launcher backup';cleanLauncher='Clean obsolete downloads'
+   checkLauncher='Check Launcher';prepareLauncher='Download & verify';applyLauncher='Install & restart';finalizeLauncher='Release previous Launcher backup';cleanLauncher='Clean downloads';inspectLauncher='Recovery status'
   }
  }
  $value=$labels[$script:launcherLanguage][$key]
@@ -1617,6 +1617,21 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    $lines.Add('VC++ current installer version cannot be verified without vendor metadata.')
    $script:state.DependencyReport=[string]::Join([Environment]::NewLine,$lines.ToArray())
    Progress 'Microsoft dependency version check finished. No software changed.'
+  }elseif($Mode -eq 'InspectLauncher'){
+   $inspector=Join-Path $PSScriptRoot 'Inspect-LauncherRecovery.ps1'
+   if(-not(Test-Path -LiteralPath $inspector -PathType Leaf)){
+    throw 'Bundled read-only Launcher recovery inspector is missing.'
+   }
+   $root=[IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..')).TrimEnd('\')
+   $raw=(& $inspector -InstallationDirectory $root -Format Json|Out-String).Trim()
+   if(-not $raw){throw 'Read-only Launcher recovery inspector returned no report.'}
+   $result=ConvertFrom-Json -InputObject $raw -ErrorAction Stop
+   if([string]$result.Status -cnotin @('Clean','BackupAvailable','RecoveryPending',
+      'RestartPending','RetirementPending','NeedsInspection')){
+    throw 'Unknown native Launcher recovery status.'
+   }
+   $script:state.LauncherDetail=$raw
+   Progress ('Launcher recovery: '+[string]$result.Status+'. Read-only.')
   }elseif($Mode -eq 'CleanLauncherStorage'){
    $report=Invoke-NativeLauncherStorageCleanup -StorageRoot (Join-Path $base 'LauncherUpdates') -SelectedChannel $Channel -InstalledBuild (Read-LauncherInstalledBuild) -InstallationDirectory ([IO.Path]::GetFullPath((Join-Path $PSScriptRoot '..')).TrimEnd('\'))
    $script:state.LauncherDiscarded=[int]$report.Discarded
@@ -1676,6 +1691,8 @@ if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
    $message
   }elseif($Mode -eq 'Launch'){
    ('Unable to start the selected application: '+$message)
+  }elseif($Mode -eq 'InspectLauncher'){
+   ('Read-only recovery inspection failed: '+$message)
   }elseif($Mode -eq 'CleanLauncherStorage'){
    ('Launcher storage cleanup refused: '+$message)
   }elseif($Mode -eq 'FinalizeLauncher'){
@@ -2026,9 +2043,14 @@ function Show-LauncherSettings {
  $repairInstallButton.Add_Click({$dlg.Close();Begin-Action 'RepairInstall'})
  $cleanLauncher=New-Object Windows.Forms.Button
  $cleanLauncher.Text=Translate 'cleanLauncher'
- $cleanLauncher.SetBounds(18,405,335,29)
+ $cleanLauncher.SetBounds(18,405,160,29)
  $dlg.Controls.Add($cleanLauncher)
  $cleanLauncher.Add_Click({$dlg.Close();Begin-Action 'CleanLauncherStorage'})
+ $inspectLauncher=New-Object Windows.Forms.Button
+ $inspectLauncher.Text=Translate 'inspectLauncher'
+ $inspectLauncher.SetBounds(185,405,168,29)
+ $dlg.Controls.Add($inspectLauncher)
+ $inspectLauncher.Add_Click({$dlg.Close();Begin-Action 'InspectLauncher'})
  $save.Add_Click({
   if($channelSelect.SelectedIndex -ge 0){$choice.SelectedIndex=$channelSelect.SelectedIndex}
   if($languageSelect.SelectedIndex -ge 0){$languageChoice.SelectedIndex=$languageSelect.SelectedIndex}
@@ -2349,10 +2371,12 @@ function Poll-WorkerState {
  if($script:child -and $script:child.HasExited){
   $reportText=''
   $finishedAction=$script:pendingAction
-  if($finishedAction -cin @('CheckLauncher','PrepareLauncher','FinalizeLauncher','CleanLauncherStorage') -and $complete -and
+  if($finishedAction -cin @('CheckLauncher','PrepareLauncher','FinalizeLauncher','CleanLauncherStorage','InspectLauncher') -and $complete -and
      $snapshot.Failed -eq $false -and
      $null -ne $snapshot -and [string]$snapshot.LauncherDetail){
-   $reportText=if($finishedAction -ceq 'CleanLauncherStorage'){
+   $reportText=if($finishedAction -ceq 'InspectLauncher'){
+    Format-LauncherRecoveryReport ([string]$snapshot.LauncherDetail)
+   }elseif($finishedAction -ceq 'CleanLauncherStorage'){
     if($script:launcherLanguage -eq 'RU'){
      'Удалено каталогов: '+[string]$snapshot.LauncherDiscarded+
      '; сохранено: '+[string]$snapshot.LauncherPreserved+
@@ -2391,7 +2415,7 @@ function Poll-WorkerState {
    return
   }
   if($reportText){
-   $reportTitle=if($finishedAction -cin @('CheckLauncher','PrepareLauncher','FinalizeLauncher','CleanLauncherStorage')){'Dvinholm | Launcher updates'}else{'Dvinholm | Installed and available runtimes'}
+   $reportTitle=if($finishedAction -cin @('CheckLauncher','PrepareLauncher','FinalizeLauncher','CleanLauncherStorage','InspectLauncher')){'Dvinholm | Launcher updates'}else{'Dvinholm | Installed and available runtimes'}
    [void][Windows.Forms.MessageBox]::Show($form,$reportText,
     $reportTitle,
     [Windows.Forms.MessageBoxButtons]::OK,
