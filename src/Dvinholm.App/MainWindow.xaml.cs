@@ -2371,25 +2371,14 @@ public sealed partial class MainWindow : Window
         client = null;
         error = string.Empty;
 
-        if (!_connected)
-        {
-            error = "Connect to J2534 first.";
+        // Button readiness is only a convenience. Recheck all addressing at
+        // channel creation, including distinct TX/RX IDs, before subscribing.
+        if (!UdsChannelStartPreflight.TryPrepare(
+                _connected, CanIdFormat.SelectedIndex,
+                UdsRequestId.Text, UdsResponseId.Text,
+                out var requestId, out var responseId, out var canExtendedId,
+                out error))
             return false;
-        }
-
-        if (CanIdFormat.SelectedIndex is not (0 or 1))
-        {
-            error = "Select 11-bit or 29-bit CAN ID format.";
-            return false;
-        }
-
-        var canExtendedId = CanIdFormat.SelectedIndex == 1;
-        if (!TryParseCanId(UdsRequestId.Text, canExtendedId, out var requestId, out var requestError) ||
-            !TryParseCanId(UdsResponseId.Text, canExtendedId, out var responseId, out requestError))
-        {
-            error = requestError;
-            return false;
-        }
 
         try
         {
@@ -2400,9 +2389,11 @@ public sealed partial class MainWindow : Window
             client = new UdsClient(channel);
             return true;
         }
-        catch (Exception ex)
+        catch (Exception)
         {
-            error = FormatSafeException(ex, "Unable to initialize the UDS channel.");
+            // Even sanitized vendor exceptions may contain paths or response
+            // data. This text is mirrored on the public Aurora home screen.
+            error = UdsChannelStartPreflight.ChannelFailureActivity;
             return false;
         }
     }
