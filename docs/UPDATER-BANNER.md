@@ -776,3 +776,53 @@ A successful process-level CI run is **not** equivalent to an actual
 Windows reboot, power loss, or GUI acceptance on the owner's PC.
 Stable 0.2.4, the managed application and physical J2534 interfaces
 remain unaffected.
+
+
+## Windows 11 interactive reboot acceptance: read-only state inspector
+
+Development includes **eng/Inspect-LauncherRecovery.ps1**, a Windows PowerShell
+5.1 **read-only** tool for the owner's Windows 11 PC. It inspects a selected
+Launcher installation and associated per-user recovery workers and HKCU Run
+registration. It never installs, updates, rolls back, clears a startup entry,
+kills processes or reboots Windows.
+
+From a trusted repository checkout, run in Windows PowerShell 5.1:
+
+    .\eng\Inspect-LauncherRecovery.ps1 -InstallationDirectory 'C:\Path\To\Dvinholm' -Format Text
+
+Point at the folder containing Launcher.exe, not Binaries. The default JSON
+report includes Status, InstalledTag, TransactionPresent, BackupPresent,
+RetiredPresent, StartupEntryPresent, MatchingCheckpointCount and
+CheckpointTrusted. The inspector bounds the number of per-user
+LauncherHandoff/worker-<guid> directories inspected and never executes
+scripts found in them.
+
+Recovery statuses:
+- Clean: no backup, transaction or sign-in recovery registration
+- BackupAvailable: committed previous version retained; no recovery armed
+- RecoveryPending: interrupted update and matching trusted recovery checkpoint
+- RestartPending: startup registration armed, awaiting successful new launch
+- RetirementPending: interrupted explicit backup retirement; use verified finalization
+- NeedsInspection: conflicting or untrusted recovery state; preserve all journals
+
+Suggested **eight on-device acceptance gates** to record separately:
+
+1. Close Dvinholm and inspect the installed Launcher and current recovery state.
+2. Use Launcher RU/EN to check, download and verify a newer Development build.
+3. Confirm Install & restart, then visually verify a new Launcher window and
+   correct channel. The short-lived native EXE process is not proof the GUI opened.
+4. Re-run this inspector. Expect BackupAvailable and no HKCU Run entry after success.
+5. Launch and close main Dvinholm: the updater should close when the app starts.
+6. On a disposable Windows 11 test installation only, perform a controlled
+   interrupted update. Do not kill apps or cut power on a production PC.
+7. At a natural reboot/sign-in, inspect again; verify original bytes were
+   restored or a fully committed release was accepted, then confirm GUI launch.
+8. Check that the startup Run entry was removed only after successful recovery;
+   if recovery fails, preserve its checkpoint and journal for investigation.
+
+Nothing in CI initiates a real Windows reboot. These eight local gates require
+explicit operator confirmation; simulated test-fixture output must not be
+recorded as real Windows 11 power-loss or interactive GUI acceptance. CI tests
+all six status classes plus compromised startup and helper configurations
+without writing a real HKCU Run value. Stable 0.2.4 and physical J2534
+interfaces are unaffected.
