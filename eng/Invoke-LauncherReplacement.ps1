@@ -7,7 +7,7 @@ or request privileges. The normal UI does not invoke it yet.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('Apply','Recover')][string]$Mode='Recover',
+ [ValidateSet('Apply','Recover','Undo')][string]$Mode='Recover',
  [Parameter(Mandatory)][string]$InstallationDirectory,
  [string]$ZipPath,
  [ValidatePattern('^[0-9a-f]{64}$')][string]$ExpectedSha256,
@@ -23,6 +23,7 @@ $names=@(
  'Binaries/Launcher-ServiceCockpit.ps1',
  'Binaries/Launcher-ReleaseDiscovery.ps1',
  'Binaries/Launcher-VerifiedDownload.ps1',
+ 'Binaries/Launcher-ApplyPrepared.ps1',
  'Binaries/J2534-DriverManager.ps1',
  'Binaries/J2534-DriverUI.ps1',
  'Binaries/Manage-Lite-Dependencies.ps1',
@@ -162,6 +163,22 @@ if(-not(Test-Path -LiteralPath $root -PathType Container) -or
 Assert-Ordinary (Join-Path $root 'Binaries') $true
 Assert-Ordinary $txn $true
 Assert-Ordinary $previous $true
+if($Mode -eq 'Undo'){
+ # The committed backup is a verified journal with original hashes.
+ # Only an explicit out-of-process rollback may revert the most recent swap.
+ if(Test-Path -LiteralPath $txn){
+  throw 'An interrupted transaction must be recovered before undo.'
+ }
+ if(-not(Test-Path -LiteralPath $previous -PathType Container)){
+  throw 'No committed native Launcher version available to undo.'
+ }
+ $txn=$previous
+ $journal=Join-Path $txn 'journal.json'
+ $stage=Join-Path $txn 'stage'
+ $backup=Join-Path $txn 'backup'
+ Recover-Interrupted
+ exit 0
+}
 if($Mode -eq 'Recover'){
  Recover-Interrupted
  exit 0

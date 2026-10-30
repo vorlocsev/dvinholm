@@ -609,3 +609,32 @@ release identity, repeated manifest entries and preexisting staging.
 by preparation.** Applying the snapshot and restarting the launcher are still
 separate safety gates, not yet exposed in the UI. These operations do not
 perform physical J2534 testing.
+
+## Native Launcher install handoff and restart (Development)
+
+Settings includes **Install & restart / Установить и перезапустить** only
+when a native Launcher package has already been prepared. A second,
+explicit confirmation is required. GitHub release metadata is fetched
+again before handoff and must identify a strictly newer native build in
+the same channel. Mixed-channel or unverified builds cannot auto-apply.
+
+The installed trusted worker and its validators are copied with SHA-256
+verification to a fresh per-user directory outside the installation.
+The detached Windows PowerShell 5.1 worker waits for the GUI PowerShell
+PID, not the short-lived native Launcher.exe process. It obtains a
+per-installation mutex, verifies the ZIP, SHA256SUMS and build receipt
+again, and invokes the journaled replacement helper. After a verified
+commit it starts the replacement Launcher.exe; on failure it attempts
+journal recovery or verified undo of an already committed backup.
+
+A minimal outcome record is saved to the per-channel LauncherUpdates
+folder as last-apply.log. The prior native version remains preserved
+in .launcher-previous. A second replacement remains blocked until
+backup rotation receives separate review. An unrecoverable journal or
+corrupt backup is preserved for manual inspection, never force-overwritten.
+
+Eight new offline tests exercise application isolation, commit, undo,
+tampering and interrupted replacement against the real packaged ZIP.
+They do not claim real Windows interactive handoff, forced shutdown,
+power-loss recovery, or physical J2534/ECU acceptance. Stable 0.2.4 is
+unchanged.
