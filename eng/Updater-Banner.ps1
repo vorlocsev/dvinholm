@@ -2360,6 +2360,38 @@ function Format-LauncherCheckReport($snapshot) {
   'Статус: '+$ru+[Environment]::NewLine+
   'Проверены только сведения о релизе. Файлы не изменены.')
 }
+function Format-LauncherRecoveryReport([string]$json) {
+ $data=ConvertFrom-Json -InputObject $json -ErrorAction Stop
+ $status=[string]$data.Status
+ if($status -cnotin @('Clean','BackupAvailable','RecoveryPending',
+   'RestartPending','RetirementPending','NeedsInspection')){
+  throw 'Unknown Launcher recovery inspection state.'
+ }
+ $boolean={param($value) if([bool]$value){'Yes'}else{'No'}}
+ if($script:launcherLanguage -eq 'RU'){
+  $states=@{
+   Clean='Без ошибок';BackupAvailable='Резервная копия доступна'
+   RecoveryPending='Требуется восстановление'
+   RestartPending='Ожидается запуск';RetirementPending='Очистка копии не завершена'
+   NeedsInspection='Требуется ручная проверка'
+  }
+  $yes={param($value) if([bool]$value){'Да'}else{'Нет'}}
+  return ('Состояние Launcher: '+$states[$status]+[Environment]::NewLine+
+   'Версия: '+[string]$data.InstalledTag+[Environment]::NewLine+
+   'Транзакция: '+(& $yes $data.TransactionPresent)+
+   '; копия: '+(& $yes $data.BackupPresent)+[Environment]::NewLine+
+   'Автозапуск восстановления: '+(& $yes $data.StartupEntryPresent)+
+   '; доверенная запись: '+(& $yes $data.CheckpointTrusted)+
+   [Environment]::NewLine+'Проверка только для чтения. Изменений нет.')
+ }
+ return ('Launcher recovery: '+$status+[Environment]::NewLine+
+  'Installed: '+[string]$data.InstalledTag+[Environment]::NewLine+
+  'Transaction: '+(& $boolean $data.TransactionPresent)+
+  '; backup: '+(& $boolean $data.BackupPresent)+[Environment]::NewLine+
+  'Recovery startup: '+(& $boolean $data.StartupEntryPresent)+
+  '; trusted checkpoint: '+(& $boolean $data.CheckpointTrusted)+
+  [Environment]::NewLine+'Read-only inspection. No files changed.')
+}
 function Poll-WorkerState {
  $complete=$false
  if(Test-Path -LiteralPath $script:statefile -PathType Leaf){
