@@ -542,7 +542,7 @@ public sealed partial class MainWindow : Window
             .First(p => string.Equals(p.Id, savedProfile.Id, StringComparison.OrdinalIgnoreCase));
         ProfileSelector.SelectedItem = selected;
         ApplySelectedProfile(selected);
-        SetStatus($"Saved ECU profile '{savedProfile.Name}' as unverified. No diagnostic request was sent.");
+        SetStatus(EcuProfileActivity.Message(EcuProfileActivityKind.SavedUnverified));
     }
 
 #if DVINHOLM_DEVELOPMENT_FEATURES
@@ -652,7 +652,7 @@ public sealed partial class MainWindow : Window
             var imported = EcuProfileCatalogImporter.ImportAndPersist(
                 json, SaveProfileCatalog);
             SetProfileCatalog(imported);
-            SetStatus($"Imported and saved {imported.All.Count} ECU profile(s) from {file.Name}. Select a profile to apply its CAN IDs.");
+            SetStatus(EcuProfileActivity.Message(EcuProfileActivityKind.Imported, imported.All.Count));
         }
         catch (InvalidDataException)
         {
@@ -695,13 +695,13 @@ public sealed partial class MainWindow : Window
 
             await EcuProfileJsonExport.SaveAsync(
                 _profileCatalog, destinationPath, AppContext.BaseDirectory);
-            SetStatus($"Exported {_profileCatalog.All.Count} ECU profile(s) to {Path.GetFileName(destinationPath)}.");
+            SetStatus(EcuProfileActivity.Message(EcuProfileActivityKind.Exported, _profileCatalog.All.Count));
         }
-        catch (InvalidOperationException ex)
+        catch (InvalidOperationException)
         {
-            // Empty catalogs and app-directory locations have clear, specific
-            // no-write errors. Other I/O failures use the generic safe text.
-            SetStatus(ex.Message);
+            // The exception may contain user-selected paths. The global
+            // activity is mirrored onto Aurora, so use trusted fixed text.
+            SetStatus(EcuProfileActivity.Message(EcuProfileActivityKind.ExportBlocked));
         }
         catch (Exception)
         {
@@ -1960,7 +1960,7 @@ public sealed partial class MainWindow : Window
         // The replacement values may equal the previous text, so WinUI may
         // not raise TextChanged. Always recalculate read-button availability.
         SetUdsEnabled(_connected && !_closing);
-        SetStatus($"Applied profile '{profile.Name}' (request {UdsRequestId.Text}, response {UdsResponseId.Text}). No diagnostic request was sent.");
+        SetStatus(EcuProfileActivity.Message(EcuProfileActivityKind.Applied));
     }
 
 
