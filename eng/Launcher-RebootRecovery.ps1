@@ -11,6 +11,7 @@ param(
  [Parameter(Mandatory)][string]$InstallationDirectory,
  [string]$ExpectedTag,
  [switch]$OfflineFixture,
+ [switch]$SimulateRestartFailure,
  [string]$FixtureRegistryDirectory
 )
 $ErrorActionPreference='Stop'
@@ -157,6 +158,9 @@ function Verify-Commit($data) {
 Assert-RecoveryAncestors $root
 Assert-RecoveryAncestors $PSScriptRoot
 Assert-RegistryFixture
+if($SimulateRestartFailure -and (-not $OfflineFixture -or $Mode -cne 'Resume')){
+ throw 'Restart interruption injection is restricted to isolated offline Resume fixtures.'
+}
 if($Mode -eq 'Arm'){
  if($ExpectedTag -cnotmatch '^(?:ci-[1-9][0-9]{0,8}|v[0-9]+\.[0-9]+\.[0-9]+)$'){
   throw 'Cannot register native recovery without a verified expected release tag.'
@@ -216,14 +220,18 @@ try{
   # installed files before treating this as a fully committed update.
   Verify-Commit $data
  }
+ # Restart must succeed BEFORE clearing the durable sign-in retry marker.
+ # If the native EXE cannot start, the next sign-in can try again without
+ # allowing arbitrary file changes, because the journal was verified first.
+ if($SimulateRestartFailure -and ($hasTransaction -or $hasCommitted)){
+  throw 'Simulated Launcher restart failure after verified recovery.'
+ }
+ if(($hasTransaction -or $hasCommitted) -and -not $OfflineFixture){
+  Start-Process -FilePath (Join-Path $root 'Launcher.exe') -WorkingDirectory $root -ErrorAction Stop|Out-Null
+ }
  # Nothing to recover before a journal is committed: no live file changed.
  Remove-Startup
  Remove-Item -LiteralPath $checkpoint -Force
- if($hasTransaction -or $hasCommitted){
-  if(-not $OfflineFixture){
-   Start-Process -FilePath (Join-Path $root 'Launcher.exe') -WorkingDirectory $root -ErrorAction Stop|Out-Null
-  }
- }
  Write-Host ('Native Launcher sign-in recovery resolved: '+
   $(if($hasTransaction){'rolled back'}elseif($hasCommitted){'verified committed'}else{'no transaction'}))
 }finally{
