@@ -2551,9 +2551,12 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
-            if (!TryGetUdsClient(out var client, out var error) || client is null)
+            if (!TryGetUdsClient(out var client, out _) || client is null)
             {
-                SetStatus(error);
+                // Vendor channel-construction failures may contain DLL paths
+                // or ECU data. The global Aurora activity must stay fixed.
+                if (IsSnapshotContextCurrent(profile, captureGeneration))
+                    SetStatus("ECU snapshot cannot start. Check adapter and selected CAN IDs.");
                 return;
             }
 
