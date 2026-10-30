@@ -250,6 +250,9 @@ public sealed partial class MainWindow : Window
 
     private void SetProfileCatalog(EcuProfileCatalog catalog)
     {
+        // Replacing the catalog invalidates an in-flight read even if old
+        // text fields were already empty and TextChanged does not fire.
+        InvalidateProfileContext();
         _profileCatalog = catalog;
         _profileFilterGeneration++;
         _loadingProfiles = true;
@@ -305,6 +308,9 @@ public sealed partial class MainWindow : Window
 
         if (previousId is not null && retained is null)
         {
+            // Filtering out the selection is a context change even when the
+            // editor fields happen to be empty and emit no TextChanged.
+            InvalidateProfileContext();
             ClearProfileInputs();
             SetStatus("Previously selected ECU profile is hidden by the filter. No diagnostic request was sent.");
         }
@@ -1894,11 +1900,28 @@ public sealed partial class MainWindow : Window
         CanIdFormat.SelectedIndex = -1;
     }
 
+    private void InvalidateProfileContext()
+    {
+        // Selection is authoritative NOW, not when deferred TextBox updates
+        // run. Even an A -> B -> A switch must invalidate the first read.
+        ClearDiagnosticReadResult();
+        // Cancellation is cooperative: this can stop remaining snapshot DID
+        // requests, but cannot retract a request already sent to an ECU.
+        _udsCts?.Cancel();
+        RefreshSnapshotCaptureAvailability();
+    }
+
     private void ProfileSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (_loadingProfiles)
             return;
 
+        // Invalidate pending output before the queued profile apply. Without
+        // this, two profiles with identical CAN IDs could retain an in-flight
+        // VIN/DID/DTC response or a snapshot during a fast A -> B -> A switch.
+        InvalidateProfileContext();
+        // Drop prior queued applies after each selection (not only filtering).
+        _profileFilterGeneration++;
         EditProfileButton.IsEnabled = ProfileSelector.SelectedItem is EcuProfile;
 
         // WinUI can raise selection notifications while the ComboBox is still
@@ -1922,7 +1945,7 @@ public sealed partial class MainWindow : Window
         {
             ClearProfileInputs();
             EcuInfoText.Text = "No ECU profile selected.";
-            RefreshSnapshotCaptureAvailability();
+            SetUdsEnabled(_connected && !_closing);
             return;
         }
 
@@ -1934,7 +1957,9 @@ public sealed partial class MainWindow : Window
             : string.Empty;
 
         EcuInfoText.Text = EcuProfileCatalogSearch.Describe(profile);
-        RefreshSnapshotCaptureAvailability();
+        // The replacement values may equal the previous text, so WinUI may
+        // not raise TextChanged. Always recalculate read-button availability.
+        SetUdsEnabled(_connected && !_closing);
         SetStatus($"Applied profile '{profile.Name}' (request {UdsRequestId.Text}, response {UdsResponseId.Text}). No diagnostic request was sent.");
     }
 
