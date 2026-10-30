@@ -82,6 +82,30 @@ public sealed class VolvoP2ConfigDependencyResearchTests
     }
 
     [Fact]
+    public void NullCandidateIdsAndNullClaimEntriesStayFailClosed()
+    {
+        // Externally supplied records may bypass their non-nullable annotations.
+        // The guarded relationship set must not accept null as a known ID.
+        var claims = new VolvoP2ConfigDependencyClaim?[]
+        {
+            new(null!, Washers,
+                VolvoP2ConfigDependencyRelation.ReviewTogether,
+                "Unverified source"),
+            new(Heater, null!,
+                VolvoP2ConfigDependencyRelation.ReviewTogether,
+                "Unverified source"),
+            null
+        };
+        var result = VolvoP2ConfigDependencyResearch.Assess(
+            Heater, 2008, true, claims);
+
+        Assert.Equal(VolvoP2ConfigDependencyReviewKind.InvalidResearchClaims, result.Kind);
+        Assert.Contains(VolvoP2ConfigDependencyIssue.UnknownCandidateId, result.Issues);
+        Assert.Equal(0, result.RelatedClaimCount);
+        AssertNoOperations(result);
+    }
+
+    [Fact]
     public void UndefinedRelationshipsAndDuplicatePairsAreRejected()
     {
         var invalidRelation = Review(Heater, 2008, true,
