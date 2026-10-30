@@ -2135,7 +2135,7 @@ public sealed partial class MainWindow : Window
             ShowDiscoveredEcus(found, complete: true);
             DiscoveryStatus.Text = UdsPassiveEcuListPresentation.ScanSummary(found.Count, true);
 
-            SetStatus("ECU discovery complete.");
+            SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.Completed));
         }
         catch (UdsEcuDiscoveryCancelledException ex)
         {
@@ -2144,25 +2144,28 @@ public sealed partial class MainWindow : Window
                 UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false);
             if (ex.DroppedFrameCount > 0)
                 DiscoveryStatus.Text += $" · {ex.DroppedFrameCount} frame(s) dropped";
-            SetStatus(ex.Message);
+            // Discovery exception messages are implementation details. The
+            // status is mirrored to Aurora, so use a fixed outcome instead.
+            SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.CancelledWithObservations));
         }
         catch (UdsEcuDiscoveryIncompleteException ex)
         {
             ShowDiscoveredEcus(ex.Candidates, complete: false);
             DiscoveryStatus.Text = UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false) +
                 $" · {ex.DroppedFrameCount} frame(s) dropped";
-            SetStatus(ex.Message);
+            SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.IncompleteWithDrops));
         }
         catch (OperationCanceledException)
         {
             // Cancellation before the scan worker starts has no observations
             // to preserve.
             DiscoveryStatus.Text = "Cancelled · no scan results available";
+            SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.CancelledBeforeStart));
         }
-        catch (Exception ex)
+        catch (Exception)
         {
             DiscoveryStatus.Text = "Failed";
-            SetStatus("ECU discovery failed: " + FormatSafeException(ex, "unexpected diagnostic error."));
+            SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.Failed));
         }
         finally
         {
