@@ -145,6 +145,9 @@ function Start-LauncherPreparedHandoff {
  if(Test-Path -LiteralPath (Join-Path $install '.launcher-previous')){
   throw 'Previous native Launcher backup must be managed before another update.'
  }
+ if(Test-Path -LiteralPath (Join-Path $install '.launcher-retired')){
+  throw 'Unfinished native Launcher backup retirement must be finalized before another update.'
+ }
  # The selected release and digests are fetched AGAIN from trusted GitHub
  # metadata immediately before handoff, not accepted from mutable local JSON.
  $script:Channel=$ChannelName
