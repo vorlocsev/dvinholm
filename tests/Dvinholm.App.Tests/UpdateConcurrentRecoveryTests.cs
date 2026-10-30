@@ -111,7 +111,7 @@ public sealed class UpdateConcurrentRecoveryTests
                         if (primary.IsCompleted)
                         {
                             var earlyExit = await primary;
-                            Assert.True(false, "Primary exited before locking: " + earlyExit.Output);
+                            Assert.Fail("Primary exited before locking: " + earlyExit.Output);
                         }
                         await Task.Delay(25, timeout.Token);
                     }
@@ -299,7 +299,7 @@ public sealed class UpdateConcurrentRecoveryTests
                     if (owner.IsCompleted)
                     {
                         var early = await owner;
-                        Assert.True(false, "Owner exited without mutex: " + early.Output);
+                        Assert.Fail("Owner exited without mutex: " + early.Output);
                     }
                     await Task.Delay(25, timeout.Token);
                 }
