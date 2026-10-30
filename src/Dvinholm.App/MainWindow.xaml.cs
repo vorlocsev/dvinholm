@@ -2232,9 +2232,30 @@ public sealed partial class MainWindow : Window
 
     private void SetUdsEnabled(bool enabled)
     {
-        ReadDidButton.IsEnabled = enabled;
-        ReadVinButton.IsEnabled = enabled;
-        ReadDtcButton.IsEnabled = enabled;
+        // XAML may emit TextChanged before all named controls are ready.
+        if (ReadDidButton is null || ReadVinButton is null ||
+            ReadDtcButton is null || UdsReadinessHint is null)
+            return;
+
+        // An observed RX address or a connected adapter alone does not
+        // authorize a diagnostic request. Never arm a guessed/default TX ID.
+        var connected = enabled && _connected && !_closing;
+        var ready = UdsReadAddressReadiness.CanRead(
+            connected,
+            _udsGate.CurrentCount == 0 || _discoveryCts is not null,
+            DvinholmUserDataDirectory.IsAcceptanceLaunch,
+            CanIdFormat?.SelectedIndex ?? -1,
+            UdsRequestId?.Text,
+            UdsResponseId?.Text);
+        ReadVinButton.IsEnabled = ready;
+        ReadDtcButton.IsEnabled = ready;
+        ReadDidButton.IsEnabled = ready &&
+            UdsReadAddressReadiness.ValidDid(UdsDid?.Text);
+        UdsReadinessHint.Text = ready
+            ? "Read-only UDS address syntax valid. Verify ECU identity and service support before reading."
+            : connected
+                ? "Read-only UDS disabled. Enter two distinct valid source-checked CAN IDs (TX and RX). Passive RX alone is not sufficient."
+                : "Read-only UDS disabled until connected with manually checked request and response CAN IDs.";
         RefreshSnapshotCaptureAvailability();
     }
 
@@ -2265,17 +2286,20 @@ public sealed partial class MainWindow : Window
     private void SnapshotCanIdTextChanged(object sender, TextChangedEventArgs e)
     {
         ClearDiagnosticReadResult();
-        RefreshSnapshotCaptureAvailability();
+        SetUdsEnabled(_connected && !_closing);
     }
 
     private void SnapshotCanIdFormatChanged(object sender, SelectionChangedEventArgs e)
     {
         ClearDiagnosticReadResult();
-        RefreshSnapshotCaptureAvailability();
+        SetUdsEnabled(_connected && !_closing);
     }
 
-    private void UdsDid_TextChanged(object sender, TextChangedEventArgs e) =>
+    private void UdsDid_TextChanged(object sender, TextChangedEventArgs e)
+    {
         ClearDiagnosticReadResult();
+        SetUdsEnabled(_connected && !_closing);
+    }
 
     private bool CanCaptureSelectedSnapshot(EcuProfile? profile, bool busy)
     {
