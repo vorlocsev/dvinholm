@@ -29,9 +29,7 @@ foreach($spec in @(
  $rcFile=Join-Path $target ($spec.Name+'.rc')
  # Win32 resource compiler embeds ICO in the actual executable, rather than
  # relying on a loose icon file or Windows shortcut metadata.
- $absoluteIcon=ConvertTo-NativeIconResourcePath -Path ((Resolve-Path -LiteralPath $spec.Icon).Path)
- [IO.File]::WriteAllText($rcFile,('1 ICON "'+$absoluteIcon+'"'+"\r\n"),
-  [Text.Encoding]::ASCII)
+ Write-NativeIconResourceFile -OutputPath $rcFile -IconPath ((Resolve-Path -LiteralPath $spec.Icon).Path)
  try {
   & $rc.Source '/nologo' ('/fo'+$res) $rcFile
   if($LASTEXITCODE -ne 0 -or -not(Test-Path -LiteralPath $res -PathType Leaf)){
