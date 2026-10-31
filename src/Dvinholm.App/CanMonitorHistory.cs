@@ -51,6 +51,10 @@ internal sealed class CanMonitorHistory
     // A bounded explicit list prevents accidental work from enormous pasted
     // queries. This is only a software view filter, never a J2534 filter.
     internal const int MaxSoftwareFilterIds = 16;
+    // Bound pasted UI input before Trim/Split allocates intermediate strings.
+    // Sixteen prefixed 29-bit IDs plus separators and moderate spacing fit.
+    internal const int MaxSoftwareFilterCharacters = 256;
+    private const int MaxCanIdHexDigits = 8;
     private const uint MaxExtendedCanId = 0x1FFFFFFFu;
 
     internal IReadOnlyList<CanMonitorRow> Filter(string? query)
@@ -85,13 +89,21 @@ internal sealed class CanMonitorHistory
 
     // The software filter accepts CAN arbitration IDs, not arbitrary uints.
     // Numeric matching between 11-bit and 29-bit frames is intentional.
-    private static bool TryParseCanId(string value, out uint id) =>
-        uint.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out id) &&
-        id <= MaxExtendedCanId;
+    private static bool TryParseCanId(string value, out uint id)
+    {
+        id = default;
+        return value is { Length: >= 1 and <= MaxCanIdHexDigits } &&
+            uint.TryParse(value, NumberStyles.HexNumber, CultureInfo.InvariantCulture, out id) &&
+            id <= MaxExtendedCanId;
+    }
 
     private static bool TryParseFilter(string? query, out HashSet<uint>? ids)
     {
         ids = null;
+        // Do not Trim() or Split() an unbounded pasted query on the UI thread.
+        if (query is { Length: > MaxSoftwareFilterCharacters })
+            return false;
+
         var text = (query ?? string.Empty).Trim();
         if (text.Length == 0)
             return true;
