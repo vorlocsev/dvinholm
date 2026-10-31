@@ -178,6 +178,14 @@ internal static class VolvoP2CemRevisionSourceComparison
                 .AppendLine(result.DiagnosticSoftwareClaimMatches ? "SAME" : "DIFFERENT");
         }
 
+        // Add an actionable, source-limited hardware/software discrepancy
+        // classification to the EXISTING two-file offline preview.
+        // The community lookup never promotes manual text to ECU identity.
+        report.AppendLine()
+            .Append(VolvoP2CemRevisionEvidenceTriage.BuildReadOnlyReport(
+                manualCard, sourceClaim))
+            .AppendLine();
+
         return report.AppendLine("A match proves neither source authenticity, identical physical CEM,")
             .AppendLine("firmware compatibility, CAN/K-Line transport nor configuration mapping.")
             .AppendLine("Source references, part numbers, VIN/PIN, file paths and raw DIDs are withheld.")
