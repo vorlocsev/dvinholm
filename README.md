@@ -49,6 +49,12 @@ Dvinholm. A detected J2534 DLL is not proof that the hardware is connected.
 
 [Distribution and driver details](docs/UPDATER-BANNER.md).
 
+## Latest stable release — v0.2.4 (2026-10-26)
+
+**Published Stable v0.2.4** is available as a [self-contained Portable ZIP](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.4/Dvinholm-Windows-x86.zip) or a [framework-dependent Lite ZIP](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.4/Dvinholm-Windows-x86-Lite.zip). The [SHA256SUMS.txt](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.4/SHA256SUMS.txt) from that **same published release** contains the authoritative hashes; do not substitute checksums from another build.
+
+Demo/preview/test-only controls are **excluded from Stable**. The frozen source revision is `a9e61883a413d4afaebb86fb468987c904250092`. Actual installed updater and physical adapter acceptance remain separate tests.
+
 ## Quick start
 
 **Latest published Stable:** [Dvinholm v0.2.4](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.4), published 2026-10-26 from frozen commit `a9e6188`. Both Portable and Lite Windows x86 ZIPs are available. The `main` **Development** channel is experimental and separately built, even though its binary version may also say 0.2.4.
