@@ -25,6 +25,9 @@ internal static class CanMonitorIsoTpShapeSummary
             rows, totalReceivedSinceClear, subscriberDroppedFrames, syntheticDemo);
 
         var groups = new Dictionary<(bool Extended, uint Id), FrameCounts>();
+        // Reuse one 8-byte scratch span across the bounded RX history. Each
+        // iteration parses and classifies only the exact DLC-length slice.
+        Span<byte> bytes = stackalloc byte[8];
         foreach (var row in rows)
         {
             if (row is null || row.Dlc > 8)
@@ -35,7 +38,6 @@ internal static class CanMonitorIsoTpShapeSummary
                     CultureInfo.InvariantCulture, out var id))
                 throw new InvalidDataException("Invalid CAN RX arbitration identifier.");
 
-            Span<byte> bytes = stackalloc byte[8];
             if (!TryDecodeData(row.Data, (int)row.Dlc, bytes))
                 throw new InvalidDataException("Malformed CAN RX payload shape.");
 
