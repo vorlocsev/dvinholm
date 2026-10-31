@@ -276,10 +276,16 @@ public sealed class J2534SessionLifecycleTests
             allowCallbackToFinish.Set();
         }
 
+        // The fake adapter increments UnloadCount *inside* Unload(), before
+        // J2534Session.DisconnectLocked() executes its finally block to clear
+        // AdapterVersion/Capabilities. Wait for the entire teardown contract,
+        // not just its intermediate adapter-unload counter.
         Assert.True(SpinWait.SpinUntil(
-                () => !session.IsConnected && adapter.UnloadCount == 2,
+                () => !session.IsConnected && adapter.UnloadCount == 2 &&
+                      session.AdapterVersion is null &&
+                      session.AdapterCapabilities is null,
                 TimeSpan.FromSeconds(3)),
-            "Deferred disposal did not finish after the read-error callback returned.");
+            "Deferred disposal did not clear the bus and adapter metadata.");
         Assert.Null(session.AdapterVersion);
         Assert.Null(session.AdapterCapabilities);
         Assert.Throws<ObjectDisposedException>(() =>
