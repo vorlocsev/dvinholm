@@ -100,7 +100,7 @@ public sealed class CanMonitorOfflineCsvTimestampBoundaryTests
         Assert.Contains("Timestamp regressions/wraps in CSV: 2", report);
         Assert.Contains("Active candidates invalidated at timestamp boundaries: 0", report);
         Assert.Contains("FF=0, plausible-completion=0", report);
-        Assert.Contains("not validated ISO-TP", report);
+        Assert.Contains("not verified ISO-TP sessions", report);
     }
 
     [Fact]
