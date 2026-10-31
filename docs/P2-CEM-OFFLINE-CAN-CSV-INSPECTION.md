@@ -38,6 +38,22 @@ comes from the selected CSV only; it cannot verify original bus ordering,
 completeness, direction or the captured physical CEM. The CSV has no original
 drop counter, so subscriber loss remains **UNKNOWN**.
 
+**Timestamp boundary protection:** The aggregate CSV sequence tracker compares
+adjacent raw J2534 `uint32` timestamps only to spot decreases. At a decrease,
+it invalidates ALL active candidate sequences, across all CAN IDs/formats,
+before processing the next row. This prevents falsely matching first and
+consecutive frames across a logger restart, joined capture or clock wrap.
+The redacted report shows the *number* of decreases and invalidated
+candidates, but not the timestamp values or CAN IDs. It does **not** assume
+time units, clock continuity, transport timeout or valid ISO-TP timing.
+Equal/increasing timestamps merely lack that specific warning; they do NOT
+authenticate frame order or an ECU. A natural 32-bit wrap is intentionally
+handled as a boundary rather than a continuous ISO-TP transaction.
+
+The existing live monitor sequence report remains unchanged, including its
+per-ID display. Only the user-selected offline CSV aggregate view applies
+this conservative discontinuity reset.
+
 The JSON RX metadata schema and the existing per-CAN-ID live RX summary
 remain unchanged. Nothing is copied until **Copy redacted summary** is
 clicked; Close leaves clipboard alone. Import never appends or clears
@@ -61,6 +77,10 @@ Eight additional synthetic tests check ID-free multiframe aggregate totals,
 same-ID CF continuity, cross-ID/format isolation, mismatches and interruptions,
 65-group completeness, unknown loss/demo provenance, and end-to-end local
 CSV summary integration without changing the original per-ID live report.
+Eight timestamp-boundary regression tests cover backwards timestamps,
+normal/equal timestamps, global multi-ID invalidation, unrelated-ID
+discontinuities, uint32 wrap, inactive-boundary accounting and CSV
+round-trip versus unchanged live monitor behavior.
 
 Installed Windows UI acceptance, genuine DiCE/J2534 acquisition and actual
 XC90 CEM service mapping are **not claimed**. Only Dvinholm changes.
