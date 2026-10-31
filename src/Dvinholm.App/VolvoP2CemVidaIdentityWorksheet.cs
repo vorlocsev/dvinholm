@@ -84,6 +84,8 @@ internal static class VolvoP2CemVidaIdentityWorksheet
                 ? "User says these fields were read in VIDA (not independently verified)"
                 : "Other / not independently documented")
             .AppendLine("Hardware serial and VIN: intentionally not collected.")
+            .AppendLine()
+            .AppendLine(VolvoP2CemCommunityPartNumberResearch.BuildResearchNote(hardware))
             .AppendLine("Transport, firmware compatibility, configuration mappings and PIN: UNKNOWN.")
             .AppendLine("No CAN/UDS/K-Line requests, configuration writes or PIN operations enabled.")
             .AppendLine("Review before copying or sharing. Part numbers can be identifying metadata.")
