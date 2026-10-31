@@ -14,6 +14,8 @@ internal static class J2534OfflineTraceInspection
     internal const int MaximumFileBytes = 512 * 1024;
     internal const int MaximumEvents = 5000;
     internal const int MaximumLineCharacters = 1024;
+    // A conservative research-only limit, not a J2534 or Volvo timeout.
+    internal const uint MaximumTemporalAssociationMs = 30_000;
     private static readonly UTF8Encoding StrictUtf8 = new(false, true);
     private static readonly HashSet<string> KnownFields = new(StringComparer.Ordinal)
     {
@@ -35,7 +37,9 @@ internal static class J2534OfflineTraceInspection
             throw new InvalidDataException("Invalid J2534 event count.");
 
         var activeChannels = new HashSet<uint>();
-        var successfulTxWindow = new HashSet<uint>();
+        // Record when each channel's most recent accepted write completed.
+        // Temporal proximity alone is NEVER proof that an ECU responded.
+        var successfulTxWindow = new Dictionary<uint, uint>();
         uint? previousMs = null;
         int resets = 0, resetWindows = 0;
         int connects = 0, failedConnects = 0, reconnected = 0;
@@ -43,6 +47,7 @@ internal static class J2534OfflineTraceInspection
         int writes = 0, successfulWrites = 0, failedWrites = 0;
         int reads = 0, successfulReadsWithData = 0, readsAfterTxWithData = 0;
         int readsBeforeTxWithData = 0, multiTx = 0, multiRx = 0, orphanCalls = 0;
+        int staleTxWindowsOnDataRead = 0;
         int a3 = 0, b9fb = 0, b9e0 = 0, b9f0 = 0, b9fc = 0;
         int e302 = 0, f9e0 = 0, f9f0 = 0, fragments = 0;
         int otherEvents = 0;
@@ -154,7 +159,7 @@ internal static class J2534OfflineTraceInspection
                         if (status == 0 && messages > 0)
                         {
                             successfulWrites++;
-                            successfulTxWindow.Add(channel);
+                            successfulTxWindow.Add(channel, ms);
                             switch (category)
                             {
                                 case "a3_tx": a3++; break;
@@ -186,10 +191,19 @@ internal static class J2534OfflineTraceInspection
                         {
                             successfulReadsWithData++;
                             if (messages > 1 || requested > 1) multiRx++;
-                            if (successfulTxWindow.Contains(channel))
+                            if (successfulTxWindow.TryGetValue(channel, out var writeMs) &&
+                                ms - writeMs <= MaximumTemporalAssociationMs)
+                            {
                                 readsAfterTxWithData++;
+                            }
                             else
+                            {
+                                // The global timestamp regression check above
+                                // has already cleared all cross-wrap windows.
+                                if (successfulTxWindow.Remove(channel))
+                                    staleTxWindowsOnDataRead++;
                                 readsBeforeTxWithData++;
+                            }
                             switch (category)
                             {
                                 case "e3_02_candidate": e302++; break;
@@ -251,6 +265,8 @@ internal static class J2534OfflineTraceInspection
                 .AppendLine(readsAfterTxWithData.ToString(CultureInfo.InvariantCulture))
             .Append("Data reads without preceding accepted TX in channel window: ")
                 .AppendLine(readsBeforeTxWithData.ToString(CultureInfo.InvariantCulture))
+            .Append("Stale accepted-TX windows expired on data read: ")
+                .AppendLine(staleTxWindowsOnDataRead.ToString(CultureInfo.InvariantCulture))
             .Append("Ambiguous multi-message TX / RX calls: ").Append(multiTx)
                 .Append(" / ").AppendLine(multiRx.ToString(CultureInfo.InvariantCulture))
             .Append("Inconsistent TX / RX batch counts (returned > requested): ")
@@ -274,6 +290,7 @@ internal static class J2534OfflineTraceInspection
                 .Append(e302).Append(" / ").Append(f9e0).Append(" / ")
                 .Append(f9f0).Append(" / ").AppendLine(fragments.ToString(CultureInfo.InvariantCulture))
             .AppendLine("Temporal RX-after-TX is NOT verified ECU response, request pairing, VIN read or CEM acknowledgment.")
+            .AppendLine("Temporal proximity limit: 30000 ms (heuristic only, not a protocol timeout).")
             .AppendLine("Read batches may contain many messages; only first category may be classified by source.")
             .AppendLine("A batch reporting more messages than requested is untrusted, not ECU evidence.")
             .AppendLine("Event ordering, clock continuity, channel origin and dropped events are UNKNOWN.")
