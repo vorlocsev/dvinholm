@@ -18,3 +18,21 @@ function ConvertTo-NativeIconResourcePath {
 
     return $Path.Replace([char]92, [char]47)
 }
+
+# rc.exe defaults to the machine ANSI code page. Keep source paths intact by
+# declaring UTF-8 inside the resource script, and writing UTF-8 without a BOM.
+function Write-NativeIconResourceFile {
+    [CmdletBinding()]
+    param(
+        [Parameter(Mandatory = $true)][string]$OutputPath,
+        [Parameter(Mandatory = $true)][string]$IconPath
+    )
+
+    $resourcePath = ConvertTo-NativeIconResourcePath -Path $IconPath
+    $resourceText = "#pragma code_page(65001)`r`n1 ICON `"$resourcePath`"`r`n"
+    [IO.File]::WriteAllText(
+        $OutputPath,
+        $resourceText,
+        [Text.UTF8Encoding]::new($false)
+    )
+}
