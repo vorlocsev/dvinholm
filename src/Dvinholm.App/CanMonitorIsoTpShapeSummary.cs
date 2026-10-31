@@ -123,7 +123,7 @@ internal static class CanMonitorIsoTpShapeSummary
 
     // CAN monitor DataHex is uppercase, space-separated byte pairs.
     // Do not echo or persist malformed user/device content.
-    private static bool TryDecodeData(string? data, int dlc, Span<byte> destination)
+    internal static bool TryDecodeData(string? data, int dlc, Span<byte> destination)
     {
         if (data is null || dlc is < 0 or > 8)
             return false;

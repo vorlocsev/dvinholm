@@ -3335,7 +3335,12 @@ public sealed partial class MainWindow : Window
             // displays no bytes and never infers a physical CEM/transport.
             var pciShapes = CanMonitorIsoTpShapeSummary.Build(
                 snapshotRows, _monitorHistory.TotalReceived, queueDrops, synthetic);
-            var copyableReport = report + Environment.NewLine + pciShapes;
+            // Track possible same-ID consecutive-frame counters in the
+            // same buffered RX view, without reassembly or ECU identification.
+            var candidateSequences = CanMonitorIsoTpCandidateSequences.Build(
+                snapshotRows, _monitorHistory.TotalReceived, queueDrops, synthetic);
+            var copyableReport = report + Environment.NewLine + pciShapes +
+                                 Environment.NewLine + candidateSequences;
             // Existing JSON remains strictly ID/DLC metadata only.
             var jsonMetadata = CanMonitorRxMetadataJson.Build(
                 snapshotRows, _monitorHistory.TotalReceived, queueDrops, synthetic);

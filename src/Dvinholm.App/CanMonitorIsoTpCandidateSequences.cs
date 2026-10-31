@@ -1,0 +1,173 @@
+using System.Globalization;
+using System.Text;
+
+namespace Dvinholm.App;
+
+/// <summary>
+/// Offline, bounded *candidate* sequence tracking over already retained
+/// CAN Monitor RX rows. The tracker never reassembles or emits payload bytes.
+/// Neither a matching PCI pattern nor a plausible byte count establishes
+/// ISO-TP, direction, an ECU, a CEM revision or physical bus completeness.
+/// </summary>
+internal static class CanMonitorIsoTpCandidateSequences
+{
+    internal const int MaximumDisplayedGroups = 64;
+
+    internal static string Build(
+        IReadOnlyList<CanMonitorRow> rows,
+        long totalReceivedSinceClear,
+        long? subscriberDroppedFrames,
+        bool syntheticDemo)
+    {
+        // Reuse strict capture-history bounds and canonical arbitration-ID
+        // validation. No adapters, files, network, telemetry or clipboard.
+        _ = CanMonitorRxResearchSummary.Build(
+            rows, totalReceivedSinceClear, subscriberDroppedFrames, syntheticDemo);
+
+        var groups = new Dictionary<(bool Extended, uint Id), GroupStats>();
+        Span<byte> bytes = stackalloc byte[8];
+
+        foreach (var row in rows)
+        {
+            if (!uint.TryParse(row.Id, NumberStyles.HexNumber,
+                    CultureInfo.InvariantCulture, out var id) ||
+                !CanMonitorIsoTpShapeSummary.TryDecodeData(
+                    row.Data, (int)row.Dlc, bytes))
+                throw new InvalidDataException("Invalid historical CAN RX frame shape.");
+
+            var key = (row.Type == "29-bit", id);
+            if (!groups.TryGetValue(key, out var stats))
+            {
+                stats = new GroupStats();
+                groups.Add(key, stats);
+            }
+
+            var payload = bytes[..(int)row.Dlc];
+            int kind = payload.Length == 0 ? -1 : payload[0] >> 4;
+
+            // Classic CAN, normal-addressed FF: 12-bit length and six initial
+            // data bytes. The shape can also occur in unrelated traffic.
+            if (kind == 1 && payload.Length == 8 &&
+                (((payload[0] & 0x0F) << 8) | payload[1]) > 7)
+            {
+                if (stats.Active is not null)
+                    stats.Interrupted++;
+
+                int length = ((payload[0] & 0x0F) << 8) | payload[1];
+                stats.Starts++;
+                stats.Active = new Candidate(length - 6, nextSequenceNumber: 1);
+                continue;
+            }
+
+            // A CF has one PCI byte and 1-7 payload bytes. We compare only
+            // the four-bit sequence counter within the SAME CAN-ID/format.
+            // We never invent the complementary CAN ID or flow-control peer.
+            if (kind == 2 && payload.Length >= 2)
+            {
+                if (stats.Active is null)
+                {
+                    stats.OrphanConsecutive++;
+                    continue;
+                }
+
+                int sequenceNumber = payload[0] & 0x0F;
+                if (sequenceNumber != stats.Active.NextSequenceNumber)
+                {
+                    stats.SequenceMismatch++;
+                    stats.Active = null;
+                    continue;
+                }
+
+                stats.Active.RemainingBytes -= payload.Length - 1;
+                stats.Active.NextSequenceNumber =
+                    (stats.Active.NextSequenceNumber + 1) & 0x0F;
+
+                if (stats.Active.RemainingBytes <= 0)
+                {
+                    stats.PlausibleCompletions++;
+                    stats.Active = null;
+                }
+                continue;
+            }
+
+            // Any other shape on this exact CAN ID interrupts a candidate.
+            // Other CAN IDs may interleave freely and never imply direction.
+            if (stats.Active is not null)
+            {
+                stats.Interrupted++;
+                stats.Active = null;
+            }
+        }
+
+        var output = new StringBuilder()
+            .AppendLine("POTENTIAL ISO-TP SEQUENCES (OFFLINE, UNVERIFIED)")
+            .AppendLine(syntheticDemo
+                ? "Source: SYNTHETIC DEMO, not physical vehicle evidence."
+                : "Source: buffered RX rows, physical origin unverified.")
+            .AppendLine("Assumes Classic CAN normal addressing only; proprietary D2/extended addressing not decoded.")
+            .AppendLine("Tracks first-frame lengths and consecutive-frame counters ONLY within identical CAN ID/format.")
+            .Append("Buffered RX rows: ")
+            .AppendLine(rows.Count.ToString(CultureInfo.InvariantCulture))
+            .Append("Distinct groups: ")
+            .AppendLine(groups.Count.ToString(CultureInfo.InvariantCulture))
+            .AppendLine("All counts are heuristics, not verified ISO-TP sessions:");
+
+        foreach (var group in groups.OrderBy(g => g.Key.Extended)
+                     .ThenBy(g => g.Key.Id).Take(MaximumDisplayedGroups))
+        {
+            var c = group.Value;
+            int incomplete = c.Active is null ? 0 : 1;
+            output.Append("  CAN ")
+                .Append(group.Key.Extended ? "29-bit " : "11-bit ")
+                .Append(group.Key.Id.ToString(
+                    group.Key.Extended ? "X8" : "X3", CultureInfo.InvariantCulture))
+                .Append(": candidate FF=").Append(c.Starts)
+                .Append(", plausible-completion=").Append(c.PlausibleCompletions)
+                .Append(", trailing-incomplete=").Append(incomplete)
+                .Append(", sequence-mismatch=").Append(c.SequenceMismatch)
+                .Append(", interrupted=").Append(c.Interrupted)
+                .Append(", orphan-CF=").Append(c.OrphanConsecutive)
+                .AppendLine();
+        }
+
+        if (groups.Count > MaximumDisplayedGroups)
+            output.Append("Additional groups withheld: ")
+                .AppendLine((groups.Count - MaximumDisplayedGroups)
+                    .ToString(CultureInfo.InvariantCulture));
+
+        bool reportedUnbrokenBuffer = totalReceivedSinceClear == rows.Count &&
+                                      subscriberDroppedFrames == 0;
+        return output
+            .AppendLine(reportedUnbrokenBuffer
+                ? "No history eviction or subscriber drops reported; other missed frames still possible."
+                : "Frame continuity UNKNOWN/INCOMPLETE: eviction, drops or missing counters possible.")
+            .AppendLine("A plausible completion is a length/counter pattern, NOT a validated diagnostic exchange.")
+            .AppendLine("No frame payload, VIN, PIN, DID values, timestamps, profile IDs or secret strings are output.")
+            .AppendLine("No source ECU, request/response pairing, flow-control peer or Volvo CEM address is identified.")
+            .AppendLine("CAN IDs and traffic patterns may fingerprint a vehicle. Review before sharing.")
+            .AppendLine("No CAN/J2534 operation, diagnostic request, configuration write or PIN access.")
+            .ToString();
+    }
+
+    private sealed class Candidate
+    {
+        internal Candidate(int remainingBytes, int nextSequenceNumber)
+        {
+            RemainingBytes = remainingBytes;
+            NextSequenceNumber = nextSequenceNumber;
+        }
+
+        internal int RemainingBytes;
+        internal int NextSequenceNumber;
+    }
+
+    private sealed class GroupStats
+    {
+        internal int Starts;
+        internal int PlausibleCompletions;
+        internal int Interrupted;
+        internal int SequenceMismatch;
+        internal int OrphanConsecutive;
+        internal Candidate? Active;
+    }
+}
