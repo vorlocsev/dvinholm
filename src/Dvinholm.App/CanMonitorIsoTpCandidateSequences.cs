@@ -48,9 +48,32 @@ internal static class CanMonitorIsoTpCandidateSequences
 
         var groups = new Dictionary<(bool Extended, uint Id), GroupStats>();
         Span<byte> bytes = stackalloc byte[8];
+        uint? previousTimestamp = null;
+        var timestampRegressions = 0;
+        var boundaryInvalidatedCandidates = 0;
 
         foreach (var row in rows)
         {
+            // A selected CSV may contain a restarted logger, concatenated
+            // captures or a wrapping 32-bit J2534 clock. The origin and units
+            // of timestamps are unverified; never join candidate messages
+            // across a backwards jump. Reset ALL CAN-ID groups because the
+            // discontinuity is in the global CSV capture, not one ECU.
+            // The live per-ID monitor report retains its existing behavior.
+            if (!showCanIds &&
+                previousTimestamp is uint previous &&
+                row.Timestamp < previous)
+            {
+                timestampRegressions++;
+                foreach (var group in groups.Values)
+                {
+                    if (group.Active is null)
+                        continue;
+                    group.Active = null;
+                    boundaryInvalidatedCandidates++;
+                }
+            }
+            previousTimestamp = row.Timestamp;
             if (!uint.TryParse(row.Id, NumberStyles.HexNumber,
                     CultureInfo.InvariantCulture, out var id) ||
                 !CanMonitorIsoTpShapeSummary.TryDecodeData(
@@ -169,7 +192,13 @@ internal static class CanMonitorIsoTpCandidateSequences
 
         if (!showCanIds)
         {
-            output.AppendLine("Offline CSV aggregate mode: CAN identifiers withheld.");
+            output.AppendLine("Offline CSV aggregate mode: CAN identifiers withheld.")
+                .Append("Timestamp regressions/wraps in CSV: ")
+                .AppendLine(timestampRegressions.ToString(CultureInfo.InvariantCulture))
+                .Append("Active candidates invalidated at timestamp boundaries: ")
+                .AppendLine(boundaryInvalidatedCandidates.ToString(CultureInfo.InvariantCulture))
+                .AppendLine("A timestamp decrease is an unverified capture boundary or uint32 wrap; no frames are joined across it.")
+                .AppendLine("Even monotonic timestamps do not validate timestamp units, inter-frame delays or capture completeness.");
         }
         else
         {
