@@ -17,7 +17,29 @@ internal static class CanMonitorIsoTpCandidateSequences
         IReadOnlyList<CanMonitorRow> rows,
         long totalReceivedSinceClear,
         long? subscriberDroppedFrames,
-        bool syntheticDemo)
+        bool syntheticDemo) =>
+        BuildCore(rows, totalReceivedSinceClear, subscriberDroppedFrames,
+            syntheticDemo, showCanIds: true);
+
+    /// <summary>
+    /// Use for a selected offline CSV. All candidate sequences are still
+    /// counted by CAN ID internally, but no arbitration IDs appear in the
+    /// output. This does NOT authenticate the CSV or its frame continuity.
+    /// </summary>
+    internal static string BuildAggregate(
+        IReadOnlyList<CanMonitorRow> rows,
+        long totalReceivedSinceClear,
+        long? subscriberDroppedFrames,
+        bool syntheticDemo) =>
+        BuildCore(rows, totalReceivedSinceClear, subscriberDroppedFrames,
+            syntheticDemo, showCanIds: false);
+
+    private static string BuildCore(
+        IReadOnlyList<CanMonitorRow> rows,
+        long totalReceivedSinceClear,
+        long? subscriberDroppedFrames,
+        bool syntheticDemo,
+        bool showCanIds)
     {
         // Reuse strict capture-history bounds and canonical arbitration-ID
         // validation. No adapters, files, network, telemetry or clipboard.
@@ -145,6 +167,12 @@ internal static class CanMonitorIsoTpCandidateSequences
             .Append(", orphan-CF=").AppendLine(totals.Orphan.ToString(CultureInfo.InvariantCulture))
             .AppendLine("All counts are heuristics, not verified ISO-TP sessions:");
 
+        if (!showCanIds)
+        {
+            output.AppendLine("Offline CSV aggregate mode: CAN identifiers withheld.");
+        }
+        else
+        {
         foreach (var group in groups.OrderBy(g => g.Key.Extended)
                      .ThenBy(g => g.Key.Id).Take(MaximumDisplayedGroups))
         {
@@ -167,6 +195,7 @@ internal static class CanMonitorIsoTpCandidateSequences
             output.Append("Additional groups withheld: ")
                 .AppendLine((groups.Count - MaximumDisplayedGroups)
                     .ToString(CultureInfo.InvariantCulture));
+        }
 
         return output
             .AppendLine(!hasReportedLoss && !dropsUnknown
@@ -176,7 +205,9 @@ internal static class CanMonitorIsoTpCandidateSequences
             .AppendLine("A plausible completion is a length/counter pattern, NOT a validated diagnostic exchange.")
             .AppendLine("No frame payload, VIN, PIN, DID values, timestamps, profile IDs or secret strings are output.")
             .AppendLine("No source ECU, request/response pairing, flow-control peer or Volvo CEM address is identified.")
-            .AppendLine("CAN IDs and traffic patterns may fingerprint a vehicle. Review before sharing.")
+            .AppendLine(showCanIds
+                ? "CAN IDs and traffic patterns may fingerprint a vehicle. Review before sharing."
+                : "CAN IDs are withheld in this view, but aggregate patterns may still fingerprint traffic. Review before sharing.")
             .AppendLine("No CAN/J2534 operation, diagnostic request, configuration write or PIN access.")
             .ToString();
     }
