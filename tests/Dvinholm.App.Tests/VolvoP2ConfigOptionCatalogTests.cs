@@ -26,7 +26,7 @@ public sealed class VolvoP2ConfigOptionCatalogTests
             Assert.Equal(2014, e.ScopeLastModelYear);
             Assert.Contains("vendor advertisement", e.Source);
             Assert.Contains("not independently verified", e.Source);
-            Assert.Contains("https://sectorv.ru/", e.Source);
+            Assert.Contains("user-provided screenshots", e.Source);
         });
     }
 
