@@ -39,7 +39,7 @@ Assert-Converted '4. Unicode path content is retained' ('C:\' + $unicode + '\ico
 # filename bytes even when the converted path string is still correct.
 $rcProbe = [IO.Path]::GetTempFileName()
 try {
-    Write-NativeIconResourceFile -OutputPath $rcProbe -IconPath ('C:\\' + $unicode + '\\icon.ico')
+    Write-NativeIconResourceFile -OutputPath $rcProbe -IconPath ('C:\' + $unicode + '\icon.ico')
     $bytes = [IO.File]::ReadAllBytes($rcProbe)
     $decoded = [Text.UTF8Encoding]::new($false, $true).GetString($bytes)
     $expectedResource = "#pragma code_page(65001)`r`n1 ICON `"C:/$unicode/icon.ico`"`r`n"
