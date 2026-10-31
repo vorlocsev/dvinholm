@@ -7,7 +7,7 @@ configuration writer, security access, PIN retrieval or immobilizer function exi
 
 Dvinholm will grow from read-only J2534 diagnostics into a carefully gated,
 vehicle-specific ECU configuration tool. The requested priorities are
-**authorized PIN retrieval** and **vehicle configuration changes**. SectorV,
+**authorized PIN retrieval** and **vehicle configuration changes**.
 P3Tool and VDASH are research references for user-facing capabilities, NOT
 verified protocols, interchangeable APIs or permission to copy proprietary code.
 Actual commands and ECU identification must come from independently validated,

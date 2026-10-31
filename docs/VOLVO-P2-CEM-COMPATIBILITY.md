@@ -248,8 +248,8 @@ speed policy. Identifiers are newly assigned Dvinholm research labels;
 they are **not Volvo parameter IDs**, another application's IDs or a
 verified factory configuration dictionary.
 
-Evidence: the user-provided readable SectorV product screenshots from
-2026-10-27 and the vendor homepage, https://sectorv.ru/. The claim
+Evidence: user-provided screenshots of third-party P2 product advertising
+from 2026-10-27. The claim
 "from model year 2006" is **vendor advertising for P2**, not
 independently validated coverage for every XC90, CEM firmware, option
 or compatible adapter. Earlier first-generation XC90 years
@@ -558,9 +558,8 @@ unverified and physical testing deferred.
   live firmware identity or a safe configuration write.
 - PIN retrieval and configuration writing: **not supported**.
 
-Reference applications [SectorV](https://sectorv.ru/),
-[P3Tool](https://p3tool.org/), and [VDASH](https://d5t5.com/)
-remain functional research references, not validated protocol sources for
+[P3Tool](https://p3tool.org/) and [VDASH](https://d5t5.com/) are
+functional research references, not validated protocol sources for
 this application. P3Tool's P3 feature design must not be transplanted to P2.
 
 The existing published **Stable v0.2.4** remains frozen. No 0.3.0 Stable

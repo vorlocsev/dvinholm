@@ -45,8 +45,8 @@ independent of the frozen v0.2.4 tag and assets.
 - Next: documented ECU software/hardware identifiers and compatibility data,
   then user-initiated local snapshot export/comparison with privacy safeguards.
 
-Functional references are [SectorV](https://sectorv.ru/),
-[P3Tool](https://p3tool.org/) and [VDASH](https://d5t5.com/). They guide
+Functional comparison references include [P3Tool](https://p3tool.org/)
+and [VDASH](https://d5t5.com/). They guide
 capability discovery, not undocumented protocol assumptions or code copying.
 See also [ECU configuration roadmap](ECU-CONFIGURATION-ROADMAP.md) and
 [backlog issue #523](https://github.com/vorlocsev/dvinholm/issues/523).

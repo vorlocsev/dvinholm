@@ -49,28 +49,30 @@ internal static class VolvoP2CemCatalogSearch
 
         var terms = (query ?? string.Empty).Trim()
             .Split(' ', StringSplitOptions.RemoveEmptyEntries);
-        var rows = new List<VolvoP2CemCatalogSearchRow>(14);
+        var rows = new List<VolvoP2CemCatalogSearchRow>(
+            VolvoP2CemConfigOptionManifest.Entries.Count);
 
-        if (tier is VolvoP2CemCatalogEvidenceTier.All or
-            VolvoP2CemCatalogEvidenceTier.VendorAdvertisement)
+        // The viewer now consumes the same source-separated structured
+        // option manifest that a future configuration editor can inspect.
+        // An OEM menu title is still NOT a verified ECU parameter mapping.
+        foreach (var definition in VolvoP2CemConfigOptionManifest.Entries)
         {
-            foreach (var option in VolvoP2ConfigOptionCatalog.Entries)
-                rows.Add(new(option.CanonicalId, option.DisplayName,
-                    option.Group.ToString(),
-                    VolvoP2CemCatalogEvidenceTier.VendorAdvertisement,
-                    "Vendor-advertised P2 model years 2006–2014 only",
-                    option.SafetyOrComplianceReviewRequired));
-        }
+            var sourceTier = definition.Provenance ==
+                VolvoP2CemOptionProvenance.ThirdPartyAdvertisement
+                    ? VolvoP2CemCatalogEvidenceTier.VendorAdvertisement
+                    : VolvoP2CemCatalogEvidenceTier.VolvoPublishedServiceMenu;
+            if (tier != VolvoP2CemCatalogEvidenceTier.All && tier != sourceTier)
+                continue;
 
-        if (tier is VolvoP2CemCatalogEvidenceTier.All or
-            VolvoP2CemCatalogEvidenceTier.VolvoPublishedServiceMenu)
-        {
-            foreach (var feature in VolvoXc90OemCemMenuCatalog.Entries)
-                rows.Add(new(feature.ResearchId, feature.Name,
-                    "XC90 CEM service menu",
-                    VolvoP2CemCatalogEvidenceTier.VolvoPublishedServiceMenu,
-                    "XC90 service-menu category only; no vehicle-year or revision proof",
-                    feature.ConditionalEquipment));
+            rows.Add(new(
+                definition.CanonicalId,
+                definition.DisplayName,
+                definition.Category,
+                sourceTier,
+                sourceTier == VolvoP2CemCatalogEvidenceTier.VendorAdvertisement
+                    ? "Vendor-advertised P2 model years 2006–2014 only"
+                    : "XC90 service-menu category only; no vehicle-year or revision proof",
+                definition.AdditionalSafetyOrEquipmentReviewRequired));
         }
 
         // Every term must occur in one of the displayed research fields.
@@ -105,6 +107,11 @@ internal static class VolvoP2CemCatalogSearch
                 .Append("  Source scope: ").AppendLine(row.ClaimedScope);
             if (row.NeedsSafetyOrEquipmentReview)
                 report.AppendLine("  Additional safety, compliance or equipment review may be required.");
+            var manifest = VolvoP2CemConfigOptionManifest.Find(row.ResearchId)
+                ?? throw new InvalidDataException("Missing structured CEM option definition.");
+            report.AppendLine("  Structured option: physical owner UNKNOWN | CEM firmware UNKNOWN");
+            report.AppendLine("  Raw value mapping UNKNOWN | verified values NONE | dependencies UNKNOWN");
+            report.Append("  Evidence: ").AppendLine(manifest.Provenance.ToString());
             report.AppendLine("  Current value: UNKNOWN | Read mapping: UNKNOWN | Write: DISABLED");
         }
 

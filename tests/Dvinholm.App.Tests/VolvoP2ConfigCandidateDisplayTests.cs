@@ -42,7 +42,7 @@ public sealed class VolvoP2ConfigCandidateDisplayTests
     public void SourceAndAdvertisedYearAreExplicitlyUnverified()
     {
         var overview = Overview();
-        Assert.Contains("https://sectorv.ru/", overview);
+        Assert.Contains("user-provided third-party screenshots", overview);
         Assert.Contains("advertisement only", overview);
         Assert.Contains("MY2006+", overview);
         Assert.Equal(8, CountOccurrences(overview, "Claimed model years: 2006–2014"));

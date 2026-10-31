@@ -36,7 +36,7 @@ internal sealed record VolvoXc90OemFeatureEvidence(
 /// <summary>
 /// Independent manufacturer-document evidence for XC90 CEM service-menu
 /// names. This must NOT be silently merged with the eight separate
-/// SectorV-advertised option categories or promoted to a firmware map.
+/// third-party-advertised option categories or promoted to a firmware map.
 /// </summary>
 internal static class VolvoXc90OemCemMenuCatalog
 {
