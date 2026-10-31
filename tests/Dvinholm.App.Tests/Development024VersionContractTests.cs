@@ -2,7 +2,7 @@ namespace Dvinholm.App.Tests;
 
 /// <summary>
 /// Eight offline version-channel contracts. They do not create tags or publish
-/// releases and deliberately distinguish Development binaries from Stable 0.2.3.
+/// releases and distinguish the frozen published Stable v0.2.4 from later Development.
 /// </summary>
 public sealed class Development024VersionContractTests
 {
@@ -18,7 +18,7 @@ public sealed class Development024VersionContractTests
     }
 
     [Fact]
-    public void MainProjectDefaultsToUnreleased024WithoutDemoTools()
+    public void MainDevelopment024KeepsProductionFeaturesOffByDefault()
     {
         var project = Read("src/Dvinholm.App/Dvinholm.App.csproj");
         Assert.Contains("<Version>0.2.4</Version>", project);
@@ -81,34 +81,42 @@ public sealed class Development024VersionContractTests
     }
 
     [Fact]
-    public void PublicReadmeDoesNotMislabel024AsReleasedStable()
+    public void PublicReadmePointsToFrozenStable024AndSeparatesDevelopment()
     {
         var readme = Read("README.md");
-        Assert.Contains("badge/stable-v0.2.3", readme);
-        Assert.Contains("Development CI ZIPs identify as **0.2.4** (unreleased", readme);
-        Assert.Contains("/releases/download/v0.2.3/Dvinholm-Windows-x86.zip", readme);
-        Assert.DoesNotContain("/releases/download/v0.2.4/", readme);
+        Assert.Contains("badge/stable-v0.2.4", readme);
+        Assert.Contains("/releases/download/v0.2.4/Dvinholm-Windows-x86.zip", readme);
+        Assert.Contains("/releases/download/v0.2.4/Dvinholm-Windows-x86-Lite.zip", readme);
+        Assert.Contains("a9e61883a413d4afaebb86fb468987c904250092", readme);
+        Assert.Contains("Launcher.exe", readme);
+        Assert.Contains("framework-dependent", readme);
+        Assert.DoesNotContain("the published, supported Stable remains **v0.2.3**", readme);
+        Assert.DoesNotContain("0.2.4 (unreleased, experimental)", readme);
     }
 
     [Fact]
-    public void RussianGuideFirstLaunchLinksActualPublishedStable023Archive()
+    public void RussianGuideFirstLaunchSeparatesStableAndDevelopmentEntrypoints()
     {
         var guide = Read("docs/USER_GUIDE_RU.md");
         var start = guide.Split("## 1. Первый запуск", StringSplitOptions.None)[1]
             .Split("## 2.", StringSplitOptions.None)[0];
-        Assert.Contains("/releases/download/v0.2.3/Dvinholm-Windows-x86.zip", start);
-        Assert.Contains("Development CI-сборки 0.2.4", start);
-        Assert.DoesNotContain("стабильный ZIP v0.2.1", start);
+        Assert.Contains("/releases/download/v0.2.4/Dvinholm-Windows-x86.zip", start);
+        Assert.Contains("/releases/download/v0.2.4/Dvinholm-Windows-x86-Lite.zip", start);
+        Assert.Contains("Launcher.exe", start);
+        Assert.Contains("Dvinholm.App.exe", start);
+        Assert.DoesNotContain("/releases/download/v0.2.3/", start);
     }
 
     [Fact]
-    public void ChangelogAndRoadmapReserve024WithoutClaimingPublication()
+    public void ChangelogAndRoadmapDistinguishPublished024FromHistoricalPlans()
     {
         var changelog = Read("CHANGELOG.md");
         var roadmap = Read("ROADMAP.md");
-        Assert.Contains("## [0.2.4] — Unreleased (Development only)", changelog);
+        Assert.Contains("## [0.2.4] — 2026-10-26 (Stable published)", changelog);
+        Assert.Contains("a9e61883a413d4afaebb86fb468987c904250092", changelog);
         Assert.Contains("## [0.2.3] — 2026-10-24", changelog);
-        Assert.Contains("## Next Development milestone: 0.2.4 (unreleased)", roadmap);
-        Assert.Contains("No 0.2.4 Stable tag/release without explicit approval", roadmap);
+        Assert.Contains("public Stable v0.2.4 release is already published", roadmap);
+        Assert.Contains("## Historical Development 0.2.4 pre-release plan", roadmap);
+        Assert.DoesNotContain("## Next Development milestone: 0.2.4 (unreleased)", roadmap);
     }
 }
