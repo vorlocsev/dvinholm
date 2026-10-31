@@ -3428,8 +3428,9 @@ public sealed partial class MainWindow : Window
     }
 
     /// <summary>
-    /// Offline-only analysis of an explicitly selected Dvinholm CAN CSV.
-    /// Never appends to the live monitor, changes profiles or opens a bus.
+    /// Offline-only inspection of a selected Dvinholm CSV or schema-15
+    /// J2534 metadata JSONL. Neither format starts an adapter or modifies
+    /// the live CAN monitor, profiles or vehicle.
     /// </summary>
     private async void InspectCanCsv_Click(object sender, RoutedEventArgs e)
     {
@@ -3441,20 +3442,34 @@ public sealed partial class MainWindow : Window
             var picker = new FileOpenPicker();
             InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
             picker.FileTypeFilter.Add(".csv");
+            picker.FileTypeFilter.Add(".jsonl");
             var selected = await picker.PickSingleFileAsync();
             if (selected is null || _closing)
                 return;
 
-            var imported = await CanMonitorOfflineCsvInspection.InspectFileAsync(
-                selected.Path);
+            string report;
+            if (Path.GetExtension(selected.Path).Equals(
+                    ".jsonl", StringComparison.OrdinalIgnoreCase))
+            {
+                report = await J2534OfflineTraceInspection.InspectFileAsync(
+                    selected.Path);
+            }
+            else if (Path.GetExtension(selected.Path).Equals(
+                         ".csv", StringComparison.OrdinalIgnoreCase))
+            {
+                var imported = await CanMonitorOfflineCsvInspection.InspectFileAsync(
+                    selected.Path);
+                report = CanMonitorOfflineCsvInspection.BuildRedactedReport(imported);
+            }
+            else
+                throw new InvalidDataException("Unsupported offline trace format.");
             if (_closing)
                 return;
-            var report = CanMonitorOfflineCsvInspection.BuildRedactedReport(imported);
             var copied = false;
             var dialog = new ContentDialog
             {
                 XamlRoot = RootLayout.XamlRoot,
-                Title = "Offline CAN CSV research (payload and CAN IDs hidden)",
+                Title = "Offline trace research (identifiers and payload hidden)",
                 Content = new ScrollViewer
                 {
                     MaxHeight = 380,
@@ -3482,24 +3497,24 @@ public sealed partial class MainWindow : Window
                 {
                     args.Cancel = true;
                     if (!_closing)
-                        SetStatus("Offline CAN CSV summary could not be copied.");
+                        SetStatus("Offline trace summary could not be copied.");
                 }
             };
             await dialog.ShowAsync();
             if (!_closing)
                 SetStatus(copied
-                    ? "Copied redacted offline CAN CSV summary by request. Review before sharing."
-                    : "Reviewed local CAN CSV offline. No monitor, ECU or file changed.");
+                    ? "Copied redacted offline trace summary by request. Review before sharing."
+                    : "Reviewed local trace offline. No monitor, ECU or file changed.");
         }
         catch (InvalidDataException)
         {
             if (!_closing)
-                SetStatus("Invalid, oversized or unsupported CAN CSV. Nothing imported.");
+                SetStatus("Invalid, oversized or unsupported offline trace. Nothing imported.");
         }
         catch (Exception)
         {
             if (!_closing)
-                SetStatus("Offline CAN CSV inspection failed. No diagnostic request or file write.");
+                SetStatus("Offline trace inspection failed. No diagnostic request or file write.");
         }
         finally
         {
