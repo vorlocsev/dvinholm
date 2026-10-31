@@ -46,6 +46,7 @@ internal static class J2534OfflineTraceInspection
         int a3 = 0, b9fb = 0, b9e0 = 0, b9f0 = 0, b9fc = 0;
         int e302 = 0, f9e0 = 0, f9f0 = 0, fragments = 0;
         int otherEvents = 0;
+        int inconsistentWriteBatches = 0, inconsistentReadBatches = 0;
         int successfulDeviceCloses = 0, failedDeviceCloses = 0;
         int closeInvalidatedChannels = 0, closeInvalidatedTxWindows = 0;
 
@@ -141,6 +142,15 @@ internal static class J2534OfflineTraceInspection
                         // write can NEVER credit later reads as responses.
                         successfulTxWindow.Remove(channel);
                         if (requested > 1 || messages > 1) multiTx++;
+                        // The source logs requested *NumMsgs and its result.
+                        // An impossible over-return is untrusted metadata,
+                        // even when the recorded native status says success.
+                        if (messages > requested)
+                        {
+                            inconsistentWriteBatches++;
+                            failedWrites++;
+                            break;
+                        }
                         if (status == 0 && messages > 0)
                         {
                             successfulWrites++;
@@ -161,6 +171,15 @@ internal static class J2534OfflineTraceInspection
                         if (!activeChannels.Contains(channel))
                         {
                             orphanCalls++;
+                            break;
+                        }
+                        if (messages > requested)
+                        {
+                            inconsistentReadBatches++;
+                            // Once a recorded batch contradicts its requested
+                            // count, no earlier accepted TX should lend later
+                            // reads a plausible temporal association.
+                            successfulTxWindow.Remove(channel);
                             break;
                         }
                         if (status == 0 && messages > 0)
@@ -234,6 +253,9 @@ internal static class J2534OfflineTraceInspection
                 .AppendLine(readsBeforeTxWithData.ToString(CultureInfo.InvariantCulture))
             .Append("Ambiguous multi-message TX / RX calls: ").Append(multiTx)
                 .Append(" / ").AppendLine(multiRx.ToString(CultureInfo.InvariantCulture))
+            .Append("Inconsistent TX / RX batch counts (returned > requested): ")
+                .Append(inconsistentWriteBatches).Append(" / ")
+                .AppendLine(inconsistentReadBatches.ToString(CultureInfo.InvariantCulture))
             .Append("Orphan channel calls / other events: ").Append(orphanCalls)
                 .Append(" / ").AppendLine(otherEvents.ToString(CultureInfo.InvariantCulture))
             .Append("Timestamp regressions/wraps: ").Append(resets)
@@ -253,6 +275,7 @@ internal static class J2534OfflineTraceInspection
                 .Append(f9f0).Append(" / ").AppendLine(fragments.ToString(CultureInfo.InvariantCulture))
             .AppendLine("Temporal RX-after-TX is NOT verified ECU response, request pairing, VIN read or CEM acknowledgment.")
             .AppendLine("Read batches may contain many messages; only first category may be classified by source.")
+            .AppendLine("A batch reporting more messages than requested is untrusted, not ECU evidence.")
             .AppendLine("Event ordering, clock continuity, channel origin and dropped events are UNKNOWN.")
             .AppendLine("Device close invalidates all channel evidence: device-to-channel mapping is absent.")
             .AppendLine("This is not a CAN CSV. There are NO frame bytes for ISO-TP reconstruction.")
