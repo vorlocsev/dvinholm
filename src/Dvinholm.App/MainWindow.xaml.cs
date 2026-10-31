@@ -3330,8 +3330,13 @@ public sealed partial class MainWindow : Window
             var queueDrops = _rxDropTracker.Snapshot(_monitorSubscription?.DroppedFrameCount);
             var report = CanMonitorRxResearchSummary.Build(
                 snapshotRows, _monitorHistory.TotalReceived, queueDrops, synthetic);
-            // Same UI-thread snapshot, with the same bounded validation and no
-            // CAN payloads, timestamps, file writes or device access.
+            // An offline, payload-redacted count of possible ISO-TP PCI
+            // shapes. This examines the buffered payload in memory but
+            // displays no bytes and never infers a physical CEM/transport.
+            var pciShapes = CanMonitorIsoTpShapeSummary.Build(
+                snapshotRows, _monitorHistory.TotalReceived, queueDrops, synthetic);
+            var copyableReport = report + Environment.NewLine + pciShapes;
+            // Existing JSON remains strictly ID/DLC metadata only.
             var jsonMetadata = CanMonitorRxMetadataJson.Build(
                 snapshotRows, _monitorHistory.TotalReceived, queueDrops, synthetic);
 
@@ -3345,7 +3350,7 @@ public sealed partial class MainWindow : Window
                     MaxHeight = 380,
                     Content = new TextBlock
                     {
-                        Text = report,
+                        Text = copyableReport,
                         TextWrapping = TextWrapping.Wrap,
                         IsTextSelectionEnabled = true
                     }
@@ -3360,7 +3365,7 @@ public sealed partial class MainWindow : Window
                 try
                 {
                     var package = new DataPackage();
-                    package.SetText(report);
+                    package.SetText(copyableReport);
                     Clipboard.SetContent(package);
                     copied = true;
                 }
