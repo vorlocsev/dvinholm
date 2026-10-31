@@ -6,6 +6,7 @@ The executables need no .NET 10 Desktop Runtime or Windows App SDK.
 [CmdletBinding()]
 param([Parameter(Mandatory)][string]$OutputDirectory)
 $ErrorActionPreference='Stop'
+. (Join-Path $PSScriptRoot 'NativeIconResourcePath.ps1')
 $cl=Get-Command 'cl.exe' -ErrorAction Stop
 $rc=Get-Command 'rc.exe' -ErrorAction Stop
 $source=Join-Path $PSScriptRoot 'native\launcher.cpp'
@@ -28,16 +29,14 @@ foreach($spec in @(
  $rcFile=Join-Path $target ($spec.Name+'.rc')
  # Win32 resource compiler embeds ICO in the actual executable, rather than
  # relying on a loose icon file or Windows shortcut metadata.
- $absoluteIcon=(Resolve-Path -LiteralPath $spec.Icon).Path.Replace('\','/')
- [IO.File]::WriteAllText($rcFile,('1 ICON "'+$absoluteIcon+'"'+"\r\n"),
-  [Text.Encoding]::ASCII)
+ Write-NativeIconResourceFile -OutputPath $rcFile -IconPath ((Resolve-Path -LiteralPath $spec.Icon).Path)
  try {
   & $rc.Source '/nologo' ('/fo'+$res) $rcFile
   if($LASTEXITCODE -ne 0 -or -not(Test-Path -LiteralPath $res -PathType Leaf)){
    throw "Native icon resource compilation failed: $($spec.Name)"
   }
   $args=@('/nologo','/std:c++17','/O2','/MT','/DUNICODE','/D_UNICODE','/W4',
-          '/EHsc',("/D"+$spec.Define),$source,$res,
+          '/EHsc','/WX',("/D"+$spec.Define),$source,$res,
           '/link','/SUBSYSTEM:WINDOWS','/MACHINE:X86',('/OUT:'+$out))
   & $cl.Source @args
  }finally{
