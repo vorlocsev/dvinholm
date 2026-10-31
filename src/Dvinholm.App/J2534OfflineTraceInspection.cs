@@ -46,6 +46,8 @@ internal static class J2534OfflineTraceInspection
         int a3 = 0, b9fb = 0, b9e0 = 0, b9f0 = 0, b9fc = 0;
         int e302 = 0, f9e0 = 0, f9f0 = 0, fragments = 0;
         int otherEvents = 0;
+        int successfulDeviceCloses = 0, failedDeviceCloses = 0;
+        int closeInvalidatedChannels = 0, closeInvalidatedTxWindows = 0;
 
         for (int i = 0; i < count; i++)
         {
@@ -178,8 +180,23 @@ internal static class J2534OfflineTraceInspection
                             }
                         }
                         break;
-                    case "open":
                     case "close":
+                        otherEvents++;
+                        if (status == 0)
+                        {
+                            successfulDeviceCloses++;
+                            // The trace records the device handle on close, but
+                            // records only a channel handle on connect. There is
+                            // no reliable device-to-channel mapping. Conservatively
+                            // invalidate ALL channel generations after a close.
+                            closeInvalidatedChannels += activeChannels.Count;
+                            closeInvalidatedTxWindows += successfulTxWindow.Count;
+                            activeChannels.Clear();
+                            successfulTxWindow.Clear();
+                        }
+                        else failedDeviceCloses++;
+                        break;
+                    case "open":
                     case "ioctl":
                         otherEvents++;
                         break;
@@ -222,6 +239,11 @@ internal static class J2534OfflineTraceInspection
             .Append("Timestamp regressions/wraps: ").Append(resets)
                 .Append("; invalidated TX windows: ")
                 .AppendLine(resetWindows.ToString(CultureInfo.InvariantCulture))
+            .Append("Successful / failed device closes: ").Append(successfulDeviceCloses)
+                .Append(" / ").AppendLine(failedDeviceCloses.ToString(CultureInfo.InvariantCulture))
+            .Append("Channel observations / TX windows invalidated by device close: ")
+                .Append(closeInvalidatedChannels).Append(" / ")
+                .AppendLine(closeInvalidatedTxWindows.ToString(CultureInfo.InvariantCulture))
             .Append("Reported TX category A3 / B9FB / B9E0 / B9F0 / B9FC: ")
                 .Append(a3).Append(" / ").Append(b9fb).Append(" / ")
                 .Append(b9e0).Append(" / ").Append(b9f0).Append(" / ")
@@ -232,6 +254,7 @@ internal static class J2534OfflineTraceInspection
             .AppendLine("Temporal RX-after-TX is NOT verified ECU response, request pairing, VIN read or CEM acknowledgment.")
             .AppendLine("Read batches may contain many messages; only first category may be classified by source.")
             .AppendLine("Event ordering, clock continuity, channel origin and dropped events are UNKNOWN.")
+            .AppendLine("Device close invalidates all channel evidence: device-to-channel mapping is absent.")
             .AppendLine("This is not a CAN CSV. There are NO frame bytes for ISO-TP reconstruction.")
             .AppendLine("No CAN IDs, channel IDs, paths, timestamps, VIN, PIN or raw JSON values are displayed.")
             .AppendLine("No J2534 connection, CAN transmission, security access or CEM configuration read/write.")
