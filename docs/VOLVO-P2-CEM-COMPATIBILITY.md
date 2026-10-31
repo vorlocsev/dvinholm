@@ -558,9 +558,8 @@ unverified and physical testing deferred.
   live firmware identity or a safe configuration write.
 - PIN retrieval and configuration writing: **not supported**.
 
-Reference applications include
-[P3Tool](https://p3tool.org/), and [VDASH](https://d5t5.com/)
-remain functional research references, not validated protocol sources for
+[P3Tool](https://p3tool.org/) and [VDASH](https://d5t5.com/) are
+functional research references, not validated protocol sources for
 this application. P3Tool's P3 feature design must not be transplanted to P2.
 
 The existing published **Stable v0.2.4** remains frozen. No 0.3.0 Stable
