@@ -356,13 +356,19 @@ public sealed class UpdaterBannerContractTests
     public void NativeLauncherAndAppStartersEmbedDistinctBrandedIcons()
     {
         var build = Read("eng/Build-Launchers.ps1");
+        var iconResourcePath = Read("eng/NativeIconResourcePath.ps1");
         var generator = Read("eng/New-LauncherIcon.ps1");
         var smoke = Read("eng/Test-NativeLauncherIcons.ps1");
         var workflow = Read(".github/workflows/ci.yml");
         Assert.Contains("Get-Command 'rc.exe'", build);
         Assert.Contains("'Launcher.exe';Define='DVINHOLM_UPDATER';Icon=$brandedLauncherIcon", build);
         Assert.Contains("'Dvinholm.exe';Define='DVINHOLM_DIRECT_LAUNCH';Icon=$brandedAppIcon", build);
-        Assert.Contains("1 ICON", build);
+        Assert.Contains("NativeIconResourcePath.ps1", build);
+        Assert.Contains("Write-NativeIconResourceFile -OutputPath $rcFile", build);
+        Assert.Contains("function Write-NativeIconResourceFile", iconResourcePath);
+        Assert.Contains("1 ICON", iconResourcePath);
+        Assert.Contains("#pragma code_page(65001)", iconResourcePath);
+        Assert.Contains("[Text.UTF8Encoding]::new($false)", iconResourcePath);
         Assert.Contains("'assets\\dvinholm-icon.png'", build);
         Assert.Contains("foreach($size in $sizes)", generator);
         Assert.Contains("DrawArc", generator);
