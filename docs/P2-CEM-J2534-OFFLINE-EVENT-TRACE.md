@@ -35,11 +35,17 @@ vehicle or test scenario.
 
 - `connect` opens a tentative channel generation; a repeated successful
   connect resets the previous observation window.
-- A `write` with `status = 0` and `count > 0` opens a temporal window.
-  An unsuccessful write invalidates a prior window on that channel.
+- A `write` with `status = 0`, `count > 0` and `count <= requested`
+  opens a temporal window. An unsuccessful or internally inconsistent
+  write invalidates a prior window on that channel. The `requested` value
+  comes from the call's input `NumMsgs`, `count` from its reported output.
+  A returned count greater than requested is not credible successful TX.
 - A subsequent successful `read` with `count > 0` on that same channel
   is counted as **temporally following an accepted write**, not as an ECU
-  response. Concurrent calls, multiple messages per batch and lossy
+  response, only if its reported batch count does not exceed the requested
+  count. An over-returned read is counted separately as inconsistent,
+  is never credited as RX data, and invalidates any pending TX window on
+  that channel. Concurrent calls, multiple messages per batch and lossy
   tracing prevent reliable reply attribution.
 - A successful disconnect, new connect or backwards 32-bit timestamp
   invalidates pending temporal assumptions. Wraps are treated as uncertain
@@ -69,8 +75,10 @@ timestamp resets, strict rejection of arbitrary/sensitive metadata,
 bounds, local UTF-8 file inspection and UI wiring. Eight additional
 regression checks cover successful/failed device close, conservative
 cross-channel invalidation, reconnect, open/ioctl boundaries, repeated closes,
-clock regression and redacted output. These tests exercise local parsing
-only, not the physical J2534 device-close behavior.
+clock regression and redacted output. Another eight offline regression checks
+cover consistent counts, read/write over-returns including zero requested,
+invalidated old TX windows, fresh TX recovery, channel separation and privacy.
+These checks exercise local parsing only, not physical J2534 behavior.
 
 **Not covered:** real Volvo DiCE/J2534 hardware, Windows installed UI
 acceptance, physical XC90 model year/CEM revision, diagnostic transport,
