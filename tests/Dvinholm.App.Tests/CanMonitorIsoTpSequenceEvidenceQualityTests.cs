@@ -35,7 +35,7 @@ public sealed class CanMonitorIsoTpSequenceEvidenceQualityTests
     public void NonzeroSubscriberDropsMarkWindowIncompleteWithoutHistoryEviction()
     {
         var rows = CompletedCandidate();
-        var text = Report(rows, rows.Count, 3);
+        var text = Report(rows, rows.Length, 3);
         Assert.Contains("History rows evicted: 0", text);
         Assert.Contains("Subscriber RX drops: 3", text);
         Assert.Contains("Observed window quality: INCOMPLETE", text);
@@ -46,7 +46,7 @@ public sealed class CanMonitorIsoTpSequenceEvidenceQualityTests
     public void UnknownDropCounterNeverBecomesZeroOrClean()
     {
         var rows = CompletedCandidate();
-        var text = Report(rows, rows.Count, null);
+        var text = Report(rows, rows.Length, null);
         Assert.Contains("Subscriber RX drops: UNKNOWN", text);
         Assert.Contains("Observed window quality: UNKNOWN: subscriber drop counter is unavailable", text);
         Assert.DoesNotContain("Observed window quality: NO REPORTED LOSS", text);
@@ -57,7 +57,7 @@ public sealed class CanMonitorIsoTpSequenceEvidenceQualityTests
     public void EvictionAndUnknownDropCounterReportKnownIncompleteNotMerelyUnknown()
     {
         var rows = CompletedCandidate();
-        var text = Report(rows, rows.Count + 1, null);
+        var text = Report(rows, rows.Length + 1, null);
         Assert.Contains("History rows evicted: 1", text);
         Assert.Contains("Subscriber RX drops: UNKNOWN", text);
         Assert.Contains("Observed window quality: INCOMPLETE", text);
