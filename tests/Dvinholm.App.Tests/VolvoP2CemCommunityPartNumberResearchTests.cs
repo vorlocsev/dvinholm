@@ -58,7 +58,7 @@ public sealed class VolvoP2CemCommunityPartNumberResearchTests
         foreach (string? input in new[]
         {
             null, "", "30786889 ", " 30786889", "SW30786889",
-            "123456789", "3078688", "YV1CM59H271234567",
+            "123456789", "307868", "YV1CM59H271234567",
             "PIN=1234", "https://sample.invalid", "30682\n982"
         })
         {
