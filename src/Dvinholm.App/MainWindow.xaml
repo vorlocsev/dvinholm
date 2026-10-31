@@ -212,6 +212,8 @@
                 <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
                     <Button Content="RX summary" Click="CanRxSummary_Click"
                             ToolTipService.ToolTip="Review buffered CAN RX ID/DLC counts without frame data. Copy only by explicit approval. No diagnostic requests."/>
+                    <Button Content="Inspect CSV" Click="InspectCanCsv_Click"
+                            ToolTipService.ToolTip="Offline review of a user-selected CAN CSV. No connection or monitor changes. Payload and CAN IDs hidden in the report."/>
                     <TextBlock x:Name="FrameRateText" VerticalAlignment="Center" Text="0 frames/s"/>
                 </StackPanel>
                 <TextBlock x:Name="FrameCountText" Grid.Column="5" VerticalAlignment="Center" Text="0 shown / 0 rx" HorizontalAlignment="Right"/>
