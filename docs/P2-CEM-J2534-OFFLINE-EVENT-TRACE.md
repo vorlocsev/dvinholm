@@ -44,6 +44,13 @@ vehicle or test scenario.
 - A successful disconnect, new connect or backwards 32-bit timestamp
   invalidates pending temporal assumptions. Wraps are treated as uncertain
   boundaries; no clock continuity or timestamp unit is inferred.
+- A successful **PassThruClose** also invalidates **all** observed channel
+  generations and accepted-write windows, even when a disconnect is missing.
+  The proxy records a device handle on close and a channel handle on connect,
+  but does **not** record their relationship; therefore no per-device
+  attribution is safe. A failed close does not invalidate the prior window.
+  The report counts successful/failed closes and affected channels/windows
+  without revealing either handle or claiming a genuine device response.
 - Count selected source-labelled candidate categories A3 / B9FB / B9E0 /
   B9F0 / B9FC on accepted writes and E3-02 / F9E0 / F9F0 / fragments
   on successful read batches. These are **user-editable labels**, not
@@ -56,10 +63,14 @@ the required raw CAN data. The two offline formats are kept separate.
 
 ## Acceptance scope
 
-Eight offline/synthetic xUnit checks cover successful TX/read windows,
-read-before-write and failed writes, channel separation and reuse,
+Eight original offline/synthetic xUnit checks cover successful TX/read
+windows, read-before-write and failed writes, channel separation and reuse,
 timestamp resets, strict rejection of arbitrary/sensitive metadata,
-bounds, actual local UTF-8 file inspection and UI wiring.
+bounds, local UTF-8 file inspection and UI wiring. Eight additional
+regression checks cover successful/failed device close, conservative
+cross-channel invalidation, reconnect, open/ioctl boundaries, repeated closes,
+clock regression and redacted output. These tests exercise local parsing
+only, not the physical J2534 device-close behavior.
 
 **Not covered:** real Volvo DiCE/J2534 hardware, Windows installed UI
 acceptance, physical XC90 model year/CEM revision, diagnostic transport,
