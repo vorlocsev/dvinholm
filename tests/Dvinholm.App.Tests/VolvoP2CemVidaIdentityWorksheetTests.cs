@@ -26,7 +26,7 @@ public sealed class VolvoP2CemVidaIdentityWorksheetTests
     [Fact]
     public void RejectsOutOfScopeMalformedOrSpacePaddedModelYears()
     {
-        foreach (var year in new[] { "2001", "2015", "200", "02007", "2007 ",
+        foreach (var year in new[] { "2001", "2002", "2015", "200", "02007", "2007 ",
             "2OO7", "-2007", "9999" })
         {
             var result = Assess(year, "HW123", "SW456", "DS789");
@@ -38,7 +38,7 @@ public sealed class VolvoP2CemVidaIdentityWorksheetTests
     [Fact]
     public void EarliestAndLatestFirstGenerationResearchYearsAreNotSupportProof()
     {
-        foreach (var year in new[] { "2002", "2007", "2014" })
+        foreach (var year in new[] { "2003", "2007", "2014" })
         {
             var result = Assess(year, "HW123", "SW456", "DS789", true);
             Assert.Equal(VolvoP2CemVidaWorksheetKind.ManualClaimUnverified, result.Kind);

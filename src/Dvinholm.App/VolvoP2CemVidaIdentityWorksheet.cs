@@ -35,7 +35,10 @@ internal sealed record VolvoP2CemVidaWorksheetAssessment(
 /// </summary>
 internal static class VolvoP2CemVidaIdentityWorksheet
 {
-    internal const int FirstGenerationXc90EarliestModelYear = 2002;
+    // Reuse the source-scoped MY range used by the XC90 P2 compatibility
+    // matrix. 2002 may describe production/calendar year, not MY2002.
+    internal const int FirstGenerationXc90EarliestModelYear =
+        VolvoP2CemHsCanSpeedAdvisory.FirstDocumentedXc90ModelYear;
     internal const int FirstGenerationXc90LastModelYear = 2014;
     internal const int MaximumPartNumberCharacters = 40;
 
