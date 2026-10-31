@@ -43,10 +43,14 @@ vehicle or test scenario.
 - A subsequent successful `read` with `count > 0` on that same channel
   is counted as **temporally following an accepted write**, not as an ECU
   response, only if its reported batch count does not exceed the requested
-  count. An over-returned read is counted separately as inconsistent,
+  count and its recorded timestamp is no more than **30,000 ms** after
+  the latest accepted write on the same channel. This is a conservative
+  offline research heuristic, **not a J2534 or Volvo protocol timeout**.
+  A later data read expires and removes the stale window without exposing
+  raw timestamps. An over-returned read is separately counted as inconsistent,
   is never credited as RX data, and invalidates any pending TX window on
-  that channel. Concurrent calls, multiple messages per batch and lossy
-  tracing prevent reliable reply attribution.
+  that channel. Concurrent calls, message batches and lossy tracing still
+  prevent reliable reply attribution.
 - A successful disconnect, new connect or backwards 32-bit timestamp
   invalidates pending temporal assumptions. Wraps are treated as uncertain
   boundaries; no clock continuity or timestamp unit is inferred.
@@ -78,6 +82,8 @@ cross-channel invalidation, reconnect, open/ioctl boundaries, repeated closes,
 clock regression and redacted output. Another eight offline regression checks
 cover consistent counts, read/write over-returns including zero requested,
 invalidated old TX windows, fresh TX recovery, channel separation and privacy.
+Eight more offline tests cover the temporal cutoff, one-ms expiry, stale-read
+removal, refreshed TX windows, independent channels, rollover and privacy.
 These checks exercise local parsing only, not physical J2534 behavior.
 
 **Not covered:** real Volvo DiCE/J2534 hardware, Windows installed UI
