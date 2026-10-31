@@ -126,6 +126,12 @@ internal static class CanMonitorOfflineCsvInspection
         // never include the existing per-ID research summary here.
         result.AppendLine(CanMonitorIsoTpShapeSummary.BuildAggregate(
             rows, rows.Count, null, snapshot.IsSyntheticDemo));
+        // Sequence continuity uses the CSV's recorded order ONLY. Without
+        // original subscriber drop counters or a verified capture boundary,
+        // even plausible completion is not an authenticated ISO-TP exchange.
+        // This variant never emits a CAN arbitration identifier or payload.
+        result.AppendLine(CanMonitorIsoTpCandidateSequences.BuildAggregate(
+            rows, rows.Count, null, snapshot.IsSyntheticDemo));
         result.AppendLine(CanMonitorD2EnvelopeCandidateSummary.Build(
             rows, rows.Count, null, snapshot.IsSyntheticDemo));
         return result
