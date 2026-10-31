@@ -3339,8 +3339,14 @@ public sealed partial class MainWindow : Window
             // same buffered RX view, without reassembly or ECU identification.
             var candidateSequences = CanMonitorIsoTpCandidateSequences.Build(
                 snapshotRows, _monitorHistory.TotalReceived, queueDrops, synthetic);
+            // Proprietary-looking D2 envelope shapes from the SAME buffered
+            // RX rows. This section only counts possible header patterns.
+            // It never decodes, transmits or authenticates a Volvo CEM.
+            var d2Shapes = CanMonitorD2EnvelopeCandidateSummary.Build(
+                snapshotRows, _monitorHistory.TotalReceived, queueDrops, synthetic);
             var copyableReport = report + Environment.NewLine + pciShapes +
-                                 Environment.NewLine + candidateSequences;
+                                 Environment.NewLine + candidateSequences +
+                                 Environment.NewLine + d2Shapes;
             // Existing JSON remains strictly ID/DLC metadata only.
             var jsonMetadata = CanMonitorRxMetadataJson.Build(
                 snapshotRows, _monitorHistory.TotalReceived, queueDrops, synthetic);
