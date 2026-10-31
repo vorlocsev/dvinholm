@@ -57,7 +57,7 @@ internal static class VolvoP2CemCaptureIdentityReview
             return Result(VolvoP2CemCaptureIdentityKind.NoProductionSignatures, count,
                 "CEM identity UNKNOWN: no verified production CEM signatures.");
 
-        if (independentlyConfirmedModelYear is not >= 2003 and <= 2014)
+        if (independentlyConfirmedModelYear is null or < 2003 or > 2014)
             return Result(VolvoP2CemCaptureIdentityKind.ExactModelYearRequired, count,
                 "CEM identity UNKNOWN: independently confirmed XC90 P2 model year required.");
 
