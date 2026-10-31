@@ -2592,6 +2592,12 @@ public sealed partial class MainWindow : Window
                 return;
             }
 
+            // A successful generic UDS readback is NOT an identified P2 CEM.
+            // This offline evaluation uses only trusted production signatures
+            // (currently none), never the profile's verified checkbox or a
+            // guessed year, and makes no additional J2534 request.
+            var cemIdentity = VolvoP2CemCaptureIdentityReview.Assess(snapshot);
+
             // Path-only Save As: cancelling never creates a placeholder file.
             var destinationPath = ReportSavePathPicker.PickPath(
                 WindowNative.GetWindowHandle(this),
@@ -2599,7 +2605,8 @@ public sealed partial class MainWindow : Window
             if (destinationPath is null)
             {
                 if (IsSnapshotContextCurrent(profile, captureGeneration))
-                    SetStatus("ECU DID snapshot read, but export was cancelled. No file was saved.");
+                    SetStatus("ECU DID snapshot read, but export was cancelled. No file was saved. " +
+                        cemIdentity.ActivityMessage);
                 return;
             }
 
@@ -2618,7 +2625,8 @@ public sealed partial class MainWindow : Window
                 snapshot, destinationPath, AppContext.BaseDirectory,
                 userApprovedSensitiveExport: true);
             if (IsSnapshotContextCurrent(profile, captureGeneration))
-                SetStatus($"Read {snapshot.Values.Count} ECU DID(s) and saved a sensitive diagnostic snapshot to the selected file. Not a restorable backup.");
+                SetStatus($"Read {snapshot.Values.Count} ECU DID(s) and saved a sensitive diagnostic snapshot to the selected file. Not a restorable backup. " +
+                    cemIdentity.ActivityMessage);
         }
         catch (OperationCanceledException)
         {
