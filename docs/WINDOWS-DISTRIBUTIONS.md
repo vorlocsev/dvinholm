@@ -1,13 +1,13 @@
 # Windows distributions
 
-Dvinholm is a WinUI 3 Windows **x86** application. New Development CI builds ship **Lite only**. The earlier Portable ZIP is preserved as a historical Stable archive; do not overwrite existing released assets.
+Dvinholm is a WinUI 3 Windows **x86** application. Published Stable **v0.2.4** (2026-10-26, frozen commit `a9e6188`) includes both self-contained Portable and framework-dependent Lite ZIPs. Current Development CI ships a single framework-dependent `Dvinholm-Windows-x86.zip` under its standard name. Development artifacts are not Stable releases; do not overwrite frozen release assets.
 
 | Variant | ZIP | Runtime dependencies | Automatic updater |
 |---|---|---|---|
-| Portable (historical Stable v0.2.3) | `Dvinholm-Windows-x86.zip` | Bundles .NET and Windows App SDK runtime | Legacy published Stable support only |
-| Lite (only active Development CI distribution) | `Dvinholm-Windows-x86-Lite.zip` | Requires .NET **10 Desktop Runtime x86**, Windows App SDK **2.5** and VC++ x86 | Development updater supports Lite with a mandatory pre-replacement dependency check |
+| Portable (published Stable v0.2.4) | `Dvinholm-Windows-x86.zip` | Bundles .NET and Windows App SDK runtime | Frozen Stable archive; use its historical in-app updater |
+| Lite (published Stable v0.2.4) | `Dvinholm-Windows-x86-Lite.zip` | Requires .NET **10 Desktop Runtime x86**, Windows App SDK **2.5** and VC++ x86 | Frozen Stable archive; verify runtimes before launch |
 
-Lite is **not** an independent stable release just because CI publishes a prerelease artifact. Older installed clients may require one manual Lite migration because their Portable updater cannot see Lite-only CI assets. Install prerequisites before launching Lite on Windows. It uses the same application and J2534 backend, but its Windows App SDK bootstrap/runtime dependencies still need a real Windows launch smoke test. Never mix Portable and Lite DLLs in the same installation folder.
+The Stable Lite ZIP belongs to the same **v0.2.4 release** as Portable. A CI-published Lite or standard Development ZIP is **not** an independent Stable release just because CI succeeds. Older installed clients may require one manual Lite migration because their Portable updater cannot see Lite-only CI assets. Install prerequisites before launching Lite on Windows. It uses the same application and J2534 backend, but its Windows App SDK bootstrap/runtime dependencies still need a real Windows launch smoke test. Never mix Portable and Lite DLLs in the same installation folder.
 
 ## Release/Stable build profile
 
@@ -452,6 +452,6 @@ Both downloads are packaged by `eng/Package-WindowsDistribution.ps1`. It omits o
 
 **Before any future Stable release is uploaded**, verify its final ZIP with `Test-WindowsDistribution.ps1`. Debugging symbols and tools are excluded from the Stable download, while CI retains test diagnostics. Release checksum (`SHA256SUMS.txt`) must be calculated **after** cleaning and compressing the final ZIP, so the checksum identifies exactly the published artifact.
 
-Stable v0.2.3 was published on 2026-10-24 with the audited self-contained Windows x86 Portable ZIP and SHA256SUMS.txt; the release tag points to `91ecc34`. The historical v0.2.2 release remains available. Lite ZIP and unsigned MSIX artifacts are still experimental Development outputs, not Stable.
+Stable v0.2.3 was published on 2026-10-24 with the audited self-contained Windows x86 Portable ZIP and SHA256SUMS.txt; the tag points to `91ecc34`. Subsequently, published Stable v0.2.4 added both Portable and Lite ZIPs from frozen `a9e6188` on 2026-10-26. The experimental **unsigned MSIX** remains Development-only. Current Development CI standard ZIP is framework-dependent and independently versioned by CI.
 
 Official Windows App SDK deployment guidance: https://learn.microsoft.com/en-us/windows/apps/package-and-deploy/deploy-overview
