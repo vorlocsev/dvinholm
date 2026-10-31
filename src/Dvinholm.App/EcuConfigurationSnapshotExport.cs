@@ -56,6 +56,13 @@ internal static class EcuConfigurationSnapshotExport
             string.IsNullOrWhiteSpace(snapshot.ProfileName) || snapshot.ProfileName.Length > 160)
             throw new InvalidDataException("The snapshot has invalid profile metadata.");
 
+        // The inspector requires a non-default UTC timestamp. Reject an
+        // invalid capture BEFORE writing a file that cannot be reopened.
+        if (snapshot.CapturedAtUtc == default ||
+            snapshot.CapturedAtUtc.Offset != TimeSpan.Zero)
+            throw new InvalidDataException(
+                "The snapshot capture time must be a non-default UTC timestamp.");
+
         var maxId = snapshot.IsExtended ? 0x1FFFFFFFu : 0x7FFu;
         if (snapshot.RequestId > maxId || snapshot.ResponseId > maxId ||
             snapshot.RequestId == snapshot.ResponseId)
@@ -120,8 +127,13 @@ internal static class EcuConfigurationSnapshotExport
 
     private static bool IsValidHex(string? value)
     {
+        // The capture path uses Classic CAN ISO-TP, where the UDS
+        // positive response header consumes three of 4095 payload bytes.
+        // Preserve the larger legacy INSPECTION limit separately: older
+        // research JSON remains inspectable, but cannot be newly exported
+        // as if it came from the current read-only capture pipeline.
         if (string.IsNullOrEmpty(value) ||
-            value.Length > MaximumValueHexCharacters ||
+            value.Length > EcuConfigurationReadback.MaximumDidValueBytes * 2 ||
             (value.Length & 1) != 0)
             return false;
 
