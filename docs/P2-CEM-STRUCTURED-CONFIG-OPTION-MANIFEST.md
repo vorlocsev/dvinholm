@@ -2,7 +2,7 @@
 
 The initial editor-facing schema is `VolvoP2CemConfigOptionManifest`. It
 normalizes **14 display-only research labels** into one immutable collection:
-eight source-attributed SectorV-advertised P2 categories and six separate
+eight source-attributed third-party-advertised P2 categories and six separate
 Volvo XC90 CEM service-menu headings (Technical Journal 20278.6.11).
 
 ## Source separation and field meanings
