@@ -10,13 +10,13 @@
 
 <p align="center">
   <a href="https://github.com/vorlocsev/dvinholm/actions/workflows/ci.yml"><img alt="Windows CI" src="https://github.com/vorlocsev/dvinholm/actions/workflows/ci.yml/badge.svg?branch=main"></a>
-  <a href="https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.3"><img alt="Stable v0.2.3" src="https://img.shields.io/badge/stable-v0.2.3-167cc1"></a>
+  <a href="https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.4"><img alt="Stable v0.2.4" src="https://img.shields.io/badge/stable-v0.2.4-167cc1"></a>
   <img alt="Windows x86" src="https://img.shields.io/badge/platform-Windows%20x86-203f60">
   <img alt="UDS read-only" src="https://img.shields.io/badge/UDS-read--only-008b8b">
 </p>
 
 <p align="center">
-  <a href="https://github.com/vorlocsev/dvinholm/releases/download/v0.2.3/Dvinholm-Windows-x86.zip"><strong>Download stable release</strong></a>
+  <a href="https://github.com/vorlocsev/dvinholm/releases/download/v0.2.4/Dvinholm-Windows-x86.zip"><strong>Download stable release</strong></a>
   &nbsp;·&nbsp; <a href="https://github.com/vorlocsev/dvinholm/actions">Latest CI builds</a>
   &nbsp;·&nbsp; <a href="docs/USER_GUIDE_RU.md">Руководство (RU)</a>
   &nbsp;·&nbsp; <a href="ROADMAP.md">Roadmap</a>
@@ -24,7 +24,7 @@
 </p>
 
 > [!IMPORTANT]
-> **Development CI uses Lite x86 only** starting with the Lite-only pipeline. Historic Stable v0.2.3 remains Portable. Details: [CI Lite-only policy](docs/CI-LITE-ONLY.md).
+> **Published Stable v0.2.4 offers Portable and Lite Windows x86 archives.** Current Development CI produces a single framework-dependent standard ZIP without the Lite suffix. A CI prerelease is not Stable. See [CI Lite-only policy](docs/CI-LITE-ONLY.md).
 >
 > **Hardware validation is pending.** Windows UI and software tests have been exercised without a physical adapter; compatibility with Volvo DiCE, Mongoose, individual drivers, ECUs, or vehicles has not yet been demonstrated. Dvinholm is an independent project and is **not affiliated with or endorsed by Volvo Cars** or any adapter manufacturer.
 
@@ -51,54 +51,23 @@ Dvinholm. A detected J2534 DLL is not proof that the hardware is connected.
 
 ## Quick start
 
-**Version channels:** the published, supported Stable remains **v0.2.3**. New `main` Development CI ZIPs identify as **0.2.4** (unreleased, experimental); a green CI does not publish Stable 0.2.4. Development explicitly retains offline demo/test functions while Stable v0.2.3 excludes them.
+**Latest published Stable:** [Dvinholm v0.2.4](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.4), published 2026-10-26 from frozen commit `a9e6188`. Both Portable and Lite Windows x86 ZIPs are available. The `main` **Development** channel is experimental and separately built, even though its binary version may also say 0.2.4.
 
-1. [Download **Dvinholm v0.2.3** for Windows x86](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.3/Dvinholm-Windows-x86.zip) or use **Dvinholm-Windows-x86.zip** from a successful [Development CI prerelease](https://github.com/vorlocsev/dvinholm/releases) after installing required runtimes.
-2. **Extract the entire ZIP** into a writable local directory; neither historical Portable nor Lite is an installer.
-3. Run `Dvinholm.App.exe`. Historical Stable v0.2.3 bundles its own runtime; **Lite needs .NET 10 Desktop Runtime x86, Windows App SDK 2.5 and VC++ x86**.
-4. For adapter use, install the **32-bit J2534 driver** supplied by the hardware manufacturer, then select the registered DLL or enter its path in Dvinholm.
-5. Start with **passive CAN monitoring** once a compatible adapter and vehicle are available. UDS commands are read-only.
+1. Download [**Stable Portable**](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.4/Dvinholm-Windows-x86.zip) (self-contained) or [**Stable Lite**](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.4/Dvinholm-Windows-x86-Lite.zip) (requires .NET 10 Desktop Runtime x86, Windows App SDK x86 and VC++ x86). Check the matching [SHA256SUMS.txt](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.4/SHA256SUMS.txt).
+2. Extract the entire chosen archive to its own writable folder. Do not mix Portable, Lite and Development files.
+3. For frozen Stable v0.2.4, use the entrypoint shipped in that archive (historical layout: `Dvinholm.App.exe`). **Current Development CI** instead packages `Launcher.exe`, `Dvinholm.exe` and `Binaries/`; launch `Launcher.exe` for prerequisites, updates and app startup.
+4. A J2534 DLL being registered is not proof of compatible DiCE/Mongoose hardware. Use authorized physical testing with verified protocol and ECU addressing, beginning with passive CAN observation where appropriate.
+5. PIN/CEM service authentication and configuration writes remain disabled pending exact-module evidence and authorized hardware testing.
 
-### Experimental Lite Development build
+### Development CI channel
 
-New [Development prereleases](https://github.com/vorlocsev/dvinholm/releases) distribute **only**
-`Dvinholm-Windows-x86-Lite.zip` for Windows x86 systems with compatible
-**.NET 10 Desktop Runtime x86**, Windows App SDK 2.5 runtime packages and
-Visual C++ x86 runtime already installed. Lite is not the Stable build,
-supports Development in-app updates **after passing the real-host prerequisite
-check**. Historic installed Portable clients may need a one-time manual
-migration to Lite because their old updater looks for the discontinued
-Portable CI asset. Never mix Portable and Lite files in the same folder.
+Current [Development CI](https://github.com/vorlocsev/dvinholm/actions) packages a **framework-dependent** `Dvinholm-Windows-x86.zip` (without `-Lite` in the filename), not a self-contained Portable. The Development Launcher owns dependency checks and Stable/Development updates. Older Lite-named CI packages are historical or compatibility feeds. The latest green CI is not automatically a published Stable release. Windows installed GUI and physical J2534 tests remain separate acceptance gates.
 
-1. Download the Lite ZIP and `SHA256SUMS.txt` from the **same** `ci-N` prerelease.
-   GitHub Actions artifacts contain an outer download wrapper, whereas the
-   prerelease lists the ready-to-extract ZIPs directly.
-2. Extract the entire Lite ZIP, then run `Check-Lite-Prerequisites.cmd`
-   beside `Dvinholm.App.exe`. The read-only check reports missing
-   prerequisites and does not install anything or launch the app.
-3. If prerequisites are satisfied, launch `Dvinholm.App.exe`. The CI
-   preflight uses simulated Windows-host fixtures: **a real interactive Lite
-   launch has not yet been verified**.
-4. Never mix Lite and Portable files. The physical J2534 adapter tests
-   remain deferred.
+**Stable v0.2.4 validation:** frozen `a9e61883a413d4afaebb86fb468987c904250092` passed [Stable staging](https://github.com/vorlocsev/dvinholm/actions/runs/40240287577), with eight user-confirmed offline Windows 11 LTSC GUI checks documented in the published release notes. A real installed 0.2.3 → 0.2.4 in-app update and physical J2534/CEM use have not been confirmed.
 
-The [Windows distributions guide](docs/WINDOWS-DISTRIBUTIONS.md) explains
-dependency checks and SHA-256 verification. Use the historical Stable Portable only when you specifically need the
-published Stable v0.2.3; future Development distribution is Lite only.
+Previous Stable: [v0.2.3](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.3) (2026-10-24).
 
-The branded icon was introduced in v0.2.1 and remains packaged in v0.2.3. A user confirmed it was visible in Windows on 2026-10-19; individual display locations were not separately specified.
-
-## Latest stable release — v0.2.3 (2026-10-24)
-
-- **Release:** [Dvinholm v0.2.3](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.3).
-- **Windows x86 portable ZIP:** [Dvinholm-Windows-x86.zip](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.3/Dvinholm-Windows-x86.zip). Extract the full ZIP to a writable folder and launch `Dvinholm.App.exe`; it is not an installer.
-- **Archive size:** 62,245,250 bytes. **SHA-256:** `fae05958bf1ca4ef92f915508b66da5acb85b4c975c6eb84a950cb8da707ed44` — [SHA256SUMS.txt](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.3/SHA256SUMS.txt).
-- **Included:** CAN Monitor with up to 16 exact software filter IDs, safe five-column CSV export, saved ECU profiles and read-only VIN/DID/DTC functionality. The **Development / Stable** update selector is included. Synthetic demo buttons, test-profile generators and UDS preview/export fixtures are **excluded from Stable**.
-- **Validation:** released from tested commit `91ecc34`; [CI #3347](https://github.com/vorlocsev/dvinholm/actions/runs/40082040984), [Stable staging #18](https://github.com/vorlocsev/dvinholm/actions/runs/40082040981) and [verified release publication](https://github.com/vorlocsev/dvinholm/actions/runs/40088739837) passed. A user confirmed Windows 11 LTSC offline application operation. Actual installed 0.2.2 → 0.2.3 updater behavior and physical J2534/ECU compatibility remain unverified.
-
-Previous stable release: [Dvinholm v0.2.2](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.2), published 2026-10-20.
-
-## Supported interfaces
+## Candidate adapter interfaces (hardware compatibility unverified)
 
 - Volvo DiCE
 - Mongoose JLR Pro
@@ -237,18 +206,13 @@ The process is x86, so it can load 32-bit J2534 DLLs but not 64-bit-only DLLs.
 
 ## Download and run on Windows
 
-The CI pipeline publishes a self-contained x86 application artifact. It is a portable build output, **not an installer**.
+The latest published Stable is **v0.2.4**. Use the [Portable ZIP](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.4/Dvinholm-Windows-x86.zip) or [Lite ZIP](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.4/Dvinholm-Windows-x86-Lite.zip) plus the matching [SHA256SUMS.txt](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.4/SHA256SUMS.txt). Extract to a separate folder and use the included executable. Portable bundles the runtime; Lite needs compatible x86 runtimes.
 
-1. Download the [stable v0.2.3 Windows x86 ZIP](https://github.com/vorlocsev/dvinholm/releases/download/v0.2.3/Dvinholm-Windows-x86.zip), or open [GitHub Actions](https://github.com/vorlocsev/dvinholm/actions), choose a successful `main` run, and download the `Dvinholm-Windows-x86` artifact.
-2. Extract the entire archive to a normal writable local folder. Do not run the executable from inside the ZIP.
-3. Launch `Dvinholm.App.exe` from the extracted folder.
-4. Install the adapter manufacturer's 32-bit J2534 driver separately. Connect the interface only after following the manufacturer's instructions.
+Development packages are framework-dependent and use `Launcher.exe`. Do not combine files from different archives. Software CI is not a physical J2534 acceptance test.
 
-The application is self-contained, so a separate .NET runtime installation is not normally required. Windows and driver requirements still apply. The artifact is intended for evaluation; CI success does not mean the application has been verified with a physical adapter or a specific vehicle.
+### Update channels: historical in-app updater and current Development Launcher
 
-### Choose an update source: Development or Stable (Stable v0.2.3 and newer)
-
-The update row has a source selector: **Development** (default: successful CI builds from `main`) or **Stable** (published stable releases). Click **Check update** after choosing the source. Switching sources invalidates any previous update offer and does **not** silently install a build. With **Stable**, the updater resolves the latest published stable GitHub release's tag to a fixed commit and requires the public portable Windows x86 ZIP to have a valid SHA-256 digest. **Development** continues to check the newest successful Windows x86 **main-branch** CI build with a published updater asset. The version row shows the current build's seven-character commit SHA, and **Replace files and restart** appears only when the selected source's commit differs. **Stable v0.2.3 includes the two-source UI; historical v0.2.2 has the original CI-only updater.** Selecting a different-commit **Stable** release and clicking **Replace files and restart** requires a separate confirmation dialog. **Cancel** exits without downloading or replacing any files. A different SHA does not by itself mean the chosen release is newer; when switching from Development to Stable, the selected Stable release may remove newer app features.
+**Historical Stable v0.2.3/v0.2.4:** the following describes the earlier in-app updater. Newer Development builds use the separate Launcher. The update row has a source selector: **Development** (default: successful CI builds from `main`) or **Stable** (published stable releases). Click **Check update** after choosing the source. Switching sources invalidates any previous update offer and does **not** silently install a build. With **Stable**, the updater resolves the latest published stable GitHub release's tag to a fixed commit and requires the public portable Windows x86 ZIP to have a valid SHA-256 digest. **Development** continues to check the newest successful Windows x86 **main-branch** CI build with a published updater asset. The version row shows the current build's seven-character commit SHA, and **Replace files and restart** appears only when the selected source's commit differs. **Stable v0.2.3 includes the two-source UI; historical v0.2.2 has the original CI-only updater.** Selecting a different-commit **Stable** release and clicking **Replace files and restart** requires a separate confirmation dialog. **Cancel** exits without downloading or replacing any files. A different SHA does not by itself mean the chosen release is newer; when switching from Development to Stable, the selected Stable release may remove newer app features.
 
 Updates are selected from successful `push` runs on **main** with a corresponding public updater asset; pull-request and other-branch runs are excluded. Since GitHub Actions artifact ZIP downloads require authentication, successful main-branch CI runs publish the same Windows x86 ZIP as a public GitHub prerelease asset tagged `ci-<run-number>`. The updater downloads that asset anonymously—no GitHub token is stored in the app—and verifies its size and SHA-256 digest when GitHub provides one, checks archive paths, and stages the extracted files before installation.
 

@@ -807,7 +807,11 @@
 
 ---
 
-## Next Development milestone: 0.2.4 (unreleased)
+## Historical Development 0.2.4 pre-release plan (superseded 2026-10-26)
+
+> Archival snapshot of requirements **before** the Stable v0.2.4 publication.
+> Stable v0.2.4 was subsequently released from frozen commit `a9e6188`;
+> current Development 0.3.0 CEM planning is at the top of this roadmap.
 
 - [x] Main CI #3377, Stable staging #33 and public Stable network audit #6 passed at `4923c81` after PR #471.
 - [x] Set the Development project and CI Portable/Lite binary versions to **0.2.4** without changing the published **Stable v0.2.3** release or immutable tag.

@@ -1,11 +1,12 @@
 # Changelog
 
-## [0.2.4] — Unreleased (Development only)
+## [0.2.4] — 2026-10-26 (Stable published)
 
-- Advance Windows x86 Portable and experimental Lite Development CI assembly and informational versions to 0.2.4, retaining CI run number and 40-character SHA for the in-app updater.
-- Keep published Stable v0.2.3, its release tag, portable ZIP and SHA-256 manifest unchanged; this is not a Stable v0.2.4 publication.
-- Correct Russian first-launch download instructions to link the current Stable v0.2.3 ZIP; preserve Development-only synthetic controls.
-- Add eight offline cross-channel version/identity regression checks. Hardware tests and actual installed 0.2.2→0.2.3 updater GUI smoke remain deferred.
+- **Official Stable v0.2.4** was published from frozen and user-accepted commit `a9e61883a413d4afaebb86fb468987c904250092`. It contains both Windows x86 Portable (self-contained) and Lite (external runtime) ZIPs, with a matching `SHA256SUMS.txt` at [the release](https://github.com/vorlocsev/dvinholm/releases/tag/v0.2.4).
+- Original Stable staging validated the archived binaries and checksums; the published release notes record eight user-confirmed Windows 11 LTSC offline GUI checks.
+- Stable excludes demo/preview/test controls and debugging byproducts. Neither trimming nor AOT is enabled. Physical J2534/ECU interoperability, and a real installed 0.2.3 → 0.2.4 in-app update, remain unverified.
+- **Development after 0.2.4 is separate from its frozen Stable artifacts.** Its newer framework-dependent standard ZIP uses `Launcher.exe`, `Dvinholm.exe` and `Binaries/`, even where the assembly still reports 0.2.4. A Development CI prerelease is not a new Stable publication.
+- The older 0.2.4 development plan initially described v0.2.4 as unreleased; that statement was superseded on 2026-10-26. Historical Stable v0.2.3 release files were not replaced.
 
 ## [0.2.3] — 2026-10-24
 
