@@ -99,6 +99,21 @@ internal static class CanMonitorIsoTpCandidateSequences
             }
         }
 
+        // Aggregate across ALL groups, including those withheld by the
+        // 64-group preview limit. These counts describe only byte patterns.
+        var totals = new
+        {
+            First = groups.Values.Sum(g => g.Starts),
+            Plausible = groups.Values.Sum(g => g.PlausibleCompletions),
+            Trailing = groups.Values.Count(g => g.Active is not null),
+            Mismatch = groups.Values.Sum(g => g.SequenceMismatch),
+            Interrupted = groups.Values.Sum(g => g.Interrupted),
+            Orphan = groups.Values.Sum(g => g.OrphanConsecutive)
+        };
+        long evicted = totalReceivedSinceClear - rows.Count;
+        bool dropsUnknown = subscriberDroppedFrames is null;
+        bool hasReportedLoss = evicted > 0 || subscriberDroppedFrames > 0;
+
         var output = new StringBuilder()
             .AppendLine("POTENTIAL ISO-TP SEQUENCES (OFFLINE, UNVERIFIED)")
             .AppendLine(syntheticDemo
@@ -110,6 +125,24 @@ internal static class CanMonitorIsoTpCandidateSequences
             .AppendLine(rows.Count.ToString(CultureInfo.InvariantCulture))
             .Append("Distinct groups: ")
             .AppendLine(groups.Count.ToString(CultureInfo.InvariantCulture))
+            .Append("History rows evicted: ")
+            .AppendLine(evicted.ToString(CultureInfo.InvariantCulture))
+            .Append("Subscriber RX drops: ")
+            .AppendLine(dropsUnknown ? "UNKNOWN" :
+                subscriberDroppedFrames!.Value.ToString(CultureInfo.InvariantCulture))
+            .Append("Observed window quality: ")
+            .AppendLine(hasReportedLoss
+                ? "INCOMPLETE: retained history eviction or subscriber drops were reported."
+                : dropsUnknown
+                    ? "UNKNOWN: subscriber drop counter is unavailable."
+                    : "NO REPORTED LOSS within the retained monitor window (NOT a full bus capture).")
+            .Append("All-group candidate totals (including hidden groups): FF=")
+            .Append(totals.First)
+            .Append(", plausible-completion=").Append(totals.Plausible)
+            .Append(", trailing-incomplete=").Append(totals.Trailing)
+            .Append(", sequence-mismatch=").Append(totals.Mismatch)
+            .Append(", interrupted=").Append(totals.Interrupted)
+            .Append(", orphan-CF=").AppendLine(totals.Orphan.ToString(CultureInfo.InvariantCulture))
             .AppendLine("All counts are heuristics, not verified ISO-TP sessions:");
 
         foreach (var group in groups.OrderBy(g => g.Key.Extended)
@@ -135,12 +168,11 @@ internal static class CanMonitorIsoTpCandidateSequences
                 .AppendLine((groups.Count - MaximumDisplayedGroups)
                     .ToString(CultureInfo.InvariantCulture));
 
-        bool reportedUnbrokenBuffer = totalReceivedSinceClear == rows.Count &&
-                                      subscriberDroppedFrames == 0;
         return output
-            .AppendLine(reportedUnbrokenBuffer
+            .AppendLine(!hasReportedLoss && !dropsUnknown
                 ? "No history eviction or subscriber drops reported; other missed frames still possible."
                 : "Frame continuity UNKNOWN/INCOMPLETE: eviction, drops or missing counters possible.")
+            .AppendLine("History and subscriber counters cannot prove that all physical bus frames were received.")
             .AppendLine("A plausible completion is a length/counter pattern, NOT a validated diagnostic exchange.")
             .AppendLine("No frame payload, VIN, PIN, DID values, timestamps, profile IDs or secret strings are output.")
             .AppendLine("No source ECU, request/response pairing, flow-control peer or Volvo CEM address is identified.")

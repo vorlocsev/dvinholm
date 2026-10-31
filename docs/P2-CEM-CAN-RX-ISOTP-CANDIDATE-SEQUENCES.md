@@ -55,3 +55,31 @@ any diagnostic/security/configuration operation.
 
 This feature supplements existing static ID/DLC and PCI-shape reports
 without modifying normal CAN Monitor, UDS, driver handling, or the launcher.
+
+## Evidence-quality and total-count correction
+
+The sequence preview reports the loss signals supplied by the existing CAN RX
+monitor: number of retained rows evicted since Clear, subscriber RX drops (or
+**UNKNOWN** when no trustworthy counter is available), and a conservative
+window-quality verdict:
+
+- **INCOMPLETE** if at least one history row was evicted or at least one
+  subscriber RX drop was reported. This verdict overrides an unknown drop
+  counter when eviction is already known.
+- **UNKNOWN** if there is no observed eviction but the drop counter is
+  unavailable. Unknown must never silently mean zero.
+- **NO REPORTED LOSS** only if neither of the monitored counters reports loss.
+  Even then this means *only within the retained monitor window*. It does
+  not prove that all physical CAN frames were captured.
+
+The preview also includes **all-group totals**, which count candidate FF,
+plausible completions, trailing incomplete sequences, sequence mismatches,
+interruptions and orphan CF across every retained CAN ID/format group,
+**including** groups omitted by the existing 64-group display ceiling.
+The totals remain transport *pattern counts*, not verified sessions.
+
+Eight additional deterministic tests cover clean-but-not-proven history,
+eviction, subscriber drops, unknown counter, combined known/unknown evidence,
+hidden groups in totals, mixed structural outcomes and extreme bounded
+receive counters. The implementation adds no data capture, persistent
+format change, ECU command, VIN/PIN exposure or physical compatibility claim.
