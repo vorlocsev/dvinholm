@@ -16,7 +16,26 @@ internal static class CanMonitorIsoTpShapeSummary
         IReadOnlyList<CanMonitorRow> rows,
         long totalReceivedSinceClear,
         long? subscriberDroppedFrames,
-        bool syntheticDemo)
+        bool syntheticDemo) =>
+        BuildCore(rows, totalReceivedSinceClear, subscriberDroppedFrames,
+            syntheticDemo, showCanIds: true);
+
+    // For user-selected CSVs, expose only all-group totals. CAN IDs from a
+    // captured vehicle can fingerprint it even when payloads are redacted.
+    internal static string BuildAggregate(
+        IReadOnlyList<CanMonitorRow> rows,
+        long totalReceivedSinceClear,
+        long? subscriberDroppedFrames,
+        bool syntheticDemo) =>
+        BuildCore(rows, totalReceivedSinceClear, subscriberDroppedFrames,
+            syntheticDemo, showCanIds: false);
+
+    private static string BuildCore(
+        IReadOnlyList<CanMonitorRow> rows,
+        long totalReceivedSinceClear,
+        long? subscriberDroppedFrames,
+        bool syntheticDemo,
+        bool showCanIds)
     {
         // Validate the same bounded capture metadata as the existing RX
         // report. Unlike that report, this deliberately inspects the CAN
@@ -70,6 +89,18 @@ internal static class CanMonitorIsoTpShapeSummary
             .Append("Buffered frames examined: ").AppendLine(rows.Count.ToString(CultureInfo.InvariantCulture))
             .Append("Distinct CAN ID + format groups: ").AppendLine(groups.Count.ToString(CultureInfo.InvariantCulture));
 
+        if (!showCanIds)
+        {
+            output.Append("All-group shapes (CAN IDs withheld): SF=")
+                .Append(groups.Values.Sum(x => x.Single))
+                .Append(", FF=").Append(groups.Values.Sum(x => x.First))
+                .Append(", CF=").Append(groups.Values.Sum(x => x.Consecutive))
+                .Append(", FC=").Append(groups.Values.Sum(x => x.Flow))
+                .Append(", other=").AppendLine(groups.Values.Sum(x => x.Other)
+                    .ToString(CultureInfo.InvariantCulture));
+        }
+        else
+        {
         foreach (var pair in groups.OrderBy(x => x.Key.Extended)
                      .ThenBy(x => x.Key.Id).Take(MaximumDisplayedIdGroups))
         {
@@ -89,6 +120,7 @@ internal static class CanMonitorIsoTpShapeSummary
             output.Append("Additional groups withheld: ")
                 .AppendLine((groups.Count - MaximumDisplayedIdGroups)
                     .ToString(CultureInfo.InvariantCulture));
+        }
 
         return output
             .AppendLine("SF=single, FF=first, CF=consecutive, FC=flow control; counts are NOT validated exchanges.")

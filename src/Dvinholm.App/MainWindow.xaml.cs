@@ -3427,6 +3427,86 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    /// <summary>
+    /// Offline-only analysis of an explicitly selected Dvinholm CAN CSV.
+    /// Never appends to the live monitor, changes profiles or opens a bus.
+    /// </summary>
+    private async void InspectCanCsv_Click(object sender, RoutedEventArgs e)
+    {
+        if (_closing || _canRxSummaryBusy)
+            return;
+        _canRxSummaryBusy = true;
+        try
+        {
+            var picker = new FileOpenPicker();
+            InitializeWithWindow.Initialize(picker, WindowNative.GetWindowHandle(this));
+            picker.FileTypeFilter.Add(".csv");
+            var selected = await picker.PickSingleFileAsync();
+            if (selected is null || _closing)
+                return;
+
+            var imported = await CanMonitorOfflineCsvInspection.InspectFileAsync(
+                selected.Path);
+            if (_closing)
+                return;
+            var report = CanMonitorOfflineCsvInspection.BuildRedactedReport(imported);
+            var copied = false;
+            var dialog = new ContentDialog
+            {
+                XamlRoot = RootLayout.XamlRoot,
+                Title = "Offline CAN CSV research (payload and CAN IDs hidden)",
+                Content = new ScrollViewer
+                {
+                    MaxHeight = 380,
+                    Content = new TextBlock
+                    {
+                        Text = report,
+                        TextWrapping = TextWrapping.Wrap,
+                        IsTextSelectionEnabled = true
+                    }
+                },
+                PrimaryButtonText = "Copy redacted summary",
+                CloseButtonText = "Close",
+                DefaultButton = ContentDialogButton.Close
+            };
+            dialog.PrimaryButtonClick += (_, args) =>
+            {
+                try
+                {
+                    var package = new DataPackage();
+                    package.SetText(report);
+                    Clipboard.SetContent(package);
+                    copied = true;
+                }
+                catch (Exception)
+                {
+                    args.Cancel = true;
+                    if (!_closing)
+                        SetStatus("Offline CAN CSV summary could not be copied.");
+                }
+            };
+            await dialog.ShowAsync();
+            if (!_closing)
+                SetStatus(copied
+                    ? "Copied redacted offline CAN CSV summary by request. Review before sharing."
+                    : "Reviewed local CAN CSV offline. No monitor, ECU or file changed.");
+        }
+        catch (InvalidDataException)
+        {
+            if (!_closing)
+                SetStatus("Invalid, oversized or unsupported CAN CSV. Nothing imported.");
+        }
+        catch (Exception)
+        {
+            if (!_closing)
+                SetStatus("Offline CAN CSV inspection failed. No diagnostic request or file write.");
+        }
+        finally
+        {
+            _canRxSummaryBusy = false;
+        }
+    }
+
     private async void Csv_Click(object sender, RoutedEventArgs e)
     {
         try
