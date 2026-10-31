@@ -31,6 +31,30 @@ not invent CEM IDs, read DIDs, seed-key steps or PIN algorithms.
 The new `VolvoP2CemReadinessMatrix` reports eight distinct dimensions
 and permanently denies any CEM request, PIN acquisition, restore or write.
 
+## Prioritized next-evidence checkpoint (Development)
+
+The same offline report now prints **one next evidence checkpoint**, selected
+from the existing eight-dimension compatibility matrix. This is a research
+worksheet prompt, never an authorization gate. Priority follows confirmed
+XC90 P2 model-year scope, the documented J2534-1 VIDA limitation, physical
+network identity, HS-CAN reference rate mismatch or missing rate, diagnostic
+interface evidence, and finally corroboration of exact CEM hardware,
+application-software and diagnostic-software revisions.
+
+For example, a claimed MY2009 XC90 / HS-CAN 500 kbit/s / DiCE combination
+asks for independent **CEM revision evidence**, not a CAN address, PIN or
+configuration-read command. Choosing J2534-2 instead asks for supported
+physical diagnostic-interface evidence; a software-download capability is
+not proof of working CEM diagnostics. An unconfirmed or out-of-scope year,
+J2534-1 VIDA diagnostics or conflicting HS-CAN speed takes precedence over
+revision review. No claim or checkbox makes a physical CEM authenticated.
+
+Eight synthetic xUnit checks cover missing/out-of-scope year, incompatible
+VIDA interface, unidentified/non-HS-CAN network, missing/conflicting
+HS-CAN rate, separate DiCE/J2534-2 outcomes, privacy and permanent service
+denial. The current WinUI report already calls the matrix, so no new picker
+or runtime connection is added. Real DiCE/J2534/ECU testing remains pending.
+
 ## Next actionable evidence intake
 
 1. Independently check XC90 model year and CEM hardware/software identifiers

@@ -152,8 +152,14 @@ internal static class VolvoP2CemReadinessMatrix
                 .Append("  Needed: ").AppendLine(row.EvidenceNeeded)
                 .Append("  Reference: ").AppendLine(row.Source);
 
-        return result.AppendLine(
-            "BLOCKED: CEM configuration reads, PIN/service access, restorable backups and writes.")
+        var next = VolvoP2CemNextEvidencePlanner.Plan(modelYear,
+            userReportsYearIndependentlyChecked, network, proposedBaudRate, selectedInterface);
+        return result
+            .Append("Next evidence checkpoint (OFFLINE ONLY): ")
+            .AppendLine(next.Kind.ToString())
+            .AppendLine(next.Action)
+            .AppendLine("This worksheet action does not authenticate a physical CEM or enable a diagnostic service.")
+            .AppendLine("BLOCKED: CEM configuration reads, PIN/service access, restorable backups and writes.")
             .AppendLine("The generic profile-based read-only DID path is separate and is not CEM compatibility proof.")
             .ToString();
     }
