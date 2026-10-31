@@ -111,7 +111,7 @@ public sealed class VolvoXc90OemCemMenuCatalogTests
     public void OfflinePreviewKeepsOemAndVendorEvidenceVisiblySeparate()
     {
         var overview = VolvoP2ConfigCandidateDisplay.BuildOverview();
-        Assert.Contains("SectorV public P2 advertisement", overview);
+        Assert.Contains("Third-party P2 advertisement", overview);
         Assert.Contains("Volvo-documented XC90 CEM service menu", overview);
         Assert.Contains("Technical Journal 20278.6.11", overview);
         Assert.Contains("https://static.nhtsa.gov/odi/tsbs/2016/SB-10087303-5448.pdf",
