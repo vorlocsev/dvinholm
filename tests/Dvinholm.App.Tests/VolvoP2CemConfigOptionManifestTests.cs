@@ -26,7 +26,7 @@ public sealed class VolvoP2CemConfigOptionManifestTests
         Assert.Equal(8, manifest.Length);
         foreach (var candidate in VolvoP2ConfigOptionCatalog.Entries)
         {
-            var entry = Assert.Single(manifest.Where(x => x.CanonicalId == candidate.CanonicalId));
+            var entry = Assert.Single(manifest, x => x.CanonicalId == candidate.CanonicalId);
             Assert.Equal(candidate.Group.ToString(), entry.Category);
             Assert.Equal(candidate.Source, entry.EvidenceReference);
             Assert.Equal(candidate.DisplayName, entry.DisplayName);
@@ -59,7 +59,7 @@ public sealed class VolvoP2CemConfigOptionManifestTests
         Assert.Equal(6, manifest.Length);
         foreach (var feature in original)
         {
-            var entry = Assert.Single(manifest.Where(x => x.CanonicalId == feature.ResearchId));
+            var entry = Assert.Single(manifest, x => x.CanonicalId == feature.ResearchId);
             Assert.Equal(feature.Name, entry.DisplayName);
             Assert.Equal(feature.PublicSource, entry.EvidenceReference);
             Assert.Null(entry.ClaimedModelYearFrom);
