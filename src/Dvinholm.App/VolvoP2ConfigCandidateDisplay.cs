@@ -19,7 +19,7 @@ internal static class VolvoP2ConfigCandidateDisplay
         text.AppendLine("Neither evidence tier provides a decoded ECU configuration.");
         text.AppendLine("Actual model year, CEM hardware/firmware, bus and option ownership");
         text.AppendLine("are unknown. This viewer neither identifies nor contacts any vehicle.");
-        text.AppendLine("SectorV public P2 advertisement (reviewed 2026-10-27) describes");
+        text.AppendLine("Third-party P2 advertisement (reviewed 2026-10-27) describes");
         text.AppendLine("MY2006+; no individual XC90 variant is independently validated.");
         text.AppendLine();
         text.AppendLine("Current values: unavailable | Desired values: disabled");
@@ -52,7 +52,7 @@ internal static class VolvoP2ConfigCandidateDisplay
             text.AppendLine();
         }
 
-        text.AppendLine("Evidence: https://sectorv.ru/ (advertisement only).");
+        text.AppendLine("Evidence: user-provided third-party screenshots (advertisement only).");
         text.AppendLine();
         text.AppendLine("Volvo-documented XC90 CEM service menu (manufacturer service-menu names only)");
         text.AppendLine("Volvo Technical Journal 20278.6.11 (2016-09-06), XC90 page 3.");
