@@ -12,7 +12,11 @@ changed.
   segments start with n, r or t.
 - Eight synthetic Windows PowerShell 5.1 checks cover ordinary drive paths,
   spaces, escape-looking directory names, Unicode, UNC, idempotent slash
-  paths, embedded quotes, and blank/multiline inputs.
+  paths, embedded quotes, and blank/multiline inputs. The Unicode gate also
+  round-trips an actual temporary .rc file (cleaned afterward).
+- RC files are written as UTF-8 with `#pragma code_page(65001)`, so the
+  Windows Resource Compiler does not silently decode non-ASCII icon paths
+  using a system-dependent ANSI code page.
 - Native launcher C++ builds now use MSVC /W4 and /WX. A compiler warning
   fails the CI build instead of being hidden by a successful PE/ZIP check.
 - Real x86 compiler invocation, icon resource validation, PE architecture
