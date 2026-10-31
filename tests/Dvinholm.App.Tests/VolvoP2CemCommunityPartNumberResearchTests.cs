@@ -96,7 +96,7 @@ public sealed class VolvoP2CemCommunityPartNumberResearchTests
         Assert.Equal(VolvoP2CemVidaWorksheetKind.ManualClaimUnverified, report.Kind);
         Assert.Contains("Claimed hardware P/N: 30682982", report.Summary);
         Assert.Contains("CATEGORY AMBIGUOUS", report.Summary);
-        Assert.Contains("not an XC90 model-year fitment table", report.Summary);
+        Assert.Contains("nor an XC90 model-year fitment table", report.Summary);
         Assert.Contains("UNVERIFIED USER-TRANSCRIBED CLAIM", report.Summary);
         Assert.False(report.IsVerifiedPhysicalCem);
         Assert.False(report.MayRequestPin);
