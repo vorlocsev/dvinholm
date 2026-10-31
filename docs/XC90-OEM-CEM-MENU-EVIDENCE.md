@@ -31,7 +31,7 @@ names**, not Volvo diagnostic identifiers, DID addresses, programming
 nodes, numeric offsets or protocol bytes.
 
 The original eight `VolvoP2ConfigOptionCatalog` labels, sourced
-from SectorV vendor advertising, remain **separate**. Do not
+from third-party vendor advertising, remain **separate**. Do not
 silently merge the two sets or upgrade a vendor-only claim based
 on a similar-sounding manufacturer menu item.
 
