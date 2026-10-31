@@ -30,7 +30,7 @@ provided by these references** and must not be guessed.
    does not require an adapter or access credential.
 2. In Dvinholm Development, select **P2 configuration candidates
    (offline)**, then **Enter CEM identity (offline)**.
-3. Enter the claimed model year (2002–2014), CEM hardware P/N,
+3. Enter the claimed model year (MY2003–2014), CEM hardware P/N,
    CEM software P/N and CEM diagnostic software P/N. Optionally
    tick the box saying that you personally copied the values from
    VIDA. This is **self-report**, not independent verification.
@@ -159,6 +159,27 @@ fields. Part numbers themselves may be fingerprinting information;
 review the text before sharing. Clipboard persistence is controlled
 by the operating system. The JSON may also identify the car's
 electronics; you are responsible for where you save or send it.
+
+## Model year vs production year boundary
+
+The manual VIDA identity worksheet now shares the existing published XC90 P2
+**model year (MY) 2003–2014** reference range used by the HS-CAN advisory,
+readiness matrix and pre-read checks. A calendar/build date in **2002** is
+**not** proof of a distinct **MY2002** XC90, and must not be entered as a
+model year. Check the actual model year independently; no VIN is requested.
+
+This is a compatibility/research input validation rule, not physical CEM
+identification. Research JSON generated earlier with a claimed MY2002 will
+now fail closed when opened or compared; the file is left unchanged and
+must be corrected from independent evidence before a new export. Manual
+revision source claims whose range starts at MY2002 are also rejected,
+instead of being treated as corroboration for a MY2003 CEM.
+
+Eight isolated cross-layer tests cover worksheet, export/import, revision
+claim JSON and comparisons, boundary MY2003/MY2014, non-disclosure and
+permanent denial of live J2534, PIN and CEM write operations. No ECU
+transport mapping, backup, configuration read or service authorization
+is added by this change.
 
 ## Strict preflight
 
