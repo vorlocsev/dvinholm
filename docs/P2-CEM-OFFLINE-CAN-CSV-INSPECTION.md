@@ -20,11 +20,23 @@ replayed to the CAN bus.
 
 ## Report and privacy
 
-The dialog summarizes two groups of **possible byte patterns**: aggregate
-normal-addressing Classic CAN ISO-TP shapes (SF, FF, CF, FC, other) and
-Volvo D2-looking RX envelope candidates (E3, F9, fragment-like).
-Neither section includes actual CAN IDs, individual timestamps, raw bytes,
-VIN, DID, PIN, filenames or user profile labels.
+The dialog now shows three separate **heuristic** sections:
+1. Aggregate Classic CAN normal-addressing ISO-TP *PCI shapes*
+   (SF/FF/CF/FC/other), without CAN IDs.
+2. **Candidate ISO-TP multiframe sequences**, tracking first-frame length,
+   consecutive-frame sequence counters, possible completions, mismatches,
+   interruptions and orphan CF frames. State is separated by 11-/29-bit
+   format plus exact CAN ID internally, but the *offline CSV report exposes
+   only all-group totals*, including groups past the 64-group live preview.
+3. Volvo D2-looking RX envelope candidates (E3/F9/fragment-like), with
+   unverified source and loss-counter warnings.
+
+No section includes actual CAN IDs, individual timestamps, raw bytes, VIN,
+DID, PIN, filenames or user profile labels. A plausible candidate length
+match is **not** a reassembled or validated ISO-TP exchange. Frame ordering
+comes from the selected CSV only; it cannot verify original bus ordering,
+completeness, direction or the captured physical CEM. The CSV has no original
+drop counter, so subscriber loss remains **UNKNOWN**.
 
 The JSON RX metadata schema and the existing per-CAN-ID live RX summary
 remain unchanged. Nothing is copied until **Copy redacted summary** is
@@ -41,10 +53,14 @@ contain sensitive data; do not share it without review.
 
 ## Verification
 
-Eight xUnit checks cover normal export round-trip, synthetic provenance,
-bad schemas, CSV injection and addressing, invalid payload/DLC/quoting,
+The original eight xUnit checks cover normal export round-trip,
+synthetic provenance, malformed schemas, CSV injection, payload/DLC/quoting,
 5000-row and byte limits, actual local file/BOM/UTF-8 inspection, and
 virtual-J2534 reception with **zero transmitted frames** and UI binding.
+Eight additional synthetic tests check ID-free multiframe aggregate totals,
+same-ID CF continuity, cross-ID/format isolation, mismatches and interruptions,
+65-group completeness, unknown loss/demo provenance, and end-to-end local
+CSV summary integration without changing the original per-ID live report.
 
 Installed Windows UI acceptance, genuine DiCE/J2534 acquisition and actual
 XC90 CEM service mapping are **not claimed**. Only Dvinholm changes.
