@@ -60,8 +60,8 @@ internal sealed record VolvoP2ConfigCandidateAssessment(
 
 /// <summary>
 /// XC90 P2 candidate option *names* derived from explicitly attributed
-/// vendor-advertised feature categories on 2026-10-27. Neither SectorV's
-/// unpublished data nor any proprietary option IDs are included.
+/// vendor-advertised feature categories from user-supplied 2026-10-27
+/// screenshots. No unpublished vendor data or proprietary IDs are included.
 /// A vendor advertisement is not independent firmware/hardware evidence.
 /// </summary>
 internal static class VolvoP2ConfigOptionCatalog
@@ -71,8 +71,8 @@ internal static class VolvoP2ConfigOptionCatalog
     internal const int VendorAdvertisedEarliestP2ModelYear = 2006;
 
     private const string VendorAdvertisementSource =
-        "SectorV public P2 features, vendor advertisement observed 2026-10-27, " +
-        "not independently verified: https://sectorv.ru/";
+        "Third-party P2 feature vendor advertisement, user-provided screenshots " +
+        "dated 2026-10-27; not independently verified";
 
     // The IDs below are NEW internal Dvinholm labels, not factory codes or
     // any external application's parameter IDs.
