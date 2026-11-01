@@ -23,7 +23,7 @@ public sealed class UdsDtcAvailabilityMaskTests
         var parsed = UdsClient.ParseDtcReadResult([0x02, 0x00]);
         Assert.Equal((byte)0, parsed.StatusAvailabilityMask);
         Assert.Empty(parsed.Records);
-        var text = UdsDtcDisplayFormatter.Format(parsed);
+        var text = UdsDtcDisplayFormatter.FormatWithAvailability(parsed);
         Assert.Contains("ECU-supported status bits 0x00", text);
         Assert.Contains("does not confirm a fault-free vehicle", text);
     }
@@ -33,7 +33,7 @@ public sealed class UdsDtcAvailabilityMaskTests
     {
         var parsed = UdsClient.ParseDtcReadResult(
             [0x02, 0xFF, 0x01, 0x23, 0x45, 0xFF]);
-        var text = UdsDtcDisplayFormatter.Format(parsed, 0xFF);
+        var text = UdsDtcDisplayFormatter.FormatWithAvailability(parsed, 0xFF);
         Assert.Contains("confirmed DTC", text);
         Assert.Contains("warning indicator requested", text);
         Assert.DoesNotContain("unsupported status bits", text);
@@ -45,7 +45,7 @@ public sealed class UdsDtcAvailabilityMaskTests
     {
         var parsed = UdsClient.ParseDtcReadResult(
             [0x02, 0x04, 0x12, 0x34, 0x56, 0x0C]);
-        var text = UdsDtcDisplayFormatter.Format(parsed);
+        var text = UdsDtcDisplayFormatter.FormatWithAvailability(parsed);
         Assert.Contains("pending DTC", text);
         Assert.DoesNotContain("confirmed DTC", text);
         Assert.Contains("unsupported status bits 0x08", text);
@@ -57,7 +57,7 @@ public sealed class UdsDtcAvailabilityMaskTests
     {
         var parsed = UdsClient.ParseDtcReadResult(
             [0x02, 0x00, 0xAB, 0xCD, 0xEF, 0x80]);
-        var text = UdsDtcDisplayFormatter.Format(parsed, 0x80);
+        var text = UdsDtcDisplayFormatter.FormatWithAvailability(parsed, 0x80);
         Assert.Contains("ECU-supported status bits 0x00", text);
         Assert.Contains("no status bits set", text);
         Assert.Contains("unsupported status bits 0x80", text);
@@ -71,7 +71,7 @@ public sealed class UdsDtcAvailabilityMaskTests
             [0x02, 0x09,
              0xAA, 0xBB, 0xCC, 0x08,
              0x01, 0x02, 0x03, 0x02]);
-        var lines = UdsDtcDisplayFormatter.Format(parsed, 0x09)
+        var lines = UdsDtcDisplayFormatter.FormatWithAvailability(parsed, 0x09)
             .Split(Environment.NewLine);
         Assert.Equal(3, lines.Length);
         Assert.Contains("requested status mask 0x09", lines[0]);
@@ -113,7 +113,7 @@ public sealed class UdsDtcAvailabilityMaskTests
         Assert.True(handlerStart >= 0 && handlerEnd > handlerStart);
         var handler = window[handlerStart..handlerEnd];
         Assert.Contains("client.ReadDtcResultByStatusMask(statusMask, token)", handler);
-        Assert.Contains("UdsDtcDisplayFormatter.Format(result, statusMask)", handler);
+        Assert.Contains("UdsDtcDisplayFormatter.FormatWithAvailability(result, statusMask)", handler);
         Assert.DoesNotContain("ReadDtcByStatusMask(", handler);
 
         var clientSource = UdsClientSource();
