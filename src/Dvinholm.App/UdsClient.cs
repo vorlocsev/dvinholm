@@ -8,6 +8,14 @@ internal enum UdsService : byte
 
 internal sealed record UdsDtcRecord(uint Code, byte Status);
 
+/// <summary>
+/// One ECU's UDS 0x19/0x02 reply. The availability mask describes which
+/// status bits that ECU supports; it is not a vehicle-wide fault verdict.
+/// </summary>
+internal sealed record UdsDtcReadResult(
+    byte StatusAvailabilityMask,
+    IReadOnlyList<UdsDtcRecord> Records);
+
 internal sealed class UdsNegativeResponseException : Exception
 {
     internal byte RequestedService { get; }
@@ -70,13 +78,18 @@ internal sealed class UdsClient : IDisposable
     internal IReadOnlyList<UdsDtcRecord> ReadDtcByStatusMask(
         byte statusMask = 0xFF,
         CancellationToken cancellationToken = default)
+        => ReadDtcResultByStatusMask(statusMask, cancellationToken).Records;
+
+    internal UdsDtcReadResult ReadDtcResultByStatusMask(
+        byte statusMask = 0xFF,
+        CancellationToken cancellationToken = default)
     {
         Span<byte> parameters = stackalloc byte[2];
         parameters[0] = 0x02;
         parameters[1] = statusMask;
 
         var response = Request((byte)UdsService.ReadDtcInformation, parameters, cancellationToken);
-        return ParseDtcResponse(response);
+        return ParseDtcReadResult(response);
     }
 
     internal string ReadVin(CancellationToken cancellationToken = default)
@@ -198,6 +211,9 @@ internal sealed class UdsClient : IDisposable
     }
 
     internal static IReadOnlyList<UdsDtcRecord> ParseDtcResponse(byte[] response)
+        => ParseDtcReadResult(response).Records;
+
+    internal static UdsDtcReadResult ParseDtcReadResult(byte[] response)
     {
         if (response is null)
             throw new ArgumentNullException(nameof(response));
@@ -229,6 +245,7 @@ internal sealed class UdsClient : IDisposable
             offset += 4;
         }
 
-        return records;
+        return new UdsDtcReadResult(response[1],
+            Array.AsReadOnly(records.ToArray()));
     }
 }
