@@ -310,15 +310,15 @@ $script:northernHome.Add_Paint({
  # The interim JPEG still contains tiny baked-in captions in its right half.
  # Fade that edge so it cannot compete with the genuine WinForms captions.
  $legacyTextFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
-  [Drawing.Rectangle]::new(730,0,450,330),
-  [Drawing.Color]::FromArgb(42,5,20,37),
-  [Drawing.Color]::FromArgb(248,5,20,37),0.0)
+  [Drawing.Rectangle]::new(650,0,530,330),
+  [Drawing.Color]::FromArgb(60,5,20,37),
+  [Drawing.Color]::FromArgb(255,5,20,37),0.0)
  $lower=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(242,8,23,40))
  $line=[Drawing.Pen]::new([Drawing.Color]::FromArgb(75,43,198,203),2)
  try{
   $g.FillRectangle($veil,0,0,1180,329)
   $g.FillRectangle($brandVeil,0,0,780,329)
-  $g.FillRectangle($legacyTextFade,730,0,450,329)
+  $g.FillRectangle($legacyTextFade,650,0,530,329)
   $g.FillRectangle($lower,0,330,1180,360)
   $g.DrawLine($line,42,324,1137,324)
   $g.DrawLine($line,42,655,1137,655)
@@ -428,7 +428,10 @@ function Update-NorthernCompactSnapshot {
  $script:northComponents.Enabled=$depsInstallQuick.Enabled
  $script:northDrivers.Enabled=$driverQuick.Enabled
  $script:northSettings.Enabled=$settingsQuick.Enabled
- $script:northVersion.Text=$installed.Text
+ $script:northVersion.Text=[string]$installed.Text
+ if($script:launcherLanguage -eq 'RU'){
+  $script:northVersion.Text=$script:northVersion.Text.Replace('Not checked','не проверено')
+ }
  $script:northChannel.Text='Канал: '+[string]$choice.SelectedItem
  # Until recovery and prerequisites are verified, do not repeat the worker's
  # generic 'Ready.' phrase: Start remains disabled and the footer must agree.
@@ -440,7 +443,10 @@ function Update-NorthernCompactSnapshot {
   @($script:northRuntime,'\.NET x86:\s*([^ ]+)',' .NET x86: '),
   @($script:northWinApp,'WinApp:\s*([^ ]+)',' WinApp: ')
   )){
-  $value=if($parts -match $spec[1]){$Matches[1]}else{'не проверено'}
+  $value=if($parts -match $spec[1]){$Matches[1]}else{''}
+  if([string]::IsNullOrWhiteSpace($value) -or $value -ceq '?'){
+   $value=if($script:launcherLanguage -eq 'RU'){'не проверено'}else{'not checked'}
+  }
   $spec[0].Text=$spec[2]+$value
  }
  if($script:driversWereProbed){
