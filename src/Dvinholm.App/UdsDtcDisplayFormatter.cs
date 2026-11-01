@@ -11,7 +11,7 @@ internal static class UdsDtcDisplayFormatter
     /// remain visible in raw hexadecimal but must never be described as
     /// supported diagnostic flags.
     /// </summary>
-    internal static string Format(UdsDtcReadResult read, byte requestedStatusMask = 0xFF)
+    internal static string FormatWithAvailability(UdsDtcReadResult read, byte requestedStatusMask = 0xFF)
     {
         ArgumentNullException.ThrowIfNull(read);
         ArgumentNullException.ThrowIfNull(read.Records);
