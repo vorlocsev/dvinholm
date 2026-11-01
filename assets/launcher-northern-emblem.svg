@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
+<title id="title">Dvinholm Northern Launcher emblem</title>
+<desc id="desc">Original Nordic aurora emblem combining a ring and arrow, gear teeth, a flying white gull and three teal White Sea waves; distinct launcher update badge.</desc>
+<defs><radialGradient id="night" cx="35%" cy="26%" r="85%"><stop stop-color="#1D5771"/><stop offset=".54" stop-color="#0C2A49"/><stop offset="1" stop-color="#061323"/></radialGradient><linearGradient id="ice" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#EFF9FF"/><stop offset=".7" stop-color="#9BCAEB"/><stop offset="1" stop-color="#40E7DD"/></linearGradient><linearGradient id="wave" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#41D7ED"/><stop offset="1" stop-color="#27F0C1"/></linearGradient></defs>
+<circle cx="128" cy="128" r="124" fill="url(#night)" stroke="#22758C" stroke-width="4"/>
+<g stroke="url(#ice)" stroke-width="13" stroke-linecap="square">
+<circle cx="125" cy="129" r="84" fill="none" stroke-width="9"/>
+<path d="M184 71 L234 19 M234 19 L230 53 M234 19 L201 23" fill="none" stroke-linejoin="round"/>
+</g>
+<g stroke="#C7E6F6" stroke-width="8" stroke-linecap="square">
+<path d="M125 36V25 M172 49L179 38 M204 85L217 81 M213 134H225 M199 181L209 190 M161 214L164 229 M113 211L109 225 M73 190L61 199 M45 152L30 156 M47 108L35 104 M69 65L61 54" fill="none"/>
+</g>
+<path d="M53 122 C77 100 103 101 121 122 C143 103 164 94 199 101 C179 115 164 131 138 134 C119 154 109 151 96 136 C77 136 64 129 53 122Z" fill="#F0F8FF"/>
+<path d="M67 159 Q94 140 120 159 T178 159 M73 175 Q102 156 129 175 T184 175 M78 191 Q107 172 133 191 T181 191" fill="none" stroke="url(#wave)" stroke-width="7" stroke-linecap="round"/>
+<circle cx="207" cy="207" r="29" fill="#082A48" stroke="#25D2EC" stroke-width="4"/>
+<path d="M224 201 A18 18 0 1 0 213 225 M225 202 L226 187 L213 196" fill="none" stroke="#EDFBFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+</svg>
