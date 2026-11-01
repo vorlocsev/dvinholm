@@ -8,6 +8,8 @@ namespace Dvinholm.App;
 internal enum VolvoP2CemSupportKind
 {
     Unknown,
+    // Historical kind name retained for compatibility; it denotes an exact
+    // offline research-pattern match, NOT an authenticated physical ECU.
     VerifiedIdentityReadOnly,
     DocumentedReadOnlyDidSet,
     Ambiguous
@@ -15,8 +17,9 @@ internal enum VolvoP2CemSupportKind
 
 /// <summary>
 /// A model-year-scoped claim with an exact, independently sourced ECU identity
-/// fingerprint. Year alone and a profile's 'verified' checkbox are NOT enough
-/// for hardware identification. DID allowlists require separate provenance.
+/// fingerprint. `IsVerified` and source references are editable research claims;
+/// even a unique matching pattern cannot authenticate physical CEM hardware.
+/// DID allowlists require separate independent provenance.
 /// </summary>
 internal sealed record VolvoP2CemSupportEntry(
     int ModelYearFrom,
@@ -62,8 +65,8 @@ internal static class VolvoP2CemSupportMatrix
 
         var unknown = new VolvoP2CemSupportAssessment(
             VolvoP2CemSupportKind.Unknown, null, Array.Empty<ushort>(),
-            "No verified XC90 P2/CEM identity and model-year evidence is available. " +
-            "No PIN or configuration write support is implied.");
+            "No qualifying XC90 P2/CEM research fingerprint matched. " +
+            "Physical CEM identity is unverified; no PIN or configuration service is authorized.");
 
         // The low-level matcher is usable directly by offline callers,
         // not only through CaptureIdentityReview's checked UI path.
@@ -101,7 +104,8 @@ internal static class VolvoP2CemSupportMatrix
         if (identity.Kind == EcuIdentityMatchKind.Ambiguous)
             return new VolvoP2CemSupportAssessment(
                 VolvoP2CemSupportKind.Ambiguous, null, Array.Empty<ushort>(),
-                "Conflicting XC90 P2/CEM identity evidence: no variant selected.");
+                "Multiple supplied XC90 P2/CEM research fingerprints match; " +
+                "physical CEM identity is unverified and no variant is selected.");
         if (identity.Kind != EcuIdentityMatchKind.VerifiedReadOnlyIdentity ||
             identity.VariantId is null)
             return unknown;
@@ -114,7 +118,8 @@ internal static class VolvoP2CemSupportMatrix
         if (matched.Length != 1)
             return new VolvoP2CemSupportAssessment(
                 VolvoP2CemSupportKind.Ambiguous, null, Array.Empty<ushort>(),
-                "Duplicate XC90 P2/CEM variant evidence: no variant selected.");
+                "Conflicting supplied XC90 P2/CEM research variant labels; " +
+                "physical CEM identity is unverified and no variant is selected.");
 
         var selected = matched[0];
         var observed = snapshot.Values.Select(v => v.DataIdentifier).ToHashSet();
@@ -125,13 +130,15 @@ internal static class VolvoP2CemSupportMatrix
             return new VolvoP2CemSupportAssessment(
                 VolvoP2CemSupportKind.VerifiedIdentityReadOnly,
                 identity.VariantId, Array.Empty<ushort>(),
-                "Verified read-only ECU identity only. No separately documented configuration DIDs observed.");
+                "Supplied read-only ECU fingerprint matches research metadata only. " +
+                "Physical CEM identity is unverified; no separately documented DID observed.");
 
         return new VolvoP2CemSupportAssessment(
             VolvoP2CemSupportKind.DocumentedReadOnlyDidSet,
             identity.VariantId, Array.AsReadOnly(dids),
-            "Verified, sourced read-only ECU identity with documented observed DIDs. " +
-            "These are opaque values, not decoded configuration or a restorable backup.");
+            "Supplied research fingerprint matches previously observed, separately listed DIDs. " +
+            "Physical CEM identity and source authenticity are unverified; these opaque values " +
+            "are not decoded configuration or a restorable backup.");
     }
 
 }
