@@ -2900,6 +2900,86 @@ if($Mode -eq 'UiSmokeTest'){
   if($northChecks -ne 8){throw 'Wrong Northern Compact acceptance count.'}
   Write-Host 'Northern Aurora compact 8/8 real WinForms offline checks passed.'
 
+  # Eight effective-work-area DPI/regression gates. These are simulated
+  # Windows desktop geometries, NOT claims that the runner DPI was changed.
+  # The actual WinForms controls are already instantiated and scaled once.
+  $dpiChecks=0
+  $normal=Get-NorthernCompactGeometry 1920 1000 16 38
+  if([Math]::Abs($normal.Scale-0.80) -gt 0.0001 -or
+     $normal.ViewWidth -ne 944 -or $normal.ViewHeight -ne 552 -or
+     $normal.RequiresScroll){throw '100% effective desktop: incorrect fit.'}
+  $dpiChecks++
+
+  $d125=Get-NorthernCompactGeometry 1536 800 16 38
+  if($d125.ViewWidth -ne 944 -or $d125.ViewHeight -ne 552 -or
+     $d125.RequiresScroll){throw '125% effective desktop: incorrect fit.'}
+  $dpiChecks++
+
+  $d150=Get-NorthernCompactGeometry 1280 667 16 38
+  if($d150.ViewWidth -ne 944 -or $d150.ViewHeight -ne 552 -or
+     $d150.RequiresScroll){throw '150% effective desktop: incorrectly scrolled or clipped.'}
+  $dpiChecks++
+
+  # A 1024x768 display at nominal 150% has only ~683x512 logical px.
+  # Preserve readable minimum scale and provide both scroll directions.
+  $d150small=Get-NorthernCompactGeometry 683 512 16 38
+  if([Math]::Abs($d150small.Scale-0.65) -gt 0.0001 -or
+     -not $d150small.RequiresScroll -or
+     $d150small.FullWidth -le $d150small.ViewWidth -or
+     $d150small.FullHeight -le $d150small.ViewHeight){
+   throw '150% cramped desktop: controls cannot be reached by scrolling.'
+  }
+  $dpiChecks++
+
+  $small=Get-NorthernCompactGeometry 640 480 16 38
+  if($small.ViewWidth -ge $small.FullWidth -or
+     $small.ViewHeight -ge $small.FullHeight -or
+     $small.ViewWidth -le 0 -or $small.ViewHeight -le 0 -or
+     -not $small.RequiresScroll){
+   throw '640x480 work area: missing bounded two-way scrolling.'
+  }
+  $dpiChecks++
+
+  $short=Get-NorthernCompactGeometry 1000 480 16 38
+  if($short.FullWidth -gt $short.ViewWidth -or
+     $short.FullHeight -le $short.ViewHeight -or
+     -not $short.RequiresScroll){
+   throw 'Short desktop: should scroll vertically but not horizontally.'
+  }
+  $dpiChecks++
+
+  # Verify the real window uses exactly the same geometry as simulated math.
+  $work=[Windows.Forms.Screen]::FromControl($form).WorkingArea
+  $edgeW=[int][Math]::Max(0,$form.Width-$form.ClientSize.Width)
+  $edgeH=[int][Math]::Max(0,$form.Height-$form.ClientSize.Height)
+  $live=Get-NorthernCompactGeometry $work.Width $work.Height $edgeW $edgeH
+  if([Math]::Abs($live.Scale-$script:auroraScale) -gt 0.0001 -or
+     $live.ViewWidth -ne $form.ClientSize.Width -or
+     $live.ViewHeight -ne $form.ClientSize.Height -or
+     $form.AutoScroll -ne $live.RequiresScroll){
+   throw 'Instantiated WinForms launcher differs from compact layout plan.'
+  }
+  $dpiChecks++
+
+  # All four working navigation buttons and Start remain inside the *scrollable*
+  # content, even at the minimum 0.65 factor. No dead off-canvas actions.
+  foreach($control in @($script:northLaunch,$script:northUpdates,
+    $script:northComponents,$script:northDrivers,$script:northSettings,
+    $script:northVersion,$script:northChannel,$script:northActivity)){
+   if($control.Left -lt 0 -or $control.Top -lt 0 -or
+      $control.Right -gt $live.FullWidth -or
+      $control.Bottom -gt $live.FullHeight){
+    throw ('Northern action/footer outside scrollable canvas: '+$control.Name)
+   }
+  }
+  if($script:northLaunch.Bottom -ge $script:northUpdates.Top){
+   throw 'Northern primary Start overlaps secondary navigation after scaling.'
+  }
+  $dpiChecks++
+  if($dpiChecks -ne 8){throw 'Wrong Aurora DPI geometry acceptance count.'}
+  Write-Host 'Northern Aurora DPI/work-area 8/8 offline layout checks passed.'
+
+
 
  }finally{
   $script:child=$null
