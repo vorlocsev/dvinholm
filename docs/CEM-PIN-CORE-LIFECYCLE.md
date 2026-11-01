@@ -31,7 +31,7 @@ cooperative deadlines. It grants no physical identity or entitlement.
 
 A successful synthetic metadata receipt is **not** PIN extraction. The
 `FinishedWithoutPin` status intentionally cannot be mistaken for success.
-There are no vehicle commands, seed/key algorithms, brute force, key
+There are no vehicle commands, seed/key algorithms, live brute-force attempts, key
 programming or configuration writes.
 
 The next increment must validate independent physical revision identity and
@@ -39,3 +39,21 @@ a documented, lawfully authorized provider route before adding real-world
 transport or secret-handling. Hardware tests, installed Windows UI tests and
 PIN acquisition remain outstanding. Frozen Stable v0.2.4 and separate
 Virtual Car release project are untouched.
+
+## Bounded candidate enumeration
+
+Following the user's explicit change allowing brute-force logic,
+`CemPinCandidateRange` independently implements the numeric enumeration part:
+six packed-decimal byte pairs, explicit ordinal/count bounds, a 64-bit cursor,
+cancellation and caller-owned buffers. It covers the entire 100^6 space without
+32-bit cursor wrap. Pair order is explicit; no CEM-specific permutation or
+transport parameter is inferred. Eight synthetic checks cover numeric behavior
+and continued production denial. This class generates candidates only; it
+neither verifies nor obtains a PIN and is not registered in a live provider.
+
+The reviewed [cracker source at 2d5de86](https://github.com/vtl/volvo-cem-cracker/blob/2d5de865d21094889a6c1c689797d5a636e909fc/volvo-cem-cracker.ino)
+also contains hardware timing measurements and programming-mode operations.
+Those parts, CAN addresses and security commands are not copied. The user's
+other conditions remain: a verified physical CEM revision and transport route
+are required before live attempts. Buffer owners must clear candidates after
+use and must not log or persist candidate values or ordinals.
