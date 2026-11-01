@@ -95,12 +95,15 @@ public sealed class UdsReadAddressReadinessTests
         Assert.Contains("DvinholmUserDataDirectory.IsAcceptanceLaunch", gate);
         Assert.DoesNotContain("ReadVinButton.IsEnabled = enabled;", gate);
         Assert.Contains("ReadVinButton.IsEnabled = ready;", gate);
-        Assert.Contains("ReadDtcButton.IsEnabled = ready;", gate);
+        // The DTC filter adds an independent fail-closed preflight:
+        // an invalid/missing selection cannot arm the Read DTC button.
+        Assert.Contains("ReadDtcButton.IsEnabled = ready && TryGetSelectedDtcStatusMask(out _);", gate);
 
         var edits = Between(source, "private void SnapshotCanIdTextChanged(", "private bool CanCaptureSelectedSnapshot(");
         Assert.Contains("private void SnapshotCanIdFormatChanged(", edits);
         Assert.Contains("private void UdsDid_TextChanged(", edits);
-        Assert.Equal(3, edits.Split("SetUdsEnabled(_connected && !_closing);",
+        Assert.Contains("private void DtcStatusMask_SelectionChanged(", edits);
+        Assert.Equal(4, edits.Split("SetUdsEnabled(_connected && !_closing);",
             StringSplitOptions.None).Length - 1);
         Assert.Contains("ClearDiagnosticReadResult();", edits);
     }
