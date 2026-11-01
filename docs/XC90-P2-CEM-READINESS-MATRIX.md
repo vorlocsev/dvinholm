@@ -77,6 +77,33 @@ direct matcher rejection, missing/non-UTC capture timestamp and normal
 read-only behavior. No real adapter/vehicle, ECU revision, config bytes
 or new protocol mapping was verified.
 
+## Physical CEM identity vs a matching research signature
+
+The offline multi-DID matcher may label a match as
+`VerifiedIdentityReadOnly` or `DocumentedReadOnlyDidSet` **relative to the
+supplied test/research catalog**. That verdict never authenticates where a
+capture came from, proves it was a physical XC90 P2 CEM, or establishes
+the provenance of a software revision. The built-in production identity
+catalog remains empty.
+
+The CEM service-capability checklist now makes this distinction explicit:
+`VolvoP2CemSupportAssessment.HasAuthenticatedPhysicalCem` remains
+**false** for every existing result, including synthetic fingerprint
+matches. Consequently the **ExactCemHardwareSoftwareIdentity** evidence
+gap stays open across **all six** future service categories, even with
+self-reported VIDA readings, claimed source references, nominal bench
+notes and a matching DID pattern. The operational service gate also
+remains closed. No input string, checkbox or test fixture makes a
+physical CEM trusted.
+
+Eight synthetic regression tests cover production-empty status,
+identity-only and multi-DID matches, all future services, forged
+variant labels, year provenance, claimed bench evidence and full
+hypothetical source references. The existing service checklist
+contracts were updated to expect this previously omitted identity
+gap. No real adapter, ECU, PIN or configuration operation was tested
+or implemented.
+
 ## Next actionable evidence intake
 
 1. Independently check XC90 model year and CEM hardware/software identifiers
