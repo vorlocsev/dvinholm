@@ -32,6 +32,30 @@ any diagnostic/security/configuration operation.
    SN wrapping, gaps, interruptions, incomplete capture, invalid data,
    bounds, redaction and zero transmissions.
 
+## Live RX timestamp discontinuity safety
+
+The original user-selected **CSV aggregate** already invalidated all
+unfinished FF/CF candidates on a decreasing global capture timestamp or
+uint32 clock wrap, including when the discontinuity was first observed
+on another CAN ID. The **live per-ID CAN Monitor** summary now applies
+the same conservative boundary rule. Its existing CAN ID groups remain
+visible, but no earlier FF can be credited with a later CF across an
+unverified clock discontinuity.
+
+The live report includes bounded, redacted counts of **timestamp
+regressions/wraps in RX rows** and **active candidates invalidated at
+those boundaries**. Counts do not disclose actual timestamps or frame
+payloads. Equal timestamps or ordinary monotonic capture order are not
+treated as resets. Fresh FF+CF patterns after a boundary can still
+be reported as **plausible only**; neither timestamp continuity nor PCI
+shapes prove a transport session, ECU, Volvo CEM identity or response.
+Timestamp units and physical frame completeness remain unknown.
+
+Eight synthetic offline tests exercise same/other-ID regressions, global
+multi-group invalidation, uint32 wrapping, equality, resumption, idle
+regressions and redaction. The original CSV/live comparison acceptance
+test now rejects the formerly possible live false completion.
+
 ## Limitations
 
 - **Heuristic, not a decoder.** Normal addressing is assumed for the
