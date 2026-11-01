@@ -2596,7 +2596,7 @@ if($Mode -eq 'UiPreview'){
    throw 'Preview must start with hidden, foreground Northern Home.'
   }
   $previewChecks++
-  if($form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552 -or
+  if($form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 672 -or
      $script:northernHome.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
      $null -eq $script:heroBackdrop -or -not $script:serviceBackdropIsApproved){
    throw 'Preview lacks the approved local automotive panorama or compact bounds.'
@@ -2642,7 +2642,7 @@ if($Mode -eq 'UiPreview'){
   Apply-LauncherLanguage
   [Windows.Forms.Application]::DoEvents()
   if($script:northLaunch.Text -cnotmatch 'START DVINHOLM' -or
-     $script:northUpdates.Text -cnotmatch 'Updates'){
+     $script:northUpdates.Text -cnotmatch 'UPDATES'){
    throw 'English Northern preview not localized.'
   }
   Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-EN.png' $script:northernHome
@@ -2875,7 +2875,7 @@ if($Mode -eq 'UiSmokeTest'){
   # No modal window, network request, installer, or ECU access.
   $auroraChecks=0
   if($script:auroraScale -gt 0.80 -or $script:auroraScale -lt 0.65 -or
-     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552){
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 672){
    throw 'Service Cockpit is larger than the compact display envelope.'
   }
   $auroraChecks++
@@ -2952,9 +2952,9 @@ if($Mode -eq 'UiSmokeTest'){
      $form.Controls.GetChildIndex($script:northernHome) -ne 0){throw 'Northern compact home is not the default visible window.'}
   $northChecks++
   if($script:northernHome.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
-     $script:northernHome.Height -ne [int][Math]::Round(690*$script:auroraScale) -or
-     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552){
-   throw 'Northern compact home does not fit the approved 944x552 window envelope.'
+     $script:northernHome.Height -ne [int][Math]::Round(840*$script:auroraScale) -or
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 672){
+   throw 'Northern compact home does not fit the reference-look 944x672 window envelope.'
   }
   $northChecks++
   if($null -eq $script:northTitle -or $script:northTitle.Text -cne 'DVINHOLM' -or
@@ -2965,7 +2965,8 @@ if($Mode -eq 'UiSmokeTest'){
   }
   $northChecks++
   foreach($button in @($script:northUpdates,$script:northComponents,
-                        $script:northDrivers,$script:northSettings)){
+                        $script:northDrivers,$script:northSettings,
+                        $script:northAbout)){
    if($button.Parent -ne $script:northernHome -or $button.Text.Length -lt 4 -or
       $button.Bottom -gt $script:northernHome.ClientSize.Height){
     throw 'One of the compact secondary launch actions is missing or clipped.'
@@ -3018,12 +3019,12 @@ if($Mode -eq 'UiSmokeTest'){
   $langBefore=$script:launcherLanguage
   $script:launcherLanguage='EN';Update-NorthernCompactSnapshot
   if($script:northLaunch.Text -cnotmatch 'START' -or
-     $script:northUpdates.Text -cnotmatch 'Updates'){
+     $script:northUpdates.Text -cnotmatch 'UPDATES'){
    throw 'Northern compact English labels missing.'
   }
   $script:launcherLanguage='RU';Update-NorthernCompactSnapshot
   if($script:northLaunch.Text -cnotmatch 'ЗАПУСТИТЬ' -or
-     $script:northUpdates.Text -cnotmatch 'Обновления'){
+     $script:northUpdates.Text -cnotmatch 'ОБНОВЛЕНИЯ'){
    throw 'Northern compact Russian labels missing.'
   }
   $script:launcherLanguage=$langBefore;Apply-LauncherLanguage
@@ -3037,17 +3038,17 @@ if($Mode -eq 'UiSmokeTest'){
   $dpiChecks=0
   $normal=Get-NorthernCompactGeometry 1920 1000 16 38
   if([Math]::Abs($normal.Scale-0.80) -gt 0.0001 -or
-     $normal.ViewWidth -ne 944 -or $normal.ViewHeight -ne 552 -or
+     $normal.ViewWidth -ne 944 -or $normal.ViewHeight -ne 672 -or
      $normal.RequiresScroll){throw '100% effective desktop: incorrect fit.'}
   $dpiChecks++
 
   $d125=Get-NorthernCompactGeometry 1536 800 16 38
-  if($d125.ViewWidth -ne 944 -or $d125.ViewHeight -ne 552 -or
+  if($d125.ViewWidth -ne 944 -or $d125.ViewHeight -ne 672 -or
      $d125.RequiresScroll){throw '125% effective desktop: incorrect fit.'}
   $dpiChecks++
 
   $d150=Get-NorthernCompactGeometry 1280 667 16 38
-  if($d150.ViewWidth -ne 944 -or $d150.ViewHeight -ne 552 -or
+  if($d150.ViewWidth -ne 839 -or $d150.ViewHeight -ne 597 -or
      $d150.RequiresScroll){throw '150% effective desktop: incorrectly scrolled or clipped.'}
   $dpiChecks++
 
@@ -3096,7 +3097,7 @@ if($Mode -eq 'UiSmokeTest'){
   # content, even at the minimum 0.65 factor. No dead off-canvas actions.
   foreach($control in @($script:northLaunch,$script:northUpdates,
     $script:northComponents,$script:northDrivers,$script:northSettings,
-    $script:northVersion,$script:northChannel,$script:northActivity)){
+    $script:northAbout,$script:northVersion,$script:northChannel,$script:northActivity)){
    if($control.Left -lt 0 -or $control.Top -lt 0 -or
       $control.Right -gt $live.FullWidth -or
       $control.Bottom -gt $live.FullHeight){
