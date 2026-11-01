@@ -95,7 +95,21 @@ internal sealed class CemPinAttemptCoordinator
         // Fail closed before even invoking a provider: editable evidence text,
         // a synthetic DID match and an apparently correct VIN are not proof.
         // Do not pass this context or any secret to the provider.
-        if (_provider is null || !_authorized(context))
+        if (_provider is null)
+            return CemPinAttemptResult.From(CemPinAttemptStatus.Unsupported);
+
+        bool isAuthorized;
+        try
+        {
+            isAuthorized = _authorized(context);
+        }
+        catch (Exception)
+        {
+            // A broken provider-authorization component is not permission.
+            // Never expose an evidence reference or private failure detail.
+            return CemPinAttemptResult.From(CemPinAttemptStatus.Failed);
+        }
+        if (!isAuthorized)
             return CemPinAttemptResult.From(CemPinAttemptStatus.Unsupported);
 
         if (Interlocked.CompareExchange(ref _running, 1, 0) != 0)
