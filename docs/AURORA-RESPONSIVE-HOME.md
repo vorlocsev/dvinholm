@@ -43,3 +43,27 @@ home, private result, profile layout and protocol checks remain applicable.
 Windows GUI acceptance and CI results are recorded in the implementation PR.
 No new vehicle protocols, ECU writes, key programming or physical support claims
 are introduced. Published Stable v0.2.4 and Virtual Car releases remain frozen.
+
+## Compact main-window shell (Development)
+
+The persistent *main-window* navigation now has its own two-width adaptive
+layout, independent from the landing dashboard's four/two/one card layout.
+At window widths below 980 effective XAML pixels it keeps all seven routes in a
+64-pixel icon rail, collapses only their visible captions and decorative
+brand/footer blocks, and keeps full names available through tooltips and UI
+Automation. The Home action continues to navigate back; no navigation command
+opens J2534 or sends ECU traffic.
+
+In that compact state the workspace header moves the connection/cancel actions
+onto a second row, reduces heading size and outer gutters, and keeps the
+workspace and sidebar vertically scrollable. At 980 pixels and above the
+original 216-pixel labeled sidebar and wide header remain unchanged. Layout
+setters affect presentation only and do not alter active CAN monitoring,
+existing session state, read results or PIN expiry rules.
+
+Eight offline XAML contract checks verify breakpoints, compact rail, all seven
+labels, accessibility affordances, header reflow, scrolling/gutters, valid
+targets and preservation of explicit vehicle-operation handlers. These checks
+are **not** a substitute for real Windows GUI resizing at 980, 800, 640 and
+smallest supported window sizes; that manual test remains open, as does
+physical DiCE/J2534 acceptance. No new Stable release or Virtual Car change.
