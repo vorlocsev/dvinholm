@@ -160,3 +160,28 @@ installer, rollback, PIN code, car diagnostic, network or Stable release
 operation is needed for any visual audit. Installed UI screenshot review
 at 100%, 125% and 150% Windows scale and exact 16px readability
 remain separate manual acceptance gates.
+
+
+## Windows DPI effective-work-area matrix (following icon acceptance)
+
+The approved Northern Compact home and the existing Service Cockpit use the
+same pure `Get-NorthernCompactGeometry` calculation in
+`eng/Launcher-ServiceCockpit.ps1`. The launch window still has a fixed
+reference canvas **1180×690** and fits at most **944×552** client pixels.
+A *single* WinForms tree scale is applied before showing the window.
+
+The PowerShell 5.1 `UiSmokeTest` now performs **eight offline geometry checks**:
+100%, 125%, 150% effective desktop scenarios; narrow 1024×768 at 150%;
+640×480; short displays; consistency with the actual instantiated Windows
+form; and all Start, four navigation and footer controls remaining inside the
+scrollable canvas.
+
+Normal desktop scenarios are simulated as working areas
+**1920×1000**, **1536×800**, **1280×667** respectively, with the same
+16×38 nonclient-frame allowance. Constrained desktops retain the minimum
+0.65 layout scale and enable scrolling instead of hiding lower controls.
+The tests verify derived virtual content and viewport dimensions and the
+real instantiated WinForms UI. They **do not modify the Windows runner's
+global DPI setting**, operate across monitors, or replace manual screenshot
+review on machines configured for 100/125/150%. They are a regression gate
+for layout arithmetic, not proof of perfect glyph rendering or photography.
