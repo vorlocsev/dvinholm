@@ -125,11 +125,14 @@ public sealed class CanMonitorOfflineCsvTimestampBoundaryTests
         Assert.DoesNotContain("CAN 11-bit 120", report);
         Assert.DoesNotContain("250", report);
 
-        // Existing live summary has no new CSV timestamp-policy dependency.
+        // The live RX report now independently enforces the same
+        // global discontinuity safety rule, without exposing the CSV label.
         var live = CanMonitorIsoTpCandidateSequences.Build(
             frames, frames.Length, 0, syntheticDemo: false);
-        Assert.Contains("FF=1, plausible-completion=1", live);
+        Assert.Contains("FF=1, plausible-completion=0", live);
         Assert.Contains("CAN 11-bit 7E8:", live);
+        Assert.Contains("Timestamp regressions/wraps in RX rows: 1", live);
+        Assert.Contains("Active candidates invalidated at RX timestamp boundaries: 1", live);
         Assert.DoesNotContain("Timestamp regressions/wraps in CSV:", live);
     }
 

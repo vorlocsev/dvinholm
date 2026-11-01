@@ -54,14 +54,12 @@ internal static class CanMonitorIsoTpCandidateSequences
 
         foreach (var row in rows)
         {
-            // A selected CSV may contain a restarted logger, concatenated
-            // captures or a wrapping 32-bit J2534 clock. The origin and units
-            // of timestamps are unverified; never join candidate messages
-            // across a backwards jump. Reset ALL CAN-ID groups because the
-            // discontinuity is in the global CSV capture, not one ECU.
-            // The live per-ID monitor report retains its existing behavior.
-            if (!showCanIds &&
-                previousTimestamp is uint previous &&
+            // Both the live RX history and a selected CSV may contain a
+            // restarted logger, discontinuous capture or a wrapping 32-bit
+            // J2534 clock. Timestamp units are unverified. Never join a
+            // presumed FF/CF sequence across a backwards jump, even when
+            // the boundary occurs on ANOTHER CAN ID. Reset all live groups.
+            if (previousTimestamp is uint previous &&
                 row.Timestamp < previous)
             {
                 timestampRegressions++;
@@ -224,6 +222,11 @@ internal static class CanMonitorIsoTpCandidateSequences
             output.Append("Additional groups withheld: ")
                 .AppendLine((groups.Count - MaximumDisplayedGroups)
                     .ToString(CultureInfo.InvariantCulture));
+        output.Append("Timestamp regressions/wraps in RX rows: ")
+            .AppendLine(timestampRegressions.ToString(CultureInfo.InvariantCulture))
+            .Append("Active candidates invalidated at RX timestamp boundaries: ")
+            .AppendLine(boundaryInvalidatedCandidates.ToString(CultureInfo.InvariantCulture))
+            .AppendLine("Live timestamp discontinuities also invalidate all active ID groups; no candidate is joined across them.");
         }
 
         return output
