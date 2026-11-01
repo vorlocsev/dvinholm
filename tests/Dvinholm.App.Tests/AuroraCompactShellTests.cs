@@ -60,13 +60,13 @@ public sealed class AuroraCompactShellTests
     }
 
     [Fact]
-    public void AllSevenTextLabelsCollapseOnlyInCompactState()
+    public void AllEightTextLabelsCollapseOnlyInCompactState()
     {
         var doc = Shell();
         var setters = Setters(doc, "ShellCompact");
         foreach (var label in new[]
         {
-            "ShellNavCemPinLabel", "ShellNavConfigLabel", "ShellNavEcuLabel",
+            "ShellNavCemPinLabel", "ShellNavConfigLabel", "ShellNavDtcLabel", "ShellNavEcuLabel",
             "ShellNavDiagnosticsLabel", "ShellNavMonitorLabel",
             "ShellNavProfilesLabel", "ShellNavConnectionLabel"
         })
@@ -83,7 +83,7 @@ public sealed class AuroraCompactShellTests
         var doc = Shell();
         var sidebar = Named(doc, "SidebarNavPanel");
         var links = sidebar.Elements().Where(e => e.Attribute("Tag") != null).ToArray();
-        Assert.Equal(7, links.Length);
+        Assert.Equal(8, links.Length);
         Assert.All(links, button =>
         {
             var expectedName = (string?)button.Attribute("AutomationProperties.Name");

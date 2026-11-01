@@ -216,13 +216,13 @@ public sealed partial class MainWindow : Window
         }
         _workspaceDestination = destination;
         ShowDashboardWorkspace();
-        foreach (var panel in new FrameworkElement[] { CemPinPage, CemConfigPage, EcuPage,
+        foreach (var panel in new FrameworkElement[] { CemPinPage, CemConfigPage, DtcPage, EcuPage,
             DiagnosticsPage, CanMonitorPage, ProfilesPage, ConnectionPage })
             panel.Visibility = panel.Name == section.Panel ? Visibility.Visible : Visibility.Collapsed;
         WorkspaceTitle.Text = section.Title;
         WorkspaceDescription.Text = section.Description;
         DiagnosticResultsCard.Visibility = destination is AuroraDestination.CemPinReadiness or
-            AuroraDestination.DiagnosticsWorkspace ? Visibility.Visible : Visibility.Collapsed;
+            AuroraDestination.DiagnosticsWorkspace or AuroraDestination.DtcFaults ? Visibility.Visible : Visibility.Collapsed;
         WorkspaceScroll.ChangeView(null, 0, null);
         SelectWorkspaceNavigation(destination);
         switch (destination)

@@ -22,7 +22,7 @@ public sealed class AuroraSectionNavigationTests
     {
         var doc = Document();
         var sections = Enum.GetValues<AuroraDestination>().Select(AuroraWorkspaceNavigation.Describe).ToArray();
-        Assert.Equal(7, sections.Select(s => s.Panel).Distinct().Count());
+        Assert.Equal(8, sections.Select(s => s.Panel).Distinct().Count());
         Assert.All(sections, section =>
         {
             Assert.Equal("Collapsed", (string?)Named(doc, section.Panel).Attribute("Visibility"));
@@ -69,7 +69,8 @@ public sealed class AuroraSectionNavigationTests
     [Fact]
     public void DiagnosticsOwnsAddressingAndReadsWhileConnectionOwnsAdapterSetup()
     {
-        Owns("DiagnosticsPage", "UdsRequestId", "UdsResponseId", "CanIdFormat", "ReadVinButton", "ReadDidButton", "ReadDtcButton");
+        Owns("DiagnosticsPage", "UdsRequestId", "UdsResponseId", "CanIdFormat", "ReadVinButton", "ReadDidButton");
+        Owns("DtcPage", "ReadDtcButton", "DtcStatusMaskSelector", "DtcClearButton");
         Owns("ConnectionPage", "DllPath", "J2534Devices", "BaudRate", "CanConnectionMode", "ConnectButton", "AdapterMetadataText");
         Assert.Equal("Disabled", (string?)Named(Document(), "WorkspaceScroll").Attribute("HorizontalScrollBarVisibility"));
     }
