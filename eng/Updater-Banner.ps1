@@ -2615,6 +2615,10 @@ if($Mode -eq 'UiPreview'){
   $form.ShowInTaskbar=$false
   $form.Location=[Drawing.Point]::new(-20000,-20000)
   $form.Show()
+  # A deterministic preview channel is display-only: the SelectedIndexChanged
+  # handler explicitly suppresses persistence and workers in UiPreview mode.
+  $choice.SelectedIndex=0
+  Update-NorthernCompactSnapshot
   [Windows.Forms.Application]::DoEvents()
   if(-not $form.Visible -or $form.Location.X -gt -10000){
    throw 'WinForms preview did not remain offscreen.'
@@ -2624,8 +2628,12 @@ if($Mode -eq 'UiPreview'){
   Show-NorthernUpdates
   [Windows.Forms.Application]::DoEvents()
   if(-not $script:northernDetailOpen -or
-     $form.Controls.GetChildIndex($script:northReturn) -ne 0){
-   throw 'Updates view navigation did not bring the genuine Back control forward.'
+     $form.Controls.GetChildIndex($script:northReturn) -ne 0 -or
+     -not $script:northReturn.Visible -or
+     -not $choice.Visible -or
+     -not $check.Visible -or
+     -not $install.Visible){
+   throw 'Updates view must retain visible Back, channel, Check and Install controls even while disabled.'
   }
   Save-NorthernWinFormsPreview 'Launcher-Aurora-Updates-RU.png' $form
   $previewChecks++
