@@ -229,21 +229,85 @@
                         </StackPanel>
                         <StackPanel x:Name="CemConfigPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
-                                <StackPanel Spacing="18">
-                                    <TextBlock Text="Конфигурация CEM" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Каталог вариантов Volvo P2. Доступен просмотр сведений и требований к совместимости." Foreground="#9EB8CC" />
-                                    <Grid RowSpacing="16">
-                                        <Grid.RowDefinitions>
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                            <RowDefinition Height="Auto" />
-                                        </Grid.RowDefinitions>
-                                        <TextBlock Text="Варианты и функции" FontSize="24" FontWeight="SemiBold" />
-                                        <TextBlock Grid.Row="1" Text="Освещение · комфорт · оборудование автомобиля" Foreground="#6DCBF7" />
-                                        <TextBlock Grid.Row="2" Text="Каталог работает офлайн. Изменение конфигурации автомобиля в этой версии недоступно." Foreground="#9EB8CC" />
-                                        <Button x:Name="P2ConfigCatalogButton" Grid.Row="3" Content="P2 configuration candidates (offline)" HorizontalAlignment="Stretch" ToolTipService.ToolTip="View vendor-advertised Volvo XC90 P2 option names offline; no vehicle queries, PIN, editing or writes." Click="P2ConfigCatalog_Click" />
+                                <StackPanel Spacing="14">
+                                    <TextBlock Text="Конфигурация CEM" FontSize="24" FontWeight="SemiBold" />
+                                    <TextBlock Text="Каталог Volvo P2 · офлайн. Выбор пункта показывает источник, но не читает или меняет автомобиль." Foreground="#9EB8CC" TextWrapping="Wrap" />
+                                    <Grid ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button x:Name="P2ConfigCatalogButton" Grid.Column="0" Content="Источники" Click="P2ConfigCatalog_Click" HorizontalAlignment="Stretch" Background="#0B5F81" ToolTipService.ToolTip="Открыть проверяемый справочный каталог P2 офлайн, без соединения с автомобилем." />
+                                        <Button Grid.Column="1" Content="Резервная копия" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет проверенной операции чтения конфигурации CEM." />
+                                        <Button Grid.Column="2" Content="Сравнить" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет считанной конфигурации и проверенного резервного снимка." />
+                                        <Button Grid.Column="3" Content="Подготовить изменения" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Не проверены байтовая карта, допустимые значения и зависимости." />
                                     </Grid>
+                                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
+                                        <Grid MinWidth="730" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="163" />
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="235" />
+                                            </Grid.ColumnDefinitions>
+                                            <Border Grid.Column="0" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
+                                                <StackPanel Spacing="12">
+                                                    <TextBlock Text="Категории" FontSize="17" FontWeight="SemiBold" />
+                                                    <ComboBox x:Name="CemConfigCategory" Header="Группа" HorizontalAlignment="Stretch" SelectionChanged="CemConfigCategory_SelectionChanged" />
+                                                    <TextBox x:Name="CemConfigSearch" Header="Найти параметр" PlaceholderText="Код или название" MaxLength="80" TextChanged="CemConfigSearch_TextChanged" />
+                                                    <TextBlock Text="Данные получены из локального каталога источников. Совместимость не подтверждена." Foreground="#A5C0D4" FontSize="12" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Grid.Column="1" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
+                                                <StackPanel Spacing="10">
+                                                    <TextBlock Text="Параметры и значения" FontSize="17" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="CemConfigCount" Text="Загрузка локальных данных…" Foreground="#9CC9E1" TextWrapping="Wrap" />
+                                                    <ListView x:Name="CemConfigResults" Height="310" SelectionMode="Single" SelectionChanged="CemConfigResults_SelectionChanged">
+                                                        <ListView.Header>
+                                                            <Grid ColumnSpacing="8">
+                                                                <Grid.ColumnDefinitions>
+                                                                    <ColumnDefinition Width="*" />
+                                                                    <ColumnDefinition Width="97" />
+                                                                </Grid.ColumnDefinitions>
+                                                                <TextBlock Text="Параметр (ID / название)" FontWeight="SemiBold" />
+                                                                <TextBlock Grid.Column="1" Text="Текущее" FontWeight="SemiBold" />
+                                                            </Grid>
+                                                        </ListView.Header>
+                                                        <ListView.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <Grid ColumnSpacing="8" Padding="2,8">
+                                                                    <Grid.ColumnDefinitions>
+                                                                        <ColumnDefinition Width="*" />
+                                                                        <ColumnDefinition Width="97" />
+                                                                    </Grid.ColumnDefinitions>
+                                                                    <StackPanel Spacing="2">
+                                                                        <TextBlock Text="{Binding Code}" Foreground="#74DAF1" FontFamily="Consolas" FontSize="12" />
+                                                                        <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
+                                                                    </StackPanel>
+                                                                    <TextBlock Grid.Column="1" Text="{Binding Current}" TextWrapping="Wrap" Foreground="#C8D6E8" FontSize="12" />
+                                                                </Grid>
+                                                            </DataTemplate>
+                                                        </ListView.ItemTemplate>
+                                                    </ListView>
+                                                </StackPanel>
+                                            </Border>
+                                            <Border Grid.Column="2" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
+                                                <StackPanel Spacing="12">
+                                                    <TextBlock Text="Описание" FontSize="17" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="CemConfigDetailTitle" Text="Выберите параметр" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                    <TextBlock x:Name="CemConfigDetailCode" Text="Код и источник появятся после выбора." FontSize="12" TextWrapping="Wrap" />
+                                                    <TextBlock x:Name="CemConfigDetailSource" Text="" FontSize="12" TextWrapping="Wrap" />
+                                                    <TextBlock x:Name="CemConfigDetailEvidence" Text="" FontSize="12" TextWrapping="Wrap" MaxLines="4" />
+                                                    <TextBlock x:Name="CemConfigDetailValues" Text="Значения автомобиля не считывались." FontSize="12" Foreground="#9CC9E1" TextWrapping="Wrap" />
+                                                    <TextBlock x:Name="CemConfigDetailSafety" Text="Изменение и запись недоступны до проверки протокола и резервного восстановления." FontSize="12" Foreground="#EBC280" TextWrapping="Wrap" />
+                                                </StackPanel>
+                                            </Border>
+                                        </Grid>
+                                    </ScrollViewer>
+                                    <Border Background="#10253D" CornerRadius="7" Padding="11" BorderBrush="#2B5878" BorderThickness="1">
+                                        <TextBlock Text="Чтение, изменение и запись CEM пока заблокированы. Никаких реальных значений, адресов или прав на запись этот каталог не подтверждает." TextWrapping="Wrap" Foreground="#C7DFF2" />
+                                    </Border>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -263,6 +327,61 @@
                                         <Button x:Name="CancelDiscoveryButton" Content="Cancel scan" Click="CancelDiscovery_Click" IsEnabled="False" Grid.Column="2" />
                                     </Grid>
                                     <TextBlock x:Name="DiscoveryStatus" VerticalAlignment="Center" Text="Not scanned" />
+                                    <Grid ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="250" />
+                                        </Grid.ColumnDefinitions>
+                                        <Border Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
+                                            <StackPanel Spacing="9">
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="*" />
+                                                        <ColumnDefinition Width="Auto" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="Карта автомобиля" FontSize="18" FontWeight="SemiBold" />
+                                                    <ComboBox x:Name="EcuVehicleModel" Grid.Column="1" Width="150" SelectedIndex="0" SelectionChanged="EcuVehicleModel_SelectionChanged" AutomationProperties.Name="Схема автомобиля">
+                                                        <ComboBoxItem Content="XC90 · P2" />
+                                                        <ComboBoxItem Content="XC70 · P3" />
+                                                    </ComboBox>
+                                                </Grid>
+                                                <Viewbox Stretch="Uniform" MaxHeight="235" HorizontalAlignment="Stretch">
+                                                    <Grid Width="640" Height="255">
+                                                        <Canvas x:Name="EcuP2SideProfile" Width="640" Height="255">
+                                                            <Path Data="M30,156 L59,145 L82,112 Q95,93 128,87 L170,82 Q202,43 245,43 L418,43 Q471,53 501,102 L550,116 Q590,129 596,148 L603,180 L567,186 L53,186 L24,176 Z" Fill="#173D56" Stroke="#31C7EA" StrokeThickness="3" />
+                                                            <Path Data="M205,83 L241,52 L409,52 Q443,54 468,98 L205,98 Z" Fill="#0B1B33" Stroke="#83B8D4" StrokeThickness="2" />
+                                                            <Path Data="M320,53 L320,98 M461,99 L461,146 M197,99 L197,165 M348,102 L348,165" Stroke="#478AAE" StrokeThickness="2" />
+                                                            <Path Data="M28,163 L601,163" Stroke="#64C8EC" StrokeThickness="2" Opacity=".7" />
+                                                            <Ellipse Canvas.Left="115" Canvas.Top="150" Width="88" Height="88" Fill="#0A1526" Stroke="#75A8BF" StrokeThickness="7" />
+                                                            <Ellipse Canvas.Left="466" Canvas.Top="150" Width="88" Height="88" Fill="#0A1526" Stroke="#75A8BF" StrokeThickness="7" />
+                                                            <Ellipse Canvas.Left="148" Canvas.Top="184" Width="23" Height="23" Fill="#18354E" Stroke="#BEDAE7" StrokeThickness="3" />
+                                                            <Ellipse Canvas.Left="499" Canvas.Top="184" Width="23" Height="23" Fill="#18354E" Stroke="#BEDAE7" StrokeThickness="3" />
+                                                        </Canvas>
+                                                        <Canvas x:Name="EcuP3SideProfile" Width="640" Height="255" Visibility="Collapsed">
+                                                            <Path Data="M22,163 L57,148 L109,142 Q146,98 197,92 L250,83 L439,85 Q488,94 519,131 L563,145 Q593,148 608,169 L608,191 L22,191 Z" Fill="#163C57" Stroke="#46D7EA" StrokeThickness="3" />
+                                                            <Path Data="M182,99 Q210,89 254,91 L434,93 Q478,99 492,135 L147,135 Z" Fill="#0A1B35" Stroke="#8CBBD5" StrokeThickness="2" />
+                                                            <Path Data="M310,91 L310,135 M445,96 L445,181 M167,137 L167,180 M321,137 L321,183 M31,180 L602,180" Stroke="#4893B7" StrokeThickness="2" />
+                                                            <Ellipse Canvas.Left="115" Canvas.Top="156" Width="82" Height="82" Fill="#0B1527" Stroke="#7DA7BD" StrokeThickness="7" />
+                                                            <Ellipse Canvas.Left="484" Canvas.Top="156" Width="82" Height="82" Fill="#0B1527" Stroke="#7DA7BD" StrokeThickness="7" />
+                                                        </Canvas>
+                                                        <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,4,0,0">
+                                                            <TextBlock Text="ПЕРЕД → ЗАД" Foreground="#8FC5DF" FontSize="12" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                </Viewbox>
+                                                <TextBlock x:Name="EcuDiagramCaption" Text="XC90 P2 · условный боковой силуэт, выбран вручную" Foreground="#B5D8ED" TextWrapping="Wrap" />
+                                                <TextBlock Text="Схема не указывает физические позиции ECU; местоположение и статус блоков не подтверждаются изображением." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
+                                            </StackPanel>
+                                        </Border>
+                                        <Border Grid.Column="1" Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
+                                            <StackPanel Spacing="12">
+                                                <TextBlock Text="Выбранный ответ" FontSize="18" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="EcuSelectionInfo" Text="Пассивный поиск · выберите наблюдаемый RX. Идентичность ECU и TX-адрес не установлены." TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                                <TextBlock Text="Нет подтверждённого сопоставления наблюдаемых CAN ID с позициями на автомобиле." FontSize="12" Foreground="#E9C48D" TextWrapping="Wrap" />
+                                                <Button Content="Диагностика ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" ToolTipService.ToolTip="Открыть экран диагностики. Не отправляет запросы и не подтверждает адрес ECU." />
+                                            </StackPanel>
+                                        </Border>
+                                    </Grid>
                                     <ListView x:Name="EcusView" Height="260" SelectionMode="Single" IsEnabled="False" SelectionChanged="Ecu_SelectionChanged" ToolTipService.ToolTip="Passive response observations only. No verified ECU identity or request ID.">
                                         <ListView.Header>
                                             <Grid ColumnSpacing="12">
@@ -302,9 +421,7 @@
                                             </DataTemplate>
                                         </ListView.ItemTemplate>
                                     </ListView>
-                                    <ScrollViewer MaxHeight="86" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                                        <TextBlock x:Name="EcuSelectionInfo" Text="Passive scan only. Select a completed observation; verify and enter the request ID manually." TextWrapping="Wrap" IsTextSelectionEnabled="True" />
-                                    </ScrollViewer>
+
                                 </StackPanel>
                             </Border>
                             <Button Content="Перейти к профилям ECU →" Tag="EcuProfiles" Click="WorkspaceNavigate_Click" />
