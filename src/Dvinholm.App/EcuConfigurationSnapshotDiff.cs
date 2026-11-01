@@ -35,6 +35,12 @@ internal static class EcuConfigurationSnapshotDiff
         ArgumentNullException.ThrowIfNull(original);
         ArgumentNullException.ThrowIfNull(current);
 
+        // This backend is also callable without the strict historical JSON
+        // inspector. Verify BOTH sides before comparing any sensitive DID
+        // bytes or returning a result that could be mistaken for a baseline.
+        ValidateCaptureMetadata(original);
+        ValidateCaptureMetadata(current);
+
         if (!string.Equals(original.ProfileId, current.ProfileId, StringComparison.OrdinalIgnoreCase) ||
             original.RequestId != current.RequestId ||
             original.ResponseId != current.ResponseId ||
@@ -64,6 +70,22 @@ internal static class EcuConfigurationSnapshotDiff
             original.CapturedAtUtc,
             current.CapturedAtUtc,
             Array.AsReadOnly(comparisons));
+    }
+
+    private static void ValidateCaptureMetadata(EcuConfigurationReadSnapshot snapshot)
+    {
+        var maximumCanId = snapshot.IsExtended ? 0x1FFFFFFFu : 0x7FFu;
+        if (snapshot.CapturedAtUtc == default ||
+            snapshot.CapturedAtUtc.Offset != TimeSpan.Zero ||
+            snapshot.RequestId > maximumCanId ||
+            snapshot.ResponseId > maximumCanId ||
+            snapshot.RequestId == snapshot.ResponseId ||
+            string.IsNullOrWhiteSpace(snapshot.ProfileId) ||
+            snapshot.ProfileId.Length > 120 ||
+            string.IsNullOrWhiteSpace(snapshot.ProfileName) ||
+            snapshot.ProfileName.Length > 160)
+            throw new InvalidDataException(
+                "Configuration snapshot has invalid capture provenance or CAN metadata.");
     }
 
     private static SortedDictionary<ushort, string> Normalize(
