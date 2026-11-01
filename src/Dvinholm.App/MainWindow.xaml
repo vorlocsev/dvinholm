@@ -87,7 +87,7 @@
                             <TextBlock Text="DVINHOLM" FontSize="25" FontWeight="Bold" />
                             <TextBlock Text="DIAGNOSTICS · CONTROL" FontSize="10" Foreground="#8AB9D9" />
                         </StackPanel>
-                        <Button x:Name="SidebarHomeButton" Content="⌂   Главная" ToolTipService.ToolTip="Главная" Style="{StaticResource AuroraNav}" Click="DashboardReturn_Click" Background="#0865C7" />
+                        <Button x:Name="SidebarHomeButton" Content="⌂   Главная" ToolTipService.ToolTip="Главная" AutomationProperties.Name="Главная" Style="{StaticResource AuroraNav}" Click="DashboardReturn_Click" Background="#0865C7" />
                         <Button Tag="CemPinReadiness" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="CEM PIN" ToolTipService.ToolTip="CEM PIN">
                             <StackPanel Orientation="Horizontal" Spacing="14">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
