@@ -2977,8 +2977,11 @@ if($Mode -eq 'UiSmokeTest'){
    throw 'Northern home lost its prerequisite evidence labels.'
   }
   # Verify exact worker-projection values, not assumed text translations.
-  $expectedDot=if($deps.Text -match '\.NET x86:\s*([^ ]+)'){$Matches[1]}else{'не проверено'}
-  $expectedWin=if($deps.Text -match 'WinApp:\s*([^ ]+)'){$Matches[1]}else{'не проверено'}
+  $unknownExpected=if($script:launcherLanguage -eq 'RU'){'не проверено'}else{'not checked'}
+  $expectedDot=if($deps.Text -match '\.NET x86:\s*([^ ]+)'){$Matches[1]}else{''}
+  $expectedWin=if($deps.Text -match 'WinApp:\s*([^ ]+)'){$Matches[1]}else{''}
+  if([string]::IsNullOrWhiteSpace($expectedDot) -or $expectedDot -ceq '?'){$expectedDot=$unknownExpected}
+  if([string]::IsNullOrWhiteSpace($expectedWin) -or $expectedWin -ceq '?'){$expectedWin=$unknownExpected}
   if(-not $script:northRuntime.Text.Contains($expectedDot) -or
      -not $script:northWinApp.Text.Contains($expectedWin)){
    throw 'Northern home prerequisite values differ from the actual worker snapshot.'
