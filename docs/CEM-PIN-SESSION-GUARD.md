@@ -70,6 +70,18 @@ the existing in-memory J2534 adapter through real session lifecycle code.
 All authorization bypasses are internal synthetic test seams, absent from UI.
 The original eight coordinator tests now supply synthetic leases explicitly.
 
+Local regression on a two-core Windows host initially passed 2184/2187 tests.
+Three existing fixture issues were corrected without changing updater or
+transport code: ZIP timestamps have no UTC offset, ISO-TP cancellation must
+not depend on pool-timer availability, and passive scan traffic must not rely
+on a delayed test continuation arriving within a 500 ms window. The latter
+now feeds periodic synthetic RX traffic on a dedicated worker and still
+requires exactly the two valid responder IDs, rejects both malformed IDs and
+asserts zero transmitted frames. Final validation results belong to the PR's
+exact-head CI and local test record, not to synthetic hardware support claims.
+The final local focused run passed 35/35 checks (CEM PIN plus the three
+affected regression classes) on Windows x86 with .NET SDK 10.0.403.
+
 Windows x86 compilation and automatic tests are separate from interactive
 Windows GUI acceptance. Neither constitutes a physical DiCE/J2534/CEM test.
 No installed application, published Stable artifact or Virtual Car release is
