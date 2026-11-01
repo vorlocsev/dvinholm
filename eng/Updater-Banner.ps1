@@ -2603,8 +2603,527 @@ if($Mode -eq 'UiPreview'){
   }
   $previewChecks++
   if($script:child -or $script:vendor -or $script:northLaunch.Enabled -or
-     $launch.Enabled -or $install.Enabled -or $check.Enabled){
-   throw 'Preview is not fail-closed at startup.'
+     $launch.Enabled -or $install.Enabled -or $check.Enabled -or
+     $script:northActivity.Text -cmatch '^(?:Ready\.|Готово\.)
+  $previewChecks++
+  # Offscreen Form.Show is required for nested WinForms page painting.
+  # Never use ShowDialog or trigger startup probes during preview.
+  $form.StartPosition=[Windows.Forms.FormStartPosition]::Manual
+  $form.ShowInTaskbar=$false
+  $form.Location=[Drawing.Point]::new(-20000,-20000)
+  $form.Show()
+  [Windows.Forms.Application]::DoEvents()
+  if(-not $form.Visible -or $form.Location.X -gt -10000){
+   throw 'WinForms preview did not remain offscreen.'
+  }
+  Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-RU.png' $script:northernHome
+  $previewChecks++
+  Show-NorthernUpdates
+  [Windows.Forms.Application]::DoEvents()
+  if(-not $script:northernDetailOpen -or
+     $form.Controls.GetChildIndex($script:northReturn) -ne 0){
+   throw 'Updates view navigation did not bring the genuine Back control forward.'
+  }
+  Save-NorthernWinFormsPreview 'Launcher-Aurora-Updates-RU.png' $form
+  $previewChecks++
+  Show-NorthernHome
+  $script:launcherLanguage='EN'
+  Apply-LauncherLanguage
+  [Windows.Forms.Application]::DoEvents()
+  if($script:northLaunch.Text -cnotmatch 'START DVINHOLM' -or
+     $script:northUpdates.Text -cnotmatch 'Updates'){
+   throw 'English Northern preview not localized.'
+  }
+  Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-EN.png' $script:northernHome
+  $previewChecks++
+  $files=@(
+   'Launcher-Aurora-Home-RU.png',
+   'Launcher-Aurora-Updates-RU.png',
+   'Launcher-Aurora-Home-EN.png')
+  $digests=@()
+  foreach($file in $files){
+   $path=Join-Path $PreviewDirectory $file
+   if(-not(Test-Path -LiteralPath $path -PathType Leaf) -or
+      (Get-Item -LiteralPath $path).Length -lt 2048){
+    throw ('Preview file missing or implausibly small: '+$file)
+   }
+   $digests+=((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash)
+  }
+  if(@($digests|Select-Object -Unique).Count -ne 3){
+   throw 'WinForms previews are identical; view or language rendering did not change.'
+  }
+  $previewChecks++
+  if(-not $form.Visible -or $form.Location.X -gt -10000 -or
+     $form.ShowInTaskbar -or $script:child -or $script:vendor -or
+     $timer.Enabled -or $launch.Enabled -or $check.Enabled){
+   throw 'Preview escaped its offscreen host, started a worker or armed buttons.'
+  }
+  $previewChecks++
+  if($previewChecks -ne 8){throw 'Wrong WinForms preview check count.'}
+  Write-Host 'Northern Aurora WinForms previews 8/8 offline checks passed.'
+ }finally{
+  $script:launcherLanguage=$localeBefore
+  $timer.Stop();$timer.Dispose();$form.Dispose()
+  if($script:nativeLauncherIcon){$script:nativeLauncherIcon.Dispose()}
+ }
+ exit 0
+}
+if($Mode -eq 'UiSmokeTest'){
+ # Instantiate the real Windows PowerShell 5.1 WinForms GUI, but do not
+ # display a modal dialog, contact GitHub, launch installers or start Dvinholm.
+ $checks=0
+ try{
+  if($null -eq $form -or
+     $form -isnot [Windows.Forms.Form] -or
+     $choice.Items.Count -ne 2 -or
+     $choice.Items[0] -cne 'Development' -or
+     $choice.Items[1] -cne 'Stable' -or
+     -not $form.Controls.Contains($recovery)){
+   throw 'Standalone WinForms controls were not constructed.'
+  }
+  $checks++
+  # Default: nothing runs until the first local inventory has been checked.
+  if($script:recoveryStatus -cne 'Not checked' -or
+     $install.Enabled -or $check.Enabled -or $launch.Enabled -or
+     $rollback.Enabled -or $repair.Enabled -or $repairInstall.Enabled -or
+     -not $refresh.Enabled){throw 'Startup actions were not locked.'}
+  $checks++
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if($install.Enabled -or -not $check.Enabled -or
+     -not $launch.Enabled -or -not $rollback.Enabled -or
+     $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Ready-state button policy failed: install must await a version check.'
+  }
+  $checks++
+  $script:recoveryStatus='Repair install';Update-ActionAvailability
+  if(-not $repairInstall.Enabled -or $repair.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled){throw 'Install recovery was not isolated.'}
+  $checks++
+  $script:recoveryStatus='Repair rollback';Update-ActionAvailability
+  if(-not $repair.Enabled -or $repairInstall.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled){throw 'Rollback recovery was not isolated.'}
+  $checks++
+  $script:recoveryStatus='Inspect';Update-ActionAvailability
+  if($repair.Enabled -or $repairInstall.Enabled -or
+     $install.Enabled -or $rollback.Enabled -or $check.Enabled -or
+     $launch.Enabled -or -not $refresh.Enabled){
+   throw 'Ambiguous recovery state was not fail-closed.'
+  }
+  $checks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if($choice.Enabled -or $refresh.Enabled -or $install.Enabled -or
+     $rollback.Enabled -or $check.Enabled -or $launch.Enabled -or
+     $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Busy-state buttons were not locked.'
+  }
+  $checks++
+  if($checks -ne 7){throw 'Wrong Windows WinForms smoke check count.'}
+  Write-Host 'Updater Banner 7/7 Windows PowerShell 5.1 WinForms smoke checks passed.'
+  $snapshotChecks=0
+  $script:child=$null
+  $completed=[pscustomobject]@{
+   Done=$true;Failed=$false;Recovery='Ready';Current='ci-4118'
+   Available='ci-4119';DotNet='Installed';WinApp='Installed'
+   VC='Installed';Detail='Completed'
+  }
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     -not $install.Enabled -or -not $launch.Enabled){
+   throw 'Completed worker snapshot failed to re-enable Ready actions.'
+  }
+  $snapshotChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     $install.Enabled -or $launch.Enabled -or $refresh.Enabled){
+   throw 'Completed snapshot unlocked actions while helper was still running.'
+  }
+  $snapshotChecks++
+  $script:child=$null
+  if(-not (Apply-WorkerSnapshot $completed) -or
+     -not $install.Enabled -or -not $check.Enabled){
+   throw 'Late snapshot after worker completion did not unlock the UI.'
+  }
+  $snapshotChecks++
+  $incomplete=$completed | Select-Object *
+  $incomplete.Done=$false
+  if((Apply-WorkerSnapshot $incomplete) -or
+     $install.Enabled -or $launch.Enabled -or
+     $script:recoveryStatus -cne 'Not checked'){
+   throw 'Incomplete worker progress unlocked the UI.'
+  }
+  $snapshotChecks++
+  $invalid=$completed | Select-Object *
+  $invalid.Recovery='Untrusted'
+  if((Apply-WorkerSnapshot $invalid) -or
+     $install.Enabled -or $repair.Enabled -or $repairInstall.Enabled){
+   throw 'Untrusted worker recovery field was accepted.'
+  }
+  $snapshotChecks++
+  $repairSnapshot=$completed | Select-Object *
+  $repairSnapshot.Recovery='Repair install'
+  if(-not (Apply-WorkerSnapshot $repairSnapshot) -or
+     -not $repairInstall.Enabled -or $install.Enabled -or $repair.Enabled){
+   throw 'Completed recovery snapshot did not activate the matching repair.'
+  }
+  $snapshotChecks++
+  if($snapshotChecks -ne 6){throw 'Wrong worker state synchronization test count.'}
+  Write-Host 'Updater Banner 6/6 WinForms worker-state synchronization checks passed.'
+  $vendorChecks=0
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons were disabled when no worker was running.'
+  }
+  $vendorChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($dot.Enabled -or $win.Enabled -or $vc.Enabled){
+   throw 'Microsoft installers were not locked during updater work.'
+  }
+  $vendorChecks++
+  $script:child=$null;Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons did not unlock after updater completion.'
+  }
+  $vendorChecks++
+  $script:vendor=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($dot.Enabled -or $win.Enabled -or $vc.Enabled -or
+     $choice.Enabled -or $refresh.Enabled -or $launch.Enabled -or
+     $install.Enabled){
+   throw 'Parallel Microsoft installer activity was not locked.'
+  }
+  $vendorChecks++
+  $script:vendor=$null;Update-ActionAvailability
+  if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
+   throw 'Microsoft installer buttons stayed disabled after worker completion.'
+  }
+  $vendorChecks++
+  if((Get-VendorExitError 0) -cne ''){
+   throw 'Successful Microsoft installer completion reported a failure.'
+  }
+  $vendorChecks++
+  if((Get-VendorExitError 1) -cnotmatch 'failed or was cancelled.*exit code 1'){
+   throw 'Failed Microsoft installer completion was not explained.'
+  }
+  $vendorChecks++
+  if($vendorChecks -ne 7){throw 'Wrong Microsoft installer lifecycle test count.'}
+  Write-Host 'Updater Banner 7/7 WinForms vendor worker lifecycle checks passed.'
+
+  # Eight deterministic update-button gates, no network or installers.
+  $updates=@(
+   @('Development','Not installed','Not checked',$false),
+   @('Development','Not installed','ci-4119',$true),
+   @('Development','ci-4118','ci-4119',$true),
+   @('Development','ci-4119','ci-4119',$false),
+   @('Development','ci-4120','ci-4119',$false),
+   @('Stable','0.2.3','0.2.4',$true),
+   @('Stable','0.2.4','0.2.4',$false),
+   @('Stable','Unverified installation','0.2.4',$false)
+  )
+  $updateChecks=0
+  foreach($item in $updates){
+   $actual=Test-CockpitUpdateAvailable ([string]$item[1]) ([string]$item[2]) ([string]$item[0])
+   if($actual -ne [bool]$item[3]){
+    throw ('Wrong update availability for '+($item[0..2] -join ' / '))
+   }
+   $updateChecks++
+  }
+  if($updateChecks -ne 8){throw 'Wrong update gate check count.'}
+  Write-Host 'Service Cockpit update buttons 8/8 offline state checks passed.'
+
+  # Eight locale checks with actual worker messages. No network or modal UI.
+  $originalLanguage=$script:launcherLanguage
+  $script:launcherLanguage='RU'
+  $samples=@(
+   @('Ready.','Готово.'),
+   @('Working...','Выполняется...'),
+   @('Runtime dependencies rechecked locally. No GitHub request made.','Компоненты Windows проверены локально. GitHub не запрашивался.'),
+   @('Up to date: ci-4223. No changes made.','Актуальная версия: ci-4223. Изменения не внесены.'),
+   @('Latest Development release: ci-4224. No changes made.','Доступна сборка Development: ci-4224. Изменения не внесены.'),
+   @('Unable to launch updater helper.','Не удалось запустить вспомогательный процесс обновления.'),
+   @('J2534 installer finished. Driver inventory refreshed; hardware untested.','Установщик J2534 завершился, список драйверов обновлён. Оборудование не проверено.'),
+   @('Unknown vendor diagnostic','Unknown vendor diagnostic')
+  )
+  $localeChecks=0
+  foreach($sample in $samples){
+   if((Format-LauncherDetail ([string]$sample[0])) -cne [string]$sample[1]){
+    throw ('Launcher locale translation failed for '+[string]$sample[0])
+   }
+   $localeChecks++
+  }
+  $script:launcherLanguage='EN'
+  if((Format-LauncherDetail 'Ready.') -cne 'Ready.'){throw 'English launcher status was altered.'}
+  $script:launcherLanguage=$originalLanguage
+  Apply-LauncherLanguage
+  if($localeChecks -ne 8){throw 'Wrong launcher locale check count.'}
+  Write-Host 'Service Cockpit 8/8 offline RU/EN status translation checks passed.'
+
+  # Eight Windows-only GUI contracts for the approved Service Cockpit.
+  # No modal window, network request, installer, or ECU access.
+  $auroraChecks=0
+  if($script:auroraScale -gt 0.80 -or $script:auroraScale -lt 0.65 -or
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552){
+   throw 'Service Cockpit is larger than the compact display envelope.'
+  }
+  $auroraChecks++
+  if($hero.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
+     $hero.Height -ne [int][Math]::Round(184*$script:auroraScale) -or
+     $brandTitle.Text -cne 'DVINHOLM'){
+   throw 'Service Cockpit upper banner is missing or not correctly scaled.'
+  }
+  $auroraChecks++
+  if($choice.Parent -ne $form -or
+     $null -eq $script:serviceCardLeft -or
+     $sidebar.Controls.Count -lt 6 -or $stableRadio.Parent -ne $form){
+   throw 'Service Cockpit root selection or backing layout is missing.'
+  }
+  $auroraChecks++
+  if($script:serviceCardUpdates -eq $null -or
+     $script:serviceCardWindows -eq $null -or
+     $script:serviceCardDrivers -eq $null -or
+     $script:serviceCardUpdates.Top -ge $script:serviceCardWindows.Top -or
+     $script:serviceCardWindows.Top -ge $script:serviceCardDrivers.Top){
+   throw 'Service Cockpit three operation cards are missing or out of order.'
+  }
+  $auroraChecks++
+  $contentWidth=[int][Math]::Round(1180*$script:auroraScale)
+  $contentHeight=[int][Math]::Round(690*$script:auroraScale)
+  if($install.Right -gt $contentWidth -or
+     $versionsButton.Right -gt $contentWidth -or
+     $driverQuick.Right -gt $contentWidth -or
+     $script:serviceCardDrivers.Bottom -gt $contentHeight -or
+     $bar.Width -lt [int][Math]::Floor(650*$script:auroraScale)){
+   throw 'Service Cockpit controls extend past the display boundary.'
+  }
+  $auroraChecks++
+  if($launch.Bottom -ge $recovery.Top -or
+     $recovery.Bottom -ge $startNote.Top){
+   throw 'Service Cockpit Start button overlaps its recovery or help labels.'
+  }
+  $working=[Windows.Forms.Screen]::FromControl($form).WorkingArea
+  if($form.Width -gt $working.Width-16 -or $form.Height -gt $working.Height-16){
+   throw 'Service Cockpit extends beyond the Windows working area.'
+  }
+  $auroraChecks++
+  $currentLanguage=$script:launcherLanguage
+  $script:launcherLanguage='EN';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Windows requirements' -or
+     $driverQuick.Text -cne 'Open drivers'){throw 'English localization did not apply.'}
+  $script:launcherLanguage='RU';Apply-LauncherLanguage
+  if($windowsHeading.Text -cne 'Требования Windows' -or
+     $driverQuick.Text -cne 'Открыть драйверы'){throw 'Russian localization did not apply.'}
+  $script:launcherLanguage=$currentLanguage;Apply-LauncherLanguage
+  $auroraChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($versionsButton.Enabled -or $windowsQuick.Enabled -or
+     $driverQuick.Enabled -or $driverScanQuick.Enabled -or
+     $settingsQuick.Enabled -or $languageChoice.Enabled){
+   throw 'Service Cockpit actions were not locked during updater operation.'
+  }
+  $script:child=$null
+  Update-ActionAvailability
+  if(-not $windowsQuick.Enabled -or -not $driverQuick.Enabled){
+   throw 'Service Cockpit actions did not recover after updater operation.'
+  }
+  $auroraChecks++
+  if($auroraChecks -ne 8){throw 'Wrong Service Cockpit smoke check count.'}
+  Write-Host 'Service Cockpit 8/8 Windows WinForms layout and action smoke checks passed.'
+  Write-Host 'Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.'
+
+  # The approved fourth concept is the visible default, not a dead mock.
+  # These eight gates instantiate the packaged WinForms controls offline.
+  $northChecks=0
+  if($script:northernDetailOpen -or
+     $script:northernHome.Parent -ne $form -or
+     $form.Controls.GetChildIndex($script:northernHome) -ne 0){throw 'Northern compact home is not the default visible window.'}
+  $northChecks++
+  if($script:northernHome.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
+     $script:northernHome.Height -ne [int][Math]::Round(690*$script:auroraScale) -or
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552){
+   throw 'Northern compact home does not fit the approved 944x552 window envelope.'
+  }
+  $northChecks++
+  if($null -eq $script:northTitle -or $script:northTitle.Text -cne 'DVINHOLM' -or
+     $null -eq $script:northLaunch -or
+     $script:northLaunch.Parent -ne $script:northernHome -or
+     $script:northLaunch.Bottom -ge $script:northUpdates.Top){
+   throw 'Approved northern brand/launch-first layout is missing or overlaps actions.'
+  }
+  $northChecks++
+  foreach($button in @($script:northUpdates,$script:northComponents,
+                        $script:northDrivers,$script:northSettings)){
+   if($button.Parent -ne $script:northernHome -or $button.Text.Length -lt 4 -or
+      $button.Bottom -gt $script:northernHome.ClientSize.Height){
+    throw 'One of the compact secondary launch actions is missing or clipped.'
+   }
+  }
+  $northChecks++
+  if($null -eq $script:northRuntime -or $null -eq $script:northWinApp -or
+     $null -eq $script:northDriver){
+   throw 'Northern home lost its prerequisite evidence labels.'
+  }
+  # Verify exact worker-projection values, not assumed text translations.
+  $expectedDot=if($deps.Text -match '\.NET x86:\s*([^ ]+)'){$Matches[1]}else{'не проверено'}
+  $expectedWin=if($deps.Text -match 'WinApp:\s*([^ ]+)'){$Matches[1]}else{'не проверено'}
+  if(-not $script:northRuntime.Text.Contains($expectedDot) -or
+     -not $script:northWinApp.Text.Contains($expectedWin)){
+   throw 'Northern home prerequisite values differ from the actual worker snapshot.'
+  }
+  $priorDrivers=$script:driversWereProbed
+  try{
+   $script:driversWereProbed=$false
+   Update-NorthernCompactSnapshot
+   if($script:northDriver.Text -cnotmatch 'J2534:\s*(не проверено|not checked)'){
+    throw 'Northern home claims J2534 readiness without a local inventory.'
+   }
+  }finally{
+   $script:driversWereProbed=$priorDrivers
+   Update-NorthernCompactSnapshot
+  }
+  $northChecks++
+  $script:recoveryStatus='Not checked';Update-ActionAvailability
+  Update-NorthernCompactSnapshot
+  if($script:northLaunch.Enabled -or $launch.Enabled){
+   throw 'Unverified recovery state enabled the compact Launch action.'
+  }
+  $northChecks++
+  Show-NorthernUpdates
+  if(-not $script:northernDetailOpen -or
+     $null -eq $check -or $null -eq $install -or $null -eq $versionsButton){
+   throw 'Compact Updates route lost real installer/recovery controls.'
+  }
+  Show-NorthernHome
+  if($script:northernDetailOpen -or
+     $form.Controls.GetChildIndex($script:northernHome) -ne 0){
+   throw 'Compact Updates route cannot return to approved home.'
+  }
+  $northChecks++
+  $langBefore=$script:launcherLanguage
+  $script:launcherLanguage='EN';Update-NorthernCompactSnapshot
+  if($script:northLaunch.Text -cnotmatch 'START' -or
+     $script:northUpdates.Text -cnotmatch 'Updates'){
+   throw 'Northern compact English labels missing.'
+  }
+  $script:launcherLanguage='RU';Update-NorthernCompactSnapshot
+  if($script:northLaunch.Text -cnotmatch 'ЗАПУСТИТЬ' -or
+     $script:northUpdates.Text -cnotmatch 'Обновления'){
+   throw 'Northern compact Russian labels missing.'
+  }
+  $script:launcherLanguage=$langBefore;Apply-LauncherLanguage
+  $northChecks++
+  if($northChecks -ne 8){throw 'Wrong Northern Compact acceptance count.'}
+  Write-Host 'Northern Aurora compact 8/8 real WinForms offline checks passed.'
+
+  # Eight effective-work-area DPI/regression gates. These are simulated
+  # Windows desktop geometries, NOT claims that the runner DPI was changed.
+  # The actual WinForms controls are already instantiated and scaled once.
+  $dpiChecks=0
+  $normal=Get-NorthernCompactGeometry 1920 1000 16 38
+  if([Math]::Abs($normal.Scale-0.80) -gt 0.0001 -or
+     $normal.ViewWidth -ne 944 -or $normal.ViewHeight -ne 552 -or
+     $normal.RequiresScroll){throw '100% effective desktop: incorrect fit.'}
+  $dpiChecks++
+
+  $d125=Get-NorthernCompactGeometry 1536 800 16 38
+  if($d125.ViewWidth -ne 944 -or $d125.ViewHeight -ne 552 -or
+     $d125.RequiresScroll){throw '125% effective desktop: incorrect fit.'}
+  $dpiChecks++
+
+  $d150=Get-NorthernCompactGeometry 1280 667 16 38
+  if($d150.ViewWidth -ne 944 -or $d150.ViewHeight -ne 552 -or
+     $d150.RequiresScroll){throw '150% effective desktop: incorrectly scrolled or clipped.'}
+  $dpiChecks++
+
+  # A 1024x768 display at nominal 150% has only ~683x512 logical px.
+  # Preserve readable minimum scale and provide both scroll directions.
+  $d150small=Get-NorthernCompactGeometry 683 512 16 38
+  if([Math]::Abs($d150small.Scale-0.65) -gt 0.0001 -or
+     -not $d150small.RequiresScroll -or
+     $d150small.FullWidth -le $d150small.ViewWidth -or
+     $d150small.FullHeight -le $d150small.ViewHeight){
+   throw '150% cramped desktop: controls cannot be reached by scrolling.'
+  }
+  $dpiChecks++
+
+  $small=Get-NorthernCompactGeometry 640 480 16 38
+  if($small.ViewWidth -ge $small.FullWidth -or
+     $small.ViewHeight -ge $small.FullHeight -or
+     $small.ViewWidth -le 0 -or $small.ViewHeight -le 0 -or
+     -not $small.RequiresScroll){
+   throw '640x480 work area: missing bounded two-way scrolling.'
+  }
+  $dpiChecks++
+
+  $short=Get-NorthernCompactGeometry 1000 480 16 38
+  if($short.FullWidth -gt $short.ViewWidth -or
+     $short.FullHeight -le $short.ViewHeight -or
+     -not $short.RequiresScroll){
+   throw 'Short desktop: should scroll vertically but not horizontally.'
+  }
+  $dpiChecks++
+
+  # Verify the real window uses exactly the same geometry as simulated math.
+  $work=[Windows.Forms.Screen]::FromControl($form).WorkingArea
+  $edgeW=[int][Math]::Max(0,$form.Width-$form.ClientSize.Width)
+  $edgeH=[int][Math]::Max(0,$form.Height-$form.ClientSize.Height)
+  $live=Get-NorthernCompactGeometry $work.Width $work.Height $edgeW $edgeH
+  if([Math]::Abs($live.Scale-$script:auroraScale) -gt 0.0001 -or
+     $live.ViewWidth -ne $form.ClientSize.Width -or
+     $live.ViewHeight -ne $form.ClientSize.Height -or
+     $form.AutoScroll -ne $live.RequiresScroll){
+   throw 'Instantiated WinForms launcher differs from compact layout plan.'
+  }
+  $dpiChecks++
+
+  # All four working navigation buttons and Start remain inside the *scrollable*
+  # content, even at the minimum 0.65 factor. No dead off-canvas actions.
+  foreach($control in @($script:northLaunch,$script:northUpdates,
+    $script:northComponents,$script:northDrivers,$script:northSettings,
+    $script:northVersion,$script:northChannel,$script:northActivity)){
+   if($control.Left -lt 0 -or $control.Top -lt 0 -or
+      $control.Right -gt $live.FullWidth -or
+      $control.Bottom -gt $live.FullHeight){
+    throw ('Northern action/footer outside scrollable canvas: '+$control.Name)
+   }
+  }
+  if($script:northLaunch.Bottom -ge $script:northUpdates.Top){
+   throw 'Northern primary Start overlaps secondary navigation after scaling.'
+  }
+  $dpiChecks++
+  if($dpiChecks -ne 8){throw 'Wrong Aurora DPI geometry acceptance count.'}
+  Write-Host 'Northern Aurora DPI/work-area 8/8 offline layout checks passed.'
+
+
+
+ }finally{
+  $script:child=$null
+  $timer.Stop();$timer.Dispose();$form.Dispose()
+ }
+ exit 0
+}
+$startupChannel=$Channel
+if(-not $PSBoundParameters.ContainsKey('Channel')){
+ $savedChannel=Read-ChannelPreference
+ if($null -ne $savedChannel){$startupChannel=$savedChannel}
+}
+$form.Add_Shown({
+ if($Mode -eq 'UiPreview'){return}
+ $choice.SelectedIndex=if($startupChannel -eq 'Stable'){1}else{0}
+})
+try{[void]$form.ShowDialog()}
+finally{
+ $timer.Stop();$timer.Dispose()
+ if($script:child){$script:child.Dispose()}
+ if($script:vendor){$script:vendor.Dispose()}
+ if(Test-Path $script:statefile){Remove-Item $script:statefile -Force -ErrorAction SilentlyContinue}
+ $form.Dispose()
+ if($null -ne $script:nativeLauncherIcon){$script:nativeLauncherIcon.Dispose()}
+}
+){
+   throw 'Preview is not fail-closed or falsely says Ready at startup.'
   }
   $previewChecks++
   # Offscreen Form.Show is required for nested WinForms page painting.
