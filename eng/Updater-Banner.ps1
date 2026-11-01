@@ -2280,6 +2280,8 @@ function Show-MicrosoftComponents {
 }
 
 $choice.Add_SelectedIndexChanged({
+ # Prevent preview-only offscreen window from launching a Probe worker.
+ if($Mode -eq 'UiPreview'){return}
  if($null -ne $choice.SelectedItem){
   $null=Save-ChannelPreference ([string]$choice.SelectedItem)
  }
@@ -2553,9 +2555,8 @@ $timer.Start()
 Update-ActionAvailability
 Update-NorthernCompactSnapshot
 if($Mode -eq 'UiPreview'){
- # Render actual WinForms objects to PNG on a Windows runner WITHOUT
- # showing the window. Calling Form.Show would trigger SelectedIndexChanged
- # and a real background Probe; previews must remain entirely inert.
+ # Render actual WinForms on the Windows runner in an offscreen window.
+ # Shown and selection handlers are guarded, so no Probe worker can start.
  $previewChecks=0
  $localeBefore=$script:launcherLanguage
  $timer.Stop()
@@ -2599,12 +2600,20 @@ if($Mode -eq 'UiPreview'){
    throw 'Preview is not fail-closed at startup.'
   }
   $previewChecks++
-  # A handle is not a displayed window: do NOT Show, ShowDialog, click,
-  # set channel selection or pump the timer to create worker traffic.
-  $form.CreateControl()
+  # Offscreen Form.Show is required for nested WinForms page painting.
+  # Never use ShowDialog or trigger startup probes during preview.
+  $form.StartPosition=[Windows.Forms.FormStartPosition]::Manual
+  $form.ShowInTaskbar=$false
+  $form.Location=[Drawing.Point]::new(-20000,-20000)
+  $form.Show()
+  [Windows.Forms.Application]::DoEvents()
+  if(-not $form.Visible -or $form.Location.X -gt -10000){
+   throw 'WinForms preview did not remain offscreen.'
+  }
   Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-RU.png'
   $previewChecks++
   Show-NorthernUpdates
+  [Windows.Forms.Application]::DoEvents()
   if(-not $script:northernDetailOpen -or
      $form.Controls.GetChildIndex($script:northReturn) -ne 0){
    throw 'Updates view navigation did not bring the genuine Back control forward.'
@@ -2614,6 +2623,7 @@ if($Mode -eq 'UiPreview'){
   Show-NorthernHome
   $script:launcherLanguage='EN'
   Apply-LauncherLanguage
+  [Windows.Forms.Application]::DoEvents()
   if($script:northLaunch.Text -cnotmatch 'START DVINHOLM' -or
      $script:northUpdates.Text -cnotmatch 'Updates'){
    throw 'English Northern preview not localized.'
@@ -2637,9 +2647,10 @@ if($Mode -eq 'UiPreview'){
    throw 'WinForms previews are identical; view or language rendering did not change.'
   }
   $previewChecks++
-  if($form.Visible -or $script:child -or $script:vendor -or
+  if(-not $form.Visible -or $form.Location.X -gt -10000 -or
+     $form.ShowInTaskbar -or $script:child -or $script:vendor -or
      $timer.Enabled -or $launch.Enabled -or $check.Enabled){
-   throw 'Preview unexpectedly displayed a window, started a worker or armed buttons.'
+   throw 'Preview escaped its offscreen host, started a worker or armed buttons.'
   }
   $previewChecks++
   if($previewChecks -ne 8){throw 'Wrong WinForms preview check count.'}
@@ -3092,7 +3103,10 @@ if(-not $PSBoundParameters.ContainsKey('Channel')){
  $savedChannel=Read-ChannelPreference
  if($null -ne $savedChannel){$startupChannel=$savedChannel}
 }
-$form.Add_Shown({$choice.SelectedIndex=if($startupChannel -eq 'Stable'){1}else{0}})
+$form.Add_Shown({
+ if($Mode -eq 'UiPreview'){return}
+ $choice.SelectedIndex=if($startupChannel -eq 'Stable'){1}else{0}
+})
 try{[void]$form.ShowDialog()}
 finally{
  $timer.Stop();$timer.Dispose()
