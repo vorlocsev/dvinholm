@@ -115,3 +115,31 @@ no-send selection and stale context cleanup.
 vector/bitmap assets matching the approved visual reference, and real installed
 Windows GUI screenshot tests at wide and compact widths. Do not assign
 real-world ECU component coordinates based on a screenshot alone.
+
+## ECU page visual structure (implementation increment)
+
+The approved Aurora **list | car (side profile) | selected response** composition
+is now the ECU workspace's default wide layout. Left: a compact, selectable
+list of passively observed RX records, showing 11/29-bit format, *inferred only*
+TX address, number of frames and maximum payload. Center: existing model
+selector, side-on XC90 P2 / XC70 P3 illustration and the separate numbered
+passive-RX index rail. Right: the already-existing selection evidence and
+navigate-only diagnostics button. No new request handler or automatic ECU
+mapping is introduced.
+
+The three columns are enabled from 1280 effective window pixels. Below 1280
+the list, side-view car and details occupy successive **vertical rows**, not
+horizontally clipped fixed columns; the scan selector and its two actions
+likewise stack. The existing sidebar has its own separate 980-pixel compact
+threshold. Scrolling remains vertical and all original controls, selection
+handlers, scan cancellation and blank TX-address restrictions remain intact.
+
+Eight new offline structure tests cover three-pane order, column proportions,
+both responsive states, scan-toolbar reflow, observation bindings, the vehicle
+silhouettes, the evidence panel, uniqueness of controls, and no-TX navigation.
+
+**Visual verification is still outstanding**: render installed WinUI 3 screens
+and compare with the approved original concept, including effective widths
+640, 800, 980, 1280 and 1440 at typical Windows scaling. Offline XAML tests
+are not screenshot or hardware acceptance. Physical ECU placement must not be
+claimed or drawn until verified by model-specific independent evidence.
