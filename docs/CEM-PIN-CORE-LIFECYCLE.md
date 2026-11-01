@@ -11,7 +11,8 @@ interface. The interface carries **non-secret status receipts only**.
 - The coordinator prevents a second operation while a first authorized
   provider operation is still active.
 - Cancellation before invocation or during the provider operation returns a
-  fixed non-secret status and releases the concurrency gate.
+  fixed non-secret status. The concurrency gate releases only after the
+  provider terminates, including when it ignores cancellation.
 - Provider errors never expose exception messages, identifiers or credentials;
   a later operation can be attempted after the previous one terminates.
 - No PIN is accepted, stored, returned, displayed or claimed by this core.
@@ -23,7 +24,10 @@ The **production constructor registers no provider** and uses the existing
 `VolvoP2CemServiceCapabilityMatrix`, which always denies PIN acquisition
 until independently reviewed physical CEM identity, a lawful method and
 authorized bench support are implemented. Test-only injected providers and
-authorization delegates are not connected to WinUI or J2534.
+authorization delegates are not connected to WinUI or a live provider.
+The follow-up [session guard](CEM-PIN-SESSION-GUARD.md) binds an attempt to
+the existing J2534 session and ECU context, requires consent, and adds
+cooperative deadlines. It grants no physical identity or entitlement.
 
 A successful synthetic metadata receipt is **not** PIN extraction. The
 `FinishedWithoutPin` status intentionally cannot be mistaken for success.

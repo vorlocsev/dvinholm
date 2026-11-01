@@ -30,7 +30,7 @@ public sealed class CemPinAttemptCoordinatorTests
     public async Task ProductionCoordinatorHasNoProviderAndCannotRun()
     {
         var service = new CemPinAttemptCoordinator();
-        var result = await service.TryRunAsync(Context());
+        var result = await service.TryRunAsync(Context(), sessionGuard: new(() => true));
         Assert.Equal(CemPinAttemptStatus.Unsupported, result.Status);
         Assert.False(result.HasPin);
         Assert.False(result.MayWriteEcu);
@@ -46,7 +46,7 @@ public sealed class CemPinAttemptCoordinatorTests
         var service = new CemPinAttemptCoordinator(fake, context =>
             VolvoP2CemServiceCapabilityMatrix.Assess(
                 VolvoP2CemServiceOperation.ReviewPinAcquisition, context).MayAcquirePin);
-        var result = await service.TryRunAsync(Context());
+        var result = await service.TryRunAsync(Context(), sessionGuard: new(() => true));
         Assert.Equal(CemPinAttemptStatus.Unsupported, result.Status);
         Assert.Equal(0, fake.Calls);
         Assert.False(service.IsRunning);
@@ -71,7 +71,7 @@ public sealed class CemPinAttemptCoordinatorTests
         var service = Synthetic(fake);
         using var cts = new CancellationTokenSource();
         cts.Cancel();
-        var result = await service.TryRunAsync(Context(), cts.Token);
+        var result = await service.TryRunAsync(Context(), cancellationToken: cts.Token, sessionGuard: new(() => true));
         Assert.Equal(CemPinAttemptStatus.Cancelled, result.Status);
         Assert.Equal(0, fake.Calls);
         Assert.False(service.IsRunning);
@@ -91,10 +91,10 @@ public sealed class CemPinAttemptCoordinatorTests
             return CemPinProviderReceipt.FinishedWithoutPin;
         });
         var service = Synthetic(fake);
-        var first = service.TryRunAsync(Context());
+        var first = service.TryRunAsync(Context(), sessionGuard: new(() => true));
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         Assert.True(service.IsRunning);
-        var second = await service.TryRunAsync(Context());
+        var second = await service.TryRunAsync(Context(), sessionGuard: new(() => true));
         Assert.Equal(CemPinAttemptStatus.AlreadyRunning, second.Status);
         Assert.Equal(1, fake.Calls);
         release.SetResult();
@@ -116,7 +116,7 @@ public sealed class CemPinAttemptCoordinatorTests
         });
         var service = Synthetic(fake);
         using var cts = new CancellationTokenSource();
-        var running = service.TryRunAsync(Context(), cts.Token);
+        var running = service.TryRunAsync(Context(), cancellationToken: cts.Token, sessionGuard: new(() => true));
         await entered.Task.WaitAsync(TimeSpan.FromSeconds(5));
         cts.Cancel();
         Assert.Equal(CemPinAttemptStatus.Cancelled, (await running).Status);
@@ -124,7 +124,7 @@ public sealed class CemPinAttemptCoordinatorTests
         using var nextCancellation = new CancellationTokenSource();
         nextCancellation.Cancel();
         Assert.Equal(CemPinAttemptStatus.Cancelled,
-            (await service.TryRunAsync(Context(), nextCancellation.Token)).Status);
+            (await service.TryRunAsync(Context(), cancellationToken: nextCancellation.Token, sessionGuard: new(() => true))).Status);
         Assert.Equal(1, fake.Calls);
     }
 
@@ -136,7 +136,7 @@ public sealed class CemPinAttemptCoordinatorTests
         var service = Synthetic(fake);
         for (var n = 0; n < 2; n++)
         {
-            var result = await service.TryRunAsync(Context());
+            var result = await service.TryRunAsync(Context(), sessionGuard: new(() => true));
             Assert.Equal(CemPinAttemptStatus.Failed, result.Status);
             Assert.DoesNotContain(secret, result.PublicMessage);
             Assert.DoesNotContain("InvalidOperationException", result.PublicMessage);
@@ -164,7 +164,7 @@ public sealed class CemPinAttemptCoordinatorTests
         {
             var fake = new FakeProvider(_ => Task.FromResult(receipt));
             var service = Synthetic(fake);
-            var result = await service.TryRunAsync(Context());
+            var result = await service.TryRunAsync(Context(), sessionGuard: new(() => true));
             Assert.Equal(1, fake.Calls);
             Assert.False(result.HasPin);
             Assert.False(result.MayWriteEcu);
