@@ -61,7 +61,17 @@ internal static class VolvoP2CemSupportMatrix
             "No verified XC90 P2/CEM identity and model-year evidence is available. " +
             "No PIN or configuration write support is implied.");
 
-        if (modelYear is < 1900 or > 2100 || snapshot.Values is null ||
+        // The low-level matcher is usable directly by offline callers,
+        // not only through CaptureIdentityReview's checked UI path.
+        // Reject unscoped years and captures without a real UTC timestamp
+        // before a user-supplied synthetic signature could be "matched".
+        if (modelYear <
+                VolvoP2CemHsCanSpeedAdvisory.FirstDocumentedXc90ModelYear ||
+            modelYear >
+                VolvoP2CemHsCanSpeedAdvisory.LastFirstGenerationXc90ModelYear ||
+            snapshot.CapturedAtUtc == default ||
+            snapshot.CapturedAtUtc.Offset != TimeSpan.Zero ||
+            snapshot.Values is null ||
             snapshot.Values.Count is < 1 or > EcuConfigurationReadback.MaximumDataIdentifiers)
             return unknown;
 

@@ -55,6 +55,28 @@ HS-CAN rate, separate DiCE/J2534-2 outcomes, privacy and permanent service
 denial. The current WinUI report already calls the matrix, so no new picker
 or runtime connection is added. Real DiCE/J2534/ECU testing remains pending.
 
+## Read-only fingerprint catalog integrity (Development)
+
+The separate `VolvoP2CemEvidenceCatalogValidator` now limits any future
+XC90 P2/CEM research signature to the documented **MY2003–2014** scope,
+reusing the same model-year boundaries as the manual VIDA worksheet and
+HS-CAN advisory. A production or build date in calendar 2002 is **not** a
+verified MY2002 identity. Entries that extend into MY2002, MY2015 or
+outside the published XC90 P2 range are rejected, not partially clipped.
+
+The direct `VolvoP2CemSupportMatrix.Assess` path additionally rejects
+model years outside this range and snapshots with absent timestamps or
+non-UTC offsets. That matters even when a caller bypasses the existing
+checked UI `CaptureIdentityReview` wrapper. Synthetic rules may still
+match a valid UTC in-scope DID snapshot in offline tests, but they never
+authenticate a physical ECU or enable a CEM read, PIN service or write.
+The bundled production catalog remains **empty**.
+
+Eight synthetic xUnit gates exercise year boundaries, broadened ranges,
+direct matcher rejection, missing/non-UTC capture timestamp and normal
+read-only behavior. No real adapter/vehicle, ECU revision, config bytes
+or new protocol mapping was verified.
+
 ## Next actionable evidence intake
 
 1. Independently check XC90 model year and CEM hardware/software identifiers

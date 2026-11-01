@@ -40,8 +40,13 @@ internal static class VolvoP2CemEvidenceCatalogValidator
                 break; // Never enumerate an unlimited imported catalog.
             }
 
-            if (entry is null || entry.ModelYearFrom < 1900 ||
-                entry.ModelYearThrough > 2100 ||
+            // A CEM identity signature must be scoped to documented XC90
+            // P2 model years, never calendar build years or all 1900..2100.
+            if (entry is null ||
+                entry.ModelYearFrom <
+                    VolvoP2CemHsCanSpeedAdvisory.FirstDocumentedXc90ModelYear ||
+                entry.ModelYearThrough >
+                    VolvoP2CemHsCanSpeedAdvisory.LastFirstGenerationXc90ModelYear ||
                 entry.ModelYearFrom > entry.ModelYearThrough)
             {
                 issues.Add(new(VolvoP2CemEvidenceIssueCode.InvalidScope, index++));
