@@ -105,15 +105,16 @@ public sealed class AuroraHomeLayoutTests
     }
 
     [Fact]
-    public void OfflineCEMCardsReuseExistingSafeResearchHandlers()
+    public void CEMCardsNavigateWithoutStartingServicesOrOpeningResearchDialogs()
     {
         var main = Source("src/Dvinholm.App/MainWindow.xaml.cs");
         var start = main.IndexOf("private void DashboardNavigate(", StringComparison.Ordinal);
         var end = main.IndexOf("private void ShowDashboardWorkspace()", start, StringComparison.Ordinal);
         Assert.True(start >= 0 && end > start);
         var region = main[start..end];
-        Assert.Contains("P2PinReview_Click(this, null!)", region);
-        Assert.Contains("P2ConfigCatalog_Click(this, null!)", region);
+        Assert.Contains("AuroraWorkspaceNavigation.Describe(destination)", region);
+        Assert.DoesNotContain("P2PinReview_Click(this, null!)", region);
+        Assert.DoesNotContain("P2ConfigCatalog_Click(this, null!)", region);
         Assert.DoesNotContain("_session.", region);
         Assert.DoesNotContain("Connect_Click(", region);
         Assert.DoesNotContain("RunUdsOperationAsync", region);
@@ -136,7 +137,7 @@ public sealed class AuroraHomeLayoutTests
     public void HeroUsesAlreadyOwnedBannerAndNoWebView()
     {
         var home = Home.ToString();
-        Assert.Contains("Dvinholm-Banner.webp", home);
+        Assert.Contains("Dvinholm-Banner.png", home);
         Assert.DoesNotContain("WebView2", home);
         var project = Source("src/Dvinholm.App/Dvinholm.App.csproj");
         Assert.Contains("dvinholm-banner.webp", project);

@@ -25,6 +25,9 @@ public sealed partial class AuroraHome : UserControl
     public AuroraHome()
     {
         InitializeComponent();
+        var bannerPath = Path.Combine(AppContext.BaseDirectory, "Assets", "Dvinholm-Banner.png");
+        if (File.Exists(bannerPath))
+            HomeBannerImage.ImageSource = new Microsoft.UI.Xaml.Media.Imaging.BitmapImage(new Uri(bannerPath));
 #if DVINHOLM_DEVELOPMENT_FEATURES
         var russian = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru";
         CemPinSubtitle.Text = russian ? "Ограниченный поиск через J2534" : "Bounded search through J2534";
@@ -35,6 +38,14 @@ public sealed partial class AuroraHome : UserControl
             : "Read CEM part number and check a bounded PIN range. Physical compatibility is unverified.");
 #endif
     }
+
+    internal void UseSharedNavigation()
+    {
+        HomeSidebar.Visibility = Visibility.Collapsed;
+        HomeSidebarColumn.Width = new GridLength(0);
+    }
+
+    internal void ReturnToTop() => DashboardScroll.ChangeView(null, 0.0, null);
 
     public void UpdateConnection(bool connected, string? adapter, string? baud)
     {
