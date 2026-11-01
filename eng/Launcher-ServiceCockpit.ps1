@@ -420,21 +420,81 @@ $script:northernHome.Add_Paint({
   $gear.Dispose();$bird.Dispose();$wave.Dispose();$hairline.Dispose()
  }
 })
-$script:northTitle=New-NorthernLabel 'DVINHOLM' 329 66 670 76 37 $true
-$script:northSubtitle=New-NorthernLabel 'LAUNCHER   /   СЕВЕРНАЯ ДВИНА · БЕЛОЕ МОРЕ' 333 153 690 40 13
-$script:northCaption=New-NorthernLabel 'Volvo · Windows x86 · J2534 диагностика' 334 206 690 30 12
-$script:northSource=New-NorthernLabel 'АВТОМОБИЛЬ · СЕВЕР · ТЕХНОЛОГИИ' 333 268 780 24 11
-$script:northRuntime=New-NorthernLabel '.NET x86: не проверено' 67 342 328 53 12 $true
-$script:northWinApp=New-NorthernLabel 'WinApp: не проверено' 426 342 328 53 12 $true
-$script:northDriver=New-NorthernLabel 'J2534: не проверено' 791 342 328 53 12 $true
-$script:northLaunch=New-NorthernButton '▶   ЗАПУСТИТЬ DVINHOLM' 260 413 660 76 $true
-$script:northUpdates=New-NorthernButton '↻  Обновления' 60 514 247 65
-$script:northComponents=New-NorthernButton '◇  Компоненты' 323 514 247 65
-$script:northDrivers=New-NorthernButton '▣  Драйверы J2534' 586 514 247 65
-$script:northSettings=New-NorthernButton '⚙  Настройки' 849 514 247 65
-$script:northVersion=New-NorthernLabel 'Версия: не проверена' 61 603 335 35 10
-$script:northChannel=New-NorthernLabel 'Канал: не проверен' 399 603 320 35 10
-$script:northActivity=New-NorthernLabel 'Ожидание проверки компонентов' 722 600 403 44 10
+# The user-approved screenshot is the visual contract: a tall panoramic
+# northern header, 3 equal status cards, a dominant launch action, five
+# working controls in a 3+2 grid, and White Sea / Northern Dvina footer.
+$script:northTitle=New-NorthernLabel 'DVINHOLM' 366 70 770 65 43 $true
+$script:northSubtitle=New-NorthernLabel 'LAUNCHER' 368 137 735 64 39 $true
+$script:northCaption=New-NorthernLabel 'СЕРВИСЫ  ·  ИНСТРУМЕНТЫ  ·  ДРАЙВЕРЫ' 370 218 770 32 13
+$script:northSource=New-NorthernLabel 'ДЛЯ VOLVO' 371 253 650 27 13
+$script:northRuntimeTitle=New-NorthernLabel '.NET Runtime' 117 373 260 29 17 $true
+$script:northWinAppTitle=New-NorthernLabel 'WinApp Runtime' 505 373 262 29 17 $true
+$script:northDriverTitle=New-NorthernLabel 'J2534' 892 373 237 29 17 $true
+$script:northRuntime=New-NorthernLabel '.NET x86: не проверено' 117 405 265 25 11 $true
+$script:northWinApp=New-NorthernLabel 'WinApp: не проверено' 505 405 261 25 11 $true
+$script:northDriver=New-NorthernLabel 'J2534: не проверено' 892 405 241 25 11 $true
+$script:northLaunch=New-NorthernButton '▶  ЗАПУСТИТЬ DVINHOLM' 272 467 636 81 $true
+$script:northUpdates=New-NorthernButton '↻  ОБНОВЛЕНИЯ' 44 577 351 68
+$script:northComponents=New-NorthernButton '◇  КОМПОНЕНТЫ' 414 577 351 68
+$script:northDrivers=New-NorthernButton '▣  ДРАЙВЕРЫ J2534' 785 577 351 68
+$script:northSettings=New-NorthernButton '⚙  НАСТРОЙКИ' 44 660 541 68
+$script:northAbout=New-NorthernButton 'ⓘ  О ПРОГРАММЕ' 595 660 541 68
+$script:northVersion=New-NorthernLabel 'Версия: не проверена' 44 750 336 28 9
+$script:northChannel=New-NorthernLabel 'Канал: не проверен' 393 750 333 28 9
+$script:northActivity=New-NorthernLabel 'Ожидание проверки компонентов' 724 746 430 32 9
+
+# Frame and caption are rendered by WinForms; each button remains a real
+# accessible button with a functional Click event. Owner painting handles
+# round geometry without introducing a browser or graphics dependency.
+function Set-NorthernButtonArtwork([Windows.Forms.Button]$button,[bool]$primary){
+ $button.Tag=if($primary){'Primary'}else{'Secondary'}
+ $button.FlatAppearance.BorderSize=0
+ $button.Add_Paint({
+  param($sender,$event)
+  $graphics=$event.Graphics
+  $graphics.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
+  $w=$sender.ClientSize.Width;$h=$sender.ClientSize.Height
+  if($w -lt 12 -or $h -lt 12){return}
+  $radius=[Math]::Min([int]($h/2),$(if($sender.Tag -eq 'Primary'){38}else{14}))
+  $p=[Drawing.Drawing2D.GraphicsPath]::new()
+  try{
+   $d=$radius*2
+   $p.AddArc(1,1,$d,$d,180,90)
+   $p.AddArc($w-$d-2,1,$d,$d,270,90)
+   $p.AddArc($w-$d-2,$h-$d-2,$d,$d,0,90)
+   $p.AddArc(1,$h-$d-2,$d,$d,90,90)
+   $p.CloseFigure()
+   $isPrimary=($sender.Tag -eq 'Primary')
+   $hot=($isPrimary -and $sender.Enabled)
+   $top=if($hot){[Drawing.Color]::FromArgb(20,185,142)}elseif($isPrimary){
+    [Drawing.Color]::FromArgb(14,99,91)}else{[Drawing.Color]::FromArgb(35,65,94)}
+   $bottom=if($hot){[Drawing.Color]::FromArgb(8,106,113)}elseif($isPrimary){
+    [Drawing.Color]::FromArgb(9,58,74)}else{[Drawing.Color]::FromArgb(17,37,62)}
+   $brush=[Drawing.Drawing2D.LinearGradientBrush]::new(
+    [Drawing.Rectangle]::new(0,0,$w,$h),$top,$bottom,90.0)
+   $stroke=[Drawing.Pen]::new(
+    $(if($hot){[Drawing.Color]::FromArgb(64,241,193)}else{
+    [Drawing.Color]::FromArgb(76,151,181)}),2)
+   try{
+    $graphics.FillPath($brush,$p)
+    $graphics.DrawPath($stroke,$p)
+    $color=if($sender.Enabled){[Drawing.Color]::White}else{
+     [Drawing.Color]::FromArgb(204,220,231)}
+    $flags=[Windows.Forms.TextFormatFlags]::HorizontalCenter -bor
+     [Windows.Forms.TextFormatFlags]::VerticalCenter -bor
+     [Windows.Forms.TextFormatFlags]::SingleLine -bor
+     [Windows.Forms.TextFormatFlags]::EndEllipsis
+    [Windows.Forms.TextRenderer]::DrawText($graphics,[string]$sender.Text,
+     $sender.Font,[Drawing.Rectangle]::new(10,3,$w-20,$h-6),$color,$flags)
+   }finally{$brush.Dispose();$stroke.Dispose()}
+  }finally{$p.Dispose()}
+ })
+}
+Set-NorthernButtonArtwork $script:northLaunch $true
+foreach($action in @($script:northUpdates,$script:northComponents,
+                      $script:northDrivers,$script:northSettings,$script:northAbout)){
+ Set-NorthernButtonArtwork $action $false
+}
 $script:northReturn=New-ServiceButton '← Главная' 25 133 176 36
 $script:northReturn.Visible=$false
 function Show-NorthernHome {
@@ -459,6 +519,11 @@ $script:northUpdates.Add_Click({Show-NorthernUpdates})
 $script:northComponents.Add_Click({Show-MicrosoftComponents})
 $script:northDrivers.Add_Click({Show-J2534Drivers})
 $script:northSettings.Add_Click({Show-LauncherSettings})
+$script:northAbout.Add_Click({
+ [void][Windows.Forms.MessageBox]::Show($form,(Translate 'aboutMessage'),
+  'Dvinholm Launcher',[Windows.Forms.MessageBoxButtons]::OK,
+  [Windows.Forms.MessageBoxIcon]::Information)
+})
 function Update-NorthernCompactSnapshot {
  if($null -eq $script:northLaunch -or $script:northLaunch.IsDisposed){return}
  # Copy actual worker and inventory readings. No fabricated version or
@@ -467,6 +532,7 @@ function Update-NorthernCompactSnapshot {
  $script:northComponents.Enabled=$depsInstallQuick.Enabled
  $script:northDrivers.Enabled=$driverQuick.Enabled
  $script:northSettings.Enabled=$settingsQuick.Enabled
+ $script:northAbout.Enabled=($null -eq $script:child -and $null -eq $script:vendor)
  $script:northVersion.Text=[string]$installed.Text
  if($script:launcherLanguage -eq 'RU'){
   $script:northVersion.Text=$script:northVersion.Text.Replace('Not checked','не проверено')
@@ -497,26 +563,28 @@ function Update-NorthernCompactSnapshot {
  }
  if($script:launcherLanguage -eq 'EN'){
   $script:northTitle.Text='DVINHOLM'
-  $script:northSubtitle.Text='LAUNCHER   /   NORTHERN DVINA · WHITE SEA'
-  $script:northCaption.Text='Volvo · Windows x86 · J2534 diagnostics'
-  $script:northSource.Text='VEHICLE · NORTH · TECHNOLOGY'
-  $script:northLaunch.Text='▶   START DVINHOLM'
-  $script:northUpdates.Text='↻  Updates'
-  $script:northComponents.Text='◇  Components'
-  $script:northDrivers.Text='▣  J2534 Drivers'
-  $script:northSettings.Text='⚙  Settings'
+  $script:northSubtitle.Text='LAUNCHER'
+  $script:northCaption.Text='SERVICES  ·  TOOLS  ·  DRIVERS'
+  $script:northSource.Text='FOR VOLVO'
+  $script:northLaunch.Text='▶  START DVINHOLM'
+  $script:northUpdates.Text='↻  UPDATES'
+  $script:northComponents.Text='◇  COMPONENTS'
+  $script:northDrivers.Text='▣  J2534 DRIVERS'
+  $script:northSettings.Text='⚙  SETTINGS'
+  $script:northAbout.Text='ⓘ  ABOUT'
   $script:northReturn.Text='← Home'
   $script:northChannel.Text='Channel: '+[string]$choice.SelectedItem
  }else{
   $script:northTitle.Text='DVINHOLM'
-  $script:northSubtitle.Text='LAUNCHER   /   СЕВЕРНАЯ ДВИНА · БЕЛОЕ МОРЕ'
-  $script:northCaption.Text='Volvo · Windows x86 · J2534 диагностика'
-  $script:northSource.Text='АВТОМОБИЛЬ · СЕВЕР · ТЕХНОЛОГИИ'
-  $script:northLaunch.Text='▶   ЗАПУСТИТЬ DVINHOLM'
-  $script:northUpdates.Text='↻  Обновления'
-  $script:northComponents.Text='◇  Компоненты'
-  $script:northDrivers.Text='▣  Драйверы J2534'
-  $script:northSettings.Text='⚙  Настройки'
+  $script:northSubtitle.Text='LAUNCHER'
+  $script:northCaption.Text='СЕРВИСЫ  ·  ИНСТРУМЕНТЫ  ·  ДРАЙВЕРЫ'
+  $script:northSource.Text='ДЛЯ VOLVO'
+  $script:northLaunch.Text='▶  ЗАПУСТИТЬ DVINHOLM'
+  $script:northUpdates.Text='↻  ОБНОВЛЕНИЯ'
+  $script:northComponents.Text='◇  КОМПОНЕНТЫ'
+  $script:northDrivers.Text='▣  ДРАЙВЕРЫ J2534'
+  $script:northSettings.Text='⚙  НАСТРОЙКИ'
+  $script:northAbout.Text='ⓘ  О ПРОГРАММЕ'
   $script:northReturn.Text='← Главная'
  }
 }
