@@ -112,12 +112,12 @@ jobs:
 
       # PR-only images for user visual approval; no changed release payload.
       - name: Upload Northern Aurora GUI previews
-        if: github.event_name == 'pull_request'
+        if: always() && github.event_name == 'pull_request'
         uses: actions/upload-artifact@v7
         with:
           name: Dvinholm-Launcher-Aurora-GUI-Preview
           path: artifacts/aurora-gui-preview/Launcher-Aurora-*.png
-          if-no-files-found: error
+          if-no-files-found: warn
           retention-days: 14
 
       - name: Restore
