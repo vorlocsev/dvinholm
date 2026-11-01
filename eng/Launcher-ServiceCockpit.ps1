@@ -283,6 +283,13 @@ $script:northernHome.Add_Paint({
   $g.FillRectangle($lower,0,330,1180,360)
   $g.DrawLine($line,42,324,1137,324)
   $g.DrawLine($line,42,655,1137,655)
+  $cardFill=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(223,15,45,69))
+  try{
+   foreach($x in @(55,412,773)){
+    $g.FillRectangle($cardFill,$x,337,342,64)
+    $g.DrawRectangle($line,$x,337,342,64)
+   }
+  }finally{$cardFill.Dispose()}
  }finally{$veil.Dispose();$lower.Dispose();$line.Dispose()}
  $silver=[Drawing.Pen]::new([Drawing.Color]::FromArgb(216,227,240,250),7)
  $cyan=[Drawing.Pen]::new([Drawing.Color]::FromArgb(212,36,224,217),5)
@@ -329,12 +336,13 @@ $script:northChannel=New-NorthernLabel 'Канал: не проверен' 399 6
 $script:northActivity=New-NorthernLabel 'Ожидание проверки компонентов' 722 600 403 44 10
 $script:northReturn=New-ServiceButton '← Главная' 25 133 176 36
 $script:northReturn.Visible=$false
-$script:northReturn.Add_Click({
+function Show-NorthernHome {
  $script:northernDetailOpen=$false
  $script:northernHome.Visible=$true
  $script:northReturn.Visible=$false
  $script:northernHome.BringToFront()
-})
+}
+$script:northReturn.Add_Click({Show-NorthernHome})
 function Show-NorthernUpdates {
  # Advanced service cockpit retains its genuine Check, Install, worker
  # progress, actual versions and confirmation-gated driver controls.
@@ -355,6 +363,9 @@ function Update-NorthernCompactSnapshot {
  # Copy actual worker and inventory readings. No fabricated version or
  # successful J2534/DiCE hardware connection is shown.
  $script:northLaunch.Enabled=$launch.Enabled
+ $script:northComponents.Enabled=$depsInstallQuick.Enabled
+ $script:northDrivers.Enabled=$driverQuick.Enabled
+ $script:northSettings.Enabled=$settingsQuick.Enabled
  $script:northVersion.Text=$installed.Text
  $script:northChannel.Text='Канал: '+[string]$choice.SelectedItem
  $script:northActivity.Text=$status.Text
