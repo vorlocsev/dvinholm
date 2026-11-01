@@ -239,7 +239,7 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <Button x:Name="P2ConfigCatalogButton" Grid.Column="0" Content="Источники" Click="P2ConfigCatalog_Click" HorizontalAlignment="Stretch" Background="#0B5F81" ToolTipService.ToolTip="Открыть проверяемый справочный каталог P2 офлайн, без соединения с автомобилем." />
+                                        <Button x:Name="P2ConfigCatalogButton" Grid.Column="0" Content="Источники (offline)" Click="P2ConfigCatalog_Click" HorizontalAlignment="Stretch" Background="#0B5F81" ToolTipService.ToolTip="Open reference sources offline; no vehicle queries, PIN or configuration writes." />
                                         <Button Grid.Column="1" Content="Резервная копия" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет проверенной операции чтения конфигурации CEM." />
                                         <Button Grid.Column="2" Content="Сравнить" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет считанной конфигурации и проверенного резервного снимка." />
                                         <Button Grid.Column="3" Content="Подготовить изменения" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Не проверены байтовая карта, допустимые значения и зависимости." />
@@ -376,7 +376,9 @@
                                         <Border Grid.Column="1" Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
                                             <StackPanel Spacing="12">
                                                 <TextBlock Text="Выбранный ответ" FontSize="18" FontWeight="SemiBold" />
-                                                <TextBlock x:Name="EcuSelectionInfo" Text="Пассивный поиск · выберите наблюдаемый RX. Идентичность ECU и TX-адрес не установлены." TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                                <ScrollViewer MaxHeight="86" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                                    <TextBlock x:Name="EcuSelectionInfo" Text="Пассивный поиск · выберите наблюдаемый RX. Идентичность ECU и TX-адрес не установлены." TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                                </ScrollViewer>
                                                 <TextBlock Text="Нет подтверждённого сопоставления наблюдаемых CAN ID с позициями на автомобиле." FontSize="12" Foreground="#E9C48D" TextWrapping="Wrap" />
                                                 <Button Content="Диагностика ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" ToolTipService.ToolTip="Открыть экран диагностики. Не отправляет запросы и не подтверждает адрес ECU." />
                                             </StackPanel>
