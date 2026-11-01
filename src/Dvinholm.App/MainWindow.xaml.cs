@@ -646,7 +646,7 @@ public sealed partial class MainWindow : Window
             var file = await picker.PickSingleFileAsync();
             if (file is null) return;
 
-            var json = await File.ReadAllTextAsync(file.Path);
+            var json = await EcuProfileCatalogInput.ReadFileAsync(file.Path);
             // Validate the entire JSON and persist it before touching the
             // profile selector or any of the currently applied UDS CAN IDs.
             var imported = EcuProfileCatalogImporter.ImportAndPersist(

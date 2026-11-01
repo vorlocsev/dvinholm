@@ -35,7 +35,7 @@ internal sealed class EcuProfileCatalogStore
         if (!File.Exists(_path))
             return new EcuProfileCatalog();
 
-        return EcuProfileCatalog.FromJson(File.ReadAllText(_path));
+        return EcuProfileCatalog.FromJson(EcuProfileCatalogInput.ReadFile(_path));
     }
 
     /// <summary>
@@ -58,7 +58,7 @@ internal sealed class EcuProfileCatalogStore
 
             try
             {
-                return (EcuProfileCatalog.FromJson(File.ReadAllText(BackupPath)), true);
+                return (EcuProfileCatalog.FromJson(EcuProfileCatalogInput.ReadFile(BackupPath)), true);
             }
             catch (Exception backupError) when (
                 backupError is InvalidDataException or ArgumentException)
@@ -87,7 +87,7 @@ internal sealed class EcuProfileCatalogStore
         {
             try
             {
-                EcuProfileCatalog.FromJson(File.ReadAllText(_path));
+                EcuProfileCatalog.FromJson(EcuProfileCatalogInput.ReadFile(_path));
             }
             catch (Exception ex) when (ex is InvalidDataException or ArgumentException)
             {
