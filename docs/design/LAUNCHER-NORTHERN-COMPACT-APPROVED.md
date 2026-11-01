@@ -137,3 +137,26 @@ user-visible 2×5 concept board. The repository SVG
 **code-native approximations** of that concept, not pixel-identical
 copies of its rendered 3D art. Do not silently substitute a different
 numbered concept.
+
+## Native ICO pixel acceptance (next iteration)
+
+`eng/Test-NorthernLauncherIconFrames.ps1` is invoked by Windows x86 CI after
+the MSVC native Launcher build and checks **the actual PNG payloads** of
+`artifacts/native/Dvinholm-Launcher.ico`, not a separately rendered concept
+image. Eight offline gates verify the seven ICO directory entries, 32bpp
+sizes, nonoverlap/offsets, PNG signatures/IHDR, real GDI+ decode, 16px
+contrast, 32px/256px contrast and color detail, and byte-exact export.
+
+On pull requests, the CI artifact `Dvinholm-Launcher-Icon-Preview` contains
+`Launcher-16.png`, `Launcher-32.png`, and `Launcher-256.png`, copied
+byte-for-byte from the generated ICO. This gives an honest visible
+artifact for manual comparison with the selected **No. 9 Techno-North**
+concept. These PNGs do **not** claim that the EXE has been opened in
+Explorer or that the 3D concept art is pixel-identical to the GDI drawing.
+
+The existing independent check still extracts `Launcher.exe` and
+`Dvinholm.exe` icon resources and verifies that they differ. No
+installer, rollback, PIN code, car diagnostic, network or Stable release
+operation is needed for any visual audit. Installed UI screenshot review
+at 100%, 125% and 150% Windows scale and exact 16px readability
+remain separate manual acceptance gates.
