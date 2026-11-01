@@ -38,7 +38,7 @@ public sealed partial class MainWindow
                 content.Children.Add(new TextBlock { TextWrapping = TextWrapping.Wrap,
                     Text = CemText("Некоторые записи повреждены или недоступны этому пользователю Windows.",
                         "Some records are damaged or unavailable to this Windows user.") });
-            var dialog = new ContentDialog { XamlRoot = RootLayout.XamlRoot,
+            var dialog = new ContentDialog { XamlRoot = RootLayout.XamlRoot, RequestedTheme = ElementTheme.Dark,
                 Title = CemText("Сохранённые PIN CEM", "Saved CEM PINs"), Content = content,
                 PrimaryButtonText = CemText("Загрузить скрытым", "Load hidden"),
                 SecondaryButtonText = CemText("Удалить запись", "Delete record"),
