@@ -51,10 +51,15 @@ internal static class EcuIdentityEvidenceMatcher
 
         var unknown = new EcuIdentityAssessment(
             EcuIdentityMatchKind.Unknown, null,
-            "No independently verified ECU identity signature matches this readback.");
+            "No eligible research signature matches this readback; physical ECU identity remains unverified.");
 
         var maxCanId = snapshot.IsExtended ? 0x1FFFFFFFu : 0x7FFu;
-        if (snapshot.Values is null ||
+        // This generic matcher is callable directly, independently from the
+        // CEM-specific review wrapper. Enforce UTC capture metadata before
+        // comparing any user-supplied DID signature.
+        if (snapshot.CapturedAtUtc == default ||
+            snapshot.CapturedAtUtc.Offset != TimeSpan.Zero ||
+            snapshot.Values is null ||
             snapshot.Values.Count is < 1 or > EcuConfigurationReadback.MaximumDataIdentifiers ||
             snapshot.RequestId > maxCanId || snapshot.ResponseId > maxCanId ||
             snapshot.RequestId == snapshot.ResponseId)
@@ -93,12 +98,12 @@ internal static class EcuIdentityEvidenceMatcher
             return new EcuIdentityAssessment(
                 EcuIdentityMatchKind.VerifiedReadOnlyIdentity,
                 matches[0].VariantId,
-                "An independently sourced ECU identity signature matches. Write access is not authorized.");
+                "A supplied research fingerprint matches this readback. Source authenticity and physical ECU identity are unverified; write access is not authorized.");
 
         if (matches.Count > 1)
             return new EcuIdentityAssessment(
                 EcuIdentityMatchKind.Ambiguous, null,
-                "Multiple verified identity signatures match; the ECU variant cannot be selected.");
+                "Multiple supplied research fingerprints match; physical ECU identity is unverified and no variant is selected.");
 
         return unknown;
     }
