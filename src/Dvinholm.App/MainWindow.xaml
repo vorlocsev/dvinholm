@@ -376,6 +376,11 @@
                                                         </StackPanel>
                                                     </Grid>
                                                 </Viewbox>
+                                                <TextBlock Text="Наблюдаемые RX · не позиции ECU" FontWeight="SemiBold" Foreground="#9EDCEA" FontSize="13" />
+                                                <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" MaxHeight="74">
+                                                    <StackPanel x:Name="EcuObservationRail" Orientation="Horizontal" Spacing="2" />
+                                                </ScrollViewer>
+                                                <TextBlock x:Name="EcuObservationRailSummary" Text="Нет завершённого пассивного наблюдения. На изображении нет отметок физических ECU." Foreground="#E9C48D" FontSize="12" TextWrapping="Wrap" />
                                                 <TextBlock x:Name="EcuDiagramCaption" Text="XC90 P2 · условный боковой силуэт, выбран вручную" Foreground="#B5D8ED" TextWrapping="Wrap" />
                                                 <TextBlock Text="Схема не указывает физические позиции ECU; местоположение и статус блоков не подтверждаются изображением." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
                                             </StackPanel>

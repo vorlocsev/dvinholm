@@ -89,6 +89,7 @@ public sealed partial class MainWindow : Window
         LoadSavedProfileCatalog();
         FramesView.ItemsSource = _frames;
         EcusView.ItemsSource = _ecus;
+        ClearAuroraEcuObservationRail();
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
         RefreshDashboardSummary();
@@ -2249,6 +2250,7 @@ public sealed partial class MainWindow : Window
         EcusView.SelectedIndex = -1;
         EcuSelector.SelectedIndex = -1;
         _ecus.Clear();
+        ClearAuroraEcuObservationRail();
         EcuSelector.Items.Clear();
         UdsRequestId.Text = string.Empty;
         UdsResponseId.Text = string.Empty;
@@ -2271,6 +2273,7 @@ public sealed partial class MainWindow : Window
         EcusView.IsEnabled = complete && found.Count > 0;
         EcuSelector.IsEnabled = complete && found.Count > 0;
         EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.ScanSummary(found.Count, complete);
+        ShowAuroraEcuObservationRail(found, complete);
     }
 
     private void CancelDiscovery_Click(object sender, RoutedEventArgs e)
@@ -2313,6 +2316,7 @@ public sealed partial class MainWindow : Window
             row.Candidate.ResponseId, row.Candidate.IsExtended);
         CanIdFormat.SelectedIndex = row.Candidate.IsExtended ? 1 : 0;
         EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.SelectionDetails(row.Candidate);
+        HighlightAuroraEcuObservation(index);
 
         if (EcuSelector.SelectedIndex != index)
             EcuSelector.SelectedIndex = index;
