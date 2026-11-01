@@ -106,7 +106,7 @@ public sealed class AuroraApprovedReferenceTests
         var doc = Layout();
         var page = Named(doc, "EcuPage").ToString();
         Assert.Contains("не указывает физические позиции", page);
-        Assert.Contains("не подтверждённого сопоставления", page);
+        Assert.Contains("Нет подтверждённого сопоставления", page);
         var source = ReadSource("src/Dvinholm.App/MainWindow.AuroraReference.cs");
         var start = source.IndexOf("private void EcuVehicleModel_SelectionChanged(", StringComparison.Ordinal);
         Assert.True(start > 0);
