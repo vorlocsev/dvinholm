@@ -48,3 +48,26 @@ malformed observed DIDs, ambiguous matches, and spoofed profile
 verification. No adapter, CAN request, real CEM signature or PIN service is
 added. The stricter generic boundary complements the independent,
 permanently denied physical CEM identity gate.
+
+## CEM research matcher display terminology
+
+The CEM-specific `VolvoP2CemSupportMatrix` consumes **supplied,
+editable research evidence** and the generic offline fingerprint matcher.
+Its legacy internal enum value `VerifiedIdentityReadOnly` means the DID
+pattern matched a structurally eligible supplied rule, **not** that the
+underlying rule, physical ECU, source provenance or adapter session was
+independently authenticated. That enum is retained for existing caller
+compatibility; it must not be displayed as a physical-identity verdict.
+
+The human-facing `Explanation` for **every** assessment state, including
+identity-only and previously observed DID matches, now explicitly describes
+research-only data and an **unverified physical CEM**. In particular, an
+`IsVerified` flag, an `EvidenceSource` string, a profile name and a
+candidate variant label do not create authentication. Private reference
+strings and DID payloads are not inserted into the explanation.
+
+Eight synthetic regression tests cover production-empty results, matching
+research identity only, previously observed DID claims, forged source and
+profile labels, unsupported model years, ambiguity, invalid catalogs and
+the separate live-capture presentation. All existing CEM PIN, config read,
+backup and write gates remain disabled; production signatures remain empty.
