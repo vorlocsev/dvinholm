@@ -97,7 +97,7 @@ public sealed class AuroraApprovedReferenceTests
         Assert.Equal(2, Named(doc, "EcuVehicleModel").Elements()
             .Count(e => e.Name.LocalName == "ComboBoxItem"));
         Assert.All(new[] { "EcuP2SideProfile", "EcuP3SideProfile" }, name =>
-            Assert.True(Named(doc, name).Descendants().Any(e => e.Name.LocalName == "Ellipse")));
+            Assert.Contains(Named(doc, name).Descendants(), e => e.Name.LocalName == "Ellipse"));
     }
 
     [Fact]
