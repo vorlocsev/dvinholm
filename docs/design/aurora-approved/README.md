@@ -89,3 +89,29 @@ second scan. Erase stays disabled. Eight offline tests cover display fidelity,
 masks, unknown states, validation, bounds, XAML, invalidation and erase safety.
 
 Installed Windows GUI and physical J2534/vehicle acceptance remain unverified.
+
+## ECU side-view interaction: observational index rail
+
+The model-switching XC90 P2 / XC70 P3 **side profile stays decorative and
+manually selected**. Immediately beneath it an independent scrollable strip of
+numbered RX observation tiles is shown after the existing passive discovery.
+Each tile includes only a validated response ID and frame count. The numbers
+represent **scan result order, never physical ECU location or module
+identity**. There are no falsely placed CEM/ECM/SRS hotspots on the body.
+
+Selecting a tile takes the existing `EcusView` selection path; this displays
+the existing source-guarded passive response detail, synchronizes the selector,
+invalidates the old diagnostic result and explicitly leaves TX blank. It sends
+no CAN/UDS message. Incomplete scans show disabled tiles, an empty scan has
+no tiles and cannot establish a fault-free vehicle, and the view limits the
+visible rail to 20 entries with a truthful count. Rescan/disconnect clear all
+buttons and highlights. Model illustration changes do not affect observations.
+
+Eight automated offline tests cover raw RX presentation, incomplete/empty
+scans, bounds/order, invalid response rejection, side-view placement disclaimer,
+no-send selection and stale context cleanup.
+
+**Still outstanding:** source-verified per-model module locations, automotive
+vector/bitmap assets matching the approved visual reference, and real installed
+Windows GUI screenshot tests at wide and compact widths. Do not assign
+real-world ECU component coordinates based on a screenshot alone.
