@@ -47,6 +47,7 @@
     <Compile Remove="CanDemoFrameGenerator.cs" />
     <Compile Remove="UdsOfflineSample.cs" />
     <Compile Remove="UdsOfflineTextReport.cs" />
+    <Compile Remove="ExperimentalCemPinCanProvider.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />

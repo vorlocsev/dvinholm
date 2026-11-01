@@ -195,5 +195,16 @@ public sealed class CemPartNumberReaderTests
         var mode = Assert.Single(document.Descendants(), e => (string?)e.Attribute(x + "Name") == "CanConnectionMode");
         Assert.Equal("0", (string?)mode.Attribute("SelectedIndex"));
         Assert.Equal("Collapsed", (string?)mode.Attribute("Visibility"));
+        var pinPanel = Assert.Single(document.Descendants(), e => (string?)e.Attribute(x + "Name") == "CemPinLivePanel");
+        Assert.Equal("Collapsed", (string?)pinPanel.Attribute("Visibility"));
+        Assert.Equal("Dark", (string?)pinPanel.Attribute("RequestedTheme"));
+        foreach (var name in new[] { "CemPinReadButton", "CemPinRevealButton" })
+        {
+            var pinButton = Assert.Single(document.Descendants(), e => (string?)e.Attribute(x + "Name") == name);
+            Assert.Equal("False", (string?)pinButton.Attribute("IsEnabled"));
+        }
+        var pinText = Assert.Single(document.Descendants(), e => (string?)e.Attribute(x + "Name") == "CemPinResultText");
+        Assert.Equal("No PIN result.", (string?)pinText.Attribute("Text"));
+        Assert.Equal("False", (string?)pinText.Attribute("IsTextSelectionEnabled"));
     }
 }
