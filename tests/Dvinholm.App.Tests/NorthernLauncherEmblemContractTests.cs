@@ -43,7 +43,7 @@ public sealed class NorthernLauncherEmblemContractTests
         Assert.Contains("M36 119", source);
         Assert.Contains("M171 87", source);
         Assert.Contains("M41 162", source);
-        Assert.Contains("bolted", source);
+        Assert.Contains("riveted", source);
     }
 
     [Fact]
