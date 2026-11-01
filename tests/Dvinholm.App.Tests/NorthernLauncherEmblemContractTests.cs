@@ -109,9 +109,12 @@ public sealed class NorthernLauncherEmblemContractTests
         var cockpit = Read("eng/Launcher-ServiceCockpit.ps1");
         Assert.Contains("Northern identity", cockpit);
         Assert.Contains("Gear + ring/arrow + white-gull silhouette", cockpit);
-        Assert.Contains("$g.DrawArc($silver", cockpit);
+        Assert.Contains("$g.DrawEllipse($silver", cockpit);
+        Assert.Contains("$g.FillEllipse($rivet", cockpit);
+        Assert.Contains("$g.DrawLine($silver,213,109,290,31)", cockpit);
         Assert.Contains("$g.FillPolygon($bird", cockpit);
-        Assert.Contains("$g.DrawArc($cyan", cockpit);
+        Assert.Contains("$g.DrawBezier($water", cockpit);
+        Assert.Contains("$legacyTextFade", cockpit);
         Assert.Contains("Show-NorthernUpdates", cockpit);
         Assert.Contains("Update-NorthernCompactSnapshot", cockpit);
     }
