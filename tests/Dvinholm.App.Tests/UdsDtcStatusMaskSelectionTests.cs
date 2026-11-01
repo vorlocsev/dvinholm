@@ -97,8 +97,9 @@ public sealed class UdsDtcStatusMaskSelectionTests
         Assert.Contains("client.ReadDtcResultByStatusMask(statusMask, token)", handler);
         Assert.Contains("FormatWithAvailability(result, statusMask)", handler);
         Assert.DoesNotContain("const byte statusMask = 0xFF", handler);
-        Assert.Equal(1, System.Text.RegularExpressions.Regex.Matches(
-            handler, "ReadDtcResultByStatusMask\\(").Count);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(
+            handler, "ReadDtcResultByStatusMask\\(")
+            .Cast<System.Text.RegularExpressions.Match>());
     }
 
     [Fact]
