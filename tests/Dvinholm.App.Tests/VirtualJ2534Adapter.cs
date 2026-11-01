@@ -6,8 +6,10 @@ namespace Dvinholm.App.Tests;
 /// In-memory J2534 adapter used to exercise the real CAN/ISO-TP stack without
 /// loading a vendor DLL or requiring a physical interface.
 /// </summary>
-internal sealed class VirtualJ2534Adapter : Dvinholm.App.IJ2534Adapter, IDisposable
+internal sealed class VirtualJ2534Adapter : Dvinholm.App.IJ2534SessionAdapter, IDisposable
 {
+    public Dvinholm.App.J2534Native.AdapterCapabilities Capabilities { get; } = new(false, true, true);
+
     private readonly ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _rx = new();
     private readonly SemaphoreSlim _rxReady = new(0);
     private readonly Func<Dvinholm.App.CanFrame, IEnumerable<Dvinholm.App.CanFrame>> _onTransmit;
@@ -26,6 +28,7 @@ internal sealed class VirtualJ2534Adapter : Dvinholm.App.IJ2534Adapter, IDisposa
 
     internal int TransmittedFrames => Volatile.Read(ref _transmittedFrames);
     internal int ActiveFilterCount => _filters.Count;
+    internal volatile bool FailReads;
 
     internal void InjectReceiveFrame(Dvinholm.App.CanFrame frame)
     {
@@ -47,6 +50,13 @@ internal sealed class VirtualJ2534Adapter : Dvinholm.App.IJ2534Adapter, IDisposa
     {
         error = string.Empty;
         msg = default;
+
+        if (FailReads)
+        {
+            error = "Synthetic adapter read failure.";
+            Thread.Sleep(5);
+            return false;
+        }
 
         if (!_rx.TryDequeue(out msg))
         {

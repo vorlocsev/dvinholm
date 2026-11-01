@@ -80,7 +80,9 @@ public sealed class UpdateExtractionCancellationTests
 
         await LatestBuildUpdater.ValidateAndExtractArchiveAsync(folder.Zip, folder.Stage);
         var extracted = File.GetLastWriteTime(Path.Combine(folder.Stage, "Dvinholm.App.exe"));
-        Assert.InRange(Math.Abs((extracted - timestamp.LocalDateTime).TotalSeconds), 0, 4);
+        // ZIP stores DOS wall-clock fields without a UTC offset. Comparing to
+        // LocalDateTime incorrectly shifts this fixture on non-UTC machines.
+        Assert.InRange(Math.Abs((extracted - timestamp.DateTime).TotalSeconds), 0, 4);
     }
 
     [Fact]

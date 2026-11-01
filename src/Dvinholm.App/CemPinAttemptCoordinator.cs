@@ -11,6 +11,8 @@ internal enum CemPinAttemptStatus
     Unsupported,
     AlreadyRunning,
     Cancelled,
+    SessionInvalidated,
+    TimedOut,
     Failed,
     FinishedWithoutPin
 }
@@ -28,6 +30,10 @@ internal sealed record CemPinAttemptResult(CemPinAttemptStatus Status, string Pu
             "A CEM PIN operation is already active."),
         CemPinAttemptStatus.Cancelled => new(status,
             "CEM PIN operation cancelled; no PIN result."),
+        CemPinAttemptStatus.SessionInvalidated => new(status,
+            "CEM PIN operation stopped: consent, connection or ECU context is no longer valid."),
+        CemPinAttemptStatus.TimedOut => new(status,
+            "CEM PIN provider deadline expired; no PIN result."),
         CemPinAttemptStatus.Failed => new(status,
             "CEM PIN operation failed; provider details and private data are withheld."),
         CemPinAttemptStatus.FinishedWithoutPin => new(status,
@@ -85,44 +91,87 @@ internal sealed class CemPinAttemptCoordinator
 
     internal async Task<CemPinAttemptResult> TryRunAsync(
         VolvoP2CemServiceResearchContext context,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        CemPinSessionGuard? sessionGuard = null,
+        TimeSpan timeout = default)
     {
         ArgumentNullException.ThrowIfNull(context);
 
         if (cancellationToken.IsCancellationRequested)
             return CemPinAttemptResult.From(CemPinAttemptStatus.Cancelled);
 
-        // Fail closed before even invoking a provider: editable evidence text,
-        // a synthetic DID match and an apparently correct VIN are not proof.
-        // Do not pass this context or any secret to the provider.
-        if (_provider is null)
-            return CemPinAttemptResult.From(CemPinAttemptStatus.Unsupported);
-
-        bool isAuthorized;
-        try
-        {
-            isAuthorized = _authorized(context);
-        }
-        catch (Exception)
-        {
-            // A broken provider-authorization component is not permission.
-            // Never expose an evidence reference or private failure detail.
-            return CemPinAttemptResult.From(CemPinAttemptStatus.Failed);
-        }
-        if (!isAuthorized)
-            return CemPinAttemptResult.From(CemPinAttemptStatus.Unsupported);
+        // Bound the deadline to a supported timer range before any provider call.
+        if (timeout == default) timeout = TimeSpan.FromMinutes(2);
+        if (timeout <= TimeSpan.Zero || timeout > TimeSpan.FromHours(1))
+            throw new ArgumentOutOfRangeException(nameof(timeout));
 
         if (Interlocked.CompareExchange(ref _running, 1, 0) != 0)
             return CemPinAttemptResult.From(CemPinAttemptStatus.AlreadyRunning);
 
         try
         {
+            // Gate evaluation is inside the single-flight/error boundary too.
+            // Editable evidence cannot grant production service entitlement.
+            if (_provider is null || !_authorized(context))
+                return CemPinAttemptResult.From(CemPinAttemptStatus.Unsupported);
+            if (sessionGuard?.IsCurrent != true)
+                return CemPinAttemptResult.From(CemPinAttemptStatus.SessionInvalidated);
+
             cancellationToken.ThrowIfCancellationRequested();
-            var receipt = await _provider.TryRunAsync(cancellationToken);
-            cancellationToken.ThrowIfCancellationRequested();
-            return receipt == CemPinProviderReceipt.FinishedWithoutPin
-                ? CemPinAttemptResult.From(CemPinAttemptStatus.FinishedWithoutPin)
-                : CemPinAttemptResult.From(CemPinAttemptStatus.Unsupported);
+            using var deadline = new CancellationTokenSource(timeout);
+            using var operation = CancellationTokenSource.CreateLinkedTokenSource(
+                cancellationToken, deadline.Token);
+            using var stopMonitor = new CancellationTokenSource();
+            var invalidated = 0;
+            async Task MonitorAsync()
+            {
+                try
+                {
+                    while (true)
+                    {
+                        await Task.Delay(TimeSpan.FromMilliseconds(50), stopMonitor.Token)
+                            .ConfigureAwait(false);
+                        if (!sessionGuard.IsCurrent)
+                        {
+                            Interlocked.Exchange(ref invalidated, 1);
+                            operation.Cancel();
+                            return;
+                        }
+                    }
+                }
+                catch (OperationCanceledException) when (stopMonitor.IsCancellationRequested) { }
+            }
+            var monitor = MonitorAsync();
+            CemPinAttemptStatus? StopReason() => cancellationToken.IsCancellationRequested
+                ? CemPinAttemptStatus.Cancelled
+                : Volatile.Read(ref invalidated) != 0 || !sessionGuard.IsCurrent
+                    ? CemPinAttemptStatus.SessionInvalidated
+                    : deadline.IsCancellationRequested ? CemPinAttemptStatus.TimedOut : null;
+            CemPinAttemptStatus completion;
+            try
+            {
+                // Await provider termination even after cancellation. Never release
+                // the gate while an uncooperative provider may still be using ECU.
+                var receipt = await _provider.TryRunAsync(operation.Token).ConfigureAwait(false);
+                completion = receipt == CemPinProviderReceipt.FinishedWithoutPin
+                        ? CemPinAttemptStatus.FinishedWithoutPin
+                        : CemPinAttemptStatus.Unsupported;
+            }
+            catch (OperationCanceledException) when (operation.IsCancellationRequested)
+            {
+                completion = CemPinAttemptStatus.Failed;
+            }
+            catch (TimeoutException)
+            {
+                completion = CemPinAttemptStatus.TimedOut;
+            }
+            finally
+            {
+                stopMonitor.Cancel();
+                await monitor.ConfigureAwait(false);
+            }
+            // Revalidate after monitor teardown, immediately before publishing.
+            return CemPinAttemptResult.From(StopReason() ?? completion);
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
