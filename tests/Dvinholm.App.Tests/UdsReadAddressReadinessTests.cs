@@ -77,7 +77,7 @@ public sealed class UdsReadAddressReadinessTests
         Assert.Contains("No request ID is selected by default", (string?)tx.Attribute("ToolTipService.ToolTip"));
         Assert.Contains("observation alone", (string?)rx.Attribute("ToolTipService.ToolTip"));
         Assert.Contains("Read-only UDS disabled", (string?)hint.Attribute("Text"));
-        Assert.Equal("8", (string?)hint.Attribute("Grid.ColumnSpan"));
+        Assert.Contains(Named(doc, "DiagnosticsPage"), hint.Ancestors());
         Assert.Equal("Wrap", (string?)hint.Attribute("TextWrapping"));
         foreach (var name in new[] { "ReadDidButton", "ReadVinButton", "ReadDtcButton" })
             Assert.Equal("False", (string?)Named(doc, name).Attribute("IsEnabled"));

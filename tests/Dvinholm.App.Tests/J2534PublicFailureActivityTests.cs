@@ -95,7 +95,7 @@ public sealed class J2534PublicFailureActivityTests
         Assert.Contains("catch (Exception)", section);
         Assert.Contains("_connected = false;", section);
         Assert.Contains("StartButton.IsEnabled = false;", section);
-        Assert.Contains("ConnectButton.Content = \"Connect\";", section);
+        Assert.Contains("ConnectButton.Content = AuroraUiText(\"Подключить\", \"Connect\");", section);
     }
 
     [Fact]
@@ -109,7 +109,7 @@ public sealed class J2534PublicFailureActivityTests
             StringComparison.Ordinal);
         var disposal = start.IndexOf("monitorCts.Dispose();", StringComparison.Ordinal);
         var assignCts = start.IndexOf("_cts = monitorCts;", StringComparison.Ordinal);
-        var arm = start.IndexOf("StartButton.Content = \"Stop monitor\";", StringComparison.Ordinal);
+        var arm = start.IndexOf("StartButton.Content = AuroraUiText(\"Остановить мониторинг\", \"Stop monitor\");", StringComparison.Ordinal);
         Assert.True(createCts >= 0 && createCts < subscribe && subscribe < disposal &&
                     disposal < assignCts && assignCts < arm);
         Assert.Contains("catch (Exception)", start);

@@ -56,6 +56,10 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        AuroraLanding.UseSharedNavigation();
+        InitializeAuroraLabels();
+        CancelUdsButton.RegisterPropertyChangedCallback(Control.IsEnabledProperty, (_, _) =>
+            CancelUdsButton.Visibility = CancelUdsButton.IsEnabled ? Visibility.Visible : Visibility.Collapsed);
         // Attach after XAML initialization so the default selection cannot
         // invalidate a diagnostic result during partial control creation.
         DtcStatusMaskSelector.SelectionChanged += DtcStatusMask_SelectionChanged;
@@ -197,46 +201,54 @@ public sealed partial class MainWindow : Window
         RefreshDashboardSummary();
     }
 
-    // This navigation never starts J2534, PIN search or configuration writes.
-    // The existing diagnostic workspace and all its tested controls remain intact.
+    private AuroraDestination? _workspaceDestination;
+
+    // Navigation changes presentation only. It never connects or sends a request.
     private void DashboardNavigate(object? sender, AuroraDestination destination)
     {
-        if (_closing)
-            return;
-
+        if (_closing) return;
+        var section = AuroraWorkspaceNavigation.Describe(destination);
+        if (_workspaceDestination != destination)
+        {
+            _udsCts?.Cancel();
+            ClearDiagnosticReadResult();
+        }
+        _workspaceDestination = destination;
+        ShowDashboardWorkspace();
+        foreach (var panel in new FrameworkElement[] { CemPinPage, CemConfigPage, EcuPage,
+            DiagnosticsPage, CanMonitorPage, ProfilesPage, ConnectionPage })
+            panel.Visibility = panel.Name == section.Panel ? Visibility.Visible : Visibility.Collapsed;
+        WorkspaceTitle.Text = section.Title;
+        WorkspaceDescription.Text = section.Description;
+        DiagnosticResultsCard.Visibility = destination is AuroraDestination.CemPinReadiness or
+            AuroraDestination.DiagnosticsWorkspace ? Visibility.Visible : Visibility.Collapsed;
+        WorkspaceScroll.ChangeView(null, 0, null);
+        SelectWorkspaceNavigation(destination);
         switch (destination)
         {
-            case AuroraDestination.CemPinReadiness:
-#if DVINHOLM_DEVELOPMENT_FEATURES
-                ShowDashboardWorkspace();
-                CemPartNumberReadButton.Focus(FocusState.Programmatic);
-#else
-                P2PinReview_Click(this, null!); // Existing offline-only checklist.
-#endif
-                return;
-            case AuroraDestination.CemConfigurationCatalog:
-                P2ConfigCatalog_Click(this, null!); // Existing offline research.
-                return;
-            case AuroraDestination.EcuWorkspace:
-                ShowDashboardWorkspace();
-                EcuSelector.Focus(FocusState.Programmatic);
-                return;
-            case AuroraDestination.DiagnosticsWorkspace:
-                ShowDashboardWorkspace();
-                UdsRequestId.Focus(FocusState.Programmatic);
-                return;
-            case AuroraDestination.CanMonitor:
-                ShowDashboardWorkspace();
-                IdFilter.Focus(FocusState.Programmatic);
-                return;
-            case AuroraDestination.EcuProfiles:
-                ShowDashboardWorkspace();
-                ProfileSearch.Focus(FocusState.Programmatic);
-                return;
-            case AuroraDestination.J2534Connection:
-                ShowDashboardWorkspace();
-                J2534Devices.Focus(FocusState.Programmatic);
-                return;
+            case AuroraDestination.EcuWorkspace: EcuSelector.Focus(FocusState.Programmatic); break;
+            case AuroraDestination.DiagnosticsWorkspace: UdsRequestId.Focus(FocusState.Programmatic); break;
+            case AuroraDestination.CanMonitor: IdFilter.Focus(FocusState.Programmatic); break;
+            case AuroraDestination.EcuProfiles: ProfileSearch.Focus(FocusState.Programmatic); break;
+            case AuroraDestination.J2534Connection: J2534Devices.Focus(FocusState.Programmatic); break;
+        }
+    }
+
+    private void WorkspaceNavigate_Click(object sender, RoutedEventArgs e)
+    {
+        if (sender is Button button && AuroraWorkspaceNavigation.TryParse(button.Tag as string, out var destination))
+            DashboardNavigate(sender, destination);
+    }
+
+    private void SelectWorkspaceNavigation(AuroraDestination? destination)
+    {
+        foreach (var button in SidebarNavPanel.Children.OfType<Button>())
+        {
+            var selected = button == SidebarHomeButton ? destination is null :
+                AuroraWorkspaceNavigation.TryParse(button.Tag as string, out var target) && target == destination;
+            button.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(selected
+                ? Windows.UI.Color.FromArgb(255, 8, 101, 199) : Windows.UI.Color.FromArgb(0, 0, 0, 0));
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(button, selected ? "Выбран" : "");
         }
     }
 
@@ -248,9 +260,13 @@ public sealed partial class MainWindow : Window
 
     private void DashboardReturn_Click(object sender, RoutedEventArgs e)
     {
+        _udsCts?.Cancel();
         ClearDiagnosticReadResult();
+        _workspaceDestination = null;
+        SelectWorkspaceNavigation(null);
         AuroraWorkspaceHost.Visibility = Visibility.Collapsed;
         AuroraLanding.Visibility = Visibility.Visible;
+        AuroraLanding.ReturnToTop();
         RefreshDashboardSummary();
     }
 
@@ -262,6 +278,8 @@ public sealed partial class MainWindow : Window
         var adapter = (J2534Devices.SelectedItem as J2534Device)?.Label;
         var baud = (BaudRate.SelectedItem as ComboBoxItem)?.Content?.ToString();
         AuroraLanding.UpdateConnection(_connected, adapter, baud);
+        if (ShellConnectionText is not null)
+            ShellConnectionText.Text = _connected && _session.IsConnected ? "J2534 подключён" : "Не подключено";
         AuroraLanding.UpdateProfile((ProfileSelector.SelectedItem as EcuProfile)?.Name);
 #if DVINHOLM_DEVELOPMENT_FEATURES
         RefreshCemPartReadAvailability();
@@ -577,16 +595,19 @@ public sealed partial class MainWindow : Window
         CemPartNumberReadButton.Visibility = Visibility.Visible;
         CemPartNumberReadButton.Content = CemText("Прочитать номер CEM (экспериментальный HS-CAN)", "Read CEM P/N (experimental HS-CAN)");
         CemPinLivePanel.Visibility = Visibility.Visible;
+        CemPinIdentityCard.Visibility = Visibility.Visible;
+        CemPinSearchCard.Visibility = Visibility.Visible;
         CemPinRangeStart.Header = CemText("Начальная позиция перебора", "Search starting position");
         CemPinRangeCount.Header = CemText("Лимит попыток (1–10000)", "Attempt limit (1–10000)");
-        CemPinReadButton.Content = CemText("Read CEM PIN — эксперимент", "Read CEM PIN (experimental)");
+        CemPinReadButton.Content = CemText("Найти PIN · эксперимент", "Read CEM PIN (experimental)");
         CemPinRevealButton.Content = CemText("Показать на 15 секунд", "Reveal for 15 seconds");
         CemPinResultText.Text = CemText("Нет результата PIN.", "No PIN result.");
         CemPinSavedButton.Visibility = Visibility.Visible;
         CemPinSavedButton.Content = CemText("Сохранённые PIN", "Saved PINs");
         var addTestProfiles = new Button { Content = "Add test profiles" };
         addTestProfiles.Click += AddTestProfiles_Click;
-        ProfileActionsPanel.Children.Insert(2, addTestProfiles);
+        DevelopmentProfileTools.Children.Add(addTestProfiles);
+        DevelopmentProfileTools.Visibility = Visibility.Visible;
 
         _demoMonitorButton = new Button { Content = "Start demo" };
         _demoMonitorButton.Click += DemoMonitor_Click;
@@ -615,7 +636,8 @@ public sealed partial class MainWindow : Window
         var exportSynthetic = new Button { Content = "Export synthetic UDS TXT" };
         exportSynthetic.Click += ExportOfflineUdsTxt_Click;
         offlinePanel.Children.Add(exportSynthetic);
-        StatusPanel.Children.Insert(0, offlinePanel);
+        DevelopmentDiagnosticTools.Children.Add(offlinePanel);
+        DevelopmentDiagnosticTools.Visibility = Visibility.Visible;
     }
 
     private void AddTestProfiles_Click(object sender, RoutedEventArgs e)
@@ -3103,7 +3125,7 @@ public sealed partial class MainWindow : Window
                 _activeHardwareFilterId = null;
                 HardwareFilterButton.Content = "Apply HW filter";
                 HardwareFilterButton.IsEnabled = false;
-                ConnectButton.Content = "Connect";
+                ConnectButton.Content = AuroraUiText("Подключить", "Connect");
                 SetStatus("Disconnected");
             }
             catch (Exception)
@@ -3120,7 +3142,7 @@ public sealed partial class MainWindow : Window
                 StartButton.IsEnabled = false;
                 SetUdsEnabled(false);
                 DiscoverButton.IsEnabled = false;
-                ConnectButton.Content = "Connect";
+                ConnectButton.Content = AuroraUiText("Подключить", "Connect");
                 SetStatus(J2534PublicFailureActivity.Message(J2534PublicFailure.DisconnectFault));
             }
             finally
@@ -3196,7 +3218,7 @@ public sealed partial class MainWindow : Window
 
             _connected = true;
             HardwareFilterButton.IsEnabled = true;
-            ConnectButton.Content = "Disconnect";
+            ConnectButton.Content = AuroraUiText("Отключить", "Disconnect");
             StartButton.IsEnabled = true;
             SetUdsEnabled(true);
             DiscoverButton.IsEnabled = true;
@@ -3272,7 +3294,7 @@ public sealed partial class MainWindow : Window
         _rxDropTracker.Start(subscription.DroppedFrameCount);
         UpdateRxDropCountText();
 
-        StartButton.Content = "Stop monitor";
+        StartButton.Content = AuroraUiText("Остановить мониторинг", "Stop monitor");
         SetStatus("Monitoring CAN...");
         _rate.Restart();
         _rateFrames = 0;
@@ -3301,7 +3323,7 @@ public sealed partial class MainWindow : Window
         var cts = _cts;
         _cts = null;
         cts?.Cancel();
-        StartButton.Content = "Start monitor";
+        StartButton.Content = AuroraUiText("Начать мониторинг", "Start monitor");
 
         var task = _monitorTask;
 

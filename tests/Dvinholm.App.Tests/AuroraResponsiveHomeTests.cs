@@ -163,7 +163,7 @@ public sealed class AuroraResponsiveHomeTests
     public void BannerAndAllHomeButtonsRemainVisibleAndActionable()
     {
         var home = Home();
-        Assert.Contains("Dvinholm-Banner.webp", home.ToString());
+        Assert.Contains("Dvinholm-Banner.png", home.ToString());
         var buttons = home.Descendants()
             .Where(e => e.Name.LocalName == "Button").ToArray();
         Assert.NotEmpty(buttons);

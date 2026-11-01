@@ -1,291 +1,507 @@
-<Window
-    x:Class="Dvinholm.App.MainWindow"
-    Title="Dvinholm"
-    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
-    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
-    xmlns:local="using:Dvinholm.App"
-    xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
-    xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
-    mc:Ignorable="d">
-    <Grid Background="#071827">
-        <local:AuroraHome x:Name="AuroraLanding"/>
-        <!-- The tested legacy diagnostic controls remain intact and usable,
-             but are opened on demand from the new Aurora home page. -->
-        <Grid x:Name="AuroraWorkspaceHost" Visibility="Collapsed">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <Border Background="#102A45" Padding="15,7"
-                    BorderBrush="#265A83" BorderThickness="0,0,0,1">
-                <StackPanel Orientation="Horizontal" Spacing="16">
-                    <Button Content="←  На главную" Click="DashboardReturn_Click"
-                            Background="#135D9E"/>
-                    <TextBlock Text="DVINHOLM  /  РАБОЧЕЕ ПРОСТРАНСТВО"
-                               VerticalAlignment="Center" FontWeight="Bold"
-                               Foreground="#E5F1FF"/>
-                </StackPanel>
-            </Border>
-            <Grid x:Name="RootLayout" Grid.Row="1" Padding="20" RowSpacing="14">
-        <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-
-        <!-- Adapter diagnostics remain visible only in the local workspace.
-             Do not mirror driver-supplied version strings to Aurora activity. -->
-        <TextBlock x:Name="AdapterMetadataText" Grid.Row="0"
-                   Text="J2534 adapter details: disconnected."
-                   FontSize="12" Foreground="#C1D7E8"
-                   TextWrapping="Wrap" IsTextSelectionEnabled="True"
-                   ToolTipService.ToolTip="Unverified values returned by the driver. Local diagnostic details, not an ECU identity or authorization." />
-
-        <!-- Update controls belong exclusively to Launcher.exe. -->
-        <Grid Grid.Row="1" ColumnSpacing="10">
-            <Grid.ColumnDefinitions><ColumnDefinition Width="2*"/><ColumnDefinition Width="240"/><ColumnDefinition Width="86"/><ColumnDefinition Width="130"/><ColumnDefinition Width="110"/><ColumnDefinition Width="130"/></Grid.ColumnDefinitions>
-            <TextBox x:Name="DllPath" PlaceholderText="Path to 32-bit J2534 DLL" Header="J2534 DLL"/>
-            <ComboBox x:Name="J2534Devices" Grid.Column="1" Header="Registered adapters" DisplayMemberPath="Label" PlaceholderText="Select adapter" SelectionChanged="J2534Device_SelectionChanged"/>
-            <Button Grid.Column="2" Content="Refresh" Click="RefreshJ2534Devices_Click" VerticalAlignment="Bottom"/>
-            <StackPanel Grid.Column="3" Spacing="4">
-            <ComboBox x:Name="BaudRate" Header="CAN speed" SelectedIndex="0"
-                      ToolTipService.ToolTip="Volvo XC90 P2 HS-CAN guidance: through model year 2004 250 kbit/s; from model year 2005 500 kbit/s. Other networks differ. Verify actual model year, bus and adapter before connecting; Dvinholm does not adjust the speed automatically.">
-                <ComboBoxItem Content="500 kbit/s" Tag="500000"/><ComboBoxItem Content="250 kbit/s" Tag="250000"/><ComboBoxItem Content="125 kbit/s" Tag="125000"/>
-            </ComboBox>
-            <ComboBox x:Name="CanConnectionMode" Header="CAN channel ID format" SelectedIndex="0" Visibility="Collapsed"
-                      ToolTipService.ToolTip="Select before connecting. Reconnect to change the physical channel format.">
-                <ComboBoxItem Content="11-bit"/><ComboBoxItem Content="29-bit"/>
-            </ComboBox>
-            </StackPanel>
-            <Button x:Name="ConnectButton" Grid.Column="4" Content="Connect" Click="Connect_Click" VerticalAlignment="Bottom"/>
-            <Button x:Name="StartButton" Grid.Column="5" Content="Start monitor" Click="Start_Click" VerticalAlignment="Bottom" IsEnabled="False"/>
-        </Grid>
-
-        <Grid Grid.Row="2" ColumnSpacing="10" RowSpacing="5">
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
-            <Grid.ColumnDefinitions>
-                <ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="120"/>
-                <ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/><ColumnDefinition Width="110"/>
-            </Grid.ColumnDefinitions>
-            <TextBox x:Name="UdsRequestId" Header="UDS request ID" Text="" PlaceholderText="enter verified TX ID" TextChanged="SnapshotCanIdTextChanged"
-                     ToolTipService.ToolTip="No request ID is selected by default. Enter a source-verified ID manually; passive ECU scanning does not prove a TX address."/>
-            <TextBox x:Name="UdsResponseId" Grid.Column="1" Header="UDS response ID" Text="" PlaceholderText="enter RX ID" TextChanged="SnapshotCanIdTextChanged"
-                     ToolTipService.ToolTip="Enter an independently verified response ID or explicitly select an observed passive response; observation alone does not identify an ECU."/>
-            <ComboBox x:Name="CanIdFormat" Grid.Column="2" Header="CAN ID format" SelectedIndex="0" SelectionChanged="SnapshotCanIdFormatChanged">
-                <ComboBoxItem Content="11-bit" Tag="standard"/>
-                <ComboBoxItem Content="29-bit" Tag="extended"/>
-            </ComboBox>
-            <TextBox x:Name="UdsDid" Grid.Column="3" Header="DID (hex)" Text="F190" PlaceholderText="e.g. F190" TextChanged="UdsDid_TextChanged"/>
-            <Button Grid.Column="4" Content="Read DID" Click="ReadDid_Click" VerticalAlignment="Bottom" x:Name="ReadDidButton" IsEnabled="False"/>
-            <Button x:Name="ReadVinButton" Grid.Column="5" Content="Read VIN" IsEnabled="False" Click="ReadVin_Click" VerticalAlignment="Bottom"/>
-            <Button x:Name="ReadDtcButton" Grid.Column="6" Content="Read DTC" IsEnabled="False" Click="ReadDtc_Click" VerticalAlignment="Bottom"
-                    ToolTipService.ToolTip="Read DTCs from only the selected ECU, filtered by the status choice below. No DTC clear or full-vehicle scan."/>
-            <Button x:Name="CancelUdsButton" Grid.Column="7" Content="Cancel UDS" IsEnabled="False" Click="CancelUds_Click" VerticalAlignment="Bottom"/>
-            <ComboBox x:Name="DtcStatusMaskSelector" Grid.Row="1" Grid.Column="4" Grid.ColumnSpan="3"
-                      Header="Read DTC status filter" SelectedIndex="0"
-                      ToolTipService.ToolTip="Choose which status bit the ECU should report via one read-only UDS 0x19/0x02 request. This does not prove ECU identity or clear faults.">
-                <ComboBoxItem Content="All status bits" Tag="FF"/>
-                <ComboBoxItem Content="Test failed" Tag="01"/>
-                <ComboBoxItem Content="Pending DTC" Tag="04"/>
-                <ComboBoxItem Content="Confirmed DTC" Tag="08"/>
-                <ComboBoxItem Content="Warning indicator requested" Tag="80"/>
-            </ComboBox>
-            <TextBlock x:Name="UdsReadinessHint" Grid.Row="2" Grid.ColumnSpan="8"
-                       Text="Read-only UDS disabled until connected with manually checked request and response CAN IDs."
-                       TextWrapping="Wrap" IsTextSelectionEnabled="True"
-                       ToolTipService.ToolTip="Valid CAN ID syntax does not verify ECU identity, model, protocol or service access."/>
-            <Button x:Name="CemPartNumberReadButton" Grid.Row="3" Grid.ColumnSpan="8"
-                    Content="Read CEM P/N (experimental HS-CAN)" HorizontalAlignment="Left"
-                    ToolTipService.ToolTip="Connect a 500 kbit/s, 29-bit channel; stop the monitor and remove user hardware filters first. Source-defined experimental read, not verified CEM or PIN support."
-                    Visibility="Collapsed" IsEnabled="False" Click="ReadCemPartNumber_Click"/>
-            <StackPanel x:Name="CemPinLivePanel" Grid.Row="4" Grid.ColumnSpan="8" Spacing="6" Visibility="Collapsed" RequestedTheme="Dark">
-                <StackPanel Orientation="Horizontal" Spacing="8">
-                    <TextBox x:Name="CemPinRangeStart" Header="Search starting position" Text="0" MaxLength="12" Width="170" TextChanged="CemPinRangeChanged"/>
-                    <TextBox x:Name="CemPinRangeCount" Header="Attempt limit (1–10000)" Text="1000" MaxLength="5" Width="170" TextChanged="CemPinRangeChanged"/>
-                    <Button x:Name="CemPinReadButton" Content="Read CEM PIN (experimental)" IsEnabled="False" Click="ReadCemPin_Click" VerticalAlignment="Bottom"/>
-                    <Button x:Name="CemPinRevealButton" Content="Reveal for 15 seconds" IsEnabled="False" Click="RevealCemPin_Click" VerticalAlignment="Bottom"/>
-                </StackPanel>
-                <Grid ColumnSpacing="12">
-                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                    <Button x:Name="CemPinSavedButton" Content="Saved PINs" Visibility="Collapsed"
-                            HorizontalAlignment="Left" Click="SavedCemPins_Click"/>
-                    <TextBlock x:Name="CemPinResultText" Grid.Column="1" Text="No PIN result." FontFamily="Consolas"
-                               TextWrapping="Wrap" IsTextSelectionEnabled="False" VerticalAlignment="Center"/>
-                </Grid>
-            </StackPanel>
-        </Grid>
-
-        <Grid Grid.Row="3" RowSpacing="10">
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="*"/></Grid.RowDefinitions>
-            <Grid Grid.Row="0" ColumnSpacing="10">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="150"/><ColumnDefinition Width="130"/><ColumnDefinition Width="130"/><ColumnDefinition Width="130"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
-                <Button x:Name="DiscoverButton" Content="Discover ECUs" Click="Discover_Click" IsEnabled="False"/>
-                <ComboBox x:Name="EcuSelector" Grid.Column="1" PlaceholderText="Observed response"
-                          IsEnabled="False" SelectionChanged="EcuSelector_SelectionChanged"
-                          ToolTipService.ToolTip="Selection does not send a request or verify the inferred request address."/>
-                <TextBlock x:Name="DiscoveryStatus" Grid.Column="2" VerticalAlignment="Center" Text="Not scanned"/>
-                <Button x:Name="CancelDiscoveryButton" Grid.Column="3" Content="Cancel scan" Click="CancelDiscovery_Click" IsEnabled="False"/>
-            </Grid>
-            <ListView x:Name="EcusView" Grid.Row="1" Height="76" SelectionMode="Single"
-                      IsEnabled="False" SelectionChanged="Ecu_SelectionChanged"
-                      ToolTipService.ToolTip="Passive response observations only. No verified ECU identity or request ID.">
-                <ListView.Header><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Observed RX"/><TextBlock Grid.Column="1" Text="Guessed TX"/><TextBlock Grid.Column="2" Text="Type"/><TextBlock Grid.Column="3" Text="Frames"/><TextBlock Grid.Column="4" Text="Max bytes / ID basis"/></Grid></ListView.Header>
-                <ListView.ItemTemplate><DataTemplate><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="100"/><ColumnDefinition Width="100"/><ColumnDefinition Width="90"/><ColumnDefinition Width="90"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Response}"/><TextBlock Grid.Column="1" Text="{Binding Request}"/><TextBlock Grid.Column="2" Text="{Binding Type}"/><TextBlock Grid.Column="3" Text="{Binding Frames}"/><StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8"><TextBlock Text="{Binding MaxPayload}"/><TextBlock Text="{Binding RequestBasis}"/></StackPanel></Grid></DataTemplate></ListView.ItemTemplate>
-            </ListView>
-            <ScrollViewer Grid.Row="2" MaxHeight="86" VerticalScrollBarVisibility="Auto"
-                          HorizontalScrollBarVisibility="Disabled">
-                <TextBlock x:Name="EcuSelectionInfo"
-                           Text="Passive scan only. Select a completed observation; verify and enter the request ID manually."
-                           TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
-            </ScrollViewer>
-            <Border Grid.Row="3" Padding="8" Margin="0" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-                <!-- Separate filtering from actions; keep the metadata scrollable
-                     and the CAN monitor visible in a compact window. -->
-                <Grid RowSpacing="6">
-                    <Grid.RowDefinitions>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                        <RowDefinition Height="Auto"/>
-                    </Grid.RowDefinitions>
-                    <Grid Grid.Row="0" ColumnSpacing="8">
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="2*"/>
-                            <ColumnDefinition Width="2*"/>
-                            <ColumnDefinition Width="Auto"/>
-                        </Grid.ColumnDefinitions>
-                        <TextBox x:Name="ProfileSearch" Grid.Column="0"
-                                 Header="Find ECU profile"
-                                 PlaceholderText="Name, ID, CAN ID, DID or source"
-                                 TextChanged="ProfileSearch_TextChanged"/>
-                        <ComboBox x:Name="ProfileSelector" Grid.Column="1"
-                                  Header="ECU profiles" PlaceholderText="Select profile"
-                                  SelectionChanged="ProfileSelector_SelectionChanged"/>
-                        <CheckBox x:Name="MarkedVerifiedOnly" Grid.Column="2"
-                                  Content="Marked verified only"
-                                  Checked="MarkedVerifiedOnly_Changed"
-                                  Unchecked="MarkedVerifiedOnly_Changed"
-                                  VerticalAlignment="Bottom"/>
-                    </Grid>
-                    <!-- Two compact action rows replace a seven-button horizontal
-                         strip which overflowed narrower app windows. All controls
-                         stay reachable without horizontal scrolling. -->
-                    <Grid x:Name="ProfileActionsPanel" Grid.Row="1" RowSpacing="6" ColumnSpacing="8">
-                        <Grid.RowDefinitions>
-                            <RowDefinition Height="Auto"/>
-                            <RowDefinition Height="Auto"/>
-                        </Grid.RowDefinitions>
-                        <Grid.ColumnDefinitions>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                            <ColumnDefinition Width="*"/>
-                        </Grid.ColumnDefinitions>
-                        <Button x:Name="CreateProfileButton" Grid.Row="0" Grid.Column="0"
-                                Content="New profile" HorizontalAlignment="Stretch"
-                                Click="CreateProfile_Click"/>
-                        <Button x:Name="EditProfileButton" Grid.Row="0" Grid.Column="1"
-                                Content="Edit selected" HorizontalAlignment="Stretch"
-                                Click="EditProfile_Click" IsEnabled="False"/>
-                        <Button Grid.Row="0" Grid.Column="2"
-                                Content="Import JSON" HorizontalAlignment="Stretch"
-                                Click="ImportProfiles_Click"/>
-                        <Button Grid.Row="0" Grid.Column="3"
-                                Content="Export JSON" HorizontalAlignment="Stretch"
-                                Click="ExportProfiles_Click"/>
-                        <Button x:Name="CaptureSnapshotButton" Grid.Row="1"
-                                Grid.Column="0" Grid.ColumnSpan="2"
-                                Content="Read + save snapshot" HorizontalAlignment="Stretch"
-                                ToolTipService.ToolTip="Read selected profile DIDs and explicitly save a diagnostic JSON file. Not a restorable ECU backup."
-                                Click="CaptureSnapshot_Click" IsEnabled="False"/>
-                        <Button x:Name="InspectSnapshotButton" Grid.Row="1" Grid.Column="2"
-                                Content="Inspect snapshot" HorizontalAlignment="Stretch"
-                                ToolTipService.ToolTip="Inspect local DID JSON without connecting, transmitting CAN, or restoring ECU data."
-                                Click="InspectSnapshot_Click"/>
-                        <Button x:Name="CompareSnapshotsButton" Grid.Row="1" Grid.Column="3"
-                                Content="Compare snapshots" HorizontalAlignment="Stretch"
-                                ToolTipService.ToolTip="Compare two local diagnostic JSON snapshots offline. Show only changed DID numbers, not their data."
-                                Click="CompareSnapshots_Click"/>
-                    </Grid>
-                    <ScrollViewer Grid.Row="2" MaxHeight="76"
-                                  VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled">
-                        <TextBlock x:Name="EcuInfoText"
-                                   Text="No ECU profile selected"
-                                   TextWrapping="Wrap"
-                                   IsTextSelectionEnabled="True"/>
-                    </ScrollViewer>
-                    <Button x:Name="P2ConfigCatalogButton" Grid.Row="3"
-                            Content="P2 configuration candidates (offline)"
-                            HorizontalAlignment="Stretch"
-                            ToolTipService.ToolTip="View vendor-advertised Volvo XC90 P2 option names offline; no vehicle queries, PIN, editing or writes."
-                            Click="P2ConfigCatalog_Click"/>
-                    <Button x:Name="P2PinReviewButton" Grid.Row="4"
-                            Content="P2 CEM PIN readiness (offline review)"
-                            HorizontalAlignment="Stretch"
-                            ToolTipService.ToolTip="Cancellable offline evidence checklist only. No PIN extraction, credential entry or vehicle operation."
-                            Click="P2PinReview_Click"/>
-                </Grid>
-            </Border>
-            <Grid Grid.Row="3">
-            <Grid.RowDefinitions>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="Auto"/>
-                <RowDefinition Height="*"/>
-            </Grid.RowDefinitions>
-            <!-- Populated solely by the opt-in Development build. -->
-            <Grid x:Name="DeveloperMonitorHost" Grid.Row="0" ColumnSpacing="10" Margin="0,0,0,8" Visibility="Collapsed">
-                <Grid.ColumnDefinitions>
-                    <ColumnDefinition Width="Auto"/>
-                    <ColumnDefinition Width="*"/>
-                </Grid.ColumnDefinitions>
-            </Grid>
-            <Grid Grid.Row="1" ColumnSpacing="10" Margin="0,0,0,10">
-                <Grid.ColumnDefinitions><ColumnDefinition Width="160"/><ColumnDefinition Width="75"/><ColumnDefinition Width="125"/><ColumnDefinition Width="100"/><ColumnDefinition Width="*"/><ColumnDefinition Width="150"/><ColumnDefinition Width="100"/></Grid.ColumnDefinitions>
-                <TextBox x:Name="IdFilter" Header="ID filter (hex)" PlaceholderText="7E0,7E8" TextChanged="Filter_Changed"/>
-                <Button Grid.Column="1" Content="Clear" Click="Clear_Click" VerticalAlignment="Bottom"/>
-                <Button x:Name="HardwareFilterButton" Grid.Column="2" Content="Apply HW filter" Click="HardwareFilter_Click" VerticalAlignment="Bottom" IsEnabled="False"/>
-                <Button Grid.Column="3" Content="CSV log" Click="Csv_Click" VerticalAlignment="Bottom"/>
-                <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8" VerticalAlignment="Bottom">
-                    <Button Content="RX summary" Click="CanRxSummary_Click"
-                            ToolTipService.ToolTip="Review buffered CAN RX ID/DLC counts without frame data. Copy only by explicit approval. No diagnostic requests."/>
-                    <Button Content="Inspect trace" Click="InspectCanCsv_Click"
-                            ToolTipService.ToolTip="Offline review of a selected Dvinholm CAN CSV or metadata-only J2534 JSONL. Never connects or changes the monitor. Sensitive identifiers and payload stay hidden."/>
-                    <TextBlock x:Name="FrameRateText" VerticalAlignment="Center" Text="0 frames/s"/>
-                </StackPanel>
-                <TextBlock x:Name="FrameCountText" Grid.Column="5" VerticalAlignment="Center" Text="0 shown / 0 rx" HorizontalAlignment="Right"/>
-                <TextBlock x:Name="DroppedFrameText" Grid.Column="6" VerticalAlignment="Center" Text="0 dropped" HorizontalAlignment="Right"/>
-            </Grid>
-            <ListView x:Name="FramesView" Grid.Row="2" SelectionMode="None">
-                <ListView.Header><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="90"/><ColumnDefinition Width="80"/><ColumnDefinition Width="55"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="Timestamp (ms)"/><TextBlock Grid.Column="1" Text="ID"/><TextBlock Grid.Column="2" Text="Type"/><TextBlock Grid.Column="3" Text="DLC"/><TextBlock Grid.Column="4" Text="Data"/></Grid></ListView.Header>
-                <ListView.ItemTemplate><DataTemplate><Grid ColumnSpacing="12"><Grid.ColumnDefinitions><ColumnDefinition Width="130"/><ColumnDefinition Width="90"/><ColumnDefinition Width="80"/><ColumnDefinition Width="55"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions><TextBlock Text="{Binding Timestamp}"/><TextBlock Grid.Column="1" Text="{Binding Id}" FontFamily="Consolas"/><TextBlock Grid.Column="2" Text="{Binding Type}"/><TextBlock Grid.Column="3" Text="{Binding Dlc}"/><TextBlock Grid.Column="4" Text="{Binding Data}" FontFamily="Consolas"/></Grid></DataTemplate></ListView.ItemTemplate>
-            </ListView>
-            </Grid>
-        </Grid>
-
-        <Border Grid.Row="4" Padding="10" CornerRadius="6" Background="{ThemeResource CardBackgroundFillColorDefaultBrush}">
-            <StackPanel x:Name="StatusPanel" Spacing="6">
-                <!-- Explicit diagnostic payloads stay inside the workspace.
-                     The Aurora last-event summary sees only payload-free status. -->
-                <Expander x:Name="DiagnosticResultExpander"
-                          Header="Diagnostic read result (VIN / DID / DTC, review before sharing)"
-                          IsExpanded="False">
-                    <ScrollViewer MaxHeight="170" VerticalScrollBarVisibility="Auto"
-                                  HorizontalScrollBarVisibility="Disabled">
-                        <TextBlock x:Name="DiagnosticResultText"
-                                   Text="No completed UDS read in this session."
-                                   TextWrapping="Wrap" IsTextSelectionEnabled="True"
-                                   FontFamily="Consolas"/>
-                    </ScrollViewer>
-                </Expander>
-                <Button x:Name="ClearDiagnosticResultButton"
-                        Content="Clear diagnostic result"
-                        HorizontalAlignment="Right"
-                        Click="ClearDiagnosticResult_Click"
-                        ToolTipService.ToolTip="Clear the last VIN/DID/DTC payload and ignore any pending result. Does not contact the ECU."/>
-                <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <TextBlock x:Name="StatusText" Text="Disconnected" TextWrapping="Wrap" IsTextSelectionEnabled="True"/>
+<Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:local="using:Dvinholm.App" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="Dvinholm.App.MainWindow" Title="Dvinholm">
+    <Grid x:Name="RootLayout" Background="#071827" RequestedTheme="Dark">
+        <Grid.Resources>
+            <Style x:Key="AuroraButton" TargetType="Button">
+                <Setter Property="CornerRadius" Value="8" />
+                <Setter Property="Padding" Value="16,10" />
+                <Setter Property="MinHeight" Value="40" />
+                <Setter Property="Background" Value="#173650" />
+                <Setter Property="BorderBrush" Value="#2B506C" />
+                <Setter Property="Foreground" Value="#EDF6FF" />
+            </Style>
+            <Style TargetType="Button" BasedOn="{StaticResource AuroraButton}" />
+            <Style x:Key="AuroraNav" TargetType="Button" BasedOn="{StaticResource AuroraButton}">
+                <Setter Property="MinHeight" Value="38" />
+                <Setter Property="Background" Value="Transparent" />
+                <Setter Property="BorderThickness" Value="0" />
+                <Setter Property="HorizontalAlignment" Value="Stretch" />
+                <Setter Property="HorizontalContentAlignment" Value="Left" />
+                <Setter Property="Padding" Value="12,9" />
+            </Style>
+            <Style TargetType="TextBlock">
+                <Setter Property="Foreground" Value="#E8F2FC" />
+                <Setter Property="TextWrapping" Value="Wrap" />
+            </Style>
+            <Style x:Key="AuroraCard" TargetType="Border">
+                <Setter Property="Background" Value="#0D263B" />
+                <Setter Property="BorderBrush" Value="#23445F" />
+                <Setter Property="BorderThickness" Value="1" />
+                <Setter Property="CornerRadius" Value="16" />
+                <Setter Property="Padding" Value="24" />
+                <Setter Property="Margin" Value="0,0,0,16" />
+            </Style>
+            <DataTemplate x:Key="AuroraWrapCaption">
+                <TextBlock Text="{Binding}" TextWrapping="Wrap" TextAlignment="Center" />
+            </DataTemplate>
+        </Grid.Resources>
+        <Grid.ColumnDefinitions>
+            <ColumnDefinition Width="216" />
+            <ColumnDefinition Width="*" />
+        </Grid.ColumnDefinitions>
+        <Border Background="#0A2038" BorderBrush="#244B73" BorderThickness="0,0,1,0">
+            <Grid>
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="SidebarNavPanel" Padding="16,24" Spacing="5">
+                        <StackPanel Margin="6,0,0,18" Spacing="4">
+                            <TextBlock Text="DVINHOLM" FontSize="25" FontWeight="Bold" />
+                            <TextBlock Text="DIAGNOSTICS · CONTROL" FontSize="10" Foreground="#8AB9D9" />
+                        </StackPanel>
+                        <Button x:Name="SidebarHomeButton" Content="⌂   Главная" Style="{StaticResource AuroraNav}" Click="DashboardReturn_Click" Background="#0865C7" />
+                        <Button Tag="CemPinReadiness" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="CEM PIN">
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
+                                <TextBlock Text="CEM PIN" />
+                            </StackPanel>
+                        </Button>
+                        <Button Tag="CemConfigurationCatalog" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Конфигурация CEM">
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
+                                <TextBlock Text="Конфигурация CEM" />
+                            </StackPanel>
+                        </Button>
+                        <Button Tag="EcuWorkspace" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Блоки ECU">
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
+                                <TextBlock Text="Блоки ECU" />
+                            </StackPanel>
+                        </Button>
+                        <Button Tag="DiagnosticsWorkspace" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Диагностика">
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
+                                <TextBlock Text="Диагностика" />
+                            </StackPanel>
+                        </Button>
+                        <Button Tag="CanMonitor" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="CAN монитор">
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
+                                <TextBlock Text="CAN монитор" />
+                            </StackPanel>
+                        </Button>
+                        <Button Tag="EcuProfiles" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Профили ECU">
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
+                                <TextBlock Text="Профили ECU" />
+                            </StackPanel>
+                        </Button>
+                        <Button Tag="J2534Connection" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Подключение">
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
+                                <TextBlock Text="Подключение" />
+                            </StackPanel>
+                        </Button>
+                    </StackPanel>
                 </ScrollViewer>
-            </StackPanel>
+                <StackPanel Grid.Row="1" Padding="22,18" Spacing="6">
+                    <TextBlock Text="WINUI 3 · WINDOWS x86" FontSize="10" Foreground="#80A5C3" />
+                    <TextBlock Text="Обновления через Launcher" FontSize="11" Foreground="#80A5C3" />
+                </StackPanel>
+            </Grid>
         </Border>
+        <Grid Grid.Column="1">
+            <local:AuroraHome x:Name="AuroraLanding" />
+            <Grid x:Name="AuroraWorkspaceHost" Visibility="Collapsed">
+                <Grid.RowDefinitions>
+                    <RowDefinition Height="Auto" />
+                    <RowDefinition Height="*" />
+                    <RowDefinition Height="Auto" />
+                </Grid.RowDefinitions>
+                <Grid Margin="28,24,28,20" ColumnSpacing="20">
+                    <Grid.ColumnDefinitions>
+                        <ColumnDefinition Width="*" />
+                        <ColumnDefinition Width="Auto" />
+                    </Grid.ColumnDefinitions>
+                    <StackPanel Spacing="7">
+                        <TextBlock Text="DVINHOLM / РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" CharacterSpacing="120" Foreground="#65BFF2" />
+                        <TextBlock x:Name="WorkspaceTitle" FontSize="32" FontWeight="SemiBold" />
+                        <TextBlock x:Name="WorkspaceDescription" Foreground="#9EB8CC" MaxWidth="760" HorizontalAlignment="Left" />
+                    </StackPanel>
+                    <StackPanel Grid.Column="1" Spacing="10">
+                        <Button Tag="J2534Connection" Click="WorkspaceNavigate_Click">
+                            <StackPanel Orientation="Horizontal" Spacing="8">
+                                <TextBlock Text="●" Foreground="#66CAED" />
+                                <TextBlock x:Name="ShellConnectionText" Text="Не подключено" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="CancelUdsButton" Visibility="Collapsed" Content="Отменить операцию" IsEnabled="False" Click="CancelUds_Click" VerticalAlignment="Bottom" />
+                    </StackPanel>
+                </Grid>
+                <ScrollViewer x:Name="WorkspaceScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel Padding="28,0,28,24" MaxWidth="1200" HorizontalAlignment="Stretch">
+                        <StackPanel x:Name="CemPinPage" Visibility="Collapsed" Spacing="4">
+                            <Border Style="{StaticResource AuroraCard}" x:Name="CemPinIdentityCard" Visibility="Collapsed">
+                                <StackPanel Spacing="18">
+                                    <TextBlock Text="01  ·  Идентификация CEM" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock Text="Прочитайте номер блока перед поиском PIN. Для экспериментального маршрута нужен канал 500 кбит/с, 29 бит." Foreground="#9EB8CC" />
+                                    <Button x:Name="CemPartNumberReadButton" Content="Read CEM P/N (experimental HS-CAN)" HorizontalAlignment="Left" ToolTipService.ToolTip="Connect a 500 kbit/s, 29-bit channel; stop the monitor and remove user hardware filters first. Source-defined experimental read, not verified CEM or PIN support." Visibility="Collapsed" IsEnabled="False" Click="ReadCemPartNumber_Click" Background="#0865C7" BorderBrush="#348DEA" />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource AuroraCard}" x:Name="CemPinSearchCard" Visibility="Collapsed">
+                                <StackPanel Spacing="18">
+                                    <TextBlock Text="02  ·  Поиск и сохранённые PIN" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock Text="Задайте диапазон попыток. Найденные PIN сохраняются с защитой текущего пользователя Windows." Foreground="#9EB8CC" />
+                                    <StackPanel x:Name="CemPinLivePanel" Spacing="6" Visibility="Collapsed" RequestedTheme="Dark">
+                                        <Grid ColumnSpacing="12" RowSpacing="16">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <TextBox x:Name="CemPinRangeStart" Header="Search starting position" Text="0" MaxLength="12" TextChanged="CemPinRangeChanged" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Stretch" />
+                                            <TextBox x:Name="CemPinRangeCount" Header="Attempt limit (1–10000)" Text="1000" MaxLength="5" TextChanged="CemPinRangeChanged" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" />
+                                            <Button x:Name="CemPinReadButton" Content="Read CEM PIN (experimental)" IsEnabled="False" Click="ReadCemPin_Click" VerticalAlignment="Bottom" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch" Background="#0865C7" BorderBrush="#348DEA" />
+                                            <Button x:Name="CemPinRevealButton" Content="Reveal for 15 seconds" IsEnabled="False" Click="RevealCemPin_Click" VerticalAlignment="Bottom" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" />
+                                        </Grid>
+                                        <Grid ColumnSpacing="12">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button x:Name="CemPinSavedButton" Content="Saved PINs" Visibility="Collapsed" HorizontalAlignment="Left" Click="SavedCemPins_Click" />
+                                            <TextBlock x:Name="CemPinResultText" Grid.Column="1" Text="No PIN result." FontFamily="Consolas" TextWrapping="Wrap" IsTextSelectionEnabled="False" VerticalAlignment="Center" />
+                                        </Grid>
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource AuroraCard}">
+                                <StackPanel Spacing="18">
+                                    <TextBlock Text="Совместимость и доступ" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock Text="Сведения о процедуре и ограничениях текущей реализации." Foreground="#9EB8CC" />
+                                    <Grid>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Button x:Name="P2PinReviewButton" Grid.Row="4" Content="P2 CEM PIN readiness (offline review)" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Cancellable offline evidence checklist only. No PIN extraction, credential entry or vehicle operation." Click="P2PinReview_Click" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel x:Name="CemConfigPage" Visibility="Collapsed" Spacing="4">
+                            <Border Style="{StaticResource AuroraCard}">
+                                <StackPanel Spacing="18">
+                                    <TextBlock Text="Конфигурация CEM" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock Text="Каталог вариантов Volvo P2. Доступен просмотр сведений и требований к совместимости." Foreground="#9EB8CC" />
+                                    <Grid RowSpacing="16">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBlock Text="Варианты и функции" FontSize="24" FontWeight="SemiBold" />
+                                        <TextBlock Grid.Row="1" Text="Освещение · комфорт · оборудование автомобиля" Foreground="#6DCBF7" />
+                                        <TextBlock Grid.Row="2" Text="Каталог работает офлайн. Изменение конфигурации автомобиля в этой версии недоступно." Foreground="#9EB8CC" />
+                                        <Button x:Name="P2ConfigCatalogButton" Grid.Row="3" Content="P2 configuration candidates (offline)" HorizontalAlignment="Stretch" ToolTipService.ToolTip="View vendor-advertised Volvo XC90 P2 option names offline; no vehicle queries, PIN, editing or writes." Click="P2ConfigCatalog_Click" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel x:Name="EcuPage" Visibility="Collapsed" Spacing="4">
+                            <Border Style="{StaticResource AuroraCard}">
+                                <StackPanel Spacing="18">
+                                    <TextBlock Text="Обнаружение блоков" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock Text="Пассивное наблюдение ответов. Выбор записи не подтверждает идентичность блока и не отправляет запрос." Foreground="#9EB8CC" />
+                                    <Grid ColumnSpacing="16" RowSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="EcuSelector" PlaceholderText="Observed response" IsEnabled="False" SelectionChanged="EcuSelector_SelectionChanged" ToolTipService.ToolTip="Selection does not send a request or verify the inferred request address." Grid.Column="0" />
+                                        <Button x:Name="DiscoverButton" Content="Discover ECUs" Click="Discover_Click" IsEnabled="False" Grid.Column="1" />
+                                        <Button x:Name="CancelDiscoveryButton" Content="Cancel scan" Click="CancelDiscovery_Click" IsEnabled="False" Grid.Column="2" />
+                                    </Grid>
+                                    <TextBlock x:Name="DiscoveryStatus" VerticalAlignment="Center" Text="Not scanned" />
+                                    <ListView x:Name="EcusView" Height="260" SelectionMode="Single" IsEnabled="False" SelectionChanged="Ecu_SelectionChanged" ToolTipService.ToolTip="Passive response observations only. No verified ECU identity or request ID.">
+                                        <ListView.Header>
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="100" />
+                                                    <ColumnDefinition Width="100" />
+                                                    <ColumnDefinition Width="90" />
+                                                    <ColumnDefinition Width="90" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Observed RX" />
+                                                <TextBlock Grid.Column="1" Text="Guessed TX" />
+                                                <TextBlock Grid.Column="2" Text="Type" />
+                                                <TextBlock Grid.Column="3" Text="Frames" />
+                                                <TextBlock Grid.Column="4" Text="Max bytes / ID basis" />
+                                            </Grid>
+                                        </ListView.Header>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="100" />
+                                                        <ColumnDefinition Width="100" />
+                                                        <ColumnDefinition Width="90" />
+                                                        <ColumnDefinition Width="90" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Response}" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Request}" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding Type}" />
+                                                    <TextBlock Grid.Column="3" Text="{Binding Frames}" />
+                                                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock Text="{Binding MaxPayload}" />
+                                                        <TextBlock Text="{Binding RequestBasis}" />
+                                                    </StackPanel>
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                    <ScrollViewer MaxHeight="86" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                        <TextBlock x:Name="EcuSelectionInfo" Text="Passive scan only. Select a completed observation; verify and enter the request ID manually." TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </Border>
+                            <Button Content="Перейти к профилям ECU →" Tag="EcuProfiles" Click="WorkspaceNavigate_Click" />
+                        </StackPanel>
+                        <StackPanel x:Name="DiagnosticsPage" Visibility="Collapsed" Spacing="4">
+                            <Border Style="{StaticResource AuroraCard}">
+                                <StackPanel Spacing="18">
+                                    <TextBlock Text="Адресация выбранного ECU" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock Text="Введите проверенные CAN-адреса. Пассивное обнаружение не определяет адрес запроса." Foreground="#9EB8CC" />
+                                    <Grid ColumnSpacing="16" RowSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="140" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="UdsRequestId" Header="UDS request ID" Text="" PlaceholderText="enter verified TX ID" TextChanged="SnapshotCanIdTextChanged" ToolTipService.ToolTip="No request ID is selected by default. Enter a source-verified ID manually; passive ECU scanning does not prove a TX address." Grid.Column="0" />
+                                        <TextBox x:Name="UdsResponseId" Header="UDS response ID" Text="" PlaceholderText="enter RX ID" TextChanged="SnapshotCanIdTextChanged" ToolTipService.ToolTip="Enter an independently verified response ID or explicitly select an observed passive response; observation alone does not identify an ECU." Grid.Column="1" />
+                                        <ComboBox x:Name="CanIdFormat" Header="CAN ID format" SelectedIndex="0" SelectionChanged="SnapshotCanIdFormatChanged" Grid.Column="2">
+                                            <ComboBoxItem Content="11-bit" Tag="standard" />
+                                            <ComboBoxItem Content="29-bit" Tag="extended" />
+                                        </ComboBox>
+                                    </Grid>
+                                    <TextBlock x:Name="UdsReadinessHint" Text="Read-only UDS disabled until connected with manually checked request and response CAN IDs." TextWrapping="Wrap" IsTextSelectionEnabled="True" ToolTipService.ToolTip="Valid CAN ID syntax does not verify ECU identity, model, protocol or service access." />
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource AuroraCard}">
+                                <StackPanel Spacing="18">
+                                    <TextBlock Text="Чтение данных" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock Text="VIN, диагностические параметры и коды неисправностей выбранного блока." Foreground="#9EB8CC" />
+                                    <Grid ColumnSpacing="16" RowSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <TextBox x:Name="UdsDid" Header="DID (hex)" Text="F190" PlaceholderText="e.g. F190" TextChanged="UdsDid_TextChanged" Grid.Column="0" Grid.Row="0" HorizontalAlignment="Stretch" />
+                                        <Button Content="Read DID" Click="ReadDid_Click" VerticalAlignment="Bottom" x:Name="ReadDidButton" IsEnabled="False" Grid.Column="1" Background="#0865C7" BorderBrush="#348DEA" Grid.Row="0" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="ReadVinButton" Content="Read VIN" IsEnabled="False" Click="ReadVin_Click" VerticalAlignment="Bottom" Grid.Column="0" Grid.Row="1" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="ReadDtcButton" Content="Read DTC" IsEnabled="False" Click="ReadDtc_Click" VerticalAlignment="Bottom" ToolTipService.ToolTip="Read DTCs from only the selected ECU, filtered by the status choice below. No DTC clear or full-vehicle scan." Grid.Column="1" Grid.Row="1" HorizontalAlignment="Stretch" />
+                                    </Grid>
+                                    <ComboBox x:Name="DtcStatusMaskSelector" Header="Read DTC status filter" SelectedIndex="0" ToolTipService.ToolTip="Choose which status bit the ECU should report via one read-only UDS 0x19/0x02 request. This does not prove ECU identity or clear faults.">
+                                        <ComboBoxItem Content="All status bits" Tag="FF" />
+                                        <ComboBoxItem Content="Test failed" Tag="01" />
+                                        <ComboBoxItem Content="Pending DTC" Tag="04" />
+                                        <ComboBoxItem Content="Confirmed DTC" Tag="08" />
+                                        <ComboBoxItem Content="Warning indicator requested" Tag="80" />
+                                    </ComboBox>
+                                </StackPanel>
+                            </Border>
+                            <StackPanel x:Name="DevelopmentDiagnosticTools" Spacing="8" Visibility="Collapsed" />
+                        </StackPanel>
+                        <StackPanel x:Name="CanMonitorPage" Visibility="Collapsed" Spacing="4">
+                            <Border Style="{StaticResource AuroraCard}">
+                                <StackPanel Spacing="18">
+                                    <TextBlock Text="Поток CAN" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock Text="Запускайте и останавливайте наблюдение независимо от переходов между разделами." Foreground="#9EB8CC" />
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <Button x:Name="StartButton" Content="Start monitor" Click="Start_Click" VerticalAlignment="Bottom" IsEnabled="False" Background="#0865C7" BorderBrush="#348DEA" />
+                                    </StackPanel>
+                                    <Grid x:Name="DeveloperMonitorHost" ColumnSpacing="10" Visibility="Collapsed">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                    </Grid>
+                                    <Grid ColumnSpacing="16" RowSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="IdFilter" Header="ID filter (hex)" PlaceholderText="7E0,7E8" TextChanged="Filter_Changed" Grid.Column="0" />
+                                        <Button Grid.Column="1" Content="Clear" Click="Clear_Click" VerticalAlignment="Bottom" />
+                                        <Button x:Name="HardwareFilterButton" Content="Apply HW filter" Click="HardwareFilter_Click" VerticalAlignment="Bottom" IsEnabled="False" Grid.Column="2" />
+                                        <Button Grid.Column="3" Content="CSV log" Click="Csv_Click" VerticalAlignment="Bottom" />
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" Spacing="16">
+                                        <Button Content="RX summary" Click="CanRxSummary_Click" ToolTipService.ToolTip="Review buffered CAN RX ID/DLC counts without frame data. Copy only by explicit approval. No diagnostic requests." />
+                                        <Button Content="Inspect trace" Click="InspectCanCsv_Click" ToolTipService.ToolTip="Offline review of a selected Dvinholm CAN CSV or metadata-only J2534 JSONL. Never connects or changes the monitor. Sensitive identifiers and payload stay hidden." />
+                                    </StackPanel>
+                                    <StackPanel Orientation="Horizontal" Spacing="24">
+                                        <TextBlock x:Name="FrameRateText" VerticalAlignment="Center" Text="0 frames/s" />
+                                        <TextBlock x:Name="FrameCountText" VerticalAlignment="Center" Text="0 shown / 0 rx" HorizontalAlignment="Right" />
+                                        <TextBlock x:Name="DroppedFrameText" VerticalAlignment="Center" Text="0 dropped" HorizontalAlignment="Right" />
+                                    </StackPanel>
+                                    <ListView x:Name="FramesView" SelectionMode="None" Height="380">
+                                        <ListView.Header>
+                                            <Grid ColumnSpacing="12">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="130" />
+                                                    <ColumnDefinition Width="90" />
+                                                    <ColumnDefinition Width="80" />
+                                                    <ColumnDefinition Width="55" />
+                                                    <ColumnDefinition Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <TextBlock Text="Timestamp (ms)" />
+                                                <TextBlock Grid.Column="1" Text="ID" />
+                                                <TextBlock Grid.Column="2" Text="Type" />
+                                                <TextBlock Grid.Column="3" Text="DLC" />
+                                                <TextBlock Grid.Column="4" Text="Data" />
+                                            </Grid>
+                                        </ListView.Header>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate>
+                                                <Grid ColumnSpacing="12">
+                                                    <Grid.ColumnDefinitions>
+                                                        <ColumnDefinition Width="130" />
+                                                        <ColumnDefinition Width="90" />
+                                                        <ColumnDefinition Width="80" />
+                                                        <ColumnDefinition Width="55" />
+                                                        <ColumnDefinition Width="*" />
+                                                    </Grid.ColumnDefinitions>
+                                                    <TextBlock Text="{Binding Timestamp}" />
+                                                    <TextBlock Grid.Column="1" Text="{Binding Id}" FontFamily="Consolas" />
+                                                    <TextBlock Grid.Column="2" Text="{Binding Type}" />
+                                                    <TextBlock Grid.Column="3" Text="{Binding Dlc}" />
+                                                    <TextBlock Grid.Column="4" Text="{Binding Data}" FontFamily="Consolas" />
+                                                </Grid>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel x:Name="ProfilesPage" Visibility="Collapsed" Spacing="4">
+                            <StackPanel x:Name="DevelopmentProfileTools" Spacing="8" Visibility="Collapsed" />
+                            <Border Style="{StaticResource AuroraCard}">
+                                <Grid RowSpacing="6">
+                                    <Grid.RowDefinitions>
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                        <RowDefinition Height="Auto" />
+                                    </Grid.RowDefinitions>
+                                    <Grid Grid.Row="0" ColumnSpacing="8">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition Width="Auto" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="ProfileSearch" Grid.Column="0" Header="Find ECU profile" PlaceholderText="Name, ID, CAN ID, DID or source" TextChanged="ProfileSearch_TextChanged" />
+                                        <ComboBox x:Name="ProfileSelector" Grid.Column="1" Header="ECU profiles" PlaceholderText="Select profile" SelectionChanged="ProfileSelector_SelectionChanged" />
+                                        <CheckBox x:Name="MarkedVerifiedOnly" Grid.Column="0" Content="Marked verified only" Checked="MarkedVerifiedOnly_Changed" Unchecked="MarkedVerifiedOnly_Changed" VerticalAlignment="Bottom" Grid.Row="1" Grid.ColumnSpan="3" />
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                    </Grid>
+                                    <Grid x:Name="ProfileActionsPanel" Grid.Row="1" RowSpacing="6" ColumnSpacing="8">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button x:Name="CreateProfileButton" Grid.Row="0" Grid.Column="0" Content="New profile" HorizontalAlignment="Stretch" Click="CreateProfile_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="EditProfileButton" Grid.Row="0" Grid.Column="1" Content="Edit selected" HorizontalAlignment="Stretch" Click="EditProfile_Click" IsEnabled="False" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button Grid.Row="0" Grid.Column="2" Content="Import JSON" HorizontalAlignment="Stretch" Click="ImportProfiles_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button Grid.Row="0" Grid.Column="3" Content="Export JSON" HorizontalAlignment="Stretch" Click="ExportProfiles_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="CaptureSnapshotButton" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Content="Read + save snapshot" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Read selected profile DIDs and explicitly save a diagnostic JSON file. Not a restorable ECU backup." Click="CaptureSnapshot_Click" IsEnabled="False" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="InspectSnapshotButton" Grid.Row="1" Grid.Column="2" Content="Inspect snapshot" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Inspect local DID JSON without connecting, transmitting CAN, or restoring ECU data." Click="InspectSnapshot_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="CompareSnapshotsButton" Grid.Row="1" Grid.Column="3" Content="Compare snapshots" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Compare two local diagnostic JSON snapshots offline. Show only changed DID numbers, not their data." Click="CompareSnapshots_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                    </Grid>
+                                    <ScrollViewer Grid.Row="2" MaxHeight="76" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                        <TextBlock x:Name="EcuInfoText" Text="No ECU profile selected" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                    </ScrollViewer>
+                                </Grid>
+                            </Border>
+                        </StackPanel>
+                        <StackPanel x:Name="ConnectionPage" Visibility="Collapsed" Spacing="4">
+                            <Border Style="{StaticResource AuroraCard}">
+                                <StackPanel Spacing="18">
+                                    <TextBlock Text="Интерфейс автомобиля" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock Text="Выберите установленный J2534-адаптер и параметры канала." Foreground="#9EB8CC" />
+                                    <TextBox x:Name="DllPath" PlaceholderText="Path to 32-bit J2534 DLL" Header="J2534 DLL" />
+                                    <Grid ColumnSpacing="16" RowSpacing="16">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <ComboBox x:Name="J2534Devices" Header="Registered adapters" DisplayMemberPath="Label" PlaceholderText="Select adapter" SelectionChanged="J2534Device_SelectionChanged" Grid.Column="0" />
+                                        <StackPanel Grid.Column="1" Spacing="12">
+                                            <ComboBox x:Name="BaudRate" Header="CAN speed" SelectedIndex="0" ToolTipService.ToolTip="Volvo XC90 P2 HS-CAN guidance: through model year 2004 250 kbit/s; from model year 2005 500 kbit/s. Other networks differ. Verify actual model year, bus and adapter before connecting; Dvinholm does not adjust the speed automatically.">
+                                                <ComboBoxItem Content="500 kbit/s" Tag="500000" />
+                                                <ComboBoxItem Content="250 kbit/s" Tag="250000" />
+                                                <ComboBoxItem Content="125 kbit/s" Tag="125000" />
+                                            </ComboBox>
+                                            <ComboBox x:Name="CanConnectionMode" Header="CAN channel ID format" SelectedIndex="0" Visibility="Collapsed" ToolTipService.ToolTip="Select before connecting. Reconnect to change the physical channel format.">
+                                                <ComboBoxItem Content="11-bit" />
+                                                <ComboBoxItem Content="29-bit" />
+                                            </ComboBox>
+                                        </StackPanel>
+                                    </Grid>
+                                    <StackPanel Orientation="Horizontal" Spacing="12">
+                                        <Button Content="Refresh" Click="RefreshJ2534Devices_Click" VerticalAlignment="Bottom" />
+                                        <Button x:Name="ConnectButton" Content="Connect" Click="Connect_Click" VerticalAlignment="Bottom" Background="#0865C7" BorderBrush="#348DEA" />
+                                    </StackPanel>
+                                </StackPanel>
+                            </Border>
+                            <Border Style="{StaticResource AuroraCard}">
+                                <StackPanel Spacing="18">
+                                    <TextBlock Text="Сведения об адаптере" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock Text="Информация текущего подключения." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="AdapterMetadataText" Text="J2534 adapter details: disconnected." FontSize="12" Foreground="#C1D7E8" TextWrapping="Wrap" IsTextSelectionEnabled="True" ToolTipService.ToolTip="Unverified values returned by the driver. Local diagnostic details, not an ECU identity or authorization." />
+                                </StackPanel>
+                            </Border>
+                        </StackPanel>
+                        <Border x:Name="DiagnosticResultsCard" Visibility="Collapsed" Style="{StaticResource AuroraCard}">
+                            <StackPanel Spacing="18">
+                                <TextBlock Text="Результат операции" FontSize="20" FontWeight="SemiBold" />
+                                <TextBlock Text="Данные отображаются локально. Проверьте содержимое перед передачей." Foreground="#9EB8CC" />
+                                <StackPanel x:Name="StatusPanel" Spacing="6">
+                                    <Expander x:Name="DiagnosticResultExpander" Header="Diagnostic read result (VIN / DID / DTC, review before sharing)" IsExpanded="False">
+                                        <ScrollViewer MaxHeight="170" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                            <TextBlock x:Name="DiagnosticResultText" Text="No completed UDS read in this session." TextWrapping="Wrap" IsTextSelectionEnabled="True" FontFamily="Consolas" />
+                                        </ScrollViewer>
+                                    </Expander>
+                                    <Button x:Name="ClearDiagnosticResultButton" Content="Clear diagnostic result" HorizontalAlignment="Right" Click="ClearDiagnosticResult_Click" ToolTipService.ToolTip="Clear the last VIN/DID/DTC payload and ignore any pending result. Does not contact the ECU." />
+                                    <ScrollViewer MaxHeight="100" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                                        <TextBlock x:Name="StatusText" Text="Disconnected" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                    </ScrollViewer>
+                                </StackPanel>
+                            </StackPanel>
+                        </Border>
+                    </StackPanel>
+                </ScrollViewer>
+                <Border Grid.Row="2" Background="#0A2032" BorderBrush="#1E3B53" BorderThickness="0,1,0,0" Padding="28,12">
+                    <TextBlock x:Name="ShellStatusText" Text="{Binding Text, ElementName=StatusText}" Foreground="#9EB8CC" FontSize="12" MaxLines="2" />
+                </Border>
             </Grid>
         </Grid>
     </Grid>

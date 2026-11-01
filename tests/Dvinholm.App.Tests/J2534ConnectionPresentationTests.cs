@@ -117,7 +117,7 @@ public sealed class J2534ConnectionPresentationTests
         Assert.DoesNotContain("capabilityText", connect);
         Assert.DoesNotContain("SetStatus(\"Connected · J2534 · CAN · \"", connect);
         Assert.DoesNotContain("_session.AdapterVersionStatus", connect);
-        Assert.Contains("ConnectButton.Content = \"Disconnect\";", connect);
+        Assert.Contains("ConnectButton.Content = AuroraUiText(\"Отключить\", \"Disconnect\");", connect);
     }
 
     private static string MainXaml() => ReadSource("MainWindow.xaml");
