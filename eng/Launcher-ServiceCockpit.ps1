@@ -173,20 +173,48 @@ function Update-ServiceDriverInventory {
  }
 }
 
-# Work-area sizing: at common desktop scales the whole form is <=944x552.
-# On smaller/high-DPI screens scroll instead of clipping the bottom card.
-function Set-AuroraCompactLayout {
+# Pure size plan for the actual Northern Aurora / Service Cockpit window.
+# Inputs are physical Windows working-area and nonclient-frame pixel sizes.
+# Tests may supply equivalent *effective* work areas for DPI scenarios.
+# Never rerun WinForms Scale on a live window, which would shrink it twice.
+function Get-NorthernCompactGeometry(
+ [int]$WorkWidth,[int]$WorkHeight,[int]$BorderWidth,[int]$BorderHeight){
+ if($WorkWidth -lt 1 -or $WorkHeight -lt 1 -or
+    $BorderWidth -lt 0 -or $BorderHeight -lt 0){
+  throw 'Northern work-area dimensions must be positive and borders nonnegative.'
+ }
  $referenceWidth=1180
  $referenceHeight=690
+ $maxWidth=[int][Math]::Max(1,$WorkWidth-32-$BorderWidth)
+ $maxHeight=[int][Math]::Max(1,$WorkHeight-32-$BorderHeight)
+ $fit=[Math]::Min([double]$maxWidth/$referenceWidth,
+                  [double]$maxHeight/$referenceHeight)
+ $factor=[Math]::Max(0.65,[Math]::Min(0.80,$fit))
+ $fullW=[int][Math]::Round($referenceWidth*$factor)
+ $fullH=[int][Math]::Round($referenceHeight*$factor)
+ $needsScroll=($fullW -gt $maxWidth -or $fullH -gt $maxHeight)
+ return [pscustomobject]@{
+  Scale=$factor
+  FullWidth=$fullW
+  FullHeight=$fullH
+  ViewWidth=[int][Math]::Min($fullW,$maxWidth)
+  ViewHeight=[int][Math]::Min($fullH,$maxHeight)
+  MaxWidth=$maxWidth
+  MaxHeight=$maxHeight
+  RequiresScroll=[bool]$needsScroll
+ }
+}
+
+# Work-area sizing: at common desktop scales the whole form is <=944x552.
+# On small or high-DPI effective work areas scroll rather than clip actions.
+function Set-AuroraCompactLayout {
+ $referenceWidth=1180
  $heroHeight=184
  $working=[Windows.Forms.Screen]::FromControl($form).WorkingArea
  $borderW=[int][Math]::Max(0,$form.Width-$form.ClientSize.Width)
  $borderH=[int][Math]::Max(0,$form.Height-$form.ClientSize.Height)
- $maxWidth=[Math]::Max(1,$working.Width-32-$borderW)
- $maxHeight=[Math]::Max(1,$working.Height-32-$borderH)
- $fit=[Math]::Min([double]$maxWidth/$referenceWidth,
-                  [double]$maxHeight/$referenceHeight)
- $factor=[Math]::Max(0.65,[Math]::Min(0.80,$fit))
+ $plan=Get-NorthernCompactGeometry $working.Width $working.Height $borderW $borderH
+ $factor=$plan.Scale
  $script:auroraScale=$factor
  $form.SuspendLayout()
  try {
@@ -195,19 +223,19 @@ function Set-AuroraCompactLayout {
   $form.AutoScaleMode=[Windows.Forms.AutoScaleMode]::None
   $hero.SetBounds(0,0,$referenceWidth,$heroHeight)
   Resize-AuroraControlTree $form $factor
-  $fullW=[int][Math]::Round($referenceWidth*$factor)
-  $fullH=[int][Math]::Round($referenceHeight*$factor)
-  $needsScroll=($fullW -gt $maxWidth -or $fullH -gt $maxHeight)
+  $fullW=$plan.FullWidth
+  $fullH=$plan.FullHeight
+  $needsScroll=$plan.RequiresScroll
   if($needsScroll){
    $form.AutoScrollMinSize=[Drawing.Size]::new($fullW,$fullH)
   }else{$form.AutoScrollMinSize=[Drawing.Size]::Empty}
   $form.AutoScroll=$needsScroll
-  $form.ClientSize=[Drawing.Size]::new(
-   [int][Math]::Min($fullW,$maxWidth),[int][Math]::Min($fullH,$maxHeight))
+  $form.ClientSize=[Drawing.Size]::new($plan.ViewWidth,$plan.ViewHeight)
   $form.MinimumSize=$form.Size
   $form.MaximumSize=$form.Size
  }finally{$form.ResumeLayout($true)}
  $hero.Invalidate()
+ $script:northernHome.Invalidate()
 }
 
 
