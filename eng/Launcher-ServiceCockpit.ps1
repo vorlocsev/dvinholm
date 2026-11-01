@@ -184,7 +184,7 @@ function Get-NorthernCompactGeometry(
   throw 'Northern work-area dimensions must be positive and borders nonnegative.'
  }
  $referenceWidth=1180
- $referenceHeight=690
+ $referenceHeight=840
  $maxWidth=[int][Math]::Max(1,$WorkWidth-32-$BorderWidth)
  $maxHeight=[int][Math]::Max(1,$WorkHeight-32-$BorderHeight)
  $fit=[Math]::Min([double]$maxWidth/$referenceWidth,
@@ -205,7 +205,7 @@ function Get-NorthernCompactGeometry(
  }
 }
 
-# Work-area sizing: at common desktop scales the whole form is <=944x552.
+# Reference-look home uses a 1180x840 canvas, with a 944x672 normal maximum.
 # On small or high-DPI effective work areas scroll rather than clip actions.
 function Set-AuroraCompactLayout {
  $referenceWidth=1180
@@ -244,7 +244,7 @@ function Set-AuroraCompactLayout {
 # All updates, drivers, safe launch and recovery remain handled above.
 # Service Cockpit becomes the detailed Updates view behind this home.
 $script:northernHome=New-Object Windows.Forms.Panel
-$script:northernHome.SetBounds(0,0,1180,690)
+$script:northernHome.SetBounds(0,0,1180,840)
 $script:northernHome.BackColor=[Drawing.Color]::FromArgb(8,22,39)
 $form.Controls.Add($script:northernHome)
 $script:northernHome.BringToFront()
@@ -291,94 +291,133 @@ $script:northernHome.Add_Paint({
  $factor=[single]$script:auroraScale
  if($factor -le 0){$factor=1}
  $g.ScaleTransform($factor,$factor)
- $background=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(8,22,39))
- try{$g.FillRectangle($background,0,0,1180,690)}finally{$background.Dispose()}
+ # Full 1180x840 scene: aurora sky, panoramic motor scene, three compact
+ # prerequisite cards, broad central Start, 3+2 actions and river/seacoast.
+ $base=[Drawing.Drawing2D.LinearGradientBrush]::new(
+  [Drawing.Rectangle]::new(0,0,1180,840),
+  [Drawing.Color]::FromArgb(9,23,47),
+  [Drawing.Color]::FromArgb(7,30,52),90.0)
+ try{$g.FillRectangle($base,0,0,1180,840)}finally{$base.Dispose()}
  if($script:heroBackdrop){
+  # Old JPEG contains its own wordmark on the left; display only the
+  # right-hand automotive panorama, with dark glazing for new text.
   $picture=$script:heroBackdrop
-  # Right-side automotive panorama only. The original small JPEG has
-  # a baked-in old DVINHOLM wordmark on its left half. Never composite
-  # that text under the Northern icon and new title.
   $source=[Drawing.Rectangle]::new(
    [int]($picture.Width*0.46),0,
    [int]($picture.Width*0.54),[int]$picture.Height)
-  $g.DrawImage($picture,[Drawing.Rectangle]::new(0,0,1180,330),
+  $g.DrawImage($picture,[Drawing.Rectangle]::new(0,0,1180,338),
    $source,[Drawing.GraphicsUnit]::Pixel)
  }
- # Darkened typography area and compact Aurora edge treatment.
- $veil=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(162,5,20,37))
- $brandVeil=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(65,5,20,37))
- # The interim JPEG still contains tiny baked-in captions in its right half.
- # Fade that edge so it cannot compete with the genuine WinForms captions.
- $legacyTextFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
-  [Drawing.Rectangle]::new(650,0,530,330),
-  [Drawing.Color]::FromArgb(60,5,20,37),
-  [Drawing.Color]::FromArgb(255,5,20,37),0.0)
- $lower=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(242,8,23,40))
- $line=[Drawing.Pen]::new([Drawing.Color]::FromArgb(75,43,198,203),2)
+ $night=[Drawing.Drawing2D.LinearGradientBrush]::new(
+  [Drawing.Rectangle]::new(0,0,1180,348),
+  [Drawing.Color]::FromArgb(245,5,21,44),
+  [Drawing.Color]::FromArgb(105,7,28,52),0.0)
+ $veil=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(62,6,24,47))
+ $metal=[Drawing.Pen]::new([Drawing.Color]::FromArgb(218,200,227,240),7)
+ $gear=[Drawing.Pen]::new([Drawing.Color]::FromArgb(227,122,169,191),12)
+ $bird=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(245,237,249,255))
+ $wave=[Drawing.Pen]::new([Drawing.Color]::FromArgb(204,63,174,191),5)
+ $hairline=[Drawing.Pen]::new([Drawing.Color]::FromArgb(133,74,203,202),2)
  try{
-  $g.FillRectangle($veil,0,0,1180,329)
-  $g.FillRectangle($brandVeil,0,0,780,329)
-  $g.FillRectangle($legacyTextFade,650,0,530,329)
-  $g.FillRectangle($lower,0,330,1180,360)
-  $g.DrawLine($line,42,324,1137,324)
-  $g.DrawLine($line,42,655,1137,655)
-  $cardFill=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(223,15,45,69))
+  $g.FillRectangle($night,0,0,620,348)
+  $g.FillRectangle($veil,620,0,560,348)
+  # Northern aurora ribbons are local and offline, not a downloaded visual.
+  foreach($band in @(
+   @{Y=25;C=[Drawing.Color]::FromArgb(64,19,215,145)},
+   @{Y=45;C=[Drawing.Color]::FromArgb(60,116,94,236)},
+   @{Y=65;C=[Drawing.Color]::FromArgb(54,27,192,220)})){
+   $ribbon=[Drawing.Pen]::new($band.C,32)
+   try{
+    $g.DrawBezier($ribbon,310,[single]$band.Y,580,[single]($band.Y-78),
+     760,[single]($band.Y+90),1100,[single]($band.Y-64))
+   }finally{$ribbon.Dispose()}
+  }
+  $g.DrawEllipse($metal,58,46,226,226)
+  for($i=0;$i -lt 12;$i++){
+   $a=[Math]::PI*$i/6.0
+   $g.DrawLine($gear,
+    [single](171+117*[Math]::Cos($a)),
+    [single](159+117*[Math]::Sin($a)),
+    [single](171+130*[Math]::Cos($a)),
+    [single](159+130*[Math]::Sin($a)))
+  }
+  $rivet=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(230,232,241,247))
   try{
-   foreach($x in @(55,412,773)){
-    $g.FillRectangle($cardFill,$x,337,342,64)
-    $g.DrawRectangle($line,$x,337,342,64)
+   for($i=0;$i -lt 12;$i++){
+    $a=[Math]::PI*$i/6.0
+    $g.FillEllipse($rivet,
+     [single](167+113*[Math]::Cos($a)),
+     [single](155+113*[Math]::Sin($a)),8,8)
    }
-  }finally{$cardFill.Dispose()}
- }finally{$veil.Dispose();$brandVeil.Dispose();$legacyTextFade.Dispose();$lower.Dispose();$line.Dispose()}
- # Echo the approved Launcher.exe Techno-North #9, not the older sketch:
- # heavy bolted gear-ring, steel-blue White Sea waves, true gull and through-arrow.
- $silver=[Drawing.Pen]::new([Drawing.Color]::FromArgb(246,214,231,242),8)
- $steelShadow=[Drawing.Pen]::new([Drawing.Color]::FromArgb(230,64,103,128),17)
- $lug=[Drawing.Pen]::new([Drawing.Color]::FromArgb(248,170,199,216),10)
- $rivet=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(255,225,236,244))
- $water=[Drawing.Pen]::new([Drawing.Color]::FromArgb(235,137,182,204),6)
- $bird=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(252,241,249,255))
- $feather=[Drawing.Pen]::new([Drawing.Color]::FromArgb(205,105,141,162),2)
- try{
-  for($i=0;$i -lt 12;$i++){
-   $a=([double]$i*2*[Math]::PI/12)
-   $x1=[single](170+[Math]::Cos($a)*87)
-   $y1=[single](149+[Math]::Sin($a)*87)
-   $x2=[single](170+[Math]::Cos($a)*101)
-   $y2=[single](149+[Math]::Sin($a)*101)
-   $g.DrawLine($lug,$x1,$y1,$x2,$y2)
-  }
-  $g.DrawEllipse($steelShadow,85,64,170,170)
-  $g.DrawEllipse($silver,85,64,170,170)
-  for($i=0;$i -lt 12;$i++){
-   $a=([double]$i*2*[Math]::PI/12)
-   $x=[single](167+85*[Math]::Cos($a))
-   $y=[single](146+85*[Math]::Sin($a))
-   $g.FillEllipse($rivet,$x,$y,6,6)
-  }
+  }finally{$rivet.Dispose()}
+  # Gull, steel sea waves and a real through-arrow, not an update badge.
   $g.FillPolygon($bird,[Drawing.Point[]]@(
-   [Drawing.Point]::new(78,141),[Drawing.Point]::new(111,122),
-   [Drawing.Point]::new(137,124),[Drawing.Point]::new(160,135),
-   [Drawing.Point]::new(185,119),[Drawing.Point]::new(211,116),
-   [Drawing.Point]::new(252,128),[Drawing.Point]::new(223,129),
-   [Drawing.Point]::new(199,140),[Drawing.Point]::new(180,151),
-   [Drawing.Point]::new(169,158),[Drawing.Point]::new(156,153),
-   [Drawing.Point]::new(141,161),[Drawing.Point]::new(115,157),
-   [Drawing.Point]::new(96,151),[Drawing.Point]::new(137,142),
-   [Drawing.Point]::new(112,137)))
-  $g.DrawBezier($feather,89,140,118,127,138,134,162,145)
-  $g.DrawBezier($feather,180,145,199,128,223,127,243,128)
-  $g.DrawBezier($water,85,184,120,168,146,194,175,182)
-  $g.DrawBezier($water,175,182,207,172,232,165,257,180)
-  $g.DrawBezier($water,85,202,120,189,151,209,181,202)
-  $g.DrawBezier($water,181,202,214,195,238,188,257,200)
-  # The shaft visibly crosses the rim, continuing to the pointed head.
-  $g.DrawLine($silver,213,109,290,31)
-  $g.DrawLine($silver,290,31,285,76)
-  $g.DrawLine($silver,290,31,246,34)
+   [Drawing.Point]::new(83,153),[Drawing.Point]::new(119,129),
+   [Drawing.Point]::new(148,131),[Drawing.Point]::new(169,149),
+   [Drawing.Point]::new(195,129),[Drawing.Point]::new(227,125),
+   [Drawing.Point]::new(265,141),[Drawing.Point]::new(236,141),
+   [Drawing.Point]::new(207,153),[Drawing.Point]::new(186,170),
+   [Drawing.Point]::new(171,168),[Drawing.Point]::new(154,178),
+   [Drawing.Point]::new(125,169),[Drawing.Point]::new(143,155),
+   [Drawing.Point]::new(113,147)))
+  $g.DrawBezier($wave,88,211,143,182,166,226,220,204)
+  $g.DrawBezier($wave,90,229,148,205,181,246,245,224)
+  $g.DrawLine($metal,222,106,305,25)
+  $g.DrawLine($metal,305,25,300,72)
+  $g.DrawLine($metal,305,25,259,29)
+  # Fine separator, as on the approved reference.
+  $g.DrawLine($hairline,28,345,1152,345)
+  $g.DrawLine($hairline,28,829,1152,829)
+  # Three framed status cards. Native labels carry real worker evidence.
+  $cardBack=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(222,13,43,66))
+  try{
+   foreach($left in @(35,413,791)){
+    $g.FillRectangle($cardBack,$left,361,355,77)
+    $g.DrawRectangle($hairline,$left,361,355,77)
+   }
+  }finally{$cardBack.Dispose()}
+  # A purple runtime tile, four WinApp panes, and J2534 connector.
+  $purple=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(104,53,183))
+  $blue=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(37,164,234))
+  try{
+   $g.FillRectangle($purple,51,373,53,53)
+   foreach($left in @(433,463)){
+    foreach($top in @(376,405)){$g.FillRectangle($blue,$left,$top,24,24)}
+   }
+   $g.DrawRectangle($metal,810,379,66,39)
+   for($i=0;$i -lt 4;$i++){
+    $g.FillEllipse($bird,822+$i*13,388,5,5)
+    $g.FillEllipse($bird,822+$i*13,400,5,5)
+   }
+  }finally{$purple.Dispose();$blue.Dispose()}
+  # Lower background ribbons, far riverbanks and the White Sea.
+  $ribbon=[Drawing.Pen]::new([Drawing.Color]::FromArgb(80,42,200,194),18)
+  $violet=[Drawing.Pen]::new([Drawing.Color]::FromArgb(56,121,82,220),13)
+  try{
+   $g.DrawBezier($ribbon,0,566,220,505,540,617,1180,548)
+   $g.DrawBezier($violet,0,580,300,535,750,603,1180,548)
+  }finally{$ribbon.Dispose();$violet.Dispose()}
+  $coast=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(24,90,110))
+  try{
+   $g.FillPolygon($coast,[Drawing.Point[]]@(
+    [Drawing.Point]::new(0,818),[Drawing.Point]::new(0,790),
+    [Drawing.Point]::new(90,763),[Drawing.Point]::new(170,800),
+    [Drawing.Point]::new(260,785),[Drawing.Point]::new(380,840)))
+   $g.FillPolygon($coast,[Drawing.Point[]]@(
+    [Drawing.Point]::new(910,840),[Drawing.Point]::new(1035,779),
+    [Drawing.Point]::new(1095,788),[Drawing.Point]::new(1140,758),
+    [Drawing.Point]::new(1180,782),[Drawing.Point]::new(1180,840)))
+  }finally{$coast.Dispose()}
+  $footerFont=[Drawing.Font]::new('Segoe UI',[single]12,[Drawing.FontStyle]::Regular)
+  $footerBrush=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(195,220,236))
+  try{
+   $footer='СЕВЕРНАЯ ДВИНА  ·  БЕЛОЕ МОРЕ  ·  НАСЛЕДИЕ ВИКИНГОВ'
+   $sz=$g.MeasureString($footer,$footerFont)
+   $g.DrawString($footer,$footerFont,$footerBrush,[single]((1180-$sz.Width)/2),799)
+  }finally{$footerFont.Dispose();$footerBrush.Dispose()}
  }finally{
-  $silver.Dispose();$steelShadow.Dispose();$lug.Dispose()
-  $rivet.Dispose();$water.Dispose();$bird.Dispose();$feather.Dispose()
+  $night.Dispose();$veil.Dispose();$metal.Dispose()
+  $gear.Dispose();$bird.Dispose();$wave.Dispose();$hairline.Dispose()
  }
 })
 $script:northTitle=New-NorthernLabel 'DVINHOLM' 329 66 670 76 37 $true
