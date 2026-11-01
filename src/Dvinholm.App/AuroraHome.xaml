@@ -162,11 +162,11 @@
                             <StackPanel Grid.Row="1" Padding="12,9" Spacing="5">
                                 <TextBlock Text="CEM PIN" FontSize="22" FontWeight="Bold"
                                            Foreground="White"/>
-                                <TextBlock Text="Подготовка к поиску PIN" FontSize="12"
+                                <TextBlock x:Name="CemPinSubtitle" Text="Подготовка к поиску PIN" FontSize="12"
                                            Foreground="#D5E7FA" TextWrapping="Wrap"/>
-                                <TextBlock Text="Офлайн-обзор · поиск недоступен"
+                                <TextBlock x:Name="CemPinAvailability" Text="Офлайн-обзор · поиск недоступен"
                                            FontSize="11" Foreground="#9BC5F2" TextWrapping="Wrap"/>
-                                <TextBlock Text="Открыть обзор  ›" Margin="0,5,0,0"
+                                <TextBlock x:Name="CemPinOpenLabel" Text="Открыть обзор  ›" Margin="0,5,0,0"
                                            Foreground="#89CFFF"/>
                             </StackPanel>
                         </Grid>

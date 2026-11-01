@@ -22,7 +22,19 @@ public sealed partial class AuroraHome : UserControl
 {
     public event EventHandler<AuroraDestination>? NavigationRequested;
 
-    public AuroraHome() => InitializeComponent();
+    public AuroraHome()
+    {
+        InitializeComponent();
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        var russian = System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru";
+        CemPinSubtitle.Text = russian ? "Ограниченный поиск через J2534" : "Bounded search through J2534";
+        CemPinAvailability.Text = russian ? "Эксперимент · нужен сервисный контекст CEM" : "Experimental · requires CEM service context";
+        CemPinOpenLabel.Text = russian ? "Открыть CEM  ›" : "Open CEM  ›";
+        ToolTipService.SetToolTip(CemPinCard, russian
+            ? "Чтение номера CEM и ограниченный поиск PIN. Физическая совместимость не проверена."
+            : "Read CEM part number and check a bounded PIN range. Physical compatibility is unverified.");
+#endif
+    }
 
     public void UpdateConnection(bool connected, string? adapter, string? baud)
     {
