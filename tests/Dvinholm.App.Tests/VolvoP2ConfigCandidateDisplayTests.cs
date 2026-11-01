@@ -91,7 +91,8 @@ public sealed class VolvoP2ConfigCandidateDisplayTests
         Assert.Equal(7, panel.Descendants()
             .Count(e => e.Name.LocalName == "Button"));
         var button = Named("P2ConfigCatalogButton");
-        Assert.Equal("3", button.Attribute("Grid.Row")?.Value);
+        Assert.Contains("CemConfigPage", button.Ancestors()
+            .Select(e => e.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml"))?.Value));
         var metadata = Named("EcuInfoText");
         Assert.Equal("2", metadata.Parent?.Attribute("Grid.Row")?.Value);
         Assert.Equal("76", metadata.Parent?.Attribute("MaxHeight")?.Value);

@@ -107,7 +107,8 @@ public sealed class VolvoP2PinAuthorizationReviewTests
     public void PinPreviewDoesNotRemoveOriginalSevenProfileActionsOrCatalog()
     {
         var old = Named("P2ConfigCatalogButton");
-        Assert.Equal("3", old.Attribute("Grid.Row")?.Value);
+        Assert.Contains("CemConfigPage", old.Ancestors()
+            .Select(x => x.Attribute(XName.Get("Name", "http://schemas.microsoft.com/winfx/2006/xaml"))?.Value));
         var panel = Named("ProfileActionsPanel");
         Assert.Equal(7, panel.Descendants().Count(x => x.Name.LocalName == "Button"));
         var metadata = Named("EcuInfoText").Parent!;

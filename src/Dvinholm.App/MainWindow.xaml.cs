@@ -58,6 +58,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         AuroraLanding.UseSharedNavigation();
         InitializeAuroraLabels();
+        InitializeAuroraConfigReference();
         CancelUdsButton.RegisterPropertyChangedCallback(Control.IsEnabledProperty, (_, _) =>
             CancelUdsButton.Visibility = CancelUdsButton.IsEnabled ? Visibility.Visible : Visibility.Collapsed);
         // Attach after XAML initialization so the default selection cannot
