@@ -1,17 +1,45 @@
 <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 256 256" role="img" aria-labelledby="title desc">
-<title id="title">Dvinholm Northern Launcher emblem</title>
-<desc id="desc">Original Nordic aurora emblem combining a ring and arrow, gear teeth, a flying white gull and three teal White Sea waves; distinct launcher update badge.</desc>
-<defs><radialGradient id="night" cx="35%" cy="26%" r="85%"><stop stop-color="#1D5771"/><stop offset=".54" stop-color="#0C2A49"/><stop offset="1" stop-color="#061323"/></radialGradient><linearGradient id="ice" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#EFF9FF"/><stop offset=".7" stop-color="#9BCAEB"/><stop offset="1" stop-color="#40E7DD"/></linearGradient><linearGradient id="wave" x1="0" y1="0" x2="1" y2="0"><stop stop-color="#41D7ED"/><stop offset="1" stop-color="#27F0C1"/></linearGradient></defs>
-<circle cx="128" cy="128" r="124" fill="url(#night)" stroke="#22758C" stroke-width="4"/>
-<g stroke="url(#ice)" stroke-width="13" stroke-linecap="square">
-<circle cx="125" cy="129" r="84" fill="none" stroke-width="9"/>
-<path d="M184 71 L234 19 M234 19 L230 53 M234 19 L201 23" fill="none" stroke-linejoin="round"/>
+<title id="title">Dvinholm Launcher: Techno-North No. 9</title>
+<desc id="desc">Approved Techno-North design number 9: a riveted industrial silver gear and ring, a detailed white gull in flight, layered steel White Sea waves and a strong diagonal arrow passing through the ring. No separate update badge.</desc>
+<defs>
+<linearGradient id="steel" x1="0" y1="0" x2="1" y2="1"><stop stop-color="#FCFFFF"/><stop offset=".38" stop-color="#A6C3D9"/><stop offset=".62" stop-color="#D9E9F0"/><stop offset="1" stop-color="#597991"/></linearGradient>
+<linearGradient id="water" x1="0" y1="0" x2="0" y2="1"><stop stop-color="#D9F0FA"/><stop offset=".55" stop-color="#7AA8C0"/><stop offset="1" stop-color="#345A74"/></linearGradient>
+<radialGradient id="night" cx="44%" cy="27%" r="90%"><stop stop-color="#17465B"/><stop offset=".52" stop-color="#09283E"/><stop offset="1" stop-color="#061323"/></radialGradient>
+</defs>
+<rect x="5" y="5" width="246" height="246" rx="41" fill="url(#night)" stroke="#48768E" stroke-width="2"/>
+<path d="M18 105 Q73 28 154 54 T238 18" fill="none" stroke="#3DC4AE" stroke-opacity=".17" stroke-width="24"/>
+<path d="M10 202 Q72 179 143 209 T247 178" fill="none" stroke="#6C97AC" stroke-opacity=".09" stroke-width="30"/>
+<!-- Heavy mechanically bolted ring and its gear lugs -->
+<g fill="#A9C2D2" stroke="#567388" stroke-width="2">
+<rect x="121" y="29" width="15" height="23" rx="3"/>
+<rect x="121" y="204" width="15" height="23" rx="3"/>
+<rect x="204" y="121" width="23" height="15" rx="3"/>
+<rect x="29" y="121" width="23" height="15" rx="3"/>
+<rect x="186" y="57" width="17" height="22" rx="3" transform="rotate(45 194 68)"/>
+<rect x="53" y="175" width="17" height="22" rx="3" transform="rotate(45 61 186)"/>
+<rect x="180" y="179" width="17" height="22" rx="3" transform="rotate(-45 188 190)"/>
+<rect x="58" y="53" width="17" height="22" rx="3" transform="rotate(-45 66 64)"/>
 </g>
-<g stroke="#C7E6F6" stroke-width="8" stroke-linecap="square">
-<path d="M125 36V25 M172 49L179 38 M204 85L217 81 M213 134H225 M199 181L209 190 M161 214L164 229 M113 211L109 225 M73 190L61 199 M45 152L30 156 M47 108L35 104 M69 65L61 54" fill="none"/>
+<circle cx="128" cy="128" r="88" fill="none" stroke="#35556B" stroke-width="18"/>
+<circle cx="128" cy="128" r="88" fill="none" stroke="url(#steel)" stroke-width="12"/>
+<circle cx="128" cy="128" r="75" fill="none" stroke="#D0E1EB" stroke-opacity=".45" stroke-width="2"/>
+<g fill="#CEDBE5" stroke="#45637A" stroke-width="2.2">
+<circle cx="128" cy="42" r="4.3"/><circle cx="171" cy="53.5" r="4.3"/>
+<circle cx="202.5" cy="85" r="4.3"/><circle cx="214" cy="128" r="4.3"/>
+<circle cx="202.5" cy="171" r="4.3"/><circle cx="171" cy="202.5" r="4.3"/>
+<circle cx="128" cy="214" r="4.3"/><circle cx="85" cy="202.5" r="4.3"/>
+<circle cx="53.5" cy="171" r="4.3"/><circle cx="42" cy="128" r="4.3"/>
+<circle cx="53.5" cy="85" r="4.3"/><circle cx="85" cy="53.5" r="4.3"/>
 </g>
-<path d="M53 122 C77 100 103 101 121 122 C143 103 164 94 199 101 C179 115 164 131 138 134 C119 154 109 151 96 136 C77 136 64 129 53 122Z" fill="#F0F8FF"/>
-<path d="M67 159 Q94 140 120 159 T178 159 M73 175 Q102 156 129 175 T184 175 M78 191 Q107 172 133 191 T181 191" fill="none" stroke="url(#wave)" stroke-width="7" stroke-linecap="round"/>
-<circle cx="207" cy="207" r="29" fill="#082A48" stroke="#25D2EC" stroke-width="4"/>
-<path d="M224 201 A18 18 0 1 0 213 225 M225 202 L226 187 L213 196" fill="none" stroke="#EDFBFF" stroke-width="5" stroke-linecap="round" stroke-linejoin="round"/>
+<!-- Arrow visibly pierces the rim and continues beyond it, with no lower badge -->
+<path d="M167 89 L220 27 L212 15 L245 14 L241 47 L230 37 L181 100Z" fill="#274F6A" opacity=".7"/>
+<path d="M171 87 L224 29 L213 21 L245 14 L238 48 L229 37 L185 100Z" fill="url(#steel)" stroke="#EAF7FF" stroke-width="1.2" stroke-linejoin="round"/>
+<!-- Graceful anatomically inspired gull: primary wings, neck and tail -->
+<path d="M36 119 C71 96 92 97 118 113 C143 96 173 91 210 106 C177 106 157 117 138 129 C127 136 118 136 111 131 C95 139 72 137 54 129 C73 128 88 123 96 120 C78 115 57 115 36 119Z" fill="#F0F8FF"/>
+<path d="M48 119 C84 104 104 113 121 122 M135 122 C159 108 180 106 199 106" fill="none" stroke="#718FA5" stroke-width="2" opacity=".7"/>
+<path d="M112 130 Q125 147 144 130" fill="none" stroke="#D0E8F5" stroke-width="3"/>
+<!-- Steel swell and two layered White Sea waves -->
+<path d="M41 162 C75 147 104 167 133 160 C161 153 186 142 215 158" fill="none" stroke="url(#water)" stroke-width="10" stroke-linecap="round"/>
+<path d="M43 180 C76 166 106 187 139 180 C171 172 192 164 215 178" fill="none" stroke="#93B8C9" stroke-width="8" stroke-linecap="round"/>
+<path d="M59 196 C94 184 121 202 153 195 C180 191 193 188 204 190" fill="none" stroke="#4C809C" stroke-width="6" stroke-linecap="round"/>
 </svg>
