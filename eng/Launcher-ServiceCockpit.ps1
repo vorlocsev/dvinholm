@@ -400,7 +400,11 @@ function Update-NorthernCompactSnapshot {
  $script:northSettings.Enabled=$settingsQuick.Enabled
  $script:northVersion.Text=$installed.Text
  $script:northChannel.Text='Канал: '+[string]$choice.SelectedItem
- $script:northActivity.Text=$status.Text
+ # Until recovery and prerequisites are verified, do not repeat the worker's
+ # generic 'Ready.' phrase: Start remains disabled and the footer must agree.
+ $script:northActivity.Text=if($script:recoveryStatus -ceq 'Ready'){
+  $status.Text
+ }else{$recovery.Text}
  $parts=$deps.Text
  foreach($spec in @(
   @($script:northRuntime,'\.NET x86:\s*([^ ]+)',' .NET x86: '),
