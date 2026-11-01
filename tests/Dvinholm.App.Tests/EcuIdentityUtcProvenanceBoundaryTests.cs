@@ -62,7 +62,7 @@ public sealed class EcuIdentityUtcProvenanceBoundaryTests
         foreach (var rule in new[]
         {
             Rule() with { IsVerified = false },
-            Rule() with { Platform = "P3" },
+            Rule() with { Platform = "P3\nUNTRUSTED" },
             Rule() with { RequestId = 0x800u },
             Rule() with { RequiredIdentifiers = [new EcuDidReadback(0xF190, "595631"),
                                                new EcuDidReadback(0xF189, "BB22")] }
