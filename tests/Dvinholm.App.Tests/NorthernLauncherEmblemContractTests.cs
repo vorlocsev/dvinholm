@@ -3,7 +3,7 @@ using System.Xml.Linq;
 namespace Dvinholm.App.Tests;
 
 /// <summary>
-/// Eight offline contracts for the user-approved Northern Launcher mark.
+/// Eight offline contracts for the selected Techno-North No. 9 Launcher mark.
 /// Vector artwork is original, but physical Windows screenshot approval remains separate.
 /// </summary>
 public sealed class NorthernLauncherEmblemContractTests
@@ -28,8 +28,8 @@ public sealed class NorthernLauncherEmblemContractTests
         Assert.Equal("0 0 256 256", (string?)doc.Root?.Attribute("viewBox"));
         Assert.Single(doc.Descendants(svg + "title"));
         Assert.Single(doc.Descendants(svg + "desc"));
-        Assert.Empty(doc.Descendants().Where(e => e.Name.LocalName is "script" or "foreignObject"));
-        Assert.Empty(doc.Descendants().Attributes().Where(a => a.Name.LocalName == "href"));
+        Assert.DoesNotContain(doc.Descendants(), e => e.Name.LocalName is "script" or "foreignObject");
+        Assert.DoesNotContain(doc.Descendants().Attributes(), a => a.Name.LocalName == "href");
     }
 
     [Fact]
@@ -38,11 +38,12 @@ public sealed class NorthernLauncherEmblemContractTests
         var source = Read("assets/launcher-northern-emblem.svg");
         Assert.Contains("gull", source, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("gear", source, StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("ring and arrow", source);
+        Assert.Contains("ring", source);
         Assert.Contains("White Sea waves", source);
-        Assert.Contains("M53 122", source);
-        Assert.Contains("M184 71", source);
-        Assert.Contains("M67 159", source);
+        Assert.Contains("M36 119", source);
+        Assert.Contains("M171 87", source);
+        Assert.Contains("M41 162", source);
+        Assert.Contains("bolted", source);
     }
 
     [Fact]
@@ -51,8 +52,8 @@ public sealed class NorthernLauncherEmblemContractTests
         var source = Read("assets/launcher-northern-emblem.svg");
         Assert.Contains("#061323", source);
         Assert.Contains("#F0F8FF", source);
-        Assert.Contains("#41D7ED", source);
-        Assert.Contains("#27F0C1", source);
+        Assert.Contains("#A6C3D9", source);
+        Assert.Contains("#93B8C9", source);
         Assert.DoesNotContain(">VOLVO<", source, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain("data:", source);
     }
@@ -64,20 +65,24 @@ public sealed class NorthernLauncherEmblemContractTests
         Assert.Contains("@(16,24,32,48,64,128,256)", script);
         Assert.Contains("[Drawing.Bitmap]::new(", script);
         Assert.Contains("Drawing.Imaging.ImageFormat]::Png", script);
-        Assert.Contains("DrawEllipse($silver", script);
+        Assert.Contains("DrawEllipse($steel", script);
         Assert.Contains("FillPolygon($bird", script);
-        Assert.Contains("DrawBezier($wave", script);
-        Assert.Contains("DrawLine($silver,184,71,234,19)", script);
+        Assert.Contains("DrawBezier($sea", script);
+        Assert.Contains("FillPolygon($silver", script);
+        Assert.Contains("247,14", script);
         Assert.Contains("Write([uint16]$sizes.Count)", script);
     }
 
     [Fact]
-    public void SmallUpdateBadgeDistinguishesLauncherFromDvinholmApp()
+    public void NoAdditionalUpdateBadgeAndMainApplicationIconRemainsDistinct()
     {
+        var svg = Read("assets/launcher-northern-emblem.svg");
         var script = Read("eng/New-LauncherIcon.ps1");
-        Assert.Contains("FillEllipse($badgeBg,178,178,58,58)", script);
-        Assert.Contains("DrawEllipse($badgeBorder,178,178,58,58)", script);
-        Assert.Contains("DrawArc($badgeStroke,189,189,36,36,45,285)", script);
+        Assert.Contains("No separate update badge", svg);
+        Assert.DoesNotContain("cx=\"207\" cy=\"207\"", svg);
+        Assert.DoesNotContain("$badgeBg=", script);
+        Assert.DoesNotContain("$badgeBorder=", script);
+        Assert.Contains("FillPolygon($silver", script);
         var build = Read("eng/Build-Launchers.ps1");
         Assert.Contains("New-LauncherIcon.ps1", build);
         Assert.Contains("src\\Dvinholm.App\\Assets\\Dvinholm.ico", build);
@@ -122,7 +127,7 @@ public sealed class NorthernLauncherEmblemContractTests
         Assert.Contains("launcher-service-cockpit-banner.jpg", manifest);
         Assert.Contains("750KB", manifest);
         Assert.Contains("Launcher.exe", validator);
-        Assert.Contains("Get-FileHash", Read("eng/Updater-Banner.ps1"));
+        Assert.Contains("Validate-Asset $zip[0]", Read("eng/Updater-Banner.ps1"));
         Assert.DoesNotContain("dotnet.exe", Read("eng/native/launcher.cpp"));
     }
 }
