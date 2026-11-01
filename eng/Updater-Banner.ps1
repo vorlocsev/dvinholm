@@ -2560,13 +2560,19 @@ if($Mode -eq 'UiPreview'){
  $previewChecks=0
  $localeBefore=$script:launcherLanguage
  $timer.Stop()
- function Save-NorthernWinFormsPreview([string]$filename){
-  if($form.IsDisposed -or $form.ClientSize.Width -lt 200 -or
-     $form.ClientSize.Height -lt 200){throw 'Invalid WinForms preview bounds.'}
-  $image=[Drawing.Bitmap]::new($form.ClientSize.Width,$form.ClientSize.Height,
+ function Save-NorthernWinFormsPreview([string]$filename,
+  [Windows.Forms.Control]$captureRoot){
+  # Form.DrawToBitmap incorrectly composites overlapping hidden WinForms
+  # controls at the same time as the front panel. Draw the actual Northern
+  # panel directly for Home; capture the full Form for the Updates view.
+  if($captureRoot.IsDisposed){throw 'WinForms preview root already disposed.'}
+  $width=if($captureRoot -eq $form){$form.Width}else{$captureRoot.ClientSize.Width}
+  $height=if($captureRoot -eq $form){$form.Height}else{$captureRoot.ClientSize.Height}
+  if($width -lt 200 -or $height -lt 200){throw 'Invalid WinForms preview bounds.'}
+  $image=[Drawing.Bitmap]::new($width,$height,
    [Drawing.Imaging.PixelFormat]::Format32bppArgb)
   try{
-   $form.DrawToBitmap($image,[Drawing.Rectangle]::new(
+   $captureRoot.DrawToBitmap($image,[Drawing.Rectangle]::new(
     0,0,$image.Width,$image.Height))
    $colors=[Collections.Generic.HashSet[int]]::new()
    for($y=0;$y -lt $image.Height;$y+=17){
@@ -2610,7 +2616,7 @@ if($Mode -eq 'UiPreview'){
   if(-not $form.Visible -or $form.Location.X -gt -10000){
    throw 'WinForms preview did not remain offscreen.'
   }
-  Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-RU.png'
+  Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-RU.png' $script:northernHome
   $previewChecks++
   Show-NorthernUpdates
   [Windows.Forms.Application]::DoEvents()
@@ -2618,7 +2624,7 @@ if($Mode -eq 'UiPreview'){
      $form.Controls.GetChildIndex($script:northReturn) -ne 0){
    throw 'Updates view navigation did not bring the genuine Back control forward.'
   }
-  Save-NorthernWinFormsPreview 'Launcher-Aurora-Updates-RU.png'
+  Save-NorthernWinFormsPreview 'Launcher-Aurora-Updates-RU.png' $form
   $previewChecks++
   Show-NorthernHome
   $script:launcherLanguage='EN'
@@ -2628,7 +2634,7 @@ if($Mode -eq 'UiPreview'){
      $script:northUpdates.Text -cnotmatch 'Updates'){
    throw 'English Northern preview not localized.'
   }
-  Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-EN.png'
+  Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-EN.png' $script:northernHome
   $previewChecks++
   $files=@(
    'Launcher-Aurora-Home-RU.png',
