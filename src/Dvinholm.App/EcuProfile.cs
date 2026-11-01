@@ -123,7 +123,14 @@ internal sealed class EcuProfileCatalog
             IsVerified = profile.IsVerified
         }).ToArray();
 
-        return JsonSerializer.Serialize(documents, JsonOptions);
+        if (documents.Length > EcuProfileCatalogInput.MaximumProfiles)
+            throw new InvalidDataException("Too many ECU profiles to export.");
+
+        var json = JsonSerializer.Serialize(documents, JsonOptions);
+        if (System.Text.Encoding.UTF8.GetByteCount(json) >
+            EcuProfileCatalogInput.MaximumJsonBytes)
+            throw new InvalidDataException("ECU profile catalog exceeds the JSON size limit.");
+        return json;
     }
 
     /// <summary>
@@ -134,11 +141,21 @@ internal sealed class EcuProfileCatalog
     {
         if (string.IsNullOrWhiteSpace(json))
             throw new ArgumentException("Profile JSON cannot be empty.", nameof(json));
+        if (json.Length > EcuProfileCatalogInput.MaximumJsonBytes ||
+            System.Text.Encoding.UTF8.GetByteCount(json) >
+                EcuProfileCatalogInput.MaximumJsonBytes)
+            throw new InvalidDataException("ECU profile JSON exceeds the bounded import limit.");
 
         ProfileDocument?[] documents;
         try
         {
-            using var document = JsonDocument.Parse(json);
+            using var document = JsonDocument.Parse(json,
+                new JsonDocumentOptions { MaxDepth = EcuProfileCatalogInput.MaximumJsonDepth });
+            if (document.RootElement.ValueKind != JsonValueKind.Array)
+                throw new InvalidDataException("Profile JSON must be an array.");
+            if (document.RootElement.GetArrayLength() >
+                EcuProfileCatalogInput.MaximumProfiles)
+                throw new InvalidDataException("Too many ECU profiles in imported JSON.");
 
             // System.Text.Json normally accepts duplicate object keys, with a
             // later value silently overwriting an earlier one. For an ECU
