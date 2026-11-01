@@ -2896,6 +2896,7 @@ if($Mode -eq 'UiSmokeTest'){
    throw 'Northern compact Russian labels missing.'
   }
   $script:launcherLanguage=$langBefore;Apply-LauncherLanguage
+  $northChecks++
   if($northChecks -ne 8){throw 'Wrong Northern Compact acceptance count.'}
   Write-Host 'Northern Aurora compact 8/8 real WinForms offline checks passed.'
 
