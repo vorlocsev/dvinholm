@@ -194,11 +194,13 @@ WinForms hierarchy, calls `Control.DrawToBitmap` on the actual form and saves
 three PNGs: Russian Home, Russian Updates (with the real back control), and
 English Home. All views preserve unverified/recovery-locked startup state:
 **no worker process, version check, update, driver installer or vehicle
-communication**. It does not open `Form.Show` or `ShowDialog`, whose channel
-selection events could otherwise start a background dependency probe.
+communication**. It briefly opens a **non-modal Form.Show positioned offscreen** (not
+`ShowDialog`) so native WinForms child controls draw their real content.
+Preview mode guards the form's `Shown`/channel-selection handlers against
+starting a background dependency probe and stops the GUI timer.
 
 The Windows CI artifact `Dvinholm-Launcher-Aurora-GUI-Preview` contains
-the rendered client areas. Eight offline assertions cover no visible/modal
+the rendered client areas. Eight offline assertions cover offscreen non-modal
 window, bounded sizing, fail-closed actions, actual bitmap content, navigation,
 language, distinct PNG files and absence of worker/timer activity.
 
