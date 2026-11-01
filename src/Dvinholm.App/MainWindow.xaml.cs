@@ -2715,7 +2715,7 @@ public sealed partial class MainWindow : Window
             // Unsupported DTC status bits must never be presented as
             // confirmed diagnostic states.
             var result = client.ReadDtcResultByStatusMask(statusMask, token);
-            return UdsDtcDisplayFormatter.Format(result, statusMask);
+            return UdsDtcDisplayFormatter.FormatWithAvailability(result, statusMask);
         });
     }
 
