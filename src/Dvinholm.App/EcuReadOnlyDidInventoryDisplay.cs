@@ -29,8 +29,12 @@ internal static class EcuReadOnlyDidInventoryDisplay
         var lengths = new SortedDictionary<ushort, int>();
         foreach (var item in snapshot.Values)
         {
-            if (item is null || item.ValueHex is not { } value ||
-                value.Length is < 2 or > EcuConfigurationReadback.MaximumDidValueBytes * 2 ||
+            if (item is null)
+                throw new InvalidDataException("Invalid diagnostic DID entry.");
+
+            var value = item.ValueHex;
+            if (value is null || value.Length < 2 ||
+                value.Length > EcuConfigurationReadback.MaximumDidValueBytes * 2 ||
                 (value.Length & 1) != 0 ||
                 !value.All(c => c is >= '0' and <= '9' or >= 'A' and <= 'F') ||
                 !lengths.TryAdd(item.DataIdentifier, value.Length / 2))
