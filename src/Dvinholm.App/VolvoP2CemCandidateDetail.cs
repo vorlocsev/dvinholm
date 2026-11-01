@@ -84,6 +84,8 @@ internal static class VolvoP2CemCandidateDetail
             .AppendLine("read-only service documentation and bench acceptance.")
             .AppendLine("A menu name or advertisement never unlocks ECU functions.")
             .AppendLine("No CAN/J2534/UDS request or ECU change occurs here.")
+            .AppendLine()
+            .Append(VolvoP2CemOptionEvidenceChecklist.BuildReadOnlyReport(row.ResearchId))
             .ToString();
     }
 
