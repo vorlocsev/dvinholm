@@ -295,19 +295,23 @@ $script:northernHome.Add_Paint({
  try{$g.FillRectangle($background,0,0,1180,690)}finally{$background.Dispose()}
  if($script:heroBackdrop){
   $picture=$script:heroBackdrop
-  # Crop to the right-hand panorama to avoid reprinting baked-in old titles.
+  # Right-side automotive panorama only. The original small JPEG has
+  # a baked-in old DVINHOLM wordmark on its left half. Never composite
+  # that text under the Northern icon and new title.
   $source=[Drawing.Rectangle]::new(
-   [int]($picture.Width*0.24),0,
-   [int]($picture.Width*0.76),[int]$picture.Height)
+   [int]($picture.Width*0.46),0,
+   [int]($picture.Width*0.54),[int]$picture.Height)
   $g.DrawImage($picture,[Drawing.Rectangle]::new(0,0,1180,330),
    $source,[Drawing.GraphicsUnit]::Pixel)
  }
  # Darkened typography area and compact Aurora edge treatment.
- $veil=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(135,5,20,37))
+ $veil=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(162,5,20,37))
+ $brandVeil=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(65,5,20,37))
  $lower=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(242,8,23,40))
  $line=[Drawing.Pen]::new([Drawing.Color]::FromArgb(75,43,198,203),2)
  try{
   $g.FillRectangle($veil,0,0,1180,329)
+  $g.FillRectangle($brandVeil,0,0,780,329)
   $g.FillRectangle($lower,0,330,1180,360)
   $g.DrawLine($line,42,324,1137,324)
   $g.DrawLine($line,42,655,1137,655)
@@ -318,7 +322,7 @@ $script:northernHome.Add_Paint({
     $g.DrawRectangle($line,$x,337,342,64)
    }
   }finally{$cardFill.Dispose()}
- }finally{$veil.Dispose();$lower.Dispose();$line.Dispose()}
+ }finally{$veil.Dispose();$brandVeil.Dispose();$lower.Dispose();$line.Dispose()}
  $silver=[Drawing.Pen]::new([Drawing.Color]::FromArgb(216,227,240,250),7)
  $cyan=[Drawing.Pen]::new([Drawing.Color]::FromArgb(212,36,224,217),5)
  $bird=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(246,238,248,255))
@@ -396,7 +400,11 @@ function Update-NorthernCompactSnapshot {
  $script:northSettings.Enabled=$settingsQuick.Enabled
  $script:northVersion.Text=$installed.Text
  $script:northChannel.Text='Канал: '+[string]$choice.SelectedItem
- $script:northActivity.Text=$status.Text
+ # Until recovery and prerequisites are verified, do not repeat the worker's
+ # generic 'Ready.' phrase: Start remains disabled and the footer must agree.
+ $script:northActivity.Text=if($script:recoveryStatus -ceq 'Ready'){
+  $status.Text
+ }else{$recovery.Text}
  $parts=$deps.Text
  foreach($spec in @(
   @($script:northRuntime,'\.NET x86:\s*([^ ]+)',' .NET x86: '),

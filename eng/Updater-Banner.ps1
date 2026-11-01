@@ -6,9 +6,10 @@ No software installs or updates until the user explicitly confirms.
 #>
 [CmdletBinding()]
 param(
- [ValidateSet('UI','UiSmokeTest','Check','CheckLauncher','PrepareLauncher','FinalizeLauncher','CleanLauncherStorage','InspectLauncher','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
+ [ValidateSet('UI','UiSmokeTest','UiPreview','Check','CheckLauncher','PrepareLauncher','FinalizeLauncher','CleanLauncherStorage','InspectLauncher','Install','Rollback','Repair','RepairInstall','Launch','Probe','Versions','SelfTest')][string]$Mode='UI',
  [ValidateSet('Stable','Development')][string]$Channel='Development',
- [string]$StateFile
+ [string]$StateFile,
+ [string]$PreviewDirectory
 )
 $ErrorActionPreference='Stop'
 [Net.ServicePointManager]::SecurityProtocol=[Net.SecurityProtocolType]::Tls12
@@ -1550,7 +1551,7 @@ function SelfTest {
  }
 }
 if($Mode -eq 'SelfTest'){SelfTest;Test-ApplicationHelperHandoff;exit 0}
-if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest'){
+if($Mode -ne 'UI' -and $Mode -ne 'UiSmokeTest' -and $Mode -ne 'UiPreview'){
  try{
   $script:state.Current=Installed
   $script:state.Recovery=Get-ChannelRecoveryState
@@ -2279,6 +2280,8 @@ function Show-MicrosoftComponents {
 }
 
 $choice.Add_SelectedIndexChanged({
+ # Prevent preview-only offscreen window from launching a Probe worker.
+ if($Mode -eq 'UiPreview'){return}
  if($null -ne $choice.SelectedItem){
   $null=Save-ChannelPreference ([string]$choice.SelectedItem)
  }
@@ -2551,6 +2554,123 @@ $timer.Add_Tick({Update-NorthernCompactSnapshot})
 $timer.Start()
 Update-ActionAvailability
 Update-NorthernCompactSnapshot
+if($Mode -eq 'UiPreview'){
+ # Render actual WinForms on the Windows runner in an offscreen window.
+ # Shown and selection handlers are guarded, so no Probe worker can start.
+ $previewChecks=0
+ $localeBefore=$script:launcherLanguage
+ $timer.Stop()
+ function Save-NorthernWinFormsPreview([string]$filename,
+  [Windows.Forms.Control]$captureRoot){
+  # Form.DrawToBitmap incorrectly composites overlapping hidden WinForms
+  # controls at the same time as the front panel. Draw the actual Northern
+  # panel directly for Home; capture the full Form for the Updates view.
+  if($captureRoot.IsDisposed){throw 'WinForms preview root already disposed.'}
+  $width=if($captureRoot -eq $form){$form.Width}else{$captureRoot.ClientSize.Width}
+  $height=if($captureRoot -eq $form){$form.Height}else{$captureRoot.ClientSize.Height}
+  if($width -lt 200 -or $height -lt 200){throw 'Invalid WinForms preview bounds.'}
+  $image=[Drawing.Bitmap]::new($width,$height,
+   [Drawing.Imaging.PixelFormat]::Format32bppArgb)
+  try{
+   $captureRoot.DrawToBitmap($image,[Drawing.Rectangle]::new(
+    0,0,$image.Width,$image.Height))
+   $colors=[Collections.Generic.HashSet[int]]::new()
+   for($y=0;$y -lt $image.Height;$y+=17){
+    for($x=0;$x -lt $image.Width;$x+=17){
+     [void]$colors.Add($image.GetPixel($x,$y).ToArgb())
+    }
+   }
+   if($colors.Count -lt 8){throw ('WinForms produced an empty/flat rendering: '+$filename)}
+   $image.Save((Join-Path $PreviewDirectory $filename),
+    [Drawing.Imaging.ImageFormat]::Png)
+  }finally{$image.Dispose()}
+ }
+ try{
+  if([string]::IsNullOrWhiteSpace($PreviewDirectory)){
+   throw 'UiPreview needs an explicit output directory.'
+  }
+  $PreviewDirectory=[IO.Path]::GetFullPath($PreviewDirectory)
+  [IO.Directory]::CreateDirectory($PreviewDirectory)|Out-Null
+  if($form.Visible -or $script:northernDetailOpen -or
+     $form.Controls.GetChildIndex($script:northernHome) -ne 0){
+   throw 'Preview must start with hidden, foreground Northern Home.'
+  }
+  $previewChecks++
+  if($form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552 -or
+     $script:northernHome.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
+     $null -eq $script:heroBackdrop -or -not $script:serviceBackdropIsApproved){
+   throw 'Preview lacks the approved local automotive panorama or compact bounds.'
+  }
+  $previewChecks++
+  if($script:child -or $script:vendor -or $script:northLaunch.Enabled -or
+     $launch.Enabled -or $install.Enabled -or $check.Enabled -or
+     $script:northActivity.Text -ceq 'Готово.' -or
+     $script:northActivity.Text -ceq 'Ready.'){
+   throw 'Preview is not fail-closed or falsely says Ready at startup.'
+  }
+  $previewChecks++
+  # Offscreen Form.Show is required for nested WinForms page painting.
+  # Never use ShowDialog or trigger startup probes during preview.
+  $form.StartPosition=[Windows.Forms.FormStartPosition]::Manual
+  $form.ShowInTaskbar=$false
+  $form.Location=[Drawing.Point]::new(-20000,-20000)
+  $form.Show()
+  [Windows.Forms.Application]::DoEvents()
+  if(-not $form.Visible -or $form.Location.X -gt -10000){
+   throw 'WinForms preview did not remain offscreen.'
+  }
+  Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-RU.png' $script:northernHome
+  $previewChecks++
+  Show-NorthernUpdates
+  [Windows.Forms.Application]::DoEvents()
+  if(-not $script:northernDetailOpen -or
+     $form.Controls.GetChildIndex($script:northReturn) -ne 0){
+   throw 'Updates view navigation did not bring the genuine Back control forward.'
+  }
+  Save-NorthernWinFormsPreview 'Launcher-Aurora-Updates-RU.png' $form
+  $previewChecks++
+  Show-NorthernHome
+  $script:launcherLanguage='EN'
+  Apply-LauncherLanguage
+  [Windows.Forms.Application]::DoEvents()
+  if($script:northLaunch.Text -cnotmatch 'START DVINHOLM' -or
+     $script:northUpdates.Text -cnotmatch 'Updates'){
+   throw 'English Northern preview not localized.'
+  }
+  Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-EN.png' $script:northernHome
+  $previewChecks++
+  $files=@(
+   'Launcher-Aurora-Home-RU.png',
+   'Launcher-Aurora-Updates-RU.png',
+   'Launcher-Aurora-Home-EN.png')
+  $digests=@()
+  foreach($file in $files){
+   $path=Join-Path $PreviewDirectory $file
+   if(-not(Test-Path -LiteralPath $path -PathType Leaf) -or
+      (Get-Item -LiteralPath $path).Length -lt 2048){
+    throw ('Preview file missing or implausibly small: '+$file)
+   }
+   $digests+=((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash)
+  }
+  if(@($digests|Select-Object -Unique).Count -ne 3){
+   throw 'WinForms previews are identical; view or language rendering did not change.'
+  }
+  $previewChecks++
+  if(-not $form.Visible -or $form.Location.X -gt -10000 -or
+     $form.ShowInTaskbar -or $script:child -or $script:vendor -or
+     $timer.Enabled -or $launch.Enabled -or $check.Enabled){
+   throw 'Preview escaped its offscreen host, started a worker or armed buttons.'
+  }
+  $previewChecks++
+  if($previewChecks -ne 8){throw 'Wrong WinForms preview check count.'}
+  Write-Host 'Northern Aurora WinForms previews 8/8 offline checks passed.'
+ }finally{
+  $script:launcherLanguage=$localeBefore
+  $timer.Stop();$timer.Dispose();$form.Dispose()
+  if($script:nativeLauncherIcon){$script:nativeLauncherIcon.Dispose()}
+ }
+ exit 0
+}
 if($Mode -eq 'UiSmokeTest'){
  # Instantiate the real Windows PowerShell 5.1 WinForms GUI, but do not
  # display a modal dialog, contact GitHub, launch installers or start Dvinholm.
@@ -2992,7 +3112,10 @@ if(-not $PSBoundParameters.ContainsKey('Channel')){
  $savedChannel=Read-ChannelPreference
  if($null -ne $savedChannel){$startupChannel=$savedChannel}
 }
-$form.Add_Shown({$choice.SelectedIndex=if($startupChannel -eq 'Stable'){1}else{0}})
+$form.Add_Shown({
+ if($Mode -eq 'UiPreview'){return}
+ $choice.SelectedIndex=if($startupChannel -eq 'Stable'){1}else{0}
+})
 try{[void]$form.ShowDialog()}
 finally{
  $timer.Stop();$timer.Dispose()

@@ -185,3 +185,38 @@ real instantiated WinForms UI. They **do not modify the Windows runner's
 global DPI setting**, operate across monitors, or replace manual screenshot
 review on machines configured for 100/125/150%. They are a regression gate
 for layout arithmetic, not proof of perfect glyph rendering or photography.
+
+
+## Windows-runner UI pixel review (next scoped validation)
+
+The added offline `UiPreview` mode builds the **real** Northern Compact
+WinForms hierarchy, calls `Control.DrawToBitmap` on the actual form and saves
+three PNGs: Russian Home, Russian Updates (with the real back control), and
+English Home. All views preserve unverified/recovery-locked startup state:
+**no worker process, version check, update, driver installer or vehicle
+communication**. It briefly opens a **non-modal Form.Show positioned offscreen** (not
+`ShowDialog`) so native WinForms child controls draw their real content.
+Preview mode guards the form's `Shown`/channel-selection handlers against
+starting a background dependency probe and stops the GUI timer.
+
+The Windows CI artifact `Dvinholm-Launcher-Aurora-GUI-Preview` contains
+the rendered client areas. Eight offline assertions cover offscreen non-modal
+window, bounded sizing, fail-closed actions, actual bitmap content, navigation,
+language, distinct PNG files and absence of worker/timer activity.
+
+**Review limitation:** `DrawToBitmap` is offscreen WinForms rendering, not a
+photograph of an installed application. It cannot prove Windows Desktop
+Window Manager border/titlebar visual quality, hardware DPI at 125%/150%,
+pixel-perfect placement on a real screen, or clipping caused by a particular
+driver. User screenshots at 100/125/150% still constitute final acceptance.
+
+The first screenshot attempt exposed two renderer pitfalls: hidden WinForms forms
+did not update nested views, and whole-Form `DrawToBitmap` composited the old
+Service Cockpit behind the Northern Home. The adjusted preview runs a
+non-modal **offscreen** instance, captures the Northern Home panel directly
+for RU/EN and the complete form only for Updates. Its source-checkout run
+now loads `assets/launcher-service-cockpit-banner.jpg` when the same filename
+is not present beside the script; installed Launcher packages still prefer
+their bundled `Binaries/` image. The CI visual gate requires this real
+automotive banner to be decoded so a dark fallback is not accepted as the
+approved design. Final Windows screenshot validation remains outstanding.
