@@ -49,6 +49,9 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        // Attach after XAML initialization so the default selection cannot
+        // invalidate a diagnostic result during partial control creation.
+        DtcStatusMaskSelector.SelectionChanged += DtcStatusMask_SelectionChanged;
         AuroraLanding.NavigationRequested += DashboardNavigate;
         ProfileSelector.SelectionChanged += (_, _) =>
             DispatcherQueue.TryEnqueue(RefreshDashboardSummary);
@@ -2276,7 +2279,7 @@ public sealed partial class MainWindow : Window
             UdsRequestId?.Text,
             UdsResponseId?.Text);
         ReadVinButton.IsEnabled = ready;
-        ReadDtcButton.IsEnabled = ready;
+        ReadDtcButton.IsEnabled = ready && TryGetSelectedDtcStatusMask(out _);
         ReadDidButton.IsEnabled = ready &&
             UdsReadAddressReadiness.ValidDid(UdsDid?.Text);
         UdsReadinessHint.Text = ready
@@ -2328,6 +2331,19 @@ public sealed partial class MainWindow : Window
         ClearDiagnosticReadResult();
         SetUdsEnabled(_connected && !_closing);
     }
+
+    private void DtcStatusMask_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        // The selected filter is part of the diagnostic input context.
+        // A late response to the old request must not overwrite a new choice.
+        ClearDiagnosticReadResult();
+        SetUdsEnabled(_connected && !_closing);
+    }
+
+    private bool TryGetSelectedDtcStatusMask(out byte statusMask) =>
+        UdsDtcStatusMaskSelection.TryParseTag(
+            (DtcStatusMaskSelector?.SelectedItem as ComboBoxItem)?.Tag?.ToString(),
+            out statusMask);
 
     private bool CanCaptureSelectedSnapshot(EcuProfile? profile, bool busy)
     {
@@ -2708,7 +2724,14 @@ public sealed partial class MainWindow : Window
 
     private async void ReadDtc_Click(object sender, RoutedEventArgs e)
     {
-        const byte statusMask = 0xFF;
+        // Capture the chosen mask before awaiting any I/O. Unknown, missing
+        // or tampered UI tags fail closed rather than defaulting to "all".
+        if (!TryGetSelectedDtcStatusMask(out var statusMask))
+        {
+            SetStatus("Choose a valid Read DTC status filter before querying the ECU.");
+            return;
+        }
+
         await RunUdsOperationAsync(UdsReadResultKind.Dtc, (client, token) =>
         {
             // Preserve the ECU's status availability mask from UDS 0x19/0x02.
