@@ -2597,8 +2597,9 @@ if($Mode -eq 'UiPreview'){
   }
   $previewChecks++
   if($form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552 -or
-     $script:northernHome.Width -ne [int][Math]::Round(1180*$script:auroraScale)){
-   throw 'Preview did not use the installed compact home bounds.'
+     $script:northernHome.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
+     $null -eq $script:heroBackdrop -or -not $script:serviceBackdropIsApproved){
+   throw 'Preview lacks the approved local automotive panorama or compact bounds.'
   }
   $previewChecks++
   if($script:child -or $script:vendor -or $script:northLaunch.Enabled -or
