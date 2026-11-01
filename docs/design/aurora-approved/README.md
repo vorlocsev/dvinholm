@@ -64,3 +64,28 @@ Eight new structural/safety tests cover the route, single owned read button,
 selector masks, disabled erase, description provenance, private result
 presentation and absence of navigation side effects. Windows GUI screenshot
 comparison and actual J2534/vehicle acceptance are still separate gates.
+
+## Read-only DTC table (next Aurora increment)
+
+The DTC workspace now binds a table of rows from the same **explicit, single-ECU**
+UDS 0x19/0x02 read used by the diagnostic detail result. Column values come
+from the ECU response: six-digit hex code, exact raw status byte and only status
+flags supported by that ECU's returned availability mask. An unsupported raw
+bit remains visible as a discrepancy, not an asserted fault state.
+
+The description column deliberately says **"Нет проверенного описания"** for
+all rows. A guessed P-code, Volvo cause, severity, repair action, module identity
+or vehicle-wide "no faults" claim is forbidden. For an empty response the
+summary says zero records *for the selected ECU and filter*, not a healthy car.
+At most 1024 rows are shown, preserving ECU order and reporting the shown
+count. Selecting a row reveals only the raw code, status byte, supported mask
+and explicit provenance warning.
+
+The preexisting UDS async completion/lifetime guard controls table publication
+and text publication together. Changing ECU addresses, DID, DTC filter,
+navigation, disconnect or clearing results invalidates the table; a late
+response cannot repopulate it. This is intentionally one request, not a
+second scan. Erase stays disabled. Eight offline tests cover display fidelity,
+masks, unknown states, validation, bounds, XAML, invalidation and erase safety.
+
+Installed Windows GUI and physical J2534/vehicle acceptance remain unverified.
