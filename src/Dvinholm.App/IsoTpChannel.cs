@@ -33,6 +33,15 @@ internal sealed class IsoTpChannel : IDisposable
             ValidateId(RequestId, CanExtendedId, nameof(RequestId));
             ValidateId(ResponseId, CanExtendedId, nameof(ResponseId));
 
+            // The response subscription would otherwise also accept our own
+            // transmitted request/Flow Control CAN ID (loopback/echo risk).
+            // Enforce independent TX/RX arbitration IDs even when callers
+            // construct an ISO-TP channel outside WinUI UDS preflight.
+            if (RequestId == ResponseId)
+                throw new ArgumentException(
+                    "ISO-TP request and response CAN IDs must be different.",
+                    nameof(ResponseId));
+
             if (MaxWaitFlowControls < 0)
                 throw new ArgumentOutOfRangeException(nameof(MaxWaitFlowControls));
 
