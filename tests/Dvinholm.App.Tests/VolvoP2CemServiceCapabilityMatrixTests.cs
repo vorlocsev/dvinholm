@@ -61,7 +61,7 @@ public sealed class VolvoP2CemServiceCapabilityMatrixTests
             Identity = Identity(VolvoP2CemSupportKind.DocumentedReadOnlyDidSet)
         };
         var result = Assess(VolvoP2CemServiceOperation.AuthenticateConfigurationService, context);
-        Assert.DoesNotContain(VolvoP2ServiceEvidenceGap.ExactCemHardwareSoftwareIdentity,
+        Assert.Contains(VolvoP2ServiceEvidenceGap.ExactCemHardwareSoftwareIdentity,
             result.BlockingRequirements);
         Assert.Contains(VolvoP2ServiceEvidenceGap.IndependentlyDocumentedLegitimateServiceRoute,
             result.BlockingRequirements);
@@ -141,8 +141,11 @@ public sealed class VolvoP2CemServiceCapabilityMatrixTests
         foreach (var operation in VolvoP2CemServiceCapabilityMatrix.ResearchOperations)
         {
             var result = Assess(operation, context);
-            Assert.Equal(new[] { VolvoP2ServiceEvidenceGap.OperationalServiceNotImplemented },
-                result.BlockingRequirements);
+            Assert.Equal(new[]
+            {
+                VolvoP2ServiceEvidenceGap.ExactCemHardwareSoftwareIdentity,
+                VolvoP2ServiceEvidenceGap.OperationalServiceNotImplemented
+            }, result.BlockingRequirements);
             Assert.False(result.MaySendEcuRequest);
             Assert.False(result.MayAcquirePin);
             Assert.False(result.MayAuthenticateService);
