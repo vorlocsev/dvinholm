@@ -80,3 +80,60 @@ None of these start an installer, use network/vehicle, or publish releases.
 
 **Explicitly not claimed:** pixel-perfect acceptance, physical DiCE/J2534
 testing, new Stable release, or changes to the separate Virtual Car project.
+
+## First icon-art integration (2026-11-01)
+
+The repository now includes [`assets/launcher-northern-emblem.svg`](../../assets/launcher-northern-emblem.svg), a local, editable, original 256×256 vector master. It merges:
+
+- a massive silver gear-ring with **twelve bolts/rivets** and cold steel finish;
+- a **diagonal arrow passing through the top-right ring**, referencing Volvo without copying a wordmark;
+- a more detailed white gull in flight over **three steel-blue White Sea swells**;
+- **no secondary circular update badge**, per the user's explicit rejection.
+
+`eng/New-LauncherIcon.ps1` paints the same composition with GDI+
+offline into real PNG-backed ICO frames **16, 24, 32, 48, 64, 128, 256**. The
+existing native build embeds it into `Launcher.exe`; `Dvinholm.exe` keeps
+its existing independent application icon. The package retains the original
+manifest and SHA-256 update/rollback protections; no SVG parser or runtime
+renderer is required for a fresh install.
+
+The WinForms Northern home already draws a matching gull/gear/ring/wave
+composition. The SVG defines canonical color/shape choices; matching Windows
+rendering and actual 16-pixel legibility require screenshot inspection rather
+than only structural source tests. Eight additional offline contracts cover
+vector structure, local source safety, GDI rendering paths, seven resolutions,
+native resource checks, main-app icon separation and packaging constraints.
+
+**Still missing:** the original full-res selected fourth raster in GitHub,
+model-accurate licensed Volvo photo to replace the interim panorama,
+verified pixel-perfect alignment, and human acceptance at 100/125/150% DPI.
+
+
+## Final selected Launcher icon: No. 9 “Техно-Север” (2026-11-01)
+
+After reviewing two further sets of ten icons, the user explicitly chose
+**No. 9 Techno-North** from the last board. This selection overrides the
+preceding draft emblem for the **Launcher icon only**. Its design language:
+
+1. Heavy round machined stainless-steel rim, multiple visible bolt heads,
+   industrial gear teeth and subtle blue-black etched edges.
+2. A distinct elegant white seagull in flight, with flowing feathers and
+   anatomically recognizable wing shape.
+3. Three layered cold silver-blue maritime waves. Teal is background aurora,
+   not the dominant color of the waves.
+4. Volvo-inspired arrow **passes through** the top-right corner of the
+   circular gear ring and protrudes beyond it.
+5. **No lower-right badge or standalone update circle**, at any icon size.
+6. Retain readable silhouette at 16 and 32 px; multi-resolution ICO still
+   contains seven real PNG frames. Launcher.exe remains native x86.
+7. The main `Dvinholm.exe` icon is unchanged, and no new Stable release,
+   vehicle communication or actual hardware test is implied.
+8. Structural CI gates prove resource generation and packaging but do not
+   substitute for user-approved Windows screenshot/appearance review.
+
+The precise image selected is the lower row, fourth column of the
+user-visible 2×5 concept board. The repository SVG
+`assets/launcher-northern-emblem.svg` and GDI+ icon generator are
+**code-native approximations** of that concept, not pixel-identical
+copies of its rendered 3D art. Do not silently substitute a different
+numbered concept.
