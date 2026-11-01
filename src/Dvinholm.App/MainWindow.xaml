@@ -37,6 +37,35 @@
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
+            <VisualStateGroup x:Name="EcuResponsiveStates">
+                <VisualState x:Name="EcuThreeColumns">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1280" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="EcuVerticalWorkspace">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="EcuWorkbenchListColumn.Width" Value="*" />
+                        <Setter Target="EcuWorkbenchVehicleColumn.Width" Value="0" />
+                        <Setter Target="EcuWorkbenchDetailColumn.Width" Value="0" />
+                        <Setter Target="EcuWorkbenchVehiclePane.(Grid.Column)" Value="0" />
+                        <Setter Target="EcuWorkbenchVehiclePane.(Grid.Row)" Value="1" />
+                        <Setter Target="EcuWorkbenchDetailPane.(Grid.Column)" Value="0" />
+                        <Setter Target="EcuWorkbenchDetailPane.(Grid.Row)" Value="2" />
+                        <Setter Target="EcuScanToolbarActionColumn.Width" Value="0" />
+                        <Setter Target="EcuScanToolbarCancelColumn.Width" Value="0" />
+                        <Setter Target="DiscoverButton.(Grid.Column)" Value="0" />
+                        <Setter Target="DiscoverButton.(Grid.Row)" Value="1" />
+                        <Setter Target="DiscoverButton.HorizontalAlignment" Value="Stretch" />
+                        <Setter Target="CancelDiscoveryButton.(Grid.Column)" Value="0" />
+                        <Setter Target="CancelDiscoveryButton.(Grid.Row)" Value="2" />
+                        <Setter Target="CancelDiscoveryButton.HorizontalAlignment" Value="Stretch" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
         <Grid.Resources>
             <Style x:Key="AuroraButton" TargetType="Button">
@@ -323,23 +352,69 @@
                                 <StackPanel Spacing="18">
                                     <TextBlock Text="Обнаружение блоков" FontSize="20" FontWeight="SemiBold" />
                                     <TextBlock Text="Пассивное наблюдение ответов. Выбор записи не подтверждает идентичность блока и не отправляет запрос." Foreground="#9EB8CC" />
-                                    <Grid ColumnSpacing="16" RowSpacing="16">
+                                    <Grid x:Name="EcuScanToolbarGrid" ColumnSpacing="16" RowSpacing="8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition x:Name="EcuScanToolbarActionColumn" Width="Auto" />
+                                            <ColumnDefinition x:Name="EcuScanToolbarCancelColumn" Width="Auto" />
                                         </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
                                         <ComboBox x:Name="EcuSelector" PlaceholderText="Observed response" IsEnabled="False" SelectionChanged="EcuSelector_SelectionChanged" ToolTipService.ToolTip="Selection does not send a request or verify the inferred request address." Grid.Column="0" />
                                         <Button x:Name="DiscoverButton" Content="Discover ECUs" Click="Discover_Click" IsEnabled="False" Grid.Column="1" />
                                         <Button x:Name="CancelDiscoveryButton" Content="Cancel scan" Click="CancelDiscovery_Click" IsEnabled="False" Grid.Column="2" />
                                     </Grid>
                                     <TextBlock x:Name="DiscoveryStatus" VerticalAlignment="Center" Text="Not scanned" />
-                                    <Grid ColumnSpacing="12">
+                                    <Grid x:Name="EcuWorkbenchGrid" ColumnSpacing="12" RowSpacing="12">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="250" />
+                                            <ColumnDefinition x:Name="EcuWorkbenchListColumn" Width="218" />
+                                            <ColumnDefinition x:Name="EcuWorkbenchVehicleColumn" Width="*" />
+                                            <ColumnDefinition x:Name="EcuWorkbenchDetailColumn" Width="240" />
                                         </Grid.ColumnDefinitions>
-                                        <Border Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Border x:Name="EcuWorkbenchListPane" Grid.Column="0" Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
+                                            <StackPanel Spacing="10">
+                                                <TextBlock Text="Ответы ECU" FontSize="18" FontWeight="SemiBold" />
+                                                <TextBlock Text="Выберите наблюдаемый RX. Имена блоков не подтверждены." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
+                                    <ListView x:Name="EcusView" Height="260" SelectionMode="Single" IsEnabled="False" SelectionChanged="Ecu_SelectionChanged" ToolTipService.ToolTip="Passive response observations only. No verified ECU identity or request ID.">
+                                        <ListView.Header>
+                                            <StackPanel Spacing="3">
+                                                <TextBlock Text="Observed RX" FontWeight="SemiBold" FontSize="12" />
+                                                <TextBlock Text="Guessed TX · inferred only" Foreground="#A0BBD0" FontSize="11" />
+                                            </StackPanel>
+                                        </ListView.Header>
+                                        <ListView.ItemTemplate>
+                                            <DataTemplate>
+                                                <StackPanel Spacing="5" Padding="2,6">
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock Text="{Binding Response}" FontFamily="Consolas" Foreground="#75DCEC" FontWeight="SemiBold" />
+                                                        <TextBlock Text="{Binding Type}" FontSize="11" Foreground="#A7C9DD" />
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                                        <TextBlock Text="TX?" FontSize="11" Foreground="#E6C68D" />
+                                                        <TextBlock Text="{Binding Request}" FontFamily="Consolas" FontSize="11" />
+                                                        <TextBlock Text="{Binding RequestBasis}" FontSize="11" Foreground="#E6C68D" />
+                                                    </StackPanel>
+                                                    <StackPanel Orientation="Horizontal" Spacing="8">
+                                                        <TextBlock Text="Frames" FontSize="11" Foreground="#A7C9DD" />
+                                                        <TextBlock Text="{Binding Frames}" FontSize="11" />
+                                                        <TextBlock Text="Max bytes" FontSize="11" Foreground="#A7C9DD" />
+                                                        <TextBlock Text="{Binding MaxPayload}" FontSize="11" />
+                                                    </StackPanel>
+                                                </StackPanel>
+                                            </DataTemplate>
+                                        </ListView.ItemTemplate>
+                                    </ListView>
+                                            </StackPanel>
+                                        </Border>
+                                        <Border x:Name="EcuWorkbenchVehiclePane" Grid.Column="1" Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
                                             <StackPanel Spacing="9">
                                                 <Grid ColumnSpacing="12">
                                                     <Grid.ColumnDefinitions>
@@ -385,7 +460,7 @@
                                                 <TextBlock Text="Схема не указывает физические позиции ECU; местоположение и статус блоков не подтверждаются изображением." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Border>
-                                        <Border Grid.Column="1" Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
+                                        <Border x:Name="EcuWorkbenchDetailPane" Grid.Column="2" Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
                                             <StackPanel Spacing="12">
                                                 <TextBlock Text="Выбранный ответ" FontSize="18" FontWeight="SemiBold" />
                                                 <ScrollViewer MaxHeight="86" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -396,45 +471,6 @@
                                             </StackPanel>
                                         </Border>
                                     </Grid>
-                                    <ListView x:Name="EcusView" Height="260" SelectionMode="Single" IsEnabled="False" SelectionChanged="Ecu_SelectionChanged" ToolTipService.ToolTip="Passive response observations only. No verified ECU identity or request ID.">
-                                        <ListView.Header>
-                                            <Grid ColumnSpacing="12">
-                                                <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="100" />
-                                                    <ColumnDefinition Width="100" />
-                                                    <ColumnDefinition Width="90" />
-                                                    <ColumnDefinition Width="90" />
-                                                    <ColumnDefinition Width="*" />
-                                                </Grid.ColumnDefinitions>
-                                                <TextBlock Text="Observed RX" />
-                                                <TextBlock Grid.Column="1" Text="Guessed TX" />
-                                                <TextBlock Grid.Column="2" Text="Type" />
-                                                <TextBlock Grid.Column="3" Text="Frames" />
-                                                <TextBlock Grid.Column="4" Text="Max bytes / ID basis" />
-                                            </Grid>
-                                        </ListView.Header>
-                                        <ListView.ItemTemplate>
-                                            <DataTemplate>
-                                                <Grid ColumnSpacing="12">
-                                                    <Grid.ColumnDefinitions>
-                                                        <ColumnDefinition Width="100" />
-                                                        <ColumnDefinition Width="100" />
-                                                        <ColumnDefinition Width="90" />
-                                                        <ColumnDefinition Width="90" />
-                                                        <ColumnDefinition Width="*" />
-                                                    </Grid.ColumnDefinitions>
-                                                    <TextBlock Text="{Binding Response}" />
-                                                    <TextBlock Grid.Column="1" Text="{Binding Request}" />
-                                                    <TextBlock Grid.Column="2" Text="{Binding Type}" />
-                                                    <TextBlock Grid.Column="3" Text="{Binding Frames}" />
-                                                    <StackPanel Grid.Column="4" Orientation="Horizontal" Spacing="8">
-                                                        <TextBlock Text="{Binding MaxPayload}" />
-                                                        <TextBlock Text="{Binding RequestBasis}" />
-                                                    </StackPanel>
-                                                </Grid>
-                                            </DataTemplate>
-                                        </ListView.ItemTemplate>
-                                    </ListView>
 
                                 </StackPanel>
                             </Border>
