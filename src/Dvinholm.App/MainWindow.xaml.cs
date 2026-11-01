@@ -2624,6 +2624,16 @@ public sealed partial class MainWindow : Window
             // guessed year, and makes no additional J2534 request.
             var cemIdentity = VolvoP2CemCaptureIdentityReview.Assess(snapshot);
 
+            // A completed capture is useful even when the user declines
+            // sensitive JSON export. Keep the payload-free DID inventory in
+            // the private Diagnostics panel, never the Aurora activity.
+            // Input edits/Cancel invalidate its generation and clear it.
+            if (IsSnapshotContextCurrent(profile, captureGeneration))
+            {
+                DiagnosticResultText.Text = EcuReadOnlyDidInventoryDisplay.Build(snapshot);
+                DiagnosticResultExpander.IsExpanded = true;
+            }
+
             // Path-only Save As: cancelling never creates a placeholder file.
             var destinationPath = ReportSavePathPicker.PickPath(
                 WindowNative.GetWindowHandle(this),
