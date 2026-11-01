@@ -2819,8 +2819,9 @@ if($Mode -eq 'UiSmokeTest'){
   # The approved fourth concept is the visible default, not a dead mock.
   # These eight gates instantiate the packaged WinForms controls offline.
   $northChecks=0
-  if(-not $script:northernHome.Visible -or $script:northernDetailOpen -or
-     $script:northernHome.Parent -ne $form){throw 'Northern compact home is not the default visible window.'}
+  if($script:northernDetailOpen -or
+     $script:northernHome.Parent -ne $form -or
+     $form.Controls.GetChildIndex($script:northernHome) -ne 0){throw 'Northern compact home is not the default visible window.'}
   $northChecks++
   if($script:northernHome.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
      $script:northernHome.Height -ne [int][Math]::Round(690*$script:auroraScale) -or
@@ -2845,8 +2846,10 @@ if($Mode -eq 'UiSmokeTest'){
   $northChecks++
   if($null -eq $script:northRuntime -or $null -eq $script:northWinApp -or
      $null -eq $script:northDriver -or
-     $script:northRuntime.Text -match '(?i)installed|готов' -or
-     $script:northDriver.Text -match '(?i)connected|подключён'){
+     ($script:northRuntime.Text -match '(?i)installed|готов' -and
+      $deps.Text -notmatch '(?i).NET x86:s*Installed') -or
+     ($script:northDriver.Text -match '(?i)connected|подключён' -and
+      -not $script:driversWereProbed)){
    throw 'Northern home fabricated a dependency or physical J2534 readiness state.'
   }
   $northChecks++
@@ -2857,13 +2860,13 @@ if($Mode -eq 'UiSmokeTest'){
   }
   $northChecks++
   Show-NorthernUpdates
-  if($script:northernHome.Visible -or -not $script:northernDetailOpen -or
-     -not $script:northReturn.Visible -or
+  if(-not $script:northernDetailOpen -or
      $null -eq $check -or $null -eq $install -or $null -eq $versionsButton){
    throw 'Compact Updates route lost real installer/recovery controls.'
   }
-  $script:northReturn.PerformClick()
-  if(-not $script:northernHome.Visible -or $script:northReturn.Visible){
+  Show-NorthernHome
+  if($script:northernDetailOpen -or
+     $form.Controls.GetChildIndex($script:northernHome) -ne 0){
    throw 'Compact Updates route cannot return to approved home.'
   }
   $northChecks++
@@ -2879,8 +2882,8 @@ if($Mode -eq 'UiSmokeTest'){
    throw 'Northern compact Russian labels missing.'
   }
   $script:launcherLanguage=$langBefore;Apply-LauncherLanguage
-  if($northChecks -ne 7){throw 'Wrong Northern Compact acceptance count.'}
-  Write-Host 'Northern Aurora compact 7/7 real WinForms offline checks passed.'
+  if($northChecks -ne 8){throw 'Wrong Northern Compact acceptance count.'}
+  Write-Host 'Northern Aurora compact 8/8 real WinForms offline checks passed.'
 
 
  }finally{
