@@ -220,3 +220,46 @@ is not present beside the script; installed Launcher packages still prefer
 their bundled `Binaries/` image. The CI visual gate requires this real
 automotive banner to be decoded so a dark fallback is not accepted as the
 approved design. Final Windows screenshot validation remains outstanding.
+
+## User-supplied Launcher screenshot becomes the latest UI acceptance target (2026-11-02)
+
+The user supplied a **full native Launcher screenshot** and explicitly specified
+"должно быть так". This is the **latest and overriding** visual contract for
+the launcher **window**, as distinct from the previously selected No.9
+`Launcher.exe` icon. Earlier compact four-button Home arrangements are no
+longer the target.
+
+Required composition: tall Aurora/White Sea automotive hero with a prominent
+silver mechanical seagull/gear ring and through-arrow, DVINHOLM LAUNCHER,
+northern-lights sky and Volvo vehicle; **three horizontal prerequisite status
+cards** (.NET, WinApp, J2534); **one wide green primary Start**; five genuine
+actions in a **3+2 grid** (Updates, Components, J2534 Drivers; Settings,
+About); a coastal/viking Northern Dvina/White Sea footer. Localize RU and EN.
+
+The implemented **WinForms-native composition** uses a 1180×840 reference
+canvas, normally up to **944×672** pixels, constrained by screen working area
+with scrolling. It retains PowerShell 5.1 and the native x86 launcher and
+reuses the locally bundled interim automotive banner. No dead or fake
+buttons; About uses the existing localized about text, and Updates opens
+the real Service Cockpit.
+
+**Critical truthfulness:** the supplied screenshot illustratively shows
+three green "Готово" statuses, but those statuses must **not be hardcoded**.
+Cards display actual dependency/driver inventory or "не проверено" until a
+genuine local check. The Start button remains disabled until the existing
+recovery/launch safety preflight allows it; styles must not imply success when
+unverified. A registered J2534 driver is not proof of hardware connectivity.
+
+**Asset fidelity limitation:** the exact user-provided screenshot was supplied
+in the chat, not yet committed as a licensed, decomposed source-artwork
+asset. The WinForms background/crest/landscape are native GDI+ approximations
+using the locally bundled car imagery rather than a pixel-perfect raster
+copy. A faithful asset pass requires separating the approved hero, aurora,
+vehicle and coast art from its illustrative button/status pixels, so
+dynamic controls remain truthful. Real Windows DPI 100/125/150% screenshots
+and user-side visual acceptance remain mandatory before claiming a
+pixel-perfect match.
+
+The existing `UiSmokeTest`, `UiPreview` and DPI geometry matrix are
+updated for the new proportions and five-button grid, without changing
+installer transactions, self-update recovery, Stable, or Virtual Car.
