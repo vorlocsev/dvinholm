@@ -8,7 +8,11 @@ namespace Dvinholm.App.Tests;
 /// </summary>
 internal sealed class VirtualJ2534Adapter : Dvinholm.App.IJ2534SessionAdapter, IDisposable
 {
-    public Dvinholm.App.J2534Native.AdapterCapabilities Capabilities { get; } = new(false, true, true);
+    public Dvinholm.App.J2534Native.AdapterCapabilities Capabilities { get; } = new(true, true, true);
+    internal bool LastConnectExtended;
+    internal uint LastFilterMask;
+    internal bool RejectMaskFilter;
+    internal bool RejectStopFilter;
 
     private readonly ConcurrentQueue<Dvinholm.App.J2534Native.PassthruMsg> _rx = new();
     private readonly SemaphoreSlim _rxReady = new(0);
@@ -45,6 +49,11 @@ internal sealed class VirtualJ2534Adapter : Dvinholm.App.IJ2534SessionAdapter, I
     public bool Load(string path, out string error) { error = string.Empty; return true; }
     public bool Open(out string error) { error = string.Empty; return true; }
     public bool Connect(uint baudRate, out string error) { error = string.Empty; return true; }
+    public bool ConnectConfigured(uint baudRate, bool extended, out string error)
+    {
+        LastConnectExtended = extended;
+        return Connect(baudRate, out error);
+    }
 
     public bool Read(out Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
     {
@@ -108,6 +117,7 @@ internal sealed class VirtualJ2534Adapter : Dvinholm.App.IJ2534SessionAdapter, I
 
     public bool StopCanFilter(uint filterId, out string error)
     {
+        if (RejectStopFilter) { error = "Synthetic filter cleanup rejection."; return false; }
         StopFilterCallEntered?.Set();
         AllowStopFilterCallToFinish?.Wait();
         if (_filters.TryRemove(filterId, out _))
@@ -121,6 +131,18 @@ internal sealed class VirtualJ2534Adapter : Dvinholm.App.IJ2534SessionAdapter, I
     }
 
     public void Unload() { _filters.Clear(); }
+
+    public bool StartCanMaskFilter(uint mask, uint pattern, bool extended, out uint filterId, out string error)
+    {
+        LastFilterMask = mask;
+        if (RejectMaskFilter)
+        {
+            filterId = 0;
+            error = "Synthetic masked-filter rejection.";
+            return false;
+        }
+        return StartCanIdFilter(pattern, extended, out filterId, out error);
+    }
 
     public void Dispose()
     {

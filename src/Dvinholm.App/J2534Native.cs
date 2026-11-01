@@ -59,10 +59,12 @@ internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
     bool IJ2534Adapter.Load(string path, out string error) => Load(path, out error);
     bool IJ2534Adapter.Open(out string error) => Open(out error);
     bool IJ2534Adapter.Connect(uint baudRate, out string error) => Connect(baudRate, out error);
+    bool IJ2534SessionAdapter.ConnectConfigured(uint baudRate, bool extended, out string error) => Connect(baudRate, out error, extended);
     bool IJ2534Adapter.Read(out PassthruMsg msg, uint timeout, out string error) => Read(out msg, timeout, out error);
     bool IJ2534Adapter.Write(in PassthruMsg msg, uint timeout, out string error) => Write(in msg, timeout, out error);
     bool IJ2534Adapter.StartCanIdFilter(uint arbitrationId, bool extended, out uint filterId, out string error) => StartCanIdFilter(arbitrationId, extended, out filterId, out error);
     bool IJ2534Adapter.StopCanFilter(uint filterId, out string error) => StopCanFilter(filterId, out error);
+    bool IJ2534Adapter.StartCanMaskFilter(uint mask, uint pattern, bool extended, out uint filterId, out string error) => StartCanMaskFilter(mask, pattern, extended, out filterId, out error);
     AdapterVersionInfo? IJ2534Adapter.ReadVersion(out string error) => ReadVersion(out error);
     void IJ2534Adapter.Unload() => Unload();
 
@@ -189,7 +191,7 @@ internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
         return System.Text.Encoding.ASCII.GetString(buffer, 0, length).Trim();
     }
 
-    internal bool Connect(uint baudRate, out string error)
+    internal bool Connect(uint baudRate, out string error, bool extended = false)
     {
         error = string.Empty;
         if (_connect is null || _device == 0)
@@ -203,7 +205,7 @@ internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
             return false;
         }
 
-        var result = _connect(_device, ProtocolCan, 0, baudRate, out _channel);
+        var result = _connect(_device, ProtocolCan, extended ? CanDecoder.Can29BitId : 0, baudRate, out _channel);
         if (result != StatusNoError)
         {
             _channel = 0;
@@ -219,6 +221,9 @@ internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
     }
 
     internal bool StartCanIdFilter(uint arbitrationId, bool extended, out uint filterId, out string error)
+        => StartCanMaskFilter(extended ? 0x1FFFFFFFu : 0x7FFu, arbitrationId, extended, out filterId, out error);
+
+    internal bool StartCanMaskFilter(uint idMask, uint arbitrationId, bool extended, out uint filterId, out string error)
     {
         filterId = 0;
         error = string.Empty;
@@ -228,13 +233,14 @@ internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
             return false;
         }
 
-        if ((!extended && arbitrationId > 0x7FF) || (extended && arbitrationId > 0x1FFFFFFF))
+        if (arbitrationId > (extended ? 0x1FFFFFFFu : 0x7FFu) ||
+            idMask > (extended ? 0x1FFFFFFFu : 0x7FFu) || (arbitrationId & ~idMask) != 0)
         {
             error = extended ? "29-bit CAN ID is out of range." : "11-bit CAN ID is out of range.";
             return false;
         }
 
-        var mask = CanHardwareFilter.CreateMask(extended);
+        var mask = CanHardwareFilter.CreateIdMask(idMask, extended);
         var pattern = CanHardwareFilter.CreatePattern(arbitrationId, extended);
         var result = _startMsgFilter(_channel, FilterPass, &mask, &pattern, null, out filterId);
         if (result != StatusNoError)

@@ -43,16 +43,22 @@
             <TextBox x:Name="DllPath" PlaceholderText="Path to 32-bit J2534 DLL" Header="J2534 DLL"/>
             <ComboBox x:Name="J2534Devices" Grid.Column="1" Header="Registered adapters" DisplayMemberPath="Label" PlaceholderText="Select adapter" SelectionChanged="J2534Device_SelectionChanged"/>
             <Button Grid.Column="2" Content="Refresh" Click="RefreshJ2534Devices_Click" VerticalAlignment="Bottom"/>
-            <ComboBox x:Name="BaudRate" Grid.Column="3" Header="CAN speed" SelectedIndex="0"
+            <StackPanel Grid.Column="3" Spacing="4">
+            <ComboBox x:Name="BaudRate" Header="CAN speed" SelectedIndex="0"
                       ToolTipService.ToolTip="Volvo XC90 P2 HS-CAN guidance: through model year 2004 250 kbit/s; from model year 2005 500 kbit/s. Other networks differ. Verify actual model year, bus and adapter before connecting; Dvinholm does not adjust the speed automatically.">
                 <ComboBoxItem Content="500 kbit/s" Tag="500000"/><ComboBoxItem Content="250 kbit/s" Tag="250000"/><ComboBoxItem Content="125 kbit/s" Tag="125000"/>
             </ComboBox>
+            <ComboBox x:Name="CanConnectionMode" Header="CAN channel ID format" SelectedIndex="0" Visibility="Collapsed"
+                      ToolTipService.ToolTip="Select before connecting. Reconnect to change the physical channel format.">
+                <ComboBoxItem Content="11-bit"/><ComboBoxItem Content="29-bit"/>
+            </ComboBox>
+            </StackPanel>
             <Button x:Name="ConnectButton" Grid.Column="4" Content="Connect" Click="Connect_Click" VerticalAlignment="Bottom"/>
             <Button x:Name="StartButton" Grid.Column="5" Content="Start monitor" Click="Start_Click" VerticalAlignment="Bottom" IsEnabled="False"/>
         </Grid>
 
         <Grid Grid.Row="2" ColumnSpacing="10" RowSpacing="5">
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="120"/>
                 <ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/><ColumnDefinition Width="110"/>
@@ -84,6 +90,10 @@
                        Text="Read-only UDS disabled until connected with manually checked request and response CAN IDs."
                        TextWrapping="Wrap" IsTextSelectionEnabled="True"
                        ToolTipService.ToolTip="Valid CAN ID syntax does not verify ECU identity, model, protocol or service access."/>
+            <Button x:Name="CemPartNumberReadButton" Grid.Row="3" Grid.ColumnSpan="8"
+                    Content="Read CEM P/N (experimental HS-CAN)" HorizontalAlignment="Left"
+                    ToolTipService.ToolTip="Connect a 500 kbit/s, 29-bit channel; stop the monitor and remove user hardware filters first. Source-defined experimental read, not verified CEM or PIN support."
+                    Visibility="Collapsed" IsEnabled="False" Click="ReadCemPartNumber_Click"/>
         </Grid>
 
         <Grid Grid.Row="3" RowSpacing="10">
