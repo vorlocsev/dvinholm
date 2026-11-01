@@ -60,6 +60,6 @@ foreach($filename in @('Launcher.exe','Dvinholm.exe')){
  Write-Host "$filename includes $count native icon resource sizes."
 }
 if($hashes['Launcher.exe'] -ceq $hashes['Dvinholm.exe']){
- throw 'Both EXEs have an identical icon; launcher must show its update badge.'
+ throw 'Both EXEs have an identical icon; Northern Launcher and Dvinholm app must remain distinct.'
 }
 Write-Host 'Native EXE icons 3/3 offline checks passed.'
