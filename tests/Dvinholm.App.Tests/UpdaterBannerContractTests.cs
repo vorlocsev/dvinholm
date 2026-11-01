@@ -371,7 +371,12 @@ public sealed class UpdaterBannerContractTests
         Assert.Contains("[Text.UTF8Encoding]::new($false)", iconResourcePath);
         Assert.Contains("'assets\\dvinholm-icon.png'", build);
         Assert.Contains("foreach($size in $sizes)", generator);
-        Assert.Contains("DrawArc", generator);
+        // The approved Techno-North #9 icon uses a bolted gear ring, not
+        // the old circular update badge. Verify actual geometry primitives.
+        Assert.Contains("DrawEllipse($steel", generator);
+        Assert.Contains("FillEllipse($rivets", generator);
+        Assert.Contains("FillPolygon($silver", generator);
+        Assert.DoesNotContain("$badgeBg=", generator);
         Assert.Contains("RT_GROUP_ICON", smoke);
         Assert.Contains("Native EXE icons 3/3 offline checks passed.", smoke);
         Assert.Contains("Verify distinct embedded native EXE icons", workflow);
