@@ -24,3 +24,27 @@ nonmatching invalid entries, malformed addresses/source strings, invalid
 snapshot structure and genuine ambiguity. These are offline tests only;
 installed Windows and real DiCE/J2534/CEM acceptance remain outstanding.
 Stable v0.2.4 is unchanged.
+
+## Direct generic matcher UTC and provenance check
+
+The **generic** `EcuIdentityEvidenceMatcher.Assess` is callable directly,
+not only through the existing XC90 P2 CEM UI and support matrix. Before
+classifying any user-supplied multi-DID research fingerprint, it now requires
+a **non-default UTC capture timestamp with zero offset**. A missing timestamp
+or a capture labelled with a non-UTC offset produces UNKNOWN, never
+`VerifiedReadOnlyIdentity`. Existing CAN format, distinct DID, catalog-size
+and VIN-exclusion rules remain in force.
+
+A matching `IsVerified` flag plus an `EvidenceSource` text label still does
+**not** independently authenticate that source, physical ECU or vehicle.
+The generic matcher explanation now describes the event as a **supplied
+research fingerprint match** and explicitly says physical identity is
+**unverified**. Attribution strings, user profile names, DID bytes and
+other private metadata are not repeated in the output.
+
+Eight synthetic unit checks cover absent/non-UTC capture times, UTC
+research-only matching, untrusted source flags, invalid catalog rules,
+malformed observed DIDs, ambiguous matches, and spoofed profile
+verification. No adapter, CAN request, real CEM signature or PIN service is
+added. The stricter generic boundary complements the independent,
+permanently denied physical CEM identity gate.
