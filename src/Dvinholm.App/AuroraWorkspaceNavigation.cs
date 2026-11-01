@@ -9,8 +9,9 @@ internal static class AuroraWorkspaceNavigation
     {
         AuroraDestination.CemPinReadiness => new("CemPinPage", "CEM PIN", "Идентификация блока, ограниченный поиск и защищённое хранилище PIN."),
         AuroraDestination.CemConfigurationCatalog => new("CemConfigPage", "Конфигурация CEM", "Варианты оборудования и сведения о совместимости Volvo P2."),
+        AuroraDestination.DtcFaults => new("DtcPage", "Ошибки / DTC", "Чтение кодов и статусов одного выбранного ECU. Стирание недоступно до проверки протокола."),
         AuroraDestination.EcuWorkspace => new("EcuPage", "Блоки ECU", "Наблюдение ответов и выбор блока для дальнейшей диагностики."),
-        AuroraDestination.DiagnosticsWorkspace => new("DiagnosticsPage", "Диагностика", "Чтение VIN, параметров и кодов неисправностей выбранного ECU."),
+        AuroraDestination.DiagnosticsWorkspace => new("DiagnosticsPage", "Диагностика", "Чтение VIN и параметров выбранного ECU. Адреса требуют проверки."),
         AuroraDestination.CanMonitor => new("CanMonitorPage", "CAN монитор", "Поток сообщений, фильтры и инструменты анализа шины."),
         AuroraDestination.EcuProfiles => new("ProfilesPage", "Профили ECU", "Библиотека адресов, диагностических параметров и локальных снимков."),
         AuroraDestination.J2534Connection => new("ConnectionPage", "Подключение", "Настройка J2534-адаптера и физического CAN-канала."),

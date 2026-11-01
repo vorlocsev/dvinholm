@@ -11,6 +11,7 @@ public enum AuroraDestination
 {
     CemPinReadiness,
     CemConfigurationCatalog,
+    DtcFaults,
     EcuWorkspace,
     DiagnosticsWorkspace,
     CanMonitor,

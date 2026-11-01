@@ -42,3 +42,25 @@ The accompanying [wireframe.svg](./wireframe.svg) is a source-controlled **appro
 ## Implementation status
 - PR based on `main` after #687: reference specification, SVG approximate structural trace and initial WinUI workspaces.
 - Physical PIN support, live configuration reading/writing, erase DTC and physical ECU layout remain separately gated.
+
+## Dedicated DTC workspace: first implementation increment
+
+DTC reading is a separate Aurora destination, placed immediately after CEM
+configuration in the sidebar. It owns the existing single-ECU UDS 0x19/0x02
+read button and status mask selector; the VIN/DID diagnostics page retains the
+explicitly entered TX/RX addressing and other read operations. A navigation
+link returns to the address verification page. The shared private diagnostic
+result panel is visible on the DTC route, never in the home activity summary.
+
+The screen intentionally shows **no fabricated fault rows, vehicle code
+dictionary or cause descriptions**. Real ECU-reported 24-bit codes, supported
+status bits and raw statuses use the unchanged existing read formatter and
+result lifetime/cancellation gate. Erase is present but disabled; no UDS
+0x14/service writing, all-vehicle clear or automatic scan is introduced.
+An empty page does not claim the car is healthy. Selecting this page never
+sends a request.
+
+Eight new structural/safety tests cover the route, single owned read button,
+selector masks, disabled erase, description provenance, private result
+presentation and absence of navigation side effects. Windows GUI screenshot
+comparison and actual J2534/vehicle acceptance are still separate gates.
