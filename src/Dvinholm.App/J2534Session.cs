@@ -9,19 +9,26 @@ internal sealed class J2534Session : IDisposable
     private readonly object _lifecycleGate = new();
     private CanBus? _bus;
     private bool _disposed;
+    private int _transportFaulted;
 
     internal event Action<Exception>? ReadError;
 
-    internal bool IsConnected => _bus is not null;
+    internal bool IsConnected => _bus is not null && Volatile.Read(ref _transportFaulted) == 0;
+    internal uint? ConnectedBaudRate { get; private set; }
+    internal bool? ConnectedExtended { get; private set; }
 
     internal J2534Native.AdapterVersionInfo? AdapterVersion { get; private set; }
     internal string AdapterVersionStatus { get; private set; } = string.Empty;
     internal J2534Native.AdapterCapabilities? AdapterCapabilities { get; private set; }
 
-    internal CanBus Bus =>
-        _bus ?? throw new InvalidOperationException("J2534 CAN session is not connected.");
+    internal CanBus Bus => IsConnected && _bus is { } bus
+        ? bus : throw new InvalidOperationException("J2534 CAN session is not connected.");
 
-    internal bool Connect(string dllPath, uint baudRate, out string error)
+    // Preserve native resources for orderly disconnect, but reject further
+    // diagnostic work when receive-filter state could not be restored.
+    internal void InvalidateTransport() => Interlocked.Exchange(ref _transportFaulted, 1);
+
+    internal bool Connect(string dllPath, uint baudRate, out string error, bool extended = false)
     {
         // Connect's failure cleanup can unload the DLL. Never allow that path
         // to run from a callback raised by the active native Read call.
@@ -35,11 +42,11 @@ internal sealed class J2534Session : IDisposable
         lock (_lifecycleGate)
         {
             ObjectDisposedException.ThrowIf(_disposed, this);
-            return ConnectLocked(dllPath, baudRate, out error);
+            return ConnectLocked(dllPath, baudRate, extended, out error);
         }
     }
 
-    private bool ConnectLocked(string dllPath, uint baudRate, out string error)
+    private bool ConnectLocked(string dllPath, uint baudRate, bool extended, out string error)
     {
         error = string.Empty;
 
@@ -75,7 +82,7 @@ internal sealed class J2534Session : IDisposable
             AdapterVersion = _j2534.ReadVersion(out var versionError);
             AdapterVersionStatus = AdapterVersion is null ? versionError : string.Empty;
 
-            if (!_j2534.Connect(baudRate, out error))
+            if (!_j2534.ConnectConfigured(baudRate, extended, out error))
             {
                 var operationError = error;
                 error = CombineErrors(operationError, TryUnloadAdapter());
@@ -86,6 +93,8 @@ internal sealed class J2534Session : IDisposable
             _bus = new CanBus(_j2534);
             _bus.ReadError += HandleReadError;
             _bus.Start();
+            ConnectedBaudRate = baudRate;
+            ConnectedExtended = extended;
             return true;
         }
         catch (Exception)
@@ -133,6 +142,9 @@ internal sealed class J2534Session : IDisposable
 
     private void ClearAdapterMetadata()
     {
+        Interlocked.Exchange(ref _transportFaulted, 0);
+        ConnectedBaudRate = null;
+        ConnectedExtended = null;
         AdapterVersion = null;
         AdapterVersionStatus = string.Empty;
         AdapterCapabilities = null;

@@ -23,6 +23,13 @@ internal interface IJ2534Adapter
         return false;
     }
 
+    bool StartCanMaskFilter(uint mask, uint pattern, bool extended, out uint filterId, out string error)
+    {
+        filterId = 0;
+        error = "Masked CAN filters are not implemented by this adapter.";
+        return false;
+    }
+
     J2534Native.AdapterVersionInfo? ReadVersion(out string error)
     {
         error = "PassThruReadVersion is not implemented by this adapter.";

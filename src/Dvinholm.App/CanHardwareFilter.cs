@@ -3,7 +3,12 @@ namespace Dvinholm.App;
 internal static unsafe class CanHardwareFilter
 {
     internal static J2534Native.PassthruMsg CreateMask(bool extended)
+        => CreateIdMask(extended ? 0x1FFFFFFFu : 0x7FFu, extended);
+
+    internal static J2534Native.PassthruMsg CreateIdMask(uint idMask, bool extended)
     {
+        if (idMask > (extended ? 0x1FFFFFFFu : 0x7FFu))
+            throw new ArgumentOutOfRangeException(nameof(idMask));
         var message = new J2534Native.PassthruMsg
         {
             ProtocolID = J2534Native.ProtocolCan,
@@ -11,7 +16,6 @@ internal static unsafe class CanHardwareFilter
             DataSize = 4
         };
 
-        var idMask = extended ? 0x1FFFFFFFu : 0x7FFu;
         message.Data[0] = (byte)(idMask >> 24);
         message.Data[1] = (byte)(idMask >> 16);
         message.Data[2] = (byte)(idMask >> 8);

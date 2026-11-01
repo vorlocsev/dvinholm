@@ -31,12 +31,13 @@ cooperative deadlines. It grants no physical identity or entitlement.
 
 A successful synthetic metadata receipt is **not** PIN extraction. The
 `FinishedWithoutPin` status intentionally cannot be mistaken for success.
-There are no vehicle commands, seed/key algorithms, live brute-force attempts, key
+The PIN coordinator has no vehicle commands, seed/key algorithms, live brute-force attempts, key
 programming or configuration writes.
 
-The next increment must validate independent physical revision identity and
-a documented, lawfully authorized provider route before adding real-world
-transport or secret-handling. Hardware tests, installed Windows UI tests and
+Live PIN attempts still require independent physical revision identity and
+a documented, lawfully authorized provider route, plus secure result delivery.
+The experimental P/N reader described below is separate and grants no PIN access.
+Hardware tests, installed Windows UI tests and
 PIN acquisition remain outstanding. Frozen Stable v0.2.4 and separate
 Virtual Car release project are untouched.
 
@@ -53,7 +54,46 @@ neither verifies nor obtains a PIN and is not registered in a live provider.
 
 The reviewed [cracker source at 2d5de86](https://github.com/vtl/volvo-cem-cracker/blob/2d5de865d21094889a6c1c689797d5a636e909fc/volvo-cem-cracker.ino)
 also contains hardware timing measurements and programming-mode operations.
-Those parts, CAN addresses and security commands are not copied. The user's
+The numeric enumerator contains none of those timing, address or security operations. The user's
 other conditions remain: a verified physical CEM revision and transport route
 are required before live attempts. Buffer owners must clear candidates after
 use and must not log or persist candidate values or ordinals.
+
+## Experimental normal-mode P/N read (Development)
+
+The user selected the pinned cracker commands as the implementation
+specification. This is recorded as **source approval**, not a physical test.
+`CemPartNumberReader` sends one normal-mode part-number query through the
+existing J2534Session/CanBus/CanRxDispatcher. It does not use UDS or ISO-TP
+for this proprietary frame format and does not create a second transport.
+
+The native adapter now accepts explicit 29-bit channel selection; the
+default remains 11-bit. The Development connection selector chooses this
+before connecting. Adapter implementations without the new capability fail
+closed rather than silently using 11-bit. The reader requires the actual
+connected channel to be 500 kbit/s and 29-bit with message-filter APIs.
+It installs a temporary source-scoped mask filter, subscribes before sending,
+validates two full-length, BCD-correct frames from the same full RX ID, and
+removes the filter before returning. No retry, bus scan, K-line operation,
+programming mode, reset, PIN candidate or configuration write is sent.
+
+In Development the home CEM card opens the diagnostic workspace. Stop the
+monitor, remove user hardware filters, and use **Read CEM P/N (experimental
+HS-CAN)** after selecting/connecting the channel. A consent dialog precedes
+the single request. New action/consent/result text follows the Windows RU/EN
+UI culture. Results appear only in the explicit diagnostic result panel,
+not in home activity or saved settings. Clear, cancel, input edits, read
+errors and disconnect invalidate pending output. The operation shares the
+existing diagnostic gate, cancellation and shutdown path. Hardware filtering
+and monitor start are disabled while it runs. A failed filter cleanup marks
+the session unusable until disconnect/reconnect, preventing later diagnostic
+calls on an unknown receive configuration.
+
+The observation is a part number only: it does not authenticate the module,
+identify application/diagnostic software, validate MY2009 V8 fitment or enable
+the PIN provider. Late traffic has no protocol nonce, so this limited parser
+must not be used as physical identity attestation. Eight synthetic tests
+exercise the real session/bus dispatcher with a virtual adapter, including
+channel/filter prerequisites, source bytes, malformed replies, timeout/retry,
+cancellation, invalidation, error redaction, cleanup failure and UI defaults.
+Physical DiCE/J2534/CEM and interactive WinUI acceptance remain outstanding.

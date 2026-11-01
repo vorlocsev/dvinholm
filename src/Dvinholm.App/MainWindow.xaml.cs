@@ -194,7 +194,12 @@ public sealed partial class MainWindow : Window
         switch (destination)
         {
             case AuroraDestination.CemPinReadiness:
+#if DVINHOLM_DEVELOPMENT_FEATURES
+                ShowDashboardWorkspace();
+                CemPartNumberReadButton.Focus(FocusState.Programmatic);
+#else
                 P2PinReview_Click(this, null!); // Existing offline-only checklist.
+#endif
                 return;
             case AuroraDestination.CemConfigurationCatalog:
                 P2ConfigCatalog_Click(this, null!); // Existing offline research.
@@ -245,6 +250,9 @@ public sealed partial class MainWindow : Window
         var baud = (BaudRate.SelectedItem as ComboBoxItem)?.Content?.ToString();
         AuroraLanding.UpdateConnection(_connected, adapter, baud);
         AuroraLanding.UpdateProfile((ProfileSelector.SelectedItem as EcuProfile)?.Name);
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        RefreshCemPartReadAvailability();
+#endif
     }
 
     private static string ProfileCatalogPath => Path.Combine(
@@ -551,6 +559,10 @@ public sealed partial class MainWindow : Window
 #if DVINHOLM_DEVELOPMENT_FEATURES
     private void InitializeDevelopmentControls()
     {
+        CanConnectionMode.Visibility = Visibility.Visible;
+        CanConnectionMode.Header = CemText("ID канала", "Channel IDs");
+        CemPartNumberReadButton.Visibility = Visibility.Visible;
+        CemPartNumberReadButton.Content = CemText("Прочитать номер CEM (экспериментальный HS-CAN)", "Read CEM P/N (experimental HS-CAN)");
         var addTestProfiles = new Button { Content = "Add test profiles" };
         addTestProfiles.Click += AddTestProfiles_Click;
         ProfileActionsPanel.Children.Insert(2, addTestProfiles);
@@ -2270,7 +2282,7 @@ public sealed partial class MainWindow : Window
 
         // An observed RX address or a connected adapter alone does not
         // authorize a diagnostic request. Never arm a guessed/default TX ID.
-        var connected = enabled && _connected && !_closing;
+        var connected = enabled && _connected && _session.IsConnected && !_closing;
         var ready = UdsReadAddressReadiness.CanRead(
             connected,
             _udsGate.CurrentCount == 0 || _discoveryCts is not null,
@@ -2288,6 +2300,9 @@ public sealed partial class MainWindow : Window
                 ? "Read-only UDS disabled. Enter two distinct valid source-checked CAN IDs (TX and RX). Passive RX alone is not sufficient."
                 : "Read-only UDS disabled until connected with manually checked request and response CAN IDs.";
         RefreshSnapshotCaptureAvailability();
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        RefreshCemPartReadAvailability();
+#endif
     }
 
     private long ClearDiagnosticReadResult()
@@ -2368,7 +2383,7 @@ public sealed partial class MainWindow : Window
         }
 
         return EcuSnapshotCaptureUiGate.CanCapture(
-            profile, _connected && !_closing,
+            profile, _connected && _session.IsConnected && !_closing,
             DvinholmUserDataDirectory.IsAcceptanceLaunch, busy,
             requestId, responseId, extended);
     }
@@ -2393,7 +2408,7 @@ public sealed partial class MainWindow : Window
         // Button readiness is only a convenience. Recheck all addressing at
         // channel creation, including distinct TX/RX IDs, before subscribing.
         if (!UdsChannelStartPreflight.TryPrepare(
-                _connected, CanIdFormat.SelectedIndex,
+                _connected && _session.IsConnected, CanIdFormat.SelectedIndex,
                 UdsRequestId.Text, UdsResponseId.Text,
                 out var requestId, out var responseId, out var canExtendedId,
                 out error))
@@ -2709,6 +2724,145 @@ public sealed partial class MainWindow : Window
         }
     }
 
+#if DVINHOLM_DEVELOPMENT_FEATURES
+    private static string CemText(string russian, string english) =>
+        System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru" ? russian : english;
+
+    private bool CanUseCemPartRoute(bool requireIdle) =>
+        _connected && _session.IsConnected && !_closing && _demoTimer is null && _monitorTask is null &&
+        !DvinholmUserDataDirectory.IsAcceptanceLaunch && _activeHardwareFilterId is null &&
+        _session.ConnectedBaudRate == 500_000 && _session.ConnectedExtended == true &&
+        _session.AdapterCapabilities?.HardwareCanFilters == true && _discoveryCts is null &&
+        (!requireIdle || _udsGate.CurrentCount != 0);
+
+    private void RefreshCemPartReadAvailability()
+    {
+        if (CemPartNumberReadButton is not null)
+            CemPartNumberReadButton.IsEnabled = CanUseCemPartRoute(requireIdle: true);
+    }
+#endif
+
+    private async void ReadCemPartNumber_Click(object sender, RoutedEventArgs e)
+    {
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        if (!CanUseCemPartRoute(requireIdle: true) || !await _udsGate.WaitAsync(0))
+        {
+            SetStatus(CemText("Нужен свободный канал 500 кбит/с, 29 бит, без пользовательского HW-фильтра.",
+                "Requires an idle 500 kbit/s, 29-bit channel with no user hardware filter."));
+            return;
+        }
+        var generation = ClearDiagnosticReadResult();
+        using var cts = new CancellationTokenSource();
+        _udsCts = cts;
+        var filterWasEnabled = HardwareFilterButton.IsEnabled;
+        var monitorWasEnabled = StartButton.IsEnabled;
+        var cancelLabel = CancelUdsButton.Content;
+        try
+        {
+            SetUdsEnabled(false);
+            DiscoverButton.IsEnabled = false;
+            ConnectButton.IsEnabled = false;
+            HardwareFilterButton.IsEnabled = false;
+            StartButton.IsEnabled = false;
+            CancelUdsButton.IsEnabled = true;
+            CancelUdsButton.Content = CemText("Отмена CEM", "Cancel CEM");
+            var consent = new CheckBox
+            {
+                Content = new TextBlock
+                {
+                    Text = CemText("Я уполномочен выполнять диагностику этого автомобиля и согласен на один запрос.",
+                        "I am authorized to diagnose this vehicle and consent to one request."),
+                    TextWrapping = TextWrapping.Wrap
+                }
+            };
+            var content = new StackPanel { Spacing = 10 };
+            content.Children.Add(new TextBlock
+            {
+                Text = CemText("Экспериментальное чтение номера детали CEM по согласованному исходнику. " +
+                    "Текущий канал: 500 кбит/с, 29 бит. Только один запрос; без PIN, программного режима, сбросов и автопоиска. " +
+                    "Ответ не подтверждает физическую ревизию или совместимость с PIN-процедурой.",
+                    "Experimental CEM part-number read from the approved source. " +
+                    "Current channel: 500 kbit/s, 29-bit. One request only; no PIN, programming mode, resets or automatic probing. " +
+                    "The reply does not verify physical revision or PIN compatibility."),
+                TextWrapping = TextWrapping.Wrap
+            });
+            content.Children.Add(consent);
+            var dialog = new ContentDialog
+            {
+                XamlRoot = RootLayout.XamlRoot,
+                Title = CemText("Чтение номера CEM", "Read CEM part number"),
+                Content = content,
+                PrimaryButtonText = CemText("Прочитать", "Read"),
+                CloseButtonText = CemText("Отмена", "Cancel"),
+                IsPrimaryButtonEnabled = false,
+                DefaultButton = ContentDialogButton.Close
+            };
+            consent.Checked += (_, _) => dialog.IsPrimaryButtonEnabled = true;
+            consent.Unchecked += (_, _) => dialog.IsPrimaryButtonEnabled = false;
+            if (await dialog.ShowAsync() != ContentDialogResult.Primary || consent.IsChecked != true)
+                return;
+            if (!CanUseCemPartRoute(requireIdle: false) || !_udsResultLifetime.CanDisplay(generation))
+                return;
+            cts.Token.ThrowIfCancellationRequested();
+            var context = new object();
+            using var guard = CemPinSessionGuard.Capture(_session, context,
+                () => !Volatile.Read(ref _closing) && _udsResultLifetime.CanDisplay(generation) ? context : null,
+                ownerConsent: true);
+            var hardwareFilterActive = _activeHardwareFilterId is not null;
+            SetStatus(CemText("Чтение номера CEM…", "Reading CEM part number…"));
+            var observation = await Task.Run(() => CemPartNumberReader.Read(_session, guard,
+                routeApproved: true, hardwareFilterActive: hardwareFilterActive,
+                cancellationToken: cts.Token));
+            if (_closing || cts.IsCancellationRequested || !guard.IsCurrent ||
+                !_udsResultLifetime.CanDisplay(generation)) return;
+            DiagnosticResultText.Text = CemText("Наблюдаемый номер детали CEM: ", "Observed CEM part number: ") +
+                observation.PartNumber.ToString(System.Globalization.CultureInfo.InvariantCulture) +
+                Environment.NewLine + CemText("Экспериментальный ответ; HW/SW и поддержка PIN не подтверждены.",
+                    "Experimental reply; HW/SW identity and PIN support are unverified.") +
+                Environment.NewLine + observation.Source;
+            DiagnosticResultExpander.IsExpanded = true;
+            // P/N and response payload must not enter the Aurora activity feed.
+            SetStatus(CemText("Чтение номера CEM завершено (экспериментально).", "CEM part-number read completed (experimental)."));
+        }
+        catch (CemPartNumberCleanupException)
+        {
+            if (!_closing) SetStatus(CemText("Не удалось восстановить фильтр приёма. Переподключите адаптер перед диагностикой.",
+                "Receive-filter cleanup failed. Reconnect the adapter before further diagnostics."));
+        }
+        catch (OperationCanceledException)
+        {
+            if (!_closing && _udsResultLifetime.CanDisplay(generation))
+                SetStatus(CemText("Чтение CEM отменено.", "CEM read cancelled."));
+        }
+        catch (TimeoutException)
+        {
+            if (!_closing && _udsResultLifetime.CanDisplay(generation))
+                SetStatus(CemText("Нет полного ответа CEM в заданный срок. Другие маршруты не проверялись.",
+                    "No complete CEM reply before the deadline. No other routes were probed."));
+        }
+        catch (Exception)
+        {
+            if (!_closing && _udsResultLifetime.CanDisplay(generation))
+                SetStatus(CemText("Чтение CEM не выполнено: ошибка адаптера или изменившийся контекст. Частные данные скрыты.",
+                    "CEM read failed: adapter error or changed context. Private details are withheld."));
+        }
+        finally
+        {
+            _udsCts = null;
+            CancelUdsButton.Content = cancelLabel;
+            CancelUdsButton.IsEnabled = false;
+            DiscoverButton.IsEnabled = _connected && _session.IsConnected && !_closing;
+            ConnectButton.IsEnabled = !_closing;
+            HardwareFilterButton.IsEnabled = filterWasEnabled && _session.IsConnected && !_closing;
+            StartButton.IsEnabled = monitorWasEnabled && _session.IsConnected && !_closing;
+            _udsGate.Release();
+            SetUdsEnabled(_connected);
+        }
+#else
+        await Task.CompletedTask;
+#endif
+    }
+
     private async void ReadDid_Click(object sender, RoutedEventArgs e)
     {
         if (!TryParseDid(out var did)) return;
@@ -2852,7 +3006,7 @@ public sealed partial class MainWindow : Window
         ClearDiagnosticReadResult();
         cts.Cancel();
         CancelUdsButton.IsEnabled = false;
-        SetStatus("UDS cancellation requested; late output will be discarded.");
+        SetStatus("Diagnostic cancellation requested; late output will be discarded.");
     }
 
     private async void Connect_Click(object sender, RoutedEventArgs e)
@@ -2944,6 +3098,7 @@ public sealed partial class MainWindow : Window
 #if DVINHOLM_DEVELOPMENT_FEATURES
                 _demoMonitorButton.IsEnabled = !_connected && !_closing;
 #endif
+                CanConnectionMode.IsEnabled = !_connected && !_closing;
             }
             return;
         }
@@ -2960,6 +3115,16 @@ public sealed partial class MainWindow : Window
             SetStatus("Select a valid CAN baud rate.");
             return;
         }
+
+        var extendedChannel = false;
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        if (CanConnectionMode.SelectedIndex is not (0 or 1))
+        {
+            SetStatus(CemText("Выберите формат ID канала CAN.", "Select a CAN channel ID format."));
+            return;
+        }
+        extendedChannel = CanConnectionMode.SelectedIndex == 1;
+#endif
 
 #if DVINHOLM_DEVELOPMENT_FEATURES
         // Never combine previously generated demo rows with real CAN capture.
@@ -2979,12 +3144,13 @@ public sealed partial class MainWindow : Window
         SetStatus("Connecting to J2534...");
         var connectTask = Task.Run(() =>
         {
-            var connected = _session.Connect(dllPath, baud, out var error);
+            var connected = _session.Connect(dllPath, baud, out var error, extended: extendedChannel);
             return (connected, error);
         });
         // Track the actual native connect operation. Its UI continuation must
         // check _closing before inspecting session properties after this await.
         _connectTask = connectTask;
+        CanConnectionMode.IsEnabled = false;
         try
         {
             var result = await connectTask;
@@ -3018,6 +3184,7 @@ public sealed partial class MainWindow : Window
             if (!_closing)
             {
                 ConnectButton.IsEnabled = true;
+                CanConnectionMode.IsEnabled = !_connected;
 #if DVINHOLM_DEVELOPMENT_FEATURES
                 _demoMonitorButton.IsEnabled = !_connected;
 #endif
@@ -3125,6 +3292,9 @@ public sealed partial class MainWindow : Window
                     {
                         if (ReferenceEquals(_monitorTask, completed))
                             _monitorTask = null;
+#if DVINHOLM_DEVELOPMENT_FEATURES
+                        RefreshCemPartReadAvailability();
+#endif
                     });
                 },
                 CancellationToken.None,

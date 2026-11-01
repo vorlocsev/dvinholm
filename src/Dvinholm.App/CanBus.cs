@@ -77,6 +77,24 @@ internal sealed class CanBus : IDisposable
         }
     }
 
+    internal bool StartCanMaskFilter(uint mask, uint pattern, bool extended, out uint filterId, out string error)
+    {
+        ThrowIfDisposed();
+        if (mask > (extended ? 0x1FFFFFFFu : 0x7FFu) || (pattern & ~mask) != 0)
+        {
+            filterId = 0;
+            error = "Invalid masked CAN filter.";
+            return false;
+        }
+        _txLock.Wait();
+        try
+        {
+            ThrowIfDisposed();
+            return _j2534.StartCanMaskFilter(mask, pattern, extended, out filterId, out error);
+        }
+        finally { _txLock.Release(); }
+    }
+
     internal void Stop()
     {
         if (Volatile.Read(ref _disposed) != 0)
