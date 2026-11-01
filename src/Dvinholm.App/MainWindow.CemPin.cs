@@ -7,6 +7,10 @@ namespace Dvinholm.App;
 
 public sealed partial class MainWindow
 {
+#if DVINHOLM_DEVELOPMENT_FEATURES
+    private bool _cemPinLoadedFromStore;
+    private static CemPinStore OpenCemPinStore() => new(Path.Combine(DvinholmUserDataDirectory.Current, "cem-pin-vault"));
+#endif
     private void CemPinRangeChanged(object sender, TextChangedEventArgs e)
     {
 #if DVINHOLM_DEVELOPMENT_FEATURES
@@ -19,10 +23,11 @@ public sealed partial class MainWindow
     private void RevealCemPin_Click(object sender, RoutedEventArgs e)
     {
 #if DVINHOLM_DEVELOPMENT_FEATURES
-        if (_cemPinResultGuard?.IsCurrent != true || _cemPinShownAt != 0)
+        if ((!_cemPinLoadedFromStore && _cemPinResultGuard?.IsCurrent != true) || _cemPinShownAt != 0)
         { ClearCemPinMaterial(); return; }
         if (_cemPinResult?.TryReveal(bytes => CemPinResultText.Text =
-            (_cemPinResult.Origin == CemPinResultOrigin.Synthetic ? "SYNTHETIC: " : "PIN: ") +
+            (_cemPinResult.Origin == CemPinResultOrigin.Synthetic ? "SYNTHETIC: " :
+                _cemPinLoadedFromStore ? CemText("Сохранённый PIN: ", "Saved PIN: ") : "PIN: ") +
             Convert.ToHexString(bytes)) == true)
         {
             _cemPinShownAt = Stopwatch.GetTimestamp();
@@ -46,6 +51,7 @@ public sealed partial class MainWindow
         _cemPinViewTimer?.Stop();
         _cemPinViewTimer = null;
         _cemPinShownAt = 0;
+        _cemPinLoadedFromStore = false;
         _cemPinResult?.Dispose();
         _cemPinResult = null;
         _cemPinResultGuard?.Dispose();
@@ -75,7 +81,7 @@ public sealed partial class MainWindow
         timer.Interval = TimeSpan.FromMilliseconds(200);
         timer.Tick += (_, _) =>
         {
-            if (_closing || _cemPinResult?.HasPin != true || _cemPinResultGuard?.IsCurrent != true ||
+            if (_closing || _cemPinResult?.HasPin != true || (!_cemPinLoadedFromStore && _cemPinResultGuard?.IsCurrent != true) ||
                 (_cemPinShownAt != 0 && Stopwatch.GetElapsedTime(_cemPinShownAt) >= TimeSpan.FromSeconds(15)))
                 ClearCemPinMaterial();
         };
@@ -110,9 +116,11 @@ public sealed partial class MainWindow
             content.Children.Add(new TextBlock { TextWrapping = TextWrapping.Wrap,
                 Text = CemText("Перебор по согласованному исходнику: до 10000 попыток, максимум 60 секунд. " +
                     "Нужен уже доступный сервисный контекст CEM. Физическая совместимость не проверена. " +
-                    "PIN показывается отдельно и временно. Автоматический вход в программирование и сбросы не выполняются.",
+                    "Найденный PIN автоматически сохраняется в зашифрованном хранилище текущего пользователя Windows. " +
+                    "Показ PIN временный. Автоматический вход в программирование и сбросы не выполняются.",
                     "Source-defined enumeration: at most 10000 attempts and 60 seconds. Requires an already available CEM service context. " +
-                    "Physical compatibility is unverified. PIN is revealed separately and temporarily. Programming entry and resets are unavailable.") });
+                    "Physical compatibility is unverified. Found PINs are saved with Windows current-user encryption. " +
+                    "Reveal is temporary. Programming entry and resets are unavailable.") });
             content.Children.Add(consent);
             var dialog = new ContentDialog { XamlRoot = RootLayout.XamlRoot, Content = content,
                 Title = CemText("Получение PIN CEM — эксперимент", "CEM PIN source experiment"),
@@ -144,6 +152,9 @@ public sealed partial class MainWindow
             }
             if (result.HasPin)
             {
+                var saved = false;
+                try { OpenCemPinStore().Save(result, identity.PartNumber); saved = true; }
+                catch (Exception) { /* Keep the temporary result; never echo storage errors. */ }
                 _cemPinResult = result;
                 result = null;
                 _cemPinResultGuard = guard;
@@ -152,7 +163,10 @@ public sealed partial class MainWindow
                     "Candidate accepted twice by the adapter. PIN hidden. Physical provenance is unverified.");
                 CemPinRevealButton.IsEnabled = true;
                 StartCemPinExpiry();
-                SetStatus(CemText("Получен временный результат PIN CEM.", "Temporary CEM PIN result available."));
+                SetStatus(saved
+                    ? CemText("PIN CEM сохранён в зашифрованном хранилище Windows.", "CEM PIN saved with Windows user encryption.")
+                    : CemText("PIN CEM получен, но сохранить не удалось. Доступен только временный показ.",
+                        "CEM PIN obtained, but saving failed. Only temporary reveal is available."));
             }
             else if (!_session.IsConnected)
                 SetStatus(CemText("Ошибка очистки транспорта. Переподключите адаптер.", "Transport cleanup failed. Reconnect the adapter."));

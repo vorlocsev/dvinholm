@@ -30,8 +30,12 @@ public sealed class ProductionAssemblySmokeTests
     }
 
     [Fact]
-    public void NoSyntheticCanGeneratorType() =>
+    public void NoSyntheticCanGeneratorType()
+    {
         Assert.Null(App.GetType("Dvinholm.App.CanDemoFrameGenerator"));
+        Assert.Null(App.GetType("Dvinholm.App.CemPinStore"));
+        Assert.Null(App.GetType("Dvinholm.App.CemPinWindowsProtection"));
+    }
 
     [Fact]
     public void NoOfflineUdsSampleType() =>

@@ -48,6 +48,8 @@
     <Compile Remove="UdsOfflineSample.cs" />
     <Compile Remove="UdsOfflineTextReport.cs" />
     <Compile Remove="ExperimentalCemPinCanProvider.cs" />
+    <Compile Remove="CemPinStore.cs" />
+    <Compile Remove="CemPinWindowsProtection.cs" />
   </ItemGroup>
   <ItemGroup>
     <PackageReference Include="Microsoft.WindowsAppSDK" Version="2.5.1" />

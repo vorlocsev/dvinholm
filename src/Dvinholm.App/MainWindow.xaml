@@ -101,7 +101,13 @@
                     <Button x:Name="CemPinReadButton" Content="Read CEM PIN (experimental)" IsEnabled="False" Click="ReadCemPin_Click" VerticalAlignment="Bottom"/>
                     <Button x:Name="CemPinRevealButton" Content="Reveal for 15 seconds" IsEnabled="False" Click="RevealCemPin_Click" VerticalAlignment="Bottom"/>
                 </StackPanel>
-                <TextBlock x:Name="CemPinResultText" Text="No PIN result." FontFamily="Consolas" TextWrapping="Wrap" IsTextSelectionEnabled="False"/>
+                <Grid ColumnSpacing="12">
+                    <Grid.ColumnDefinitions><ColumnDefinition Width="Auto"/><ColumnDefinition Width="*"/></Grid.ColumnDefinitions>
+                    <Button x:Name="CemPinSavedButton" Content="Saved PINs" Visibility="Collapsed"
+                            HorizontalAlignment="Left" Click="SavedCemPins_Click"/>
+                    <TextBlock x:Name="CemPinResultText" Grid.Column="1" Text="No PIN result." FontFamily="Consolas"
+                               TextWrapping="Wrap" IsTextSelectionEnabled="False" VerticalAlignment="Center"/>
+                </Grid>
             </StackPanel>
         </Grid>
 
