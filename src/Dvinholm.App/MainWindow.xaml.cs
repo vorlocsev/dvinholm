@@ -2711,8 +2711,11 @@ public sealed partial class MainWindow : Window
         const byte statusMask = 0xFF;
         await RunUdsOperationAsync(UdsReadResultKind.Dtc, (client, token) =>
         {
-            var records = client.ReadDtcByStatusMask(statusMask, token);
-            return UdsDtcDisplayFormatter.Format(records, statusMask);
+            // Preserve the ECU's status availability mask from UDS 0x19/0x02.
+            // Unsupported DTC status bits must never be presented as
+            // confirmed diagnostic states.
+            var result = client.ReadDtcResultByStatusMask(statusMask, token);
+            return UdsDtcDisplayFormatter.Format(result, statusMask);
         });
     }
 
