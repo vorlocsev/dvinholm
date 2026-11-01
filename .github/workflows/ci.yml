@@ -37,7 +37,7 @@ jobs:
       - name: Parse Windows PowerShell 5.1 distribution scripts
         shell: powershell
         run: |
-          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Manage-Lite-Dependencies.ps1', 'eng/Updater-Banner.ps1', 'eng/Launcher-AuroraTheme.ps1', 'eng/Launcher-ServiceCockpit.ps1', 'eng/Launcher-ReleaseDiscovery.ps1', 'eng/Test-LauncherReleaseDiscovery.ps1', 'eng/Launcher-VerifiedDownload.ps1', 'eng/Test-LauncherVerifiedDownload.ps1', 'eng/Test-LauncherStorageCleanup.ps1', 'eng/Launcher-ApplyPrepared.ps1', 'eng/Test-LauncherApplyPrepared.ps1', 'eng/Launcher-RebootRecovery.ps1', 'eng/Test-LauncherRebootRecovery.ps1', 'eng/Inspect-LauncherRecovery.ps1', 'eng/Test-LauncherRecoveryInspection.ps1', 'eng/Test-LauncherRecoveryAudit.ps1', 'eng/Test-LauncherRecoveryAuditValidation.ps1', 'eng/Test-PackagedLauncherInspector.ps1', 'eng/Test-LauncherRecoveryProcesses.ps1', 'eng/Test-LauncherBackupFinalization.ps1', 'eng/J2534-DriverManager.ps1', 'eng/J2534-DriverUI.ps1', 'eng/Package-Updater-Banner.ps1', 'eng/Build-Launchers.ps1', 'eng/NativeIconResourcePath.ps1', 'eng/Test-NativeIconResourcePath.ps1', 'eng/Invoke-NativeLauncherBuild.ps1', 'eng/New-LauncherIcon.ps1', 'eng/Test-NativeLauncherIcons.ps1', 'eng/Assert-LauncherSelfUpdatePackage.ps1', 'eng/Test-LauncherSelfUpdatePackage.ps1', 'eng/Invoke-LauncherReplacement.ps1', 'eng/Test-LauncherReplacement.ps1', 'eng/Package-Launchable-Lite.ps1', 'eng/Test-Launchable-Lite.ps1', 'eng/Test-PackagedUpdaterBanner.ps1', 'eng/Test-LiteBundledPreflight.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
+          foreach ($path in @('eng/Test-WindowsDistribution.ps1', 'eng/Test-WindowsDistributionExtraction.ps1', 'eng/Test-LitePrerequisites.ps1', 'eng/Manage-Lite-Dependencies.ps1', 'eng/Updater-Banner.ps1', 'eng/Launcher-AuroraTheme.ps1', 'eng/Launcher-ServiceCockpit.ps1', 'eng/Launcher-ReleaseDiscovery.ps1', 'eng/Test-LauncherReleaseDiscovery.ps1', 'eng/Launcher-VerifiedDownload.ps1', 'eng/Test-LauncherVerifiedDownload.ps1', 'eng/Test-LauncherStorageCleanup.ps1', 'eng/Launcher-ApplyPrepared.ps1', 'eng/Test-LauncherApplyPrepared.ps1', 'eng/Launcher-RebootRecovery.ps1', 'eng/Test-LauncherRebootRecovery.ps1', 'eng/Inspect-LauncherRecovery.ps1', 'eng/Test-LauncherRecoveryInspection.ps1', 'eng/Test-LauncherRecoveryAudit.ps1', 'eng/Test-LauncherRecoveryAuditValidation.ps1', 'eng/Test-PackagedLauncherInspector.ps1', 'eng/Test-LauncherRecoveryProcesses.ps1', 'eng/Test-LauncherBackupFinalization.ps1', 'eng/J2534-DriverManager.ps1', 'eng/J2534-DriverUI.ps1', 'eng/Package-Updater-Banner.ps1', 'eng/Build-Launchers.ps1', 'eng/NativeIconResourcePath.ps1', 'eng/Test-NativeIconResourcePath.ps1', 'eng/Invoke-NativeLauncherBuild.ps1', 'eng/New-LauncherIcon.ps1', 'eng/Test-NativeLauncherIcons.ps1', 'eng/Test-NorthernLauncherIconFrames.ps1', 'eng/Assert-LauncherSelfUpdatePackage.ps1', 'eng/Test-LauncherSelfUpdatePackage.ps1', 'eng/Invoke-LauncherReplacement.ps1', 'eng/Test-LauncherReplacement.ps1', 'eng/Package-Launchable-Lite.ps1', 'eng/Test-Launchable-Lite.ps1', 'eng/Test-PackagedUpdaterBanner.ps1', 'eng/Test-LiteBundledPreflight.ps1', 'eng/Test-WindowsDistributionChecksums.ps1', 'eng/Test-PublishedDevelopmentRelease.ps1')) {
             $tokens = $null
             $syntaxErrors = $null
             [System.Management.Automation.Language.Parser]::ParseFile(
@@ -176,6 +176,23 @@ jobs:
       - name: Verify distinct embedded native EXE icons
         shell: powershell
         run: ./eng/Test-NativeLauncherIcons.ps1 -Directory artifacts/native
+
+      # Extract actual PNG payloads from the generated native Launcher ICO,
+      # not mock images. Check all seven frames and legibility at 16/32/256.
+      - name: Verify Northern Launcher icon frames (eight offline gates)
+        shell: powershell
+        run: ./eng/Test-NorthernLauncherIconFrames.ps1 -IconPath artifacts/native/Dvinholm-Launcher.ico -PreviewDirectory artifacts/launcher-icon-preview
+
+      # Human visual approval is still necessary. This PR-only artifact makes
+      # the actual built 16/32/256 PNGs inspectable without publishing a release.
+      - name: Upload Northern Launcher icon previews
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-Launcher-Icon-Preview
+          path: artifacts/launcher-icon-preview/Launcher-*.png
+          if-no-files-found: error
+          retention-days: 14
 
       - name: Package and validate main application
         shell: pwsh
