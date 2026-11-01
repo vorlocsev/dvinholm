@@ -209,3 +209,194 @@ function Set-AuroraCompactLayout {
  }finally{$form.ResumeLayout($true)}
  $hero.Invalidate()
 }
+
+
+# Approved Northern Compact home (2026-11-01, final/fourth concept).
+# Use only the existing GDI+/WinForms runtime and the bundled panorama.
+# All updates, drivers, safe launch and recovery remain handled above.
+# Service Cockpit becomes the detailed Updates view behind this home.
+$script:northernHome=New-Object Windows.Forms.Panel
+$script:northernHome.SetBounds(0,0,1180,690)
+$script:northernHome.BackColor=[Drawing.Color]::FromArgb(8,22,39)
+$form.Controls.Add($script:northernHome)
+$script:northernHome.BringToFront()
+$script:northernDetailOpen=$false
+
+function New-NorthernLabel([string]$value,[int]$x,[int]$y,
+ [int]$width,[int]$height,[int]$size=11,[bool]$bold=$false){
+ $label=New-Object Windows.Forms.Label
+ $label.Text=$value
+ $label.SetBounds($x,$y,$width,$height)
+ $label.Font=[Drawing.Font]::new('Segoe UI',[single]$size,
+  $(if($bold){[Drawing.FontStyle]::Bold}else{[Drawing.FontStyle]::Regular}))
+ $label.ForeColor=[Drawing.Color]::FromArgb(227,242,253)
+ $label.BackColor=[Drawing.Color]::Transparent
+ $label.AutoEllipsis=$true
+ $script:northernHome.Controls.Add($label)
+ return $label
+}
+function New-NorthernButton([string]$value,[int]$x,[int]$y,
+ [int]$width,[int]$height,[bool]$primary=$false){
+ $button=New-Object Windows.Forms.Button
+ $button.Text=$value
+ $button.SetBounds($x,$y,$width,$height)
+ $button.Font=[Drawing.Font]::new('Segoe UI',$(if($primary){17}else{11}),
+  [Drawing.FontStyle]::Bold)
+ $button.BackColor=if($primary){
+  [Drawing.Color]::FromArgb(8,118,113)
+ }else{[Drawing.Color]::FromArgb(17,49,76)}
+ $button.ForeColor=[Drawing.Color]::White
+ $button.FlatStyle=[Windows.Forms.FlatStyle]::Flat
+ $button.FlatAppearance.BorderSize=2
+ $button.FlatAppearance.BorderColor=if($primary){
+  [Drawing.Color]::FromArgb(42,218,189)
+ }else{[Drawing.Color]::FromArgb(51,121,168)}
+ $button.Cursor=[Windows.Forms.Cursors]::Hand
+ $script:northernHome.Controls.Add($button)
+ return $button
+}
+# Northern identity is drawn locally, not a copied automaker mark.
+# Gear + ring/arrow + white-gull silhouette + three White Sea waves.
+$script:northernHome.Add_Paint({
+ $g=$_.Graphics
+ $g.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
+ $factor=[single]$script:auroraScale
+ if($factor -le 0){$factor=1}
+ $g.ScaleTransform($factor,$factor)
+ $background=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(8,22,39))
+ try{$g.FillRectangle($background,0,0,1180,690)}finally{$background.Dispose()}
+ if($script:heroBackdrop){
+  $picture=$script:heroBackdrop
+  # Crop to the right-hand panorama to avoid reprinting baked-in old titles.
+  $source=[Drawing.Rectangle]::new(
+   [int]($picture.Width*0.24),0,
+   [int]($picture.Width*0.76),[int]$picture.Height)
+  $g.DrawImage($picture,[Drawing.Rectangle]::new(0,0,1180,330),
+   $source,[Drawing.GraphicsUnit]::Pixel)
+ }
+ # Darkened typography area and compact Aurora edge treatment.
+ $veil=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(135,5,20,37))
+ $lower=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(242,8,23,40))
+ $line=[Drawing.Pen]::new([Drawing.Color]::FromArgb(75,43,198,203),2)
+ try{
+  $g.FillRectangle($veil,0,0,1180,329)
+  $g.FillRectangle($lower,0,330,1180,360)
+  $g.DrawLine($line,42,324,1137,324)
+  $g.DrawLine($line,42,655,1137,655)
+ }finally{$veil.Dispose();$lower.Dispose();$line.Dispose()}
+ $silver=[Drawing.Pen]::new([Drawing.Color]::FromArgb(216,227,240,250),7)
+ $cyan=[Drawing.Pen]::new([Drawing.Color]::FromArgb(212,36,224,217),5)
+ $bird=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(246,238,248,255))
+ try{
+  # Volvo-inspired ring and arrow merged with the Severodvinsk gear motif.
+  $g.DrawArc($silver,85,64,170,170,38,305)
+  $g.DrawLine($silver,215,94,272,38)
+  $g.DrawLine($silver,272,38,269,81)
+  $g.DrawLine($silver,272,38,229,38)
+  for($i=0;$i -lt 10;$i++){
+   $a=([double]$i*2*[Math]::PI/10)
+   $x1=170+[Math]::Cos($a)*89
+   $y1=148+[Math]::Sin($a)*89
+   $x2=170+[Math]::Cos($a)*102
+   $y2=148+[Math]::Sin($a)*102
+   $g.DrawLine($silver,[single]$x1,[single]$y1,[single]$x2,[single]$y2)
+  }
+  $g.FillPolygon($bird,[Drawing.Point[]]@(
+   [Drawing.Point]::new(104,141),[Drawing.Point]::new(142,128),
+   [Drawing.Point]::new(164,141),[Drawing.Point]::new(210,114),
+   [Drawing.Point]::new(192,151),[Drawing.Point]::new(233,154),
+   [Drawing.Point]::new(181,159),[Drawing.Point]::new(160,174),
+   [Drawing.Point]::new(139,153)))
+  $g.DrawArc($cyan,111,176,117,26,8,166)
+  $g.DrawArc($cyan,120,191,112,24,8,166)
+  $g.DrawArc($cyan,130,206,104,21,8,166)
+ }finally{$silver.Dispose();$cyan.Dispose();$bird.Dispose()}
+})
+$script:northTitle=New-NorthernLabel 'DVINHOLM' 329 66 670 76 37 $true
+$script:northSubtitle=New-NorthernLabel 'LAUNCHER   /   СЕВЕРНАЯ ДВИНА · БЕЛОЕ МОРЕ' 333 153 690 40 13
+$script:northCaption=New-NorthernLabel 'Volvo · Windows x86 · J2534 диагностика' 334 206 690 30 12
+$script:northSource=New-NorthernLabel 'АВТОМОБИЛЬ · СЕВЕР · ТЕХНОЛОГИИ' 333 268 780 24 11
+$script:northRuntime=New-NorthernLabel '.NET x86: не проверено' 67 342 328 53 12 $true
+$script:northWinApp=New-NorthernLabel 'WinApp: не проверено' 426 342 328 53 12 $true
+$script:northDriver=New-NorthernLabel 'J2534: не проверено' 791 342 328 53 12 $true
+$script:northLaunch=New-NorthernButton '▶   ЗАПУСТИТЬ DVINHOLM' 260 413 660 76 $true
+$script:northUpdates=New-NorthernButton '↻  Обновления' 60 514 247 65
+$script:northComponents=New-NorthernButton '◇  Компоненты' 323 514 247 65
+$script:northDrivers=New-NorthernButton '▣  Драйверы J2534' 586 514 247 65
+$script:northSettings=New-NorthernButton '⚙  Настройки' 849 514 247 65
+$script:northVersion=New-NorthernLabel 'Версия: не проверена' 61 603 335 35 10
+$script:northChannel=New-NorthernLabel 'Канал: не проверен' 399 603 320 35 10
+$script:northActivity=New-NorthernLabel 'Ожидание проверки компонентов' 722 600 403 44 10
+$script:northReturn=New-ServiceButton '← Главная' 25 133 176 36
+$script:northReturn.Visible=$false
+$script:northReturn.Add_Click({
+ $script:northernDetailOpen=$false
+ $script:northernHome.Visible=$true
+ $script:northReturn.Visible=$false
+ $script:northernHome.BringToFront()
+})
+function Show-NorthernUpdates {
+ # Advanced service cockpit retains its genuine Check, Install, worker
+ # progress, actual versions and confirmation-gated driver controls.
+ $script:northernDetailOpen=$true
+ $script:northernHome.Visible=$false
+ $script:northReturn.Visible=$true
+ $script:northReturn.BringToFront()
+}
+$script:northLaunch.Add_Click({
+ if($launch.Enabled){$launch.PerformClick()}
+})
+$script:northUpdates.Add_Click({Show-NorthernUpdates})
+$script:northComponents.Add_Click({Show-MicrosoftComponents})
+$script:northDrivers.Add_Click({Show-J2534Drivers})
+$script:northSettings.Add_Click({Show-LauncherSettings})
+function Update-NorthernCompactSnapshot {
+ if($null -eq $script:northLaunch -or $script:northLaunch.IsDisposed){return}
+ # Copy actual worker and inventory readings. No fabricated version or
+ # successful J2534/DiCE hardware connection is shown.
+ $script:northLaunch.Enabled=$launch.Enabled
+ $script:northVersion.Text=$installed.Text
+ $script:northChannel.Text='Канал: '+[string]$choice.SelectedItem
+ $script:northActivity.Text=$status.Text
+ $parts=$deps.Text
+ foreach($spec in @(
+  @($script:northRuntime,'\.NET x86:\s*([^ ]+)',' .NET x86: '),
+  @($script:northWinApp,'WinApp:\s*([^ ]+)',' WinApp: ')
+  )){
+  $value=if($parts -match $spec[1]){$Matches[1]}else{'не проверено'}
+  $spec[0].Text=$spec[2]+$value
+ }
+ if($script:driversWereProbed){
+  $script:northDriver.Text='J2534: '+$driverStatus.Text
+ }else{
+  $script:northDriver.Text=if($script:launcherLanguage -eq 'RU'){
+   'J2534: не проверено'
+  }else{'J2534: not checked'}
+ }
+ if($script:launcherLanguage -eq 'EN'){
+  $script:northTitle.Text='DVINHOLM'
+  $script:northSubtitle.Text='LAUNCHER   /   NORTHERN DVINA · WHITE SEA'
+  $script:northCaption.Text='Volvo · Windows x86 · J2534 diagnostics'
+  $script:northSource.Text='VEHICLE · NORTH · TECHNOLOGY'
+  $script:northLaunch.Text='▶   START DVINHOLM'
+  $script:northUpdates.Text='↻  Updates'
+  $script:northComponents.Text='◇  Components'
+  $script:northDrivers.Text='▣  J2534 Drivers'
+  $script:northSettings.Text='⚙  Settings'
+  $script:northReturn.Text='← Home'
+  $script:northChannel.Text='Channel: '+[string]$choice.SelectedItem
+ }else{
+  $script:northTitle.Text='DVINHOLM'
+  $script:northSubtitle.Text='LAUNCHER   /   СЕВЕРНАЯ ДВИНА · БЕЛОЕ МОРЕ'
+  $script:northCaption.Text='Volvo · Windows x86 · J2534 диагностика'
+  $script:northSource.Text='АВТОМОБИЛЬ · СЕВЕР · ТЕХНОЛОГИИ'
+  $script:northLaunch.Text='▶   ЗАПУСТИТЬ DVINHOLM'
+  $script:northUpdates.Text='↻  Обновления'
+  $script:northComponents.Text='◇  Компоненты'
+  $script:northDrivers.Text='▣  Драйверы J2534'
+  $script:northSettings.Text='⚙  Настройки'
+  $script:northReturn.Text='← Главная'
+ }
+}
+# Show the compact approved screen on normal launch. Existing Service
+# Cockpit remains accessible with all real actions from Updates.
