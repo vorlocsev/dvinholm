@@ -103,6 +103,23 @@ jobs:
         run: |
           ./eng/Updater-Banner.ps1 -Mode UiSmokeTest
 
+      # Actual Windows Forms offscreen rendering of the constructed home,
+      # Updates view and EN locale. No ShowDialog, installer or network.
+      # These are Windows-runner DPI captures, not verified 125/150% OS DPI.
+      - name: Render actual Northern Aurora WinForms GUI previews
+        shell: powershell
+        run: ./eng/Updater-Banner.ps1 -Mode UiPreview -PreviewDirectory artifacts/aurora-gui-preview
+
+      # PR-only images for user visual approval; no changed release payload.
+      - name: Upload Northern Aurora GUI previews
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-Launcher-Aurora-GUI-Preview
+          path: artifacts/aurora-gui-preview/Launcher-Aurora-*.png
+          if-no-files-found: error
+          retention-days: 14
+
       - name: Restore
         run: dotnet restore Dvinholm.sln
 
