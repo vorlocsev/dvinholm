@@ -80,3 +80,30 @@ None of these start an installer, use network/vehicle, or publish releases.
 
 **Explicitly not claimed:** pixel-perfect acceptance, physical DiCE/J2534
 testing, new Stable release, or changes to the separate Virtual Car project.
+
+## First icon-art integration (2026-11-01)
+
+The repository now includes [`assets/launcher-northern-emblem.svg`](../../assets/launcher-northern-emblem.svg), a local, editable, original 256×256 vector master. It merges:
+
+- a white/ice ring and diagonal arrow motif referencing classic Volvo aesthetics without copying a manufacturer wordmark;
+- a stylized flying gull and eleven gear teeth referencing the old Severodvinsk civic emblem;
+- three turquoise White Sea waves and subdued Aurora navy gradients;
+- a small separate update arrow badge identifying the **Launcher**, not the main Dvinholm application.
+
+`eng/New-LauncherIcon.ps1` paints the same composition with GDI+
+offline into real PNG-backed ICO frames **16, 24, 32, 48, 64, 128, 256**. The
+existing native build embeds it into `Launcher.exe`; `Dvinholm.exe` keeps
+its existing independent application icon. The package retains the original
+manifest and SHA-256 update/rollback protections; no SVG parser or runtime
+renderer is required for a fresh install.
+
+The WinForms Northern home already draws a matching gull/gear/ring/wave
+composition. The SVG defines canonical color/shape choices; matching Windows
+rendering and actual 16-pixel legibility require screenshot inspection rather
+than only structural source tests. Eight additional offline contracts cover
+vector structure, local source safety, GDI rendering paths, seven resolutions,
+native resource checks, main-app icon separation and packaging constraints.
+
+**Still missing:** the original full-res selected fourth raster in GitHub,
+model-accurate licensed Volvo photo to replace the interim panorama,
+verified pixel-perfect alignment, and human acceptance at 100/125/150% DPI.
