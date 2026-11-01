@@ -111,10 +111,12 @@ public sealed class NorthernLauncherEmblemContractTests
         Assert.Contains("Gear + ring/arrow + white-gull silhouette", cockpit);
         Assert.Contains("$g.DrawEllipse($silver", cockpit);
         Assert.Contains("$g.FillEllipse($rivet", cockpit);
-        Assert.Contains("$g.DrawLine($silver,213,109,290,31)", cockpit);
+        Assert.Contains("$g.DrawLine($metal,222,106,305,25)", cockpit);
         Assert.Contains("$g.FillPolygon($bird", cockpit);
-        Assert.Contains("$g.DrawBezier($water", cockpit);
-        Assert.Contains("$legacyTextFade", cockpit);
+        Assert.Contains("$g.DrawBezier($wave", cockpit);
+        Assert.Contains("Set-NorthernButtonArtwork", cockpit);
+        Assert.Contains("$script:northAbout=New-NorthernButton", cockpit);
+        Assert.Contains("New-NorthernLabel '.NET Runtime'", cockpit);
         Assert.Contains("Show-NorthernUpdates", cockpit);
         Assert.Contains("Update-NorthernCompactSnapshot", cockpit);
     }
