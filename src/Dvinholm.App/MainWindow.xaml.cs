@@ -58,6 +58,7 @@ public sealed partial class MainWindow : Window
         InitializeComponent();
         AuroraLanding.UseSharedNavigation();
         InitializeAuroraLabels();
+        InitializeAuroraDtcTable();
         InitializeAuroraConfigReference();
         CancelUdsButton.RegisterPropertyChangedCallback(Control.IsEnabledProperty, (_, _) =>
             CancelUdsButton.Visibility = CancelUdsButton.IsEnabled ? Visibility.Visible : Visibility.Collapsed);
@@ -2355,6 +2356,7 @@ public sealed partial class MainWindow : Window
         // generation before clearing so a late UDS completion cannot redisplay
         // sensitive VIN, DID bytes or DTCs under changed ECU inputs.
         var generation = _udsResultLifetime.Invalidate();
+        ClearAuroraDtcTable();
 #if DVINHOLM_DEVELOPMENT_FEATURES
         ClearCemPinMaterial();
 #endif
@@ -2942,13 +2944,19 @@ public sealed partial class MainWindow : Window
             return;
         }
 
+        UdsDtcReadResult? completedRead = null;
         await RunUdsOperationAsync(UdsReadResultKind.Dtc, (client, token) =>
         {
             // Preserve the ECU's status availability mask from UDS 0x19/0x02.
-            // Unsupported DTC status bits must never be presented as
-            // confirmed diagnostic states.
+            // The private table updates only after the same generation guard
+            // that protects the existing diagnostic text results.
             var result = client.ReadDtcResultByStatusMask(statusMask, token);
+            completedRead = result;
             return UdsDtcDisplayFormatter.FormatWithAvailability(result, statusMask);
+        }, () =>
+        {
+            if (completedRead is not null)
+                PublishAuroraDtcTable(completedRead);
         });
     }
 
@@ -2971,7 +2979,8 @@ public sealed partial class MainWindow : Window
 
     private async Task RunUdsOperationAsync(
         UdsReadResultKind kind,
-        Func<UdsClient, CancellationToken, string> action)
+        Func<UdsClient, CancellationToken, string> action,
+        Action? onAcceptedResult = null)
     {
         var operation = UdsDiagnosticReadResultPresentation.OperationName(kind);
         if (!await _udsGate.WaitAsync(0))
@@ -3016,6 +3025,7 @@ public sealed partial class MainWindow : Window
             var presentation = UdsDiagnosticReadResultPresentation.Completed(kind, data);
             DiagnosticResultText.Text = presentation.Details;
             DiagnosticResultExpander.IsExpanded = true;
+            onAcceptedResult?.Invoke();
             SetStatus(presentation.Activity);
         }
         catch (OperationCanceledException ex)

@@ -510,14 +510,30 @@
                                                 <TextBlock Grid.Column="1" Text="Описание" FontWeight="SemiBold" />
                                                 <TextBlock Grid.Column="2" Text="Статус" FontWeight="SemiBold" />
                                             </Grid>
-                                            <Border BorderBrush="#2B5270" BorderThickness="0,1,0,0" Padding="0,13,0,0">
-                                                <TextBlock Text="Коды появляются только после явного чтения. Подтверждённого каталога описаний Volvo пока нет. Ни одна ошибка здесь не подставляется автоматически." Foreground="#A8C7DF" TextWrapping="Wrap" />
-                                            </Border>
+                                            <TextBlock x:Name="DtcTableSummary" Text="Коды не считывались в текущем диагностическом контексте." Foreground="#9CD8ED" TextWrapping="Wrap" />
+                                            <ListView x:Name="DtcRecordsView" Height="260" SelectionMode="Single" SelectionChanged="DtcRecordsView_SelectionChanged" AutomationProperties.Name="Коды неисправностей выбранного ECU" ToolTipService.ToolTip="Только реально считанные DTC одного ECU. Нет подтверждённого словаря причин Volvo.">
+                                                <ListView.ItemTemplate>
+                                                    <DataTemplate>
+                                                        <Grid ColumnSpacing="14" Padding="0,9,0,9">
+                                                            <Grid.ColumnDefinitions>
+                                                                <ColumnDefinition Width="112" />
+                                                                <ColumnDefinition Width="*" />
+                                                                <ColumnDefinition Width="155" />
+                                                            </Grid.ColumnDefinitions>
+                                                            <TextBlock Text="{Binding Code}" FontFamily="Consolas" Foreground="#8BDBF4" />
+                                                            <TextBlock Grid.Column="1" Text="{Binding Description}" TextWrapping="Wrap" />
+                                                            <TextBlock Grid.Column="2" Text="{Binding Status}" TextWrapping="Wrap" FontSize="12" Foreground="#F0D3A0" />
+                                                        </Grid>
+                                                    </DataTemplate>
+                                                </ListView.ItemTemplate>
+                                            </ListView>
+                                            <TextBlock Text="Коды появляются только после явного чтения. Подтверждённого каталога описаний Volvo пока нет. Ни одна ошибка здесь не подставляется автоматически." Foreground="#A8C7DF" FontSize="12" TextWrapping="Wrap" />
                                         </StackPanel>
                                     </Border>
                                     <StackPanel Spacing="7">
                                         <TextBlock Text="Подробности" FontSize="19" FontWeight="SemiBold" />
-                                        <TextBlock Text="После чтения реальные 24-битные коды DTC, маски статуса и поддерживаемые ECU биты появятся в панели «Результат операции» ниже. Описания причин и рекомендаций требуют проверенного каталога для выбранной модели." Foreground="#B2CBDE" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="DtcSelectedRecordDetails" Text="Выберите считанную ошибку, чтобы посмотреть сырые данные и маску статуса." Foreground="#B2CBDE" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
+                                        <TextBlock Text="После чтения реальные 24-битные коды DTC, маски статуса и поддерживаемые ECU биты появятся в панели «Результат операции» ниже. Описания причин и рекомендаций требуют проверенного каталога для выбранной модели." Foreground="#B2CBDE" TextWrapping="Wrap" FontSize="12" />
                                     </StackPanel>
                                     <Button Content="Проверить адреса ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" HorizontalAlignment="Left" ToolTipService.ToolTip="Только навигация к параметрам подключения. Запросы к автомобилю не отправляются." />
                                 </StackPanel>
