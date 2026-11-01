@@ -37,16 +37,19 @@ internal static class EcuConfigurationReadback
     internal static EcuConfigurationReadSnapshot Capture(
         EcuProfile profile,
         UdsClient client,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Action<int, int>? reportProgress = null)
     {
         ArgumentNullException.ThrowIfNull(client);
-        return Capture(profile, (did, ct) => client.ReadDataByIdentifier(did, ct), cancellationToken);
+        return Capture(profile, (did, ct) => client.ReadDataByIdentifier(did, ct),
+            cancellationToken, reportProgress);
     }
 
     internal static EcuConfigurationReadSnapshot Capture(
         EcuProfile profile,
         Func<ushort, CancellationToken, byte[]> readDid,
-        CancellationToken cancellationToken = default)
+        CancellationToken cancellationToken = default,
+        Action<int, int>? reportProgress = null)
     {
         ArgumentNullException.ThrowIfNull(profile);
         ArgumentNullException.ThrowIfNull(readDid);
@@ -81,6 +84,13 @@ internal static class EcuConfigurationReadback
             // Encode bytes without guessing undocumented ECU encodings.
             // Do not persist, log or export configuration data here.
             values.Add(new EcuDidReadback(did, Convert.ToHexString(response.AsSpan(2))));
+
+            // Progress is deliberately counts-only. A completed DID is not
+            // an exportable baseline until *all* requested reads succeed.
+            // No VIN, payload bytes, vendor exceptions or profile metadata
+            // are passed to the callback, which is optional for old callers.
+            cancellationToken.ThrowIfCancellationRequested();
+            reportProgress?.Invoke(values.Count, dids.Length);
         }
 
         cancellationToken.ThrowIfCancellationRequested();

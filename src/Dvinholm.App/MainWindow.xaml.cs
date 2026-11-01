@@ -2542,7 +2542,8 @@ public sealed partial class MainWindow : Window
                 Title = "Read and export ECU DID values?",
                 Content = new TextBlock
                 {
-                    Text = "Dvinholm will request the selected profile's DIDs using read-only UDS 0x22. " +
+                    Text = $"Selected profile contains {profile!.ReadableDataIdentifiers.Count} candidate DID(s). " +
+                           "Dvinholm will request those DIDs using read-only UDS 0x22. " +
                            "The JSON export can contain a VIN or other sensitive vehicle data. " +
                            "It is a diagnostic snapshot, NOT a restorable ECU backup. " +
                            "No configuration or PIN operation will be performed. " +
@@ -2581,8 +2582,33 @@ public sealed partial class MainWindow : Window
 
             using var udsClient = client;
             SetStatus("Reading selected ECU DIDs (read-only)...");
-            var snapshot = await Task.Run(() =>
-                EcuConfigurationReadback.Capture(profile!, udsClient, cts.Token));
+            // Post only sanitized counts to the UI dispatcher, never raw DID
+            // values. A queued callback must not overwrite completion, a
+            // newer profile selection, cancellation or a Save As outcome.
+            var readInProgress = true;
+            EcuConfigurationReadSnapshot snapshot;
+            try
+            {
+                snapshot = await Task.Run(() =>
+                    EcuConfigurationReadback.Capture(profile!, udsClient, cts.Token,
+                        reportProgress: (completed, total) =>
+                        {
+                            DispatcherQueue.TryEnqueue(() =>
+                            {
+                                if (readInProgress && !_closing &&
+                                    !cts.IsCancellationRequested &&
+                                    IsSnapshotContextCurrent(profile, captureGeneration))
+                                    SetStatus($"Read-only ECU DID progress: {completed}/{total} complete. " +
+                                        "Not a complete snapshot until every DID succeeds.");
+                            });
+                        }));
+            }
+            finally
+            {
+                // Executed on the UI thread, just like the queued callbacks.
+                // Reject stale progress even if read, cancel or export failed.
+                readInProgress = false;
+            }
 
             cts.Token.ThrowIfCancellationRequested();
             if (!IsSnapshotContextCurrent(profile, captureGeneration))
