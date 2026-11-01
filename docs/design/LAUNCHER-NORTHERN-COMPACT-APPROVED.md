@@ -185,3 +185,25 @@ real instantiated WinForms UI. They **do not modify the Windows runner's
 global DPI setting**, operate across monitors, or replace manual screenshot
 review on machines configured for 100/125/150%. They are a regression gate
 for layout arithmetic, not proof of perfect glyph rendering or photography.
+
+
+## Windows-runner UI pixel review (next scoped validation)
+
+The added offline `UiPreview` mode builds the **real** Northern Compact
+WinForms hierarchy, calls `Control.DrawToBitmap` on the actual form and saves
+three PNGs: Russian Home, Russian Updates (with the real back control), and
+English Home. All views preserve unverified/recovery-locked startup state:
+**no worker process, version check, update, driver installer or vehicle
+communication**. It does not open `Form.Show` or `ShowDialog`, whose channel
+selection events could otherwise start a background dependency probe.
+
+The Windows CI artifact `Dvinholm-Launcher-Aurora-GUI-Preview` contains
+the rendered client areas. Eight offline assertions cover no visible/modal
+window, bounded sizing, fail-closed actions, actual bitmap content, navigation,
+language, distinct PNG files and absence of worker/timer activity.
+
+**Review limitation:** `DrawToBitmap` is offscreen WinForms rendering, not a
+photograph of an installed application. It cannot prove Windows Desktop
+Window Manager border/titlebar visual quality, hardware DPI at 125%/150%,
+pixel-perfect placement on a real screen, or clipping caused by a particular
+driver. User screenshots at 100/125/150% still constitute final acceptance.
