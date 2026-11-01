@@ -28,8 +28,8 @@ public sealed class NorthernLauncherEmblemContractTests
         Assert.Equal("0 0 256 256", (string?)doc.Root?.Attribute("viewBox"));
         Assert.Single(doc.Descendants(svg + "title"));
         Assert.Single(doc.Descendants(svg + "desc"));
-        Assert.DoesNotContain("http://", doc.ToString());
-        Assert.DoesNotContain("https://", doc.ToString());
+        Assert.Empty(doc.Descendants().Where(e => e.Name.LocalName is "script" or "foreignObject"));
+        Assert.Empty(doc.Descendants().Attributes().Where(a => a.Name.LocalName == "href"));
     }
 
     [Fact]
@@ -62,7 +62,7 @@ public sealed class NorthernLauncherEmblemContractTests
     {
         var script = Read("eng/New-LauncherIcon.ps1");
         Assert.Contains("@(16,24,32,48,64,128,256)", script);
-        Assert.Contains("New([", script.Replace("[Drawing.Bitmap]::new(", "New(["), StringComparison.Ordinal);
+        Assert.Contains("[Drawing.Bitmap]::new(", script);
         Assert.Contains("Drawing.Imaging.ImageFormat]::Png", script);
         Assert.Contains("DrawEllipse($silver", script);
         Assert.Contains("FillPolygon($bird", script);
