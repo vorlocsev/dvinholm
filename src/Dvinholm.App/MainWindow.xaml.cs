@@ -582,6 +582,8 @@ public sealed partial class MainWindow : Window
         CemPinReadButton.Content = CemText("Read CEM PIN — эксперимент", "Read CEM PIN (experimental)");
         CemPinRevealButton.Content = CemText("Показать на 15 секунд", "Reveal for 15 seconds");
         CemPinResultText.Text = CemText("Нет результата PIN.", "No PIN result.");
+        CemPinSavedButton.Visibility = Visibility.Visible;
+        CemPinSavedButton.Content = CemText("Сохранённые PIN", "Saved PINs");
         var addTestProfiles = new Button { Content = "Add test profiles" };
         addTestProfiles.Click += AddTestProfiles_Click;
         ProfileActionsPanel.Children.Insert(2, addTestProfiles);

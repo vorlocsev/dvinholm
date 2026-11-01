@@ -31,12 +31,51 @@ Protocol facts are independently encoded; source implementation is not copied.
    30 seconds of creation, even without UI polling.
 
 The PIN view is separate from generic diagnostic text, activity, logs,
-reports, settings and clipboard. Expiry, cancellation, context/input changes,
+reports, ordinary settings and clipboard. Expiry, cancellation, context/input changes,
 connection loss and shutdown clear it. Rendering necessarily creates a
 managed UI string; clearing the view cannot promise immediate erasure of
 all CLR/UI copies. Owned candidate buffers are explicitly zeroed. Origins
 are Synthetic for tests and AdapterUnattested for native sessions. Native
 replies are not physical provenance attestation.
+
+## Encrypted persistence (Development)
+
+The user's follow-up explicitly enables saving found PINs, superseding the
+initial prohibition on persistence. Every accepted native result is saved
+automatically in `%LOCALAPPDATA%\Dvinholm\cem-pin-vault`, separately from
+normal settings. The operation consent explains this behavior. A save failure
+is reported explicitly while the temporary result remains available.
+
+Each find receives a unique GUID record, even for the same part number.
+Its PIN, observed P/N, timestamp, schema and AdapterUnattested origin are
+encrypted together using Windows DPAPI current-user protection. The record
+GUID is included as additional entropy, so renaming/substituting a blob
+does not create another valid record. No VIN or arbitrary user label is
+collected. Synthetic, expired and metadata-only results cannot be saved.
+
+Only ciphertext is staged to disk, flushed, checked and moved to a unique
+destination. Failed writes do not replace existing records. Crash leftovers
+may leave encrypted `.tmp` files; they are not loaded as records. Errors do
+not expose file paths or native exception text. Listing skips unavailable
+records with a visible warning and does not delete them automatically.
+
+**Saved PINs** supports listing, explicit loading and deletion without a CAN
+connection. Loading keeps the PIN hidden until explicit reveal and creates
+a new expiring in-memory result. The saved file remains until deleted.
+Stored results are labelled saved and do not verify the currently connected
+vehicle. P/N alone is never used to match a record automatically to a CEM.
+Deletion removes the selected encrypted record, not forensic disk copies.
+
+DPAPI uses the Windows user's credentials; this is not a portable plaintext
+export and does not defend against programs running as that same user.
+Moving the files to another Windows account/computer or losing the required
+profile keys can make them unreadable. No application-owned encryption key
+is stored alongside the files. See Microsoft's
+[CryptProtectData documentation](https://learn.microsoft.com/en-us/windows/win32/api/dpapi/nf-dpapi-cryptprotectdata).
+The storage and native protection implementation are excluded from Stable.
+Eight synthetic-value tests use real Windows DPAPI and private temporary
+folders to check round-trip, isolation, rejection, corruption, interrupted
+writes, deletion, UI defaults and material disposal.
 
 ## Protocol scope and limitations
 

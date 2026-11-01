@@ -29,6 +29,9 @@ internal sealed record CemPinAttemptResult(CemPinAttemptStatus Status, string Pu
     internal static CemPinAttemptResult Accepted(CemPinSecret pin) =>
         new(CemPinAttemptStatus.CandidateAccepted,
             "A candidate was accepted twice by the current adapter session; physical provenance remains unverified.") { _pin = pin };
+    internal static CemPinAttemptResult Restored(CemPinSecret pin) =>
+        new(CemPinAttemptStatus.CandidateAccepted,
+            "Saved PIN record; the current vehicle and service context have not been checked.") { _pin = pin };
     public void Dispose() => Interlocked.Exchange(ref _pin, null)?.Dispose();
     public override string ToString() => $"{Status}: {PublicMessage}";
 
