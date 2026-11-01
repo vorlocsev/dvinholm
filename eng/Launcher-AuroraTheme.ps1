@@ -25,6 +25,14 @@ $script:serviceBackdropIsApproved=$false
 # The exact upper banner from the approved Service Cockpit reference is a
 # compact local JPEG. GDI+ decodes it without .NET 10, WinApp or WebP codecs.
 $approvedBanner=Join-Path $PSScriptRoot 'launcher-service-cockpit-banner.jpg'
+# When running UiPreview/UiSmokeTest from a source checkout, the JPEG is
+# under assets/. Installed packages continue to prefer Binaries/ JPEG.
+if(-not(Test-Path -LiteralPath $approvedBanner -PathType Leaf)){
+ $sourceBanner=Join-Path (Split-Path -Parent $PSScriptRoot) 'assets\launcher-service-cockpit-banner.jpg'
+ if(Test-Path -LiteralPath $sourceBanner -PathType Leaf){
+  $approvedBanner=$sourceBanner
+ }
+}
 if(Test-Path -LiteralPath $approvedBanner -PathType Leaf){
  try {
   $script:heroBackdrop=[Drawing.Image]::FromFile($approvedBanner)
