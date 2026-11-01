@@ -209,3 +209,14 @@ photograph of an installed application. It cannot prove Windows Desktop
 Window Manager border/titlebar visual quality, hardware DPI at 125%/150%,
 pixel-perfect placement on a real screen, or clipping caused by a particular
 driver. User screenshots at 100/125/150% still constitute final acceptance.
+
+The first screenshot attempt exposed two renderer pitfalls: hidden WinForms forms
+did not update nested views, and whole-Form `DrawToBitmap` composited the old
+Service Cockpit behind the Northern Home. The adjusted preview runs a
+non-modal **offscreen** instance, captures the Northern Home panel directly
+for RU/EN and the complete form only for Updates. Its source-checkout run
+now loads `assets/launcher-service-cockpit-banner.jpg` when the same filename
+is not present beside the script; installed Launcher packages still prefer
+their bundled `Binaries/` image. The CI visual gate requires this real
+automotive banner to be decoded so a dark fallback is not accepted as the
+approved design. Final Windows screenshot validation remains outstanding.
