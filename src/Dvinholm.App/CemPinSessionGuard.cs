@@ -49,10 +49,15 @@ internal sealed class CemPinSessionGuard : IDisposable
         {
             try
             {
-                return Volatile.Read(ref _invalidated) == 0 && _isCurrent() &&
-                    Volatile.Read(ref _invalidated) == 0;
+                if (Volatile.Read(ref _invalidated) != 0) return false;
+                if (!_isCurrent()) Interlocked.Exchange(ref _invalidated, 1);
+                return Volatile.Read(ref _invalidated) == 0;
             }
-            catch (Exception) { return false; } // No private callback/driver text.
+            catch (Exception)
+            {
+                Interlocked.Exchange(ref _invalidated, 1);
+                return false; // No private callback/driver text.
+            }
         }
     }
 }

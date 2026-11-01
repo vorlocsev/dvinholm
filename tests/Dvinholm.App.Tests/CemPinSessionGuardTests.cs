@@ -70,6 +70,7 @@ public sealed class CemPinSessionGuardTests
         using var session = new J2534Session(adapter);
         Assert.True(session.Connect("synthetic.dll", 500_000, out _));
         object context = new();
+        var original = context;
         using var guard = CemPinSessionGuard.Capture(session, context, () => context, true);
         var provider = new Provider(_ =>
         {
@@ -81,6 +82,8 @@ public sealed class CemPinSessionGuardTests
         Assert.Equal(CemPinAttemptStatus.SessionInvalidated, result.Status);
         Assert.False(result.HasPin);
         Assert.False(service.IsRunning);
+        context = original;
+        Assert.False(guard.IsCurrent);
     }
 
     [Fact]
