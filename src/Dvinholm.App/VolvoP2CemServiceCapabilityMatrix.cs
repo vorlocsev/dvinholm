@@ -100,11 +100,17 @@ internal static class VolvoP2CemServiceCapabilityMatrix
             context.ModelYear.Value is < 2003 or > 2014)
             gaps.Add(VolvoP2ServiceEvidenceGap.ConfirmedXc90P2ModelYear);
 
-        // Even a synthetic test fixture can report read-only identity.
-        // It must not enable a module-specific command by itself.
-        if (context.Identity is not { Kind: VolvoP2CemSupportKind.VerifiedIdentityReadOnly
-                                          or VolvoP2CemSupportKind.DocumentedReadOnlyDidSet,
-                                       VariantId: { Length: > 0 } })
+        // A research matcher can label a synthetic DID fingerprint as
+        // "verified" relative to user-supplied rules, but that does NOT
+        // authenticate the physical CEM or the capture's provenance.
+        // Keep this evidence gap until a separate, independently audited
+        // physical identity/transport acceptance path actually exists.
+        if (context.Identity is not {
+                HasAuthenticatedPhysicalCem: true,
+                Kind: VolvoP2CemSupportKind.VerifiedIdentityReadOnly
+                    or VolvoP2CemSupportKind.DocumentedReadOnlyDidSet,
+                VariantId: { Length: > 0 }
+            })
             gaps.Add(VolvoP2ServiceEvidenceGap.ExactCemHardwareSoftwareIdentity);
 
         if (operation is VolvoP2CemServiceOperation.ReadConfiguration

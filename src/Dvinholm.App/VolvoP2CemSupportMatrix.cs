@@ -31,6 +31,10 @@ internal sealed record VolvoP2CemSupportAssessment(
     IReadOnlyList<ushort> ObservedDocumentedDids,
     string Explanation)
 {
+    // A match to a supplied text/DID research rule does not authenticate
+    // where a capture came from or prove it was a physical Volvo CEM.
+    // The production catalog is empty and has no physical attestation path.
+    internal bool HasAuthenticatedPhysicalCem => false;
     // Authorization, PIN acquisition and write APIs do not exist yet.
     // Never derive these capabilities from an identity match or a DID read.
     internal bool PinRetrievalSupported => false;
