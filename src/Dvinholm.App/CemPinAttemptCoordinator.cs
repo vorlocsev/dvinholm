@@ -3,8 +3,8 @@ using System.Threading;
 namespace Dvinholm.App;
 
 /// <summary>
-/// Non-secret lifecycle outcomes for a future explicitly authorized CEM PIN
-/// provider. None of these outcomes contains or proves possession of a PIN.
+/// Public lifecycle metadata. Candidate material is separately owned and
+/// expires; no result claims authenticated physical CEM support.
 /// </summary>
 internal enum CemPinAttemptStatus
 {
@@ -14,13 +14,23 @@ internal enum CemPinAttemptStatus
     SessionInvalidated,
     TimedOut,
     Failed,
-    FinishedWithoutPin
+    FinishedWithoutPin,
+    CandidateAccepted
 }
 
-internal sealed record CemPinAttemptResult(CemPinAttemptStatus Status, string PublicMessage)
+internal sealed record CemPinAttemptResult(CemPinAttemptStatus Status, string PublicMessage) : IDisposable
 {
-    internal bool HasPin => false;
+    private CemPinSecret? _pin;
+    internal bool HasPin => _pin?.IsAvailable == true;
+    internal CemPinResultOrigin? Origin => _pin?.Origin;
+    internal bool PhysicalAcceptanceVerified => false;
     internal bool MayWriteEcu => false;
+    internal bool TryReveal(CemPinReveal reveal) => _pin?.TryReveal(reveal) == true;
+    internal static CemPinAttemptResult Accepted(CemPinSecret pin) =>
+        new(CemPinAttemptStatus.CandidateAccepted,
+            "A candidate was accepted twice by the current adapter session; physical provenance remains unverified.") { _pin = pin };
+    public void Dispose() => Interlocked.Exchange(ref _pin, null)?.Dispose();
+    public override string ToString() => $"{Status}: {PublicMessage}";
 
     internal static CemPinAttemptResult From(CemPinAttemptStatus status) => status switch
     {
@@ -44,14 +54,14 @@ internal sealed record CemPinAttemptResult(CemPinAttemptStatus Status, string Pu
 }
 
 /// <summary>
-/// A future explicitly registered, approved provider boundary. The interface
-/// deliberately cannot return a PIN, seed, key, ECU dump or sensitive bytes:
-/// secure PIN delivery requires a separate reviewed design and hardware proof.
+/// Public metadata channel. Confidential material, if produced, transfers
+/// separately through ICemPinCandidateSource and never enters a receipt.
 /// </summary>
 internal enum CemPinProviderReceipt
 {
     Unsupported,
-    FinishedWithoutPin
+    FinishedWithoutPin,
+    CandidateAccepted
 }
 
 internal interface ICemPinAuthorizedProvider
@@ -59,11 +69,17 @@ internal interface ICemPinAuthorizedProvider
     Task<CemPinProviderReceipt> TryRunAsync(CancellationToken cancellationToken);
 }
 
+internal interface ICemPinCandidateSource
+{
+    // Single ownership transfer, including on cancellation/failure cleanup.
+    CemPinSecret? TakeCandidate();
+}
+
 /// <summary>
 /// Cancellable, single-flight coordinator. The production constructor has
 /// NO provider and uses the existing fail-closed CEM capability matrix.
-/// An injected gate/provider is solely a unit-test seam, not connected to UI,
-/// ECU, J2534 or any production provider registry.
+/// Development has an explicit source-experiment factory; the default
+/// production registry still denies acquisition.
 /// </summary>
 internal sealed class CemPinAttemptCoordinator
 {
@@ -77,8 +93,8 @@ internal sealed class CemPinAttemptCoordinator
     {
     }
 
-    // Only deterministic fake providers may be supplied at this internal seam.
-    // It cannot authenticate a real ECU and is never used by production UI.
+    // Internal injection seam shared by tests and the explicit Development
+    // factory. A delegate cannot authenticate physical ECU provenance.
     internal CemPinAttemptCoordinator(
         ICemPinAuthorizedProvider? provider,
         Func<VolvoP2CemServiceResearchContext, bool> authorized)
@@ -88,6 +104,13 @@ internal sealed class CemPinAttemptCoordinator
     }
 
     internal bool IsRunning => Volatile.Read(ref _running) != 0;
+
+#if DVINHOLM_DEVELOPMENT_FEATURES
+    // Explicit experimental source route; research strings cannot select it.
+    // The provider independently rechecks transport, consent, P/N and replies.
+    internal static CemPinAttemptCoordinator ForSourceExperiment(ExperimentalCemPinCanProvider provider) =>
+        new(provider, _ => true);
+#endif
 
     internal async Task<CemPinAttemptResult> TryRunAsync(
         VolvoP2CemServiceResearchContext context,
@@ -153,9 +176,12 @@ internal sealed class CemPinAttemptCoordinator
                 // Await provider termination even after cancellation. Never release
                 // the gate while an uncooperative provider may still be using ECU.
                 var receipt = await _provider.TryRunAsync(operation.Token).ConfigureAwait(false);
-                completion = receipt == CemPinProviderReceipt.FinishedWithoutPin
-                        ? CemPinAttemptStatus.FinishedWithoutPin
-                        : CemPinAttemptStatus.Unsupported;
+                completion = receipt switch
+                {
+                    CemPinProviderReceipt.FinishedWithoutPin => CemPinAttemptStatus.FinishedWithoutPin,
+                    CemPinProviderReceipt.CandidateAccepted when _provider is ICemPinCandidateSource => CemPinAttemptStatus.CandidateAccepted,
+                    _ => CemPinAttemptStatus.Unsupported
+                };
             }
             catch (OperationCanceledException) when (operation.IsCancellationRequested)
             {
@@ -165,13 +191,26 @@ internal sealed class CemPinAttemptCoordinator
             {
                 completion = CemPinAttemptStatus.TimedOut;
             }
+            catch (Exception)
+            {
+                completion = CemPinAttemptStatus.Failed;
+            }
             finally
             {
                 stopMonitor.Cancel();
                 await monitor.ConfigureAwait(false);
             }
             // Revalidate after monitor teardown, immediately before publishing.
-            return CemPinAttemptResult.From(StopReason() ?? completion);
+            var stopped = StopReason();
+            if (stopped is null && completion == CemPinAttemptStatus.CandidateAccepted &&
+                _provider is ICemPinCandidateSource source && source.TakeCandidate() is { } pin)
+            {
+                stopped = StopReason();
+                if (stopped is null && pin.IsAvailable) return CemPinAttemptResult.Accepted(pin);
+                pin.Dispose();
+            }
+            return CemPinAttemptResult.From(stopped ??
+                (completion == CemPinAttemptStatus.CandidateAccepted ? CemPinAttemptStatus.Failed : completion));
         }
         catch (OperationCanceledException) when (cancellationToken.IsCancellationRequested)
         {
@@ -184,7 +223,12 @@ internal sealed class CemPinAttemptCoordinator
         }
         finally
         {
-            Volatile.Write(ref _running, 0);
+            try
+            {
+                if (_provider is ICemPinCandidateSource source) source.TakeCandidate()?.Dispose();
+            }
+            catch (Exception) { /* Neither private provider text nor cleanup faults escape. */ }
+            finally { Volatile.Write(ref _running, 0); }
         }
     }
 }

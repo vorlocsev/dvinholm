@@ -58,7 +58,7 @@
         </Grid>
 
         <Grid Grid.Row="2" ColumnSpacing="10" RowSpacing="5">
-            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
+            <Grid.RowDefinitions><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/><RowDefinition Height="Auto"/></Grid.RowDefinitions>
             <Grid.ColumnDefinitions>
                 <ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="120"/>
                 <ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="110"/><ColumnDefinition Width="*"/><ColumnDefinition Width="110"/>
@@ -94,6 +94,15 @@
                     Content="Read CEM P/N (experimental HS-CAN)" HorizontalAlignment="Left"
                     ToolTipService.ToolTip="Connect a 500 kbit/s, 29-bit channel; stop the monitor and remove user hardware filters first. Source-defined experimental read, not verified CEM or PIN support."
                     Visibility="Collapsed" IsEnabled="False" Click="ReadCemPartNumber_Click"/>
+            <StackPanel x:Name="CemPinLivePanel" Grid.Row="4" Grid.ColumnSpan="8" Spacing="6" Visibility="Collapsed">
+                <StackPanel Orientation="Horizontal" Spacing="8">
+                    <TextBox x:Name="CemPinRangeStart" Header="Search starting position" Text="0" MaxLength="12" Width="170" TextChanged="CemPinRangeChanged"/>
+                    <TextBox x:Name="CemPinRangeCount" Header="Attempt limit (1–10000)" Text="1000" MaxLength="5" Width="170" TextChanged="CemPinRangeChanged"/>
+                    <Button x:Name="CemPinReadButton" Content="Read CEM PIN (experimental)" IsEnabled="False" Click="ReadCemPin_Click" VerticalAlignment="Bottom"/>
+                    <Button x:Name="CemPinRevealButton" Content="Reveal for 15 seconds" IsEnabled="False" Click="RevealCemPin_Click" VerticalAlignment="Bottom"/>
+                </StackPanel>
+                <TextBlock x:Name="CemPinResultText" Text="No PIN result." FontFamily="Consolas" TextWrapping="Wrap" IsTextSelectionEnabled="False"/>
+            </StackPanel>
         </Grid>
 
         <Grid Grid.Row="3" RowSpacing="10">

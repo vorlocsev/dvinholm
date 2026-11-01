@@ -27,6 +27,13 @@ public sealed partial class MainWindow : Window
     private bool _demoDataPresent;
     private Button _demoMonitorButton = null!;
     private TextBlock _demoStatusText = null!;
+    private object _cemIdentityContext = new();
+    private CemPartNumberObservation? _cemIdentity;
+    private CemPinSessionGuard? _cemIdentityGuard;
+    private CemPinAttemptResult? _cemPinResult;
+    private CemPinSessionGuard? _cemPinResultGuard;
+    private DispatcherQueueTimer? _cemPinViewTimer;
+    private long _cemPinShownAt;
 #endif
     private Task? _disconnectTask;
     private Task? _connectTask;
@@ -84,6 +91,10 @@ public sealed partial class MainWindow : Window
             ConnectButton.IsEnabled = false;
         _session.ReadError += _ => DispatcherQueue.TryEnqueue(() =>
         {
+#if DVINHOLM_DEVELOPMENT_FEATURES
+            ClearCemIdentity();
+            ClearCemPinMaterial();
+#endif
             // The worker may report a late error after disconnect/close.
             // Neither vendor exception data nor stale errors belong on Aurora.
             if (!_closing && _connected)
@@ -93,6 +104,8 @@ public sealed partial class MainWindow : Window
         {
             _closing = true;
 #if DVINHOLM_DEVELOPMENT_FEATURES
+            ClearCemIdentity();
+            ClearCemPinMaterial();
             StopDemoMonitor();
 #endif
 
@@ -563,6 +576,12 @@ public sealed partial class MainWindow : Window
         CanConnectionMode.Header = CemText("ID канала", "Channel IDs");
         CemPartNumberReadButton.Visibility = Visibility.Visible;
         CemPartNumberReadButton.Content = CemText("Прочитать номер CEM (экспериментальный HS-CAN)", "Read CEM P/N (experimental HS-CAN)");
+        CemPinLivePanel.Visibility = Visibility.Visible;
+        CemPinRangeStart.Header = CemText("Начальная позиция перебора", "Search starting position");
+        CemPinRangeCount.Header = CemText("Лимит попыток (1–10000)", "Attempt limit (1–10000)");
+        CemPinReadButton.Content = CemText("Read CEM PIN — эксперимент", "Read CEM PIN (experimental)");
+        CemPinRevealButton.Content = CemText("Показать на 15 секунд", "Reveal for 15 seconds");
+        CemPinResultText.Text = CemText("Нет результата PIN.", "No PIN result.");
         var addTestProfiles = new Button { Content = "Add test profiles" };
         addTestProfiles.Click += AddTestProfiles_Click;
         ProfileActionsPanel.Children.Insert(2, addTestProfiles);
@@ -2311,6 +2330,9 @@ public sealed partial class MainWindow : Window
         // generation before clearing so a late UDS completion cannot redisplay
         // sensitive VIN, DID bytes or DTCs under changed ECU inputs.
         var generation = _udsResultLifetime.Invalidate();
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        ClearCemPinMaterial();
+#endif
         if (DiagnosticResultText is not null && DiagnosticResultExpander is not null)
         {
             DiagnosticResultText.Text = UdsDiagnosticReadResultPresentation.NoCompletedResult;
@@ -2739,6 +2761,10 @@ public sealed partial class MainWindow : Window
     {
         if (CemPartNumberReadButton is not null)
             CemPartNumberReadButton.IsEnabled = CanUseCemPartRoute(requireIdle: true);
+        if (CemPinReadButton is not null)
+            CemPinReadButton.IsEnabled = CanUseCemPartRoute(requireIdle: true) &&
+                _cemIdentityGuard?.IsCurrent == true && _cemIdentity is { } identity &&
+                ExperimentalCemPinCanProvider.HasSourceProfile(identity.PartNumber) && TryGetCemPinRange(out _, out _);
     }
 #endif
 
@@ -2752,6 +2778,7 @@ public sealed partial class MainWindow : Window
             return;
         }
         var generation = ClearDiagnosticReadResult();
+        ClearCemIdentity();
         using var cts = new CancellationTokenSource();
         _udsCts = cts;
         var filterWasEnabled = HardwareFilterButton.IsEnabled;
@@ -2821,6 +2848,10 @@ public sealed partial class MainWindow : Window
                     "Experimental reply; HW/SW identity and PIN support are unverified.") +
                 Environment.NewLine + observation.Source;
             DiagnosticResultExpander.IsExpanded = true;
+            _cemIdentity = observation;
+            var identityContext = _cemIdentityContext;
+            _cemIdentityGuard = CemPinSessionGuard.Capture(_session, identityContext,
+                () => !Volatile.Read(ref _closing) ? Volatile.Read(ref _cemIdentityContext) : null, true);
             // P/N and response payload must not enter the Aurora activity feed.
             SetStatus(CemText("Чтение номера CEM завершено (экспериментально).", "CEM part-number read completed (experimental)."));
         }

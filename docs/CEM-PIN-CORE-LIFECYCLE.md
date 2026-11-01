@@ -1,99 +1,85 @@
-# CEM PIN Core: bounded operation lifecycle (Development)
+# CEM PIN: bounded source experiment (Development)
 
-This is the first **code** increment toward an authorized CEM PIN workflow,
-rather than another static configuration-research view. The new
-`CemPinAttemptCoordinator` implements cancellation-aware, single-flight
-asynchronous operation orchestration, sanitized results and a provider
-interface. The interface carries **non-secret status receipts only**.
+Development connects source-defined PIN enumeration to the existing
+J2534Session/CanBus/CanRxDispatcher and a separate temporary result panel.
+This is **partial implementation**, without physical CEM acceptance or a
+claim of supported vehicle fitment. Published Stable v0.2.4 and Virtual Car
+releases are unchanged.
 
-## What actually works
+The user explicitly approved enumeration and commands from the
+[pinned source](https://github.com/vtl/volvo-cem-cracker/blob/2d5de865d21094889a6c1c689797d5a636e909fc/volvo-cem-cracker.ino).
+Approval selects an experimental specification; it does not prove physical
+revision, HW/SW identity, vehicle ownership or successful extraction.
+Protocol facts are independently encoded; source implementation is not copied.
 
-- The coordinator prevents a second operation while a first authorized
-  provider operation is still active.
-- Cancellation before invocation or during the provider operation returns a
-  fixed non-secret status. The concurrency gate releases only after the
-  provider terminates, including when it ignores cancellation.
-- Provider errors never expose exception messages, identifiers or credentials;
-  a later operation can be attempted after the previous one terminates.
-- No PIN is accepted, stored, returned, displayed or claimed by this core.
-- Eight synthetic asynchronous tests exercise those boundaries.
+## User workflow
 
-## Critical integration boundary
+1. Connect at 500 kbit/s with 29-bit channel IDs. Stop monitoring and remove
+   user hardware filters.
+2. Use **Read CEM P/N (experimental HS-CAN)** and approve its single request.
+   The reader validates two source BCD frames from the same full RX ID.
+3. For a source-listed P2 L/H part number, enter a starting ordinal and an
+   attempt limit of 1–10000, then choose **Read CEM PIN (experimental)**.
+   Explicit authorization precedes transport access.
+4. The provider queries the already available service context and requires
+   its P/N to match the normal-mode observation. It checks bounded candidates
+   with a total 60-second deadline and a 2-second reply deadline. Missing
+   replies stop the operation.
+5. A zero acknowledgement requires a second request with the same candidate
+   and a separate zero acknowledgement. The result stays hidden until
+   **Reveal for 15 seconds** is pressed. Its owned buffer expires within
+   30 seconds of creation, even without UI polling.
 
-The **production constructor registers no provider** and uses the existing
-`VolvoP2CemServiceCapabilityMatrix`, which always denies PIN acquisition
-until independently reviewed physical CEM identity, a lawful method and
-authorized bench support are implemented. Test-only injected providers and
-authorization delegates are not connected to WinUI or a live provider.
-The follow-up [session guard](CEM-PIN-SESSION-GUARD.md) binds an attempt to
-the existing J2534 session and ECU context, requires consent, and adds
-cooperative deadlines. It grants no physical identity or entitlement.
+The PIN view is separate from generic diagnostic text, activity, logs,
+reports, settings and clipboard. Expiry, cancellation, context/input changes,
+connection loss and shutdown clear it. Rendering necessarily creates a
+managed UI string; clearing the view cannot promise immediate erasure of
+all CLR/UI copies. Owned candidate buffers are explicitly zeroed. Origins
+are Synthetic for tests and AdapterUnattested for native sessions. Native
+replies are not physical provenance attestation.
 
-A successful synthetic metadata receipt is **not** PIN extraction. The
-`FinishedWithoutPin` status intentionally cannot be mistaken for success.
-The PIN coordinator has no vehicle commands, seed/key algorithms, live brute-force attempts, key
-programming or configuration writes.
+## Protocol scope and limitations
 
-Live PIN attempts still require independent physical revision identity and
-a documented, lawfully authorized provider route, plus secure result delivery.
-The experimental P/N reader described below is separate and grants no PIN access.
-Hardware tests, installed Windows UI tests and
-PIN acquisition remain outstanding. Frozen Stable v0.2.4 and separate
-Virtual Car release project are untouched.
+The new provider sends only source service-context identification and PIN
+checks through the existing HS-CAN channel. It uses P2 L/H order-1 mapping
+and a 64-bit cursor over six packed-decimal pairs. Ambiguous P/N 30682982,
+P1/early-P2 profiles and unknown numbers are excluded before transmission.
+The source-listed P/N set is not verified MY2009 V8 support or SW identity.
 
-## Bounded candidate enumeration
+No programming-mode entry, ECU reset, K-line initialization, timing attack,
+key programming or configuration write is implemented. An ordinary vehicle
+may not expose the required service context. The full source procedure is
+therefore not implemented, and a 100^6 search is not claimed practical with
+this J2534 route. No ETA, invented percentage or synthetic PIN is presented
+as a vehicle result.
 
-Following the user's explicit change allowing brute-force logic,
-`CemPinCandidateRange` independently implements the numeric enumeration part:
-six packed-decimal byte pairs, explicit ordinal/count bounds, a 64-bit cursor,
-cancellation and caller-owned buffers. It covers the entire 100^6 space without
-32-bit cursor wrap. Pair order is explicit; no CEM-specific permutation or
-transport parameter is inferred. Eight synthetic checks cover numeric behavior
-and continued production denial. This class generates candidates only; it
-neither verifies nor obtains a PIN and is not registered in a live provider.
+Acknowledgements require the same full RX ID, source header and zero tail.
+This deliberately stricter parser stops on unknown shapes, changed rejection
+status, queue loss, deadline or invalidation. Late traffic has no protocol
+nonce; repeated acknowledgement is not cryptographic authentication.
 
-The reviewed [cracker source at 2d5de86](https://github.com/vtl/volvo-cem-cracker/blob/2d5de865d21094889a6c1c689797d5a636e909fc/volvo-cem-cracker.ino)
-also contains hardware timing measurements and programming-mode operations.
-The numeric enumerator contains none of those timing, address or security operations. The user's
-other conditions remain: a verified physical CEM revision and transport route
-are required before live attempts. Buffer owners must clear candidates after
-use and must not log or persist candidate values or ordinals.
+The operation shares the diagnostic gate and cancellation/shutdown path.
+The session guard binds consent and context to the captured bus and makes
+invalidation permanent. The gate releases after provider termination and
+filter cleanup. Failed cleanup invalidates transport until reconnect;
+unpublished accepted material is disposed. Vendor exceptions are sanitized.
 
-## Experimental normal-mode P/N read (Development)
+## Registry and validation
 
-The user selected the pinned cracker commands as the implementation
-specification. This is recorded as **source approval**, not a physical test.
-`CemPartNumberReader` sends one normal-mode part-number query through the
-existing J2534Session/CanBus/CanRxDispatcher. It does not use UDS or ISO-TP
-for this proprietary frame format and does not create a second transport.
+The default coordinator registers no provider and uses the closed capability
+matrix. Only the explicit Development factory selects this source experiment;
+editable research evidence cannot activate it. Stable compilation excludes
+the live provider and keeps the controls collapsed.
 
-The native adapter now accepts explicit 29-bit channel selection; the
-default remains 11-bit. The Development connection selector chooses this
-before connecting. Adapter implementations without the new capability fail
-closed rather than silently using 11-bit. The reader requires the actual
-connected channel to be 500 kbit/s and 29-bit with message-filter APIs.
-It installs a temporary source-scoped mask filter, subscribes before sending,
-validates two full-length, BCD-correct frames from the same full RX ID, and
-removes the filter before returning. No retry, bus scan, K-line operation,
-programming mode, reset, PIN candidate or configuration write is sent.
+Synthetic tests exercise actual bus dispatch, prerequisites, request mapping,
+repeated acceptance, context mismatch, strict acknowledgements, cancellation,
+invalidation, exhaustion, deadlines, cleanup faults and private-error
+redaction. Separate tests cover secret expiry, erasure and explicit reveal.
+Existing lifecycle, enumeration and normal-mode P/N tests remain applicable.
+Tests use an in-memory adapter and cannot establish physical support.
 
-In Development the home CEM card opens the diagnostic workspace. Stop the
-monitor, remove user hardware filters, and use **Read CEM P/N (experimental
-HS-CAN)** after selecting/connecting the channel. A consent dialog precedes
-the single request. New action/consent/result text follows the Windows RU/EN
-UI culture. Results appear only in the explicit diagnostic result panel,
-not in home activity or saved settings. Clear, cancel, input edits, read
-errors and disconnect invalidate pending output. The operation shares the
-existing diagnostic gate, cancellation and shutdown path. Hardware filtering
-and monitor start are disabled while it runs. A failed filter cleanup marks
-the session unusable until disconnect/reconnect, preventing later diagnostic
-calls on an unknown receive configuration.
-
-The observation is a part number only: it does not authenticate the module,
-identify application/diagnostic software, validate MY2009 V8 fitment or enable
-the PIN provider. Late traffic has no protocol nonce, so this limited parser
-must not be used as physical identity attestation. Eight synthetic tests
-exercise the real session/bus dispatcher with a virtual adapter, including
-channel/filter prerequisites, source bytes, malformed replies, timeout/retry,
-cancellation, invalidation, error redaction, cleanup failure and UI defaults.
-Physical DiCE/J2534/CEM and interactive WinUI acceptance remain outstanding.
+Interactive Windows UI testing and physical DiCE/J2534/CEM acceptance remain
+outstanding. A future physical record must identify actual HW/SW and vehicle,
+establish authorized context, validate accepted and rejected replies, confirm
+repeatability and check cancellation/disconnect/recovery without configuration
+changes. Keep PIN/VIN/raw secret traffic out of that record.
