@@ -144,6 +144,17 @@ public sealed class CemPinAttemptCoordinatorTests
             Assert.False(result.HasPin);
         }
         Assert.Equal(2, fake.Calls);
+
+        // Authorization gate failure must also be redacted and fail closed.
+        var blockedProvider = new FakeProvider(_ =>
+            Task.FromResult(CemPinProviderReceipt.FinishedWithoutPin));
+        var gateFailure = new CemPinAttemptCoordinator(blockedProvider,
+            _ => throw new InvalidDataException(secret));
+        var gateResult = await gateFailure.TryRunAsync(Context());
+        Assert.Equal(CemPinAttemptStatus.Failed, gateResult.Status);
+        Assert.DoesNotContain(secret, gateResult.PublicMessage);
+        Assert.Equal(0, blockedProvider.Calls);
+        Assert.False(gateFailure.IsRunning);
     }
 
     [Fact]
