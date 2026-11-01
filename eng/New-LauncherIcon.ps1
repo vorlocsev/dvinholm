@@ -12,59 +12,107 @@ param(
 $ErrorActionPreference='Stop'
 Add-Type -AssemblyName System.Drawing
 
-$source=[Drawing.Image]::FromFile((Resolve-Path -LiteralPath $LogoPath).Path)
+# Validate the original Dvinholm logo input for release provenance; the
+# Launcher has a DISTINCT new Northern Dvina emblem. Dvinholm.exe keeps
+# its independently approved original app icon.
+$logo=(Resolve-Path -LiteralPath $LogoPath -ErrorAction Stop).Path
+if(-not(Test-Path -LiteralPath $logo -PathType Leaf)){
+ throw 'Original Dvinholm logo missing.'
+}
 $sizes=@(16,24,32,48,64,128,256)
 $frames=[Collections.Generic.List[byte[]]]::new()
+$master=[Drawing.Bitmap]::new(256,256,
+ [Drawing.Imaging.PixelFormat]::Format32bppArgb)
 try{
- # Draw once at high resolution; downsampling retains the neon strokes.
- $master=[Drawing.Bitmap]::new(256,256,
-  [Drawing.Imaging.PixelFormat]::Format32bppArgb)
+ $g=[Drawing.Graphics]::FromImage($master)
  try{
-  $g=[Drawing.Graphics]::FromImage($master)
+  $g.Clear([Drawing.Color]::Transparent)
+  $g.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
+  $g.InterpolationMode=[Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+  $g.PixelOffsetMode=[Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+  $base=[Drawing.Drawing2D.LinearGradientBrush]::new(
+   [Drawing.Rectangle]::new(4,4,248,248),
+   [Drawing.Color]::FromArgb(25,81,108),
+   [Drawing.Color]::FromArgb(5,17,34),45.0)
+  $outer=[Drawing.Pen]::new([Drawing.Color]::FromArgb(255,32,119,141),4)
+  $silver=[Drawing.Pen]::new([Drawing.Color]::FromArgb(245,229,246,255),9)
+  $gear=[Drawing.Pen]::new([Drawing.Color]::FromArgb(236,188,223,239),8)
+  $wave=[Drawing.Pen]::new([Drawing.Color]::FromArgb(248,38,229,209),7)
+  $bird=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(252,242,250,255))
+  $badgeBg=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(255,8,42,71))
+  $badgeBorder=[Drawing.Pen]::new([Drawing.Color]::FromArgb(255,37,212,236),4)
+  $badgeStroke=[Drawing.Pen]::new([Drawing.Color]::FromArgb(255,239,251,255),5)
   try{
-   $g.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
-   $g.InterpolationMode=[Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-   $g.PixelOffsetMode=[Drawing.Drawing2D.PixelOffsetMode]::HighQuality
-   $g.DrawImage($source,0,0,256,256)
-   # Small badge on top of the established Dvinholm road-and-arrow mark.
-   $badge=[Drawing.Rectangle]::new(163,162,80,80)
-   $bg=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(243,4,30,57))
-   $border=[Drawing.Pen]::new([Drawing.Color]::FromArgb(255,23,206,246),6)
-   $stroke=[Drawing.Pen]::new([Drawing.Color]::White,6)
-   $fill=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(255,72,233,251))
-   try{
-    $g.FillEllipse($bg,$badge)
-    $g.DrawEllipse($border,$badge)
-    $g.DrawArc($stroke,181,179,45,45,210,145)
-    $g.DrawArc($stroke,181,179,45,45,30,145)
-    $g.FillPolygon($fill,[Drawing.Point[]]@(
-     [Drawing.Point]::new(177,199),[Drawing.Point]::new(190,198),
-     [Drawing.Point]::new(183,211)))
-    $g.FillPolygon($fill,[Drawing.Point[]]@(
-     [Drawing.Point]::new(230,205),[Drawing.Point]::new(216,206),
-     [Drawing.Point]::new(225,193)))
-   }finally{$bg.Dispose();$border.Dispose();$stroke.Dispose();$fill.Dispose()}
-  }finally{$g.Dispose()}
-  foreach($size in $sizes){
-   $frame=[Drawing.Bitmap]::new($size,$size,
-    [Drawing.Imaging.PixelFormat]::Format32bppArgb)
-   try{
-    $scaled=[Drawing.Graphics]::FromImage($frame)
-    try{
-     $scaled.Clear([Drawing.Color]::Transparent)
-     $scaled.InterpolationMode=[Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
-     $scaled.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
-     $scaled.DrawImage($master,0,0,$size,$size)
-    }finally{$scaled.Dispose()}
-    $ms=[IO.MemoryStream]::new()
-    try{
-     $frame.Save($ms,[Drawing.Imaging.ImageFormat]::Png)
-     $frames.Add($ms.ToArray())
-    }finally{$ms.Dispose()}
-   }finally{$frame.Dispose()}
+   $g.FillEllipse($base,4,4,248,248)
+   $g.DrawEllipse($outer,4,4,248,248)
+   $g.DrawEllipse($silver,41,45,168,168)
+   # Gear-like tips mark the historic Severodvinsk gear around the ring.
+   for($i=0;$i -lt 11;$i++){
+    $angle=2.0*[Math]::PI*$i/11.0
+    $x1=[single](125+94*[Math]::Cos($angle))
+    $y1=[single](129+94*[Math]::Sin($angle))
+    $x2=[single](125+106*[Math]::Cos($angle))
+    $y2=[single](129+106*[Math]::Sin($angle))
+    $g.DrawLine($gear,$x1,$y1,$x2,$y2)
+   }
+   # Ring-arrow motif references Volvo without duplicating its official logo.
+   $g.DrawLine($silver,184,71,234,19)
+   $g.DrawLine($silver,234,19,230,53)
+   $g.DrawLine($silver,234,19,201,23)
+   # White gull over the White Sea, deliberately readable at 16px.
+   $g.FillPolygon($bird,[Drawing.Point[]]@(
+    [Drawing.Point]::new(53,122),
+    [Drawing.Point]::new(80,103),
+    [Drawing.Point]::new(103,106),
+    [Drawing.Point]::new(121,122),
+    [Drawing.Point]::new(154,100),
+    [Drawing.Point]::new(199,101),
+    [Drawing.Point]::new(176,119),
+    [Drawing.Point]::new(138,134),
+    [Drawing.Point]::new(119,151),
+    [Drawing.Point]::new(97,136),
+    [Drawing.Point]::new(68,133)))
+   foreach($y in @(158,175,192)){
+    $g.DrawBezier($wave,
+      [single]68,[single]$y,
+      [single]103,[single]($y-22),
+      [single]137,[single]($y+18),
+      [single]188,[single]$y)
+   }
+   # Small updater-only badge, distinct from the original Dvinholm.exe ICO.
+   $g.FillEllipse($badgeBg,178,178,58,58)
+   $g.DrawEllipse($badgeBorder,178,178,58,58)
+   $g.DrawArc($badgeStroke,189,189,36,36,45,285)
+   $g.FillPolygon($bird,[Drawing.Point[]]@(
+    [Drawing.Point]::new(220,186),
+    [Drawing.Point]::new(232,194),
+    [Drawing.Point]::new(217,201)))
+  }finally{
+   $base.Dispose();$outer.Dispose();$silver.Dispose();$gear.Dispose()
+   $wave.Dispose();$bird.Dispose();$badgeBg.Dispose()
+   $badgeBorder.Dispose();$badgeStroke.Dispose()
   }
- }finally{$master.Dispose()}
-}finally{$source.Dispose()}
+ }finally{$g.Dispose()}
+ foreach($size in $sizes){
+  $frame=[Drawing.Bitmap]::new($size,$size,
+   [Drawing.Imaging.PixelFormat]::Format32bppArgb)
+  try{
+   $scaled=[Drawing.Graphics]::FromImage($frame)
+   try{
+    $scaled.Clear([Drawing.Color]::Transparent)
+    $scaled.InterpolationMode=[Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+    $scaled.SmoothingMode=[Drawing.Drawing2D.SmoothingMode]::AntiAlias
+    $scaled.PixelOffsetMode=[Drawing.Drawing2D.PixelOffsetMode]::HighQuality
+    $scaled.DrawImage($master,0,0,$size,$size)
+   }finally{$scaled.Dispose()}
+   $stream=[IO.MemoryStream]::new()
+   try{
+    $frame.Save($stream,[Drawing.Imaging.ImageFormat]::Png)
+    $frames.Add($stream.ToArray())
+   }finally{$stream.Dispose()}
+  }finally{$frame.Dispose()}
+ }
+}finally{$master.Dispose()}
 $directory=[IO.Path]::GetDirectoryName([IO.Path]::GetFullPath($IconPath))
 [IO.Directory]::CreateDirectory($directory)|Out-Null
 $writer=[IO.BinaryWriter]::new([IO.File]::Create([IO.Path]::GetFullPath($IconPath)))
