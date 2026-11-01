@@ -2845,12 +2845,26 @@ if($Mode -eq 'UiSmokeTest'){
   }
   $northChecks++
   if($null -eq $script:northRuntime -or $null -eq $script:northWinApp -or
-     $null -eq $script:northDriver -or
-     ($script:northRuntime.Text -match '(?i)installed|готов' -and
-      $deps.Text -notmatch '(?i).NET x86:s*Installed') -or
-     ($script:northDriver.Text -match '(?i)connected|подключён' -and
-      -not $script:driversWereProbed)){
-   throw 'Northern home fabricated a dependency or physical J2534 readiness state.'
+     $null -eq $script:northDriver){
+   throw 'Northern home lost its prerequisite evidence labels.'
+  }
+  # Verify exact worker-projection values, not assumed text translations.
+  $expectedDot=if($deps.Text -match '\.NET x86:\s*([^ ]+)'){$Matches[1]}else{'не проверено'}
+  $expectedWin=if($deps.Text -match 'WinApp:\s*([^ ]+)'){$Matches[1]}else{'не проверено'}
+  if(-not $script:northRuntime.Text.Contains($expectedDot) -or
+     -not $script:northWinApp.Text.Contains($expectedWin)){
+   throw 'Northern home prerequisite values differ from the actual worker snapshot.'
+  }
+  $priorDrivers=$script:driversWereProbed
+  try{
+   $script:driversWereProbed=$false
+   Update-NorthernCompactSnapshot
+   if($script:northDriver.Text -cnotmatch 'J2534:\s*(не проверено|not checked)'){
+    throw 'Northern home claims J2534 readiness without a local inventory.'
+   }
+  }finally{
+   $script:driversWereProbed=$priorDrivers
+   Update-NorthernCompactSnapshot
   }
   $northChecks++
   $script:recoveryStatus='Not checked';Update-ActionAvailability
