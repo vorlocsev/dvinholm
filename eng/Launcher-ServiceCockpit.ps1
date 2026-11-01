@@ -307,11 +307,18 @@ $script:northernHome.Add_Paint({
  # Darkened typography area and compact Aurora edge treatment.
  $veil=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(162,5,20,37))
  $brandVeil=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(65,5,20,37))
+ # The interim JPEG still contains tiny baked-in captions in its right half.
+ # Fade that edge so it cannot compete with the genuine WinForms captions.
+ $legacyTextFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
+  [Drawing.Rectangle]::new(650,0,530,330),
+  [Drawing.Color]::FromArgb(60,5,20,37),
+  [Drawing.Color]::FromArgb(255,5,20,37),0.0)
  $lower=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(242,8,23,40))
  $line=[Drawing.Pen]::new([Drawing.Color]::FromArgb(75,43,198,203),2)
  try{
   $g.FillRectangle($veil,0,0,1180,329)
   $g.FillRectangle($brandVeil,0,0,780,329)
+  $g.FillRectangle($legacyTextFade,650,0,530,329)
   $g.FillRectangle($lower,0,330,1180,360)
   $g.DrawLine($line,42,324,1137,324)
   $g.DrawLine($line,42,655,1137,655)
@@ -322,34 +329,57 @@ $script:northernHome.Add_Paint({
     $g.DrawRectangle($line,$x,337,342,64)
    }
   }finally{$cardFill.Dispose()}
- }finally{$veil.Dispose();$brandVeil.Dispose();$lower.Dispose();$line.Dispose()}
- $silver=[Drawing.Pen]::new([Drawing.Color]::FromArgb(216,227,240,250),7)
- $cyan=[Drawing.Pen]::new([Drawing.Color]::FromArgb(212,36,224,217),5)
- $bird=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(246,238,248,255))
+ }finally{$veil.Dispose();$brandVeil.Dispose();$legacyTextFade.Dispose();$lower.Dispose();$line.Dispose()}
+ # Echo the approved Launcher.exe Techno-North #9, not the older sketch:
+ # heavy bolted gear-ring, steel-blue White Sea waves, true gull and through-arrow.
+ $silver=[Drawing.Pen]::new([Drawing.Color]::FromArgb(246,214,231,242),8)
+ $steelShadow=[Drawing.Pen]::new([Drawing.Color]::FromArgb(230,64,103,128),17)
+ $lug=[Drawing.Pen]::new([Drawing.Color]::FromArgb(248,170,199,216),10)
+ $rivet=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(255,225,236,244))
+ $water=[Drawing.Pen]::new([Drawing.Color]::FromArgb(235,137,182,204),6)
+ $bird=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(252,241,249,255))
+ $feather=[Drawing.Pen]::new([Drawing.Color]::FromArgb(205,105,141,162),2)
  try{
-  # Volvo-inspired ring and arrow merged with the Severodvinsk gear motif.
-  $g.DrawArc($silver,85,64,170,170,38,305)
-  $g.DrawLine($silver,215,94,272,38)
-  $g.DrawLine($silver,272,38,269,81)
-  $g.DrawLine($silver,272,38,229,38)
-  for($i=0;$i -lt 10;$i++){
-   $a=([double]$i*2*[Math]::PI/10)
-   $x1=170+[Math]::Cos($a)*89
-   $y1=148+[Math]::Sin($a)*89
-   $x2=170+[Math]::Cos($a)*102
-   $y2=148+[Math]::Sin($a)*102
-   $g.DrawLine($silver,[single]$x1,[single]$y1,[single]$x2,[single]$y2)
+  for($i=0;$i -lt 12;$i++){
+   $a=([double]$i*2*[Math]::PI/12)
+   $x1=[single](170+[Math]::Cos($a)*87)
+   $y1=[single](149+[Math]::Sin($a)*87)
+   $x2=[single](170+[Math]::Cos($a)*101)
+   $y2=[single](149+[Math]::Sin($a)*101)
+   $g.DrawLine($lug,$x1,$y1,$x2,$y2)
+  }
+  $g.DrawEllipse($steelShadow,85,64,170,170)
+  $g.DrawEllipse($silver,85,64,170,170)
+  for($i=0;$i -lt 12;$i++){
+   $a=([double]$i*2*[Math]::PI/12)
+   $x=[single](167+85*[Math]::Cos($a))
+   $y=[single](146+85*[Math]::Sin($a))
+   $g.FillEllipse($rivet,$x,$y,6,6)
   }
   $g.FillPolygon($bird,[Drawing.Point[]]@(
-   [Drawing.Point]::new(104,141),[Drawing.Point]::new(142,128),
-   [Drawing.Point]::new(164,141),[Drawing.Point]::new(210,114),
-   [Drawing.Point]::new(192,151),[Drawing.Point]::new(233,154),
-   [Drawing.Point]::new(181,159),[Drawing.Point]::new(160,174),
-   [Drawing.Point]::new(139,153)))
-  $g.DrawArc($cyan,111,176,117,26,8,166)
-  $g.DrawArc($cyan,120,191,112,24,8,166)
-  $g.DrawArc($cyan,130,206,104,21,8,166)
- }finally{$silver.Dispose();$cyan.Dispose();$bird.Dispose()}
+   [Drawing.Point]::new(78,141),[Drawing.Point]::new(111,122),
+   [Drawing.Point]::new(137,124),[Drawing.Point]::new(160,135),
+   [Drawing.Point]::new(185,119),[Drawing.Point]::new(211,116),
+   [Drawing.Point]::new(252,128),[Drawing.Point]::new(223,129),
+   [Drawing.Point]::new(199,140),[Drawing.Point]::new(180,151),
+   [Drawing.Point]::new(169,158),[Drawing.Point]::new(156,153),
+   [Drawing.Point]::new(141,161),[Drawing.Point]::new(115,157),
+   [Drawing.Point]::new(96,151),[Drawing.Point]::new(137,142),
+   [Drawing.Point]::new(112,137)))
+  $g.DrawBezier($feather,89,140,118,127,138,134,162,145)
+  $g.DrawBezier($feather,180,145,199,128,223,127,243,128)
+  $g.DrawBezier($water,85,184,120,168,146,194,175,182)
+  $g.DrawBezier($water,175,182,207,172,232,165,257,180)
+  $g.DrawBezier($water,85,202,120,189,151,209,181,202)
+  $g.DrawBezier($water,181,202,214,195,238,188,257,200)
+  # The shaft visibly crosses the rim, continuing to the pointed head.
+  $g.DrawLine($silver,213,109,290,31)
+  $g.DrawLine($silver,290,31,285,76)
+  $g.DrawLine($silver,290,31,246,34)
+ }finally{
+  $silver.Dispose();$steelShadow.Dispose();$lug.Dispose()
+  $rivet.Dispose();$water.Dispose();$bird.Dispose();$feather.Dispose()
+ }
 })
 $script:northTitle=New-NorthernLabel 'DVINHOLM' 329 66 670 76 37 $true
 $script:northSubtitle=New-NorthernLabel 'LAUNCHER   /   СЕВЕРНАЯ ДВИНА · БЕЛОЕ МОРЕ' 333 153 690 40 13
@@ -398,7 +428,10 @@ function Update-NorthernCompactSnapshot {
  $script:northComponents.Enabled=$depsInstallQuick.Enabled
  $script:northDrivers.Enabled=$driverQuick.Enabled
  $script:northSettings.Enabled=$settingsQuick.Enabled
- $script:northVersion.Text=$installed.Text
+ $script:northVersion.Text=[string]$installed.Text
+ if($script:launcherLanguage -eq 'RU'){
+  $script:northVersion.Text=$script:northVersion.Text.Replace('Not checked','не проверено')
+ }
  $script:northChannel.Text='Канал: '+[string]$choice.SelectedItem
  # Until recovery and prerequisites are verified, do not repeat the worker's
  # generic 'Ready.' phrase: Start remains disabled and the footer must agree.
@@ -410,7 +443,10 @@ function Update-NorthernCompactSnapshot {
   @($script:northRuntime,'\.NET x86:\s*([^ ]+)',' .NET x86: '),
   @($script:northWinApp,'WinApp:\s*([^ ]+)',' WinApp: ')
   )){
-  $value=if($parts -match $spec[1]){$Matches[1]}else{'не проверено'}
+  $value=if($parts -match $spec[1]){$Matches[1]}else{''}
+  if([string]::IsNullOrWhiteSpace($value) -or $value -ceq '?'){
+   $value=if($script:launcherLanguage -eq 'RU'){'не проверено'}else{'not checked'}
+  }
   $spec[0].Text=$spec[2]+$value
  }
  if($script:driversWereProbed){
