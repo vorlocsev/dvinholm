@@ -1931,6 +1931,7 @@ function Apply-LauncherLanguage {
  }
  $status.Text=Format-LauncherDetail $script:lastRawStatus
  $form.Text='Dvinholm | '+$(if($script:launcherLanguage -eq 'RU'){'Лаунчер'}else{'Launcher'})
+ Update-NorthernCompactSnapshot
 }
 function Begin-LauncherApplyHandoff {
  if($script:child -or $script:vendor){return}
@@ -2546,8 +2547,10 @@ function Poll-WorkerState {
 }
 $timer=New-Object Windows.Forms.Timer;$timer.Interval=500
 $timer.Add_Tick({Poll-WorkerState})
+$timer.Add_Tick({Update-NorthernCompactSnapshot})
 $timer.Start()
 Update-ActionAvailability
+Update-NorthernCompactSnapshot
 if($Mode -eq 'UiSmokeTest'){
  # Instantiate the real Windows PowerShell 5.1 WinForms GUI, but do not
  # display a modal dialog, contact GitHub, launch installers or start Dvinholm.
@@ -2812,6 +2815,91 @@ if($Mode -eq 'UiSmokeTest'){
   if($auroraChecks -ne 8){throw 'Wrong Service Cockpit smoke check count.'}
   Write-Host 'Service Cockpit 8/8 Windows WinForms layout and action smoke checks passed.'
   Write-Host 'Aurora Launcher 8/8 Windows WinForms compact theme smoke checks passed.'
+
+  # The approved fourth concept is the visible default, not a dead mock.
+  # These eight gates instantiate the packaged WinForms controls offline.
+  $northChecks=0
+  if($script:northernDetailOpen -or
+     $script:northernHome.Parent -ne $form -or
+     $form.Controls.GetChildIndex($script:northernHome) -ne 0){throw 'Northern compact home is not the default visible window.'}
+  $northChecks++
+  if($script:northernHome.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
+     $script:northernHome.Height -ne [int][Math]::Round(690*$script:auroraScale) -or
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 552){
+   throw 'Northern compact home does not fit the approved 944x552 window envelope.'
+  }
+  $northChecks++
+  if($null -eq $script:northTitle -or $script:northTitle.Text -cne 'DVINHOLM' -or
+     $null -eq $script:northLaunch -or
+     $script:northLaunch.Parent -ne $script:northernHome -or
+     $script:northLaunch.Bottom -ge $script:northUpdates.Top){
+   throw 'Approved northern brand/launch-first layout is missing or overlaps actions.'
+  }
+  $northChecks++
+  foreach($button in @($script:northUpdates,$script:northComponents,
+                        $script:northDrivers,$script:northSettings)){
+   if($button.Parent -ne $script:northernHome -or $button.Text.Length -lt 4 -or
+      $button.Bottom -gt $script:northernHome.ClientSize.Height){
+    throw 'One of the compact secondary launch actions is missing or clipped.'
+   }
+  }
+  $northChecks++
+  if($null -eq $script:northRuntime -or $null -eq $script:northWinApp -or
+     $null -eq $script:northDriver){
+   throw 'Northern home lost its prerequisite evidence labels.'
+  }
+  # Verify exact worker-projection values, not assumed text translations.
+  $expectedDot=if($deps.Text -match '\.NET x86:\s*([^ ]+)'){$Matches[1]}else{'не проверено'}
+  $expectedWin=if($deps.Text -match 'WinApp:\s*([^ ]+)'){$Matches[1]}else{'не проверено'}
+  if(-not $script:northRuntime.Text.Contains($expectedDot) -or
+     -not $script:northWinApp.Text.Contains($expectedWin)){
+   throw 'Northern home prerequisite values differ from the actual worker snapshot.'
+  }
+  $priorDrivers=$script:driversWereProbed
+  try{
+   $script:driversWereProbed=$false
+   Update-NorthernCompactSnapshot
+   if($script:northDriver.Text -cnotmatch 'J2534:\s*(не проверено|not checked)'){
+    throw 'Northern home claims J2534 readiness without a local inventory.'
+   }
+  }finally{
+   $script:driversWereProbed=$priorDrivers
+   Update-NorthernCompactSnapshot
+  }
+  $northChecks++
+  $script:recoveryStatus='Not checked';Update-ActionAvailability
+  Update-NorthernCompactSnapshot
+  if($script:northLaunch.Enabled -or $launch.Enabled){
+   throw 'Unverified recovery state enabled the compact Launch action.'
+  }
+  $northChecks++
+  Show-NorthernUpdates
+  if(-not $script:northernDetailOpen -or
+     $null -eq $check -or $null -eq $install -or $null -eq $versionsButton){
+   throw 'Compact Updates route lost real installer/recovery controls.'
+  }
+  Show-NorthernHome
+  if($script:northernDetailOpen -or
+     $form.Controls.GetChildIndex($script:northernHome) -ne 0){
+   throw 'Compact Updates route cannot return to approved home.'
+  }
+  $northChecks++
+  $langBefore=$script:launcherLanguage
+  $script:launcherLanguage='EN';Update-NorthernCompactSnapshot
+  if($script:northLaunch.Text -cnotmatch 'START' -or
+     $script:northUpdates.Text -cnotmatch 'Updates'){
+   throw 'Northern compact English labels missing.'
+  }
+  $script:launcherLanguage='RU';Update-NorthernCompactSnapshot
+  if($script:northLaunch.Text -cnotmatch 'ЗАПУСТИТЬ' -or
+     $script:northUpdates.Text -cnotmatch 'Обновления'){
+   throw 'Northern compact Russian labels missing.'
+  }
+  $script:launcherLanguage=$langBefore;Apply-LauncherLanguage
+  $northChecks++
+  if($northChecks -ne 8){throw 'Wrong Northern Compact acceptance count.'}
+  Write-Host 'Northern Aurora compact 8/8 real WinForms offline checks passed.'
+
 
  }finally{
   $script:child=$null
