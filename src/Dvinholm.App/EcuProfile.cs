@@ -139,12 +139,16 @@ internal sealed class EcuProfileCatalog
     /// </summary>
     internal static EcuProfileCatalog FromJson(string json)
     {
-        if (string.IsNullOrWhiteSpace(json))
+        // An attacker-supplied all-whitespace string may itself be huge.
+        // Reject by length BEFORE scanning it for non-whitespace content.
+        if (json is null || json.Length == 0)
             throw new ArgumentException("Profile JSON cannot be empty.", nameof(json));
         if (json.Length > EcuProfileCatalogInput.MaximumJsonBytes ||
             System.Text.Encoding.UTF8.GetByteCount(json) >
                 EcuProfileCatalogInput.MaximumJsonBytes)
             throw new InvalidDataException("ECU profile JSON exceeds the bounded import limit.");
+        if (string.IsNullOrWhiteSpace(json))
+            throw new ArgumentException("Profile JSON cannot be empty.", nameof(json));
 
         ProfileDocument?[] documents;
         try
