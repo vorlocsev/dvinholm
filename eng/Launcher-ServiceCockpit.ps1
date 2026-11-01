@@ -409,5 +409,8 @@ function Update-NorthernCompactSnapshot {
   $script:northReturn.Text='← Главная'
  }
 }
+# The hidden back button is created after the home panel and would otherwise
+# take the top z-order before the window becomes visible.
+$script:northernHome.BringToFront()
 # Show the compact approved screen on normal launch. Existing Service
 # Cockpit remains accessible with all real actions from Updates.
