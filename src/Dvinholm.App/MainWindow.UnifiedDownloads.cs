@@ -29,6 +29,8 @@ public sealed partial class MainWindow
         UnifiedStageUpdateButton.IsEnabled = UnifiedNetworkAllowed && !checking && !staging &&
             _unifiedCandidate is not null && _unifiedStagedPackage is null;
         UnifiedCancelStageButton.IsEnabled = staging;
+        UnifiedPreflightButton.IsEnabled = UnifiedNetworkAllowed && !checking &&
+            !staging && _unifiedStagedPackage is not null;
         UnifiedStageProgress.Visibility = staging ? Visibility.Visible : Visibility.Collapsed;
     }
 
@@ -57,6 +59,47 @@ public sealed partial class MainWindow
         try { Directory.Delete(completed.Directory, recursive: true); }
         catch (IOException) { }
         catch (UnauthorizedAccessException) { }
+    }
+
+    private void UnifiedPreflight_Click(object sender, RoutedEventArgs e)
+    {
+        var staged = _unifiedStagedPackage;
+        if (!UnifiedNetworkAllowed || _unifiedStageCts is not null ||
+            _unifiedCheckCts is not null || staged is null)
+            return;
+
+        try
+        {
+            var backups = Path.Combine(DvinholmUserDataDirectory.Current, "update-backups");
+            var plan = UnifiedX64RecoveryPreflight.Inspect(
+                AppContext.BaseDirectory, staged, backups);
+            if (!plan.CanPlanBackup)
+            {
+                SetUnifiedStatus(
+                    "Проверка резервного копирования заблокирована: " +
+                        string.Join(", ", plan.Blockers) + ". Файлы приложения не изменены.",
+                    "Backup preflight blocked: " +
+                        string.Join(", ", plan.Blockers) + ". No application files changed.");
+                return;
+            }
+
+            SetUnifiedStatus(
+                $"Каталог проверен: {plan.FilesToBackUp} файлов, " +
+                    $"{plan.BytesToBackUp:N0} байт для резервной копии. " +
+                    "Подпись издателя и механизм отката пока не подтверждены. " +
+                    "Резервная копия не создана, установка запрещена.",
+                $"Directory audited: {plan.FilesToBackUp} files, " +
+                    $"{plan.BytesToBackUp:N0} bytes to back up. " +
+                    "Publisher signature and rollback are still unverified. " +
+                    "No backup created and installation forbidden.");
+        }
+        catch (Exception ex) when (ex is IOException or UnauthorizedAccessException or
+            SecurityException or ArgumentException or InvalidDataException)
+        {
+            SetUnifiedStatus(
+                "Не удалось проверить подготовку резервной копии. Установка запрещена.",
+                "Backup preparation could not be validated. Installation forbidden.");
+        }
     }
 
     private void UnifiedCancelStage_Click(object sender, RoutedEventArgs e)
