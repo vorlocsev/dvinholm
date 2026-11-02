@@ -577,13 +577,15 @@ $script:northernHome.Add_Paint({
   $gear.Dispose();$bird.Dispose();$wave.Dispose();$hairline.Dispose()
  }
 })
+# Align native English/fallback typography with the approved atlas header.
+# The Russian atlas already contains its exact title and hides these labels.
 # The user-approved screenshot is the visual contract: a tall panoramic
 # northern header, 3 equal status cards, a dominant launch action, five
 # working controls in a 3+2 grid, and White Sea / Northern Dvina footer.
-$script:northTitle=New-NorthernLabel 'DVINHOLM' 397 70 770 65 43 $true
-$script:northSubtitle=New-NorthernLabel 'LAUNCHER' 399 137 735 64 39 $true
-$script:northCaption=New-NorthernLabel 'СЕРВИСЫ  ·  ИНСТРУМЕНТЫ  ·  ДРАЙВЕРЫ' 400 218 770 32 13
-$script:northSource=New-NorthernLabel 'ДЛЯ VOLVO' 401 253 650 27 13
+$script:northTitle=New-NorthernLabel 'DVINHOLM' 397 35 770 65 43 $true
+$script:northSubtitle=New-NorthernLabel 'LAUNCHER' 399 98 735 64 39 $true
+$script:northCaption=New-NorthernLabel 'СЕРВИСЫ  ·  ИНСТРУМЕНТЫ  ·  ДРАЙВЕРЫ' 400 168 770 32 13
+$script:northSource=New-NorthernLabel 'ДЛЯ VOLVO' 401 205 650 27 13
 $script:northRuntimeTitle=New-NorthernLabel '.NET Runtime' 117 373 260 29 17 $true
 $script:northWinAppTitle=New-NorthernLabel 'WinApp Runtime' 505 373 262 29 17 $true
 $script:northDriverTitle=New-NorthernLabel 'J2534' 892 373 237 29 17 $true
