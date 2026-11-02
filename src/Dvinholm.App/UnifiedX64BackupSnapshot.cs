@@ -130,10 +130,20 @@ internal static class UnifiedX64BackupSnapshot
             (attributes & FileAttributes.Directory) == 0)
             throw new InvalidDataException("Unsafe snapshot folder.");
 
+        // Reject untracked root files and directory junctions before reading
+        // journal data. The root must contain only payload/ and the journal.
+        var rootEntries = Directory.EnumerateFileSystemEntries(path).ToArray();
+        if (rootEntries.Length != 2 ||
+            rootEntries.Any(entry =>
+                (File.GetAttributes(entry) & FileAttributes.ReparsePoint) != 0 ||
+                (Path.GetFileName(entry) != JournalFile &&
+                 Path.GetFileName(entry) != PayloadFolder)))
+            throw new InvalidDataException("Unexpected backup snapshot root entries.");
         var journalPath = Path.Combine(path, JournalFile);
-        var bytes = File.ReadAllBytes(journalPath);
-        if (bytes.Length is 0 or > JournalLimit)
+        var journalInfo = new FileInfo(journalPath);
+        if (!journalInfo.Exists || journalInfo.Length is 0 or > JournalLimit)
             throw new InvalidDataException("Invalid snapshot journal length.");
+        var bytes = File.ReadAllBytes(journalPath);
         var journal = JsonSerializer.Deserialize<Journal>(bytes)
             ?? throw new InvalidDataException("Invalid snapshot journal.");
         if (journal.Schema != 1 || journal.State != "BackupVerified_NoInstall" ||
