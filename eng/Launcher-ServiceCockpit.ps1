@@ -439,7 +439,7 @@ $script:northernHome.Add_Paint({
   if($script:approvedAtlas -and $script:launcherLanguage -eq 'RU'){
    $g.DrawImage($script:approvedAtlas,
     [Drawing.Rectangle]::new(0,0,1180,348),
-    [Drawing.Rectangle]::new(0,0,960,276),
+    [Drawing.Rectangle]::new(0,0,1376,395),
     [Drawing.GraphicsUnit]::Pixel)
    $g.DrawImage($script:approvedAtlas,
     [Drawing.Rectangle]::new(0,778,1180,62),
