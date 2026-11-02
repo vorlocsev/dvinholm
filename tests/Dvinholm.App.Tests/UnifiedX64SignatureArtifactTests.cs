@@ -62,7 +62,7 @@ public sealed class UnifiedX64SignatureArtifactTests
     {
         var (_, signature) = Sign();
         var encoded = UnifiedX64SignatureArtifact.Encode(signature);
-        foreach (var invalid in new[] {
+        foreach (byte[] invalid in new byte[][] {
             encoded[..^2], [.. encoded, (byte)'\n'], [.. encoded, (byte)'X']
         })
             Assert.Throws<InvalidDataException>(() =>
@@ -76,7 +76,7 @@ public sealed class UnifiedX64SignatureArtifactTests
     {
         var (_, signature) = Sign();
         var encoded = UnifiedX64SignatureArtifact.Encode(signature);
-        foreach (var invalid in new[] {
+        foreach (byte[] invalid in new byte[][] {
             [.. encoded[..^1], (byte)'\r', (byte)'\n'],
             [ (byte)0xEF, (byte)0xBB, (byte)0xBF, ..encoded],
             [ (byte)' ', .. encoded[..^1]],
