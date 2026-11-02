@@ -293,9 +293,10 @@ function New-NorthernButton([string]$value,[int]$x,[int]$y,
  $button.SetBounds($x,$y,$width,$height)
  $button.Font=[Drawing.Font]::new('Segoe UI',$(if($primary){25}else{17}),
   [Drawing.FontStyle]::Bold)
- $button.BackColor=if($primary){
-  [Drawing.Color]::FromArgb(8,118,113)
- }else{[Drawing.Color]::FromArgb(17,49,76)}
+ # WinForms paints the square native Button background before our rounded
+ # geometry. Match the surrounding dark panel so no teal rectangle bleeds
+ # into the curved corners, especially for a disabled Start action.
+ $button.BackColor=[Drawing.Color]::FromArgb(8,22,39)
  $button.ForeColor=[Drawing.Color]::White
  $button.FlatStyle=[Windows.Forms.FlatStyle]::Flat
  $button.FlatAppearance.BorderSize=2
