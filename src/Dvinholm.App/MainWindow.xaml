@@ -235,6 +235,9 @@
                                         <Button x:Name="UnifiedCancelStageButton" Content="Отменить"
                                                 Click="UnifiedCancelStage_Click" IsEnabled="False"
                                                 ToolTipService.ToolTip="Отменить загрузку и удалить неполный пакет." />
+                                        <Button x:Name="UnifiedPreflightButton" Content="Проверить готовность"
+                                                Click="UnifiedPreflight_Click" IsEnabled="False"
+                                                ToolTipService.ToolTip="Проверить каталог программы и будущую резервную копию без изменения файлов." />
                                     </StackPanel>
                                     <ProgressBar x:Name="UnifiedStageProgress" IsIndeterminate="True"
                                                  Visibility="Collapsed" Height="4" />
