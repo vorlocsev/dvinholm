@@ -499,12 +499,24 @@ $script:northernHome.Add_Paint({
     [Drawing.Rectangle]::new(800,0,380,348),
     [Drawing.Rectangle]::new(934,0,442,395),
     [Drawing.GraphicsUnit]::Pixel)
-   # Cover any crossfade at the boundary without hiding the live text.
-   $enFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
-    [Drawing.Rectangle]::new(382,0,40,225),
-    [Drawing.Color]::FromArgb(180,5,21,44),
-    [Drawing.Color]::FromArgb(0,5,21,44),0.0)
-   try{$g.FillRectangle($enFade,382,0,40,225)}finally{$enFade.Dispose()}
+   # Replace legacy decorative bands and Cyrillic-bearing centre with
+   # a continuous dark sky for native English words. Fade into the real
+   # waterfront at the bottom, keeping the same car, gull and Viking art.
+   $enSky=[Drawing.Drawing2D.LinearGradientBrush]::new(
+    [Drawing.Rectangle]::new(390,0,410,288),
+    [Drawing.Color]::FromArgb(5,23,45),
+    [Drawing.Color]::FromArgb(9,39,62),0.0)
+   try{$g.FillRectangle($enSky,390,0,410,288)}finally{$enSky.Dispose()}
+   $enHorizon=[Drawing.Drawing2D.LinearGradientBrush]::new(
+    [Drawing.Rectangle]::new(390,255,410,64),
+    [Drawing.Color]::FromArgb(235,7,31,51),
+    [Drawing.Color]::FromArgb(0,7,31,51),90.0)
+   try{$g.FillRectangle($enHorizon,390,255,410,64)}
+   finally{$enHorizon.Dispose()}
+   # Two subtle aurora strokes live above, not behind, the English caption.
+   $enGlow=[Drawing.Pen]::new([Drawing.Color]::FromArgb(37,35,187,159),11)
+   try{$g.DrawBezier($enGlow,520,8,610,-30,715,50,805,4)}
+   finally{$enGlow.Dispose()}
   }
   if($script:approvedAtlas){
    # The original atlas footer has a caption baked through its centre.
@@ -519,6 +531,19 @@ $script:northernHome.Add_Paint({
     [Drawing.Rectangle]::new(892,738,288,62),
     [Drawing.Rectangle]::new(1040,395,336,115),
     [Drawing.GraphicsUnit]::Pixel)
+   # Feather the clipped coastline edges into the dark empty centre.
+   $fadeToSea=[Drawing.Drawing2D.LinearGradientBrush]::new(
+    [Drawing.Rectangle]::new(270,738,42,62),
+    [Drawing.Color]::FromArgb(0,7,28,48),
+    [Drawing.Color]::FromArgb(255,7,28,48),0.0)
+   $fadeFromSea=[Drawing.Drawing2D.LinearGradientBrush]::new(
+    [Drawing.Rectangle]::new(890,738,42,62),
+    [Drawing.Color]::FromArgb(255,7,28,48),
+    [Drawing.Color]::FromArgb(0,7,28,48),0.0)
+   try{
+    $g.FillRectangle($fadeToSea,270,738,42,62)
+    $g.FillRectangle($fadeFromSea,890,738,42,62)
+   }finally{$fadeToSea.Dispose();$fadeFromSea.Dispose()}
   }
  }finally{
   $night.Dispose();$veil.Dispose();$metal.Dispose()
@@ -528,10 +553,10 @@ $script:northernHome.Add_Paint({
 # The user-approved screenshot is the visual contract: a tall panoramic
 # northern header, 3 equal status cards, a dominant launch action, five
 # working controls in a 3+2 grid, and White Sea / Northern Dvina footer.
-$script:northTitle=New-NorthernLabel 'DVINHOLM' 366 70 770 65 43 $true
-$script:northSubtitle=New-NorthernLabel 'LAUNCHER' 368 137 735 64 39 $true
-$script:northCaption=New-NorthernLabel 'СЕРВИСЫ  ·  ИНСТРУМЕНТЫ  ·  ДРАЙВЕРЫ' 370 218 770 32 13
-$script:northSource=New-NorthernLabel 'ДЛЯ VOLVO' 371 253 650 27 13
+$script:northTitle=New-NorthernLabel 'DVINHOLM' 397 70 770 65 43 $true
+$script:northSubtitle=New-NorthernLabel 'LAUNCHER' 399 137 735 64 39 $true
+$script:northCaption=New-NorthernLabel 'СЕРВИСЫ  ·  ИНСТРУМЕНТЫ  ·  ДРАЙВЕРЫ' 400 218 770 32 13
+$script:northSource=New-NorthernLabel 'ДЛЯ VOLVO' 401 253 650 27 13
 $script:northRuntimeTitle=New-NorthernLabel '.NET Runtime' 117 373 260 29 17 $true
 $script:northWinAppTitle=New-NorthernLabel 'WinApp Runtime' 505 373 262 29 17 $true
 $script:northDriverTitle=New-NorthernLabel 'J2534' 892 373 237 29 17 $true
