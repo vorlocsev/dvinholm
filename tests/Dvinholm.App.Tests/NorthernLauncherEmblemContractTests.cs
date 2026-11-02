@@ -113,9 +113,18 @@ public sealed class NorthernLauncherEmblemContractTests
         Assert.Contains("$candidate.Width -eq 1376 -and $candidate.Height -eq 510", cockpit);
         Assert.Contains("if($script:approvedAtlas -and $script:launcherLanguage -eq 'RU')", cockpit);
         Assert.Contains("[Drawing.Rectangle]::new(0,0,1376,395)", cockpit);
-        Assert.Contains("[Drawing.Rectangle]::new(0,395,1376,115)", cockpit);
-        Assert.Contains("[Drawing.Rectangle]::new(1000,0,376,395)", cockpit);
-        Assert.Contains("NORTHERN DVINA  ·  WHITE SEA  ·  VIKING HERITAGE", cockpit);
+        // Final approved design keeps only the text-free left/right scenery.
+        // Requiring the full source rectangle would restore the removed motto.
+        Assert.Contains("[Drawing.Rectangle]::new(0,395,360,115)", cockpit);
+        Assert.Contains("[Drawing.Rectangle]::new(1040,395,336,115)", cockpit);
+        Assert.DoesNotContain("[Drawing.Rectangle]::new(0,395,1376,115)", cockpit);
+        Assert.DoesNotContain("NORTHERN DVINA  ·  WHITE SEA  ·  VIKING HERITAGE", cockpit);
+        Assert.DoesNotContain("СЕВЕРНАЯ ДВИНА  ·  БЕЛОЕ МОРЕ  ·  НАСЛЕДИЕ ВИКИНГОВ", cockpit);
+        // English now shares the same approved gull and Volvo atlas panels.
+        Assert.Contains("[Drawing.Rectangle]::new(0,0,455,395)", cockpit);
+        Assert.Contains("[Drawing.Rectangle]::new(934,0,442,395)", cockpit);
+        Assert.Contains("$script:northCaption.Text='SERVICES  ·  TOOLS  ·  DRIVERS'", cockpit);
+        Assert.Contains("$script:northSource.Text='FOR VOLVO'", cockpit);
         Assert.Contains("$script:launcherLanguage -eq 'RU' -and -not $script:approvedAtlas", cockpit);
         Assert.Contains("Gull, steel sea waves and a real through-arrow", cockpit);
         Assert.Contains("$script:northLaunch.Enabled=$launch.Enabled", cockpit);
