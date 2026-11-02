@@ -263,7 +263,7 @@ function Translate([string]$key) {
    dev='Development · сборки CI';installed='Установлено';available='Доступно'
    recovery='Восстановление';check='Проверить обновления'
    install='Скачать / установить';launch='Запустить Dvinholm'
-   refresh='Перепроверить';versions='Проверить версии компонентов'
+   refresh='Перепроверить';versions='Проверить версии'
    dot='Установить .NET x86';win='Установить WinApp'
    vc='Установить VC++ x86';rollback='Предыдущая версия'
    repair='Исправить откат';repairInstall='Исправить установку'
@@ -297,7 +297,7 @@ function Translate([string]$key) {
    dev='Development · latest CI';installed='Installed';available='Available'
    recovery='Recovery';check='Check updates'
    install='Download / Install';launch='Start Dvinholm'
-   refresh='Recheck dependencies';versions='Check runtime versions'
+   refresh='Recheck dependencies';versions='Check versions'
    dot='Install .NET x86';win='Install WinApp'
    vc='Install VC++ x86';rollback='Restore previous'
    repair='Repair rollback';repairInstall='Repair install'
@@ -330,11 +330,12 @@ function Translate([string]$key) {
 # Keep diagnostic/worker tokens unchanged; localize only the GUI text.
 # Retaining the English source permits an immediate RU/EN switch even after
 # an operation finishes without rerunning the worker or accessing GitHub.
-$script:lastRawStatus='Ready.'
+$script:lastRawStatus='Awaiting verification.'
 function Format-LauncherDetail([string]$raw) {
  if($script:launcherLanguage -ne 'RU'){return $raw}
  switch -Regex -CaseSensitive ($raw) {
   '^Ready\.$' {return 'Готово.'}
+  '^Awaiting verification\.$' {return 'Ожидание проверки.'}
   '^Launcher release checked\. No files downloaded or replaced\.$' {
    return 'Обновления лаунчера проверены. Файлы не изменены.'
   }
@@ -381,6 +382,20 @@ function Format-LauncherDetail([string]$raw) {
   '^Missing Lite prerequisites\.' {
    return 'Не найдены необходимые компоненты Windows. Установите их и повторите проверку.'
   }
+  default {return $raw}
+ }
+}
+# Translate only exact display markers. Never mutate worker state or version
+# tokens consumed by the update disposition and recovery safety gates.
+function Format-LauncherBuildLabel([string]$raw) {
+ if($script:launcherLanguage -ne 'RU'){return $raw}
+ switch -CaseSensitive ($raw) {
+  'Not checked' {return 'Не проверено'}
+  'Not installed' {return 'Не установлено'}
+  'Unverified installation' {return 'Установка не подтверждена'}
+  'Not published' {return 'Не опубликовано'}
+  'Checking' {return 'Проверка'}
+  'Unknown' {return 'Неизвестно'}
   default {return $raw}
  }
 }
@@ -1896,8 +1911,8 @@ function Apply-LauncherLanguage {
  $dependenciesTitle.Text=Translate 'prereqs'
  $stableRadio.Text=Translate 'stable'
  $developmentRadio.Text=Translate 'dev'
- $installed.Text=(Translate 'installed')+': '+$script:lastCurrent
- $available.Text=(Translate 'available')+': '+$script:lastAvailable
+ $installed.Text=(Translate 'installed')+': '+(Format-LauncherBuildLabel $script:lastCurrent)
+ $available.Text=(Translate 'available')+': '+(Format-LauncherBuildLabel $script:lastAvailable)
  $recovery.Text=(Translate 'recovery')+': '+(Format-LauncherRecovery $script:lastRecovery)
  $check.Text=Translate 'check'
  $install.Text=Translate 'install'
@@ -2301,8 +2316,8 @@ function Apply-WorkerSnapshot($snapshot) {
  if($null -eq $snapshot){return $false}
  $script:lastCurrent=[string]$snapshot.Current
  $script:lastAvailable=[string]$snapshot.Available
- $installed.Text=(Translate 'installed')+': '+$script:lastCurrent
- $available.Text=(Translate 'available')+': '+$script:lastAvailable
+ $installed.Text=(Translate 'installed')+': '+(Format-LauncherBuildLabel $script:lastCurrent)
+ $available.Text=(Translate 'available')+': '+(Format-LauncherBuildLabel $script:lastAvailable)
  $deps.Text='.NET x86: '+[string]$snapshot.DotNet+
   '    WinApp: '+[string]$snapshot.WinApp+'    VC++ x86: '+[string]$snapshot.VC
  Set-LauncherDetail ([string]$snapshot.Detail)
@@ -2922,6 +2937,35 @@ if($Mode -eq 'UiSmokeTest'){
   Apply-LauncherLanguage
   if($localeChecks -ne 8){throw 'Wrong launcher locale check count.'}
   Write-Host 'Service Cockpit 8/8 offline RU/EN status translation checks passed.'
+
+  # Eight display-only version-label checks. The raw tokens must still
+  # control recovery and update availability, never translated text.
+  $markerChecks=0
+  $script:launcherLanguage='RU'
+  foreach($sample in @(
+   @('Not checked','Не проверено'),
+   @('Not installed','Не установлено'),
+   @('Unverified installation','Установка не подтверждена'),
+   @('Not published','Не опубликовано'),
+   @('Checking','Проверка'),
+   @('Unknown','Неизвестно'),
+   @('0.2.4','0.2.4'),
+   @('ci-4224','ci-4224')
+  )){
+   if((Format-LauncherBuildLabel ([string]$sample[0])) -cne [string]$sample[1]){
+    throw ('Wrong RU build label for '+[string]$sample[0])
+   }
+   $markerChecks++
+  }
+  $script:launcherLanguage='EN'
+  if((Format-LauncherBuildLabel 'Not checked') -cne 'Not checked' -or
+     (Format-LauncherBuildLabel 'ci-4224') -cne 'ci-4224'){
+   throw 'English version marker or CI identifier was modified.'
+  }
+  $script:launcherLanguage=$originalLanguage
+  Apply-LauncherLanguage
+  if($markerChecks -ne 8){throw 'Wrong build marker translation check count.'}
+  Write-Host 'Service Cockpit 8/8 RU/EN version evidence label checks passed.'
 
   # Eight Windows-only GUI contracts for the approved Service Cockpit.
   # No modal window, network request, installer, or ECU access.
