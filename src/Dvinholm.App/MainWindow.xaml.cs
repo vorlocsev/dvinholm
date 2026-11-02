@@ -111,6 +111,7 @@ public sealed partial class MainWindow : Window
         Closed += (_, _) =>
         {
             _closing = true;
+            _unifiedCheckCts?.Cancel();
 #if DVINHOLM_DEVELOPMENT_FEATURES
             ClearCemIdentity();
             ClearCemPinMaterial();
@@ -225,6 +226,7 @@ public sealed partial class MainWindow : Window
         _unifiedUpdatesActive = false;
         WorkspaceTitle.Text = section.Title;
         WorkspaceDescription.Text = section.Description;
+        ApplyUnifiedWorkspaceSection(destination);
         DiagnosticResultsCard.Visibility = destination is AuroraDestination.CemPinReadiness or
             AuroraDestination.DiagnosticsWorkspace or AuroraDestination.DtcFaults ? Visibility.Visible : Visibility.Collapsed;
         WorkspaceScroll.ChangeView(null, 0, null);
@@ -283,7 +285,9 @@ public sealed partial class MainWindow : Window
         var baud = (BaudRate.SelectedItem as ComboBoxItem)?.Content?.ToString();
         AuroraLanding.UpdateConnection(_connected, adapter, baud);
         if (ShellConnectionText is not null)
-            ShellConnectionText.Text = _connected && _session.IsConnected ? "J2534 подключён" : "Не подключено";
+            ShellConnectionText.Text = _connected && _session.IsConnected
+                ? L("J2534 подключён", "J2534 connected")
+                : L("Не подключено", "Disconnected");
         AuroraLanding.UpdateProfile((ProfileSelector.SelectedItem as EcuProfile)?.Name);
 #if DVINHOLM_DEVELOPMENT_FEATURES
         RefreshCemPartReadAvailability();
