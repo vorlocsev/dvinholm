@@ -86,4 +86,98 @@ public sealed class UnifiedX64BackupSnapshotTests
         Assert.Throws<InvalidDataException>(()=>UnifiedX64BackupSnapshot.Create(plan,staged));
         Assert.False(Directory.Exists(Path.GetDirectoryName(plan.BackupDirectory)!));
     });
+
+    private static void AssertNoCommittedOrTemporaryBackup(UnifiedX64RecoveryPlan plan)
+    {
+        Assert.False(Directory.Exists(plan.BackupDirectory));
+        var root = Path.GetDirectoryName(plan.BackupDirectory)!;
+        if (Directory.Exists(root))
+            Assert.Empty(Directory.EnumerateDirectories(root, ".snapshot-*"));
+    }
+
+    [Fact]
+    public void FinalWholeSourceAuditAcceptsAnUnchangedSnapshot() => Run((plan, staged) =>
+    {
+        var observed = false;
+        var receipt = UnifiedX64BackupSnapshot.Create(plan, staged, () => observed = true);
+        Assert.True(observed);
+        Assert.Equal(receipt, UnifiedX64BackupSnapshot.Verify(receipt.Directory));
+        Assert.True(UnifiedX64BackupSnapshot.MatchesInstalledContents(
+            receipt.Directory, plan.InstallDirectory));
+    });
+
+    [Fact]
+    public void SameLengthSettingsRewriteAfterCaptureAbortsCommit() => Run((plan, staged) =>
+    {
+        var settings = Path.Combine(plan.InstallDirectory, "settings.json");
+        Assert.Throws<InvalidDataException>(() =>
+            UnifiedX64BackupSnapshot.Create(plan, staged,
+                () => File.WriteAllText(settings, "[]")));
+        Assert.Equal("[]", File.ReadAllText(settings));
+        AssertNoCommittedOrTemporaryBackup(plan);
+    });
+
+    [Fact]
+    public void PreviouslyCopiedExecutableChangedAtSameLengthAbortsCommit() => Run((plan, staged) =>
+    {
+        var exe = Path.Combine(plan.InstallDirectory, "Dvinholm.exe");
+        Assert.Throws<InvalidDataException>(() =>
+            UnifiedX64BackupSnapshot.Create(plan, staged, () =>
+            {
+                var content = File.ReadAllBytes(exe);
+                content[250] = 42;
+                File.WriteAllBytes(exe, content);
+            }));
+        AssertNoCommittedOrTemporaryBackup(plan);
+    });
+
+    [Fact]
+    public void SourceFileAddedAfterPerFileCopyAbortsCommit() => Run((plan, staged) =>
+    {
+        Assert.Throws<InvalidDataException>(() =>
+            UnifiedX64BackupSnapshot.Create(plan, staged, () =>
+                File.WriteAllText(Path.Combine(plan.InstallDirectory, "new.dat"), "added")));
+        AssertNoCommittedOrTemporaryBackup(plan);
+    });
+
+    [Fact]
+    public void SourceFileRemovedAfterPerFileCopyAbortsCommit() => Run((plan, staged) =>
+    {
+        Assert.Throws<InvalidDataException>(() =>
+            UnifiedX64BackupSnapshot.Create(plan, staged, () =>
+                File.Delete(Path.Combine(plan.InstallDirectory, "settings.json"))));
+        AssertNoCommittedOrTemporaryBackup(plan);
+    });
+
+    [Fact]
+    public void SourceRenamedAfterCaptureCannotReuseOldJournal() => Run((plan, staged) =>
+    {
+        Assert.Throws<InvalidDataException>(() =>
+            UnifiedX64BackupSnapshot.Create(plan, staged, () =>
+                File.Move(Path.Combine(plan.InstallDirectory, "settings.json"),
+                    Path.Combine(plan.InstallDirectory, "renamed.json"))));
+        AssertNoCommittedOrTemporaryBackup(plan);
+    });
+
+    [Fact]
+    public void FaultDuringSnapshotAuditRemovesOnlyNewTemporaryCopy() => Run((plan, staged) =>
+    {
+        Assert.Throws<IOException>(() =>
+            UnifiedX64BackupSnapshot.Create(plan, staged,
+                () => throw new IOException("Injected offline snapshot interruption.")));
+        AssertNoCommittedOrTemporaryBackup(plan);
+        Assert.Equal("{}", File.ReadAllText(
+            Path.Combine(plan.InstallDirectory, "settings.json")));
+    });
+
+    [Fact]
+    public void SnapshotRaceHookIsDeniedOutsideDedicatedTemporaryFixture() => Run((plan, staged) =>
+    {
+        var rejected = plan with { InstallDirectory = Path.Combine(
+            Path.GetTempPath(), "real-program-install") };
+        Assert.Throws<InvalidOperationException>(() =>
+            UnifiedX64BackupSnapshot.Create(rejected, staged, () => { }));
+        AssertNoCommittedOrTemporaryBackup(plan);
+    });
+
 }
