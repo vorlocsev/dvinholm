@@ -239,30 +239,28 @@ function Set-AuroraCompactLayout {
 }
 
 
-# Optional *user-approved* screenshot artwork. Only the automotive hero and
-# coastal footer are raster layers. Buttons, status and installer state remain
-# native WinForms controls with real event handlers and real worker evidence.
-# JPEGs may be placed in Binaries/ on Windows. Stock fallback stays offline.
-$script:approvedHeroArt=$null
-$script:approvedFooterArt=$null
-function Read-NorthernReferenceArt([string]$name,[int]$minWidth,[int]$minHeight){
- $path=Join-Path $PSScriptRoot $name
- if(-not(Test-Path -LiteralPath $path -PathType Leaf)){return $null}
- try{
-  $file=Get-Item -LiteralPath $path -Force
-  if($file.Length -gt 1024KB -or $file.Length -lt 2048 -or
-     ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){
-   return $null
-  }
-  $image=[Drawing.Image]::FromFile($path)
-  if($image.Width -lt $minWidth -or $image.Height -lt $minHeight){
-   $image.Dispose();return $null
-  }
-  return $image
- }catch{return $null}
+# The approved screenshot is supplied as a local, versioned JPEG atlas.
+# Source rows 0..275 contain the illustrative hero, rows 276..355 the
+# Northern Dvina / White Sea footer; no fake statuses or baked buttons.
+# A missing/corrupt asset falls back to inbox GDI+ with no download.
+$script:approvedAtlas=$null
+$atlasPath=Join-Path $PSScriptRoot 'launcher-approved-reference-atlas.jpg'
+if(-not(Test-Path -LiteralPath $atlasPath -PathType Leaf)){
+ $sourceAtlas=Join-Path (Split-Path -Parent $PSScriptRoot) 'assets\launcher-approved-reference-atlas.jpg'
+ if(Test-Path -LiteralPath $sourceAtlas -PathType Leaf){$atlasPath=$sourceAtlas}
 }
-$script:approvedHeroArt=Read-NorthernReferenceArt 'launcher-approved-hero.jpg' 1000 280
-$script:approvedFooterArt=Read-NorthernReferenceArt 'launcher-approved-footer.jpg' 1000 80
+if(Test-Path -LiteralPath $atlasPath -PathType Leaf){
+ try{
+  $item=Get-Item -LiteralPath $atlasPath -Force
+  if($item.Length -ge 4096 -and $item.Length -le 1024KB -and
+     ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0){
+   $candidate=[Drawing.Image]::FromFile($atlasPath)
+   if($candidate.Width -eq 960 -and $candidate.Height -eq 356){
+    $script:approvedAtlas=$candidate
+   }else{$candidate.Dispose()}
+  }
+ }catch{$script:approvedAtlas=$null}
+}
 
 # Approved Northern Compact home (2026-11-01, final/fourth concept).
 # Use only the existing GDI+/WinForms runtime and the bundled panorama.
@@ -436,20 +434,20 @@ $script:northernHome.Add_Paint({
   # The supplied screenshot's *art-only* layers override the vector fallback
   # in RU, after scenery painting but before real WinForms controls are drawn.
   # They contain no fictitious green "Ready" tiles or clickable buttons.
-  if($script:launcherLanguage -eq 'RU'){
-   if($script:approvedHeroArt){
-    $g.DrawImage($script:approvedHeroArt,
-     [Drawing.Rectangle]::new(0,0,1180,348))
-   }
-   if($script:approvedFooterArt){
-    $g.DrawImage($script:approvedFooterArt,
-     [Drawing.Rectangle]::new(0,778,1180,62))
-   }
+  if($script:approvedAtlas -and $script:launcherLanguage -eq 'RU'){
+   $g.DrawImage($script:approvedAtlas,
+    [Drawing.Rectangle]::new(0,0,1180,348),
+    [Drawing.Rectangle]::new(0,0,960,276),
+    [Drawing.GraphicsUnit]::Pixel)
+   $g.DrawImage($script:approvedAtlas,
+    [Drawing.Rectangle]::new(0,778,1180,62),
+    [Drawing.Rectangle]::new(0,276,960,80),
+    [Drawing.GraphicsUnit]::Pixel)
   }
   $footerFont=[Drawing.Font]::new('Segoe UI',[single]12,[Drawing.FontStyle]::Regular)
   $footerBrush=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(195,220,236))
   try{
-   if(-not ($script:approvedFooterArt -and $script:launcherLanguage -eq 'RU')){
+   if(-not ($script:approvedAtlas -and $script:launcherLanguage -eq 'RU')){
     $footer='СЕВЕРНАЯ ДВИНА  ·  БЕЛОЕ МОРЕ  ·  НАСЛЕДИЕ ВИКИНГОВ'
     $sz=$g.MeasureString($footer,$footerFont)
     $g.DrawString($footer,$footerFont,$footerBrush,[single]((1180-$sz.Width)/2),799)
@@ -628,7 +626,7 @@ function Update-NorthernCompactSnapshot {
   $script:northReturn.Text='← Главная'
  }
  # Text and exact user artwork are mutually exclusive: no double printing.
- $useReference=($null -ne $script:approvedHeroArt -and
+ $useReference=($null -ne $script:approvedAtlas -and
                 $script:launcherLanguage -eq 'RU')
  foreach($label in @($script:northTitle,$script:northSubtitle,
                      $script:northCaption,$script:northSource)){
@@ -640,5 +638,8 @@ function Update-NorthernCompactSnapshot {
 # The hidden back button is created after the home panel and would otherwise
 # take the top z-order before the window becomes visible.
 $script:northernHome.BringToFront()
+$form.Add_FormClosed({
+ if($script:approvedAtlas){$script:approvedAtlas.Dispose();$script:approvedAtlas=$null}
+})
 # Show the compact approved screen on normal launch. Existing Service
 # Cockpit remains accessible with all real actions from Updates.
