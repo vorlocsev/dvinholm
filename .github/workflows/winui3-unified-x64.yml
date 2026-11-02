@@ -36,14 +36,30 @@ jobs:
       - name: Verify packaged native x64 WinUI 3 runtime and integrity (8 checks)
         shell: pwsh
         run: |
-          ./eng/Package-UnifiedWinUIX64Pilot.ps1 -PublishDirectory artifacts/winui3-unified-x64 -ZipPath artifacts/Dvinholm-WinUI3-Windows-x64-PR.zip
+          ./eng/Package-UnifiedWinUIX64Pilot.ps1 -PublishDirectory artifacts/winui3-unified-x64 -ZipPath artifacts/Dvinholm-Windows-x64.zip
+
+      # Prepare an exact-name candidate pair for later offline verification.
+      # This is PR-only; generating a checksum is NOT a release signature.
+      - name: Write and verify x64 checksum manifest
+        shell: pwsh
+        run: |
+          $zip = 'artifacts/Dvinholm-Windows-x64.zip'
+          if (-not (Test-Path -LiteralPath $zip -PathType Leaf)) { throw 'x64 ZIP missing.' }
+          $digest = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $record = "$digest  Dvinholm-Windows-x64.zip"
+          [IO.File]::WriteAllText('artifacts/SHA256SUMS.txt', "$record`n", [Text.Encoding]::ASCII)
+          $verified = (Get-Content -LiteralPath 'artifacts/SHA256SUMS.txt' -Raw).TrimEnd()
+          if ($verified -cne $record) { throw 'x64 checksum record changed.' }
+          Write-Host ('Verified x64 package hash: ' + $digest)
 
       - name: Upload unified x64 review artifact (no release)
         if: github.event_name == 'pull_request'
         uses: actions/upload-artifact@v7
         with:
           name: Dvinholm-WinUI3-Windows-x64-PR
-          path: artifacts/Dvinholm-WinUI3-Windows-x64-PR.zip
+          path: |
+            artifacts/Dvinholm-Windows-x64.zip
+            artifacts/SHA256SUMS.txt
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
