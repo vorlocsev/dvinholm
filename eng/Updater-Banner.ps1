@@ -2676,6 +2676,27 @@ if($Mode -eq 'UiPreview'){
   if($script:launcherLanguage -eq 'RU' -and $script:northTitle.Visible){
    throw 'Approved Russian hero artwork printed a duplicate WinForms wordmark.'
   }
+  # Compare actual disabled Start pixels rather than inferred visual flags.
+  # Enabled Start keeps its original green aurora fill; a locked Start must
+  # never look ready before verified local prerequisites and recovery.
+  function Assert-NorthernStartMuted([string]$lang){
+   if($script:northLaunch.Enabled -or $launch.Enabled){
+    throw ('Start unexpectedly enabled in offscreen '+$lang+' preview.')
+   }
+   $button=$script:northLaunch
+   $bitmap=[Drawing.Bitmap]::new($button.Width,$button.Height)
+   try{
+    $button.DrawToBitmap($bitmap,[Drawing.Rectangle]::new(
+     0,0,$button.Width,$button.Height))
+    $fill=$bitmap.GetPixel([int][Math]::Floor($bitmap.Width/2),6)
+    $edge=$bitmap.GetPixel(2,[int][Math]::Floor($bitmap.Height/2))
+    if($fill.R -gt 75 -or $fill.G -gt 85 -or $fill.B -gt 110 -or
+       $edge.G -gt 125 -or $edge.B -gt 145){
+     throw ('Locked '+$lang+' Start button is still painted as active.')
+    }
+   }finally{$bitmap.Dispose()}
+  }
+  Assert-NorthernStartMuted 'RU'
   Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-RU.png' $script:northernHome
   $previewChecks++
   Show-NorthernUpdates
@@ -2733,6 +2754,11 @@ if($Mode -eq 'UiPreview'){
      throw ('Disabled native button retains a bright/active background: '+
       $description+' RGB '+$fill.R+'/'+$fill.G+'/'+$fill.B)
     }
+    $edge=$bitmap.GetPixel(0,[int][Math]::Floor($bitmap.Height/2))
+    if($edge.R -gt 85 -or $edge.G -gt 110 -or $edge.B -gt 135){
+     throw ('Disabled native button retains an active blue border: '+
+      $description+' RGB '+$edge.R+'/'+$edge.G+'/'+$edge.B)
+    }
    }finally{$bitmap.Dispose()}
   }
   $contrastChecks=0
@@ -2769,6 +2795,7 @@ if($Mode -eq 'UiPreview'){
      $script:northUpdates.Text -cnotmatch 'UPDATES'){
    throw 'English Northern preview not localized.'
   }
+  Assert-NorthernStartMuted 'EN'
   Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-EN.png' $script:northernHome
   $previewChecks++
   $files=@(
