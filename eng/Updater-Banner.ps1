@@ -2585,7 +2585,8 @@ if($Mode -eq 'UiPreview'){
     $clientTopLeft=$form.PointToScreen([Drawing.Point]::Empty)
     $offsetX=$clientTopLeft.X-$form.Left
     $offsetY=$clientTopLeft.Y-$form.Top
-    $layers=@($choice,$check,$install,$launch,$versionsButton,
+    $layers=@($choice,$installed,$available,$status,$recovery,
+     $launch,$check,$install,$bar,$deps,$versionsButton,
      $windowsQuick,$depsInstallQuick,$driverQuick,$driverScanQuick,
      $settingsQuick,$script:northReturn)
     $imageGraphics=[Drawing.Graphics]::FromImage($image)
