@@ -138,9 +138,14 @@ function Set-ServiceDisabledTextContrast([Windows.Forms.Button]$button){
   $g=$event.Graphics
   $inside=[Drawing.Rectangle]::new(2,2,
    $sender.ClientSize.Width-4,$sender.ClientSize.Height-4)
-  $background=[Drawing.SolidBrush]::new($sender.BackColor)
+  # A bright enabled Install/Start fill can falsely signal that the
+  # operation is available when the real worker has locked it. Render the
+  # entire disabled interior in a consistent muted slate, including
+  # primary buttons; never alter Enabled or the original click handlers.
+  $background=[Drawing.SolidBrush]::new(
+   [Drawing.Color]::FromArgb(31,61,80))
   try{$g.FillRectangle($background,$inside)}finally{$background.Dispose()}
-  $textColor=[Drawing.Color]::FromArgb(223,238,249)
+  $textColor=[Drawing.Color]::FromArgb(192,214,227)
   $flags=[Windows.Forms.TextFormatFlags]::HorizontalCenter -bor
    [Windows.Forms.TextFormatFlags]::VerticalCenter -bor
    [Windows.Forms.TextFormatFlags]::SingleLine -bor
