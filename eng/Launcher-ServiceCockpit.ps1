@@ -184,7 +184,7 @@ function Get-NorthernCompactGeometry(
   throw 'Northern work-area dimensions must be positive and borders nonnegative.'
  }
  $referenceWidth=1180
- $referenceHeight=840
+ $referenceHeight=800
  $maxWidth=[int][Math]::Max(1,$WorkWidth-32-$BorderWidth)
  $maxHeight=[int][Math]::Max(1,$WorkHeight-32-$BorderHeight)
  $fit=[Math]::Min([double]$maxWidth/$referenceWidth,
@@ -205,7 +205,7 @@ function Get-NorthernCompactGeometry(
  }
 }
 
-# Reference-look home uses a 1180x840 canvas, with a 944x672 normal maximum.
+# Status strip removed: 1180x800 reference, 944x640 normal maximum.
 # On small or high-DPI effective work areas scroll rather than clip actions.
 function Set-AuroraCompactLayout {
  $referenceWidth=1180
@@ -267,7 +267,7 @@ if(Test-Path -LiteralPath $atlasPath -PathType Leaf){
 # All updates, drivers, safe launch and recovery remain handled above.
 # Service Cockpit becomes the detailed Updates view behind this home.
 $script:northernHome=New-Object Windows.Forms.Panel
-$script:northernHome.SetBounds(0,0,1180,840)
+$script:northernHome.SetBounds(0,0,1180,800)
 $script:northernHome.BackColor=[Drawing.Color]::FromArgb(8,22,39)
 $form.Controls.Add($script:northernHome)
 $script:northernHome.BringToFront()
@@ -315,13 +315,13 @@ $script:northernHome.Add_Paint({
  $factor=[single]$script:auroraScale
  if($factor -le 0){$factor=1}
  $g.ScaleTransform($factor,$factor)
- # Full 1180x840 scene: aurora sky, panoramic motor scene, three compact
+ # Full 1180x800 scene: aurora sky, panoramic motor scene, three compact
  # prerequisite cards, broad central Start, 3+2 actions and river/seacoast.
  $base=[Drawing.Drawing2D.LinearGradientBrush]::new(
-  [Drawing.Rectangle]::new(0,0,1180,840),
+  [Drawing.Rectangle]::new(0,0,1180,800),
   [Drawing.Color]::FromArgb(9,23,47),
   [Drawing.Color]::FromArgb(7,30,52),90.0)
- try{$g.FillRectangle($base,0,0,1180,840)}finally{$base.Dispose()}
+ try{$g.FillRectangle($base,0,0,1180,800)}finally{$base.Dispose()}
  if($script:heroBackdrop -and $script:launcherLanguage -eq 'RU' -and -not $script:approvedAtlas){
   # Old JPEG contains its own wordmark on the left; display only the
   # right-hand automotive panorama, with dark glazing for new text.
@@ -391,7 +391,7 @@ $script:northernHome.Add_Paint({
   $g.DrawLine($metal,305,25,259,29)
   # Fine separator, as on the approved reference.
   $g.DrawLine($hairline,28,345,1152,345)
-  $g.DrawLine($hairline,28,829,1152,829)
+  $g.DrawLine($hairline,28,789,1152,789)
   # Three framed status cards. Native labels carry real worker evidence.
   $cardBack=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(222,13,43,66))
   try{
@@ -426,13 +426,13 @@ $script:northernHome.Add_Paint({
   $coast=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(24,90,110))
   try{
    $g.FillPolygon($coast,[Drawing.Point[]]@(
-    [Drawing.Point]::new(0,818),[Drawing.Point]::new(0,790),
-    [Drawing.Point]::new(90,763),[Drawing.Point]::new(170,800),
-    [Drawing.Point]::new(260,785),[Drawing.Point]::new(380,840)))
+    [Drawing.Point]::new(0,778),[Drawing.Point]::new(0,750),
+    [Drawing.Point]::new(90,723),[Drawing.Point]::new(170,760),
+    [Drawing.Point]::new(260,745),[Drawing.Point]::new(380,800)))
    $g.FillPolygon($coast,[Drawing.Point[]]@(
-    [Drawing.Point]::new(910,840),[Drawing.Point]::new(1035,779),
-    [Drawing.Point]::new(1095,788),[Drawing.Point]::new(1140,758),
-    [Drawing.Point]::new(1180,782),[Drawing.Point]::new(1180,840)))
+    [Drawing.Point]::new(910,800),[Drawing.Point]::new(1035,739),
+    [Drawing.Point]::new(1095,748),[Drawing.Point]::new(1140,718),
+    [Drawing.Point]::new(1180,742),[Drawing.Point]::new(1180,800)))
   }finally{$coast.Dispose()}
   # The supplied screenshot's *art-only* layers override the vector fallback
   # in RU, after scenery painting but before real WinForms controls are drawn.
@@ -443,7 +443,7 @@ $script:northernHome.Add_Paint({
     [Drawing.Rectangle]::new(0,0,1376,395),
     [Drawing.GraphicsUnit]::Pixel)
    $g.DrawImage($script:approvedAtlas,
-    [Drawing.Rectangle]::new(0,778,1180,62),
+    [Drawing.Rectangle]::new(0,738,1180,62),
     [Drawing.Rectangle]::new(0,395,1376,115),
     [Drawing.GraphicsUnit]::Pixel)
   }elseif($script:approvedAtlas -and $script:launcherLanguage -eq 'EN'){
@@ -468,7 +468,7 @@ $script:northernHome.Add_Paint({
      'NORTHERN DVINA  ·  WHITE SEA  ·  VIKING HERITAGE'
     }else{'СЕВЕРНАЯ ДВИНА  ·  БЕЛОЕ МОРЕ  ·  НАСЛЕДИЕ ВИКИНГОВ'}
     $sz=$g.MeasureString($footer,$footerFont)
-    $g.DrawString($footer,$footerFont,$footerBrush,[single]((1180-$sz.Width)/2),799)
+    $g.DrawString($footer,$footerFont,$footerBrush,[single]((1180-$sz.Width)/2),759)
    }
   }finally{$footerFont.Dispose();$footerBrush.Dispose()}
  }finally{
@@ -495,9 +495,8 @@ $script:northComponents=New-NorthernButton '◇  КОМПОНЕНТЫ' 414 577 3
 $script:northDrivers=New-NorthernButton '▣  ДРАЙВЕРЫ J2534' 785 577 351 68
 $script:northSettings=New-NorthernButton '⚙  НАСТРОЙКИ' 44 660 541 68
 $script:northAbout=New-NorthernButton 'ⓘ  О ПРОГРАММЕ' 595 660 541 68
-$script:northVersion=New-NorthernLabel 'Версия: не проверена' 44 750 336 28 9
-$script:northChannel=New-NorthernLabel 'Канал: не проверен' 393 750 333 28 9
-$script:northActivity=New-NorthernLabel 'Ожидание проверки компонентов' 724 746 430 32 9
+# No secondary version/channel/recovery status strip below the five actions.
+# All live evidence stays in the three status cards or dedicated Updates page.
 
 # Frame and caption are rendered by WinForms; each button remains a real
 # accessible button with a functional Click event. Owner painting handles
@@ -639,16 +638,6 @@ function Update-NorthernCompactSnapshot {
  $script:northDrivers.Enabled=$driverQuick.Enabled
  $script:northSettings.Enabled=$settingsQuick.Enabled
  $script:northAbout.Enabled=($null -eq $script:child -and $null -eq $script:vendor)
- $script:northVersion.Text=[string]$installed.Text
- if($script:launcherLanguage -eq 'RU'){
-  $script:northVersion.Text=$script:northVersion.Text.Replace('Not checked','не проверено')
- }
- $script:northChannel.Text='Канал: '+[string]$choice.SelectedItem
- # Until recovery and prerequisites are verified, do not repeat the worker's
- # generic 'Ready.' phrase: Start remains disabled and the footer must agree.
- $script:northActivity.Text=if($script:recoveryStatus -ceq 'Ready'){
-  $status.Text
- }else{$recovery.Text}
  $parts=$deps.Text
  foreach($spec in @(
   @($script:northRuntime,'\.NET x86:\s*([^ ]+)',' .NET x86: '),
@@ -679,7 +668,6 @@ function Update-NorthernCompactSnapshot {
   $script:northSettings.Text='⚙  SETTINGS'
   $script:northAbout.Text='ⓘ  ABOUT'
   $script:northReturn.Text='← Home'
-  $script:northChannel.Text='Channel: '+[string]$choice.SelectedItem
  }else{
   $script:northTitle.Text='DVINHOLM'
   $script:northSubtitle.Text='LAUNCHER'
