@@ -61,7 +61,8 @@ internal static class UnifiedX64RecoverySandbox
     /// Injected interruption leaves the journal in Applying state; the next
     /// recovery attempt restores the ORIGINAL verified backup, never guesses.
     /// </summary>
-    internal static void ApplyFixture(string fixtureRoot, bool interruptAfterFirstFile = false)
+    internal static void ApplyFixture(string fixtureRoot, bool interruptAfterFirstFile = false,
+        int? interruptAfterFiles = null)
     {
         var root = RequireScratch(fixtureRoot);
         var journal = ReadJournal(root);
@@ -73,15 +74,21 @@ internal static class UnifiedX64RecoverySandbox
             journal.Files.Any(x => candidate[x.RelativePath] != x.CandidateSha256))
             throw new InvalidDataException("Candidate changed before applying fixture.");
         AssertInstalled(root, journal, useOriginalHashes: true);
+        var interruptAt = InjectionPoint(interruptAfterFirstFile,
+            interruptAfterFiles, journal.Files.Length);
 
+        // Write Applying BEFORE touching the first destination. Even a crash
+        // at point zero is recoverable on the next fixture-only invocation.
         WriteJournal(root, journal with { State = StateApplying });
+        if (interruptAt == 0)
+            throw new IOException("Injected crash after Applying journal checkpoint.");
         var count = 0;
         foreach (var entry in journal.Files)
         {
-            CopyAndFlush(
+            CopyAndFlush(root,
                 Path.Combine(root, "candidate", Relative(entry.RelativePath)),
                 Path.Combine(root, "installed", Relative(entry.RelativePath)));
-            if (++count == 1 && interruptAfterFirstFile)
+            if (++count == interruptAt)
                 throw new IOException("Injected interrupted fixture apply.");
         }
         AssertInstalled(root, journal, useOriginalHashes: false);
@@ -92,7 +99,8 @@ internal static class UnifiedX64RecoverySandbox
     /// Replaying recovery after another injected crash is safe: journal state
     /// remains Recovering until every original byte is verified.
     /// </summary>
-    internal static void RecoverFixture(string fixtureRoot, bool interruptAfterFirstFile = false)
+    internal static void RecoverFixture(string fixtureRoot, bool interruptAfterFirstFile = false,
+        int? interruptAfterFiles = null)
     {
         var root = RequireScratch(fixtureRoot);
         var journal = ReadJournal(root);
@@ -104,15 +112,19 @@ internal static class UnifiedX64RecoverySandbox
         if (journal.State is not (StateApplying or StateRecovering))
             throw new InvalidDataException("No interrupted update to recover.");
         AssertBackup(root, journal);
+        var interruptAt = InjectionPoint(interruptAfterFirstFile,
+            interruptAfterFiles, journal.Files.Length);
         WriteJournal(root, journal with { State = StateRecovering });
+        if (interruptAt == 0)
+            throw new IOException("Injected crash after Recovering journal checkpoint.");
         var count = 0;
         foreach (var entry in journal.Files)
         {
-            CopyAndFlush(
+            CopyAndFlush(root,
                 Path.Combine(SnapshotPath(root, journal.SnapshotName), "payload",
                     Relative(entry.RelativePath)),
                 Path.Combine(root, "installed", Relative(entry.RelativePath)));
-            if (++count == 1 && interruptAfterFirstFile)
+            if (++count == interruptAt)
                 throw new IOException("Injected interrupted fixture rollback.");
         }
         AssertInstalled(root, journal, useOriginalHashes: true);
@@ -236,16 +248,46 @@ internal static class UnifiedX64RecoverySandbox
         return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
 
-    private static void CopyAndFlush(string source, string target)
+    private static int InjectionPoint(bool first, int? explicitPoint, int total)
+    {
+        var result = explicitPoint ?? (first ? 1 : -1);
+        if (result < -1 || result > total || (first && explicitPoint is not null))
+            throw new ArgumentOutOfRangeException(nameof(explicitPoint),
+                "Fixture crash point must be between 0 and the file count.");
+        return result;
+    }
+
+    // Never truncate a destination directly. Flush a unique sibling-volume
+    // scratch file, verify it, then replace the destination with one rename.
+    // Orphan scratch files after a real crash do not enter installed inventory.
+    private static void CopyAndFlush(string root, string source, string target)
     {
         if ((File.GetAttributes(source) & FileAttributes.ReparsePoint) != 0 ||
             (File.GetAttributes(target) & FileAttributes.ReparsePoint) != 0)
             throw new InvalidDataException("Linked fixture file forbidden.");
-        using var input = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read);
-        using var output = new FileStream(target, FileMode.Create, FileAccess.Write,
-            FileShare.None, 64 * 1024, FileOptions.WriteThrough);
-        input.CopyTo(output);
-        output.Flush(flushToDisk: true);
+        var temporary = Path.Combine(root, ".fixture-swap-" + Guid.NewGuid().ToString("N"));
+        try
+        {
+            using (var input = new FileStream(source, FileMode.Open, FileAccess.Read, FileShare.Read))
+            using (var output = new FileStream(temporary, FileMode.CreateNew,
+                FileAccess.Write, FileShare.None, 64 * 1024, FileOptions.WriteThrough))
+            {
+                input.CopyTo(output);
+                output.Flush(flushToDisk: true);
+            }
+            if (!string.Equals(Hash(source), Hash(temporary), StringComparison.Ordinal))
+                throw new InvalidDataException("Temporary fixture swap failed checksum verification.");
+            File.Move(temporary, target, overwrite: true);
+        }
+        finally
+        {
+            if (File.Exists(temporary))
+            {
+                try { File.Delete(temporary); }
+                catch (IOException) { }
+                catch (UnauthorizedAccessException) { }
+            }
+        }
     }
 
     private static Journal ReadJournal(string root)
