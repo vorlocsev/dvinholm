@@ -20,17 +20,21 @@ internal static class UnifiedX64BackupSnapshot
     internal sealed record Receipt(string Directory, string JournalSha256, int Files, long Bytes);
 
     internal static Receipt Create(UnifiedX64RecoveryPlan plan, UnifiedX64StagedPackage staged,
-        Action? afterCopyForTests = null)
+        Action? afterCopyForTests = null, long? failAfterCopiedBytesForTests = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(staged);
         // This optional hook exists ONLY for deterministic, isolated tests
         // simulating concurrent filesystem modification. It is never allowed
         // for a real install tree, even if the caller provides a callback.
-        if (afterCopyForTests is not null &&
+        if ((afterCopyForTests is not null || failAfterCopiedBytesForTests.HasValue) &&
             !IsIsolatedSnapshotFixture(plan, staged))
             throw new InvalidOperationException(
-                "Snapshot race injection is restricted to disposable test directories.");
+                "Snapshot fault injection is restricted to disposable test directories.");
+        if (failAfterCopiedBytesForTests is long failLimit &&
+            (failLimit < 0 || failLimit > plan.BytesToBackUp))
+            throw new ArgumentOutOfRangeException(nameof(failAfterCopiedBytesForTests),
+                "Injected disk limit must be between zero and the source inventory size.");
         // Recheck the live installation and staged bytes immediately before
         // reading source files; old preflight observations may be stale.
         var root = Path.GetDirectoryName(Path.GetFullPath(plan.BackupDirectory))
@@ -66,6 +70,7 @@ internal static class UnifiedX64BackupSnapshot
             Directory.CreateDirectory(payload);
             var entries = new List<FileEntry>();
             long bytes = 0;
+            long copiedBytes = 0;
             foreach (var (name, source) in EnumerateSafeFiles(plan.InstallDirectory))
             {
                 if (entries.Count >= UnifiedX64RecoveryPreflight.MaximumFiles)
@@ -81,7 +86,7 @@ internal static class UnifiedX64BackupSnapshot
                 using (var output = new FileStream(destination, FileMode.CreateNew,
                     FileAccess.Write, FileShare.None, 64 * 1024, FileOptions.WriteThrough))
                 {
-                    input.CopyTo(output);
+                    CopySnapshotBytes(input, output, ref copiedBytes, failAfterCopiedBytesForTests);
                     output.Flush(flushToDisk: true);
                 }
                 var fileLength = new FileInfo(destination).Length;
@@ -135,6 +140,30 @@ internal static class UnifiedX64BackupSnapshot
                 catch (UnauthorizedAccessException) { }
             }
             throw;
+        }
+    }
+
+    // Simulates an exhausted write budget without filling any real disk.
+    // The injection is guarded to a fresh test fixture by Create(). Production
+    // calls have no limit and retain ordinary streaming copy semantics.
+    private static void CopySnapshotBytes(Stream input, Stream output,
+        ref long copiedBytes, long? failAfterCopiedBytesForTests)
+    {
+        var buffer = new byte[64 * 1024];
+        int count;
+        while ((count = input.Read(buffer)) != 0)
+        {
+            var writable = count;
+            if (failAfterCopiedBytesForTests is long limit)
+                writable = (int)Math.Min(count, Math.Max(0L, limit - copiedBytes));
+            if (writable > 0)
+            {
+                output.Write(buffer, 0, writable);
+                copiedBytes += writable;
+            }
+            if (writable < count ||
+                (failAfterCopiedBytesForTests is long cap && copiedBytes >= cap))
+                throw new IOException("Injected fixture-only disk-capacity exhaustion.");
         }
     }
 
