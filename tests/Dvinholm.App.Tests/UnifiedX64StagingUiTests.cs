@@ -37,6 +37,7 @@ public sealed class UnifiedX64StagingUiTests
         var doc = Layout();
         Assert.Equal("False", (string?)Control(doc, "UnifiedStageUpdateButton").Attribute("IsEnabled"));
         Assert.Equal("False", (string?)Control(doc, "UnifiedCancelStageButton").Attribute("IsEnabled"));
+        Assert.Equal("False", (string?)Control(doc, "UnifiedPreflightButton").Attribute("IsEnabled"));
         Assert.Equal("Collapsed", (string?)Control(doc, "UnifiedStageProgress").Attribute("Visibility"));
     }
 
