@@ -322,7 +322,7 @@ $script:northernHome.Add_Paint({
   [Drawing.Color]::FromArgb(9,23,47),
   [Drawing.Color]::FromArgb(7,30,52),90.0)
  try{$g.FillRectangle($base,0,0,1180,840)}finally{$base.Dispose()}
- if($script:heroBackdrop){
+ if($script:heroBackdrop -and $script:launcherLanguage -eq 'RU' -and -not $script:approvedAtlas){
   # Old JPEG contains its own wordmark on the left; display only the
   # right-hand automotive panorama, with dark glazing for new text.
   $picture=$script:heroBackdrop
@@ -446,12 +446,27 @@ $script:northernHome.Add_Paint({
     [Drawing.Rectangle]::new(0,778,1180,62),
     [Drawing.Rectangle]::new(0,395,1376,115),
     [Drawing.GraphicsUnit]::Pixel)
+  }elseif($script:approvedAtlas -and $script:launcherLanguage -eq 'EN'){
+   # The reference has Russian typography baked into its left half.
+   # Only its text-free right-hand Volvo/Aurora panorama is safe for EN.
+   # Keep all controls, labels and status text native and localizable.
+   $g.DrawImage($script:approvedAtlas,
+    [Drawing.Rectangle]::new(715,0,465,344),
+    [Drawing.Rectangle]::new(840,0,536,395),
+    [Drawing.GraphicsUnit]::Pixel)
+   $enFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
+    [Drawing.Rectangle]::new(710,0,185,344),
+    [Drawing.Color]::FromArgb(255,5,21,44),
+    [Drawing.Color]::FromArgb(0,5,21,44),0.0)
+   try{$g.FillRectangle($enFade,710,0,185,344)}finally{$enFade.Dispose()}
   }
   $footerFont=[Drawing.Font]::new('Segoe UI',[single]12,[Drawing.FontStyle]::Regular)
   $footerBrush=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(195,220,236))
   try{
    if(-not ($script:approvedAtlas -and $script:launcherLanguage -eq 'RU')){
-    $footer='СЕВЕРНАЯ ДВИНА  ·  БЕЛОЕ МОРЕ  ·  НАСЛЕДИЕ ВИКИНГОВ'
+    $footer=if($script:launcherLanguage -eq 'EN'){
+     'NORTHERN DVINA  ·  WHITE SEA  ·  VIKING HERITAGE'
+    }else{'СЕВЕРНАЯ ДВИНА  ·  БЕЛОЕ МОРЕ  ·  НАСЛЕДИЕ ВИКИНГОВ'}
     $sz=$g.MeasureString($footer,$footerFont)
     $g.DrawString($footer,$footerFont,$footerBrush,[single]((1180-$sz.Width)/2),799)
    }
