@@ -3014,9 +3014,14 @@ if($Mode -eq 'UiSmokeTest'){
   )){
    $snapshot=$launchTemplate | Select-Object *
    $snapshot.([string]$case[0])=[string]$case[1]
+   $expectBundled=([string]$case[0] -ceq 'Current' -and
+     [string]$case[1] -ceq 'Not installed' -and
+     (Test-LocalBundledApp))
    if(-not (Apply-WorkerSnapshot $snapshot) -or
-      $launch.Enabled -or $script:serviceIsReady){
-    throw ('Unverified launch prerequisites enabled Start: '+$case[0]+'='+$case[1])
+      $launch.Enabled -ne $expectBundled -or
+      $script:serviceIsReady -ne $expectBundled -or
+      $script:northLaunch.Enabled -ne $expectBundled){
+    throw ('Incorrect managed/bundled launch permission: '+$case[0]+'='+$case[1])
    }
    $launchChecks++
   }
@@ -3037,6 +3042,62 @@ if($Mode -eq 'UiSmokeTest'){
   $script:recoveryStatus='Not checked';Update-ActionAvailability
   if($launchChecks -ne 8){throw 'Wrong launch prerequisite gate count.'}
   Write-Host 'Launcher verified prerequisites 8/8 offline Start gates passed.'
+
+  # Eight isolated fixture gates for the real first-run bundled fallback.
+  # No fake release is installed and no executable/script is launched.
+  $bundleChecks=0
+  $fixture=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-bundle-ui-'+
+    [guid]::NewGuid().ToString('N'))
+  [void][IO.Directory]::CreateDirectory($fixture)
+  try{
+   foreach($name in @('Dvinholm.App.runtimeconfig.json',
+     'Start-Dvinholm-Lite.cmd','Check-Lite-Prerequisites.ps1',
+     'Manage-Lite-Dependencies.ps1')){
+    [IO.File]::WriteAllText((Join-Path $fixture $name),'test-only')
+   }
+   $fake=New-Object byte[] 512
+   $fake[0]=77;$fake[1]=90;$fake[60]=128
+   $fake[128]=80;$fake[129]=69;$fake[132]=76;$fake[133]=1
+   $fixtureExe=Join-Path $fixture 'Dvinholm.App.exe'
+   [IO.File]::WriteAllBytes($fixtureExe,$fake)
+   if(-not (Test-LocalBundledApp $fixture)){
+    throw 'A complete x86 first-run fixture cannot pass the local guard.'
+   }
+   $bundleChecks++
+   Remove-Item -LiteralPath (Join-Path $fixture 'Dvinholm.App.runtimeconfig.json')
+   if(Test-LocalBundledApp $fixture){throw 'Missing runtimeconfig accepted.'}
+   [IO.File]::WriteAllText((Join-Path $fixture 'Dvinholm.App.runtimeconfig.json'),'{}')
+   $bundleChecks++
+   $fake[133]=2;[IO.File]::WriteAllBytes($fixtureExe,$fake)
+   if(Test-LocalBundledApp $fixture){throw 'Wrong PE machine accepted.'}
+   $fake[133]=1;$bundleChecks++
+   $fake[0]=0;[IO.File]::WriteAllBytes($fixtureExe,$fake)
+   if(Test-LocalBundledApp $fixture){throw 'Broken DOS header accepted.'}
+   $fake[0]=77;$bundleChecks++
+   $fake[128]=0;[IO.File]::WriteAllBytes($fixtureExe,$fake)
+   if(Test-LocalBundledApp $fixture){throw 'Broken PE signature accepted.'}
+   $fake[128]=80;$bundleChecks++
+   [IO.File]::WriteAllBytes($fixtureExe,(New-Object byte[] 8))
+   if(Test-LocalBundledApp $fixture){throw 'Truncated bundled executable accepted.'}
+   $bundleChecks++
+   [IO.File]::WriteAllBytes($fixtureExe,$fake)
+   if(-not (Test-LocalBundledApp $fixture)){throw 'Restored fixture remains blocked.'}
+   $bundleChecks++
+   if(-not (Test-WorkerLaunchableVersion 'ci-4118' 'Development') -or
+      -not (Test-WorkerLaunchableVersion '0.2.4' 'Stable') -or
+      (Test-WorkerLaunchableVersion 'ci-4118' 'Stable') -or
+      (Test-WorkerLaunchableVersion 'unverified' 'Development') -or
+      (Test-WorkerLaunchableVersion '' 'Stable')){
+    throw 'Unverified or cross-channel version tag accepted for launch.'
+   }
+   $bundleChecks++
+  }finally{
+   if(Test-Path -LiteralPath $fixture){
+    Remove-Item -LiteralPath $fixture -Recurse -Force
+   }
+  }
+  if($bundleChecks -ne 8){throw 'Wrong bundled launch integrity gate count.'}
+  Write-Host 'Launcher bundled x86 first-run integrity 8/8 offline checks passed.'
 
   $vendorChecks=0
   $script:recoveryStatus='Ready';Update-ActionAvailability
