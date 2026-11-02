@@ -265,22 +265,30 @@ updated for the new proportions and five-button grid, without changing
 installer transactions, self-update recovery, Stable, or Virtual Car.
 
 
-## Reference-image layer hook (artifact until binary assets land)
+## Approved screenshot artwork integration
 
-The WinForms Home now supports two optional, *locally decoded* JPEGs in the
-installed `Binaries/` folder: `launcher-approved-hero.jpg` and
-`launcher-approved-footer.jpg`. They contain only the reference screenshot's
-illustrated **header** and **coastal footer**, not fake dependency status cards
-or action buttons. Files are size-bounded and reparse-point checked; if
-missing, malformed or too large, the original native GDI+ artwork remains.
-No external download or browser is used, and unverified dependency statuses
-continue to come from the real worker.
+The user-supplied reference has been decomposed into **a single committed
+local JPEG atlas**: `assets/launcher-approved-reference-atlas.jpg`
+(960×356). The top 960×276 pixels contain the exact approved Northern
+Aurora / mechanical gull / Volvo panoramic hero, compressed for the compact
+native package. The bottom 960×80 pixels contain its White Sea/Viking coast.
+No reference status tiles or simulated `Готово` labels are in these crops.
 
-When the supplied art files are present, the RU home displays their exact
-illustration layers; text that is already baked into the hero is not printed
-a second time. The EN home still uses fully localizable GDI+ labels and
-background. This is an **optional asset hook**, not a claim that the binary
-art files have already been committed to GitHub or bundled by CI. The
-separately prepared image-asset ZIP may be used for the final licensed asset
-integration. The updater ZIP manifest remains strict and unchanged until
-those binary assets are deliberately added and audited.
+`eng/Package-Updater-Banner.ps1` now bundles the atlas as
+`Binaries/launcher-approved-reference-atlas.jpg`, with the normal exact
+native ZIP whitelist, source-byte verification and 750 KiB size budget.
+The asset is local and loaded offline with .NET Framework System.Drawing
+already used by the standalone Windows PowerShell 5.1 UI.
+
+The RU Home displays the supplied image layers at the reference positions,
+hides duplicate live wordmarks drawn over the baked-in Russian artwork,
+and keeps its three live .NET/WinApp/J2534 status cards, Start and five
+genuine 3+2 actions **outside** the artwork layer. EN keeps the existing
+dynamically translated GDI+ Home because the supplied image itself has
+Russian baked-in subtitles. If the image is corrupted, absent or unsafe,
+an offline GDI+ fallback paints the Home instead. A real runtime cannot
+claim `Готово` just because a mockup depicts a green ready state.
+
+`UiPreview` and all package/recovery audits require or validate the
+decomposed asset; no external image server or installer code was added.
+Windows real-DPI 100/125/150% final visual acceptance is still needed.
