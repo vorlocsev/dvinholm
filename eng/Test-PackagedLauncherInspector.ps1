@@ -48,10 +48,11 @@ function Worker-Status([string]$expected){
  return $snapshot
 }
 try{
- # 1. Exactly 18 strictly allowlisted native Launcher files.
+ # 1. Exactly 19 strictly allowlisted native Launcher files, including the approved atlas.
  $entries=@($zip.Entries|Where-Object{-not $_.FullName.EndsWith('/')})
- if($entries.Count -ne 18 -or
-    @($entries|Where-Object{$_.FullName -ceq 'Binaries/Inspect-LauncherRecovery.ps1'}).Count -ne 1){
+ if($entries.Count -ne 19 -or
+    @($entries|Where-Object{$_.FullName -ceq 'Binaries/Inspect-LauncherRecovery.ps1'}).Count -ne 1 -or
+    @($entries|Where-Object{$_.FullName -ceq 'Binaries/launcher-approved-reference-atlas.jpg'}).Count -ne 1){
   throw 'Bundled recovery inspector missing or native file count changed.'
  }
  $checks++
