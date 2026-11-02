@@ -144,9 +144,46 @@ public sealed partial class MainWindow
             }
 
             _unifiedStagedPackage = staged;
+            var signatureNoteRu = "Подпись издателя не опубликована.";
+            var signatureNoteEn = "No publisher signature is published.";
+            if (candidate.SignatureUrl is not null)
+            {
+                try
+                {
+                    // Explicit no-auto-redirect HTTP client: only verified
+                    // GitHub release CDN redirects may carry signature bytes.
+                    using var signatureHttp = UnifiedX64SignatureFetcher.CreateClient();
+                    var evidence = await UnifiedX64SignatureFetcher.FetchAsync(
+                        candidate, staged, signatureHttp, cts.Token);
+                    signatureNoteRu = evidence.PublisherVerified
+                        ? "Подпись издателя проверена по закреплённому ключу."
+                        : "Формат подписи корректен, но доверенный ключ издателя ещё не утверждён.";
+                    signatureNoteEn = evidence.PublisherVerified
+                        ? "Publisher signature verified with the pinned key."
+                        : "Signature format valid; the publisher trust key is not yet approved.";
+                }
+                catch (OperationCanceledException) when (cts.IsCancellationRequested)
+                {
+                    DeleteStagedArchive();
+                    return;
+                }
+                catch (Exception ex) when (ex is HttpRequestException or IOException or
+                    UnauthorizedAccessException or InvalidDataException or
+                    OperationCanceledException)
+                {
+                    signatureNoteRu = "Подпись релиза не прошла проверку; установка запрещена.";
+                    signatureNoteEn = "Release signature verification failed; installation is forbidden.";
+                }
+            }
+            if (cts.IsCancellationRequested || _closing ||
+                !ReferenceEquals(_unifiedCandidate, candidate))
+            {
+                DeleteStagedArchive();
+                return;
+            }
             SetUnifiedStatus(
-                $"Архив {candidate.Tag} скачан в закрытый временный каталог. SHA-256 и AMD64 проверены ({staged.ZipBytes:N0} байт, {staged.EntryCount} файлов). Подлинность издателя и откат ещё не подтверждены. Установка отключена.",
-                $"Archive {candidate.Tag} staged privately; SHA-256 and AMD64 checked ({staged.ZipBytes:N0} bytes, {staged.EntryCount} entries). Publisher provenance and rollback are not yet verified. Installation disabled.");
+                $"x64 ZIP {candidate.Tag}: SHA-256 и AMD64 проверены ({staged.ZipBytes:N0} байт, {staged.EntryCount} файлов). {signatureNoteRu} Откат не подтверждён. Установка отключена.",
+                $"x64 ZIP {candidate.Tag}: SHA-256 and AMD64 checked ({staged.ZipBytes:N0} bytes, {staged.EntryCount} entries). {signatureNoteEn} Rollback not validated. Installation disabled.");
         }
         catch (OperationCanceledException) when (cts.IsCancellationRequested)
         {
