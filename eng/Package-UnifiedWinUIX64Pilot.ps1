@@ -44,7 +44,7 @@ if (-not(Test-Path -LiteralPath (Join-Path $source 'Assets\Dvinholm.ico') -PathT
 }
 $checks++
 # Do not copy an independent launcher or updater GUI into the unified package.
-foreach ($forbidden in @('Launcher.exe', 'Dvinholm.Wpf.exe', 'Updater-Banner.ps1')) {
+foreach ($forbidden in @('Launcher.exe', 'Dvinholm.Wpf.exe', 'Dvinholm.UpdateHandoffProbe.exe', 'Updater-Banner.ps1')) {
     if (@(Get-ChildItem -LiteralPath $source -Recurse -File -Filter $forbidden).Count -gt 0) {
         throw ('Unified x64 package accidentally contains '+$forbidden)
     }
