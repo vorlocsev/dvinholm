@@ -112,6 +112,8 @@ public sealed partial class MainWindow : Window
         {
             _closing = true;
             _unifiedCheckCts?.Cancel();
+            _unifiedStageCts?.Cancel();
+            DeleteStagedArchive();
 #if DVINHOLM_DEVELOPMENT_FEATURES
             ClearCemIdentity();
             ClearCemPinMaterial();
@@ -212,6 +214,10 @@ public sealed partial class MainWindow : Window
     private void DashboardNavigate(object? sender, AuroraDestination destination)
     {
         if (_closing) return;
+        // Leaving Updates cancels any pending download; no hidden
+        // background transfer continues while the user diagnoses a car.
+        if (_unifiedUpdatesActive)
+            _unifiedStageCts?.Cancel();
         var section = AuroraWorkspaceNavigation.Describe(destination);
         if (_workspaceDestination != destination)
         {
