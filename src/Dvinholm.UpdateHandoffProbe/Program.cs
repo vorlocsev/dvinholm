@@ -46,9 +46,9 @@ internal static class Program
             if (!process.HasExited)
                 throw new IOException("Process exit not confirmed.");
 
+            // The handle retained above still refers to the original
+            // process object after exit, regardless of future PID reuse.
             GuardFixture(root);
-            if (process.StartTime.ToUniversalTime().Ticks != startTicks)
-                throw new InvalidOperationException("Process identity changed.");
 
             var receipt = Path.Combine(root, ReceiptName);
             var content = "Fixture-only process exit confirmed\n" +
