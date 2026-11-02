@@ -2402,7 +2402,13 @@ function Apply-WorkerSnapshot($snapshot) {
   $validManaged=Test-WorkerLaunchableVersion $script:lastCurrent $selected
   $validBundled=($script:lastCurrent -ceq 'Not installed' -and
     (Test-LocalBundledApp))
-  $script:serviceIsReady=($script:recoveryStatus -ceq 'Ready' -and
+  # Finished + Recovery=Ready does not mean a successful worker:
+  # a failed probe/install can still leave the recovery journal clean.
+  # Accept only an explicit boolean Failed=false before authorizing Start.
+  $successful=($snapshot.PSObject.Properties['Failed'] -and
+    $snapshot.Failed -is [bool] -and $snapshot.Failed -eq $false)
+  $script:serviceIsReady=($successful -and
+    $script:recoveryStatus -ceq 'Ready' -and
     ($validManaged -or $validBundled) -and
     [string]$snapshot.DotNet -ceq 'Installed' -and
     [string]$snapshot.WinApp -ceq 'Installed' -and
@@ -3098,6 +3104,74 @@ if($Mode -eq 'UiSmokeTest'){
   }
   if($bundleChecks -ne 8){throw 'Wrong bundled launch integrity gate count.'}
   Write-Host 'Launcher bundled x86 first-run integrity 8/8 offline checks passed.'
+
+  # Eight terminal worker-snapshot trust checks. Recovery=Ready is not
+  # synonymous with worker success; Failed must be an explicit bool false.
+  $failureChecks=0
+  $good=[pscustomobject]@{
+   Done=$true;Failed=$false;Recovery='Ready';Current='ci-4118'
+   Available='ci-4119';DotNet='Installed';WinApp='Installed'
+   VC='Installed';Detail='Completed'
+  }
+  $failed=$good | Select-Object *
+  $failed.Failed=$true
+  if(-not (Apply-WorkerSnapshot $failed) -or $launch.Enabled -or
+     $script:northLaunch.Enabled -or $script:serviceIsReady){
+   throw 'Failed worker with clean recovery enabled Start.'
+  }
+  $failureChecks++
+  $stringFailed=$good | Select-Object *
+  $stringFailed.Failed='false'
+  if(-not (Apply-WorkerSnapshot $stringFailed) -or
+     $launch.Enabled -or $script:serviceIsReady){
+   throw 'String-valued Failed was accepted as trusted worker success.'
+  }
+  $failureChecks++
+  $missingFailed=$good | Select-Object *
+  $missingFailed.PSObject.Properties.Remove('Failed')
+  if(-not (Apply-WorkerSnapshot $missingFailed) -or
+     $launch.Enabled -or $script:serviceIsReady){
+   throw 'Missing worker Failed field enabled Start.'
+  }
+  $failureChecks++
+  $nullFailed=$good | Select-Object *
+  $nullFailed.Failed=$null
+  if(-not (Apply-WorkerSnapshot $nullFailed) -or
+     $launch.Enabled -or $script:serviceIsReady){
+   throw 'Null Failed field enabled Start.'
+  }
+  $failureChecks++
+  $incompleteWorker=$good | Select-Object *
+  $incompleteWorker.Done=$false
+  if((Apply-WorkerSnapshot $incompleteWorker) -or $launch.Enabled -or
+     $script:recoveryStatus -cne 'Not checked'){
+   throw 'Incomplete worker snapshot enabled Start.'
+  }
+  $failureChecks++
+  $needsRepair=$good | Select-Object *
+  $needsRepair.Recovery='Repair install'
+  if(-not (Apply-WorkerSnapshot $needsRepair) -or
+     $launch.Enabled -or $script:serviceIsReady){
+   throw 'Pending install repair enabled Start.'
+  }
+  $failureChecks++
+  if(-not (Apply-WorkerSnapshot $good) -or -not $launch.Enabled -or
+     -not $script:northLaunch.Enabled -or -not $script:serviceIsReady){
+   throw 'Valid successful worker could not enable verified Start.'
+  }
+  $failureChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($launch.Enabled -or $script:northLaunch.Enabled){
+   throw 'Worker already running did not revoke Start.'
+  }
+  $script:child=$null
+  $script:serviceIsReady=$false
+  $script:recoveryStatus='Not checked'
+  Update-ActionAvailability
+  $failureChecks++
+  if($failureChecks -ne 8){throw 'Wrong terminal worker trust gate count.'}
+  Write-Host 'Launcher terminal worker fail-closed 8/8 checks passed.'
 
   $vendorChecks=0
   $script:recoveryStatus='Ready';Update-ActionAvailability
