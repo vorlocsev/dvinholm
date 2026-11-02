@@ -62,7 +62,7 @@ internal static class UnifiedX64RecoverySandbox
     /// recovery attempt restores the ORIGINAL verified backup, never guesses.
     /// </summary>
     internal static void ApplyFixture(string fixtureRoot, bool interruptAfterFirstFile = false,
-        int? interruptAfterFiles = null)
+        int? interruptAfterFiles = null, Action? afterJournalForTests = null)
     {
         var root = RequireScratch(fixtureRoot);
         var journal = ReadJournal(root);
@@ -80,6 +80,9 @@ internal static class UnifiedX64RecoverySandbox
         // Write Applying BEFORE touching the first destination. Even a crash
         // at point zero is recoverable on the next fixture-only invocation.
         WriteJournal(root, journal with { State = StateApplying });
+        // Fixture-only deterministic injection: acquire a Windows-exclusive
+        // file handle AFTER validation but BEFORE any replacement.
+        afterJournalForTests?.Invoke();
         if (interruptAt == 0)
             throw new IOException("Injected crash after Applying journal checkpoint.");
         var count = 0;
@@ -100,7 +103,7 @@ internal static class UnifiedX64RecoverySandbox
     /// remains Recovering until every original byte is verified.
     /// </summary>
     internal static void RecoverFixture(string fixtureRoot, bool interruptAfterFirstFile = false,
-        int? interruptAfterFiles = null)
+        int? interruptAfterFiles = null, Action? afterJournalForTests = null)
     {
         var root = RequireScratch(fixtureRoot);
         var journal = ReadJournal(root);
@@ -115,6 +118,9 @@ internal static class UnifiedX64RecoverySandbox
         var interruptAt = InjectionPoint(interruptAfterFirstFile,
             interruptAfterFiles, journal.Files.Length);
         WriteJournal(root, journal with { State = StateRecovering });
+        // Simulates a competing Windows handle acquired between the recovery
+        // checkpoint and the first atomic destination-file rename.
+        afterJournalForTests?.Invoke();
         if (interruptAt == 0)
             throw new IOException("Injected crash after Recovering journal checkpoint.");
         var count = 0;
