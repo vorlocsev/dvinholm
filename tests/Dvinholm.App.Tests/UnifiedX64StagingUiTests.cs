@@ -65,7 +65,8 @@ public sealed class UnifiedX64StagingUiTests
     public void StageUsesPrivateDirectoryAndNeverLaunchesOrExtractsAnything()
     {
         var code = Source("src/Dvinholm.App/MainWindow.UnifiedDownloads.cs");
-        Assert.Contains("Path.Combine(DvinholmUserDataDirectory.Current, \"update-staging\")", code);
+        Assert.Contains("UnifiedX64StoragePaths.StagingRoot", code);
+        Assert.Contains("UnifiedX64StoragePaths.BackupRoot", code);
         Assert.Contains("await UnifiedX64StageDownloader.StageAsync(", code);
         Assert.DoesNotContain("Process.Start(", code);
         Assert.DoesNotContain("ZipFile.Extract", code);
