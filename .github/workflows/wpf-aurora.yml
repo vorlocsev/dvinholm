@@ -1,0 +1,60 @@
+name: WPF Aurora Pilot
+
+on:
+  pull_request:
+    paths:
+      - 'src/Dvinholm.Wpf/**'
+      - 'src/Dvinholm.App/J2534DeviceDiscovery.cs'
+      - 'src/Dvinholm.App/UpdateSourcePreferenceStore.cs'
+      - '.github/workflows/wpf-aurora.yml'
+  workflow_dispatch:
+
+concurrency:
+  group: dvinholm-wpf-pilot-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  wpf-aurora:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      - name: Publish WPF x86 self-contained single-file pilot
+        shell: pwsh
+        run: |
+          dotnet publish src/Dvinholm.Wpf/Dvinholm.Wpf.csproj --configuration Release --runtime win-x86 --self-contained true -p:Platform=x86 -p:PublishSingleFile=true -p:PublishTrimmed=false -p:PublishAot=false --output artifacts/wpf-aurora
+          if ($LASTEXITCODE -ne 0) { throw 'WPF x86 publish failed.' }
+          $exe = 'artifacts/wpf-aurora/Dvinholm.Wpf.exe'
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw 'WPF executable missing.' }
+          $bytes = [IO.File]::ReadAllBytes((Resolve-Path -LiteralPath $exe).Path)
+          if ($bytes.Length -lt 1024 -or $bytes[0] -ne 77 -or $bytes[1] -ne 90) { throw 'Invalid WPF PE.' }
+          $offset = [BitConverter]::ToInt32($bytes, 60)
+          if ($offset -lt 64 -or [BitConverter]::ToUInt16($bytes, $offset + 4) -ne 0x14c) { throw 'WPF output is not x86.' }
+          Write-Host "Confirmed WPF Windows x86: $($bytes.Length) bytes."
+
+      - name: Execute eight real WPF navigation/safety smoke checks
+        shell: powershell
+        run: |
+          $exe = (Resolve-Path -LiteralPath 'artifacts/wpf-aurora/Dvinholm.Wpf.exe').Path
+          $p = Start-Process -FilePath $exe -ArgumentList '--shell-smoke' -PassThru
+          if (-not $p.WaitForExit(45000)) {
+            Stop-Process -Id $p.Id -Force -ErrorAction SilentlyContinue
+            throw 'WPF smoke timed out.'
+          }
+          if ($p.ExitCode -ne 0) { throw "WPF offline smoke failed: $($p.ExitCode)" }
+          Write-Host 'Constructed WPF controls: all 8 offline checks passed.'
+
+      - name: Upload user-review pilot (not a published release)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-Aurora-WPF-x86-Preview
+          path: artifacts/wpf-aurora/Dvinholm.Wpf.exe
+          if-no-files-found: error
+          retention-days: 7

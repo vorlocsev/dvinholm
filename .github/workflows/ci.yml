@@ -141,6 +141,42 @@ jobs:
         if: github.event_name == 'pull_request'
         run: dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release --no-build --no-restore -p:Platform=x86 -p:DvinholmDevelopmentFeatures=true --filter "Category!=ArchivedWorkflow" --logger "trx;LogFileName=pr-active-tests.trx"
 
+      # First-stage unified WPF replacement is a PR-only prototype, not a
+      # replacement for the active WinUI/Launcher distribution.
+      # Build a real self-contained Windows x86 executable with no WinApp SDK.
+      - name: Publish unified WPF x86 shell (self-contained)
+        shell: pwsh
+        run: |
+          dotnet publish src/Dvinholm.Wpf/Dvinholm.Wpf.csproj --configuration Release --runtime win-x86 --self-contained true -p:Platform=x86 -p:PublishSingleFile=true -p:PublishTrimmed=false -p:PublishAot=false --output artifacts/wpf-unified
+          if ($LASTEXITCODE -ne 0) { throw 'WPF publish failed.' }
+          $exe = 'artifacts/wpf-unified/Dvinholm.Wpf.exe'
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) { throw 'WPF x86 executable missing.' }
+          $bytes = [IO.File]::ReadAllBytes((Resolve-Path -LiteralPath $exe).Path)
+          if ($bytes.Length -lt 1024 -or $bytes[0] -ne 77 -or $bytes[1] -ne 90) { throw 'WPF output is not a PE executable.' }
+          $header = [BitConverter]::ToInt32($bytes, 60)
+          if ($header -lt 64 -or [BitConverter]::ToUInt16($bytes, $header + 4) -ne 0x14c) { throw 'WPF output is not x86.' }
+          Write-Host "Verified self-contained WPF win-x86 executable ($($bytes.Length) bytes)."
+
+      - name: Verify unified WPF constructed UI (eight fail-closed offline gates)
+        shell: powershell
+        run: |
+          $process = Start-Process -FilePath (Resolve-Path 'artifacts/wpf-unified/Dvinholm.Wpf.exe').Path -ArgumentList '--shell-smoke' -PassThru
+          if (-not $process.WaitForExit(45000)) {
+            Stop-Process -Id $process.Id -Force -ErrorAction SilentlyContinue
+            throw 'WPF shell offline smoke timed out.'
+          }
+          if ($process.ExitCode -ne 0) { throw "WPF shell smoke failed: exit $($process.ExitCode)." }
+          Write-Host 'Unified WPF shell: 8/8 real-control offline gates passed.'
+
+      - name: Upload WPF unified x86 pilot (PR review only)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-WPF-Aurora-Windows-x86-Pilot
+          path: artifacts/wpf-unified/Dvinholm.Wpf.exe
+          if-no-files-found: error
+          retention-days: 7
+
       # Run the complete suite on main, and on explicit manual CI dispatch.
       # This includes archived workflow compatibility tests for regression.
       - name: Test complete regression (main/manual)
