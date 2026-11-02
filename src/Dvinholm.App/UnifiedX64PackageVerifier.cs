@@ -73,7 +73,9 @@ internal static class UnifiedX64PackageVerifier
         }
         if (names.Any(name => name.Equals("Launcher.exe", StringComparison.OrdinalIgnoreCase) ||
              name.EndsWith("/Launcher.exe", StringComparison.OrdinalIgnoreCase) ||
-             name.EndsWith("/Dvinholm.Wpf.exe", StringComparison.OrdinalIgnoreCase)))
+             name.EndsWith("/Dvinholm.Wpf.exe", StringComparison.OrdinalIgnoreCase) ||
+             name.Equals("Dvinholm.UpdateHandoffProbe.exe", StringComparison.OrdinalIgnoreCase) ||
+             name.EndsWith("/Dvinholm.UpdateHandoffProbe.exe", StringComparison.OrdinalIgnoreCase)))
             throw new InvalidDataException("Unexpected second launcher in unified app.");
 
         return new UnifiedX64VerifiedArchive(Convert.ToHexString(actualHash).ToLowerInvariant(),
