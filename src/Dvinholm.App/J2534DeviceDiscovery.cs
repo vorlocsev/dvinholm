@@ -17,6 +17,11 @@ internal static class J2534DeviceDiscovery
         @"SOFTWARE\PassThruSupport.02.02"
     ];
 
+    // The native PassThru DLL is loaded in-process. An x64 app MUST NOT
+    // list x86-only registry entries as if they were directly usable.
+    internal static RegistryView RegistryViewForProcess(bool is64BitProcess) =>
+        is64BitProcess ? RegistryView.Registry64 : RegistryView.Registry32;
+
     internal static IReadOnlyList<J2534Device> FindRegisteredDevices()
     {
         var devices = new List<J2534Device>();
@@ -24,7 +29,7 @@ internal static class J2534DeviceDiscovery
 
         try
         {
-            using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryView.Registry32);
+            using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryViewForProcess(Environment.Is64BitProcess));
             foreach (var registryPath in RegistryKeys)
             {
                 // Isolate each root: a damaged or inaccessible 04.04 branch must
