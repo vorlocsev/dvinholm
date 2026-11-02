@@ -2350,7 +2350,9 @@ function Apply-WorkerSnapshot($snapshot) {
     [string]$snapshot.DotNet -ceq 'Installed' -and
     [string]$snapshot.WinApp -ceq 'Installed' -and
     [string]$snapshot.VC -ceq 'Installed')
-  $serviceHeading.Text='DVINHOLM  ·  '+(Translate $(if($script:serviceIsReady){'cockpitReady'}else{'cockpitUnchecked'}))
+  # Keep the heading short in both initial and post-probe states.
+  # Readiness is shown in the worker-backed recovery and status fields.
+  $serviceHeading.Text='DVINHOLM'
   $script:lastRecovery=$script:recoveryStatus
   $recovery.Text=(Translate 'recovery')+': '+(Format-LauncherRecovery $script:lastRecovery)
   Update-ActionAvailability
