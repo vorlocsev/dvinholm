@@ -82,7 +82,7 @@ public sealed class UnifiedX64InstallReadinessGateTests
         UnifiedX64StagedPackage? stage = null,
         UnifiedX64BackupSnapshot.Receipt? backup = null) =>
         UnifiedX64InstallReadinessGate.Inspect(candidate ?? f.Candidate,
-            stage ?? f.Stage, backup ?? f.Backup, signature: null,
+            stage ?? f.Stage, backup ?? f.Backup, detachedSignature: null,
             f.Installed, f.Backups);
 
     [Fact]
