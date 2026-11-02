@@ -263,3 +263,24 @@ pixel-perfect match.
 The existing `UiSmokeTest`, `UiPreview` and DPI geometry matrix are
 updated for the new proportions and five-button grid, without changing
 installer transactions, self-update recovery, Stable, or Virtual Car.
+
+
+## Reference-image layer hook (artifact until binary assets land)
+
+The WinForms Home now supports two optional, *locally decoded* JPEGs in the
+installed `Binaries/` folder: `launcher-approved-hero.jpg` and
+`launcher-approved-footer.jpg`. They contain only the reference screenshot's
+illustrated **header** and **coastal footer**, not fake dependency status cards
+or action buttons. Files are size-bounded and reparse-point checked; if
+missing, malformed or too large, the original native GDI+ artwork remains.
+No external download or browser is used, and unverified dependency statuses
+continue to come from the real worker.
+
+When the supplied art files are present, the RU home displays their exact
+illustration layers; text that is already baked into the hero is not printed
+a second time. The EN home still uses fully localizable GDI+ labels and
+background. This is an **optional asset hook**, not a claim that the binary
+art files have already been committed to GitHub or bundled by CI. The
+separately prepared image-asset ZIP may be used for the final licensed asset
+integration. The updater ZIP manifest remains strict and unchanged until
+those binary assets are deliberately added and audited.
