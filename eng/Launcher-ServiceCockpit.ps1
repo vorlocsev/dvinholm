@@ -302,19 +302,19 @@ if(Test-Path -LiteralPath $atlasPath -PathType Leaf){
   }
  }catch{$script:approvedAtlas=$null}
 }
-# Cache an English-only aurora-sky texture from a wordmark-free region of
-# the same trusted local atlas. No new binary, network request or fake UI.
+# Cache English-only sky from atlas pixels x1000..1375, y0..104. This
+# region has no baked RU letters or vehicle, preventing ghost glyphs. No new binary, network request or fake UI.
 $script:northernEnglishSky=$null
 if($script:approvedAtlas){
  $skyBitmap=$null
  $skyGraphics=$null
  try{
-  $skyBitmap=[Drawing.Bitmap]::new(570,235)
+  $skyBitmap=[Drawing.Bitmap]::new(630,235)
   $skyGraphics=[Drawing.Graphics]::FromImage($skyBitmap)
   $skyGraphics.InterpolationMode=[Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
   $skyGraphics.DrawImage($script:approvedAtlas,
-   [Drawing.Rectangle]::new(0,0,570,235),
-   [Drawing.Rectangle]::new(740,0,325,142),
+   [Drawing.Rectangle]::new(0,0,630,235),
+   [Drawing.Rectangle]::new(1000,0,376,105),
    [Drawing.GraphicsUnit]::Pixel)
   $script:northernEnglishSky=$skyBitmap
   $skyBitmap=$null
@@ -509,8 +509,8 @@ $script:northernHome.Add_Paint({
    # Paint the safe side crops, then reuse wordmark-free aurora sky from
    # that image behind *live* English labels. No flat rectangular panel.
    $g.DrawImage($script:approvedAtlas,
-    [Drawing.Rectangle]::new(0,0,390,348),
-    [Drawing.Rectangle]::new(0,0,455,395),
+    [Drawing.Rectangle]::new(0,0,330,348),
+    [Drawing.Rectangle]::new(0,0,385,395),
     [Drawing.GraphicsUnit]::Pixel)
    $g.DrawImage($script:approvedAtlas,
     [Drawing.Rectangle]::new(800,0,380,348),
@@ -519,27 +519,27 @@ $script:northernHome.Add_Paint({
    if($script:northernEnglishSky){
     $skyImage=$script:northernEnglishSky
     $g.DrawImage($skyImage,
-     [Drawing.Rectangle]::new(390,0,410,235),
-     [Drawing.Rectangle]::new(80,0,410,235),
+     [Drawing.Rectangle]::new(370,0,430,235),
+     [Drawing.Rectangle]::new(100,0,430,235),
      [Drawing.GraphicsUnit]::Pixel)
-    # Fade the photographic sky over the seams in eight narrow strips
+    # Fade the photographic sky over the seams in ten narrow strips
     # instead of covering the approved scene with an opaque rectangle.
     $alphaAttr=[Drawing.Imaging.ImageAttributes]::new()
     try{
-     for($i=0;$i -lt 8;$i++){
+     for($i=0;$i -lt 10;$i++){
       $alphaLeft=[Drawing.Imaging.ColorMatrix]::new()
-      $alphaLeft.Matrix33=[single](($i+1)/9.0)
+      $alphaLeft.Matrix33=[single](($i+1)/11.0)
       $alphaAttr.SetColorMatrix($alphaLeft)
       $g.DrawImage($skyImage,
-       [Drawing.Rectangle]::new(310+$i*10,0,10,235),
+       [Drawing.Rectangle]::new(270+$i*10,0,10,235),
        [single]($i*10),[single]0,[single]10,[single]235,
        [Drawing.GraphicsUnit]::Pixel,$alphaAttr)
       $alphaRight=[Drawing.Imaging.ColorMatrix]::new()
-      $alphaRight.Matrix33=[single]((8-$i)/9.0)
+      $alphaRight.Matrix33=[single]((10-$i)/11.0)
       $alphaAttr.SetColorMatrix($alphaRight)
       $g.DrawImage($skyImage,
        [Drawing.Rectangle]::new(800+$i*10,0,10,235),
-       [single](490+$i*10),[single]0,[single]10,[single]235,
+       [single](530+$i*10),[single]0,[single]10,[single]235,
        [Drawing.GraphicsUnit]::Pixel,$alphaAttr)
      }
     }finally{$alphaAttr.Dispose()}
