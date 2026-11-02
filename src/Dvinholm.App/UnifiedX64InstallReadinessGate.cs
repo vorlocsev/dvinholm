@@ -75,7 +75,7 @@ internal static class UnifiedX64InstallReadinessGate
                 var root = Path.TrimEndingDirectorySeparator(Path.GetFullPath(backupRoot));
                 var folder = Path.TrimEndingDirectorySeparator(Path.GetFullPath(backup.Directory));
                 var name = Path.GetFileName(folder);
-                if (!Path.GetDirectoryName(folder)!.Equals(root,
+                if (!string.Equals(Path.GetDirectoryName(folder), root,
                         StringComparison.OrdinalIgnoreCase) ||
                     !Regex.IsMatch(name, @"^backup-[0-9a-f]{32}$",
                         RegexOptions.CultureInvariant))
@@ -87,11 +87,14 @@ internal static class UnifiedX64InstallReadinessGate
                         blockers.Add("BACKUP_RECEIPT_MISMATCH");
                     if (staged is not null)
                     {
-                        // Current inventory may have changed since backup.
+                        // Counts and bytes are insufficient: a changed EXE or
+                        // settings file may retain its original length.
                         var dryRun = UnifiedX64RecoveryPreflight.Inspect(
                             installedDirectory, staged, root);
                         if (!dryRun.CanPlanBackup || dryRun.FilesToBackUp != backup.Files ||
-                            dryRun.BytesToBackUp != backup.Bytes)
+                            dryRun.BytesToBackUp != backup.Bytes ||
+                            !UnifiedX64BackupSnapshot.MatchesInstalledContents(
+                                folder, installedDirectory))
                             blockers.Add("BACKUP_NO_LONGER_MATCHES_INSTALL");
                     }
                 }
