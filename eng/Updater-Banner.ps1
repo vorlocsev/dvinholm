@@ -2889,6 +2889,70 @@ if($Mode -eq 'UiPreview'){
   if($headerChecks -ne 8){throw 'Wrong English hero label alignment gate count.'}
   Write-Host 'Northern Aurora English wordmark layout 8/8 checks passed.'
 
+  # Eight real WinForms pixel and runtime-artwork gates. A previous atlas
+  # crop accidentally copied white Cyrillic letters into the EN sky.
+  $cleanSkyChecks=0
+  if($null -eq $script:northernEnglishSky){
+   throw 'English Aurora sky texture was not loaded from the local atlas.'
+  }
+  $cleanSkyChecks++
+  if($script:northernEnglishSky.Width -ne 630){
+   throw 'English sky cached with an unexpected width.'
+  }
+  $cleanSkyChecks++
+  if($script:northernEnglishSky.Height -ne 235){
+   throw 'English sky cached with an unexpected height.'
+  }
+  $cleanSkyChecks++
+  $whiteSky=0
+  for($yy=0;$yy -lt 235;$yy+=3){
+   for($xx=0;$xx -lt 630;$xx+=3){
+    $pixel=$script:northernEnglishSky.GetPixel($xx,$yy)
+    $min=[Math]::Min([Math]::Min($pixel.R,$pixel.G),$pixel.B)
+    $max=[Math]::Max([Math]::Max($pixel.R,$pixel.G),$pixel.B)
+    if($min -gt 175 -and ($max-$min) -lt 65){$whiteSky++}
+   }
+  }
+  if($whiteSky -gt 100){
+   throw ('English sky contains suspected baked-in bright lettering: '+$whiteSky)
+  }
+  $cleanSkyChecks++
+  $skyPreview=[Drawing.Bitmap]::new(
+   (Join-Path $PreviewDirectory 'Launcher-Aurora-Home-EN.png'))
+  try{
+   $ghostLetters=0
+   # This gap sits between the northern emblem and the first native EN
+   # title character. It must never contain Russian source wordmark glyphs.
+   for($yy=85;$yy -lt 145;$yy++){
+    for($xx=285;$xx -lt 315;$xx++){
+     $pixel=$skyPreview.GetPixel($xx,$yy)
+     $min=[Math]::Min([Math]::Min($pixel.R,$pixel.G),$pixel.B)
+     $max=[Math]::Max([Math]::Max($pixel.R,$pixel.G),$pixel.B)
+     if($min -gt 175 -and ($max-$min) -lt 65){$ghostLetters++}
+    }
+   }
+   if($ghostLetters -gt 45){
+    throw ('Russian wordmark ghosting in English hero: '+$ghostLetters)
+   }
+  }finally{$skyPreview.Dispose()}
+  $cleanSkyChecks++
+  if(-not $script:northTitle.Visible -or
+     $script:northTitle.Text -cne 'DVINHOLM'){
+   throw 'English native title was replaced with a painted bitmap.'
+  }
+  $cleanSkyChecks++
+  if($script:northCaption.Text -cnotmatch 'SERVICES'){
+   throw 'English native services caption was lost.'
+  }
+  $cleanSkyChecks++
+  if($script:child -or $script:vendor -or
+     $script:northLaunch.Enabled -or $launch.Enabled){
+   throw 'English scenery bypassed real launch readiness.'
+  }
+  $cleanSkyChecks++
+  if($cleanSkyChecks -ne 8){throw 'Incorrect clean English sky check count.'}
+  Write-Host 'Northern Aurora no ghost Cyrillic pixels 8/8 checks passed.'
+
   Assert-NorthernStartMuted 'EN'
   Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-EN.png' $script:northernHome
   $previewChecks++
