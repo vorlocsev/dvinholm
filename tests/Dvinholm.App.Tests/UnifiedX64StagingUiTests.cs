@@ -87,6 +87,20 @@ public sealed class UnifiedX64StagingUiTests
     }
 
     [Fact]
+    public void DetachedSignaturePreviewNeverClaimsUnsignedPublisherTrust()
+    {
+        var code = Source("src/Dvinholm.App/MainWindow.UnifiedDownloads.cs");
+        Assert.Contains("UnifiedX64SignatureFetcher.CreateClient()", code);
+        Assert.Contains("UnifiedX64SignatureFetcher.FetchAsync(", code);
+        Assert.Contains("evidence.PublisherVerified", code);
+        Assert.Contains("доверенный ключ издателя ещё не утверждён", code);
+        Assert.Contains("Signature format valid; the publisher trust key is not yet approved.", code);
+        Assert.Contains("Installation disabled.", code);
+        Assert.DoesNotContain("Process.Start(", code);
+        Assert.DoesNotContain("File.Replace(", code);
+    }
+
+    [Fact]
     public void UserMayCancelAndProgressCannotBeMisrepresentedAsInstall()
     {
         var doc = Layout();
