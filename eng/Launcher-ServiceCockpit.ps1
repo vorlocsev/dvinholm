@@ -483,14 +483,8 @@ $script:northernHome.Add_Paint({
     [Drawing.Rectangle]::new(0,0,1376,395),
     [Drawing.GraphicsUnit]::Pixel)
   }elseif($script:approvedAtlas -and $script:launcherLanguage -eq 'EN'){
-   # Use the SAME actual gull-and-gear, Viking prow, northern sky, waterfront
-   # and Volvo panorama as RU. The atlas has Cyrillic only in the central
-   # header: omit that region and draw the translated native labels there.
-   # This avoids an entirely different logo/car in the English version.
-   $g.DrawImage($script:approvedAtlas,
-    [Drawing.Rectangle]::new(0,230,1180,118),
-    [Drawing.Rectangle]::new(0,277,1376,118),
-    [Drawing.GraphicsUnit]::Pixel)
+   # Same gull/gear, longship and Volvo skyline as the approved RU atlas.
+   # Cover only the Cyrillic-bearing centre and paint native EN text over it.
    $g.DrawImage($script:approvedAtlas,
     [Drawing.Rectangle]::new(0,0,390,348),
     [Drawing.Rectangle]::new(0,0,455,395),
@@ -499,35 +493,40 @@ $script:northernHome.Add_Paint({
     [Drawing.Rectangle]::new(800,0,380,348),
     [Drawing.Rectangle]::new(934,0,442,395),
     [Drawing.GraphicsUnit]::Pixel)
-   # Replace legacy decorative bands and Cyrillic-bearing centre with
-   # a continuous dark sky for native English words. Fade into the real
-   # waterfront at the bottom, keeping the same car, gull and Viking art.
+
+   # Draw the central sky without the Russian printed lettering.
    $enSky=[Drawing.Drawing2D.LinearGradientBrush]::new(
-    [Drawing.Rectangle]::new(390,0,410,245),
+    [Drawing.Rectangle]::new(390,0,410,235),
     [Drawing.Color]::FromArgb(5,23,45),
     [Drawing.Color]::FromArgb(9,39,62),0.0)
-   try{$g.FillRectangle($enSky,390,0,410,245)}finally{$enSky.Dispose()}
-   $enHorizon=[Drawing.Drawing2D.LinearGradientBrush]::new(
-    [Drawing.Rectangle]::new(390,245,410,95),
-    [Drawing.Color]::FromArgb(255,7,31,51),
-    [Drawing.Color]::FromArgb(0,7,31,51),90.0)
-   try{$g.FillRectangle($enHorizon,390,245,410,95)}
-   finally{$enHorizon.Dispose()}
-   # The English sky blends into the two atlas halves instead of leaving
-   # a visible rectangular cutoff behind the wordmark and coastline.
+   try{$g.FillRectangle($enSky,390,0,410,235)}
+   finally{$enSky.Dispose()}
+
+   # Feather both vertical borders to the surrounding approved photograph.
+   # The fade must reach full opacity at the exact x=390/800 join, not
+   # halfway through it (previously a visible rectangular seam).
    $enLeftFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
-    [Drawing.Rectangle]::new(365,0,57,245),
-    [Drawing.Color]::FromArgb(0,7,28,47),
-    [Drawing.Color]::FromArgb(255,7,28,47),0.0)
+    [Drawing.Rectangle]::new(340,0,51,235),
+    [Drawing.Color]::FromArgb(0,7,29,48),
+    [Drawing.Color]::FromArgb(255,7,29,48),0.0)
    $enRightFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
-    [Drawing.Rectangle]::new(776,0,58,245),
+    [Drawing.Rectangle]::new(799,0,63,235),
     [Drawing.Color]::FromArgb(255,8,34,55),
     [Drawing.Color]::FromArgb(0,8,34,55),0.0)
    try{
-    $g.FillRectangle($enLeftFade,365,0,57,245)
-    $g.FillRectangle($enRightFade,776,0,58,245)
+    $g.FillRectangle($enLeftFade,340,0,51,235)
+    $g.FillRectangle($enRightFade,799,0,63,235)
    }finally{$enLeftFade.Dispose();$enRightFade.Dispose()}
-   # Two subtle aurora strokes live above, not behind, the English caption.
+
+   # Use a single, unbroken source band across ALL three hero sections.
+   # This is the wordmark-free bottom 135px of the approved atlas.
+   # It removes the former hard-edged opaque English horizon rectangle.
+   $g.DrawImage($script:approvedAtlas,
+    [Drawing.Rectangle]::new(0,230,1180,118),
+    [Drawing.Rectangle]::new(0,260,1376,135),
+    [Drawing.GraphicsUnit]::Pixel)
+
+   # A subtle Aurora ribbon over the clean English title, not a fake tile.
    $enGlow=[Drawing.Pen]::new([Drawing.Color]::FromArgb(37,35,187,159),11)
    try{$g.DrawBezier($enGlow,520,8,610,-30,715,50,805,4)}
    finally{$enGlow.Dispose()}
