@@ -15,7 +15,7 @@ public sealed class UnifiedX64StagingUiTests
         for (DirectoryInfo? dir = new(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
         {
             var name = Path.Combine(dir.FullName, relative.Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(name)) return File.ReadAllText(name);
+            if (File.Exists(name)) return File.ReadAllText(name).Replace("\r\n", "\n");
         }
         throw new FileNotFoundException(relative);
     }
