@@ -553,19 +553,59 @@ foreach($action in @($script:northUpdates,$script:northComponents,
 }
 $script:northReturn=New-ServiceButton '← Главная' 785 135 186 35
 $script:northReturn.Visible=$false
+
+# The approved Home panel overlays the legacy, fully working service form.
+# Native Windows Tab navigation must not reach buttons behind that panel.
+# Capture original flags once; never change worker Enabled or Visible states.
+$script:northernLegacyTabs=[Collections.ArrayList]::new()
+$legacyQueue=[Collections.Queue]::new()
+foreach($top in @($form.Controls)){$legacyQueue.Enqueue($top)}
+while($legacyQueue.Count -gt 0){
+ $legacy=[Windows.Forms.Control]$legacyQueue.Dequeue()
+ if($legacy -eq $script:northernHome){continue}
+ [void]$script:northernLegacyTabs.Add([pscustomobject]@{
+  Control=$legacy
+  TabStop=[bool]$legacy.TabStop
+ })
+ foreach($nested in @($legacy.Controls)){$legacyQueue.Enqueue($nested)}
+}
+function Set-NorthernLegacyTabStops([bool]$detailsOpen) {
+ foreach($saved in $script:northernLegacyTabs){
+  if($saved.Control -and -not $saved.Control.IsDisposed){
+   $saved.Control.TabStop=($detailsOpen -and $saved.TabStop)
+  }
+ }
+}
 function Show-NorthernHome {
  $script:northernDetailOpen=$false
+ Set-NorthernLegacyTabStops $false
  $script:northernHome.Visible=$true
  $script:northReturn.Visible=$false
  $script:northernHome.BringToFront()
 }
 $script:northReturn.Add_Click({Show-NorthernHome})
+function Invoke-NorthernEscape {
+ # Let an expanded channel dropdown consume Esc normally.
+ if(-not $script:northernDetailOpen -or $choice.DroppedDown){return $false}
+ Show-NorthernHome
+ return $true
+}
+$form.KeyPreview=$true
+$form.Add_KeyDown({
+ param($sender,$event)
+ if($event.KeyCode -eq [Windows.Forms.Keys]::Escape -and
+    (Invoke-NorthernEscape)){
+  $event.Handled=$true
+  $event.SuppressKeyPress=$true
+ }
+})
 function Show-NorthernUpdates {
  # The legacy worker-backed controls stay on the form and under Home.
  # Bring them above Service Cockpit backing cards when switching pages:
  # Visible=true alone cannot guarantee painting or click hit-testing.
  $script:northernDetailOpen=$true
  $script:northernHome.Visible=$false
+ Set-NorthernLegacyTabStops $true
  foreach($control in @($choice,$installed,$available,$status,$recovery,
      $launch,$check,$install,$bar,$deps,$versionsButton,
      $windowsQuick,$depsInstallQuick,$driverQuick,$driverScanQuick,
@@ -666,6 +706,7 @@ function Update-NorthernCompactSnapshot {
 # The hidden back button is created after the home panel and would otherwise
 # take the top z-order before the window becomes visible.
 $script:northernHome.BringToFront()
+Set-NorthernLegacyTabStops $false
 $form.Add_FormClosed({
  if($script:approvedAtlas){$script:approvedAtlas.Dispose();$script:approvedAtlas=$null}
 })
