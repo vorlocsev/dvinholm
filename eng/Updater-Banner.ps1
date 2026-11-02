@@ -2703,6 +2703,54 @@ if($Mode -eq 'UiPreview'){
      $script:northReturn.Bottom -gt $hero.Bottom){
    throw 'Back button overlaps Settings or extends outside the banner.'
   }
+  # Inspect REAL disabled Button pixels on this offscreen WinForms form.
+  # Native themes often choose unreadable black text on dark custom fills.
+  function Assert-DisabledButtonContrast([Windows.Forms.Button]$button,
+      [string]$description){
+   if($button.Enabled){throw ('Expected a locked button: '+$description)}
+   $bitmap=[Drawing.Bitmap]::new($button.Width,$button.Height)
+   try{
+    $button.DrawToBitmap($bitmap,[Drawing.Rectangle]::new(
+     0,0,$button.Width,$button.Height))
+    $lightText=0
+    # Stay inside the button border so bright lines cannot pass this test.
+    for($y=5;$y -lt $bitmap.Height-5;$y++){
+     for($x=10;$x -lt $bitmap.Width-10;$x+=2){
+      $pixel=$bitmap.GetPixel($x,$y)
+      if($pixel.R -ge 170 -and $pixel.G -ge 180 -and
+         $pixel.B -ge 190){$lightText++}
+     }
+    }
+    if($lightText -lt 12){
+     throw ('Unreadable disabled caption in actual WinForms pixels: '+
+      $description+' (light pixels='+$lightText+')')
+    }
+   }finally{$bitmap.Dispose()}
+  }
+  $contrastChecks=0
+  if($check.Enabled -or $install.Enabled -or $launch.Enabled -or
+     $script:child -or $script:vendor){
+   throw 'Disabled contrast preview bypassed startup update safety.'
+  }
+  $contrastChecks++
+  Assert-DisabledButtonContrast $check 'Check RU';$contrastChecks++
+  Assert-DisabledButtonContrast $install 'Install RU';$contrastChecks++
+  Assert-DisabledButtonContrast $launch 'Launch RU';$contrastChecks++
+  $script:launcherLanguage='EN';Apply-LauncherLanguage
+  [Windows.Forms.Application]::DoEvents()
+  if($check.Text -cne 'Check updates' -or
+     $install.Text -cne 'Download / Install' -or
+     $launch.Text -cne 'Start Dvinholm'){
+   throw 'Native action captions did not switch to English.'
+  }
+  $contrastChecks++
+  Assert-DisabledButtonContrast $check 'Check EN';$contrastChecks++
+  Assert-DisabledButtonContrast $install 'Install EN';$contrastChecks++
+  Assert-DisabledButtonContrast $launch 'Launch EN';$contrastChecks++
+  $script:launcherLanguage='RU';Apply-LauncherLanguage
+  [Windows.Forms.Application]::DoEvents()
+  if($contrastChecks -ne 8){throw 'Wrong disabled action contrast gate count.'}
+  Write-Host 'Service Cockpit disabled action pixels 8/8 checks passed.'
   Save-NorthernWinFormsPreview 'Launcher-Aurora-Updates-RU.png' $form
   $previewChecks++
   Show-NorthernHome
