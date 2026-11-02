@@ -2910,8 +2910,8 @@ if($Mode -eq 'UiPreview'){
   }
   $cleanSkyChecks++
   $whiteSky=0
-  for($yy=0;$yy -lt 235;$yy+=3){
-   for($xx=0;$xx -lt 630;$xx+=3){
+  for($yy=0;$yy -lt $script:northernEnglishSky.Height;$yy+=3){
+   for($xx=0;$xx -lt $script:northernEnglishSky.Width;$xx+=3){
     $pixel=$script:northernEnglishSky.GetPixel($xx,$yy)
     $min=[Math]::Min([Math]::Min($pixel.R,$pixel.G),$pixel.B)
     $max=[Math]::Max([Math]::Max($pixel.R,$pixel.G),$pixel.B)
