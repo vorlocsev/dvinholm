@@ -509,8 +509,8 @@ $script:northernHome.Add_Paint({
    # Paint the safe side crops, then reuse wordmark-free aurora sky from
    # that image behind *live* English labels. No flat rectangular panel.
    $g.DrawImage($script:approvedAtlas,
-    [Drawing.Rectangle]::new(0,0,330,348),
-    [Drawing.Rectangle]::new(0,0,385,395),
+    [Drawing.Rectangle]::new(0,0,385,348),
+    [Drawing.Rectangle]::new(0,0,449,395),
     [Drawing.GraphicsUnit]::Pixel)
    $g.DrawImage($script:approvedAtlas,
     [Drawing.Rectangle]::new(800,0,380,348),
@@ -519,27 +519,29 @@ $script:northernHome.Add_Paint({
    if($script:northernEnglishSky){
     $skyImage=$script:northernEnglishSky
     $g.DrawImage($skyImage,
-     [Drawing.Rectangle]::new(370,0,430,235),
-     [Drawing.Rectangle]::new(100,0,430,235),
+     [Drawing.Rectangle]::new(425,0,375,235),
+     [Drawing.Rectangle]::new(125,0,375,235),
      [Drawing.GraphicsUnit]::Pixel)
-    # Fade the photographic sky over the seams in ten narrow strips
-    # instead of covering the approved scene with an opaque rectangle.
+    # Feather starts AFTER the entire gull-and-arrow mark, so violet
+    # aurora can never wash out the approved left emblem.
     $alphaAttr=[Drawing.Imaging.ImageAttributes]::new()
     try{
-     for($i=0;$i -lt 10;$i++){
-      $alphaLeft=[Drawing.Imaging.ColorMatrix]::new()
-      $alphaLeft.Matrix33=[single](($i+1)/11.0)
-      $alphaAttr.SetColorMatrix($alphaLeft)
+     for($i=0;$i -lt 6;$i++){
+      $leftMatrix=[Drawing.Imaging.ColorMatrix]::new()
+      $leftMatrix.Matrix33=[single](($i+1)/7.0)
+      $alphaAttr.SetColorMatrix($leftMatrix)
       $g.DrawImage($skyImage,
-       [Drawing.Rectangle]::new(270+$i*10,0,10,235),
-       [single]($i*10),[single]0,[single]10,[single]235,
+       [Drawing.Rectangle]::new(365+$i*10,0,10,235),
+       [single](65+$i*10),[single]0,[single]10,[single]235,
        [Drawing.GraphicsUnit]::Pixel,$alphaAttr)
-      $alphaRight=[Drawing.Imaging.ColorMatrix]::new()
-      $alphaRight.Matrix33=[single]((10-$i)/11.0)
-      $alphaAttr.SetColorMatrix($alphaRight)
+     }
+     for($i=0;$i -lt 8;$i++){
+      $rightMatrix=[Drawing.Imaging.ColorMatrix]::new()
+      $rightMatrix.Matrix33=[single]((8-$i)/9.0)
+      $alphaAttr.SetColorMatrix($rightMatrix)
       $g.DrawImage($skyImage,
        [Drawing.Rectangle]::new(800+$i*10,0,10,235),
-       [single](530+$i*10),[single]0,[single]10,[single]235,
+       [single](500+$i*10),[single]0,[single]10,[single]235,
        [Drawing.GraphicsUnit]::Pixel,$alphaAttr)
      }
     }finally{$alphaAttr.Dispose()}

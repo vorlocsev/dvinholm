@@ -2889,6 +2889,11 @@ if($Mode -eq 'UiPreview'){
   if($headerChecks -ne 8){throw 'Wrong English hero label alignment gate count.'}
   Write-Host 'Northern Aurora English wordmark layout 8/8 checks passed.'
 
+  # The English preview must be saved before its bitmap is analyzed.
+  Assert-NorthernStartMuted 'EN'
+  Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-EN.png' $script:northernHome
+  $previewChecks++
+
   # Eight real WinForms pixel and runtime-artwork gates. A previous atlas
   # crop accidentally copied white Cyrillic letters into the EN sky.
   $cleanSkyChecks=0
@@ -2952,10 +2957,6 @@ if($Mode -eq 'UiPreview'){
   $cleanSkyChecks++
   if($cleanSkyChecks -ne 8){throw 'Incorrect clean English sky check count.'}
   Write-Host 'Northern Aurora no ghost Cyrillic pixels 8/8 checks passed.'
-
-  Assert-NorthernStartMuted 'EN'
-  Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-EN.png' $script:northernHome
-  $previewChecks++
 
   # Eight genuine Windows bitmap/UI contracts for the final RU/EN artwork.
   # The approved footer coast remains, but its baked-in tagline is cropped

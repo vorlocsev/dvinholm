@@ -122,7 +122,7 @@ public sealed class NorthernLauncherEmblemContractTests
         Assert.DoesNotContain("СЕВЕРНАЯ ДВИНА  ·  БЕЛОЕ МОРЕ  ·  НАСЛЕДИЕ ВИКИНГОВ", cockpit);
         // English now shares the same approved gull and Volvo atlas panels.
         // Stop the EN scenic crop *before* the atlas's baked-in RU title.
-        Assert.Contains("[Drawing.Rectangle]::new(0,0,385,395)", cockpit);
+        Assert.Contains("[Drawing.Rectangle]::new(0,0,449,395)", cockpit);
         // English sky comes from the approved atlas's wordmark-free upper right.
         Assert.Contains("[Drawing.Rectangle]::new(1000,0,376,105)", cockpit);
         Assert.DoesNotContain("[Drawing.Rectangle]::new(740,0,325,142)", cockpit);
