@@ -3,6 +3,20 @@ namespace Dvinholm.App.Tests;
 public sealed class J2534DeviceDiscoveryTests
 {
     [Fact]
+    public void RegistryViewForProcess_X64UsesNative64BitDriversOnly()
+    {
+        Assert.Equal(Microsoft.Win32.RegistryView.Registry64,
+            Dvinholm.App.J2534DeviceDiscovery.RegistryViewForProcess(true));
+    }
+
+    [Fact]
+    public void RegistryViewForProcess_LegacyX86UsesNative32BitDriversOnly()
+    {
+        Assert.Equal(Microsoft.Win32.RegistryView.Registry32,
+            Dvinholm.App.J2534DeviceDiscovery.RegistryViewForProcess(false));
+    }
+
+    [Fact]
     public void TryCreateDevice_UsesRegistryNameWhenDisplayNameIsMissing()
     {
         var created = Dvinholm.App.J2534DeviceDiscovery.TryCreateDevice(
