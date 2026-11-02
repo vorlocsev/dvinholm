@@ -475,43 +475,51 @@ $script:northernHome.Add_Paint({
     [Drawing.Point]::new(1095,748),[Drawing.Point]::new(1140,718),
     [Drawing.Point]::new(1180,742),[Drawing.Point]::new(1180,800)))
   }finally{$coast.Dispose()}
-  # The supplied screenshot's *art-only* layers override the vector fallback
-  # in RU, after scenery painting but before real WinForms controls are drawn.
-  # They contain no fictitious green "Ready" tiles or clickable buttons.
+  # The supplied atlas contains a Russian wordmark in the hero and a
+  # decorative bottom band. Never paint a simulated status or button.
   if($script:approvedAtlas -and $script:launcherLanguage -eq 'RU'){
    $g.DrawImage($script:approvedAtlas,
     [Drawing.Rectangle]::new(0,0,1180,348),
     [Drawing.Rectangle]::new(0,0,1376,395),
     [Drawing.GraphicsUnit]::Pixel)
-   $g.DrawImage($script:approvedAtlas,
-    [Drawing.Rectangle]::new(0,738,1180,62),
-    [Drawing.Rectangle]::new(0,395,1376,115),
-    [Drawing.GraphicsUnit]::Pixel)
   }elseif($script:approvedAtlas -and $script:launcherLanguage -eq 'EN'){
-   # The reference has Russian typography baked into its left half.
-   # Only its text-free right-hand Volvo/Aurora panorama is safe for EN.
-   # Keep all controls, labels and status text native and localizable.
+   # Use the SAME actual gull-and-gear, Viking prow, northern sky, waterfront
+   # and Volvo panorama as RU. The atlas has Cyrillic only in the central
+   # header: omit that region and draw the translated native labels there.
+   # This avoids an entirely different logo/car in the English version.
    $g.DrawImage($script:approvedAtlas,
-    [Drawing.Rectangle]::new(715,0,465,344),
-    [Drawing.Rectangle]::new(1000,0,376,395),
+    [Drawing.Rectangle]::new(0,230,1180,118),
+    [Drawing.Rectangle]::new(0,277,1376,118),
     [Drawing.GraphicsUnit]::Pixel)
+   $g.DrawImage($script:approvedAtlas,
+    [Drawing.Rectangle]::new(0,0,390,348),
+    [Drawing.Rectangle]::new(0,0,455,395),
+    [Drawing.GraphicsUnit]::Pixel)
+   $g.DrawImage($script:approvedAtlas,
+    [Drawing.Rectangle]::new(800,0,380,348),
+    [Drawing.Rectangle]::new(934,0,442,395),
+    [Drawing.GraphicsUnit]::Pixel)
+   # Cover any crossfade at the boundary without hiding the live text.
    $enFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
-    [Drawing.Rectangle]::new(710,0,185,344),
-    [Drawing.Color]::FromArgb(255,5,21,44),
+    [Drawing.Rectangle]::new(382,0,40,225),
+    [Drawing.Color]::FromArgb(180,5,21,44),
     [Drawing.Color]::FromArgb(0,5,21,44),0.0)
-   try{$g.FillRectangle($enFade,710,0,185,344)}finally{$enFade.Dispose()}
+   try{$g.FillRectangle($enFade,382,0,40,225)}finally{$enFade.Dispose()}
   }
-  $footerFont=[Drawing.Font]::new('Segoe UI',[single]12,[Drawing.FontStyle]::Regular)
-  $footerBrush=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(195,220,236))
-  try{
-   if(-not ($script:approvedAtlas -and $script:launcherLanguage -eq 'RU')){
-    $footer=if($script:launcherLanguage -eq 'EN'){
-     'NORTHERN DVINA  ·  WHITE SEA  ·  VIKING HERITAGE'
-    }else{'СЕВЕРНАЯ ДВИНА  ·  БЕЛОЕ МОРЕ  ·  НАСЛЕДИЕ ВИКИНГОВ'}
-    $sz=$g.MeasureString($footer,$footerFont)
-    $g.DrawString($footer,$footerFont,$footerBrush,[single]((1180-$sz.Width)/2),759)
-   }
-  }finally{$footerFont.Dispose();$footerBrush.Dispose()}
+  if($script:approvedAtlas){
+   # The original atlas footer has a caption baked through its centre.
+   # Retain only its text-free scenery at the left and right edges;
+   # the centre stays the clean native dark sea background. No slogans
+   # are printed in either language, including the image fallback path.
+   $g.DrawImage($script:approvedAtlas,
+    [Drawing.Rectangle]::new(0,738,309,62),
+    [Drawing.Rectangle]::new(0,395,360,115),
+    [Drawing.GraphicsUnit]::Pixel)
+   $g.DrawImage($script:approvedAtlas,
+    [Drawing.Rectangle]::new(892,738,288,62),
+    [Drawing.Rectangle]::new(1040,395,336,115),
+    [Drawing.GraphicsUnit]::Pixel)
+  }
  }finally{
   $night.Dispose();$veil.Dispose();$metal.Dispose()
   $gear.Dispose();$bird.Dispose();$wave.Dispose();$hairline.Dispose()
