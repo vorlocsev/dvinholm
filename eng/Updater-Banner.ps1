@@ -3209,7 +3209,53 @@ if($Mode -eq 'UiSmokeTest'){
   if($dpiChecks -ne 8){throw 'Wrong Aurora DPI geometry acceptance count.'}
   Write-Host 'Northern Aurora DPI/work-area 8/8 offline layout checks passed.'
 
-
+  # Eight offline keyboard-accessibility and page-focus checks. The old
+  # service page must never steal Tab while its overlay is on screen.
+  $focusChecks=0
+  if(-not $form.KeyPreview){throw 'Escape shortcut is not routed through the form.'}
+  $focusChecks++
+  if($script:northernDetailOpen -or $choice.TabStop -or $check.TabStop -or
+     $install.TabStop -or $script:northReturn.TabStop){
+   throw 'Home permits focus on covered legacy worker buttons.'
+  }
+  $focusChecks++
+  if(-not $script:northUpdates.TabStop -or -not $script:northSettings.TabStop){
+   throw 'The visible Home actions were removed from keyboard navigation.'
+  }
+  $focusChecks++
+  Show-NorthernUpdates
+  if(-not $script:northernDetailOpen -or -not $choice.TabStop -or
+     -not $check.TabStop -or -not $install.TabStop -or
+     -not $script:northReturn.TabStop){
+   throw 'Updates did not restore native worker keyboard navigation.'
+  }
+  $focusChecks++
+  if($check.Enabled -or $install.Enabled -or $launch.Enabled){
+   throw 'Keyboard page switch bypassed unverified-update safety gates.'
+  }
+  $focusChecks++
+  if(-not (Invoke-NorthernEscape) -or $script:northernDetailOpen -or
+     $choice.TabStop -or $check.TabStop -or
+     $form.Controls.GetChildIndex($script:northernHome) -ne 0){
+   throw 'Escape did not return to the approved Home safely.'
+  }
+  $focusChecks++
+  if((Invoke-NorthernEscape) -or $script:northernDetailOpen -or
+     $script:northReturn.TabStop){
+   throw 'Escape on Home unexpectedly changed the page.'
+  }
+  $focusChecks++
+  Show-NorthernUpdates
+  $script:launcherLanguage='EN';Update-NorthernCompactSnapshot
+  if(-not (Invoke-NorthernEscape) -or $script:northernDetailOpen -or
+     $choice.TabStop -or $script:northUpdates.Text -cnotmatch 'UPDATES' -or
+     $script:child -or $script:vendor){
+   throw 'English keyboard return altered workers, labels or focus.'
+  }
+  $script:launcherLanguage=$langBefore;Apply-LauncherLanguage
+  $focusChecks++
+  if($focusChecks -ne 8){throw 'Wrong Northern keyboard acceptance count.'}
+  Write-Host 'Northern Aurora keyboard and background focus 8/8 offline checks passed.'
 
  }finally{
   $script:child=$null
