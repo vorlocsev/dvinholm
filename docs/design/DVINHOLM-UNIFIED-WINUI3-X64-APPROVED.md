@@ -52,6 +52,15 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - Neither snapshot creation nor a rollback application command is wired to the visible Updates page yet. **No installation, startup helper, running EXE replacement, automatic recovery or user-data migrations are activated.** An interrupted `.snapshot-*` directory must not be mistaken for a completed backup.
 - Pending later gates: independently vetted signing key, **publisher-provenance validation for the actual downloaded release**, explicit user approval, reliable on-disk transaction log, safe post-exit replacement, startup recovery, restored-file verification and Windows x64 physical GUI/J2534 acceptance.
 
+## Stage 9: interruption and replay harness (strictly offline)
+
+- New `UnifiedX64RecoverySandbox` exercises the **journal state machine and recovery algorithm on a purposely named, marked, direct child of the system temporary directory only**. It is **not** a production installer and is deliberately **not wired to the WinUI Updates page**.
+- Uses real verified `UnifiedX64BackupSnapshot` receipt data from stage 8, inventories the original and candidate fixture files and durably records `BackupVerified → Applying → AppliedFixtureOnly` or, upon simulated interruption, `Applying → Recovering → RolledBack`.
+- The fixture journal is `fixture-transaction.json` and is written to a new temporary file, flushed, then renamed; a state transition to `Applying` is recorded **before** changing the first fixture file. A crash in either replacement or rollback leaves a recoverable state. Recovery validates the original backup SHA-256 before writing any fixture destination.
+- A replay in `Recovering` is idempotent. The test harness verifies all restored original file hashes before recording `RolledBack`. Damaged backups, journals, changed candidates or unsafe sandbox directories refuse operation.
+- Eight fixture-only tests cover journal prepare without mutation, full apply fixture, interruption and successful restoration, interruption during restoration with replay, backup tampering, journal tampering, candidate tampering, and refusal outside the marked temp fixture.
+- **Still NOT implemented:** actual live-program update, trustworthy publisher root/signing automation, authoritative installation transaction and restart handoff, recovery of a real installed version, or actual Windows hardware/DPI acceptance. Do not infer these from a passing sandbox fault-injection test.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
