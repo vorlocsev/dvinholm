@@ -60,7 +60,7 @@ internal static class UnifiedX64ReleaseFeed
     }
 
     internal static UnifiedX64UpdateCandidate? SelectCandidate(
-        ReadOnlySpan<byte> json, UpdateSourceChannel channel)
+        ReadOnlyMemory<byte> json, UpdateSourceChannel channel)
     {
         if (!Enum.IsDefined(channel))
             throw new ArgumentOutOfRangeException(nameof(channel));
