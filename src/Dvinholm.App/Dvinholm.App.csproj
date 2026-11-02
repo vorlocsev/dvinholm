@@ -8,9 +8,12 @@
     <Version>0.2.4</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\Dvinholm.ico</ApplicationIcon>
-    <Platforms>x86</Platforms>
-    <PlatformTarget>x86</PlatformTarget>
-    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <!-- Transitional: legacy release CI explicitly selects x86, new unified app explicitly selects x64. -->
+    <Platforms>x86;x64</Platforms>
+    <PlatformTarget Condition="'$(Platform)' == 'x64'">x64</PlatformTarget>
+    <PlatformTarget Condition="'$(Platform)' != 'x64'">x86</PlatformTarget>
+    <RuntimeIdentifier Condition="'$(Platform)' == 'x64'">win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(Platform)' != 'x64'">win-x86</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishReadyToRun>false</PublishReadyToRun>
     <!-- Keep WinUI/XAML/COM safe from unvalidated linker removal. -->
