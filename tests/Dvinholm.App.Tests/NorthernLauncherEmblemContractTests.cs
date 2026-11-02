@@ -107,8 +107,16 @@ public sealed class NorthernLauncherEmblemContractTests
     public void TheApprovedNorthernHomeUsesMatchingGullGearAndWaves()
     {
         var cockpit = Read("eng/Launcher-ServiceCockpit.ps1");
-        Assert.Contains("approved Launcher.exe Techno-North #9", cockpit);
-        Assert.Contains("gull, steel sea waves and a real through-arrow", cockpit);
+        // The user-approved RU panorama and White Sea coast are rendered from a
+        // local image atlas; the vector gull/gear remains a safe EN fallback.
+        Assert.Contains("launcher-approved-reference-atlas.jpg", cockpit);
+        Assert.Contains("$candidate.Width -eq 1376 -and $candidate.Height -eq 510", cockpit);
+        Assert.Contains("if($script:approvedAtlas -and $script:launcherLanguage -eq 'RU')", cockpit);
+        Assert.Contains("[Drawing.Rectangle]::new(0,0,1376,395)", cockpit);
+        Assert.Contains("[Drawing.Rectangle]::new(0,395,1376,115)", cockpit);
+        Assert.Contains("Gull, steel sea waves and a real through-arrow", cockpit);
+        Assert.Contains("$script:northLaunch.Enabled=$launch.Enabled", cockpit);
+        Assert.Contains("if($script:driversWereProbed)", cockpit);
         Assert.Contains("$g.DrawEllipse($metal", cockpit);
         Assert.Contains("$g.FillEllipse($rivet", cockpit);
         Assert.Contains("$g.DrawLine($metal,222,106,305,25)", cockpit);
