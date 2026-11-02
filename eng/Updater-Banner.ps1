@@ -2600,8 +2600,8 @@ if($Mode -eq 'UiPreview'){
      $script:northernHome.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
      $null -eq $script:heroBackdrop -or -not $script:serviceBackdropIsApproved -or
      $null -eq $script:approvedAtlas -or
-     $script:approvedAtlas.Width -ne 960 -or
-     $script:approvedAtlas.Height -ne 356){
+     $script:approvedAtlas.Width -ne 1376 -or
+     $script:approvedAtlas.Height -ne 510){
    throw 'Preview lacks the approved local automotive panorama or compact bounds.'
   }
   $previewChecks++
