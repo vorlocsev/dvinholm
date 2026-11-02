@@ -2929,6 +2929,27 @@ if($Mode -eq 'UiPreview'){
   if($artChecks -ne 8){throw 'Wrong bilingual artwork test count.'}
   Write-Host 'Northern Aurora clean RU/EN coast and shared hero 8/8 checks passed.'
 
+  # Eight separate footer-sea pixel checks: four samples on each true
+  # Windows WinForms RU/EN bitmap, with no rendered slogan or black void.
+  $seaChecks=0
+  foreach($lang in @('RU','EN')){
+   $bitmapPath=Join-Path $PreviewDirectory ('Launcher-Aurora-Home-'+$lang+'.png')
+   $seaImage=[Drawing.Bitmap]::new($bitmapPath)
+   try{
+    foreach($pointX in @(330,450,570,660)){
+     $px=$seaImage.GetPixel($pointX,610)
+     if($px.G -lt 17 -or $px.B -lt 34 -or
+        $px.R -gt 95 -or $px.G -gt 125 -or $px.B -gt 140){
+      throw ('Interrupted/suspicious Aurora footer sea in '+$lang+
+       ', x='+$pointX+', RGB='+$px.R+'/'+$px.G+'/'+$px.B)
+     }
+     $seaChecks++
+    }
+   }finally{$seaImage.Dispose()}
+  }
+  if($seaChecks -ne 8){throw 'Wrong sea continuity pixel check count.'}
+  Write-Host 'Northern Aurora bilingual coast continuity 8/8 checks passed.'
+
   $files=@(
    'Launcher-Aurora-Home-RU.png',
    'Launcher-Aurora-Updates-RU.png',
