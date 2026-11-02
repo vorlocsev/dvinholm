@@ -51,8 +51,8 @@ public sealed class AuroraDedicatedDtcWorkspaceTests
         var sidebar = Named(doc, "SidebarNavPanel");
         var button = Assert.Single(sidebar.Elements(), e => (string?)e.Attribute("Tag") == "DtcFaults");
         Assert.Equal("WorkspaceNavigate_Click", (string?)button.Attribute("Click"));
-        Assert.Equal("Ошибки / DTC", (string?)button.Attribute("AutomationProperties.Name"));
-        Assert.Equal("Ошибки / DTC", (string?)button.Attribute("ToolTipService.ToolTip"));
+        Assert.Equal("Ошибки (DTC)", (string?)button.Attribute("AutomationProperties.Name"));
+        Assert.Equal("Ошибки (DTC)", (string?)button.Attribute("ToolTipService.ToolTip"));
         Assert.Contains(Named(doc, "ShellNavDtcLabel"), button.Descendants());
         Assert.Contains("ShellNavDtcLabel.Visibility", doc.ToString());
     }
