@@ -12,12 +12,13 @@ namespace Dvinholm.App;
 /// </summary>
 internal sealed record UnifiedX64UpdateCandidate(
     string Tag, string PackageName, long PackageBytes, string PackageUrl,
-    string ChecksumUrl);
+    string ChecksumUrl, string? SignatureUrl = null);
 
 internal static class UnifiedX64ReleaseFeed
 {
     internal const string PackageAsset = "Dvinholm-Windows-x64.zip";
     internal const string ChecksumsAsset = "SHA256SUMS.txt";
+    internal const string SignatureAsset = UnifiedX64PublisherTrust.SignatureAsset;
     private const string ApiUrl =
         "https://api.github.com/repos/vorlocsev/dvinholm/releases?per_page=100";
     private const int MaximumMetadataBytes = 1024 * 1024;
@@ -82,9 +83,10 @@ internal static class UnifiedX64ReleaseFeed
                 assets.ValueKind != JsonValueKind.Array)
                 continue;
 
-            JsonElement? package = null, checksums = null;
+            JsonElement? package = null, checksums = null, signature = null;
             var packageCount = 0;
             var checksumCount = 0;
+            var signatureCount = 0;
             foreach (var asset in assets.EnumerateArray())
             {
                 if (asset.ValueKind != JsonValueKind.Object)
@@ -92,6 +94,7 @@ internal static class UnifiedX64ReleaseFeed
                 var name = Str(asset, "name");
                 if (name == PackageAsset) { package = asset; packageCount++; }
                 if (name == ChecksumsAsset) { checksums = asset; checksumCount++; }
+                if (name == SignatureAsset) { signature = asset; signatureCount++; }
             }
             if (packageCount != 1 || checksumCount != 1 ||
                 package is null || checksums is null)
@@ -105,8 +108,20 @@ internal static class UnifiedX64ReleaseFeed
                 !TrustedAssetUrl(sumsUrl, tag, ChecksumsAsset))
                 continue;
 
+            // A signature is optional for discovery, but only an exact,
+            // uniquely named, correctly sized official GitHub asset is
+            // eligible for retrieval. Unsigned release remains non-installable.
+            string? signatureUrl = null;
+            if (signatureCount == 1 && signature is not null &&
+                Int64(signature.Value, "size") is 88 or 89)
+            {
+                var url = Str(signature.Value, "browser_download_url");
+                if (TrustedAssetUrl(url, tag, SignatureAsset))
+                    signatureUrl = url;
+            }
             return new UnifiedX64UpdateCandidate(
-                tag, PackageAsset, bytes.Value, packageUrl, sumsUrl);
+                tag, PackageAsset, bytes.Value, packageUrl, sumsUrl,
+                signatureUrl);
         }
         return null;
     }
