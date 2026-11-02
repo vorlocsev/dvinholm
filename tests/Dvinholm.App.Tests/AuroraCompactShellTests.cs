@@ -111,13 +111,16 @@ public sealed class AuroraCompactShellTests
             picker.Elements().Select(e => (string?)e.Attribute("Tag")));
         Assert.Contains("SHA-256", page.ToString(), StringComparison.Ordinal);
         var buttons = page.Descendants().Where(e => e.Name.LocalName == "Button").ToArray();
-        Assert.Equal(3, buttons.Length);
+        Assert.Equal(4, buttons.Length);
         Assert.Equal(new[] { "UnifiedCheckUpdateButton", "UnifiedStageUpdateButton",
-            "UnifiedCancelStageButton" }, buttons.Select(b => (string?)b.Attribute(X + "Name")));
+            "UnifiedCancelStageButton", "UnifiedPreflightButton" },
+            buttons.Select(b => (string?)b.Attribute(X + "Name")));
         Assert.Equal(new[] { "UnifiedCheckUpdate_Click", "UnifiedStageUpdate_Click",
-            "UnifiedCancelStage_Click" }, buttons.Select(b => (string?)b.Attribute("Click")));
+            "UnifiedCancelStage_Click", "UnifiedPreflight_Click" },
+            buttons.Select(b => (string?)b.Attribute("Click")));
         Assert.Equal("False", (string?)buttons[1].Attribute("IsEnabled"));
         Assert.Equal("False", (string?)buttons[2].Attribute("IsEnabled"));
+        Assert.Equal("False", (string?)buttons[3].Attribute("IsEnabled"));
         var progress = Named(doc, "UnifiedStageProgress");
         Assert.Equal("Collapsed", (string?)progress.Attribute("Visibility"));
         Assert.Equal("True", (string?)progress.Attribute("IsIndeterminate"));
