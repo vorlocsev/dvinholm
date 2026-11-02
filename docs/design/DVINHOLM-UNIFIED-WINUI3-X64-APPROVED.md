@@ -32,6 +32,16 @@
 
 For each stage use **6–8 substantive checks** instead of long chains of micro-fixes. Keep Stable and independent Virtual Car untouched until actual production acceptance and release. **Do not merge the superseded WPF PR #701 or WinForms Launcher PR #699.**
 
+## Stage 7: trusted publisher and rollback dry run (no installation)
+
+- `UnifiedX64PublisherTrust` defines a **detached ECDSA P-256 SHA-256 signature** for the exact canonical release identity: tag + `Dvinholm-Windows-x64.zip` + lowercase 64-character ZIP digest. This is **not yet an active trust path**: the compiled production public key is intentionally empty, so `Verify()` always refuses. A key must be independently verified, embedded through a reviewable release-security change, and supported by a signer/key-rotation policy. The public key must **never** be loaded from the untrusted release being checked.
+- A `SHA256SUMS.txt` file downloaded from the **same release** cannot independently prove publisher authenticity, even when the package hash matches. An unsigned archive remains a non-installable candidate.
+- `UnifiedX64RecoveryPreflight.Inspect` is a **read-only** backup planning audit: it requires a real AMD64 installed EXE; an isolated `pending-{GUID}` staging folder whose ZIP still matches the retained hash and byte count; disjoint installation, staging and backup paths; no filesystem reparse points; a bounded, safe installed file inventory; and a proposed randomized backup directory without creating it.
+- The Updates page may run that audit only after the user chooses **Download and verify ZIP** and the archive passes integrity inspection. **It does not make a backup, copy, remove or replace the live EXE, run a helper, modify the startup configuration or restart.** The result is displayed as a tentative inventory, not a rollback guarantee.
+- `CanInstall` remains **hardcoded false** until independently verified publisher provenance, a fully implemented transaction journal, atomic backup/extraction, Windows close-and-handoff, crash recovery, rollback and real hardware acceptance have passed.
+- Eight isolated tests cover valid dry-run inventory; previously installed x86; overlapping backup/install; overlapping backup/stage; staging-path tampering; changed ZIP bytes; unsigned public release rejection; and cryptographic verification of fixture signatures including wrong key, tag and digest.
+- All acceptance tests remain **offline, no J2534 hardware**. Physical adapter testing and Windows DPI/GUI acceptance are separate follow-up gates.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
