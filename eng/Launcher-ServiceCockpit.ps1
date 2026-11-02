@@ -126,6 +126,36 @@ $driverScanQuick=New-ServiceButton 'Проверить' 763 641 176 32
 $driverQuick=New-ServiceButton 'Открыть драйверы' 950 641 193 32
 $settingsQuick=New-ServiceButton '⚙ Настройки' 995 135 154 35
 
+# WinForms paints disabled native Button text with the system theme color,
+# which can be almost black over the dark Aurora/blue surfaces. Only paint
+# the INACTIVE presentation: leave Button.Enabled and original click handlers
+# entirely under the update/recovery worker's control.
+function Set-ServiceDisabledTextContrast([Windows.Forms.Button]$button){
+ $button.Add_Paint({
+  param($sender,$event)
+  if($sender.Enabled -or $sender.ClientSize.Width -lt 12 -or
+     $sender.ClientSize.Height -lt 12){return}
+  $g=$event.Graphics
+  $inside=[Drawing.Rectangle]::new(2,2,
+   $sender.ClientSize.Width-4,$sender.ClientSize.Height-4)
+  $background=[Drawing.SolidBrush]::new($sender.BackColor)
+  try{$g.FillRectangle($background,$inside)}finally{$background.Dispose()}
+  $textColor=[Drawing.Color]::FromArgb(223,238,249)
+  $flags=[Windows.Forms.TextFormatFlags]::HorizontalCenter -bor
+   [Windows.Forms.TextFormatFlags]::VerticalCenter -bor
+   [Windows.Forms.TextFormatFlags]::SingleLine -bor
+   [Windows.Forms.TextFormatFlags]::EndEllipsis -bor
+   [Windows.Forms.TextFormatFlags]::NoPrefix
+  [Windows.Forms.TextRenderer]::DrawText($g,[string]$sender.Text,
+   $sender.Font,[Drawing.Rectangle]::new(6,2,
+    $sender.ClientSize.Width-12,$sender.ClientSize.Height-4),
+   $textColor,$flags)
+ })
+}
+foreach($button in @($check,$install,$launch)){
+ Set-ServiceDisabledTextContrast $button
+}
+
 # Display the logo in the actual service panel, not over the panoramic art.
 if($null -ne $script:brandImage){
  $serviceLogo=New-Object Windows.Forms.PictureBox
