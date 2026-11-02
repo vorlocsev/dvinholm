@@ -110,8 +110,17 @@ public sealed class AuroraCompactShellTests
         Assert.Equal(new[] { "stable", "development" },
             picker.Elements().Select(e => (string?)e.Attribute("Tag")));
         Assert.Contains("SHA-256", page.ToString(), StringComparison.Ordinal);
-        Assert.DoesNotContain(page.Descendants(), e => e.Name.LocalName == "Button" &&
-            (string?)e.Attribute("IsEnabled") != "False");
+        var buttons = page.Descendants().Where(e => e.Name.LocalName == "Button").ToArray();
+        var check = Assert.Single(buttons);
+        Assert.Equal("UnifiedCheckUpdateButton", (string?)check.Attribute(X + "Name"));
+        Assert.Equal("UnifiedCheckUpdate_Click", (string?)check.Attribute("Click"));
+        Assert.DoesNotContain(buttons, b => (string?)b.Attribute("Content") is
+            "Установить" or "Install" or "Download / Install");
+        var lang = Named(doc, "UnifiedLanguageSelector");
+        Assert.Equal("UnifiedLanguageSelector_SelectionChanged",
+            (string?)lang.Attribute("SelectionChanged"));
+        Assert.Equal(new[] { "ru", "en" },
+            lang.Elements().Select(e => (string?)e.Attribute("Tag")));
     }
 
     [Fact]
