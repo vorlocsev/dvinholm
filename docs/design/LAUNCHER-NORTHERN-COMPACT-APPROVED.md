@@ -269,9 +269,9 @@ installer transactions, self-update recovery, Stable, or Virtual Car.
 
 The user-supplied reference has been decomposed into **a single committed
 local JPEG atlas**: `assets/launcher-approved-reference-atlas.jpg`
-(960×356). The top 960×276 pixels contain the exact approved Northern
-Aurora / mechanical gull / Volvo panoramic hero, compressed for the compact
-native package. The bottom 960×80 pixels contain its White Sea/Viking coast.
+(1376×510). The top 1376×395 pixels contain the exact approved Northern
+Aurora / mechanical gull / Volvo panoramic hero, optimized at its original source dimensions for the compact
+native package. The bottom 1376×115 pixels contain its White Sea/Viking coast.
 No reference status tiles or simulated `Готово` labels are in these crops.
 
 `eng/Package-Updater-Banner.ps1` now bundles the atlas as
