@@ -34,8 +34,8 @@ if ($sumSize -le 0 -or $sumSize -gt 65536) { throw 'Checksum manifest size rejec
 $digest = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
 $foundHashes = @()
 $raw = [IO.File]::ReadAllText($sums, [Text.Encoding]::ASCII)
-foreach ($line in ($raw -split "\n")) {
-  $record = $line.TrimEnd("\r")
+foreach ($line in ($raw -split "`n")) {
+  $record = $line.TrimEnd("`r")
   if ($record.Length -eq 0) { continue }
   if ($record -cnotmatch '^([0-9a-fA-F]{64})  ([A-Za-z0-9._-]+)$') {
     throw 'Malformed checksum record.'
@@ -69,7 +69,7 @@ if ($null -eq $key) { throw 'Only ECDSA P-256 signing certificates are supported
 try {
   if ($key.KeySize -ne 256) { throw 'Signing key must be P-256.' }
   $payload = [Text.Encoding]::ASCII.GetBytes(
-    "Dvinholm x64 release attestation v1\nTag: $Tag\nAsset: Dvinholm-Windows-x64.zip\nSHA256: $digest\n")
+    "Dvinholm x64 release attestation v1`nTag: $Tag`nAsset: Dvinholm-Windows-x64.zip`nSHA256: $digest`n")
   $sig = $key.SignData($payload,
     [Security.Cryptography.HashAlgorithmName]::SHA256,
     [Security.Cryptography.DSASignatureFormat]::IeeeP1363FixedFieldConcatenation)
@@ -91,7 +91,7 @@ try {
   if ([IO.Path]::GetFileName($target) -cne 'Dvinholm-Windows-x64.sig') {
     throw 'Output must be named Dvinholm-Windows-x64.sig.'
   }
-  $encoded = [Text.Encoding]::ASCII.GetBytes([Convert]::ToBase64String($sig) + "\n")
+  $encoded = [Text.Encoding]::ASCII.GetBytes([Convert]::ToBase64String($sig) + "`n")
   if ($encoded.Length -ne 89) { throw 'Wrong detached signature file size.' }
   $stream = [IO.FileStream]::new($target, [IO.FileMode]::CreateNew,
     [IO.FileAccess]::Write, [IO.FileShare]::None)
