@@ -114,7 +114,7 @@ public sealed class NorthernLauncherEmblemContractTests
         Assert.Contains("if($script:approvedAtlas -and $script:launcherLanguage -eq 'RU')", cockpit);
         Assert.Contains("[Drawing.Rectangle]::new(0,0,1376,395)", cockpit);
         Assert.Contains("[Drawing.Rectangle]::new(0,395,1376,115)", cockpit);
-        Assert.Contains("[Drawing.Rectangle]::new(840,0,536,395)", cockpit);
+        Assert.Contains("[Drawing.Rectangle]::new(1000,0,376,395)", cockpit);
         Assert.Contains("NORTHERN DVINA  ·  WHITE SEA  ·  VIKING HERITAGE", cockpit);
         Assert.Contains("$script:launcherLanguage -eq 'RU' -and -not $script:approvedAtlas", cockpit);
         Assert.Contains("Gull, steel sea waves and a real through-arrow", cockpit);
