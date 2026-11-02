@@ -162,8 +162,9 @@ public sealed class UnifiedX64InstallReadinessGateTests
     public void ModifiedInstalledInventoryInvalidatesSnapshot() =>
         InFixture(f =>
         {
-            File.WriteAllText(Path.Combine(f.Installed, "preferences.json"),
-                "{\"changed\":true}");
+            // "{}" becomes "[]" with the SAME byte length: an inventory
+            // that checks only file count and size would incorrectly pass.
+            File.WriteAllText(Path.Combine(f.Installed, "preferences.json"), "[]");
             var result = Inspect(f);
             Assert.Contains("BACKUP_NO_LONGER_MATCHES_INSTALL", result.Blockers);
             Assert.False(result.CanInstall);
