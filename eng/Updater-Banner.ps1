@@ -2644,7 +2644,7 @@ if($Mode -eq 'UiPreview'){
    throw 'Preview must start with hidden, foreground Northern Home.'
   }
   $previewChecks++
-  if($form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 672 -or
+  if($form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 640 -or
      $script:northernHome.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
      $null -eq $script:heroBackdrop -or -not $script:serviceBackdropIsApproved -or
      $null -eq $script:approvedAtlas -or
@@ -2655,8 +2655,7 @@ if($Mode -eq 'UiPreview'){
   $previewChecks++
   if($script:child -or $script:vendor -or $script:northLaunch.Enabled -or
      $launch.Enabled -or $install.Enabled -or $check.Enabled -or
-     $script:northActivity.Text -ceq 'Готово.' -or
-     $script:northActivity.Text -ceq 'Ready.'){
+     $status.Text -ceq 'Готово.' -or $status.Text -ceq 'Ready.'){
    throw 'Preview is not fail-closed or falsely says Ready at startup.'
   }
   $previewChecks++
@@ -2973,7 +2972,7 @@ if($Mode -eq 'UiSmokeTest'){
   # No modal window, network request, installer, or ECU access.
   $auroraChecks=0
   if($script:auroraScale -gt 0.80 -or $script:auroraScale -lt 0.65 -or
-     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 672){
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 640){
    throw 'Service Cockpit is larger than the compact display envelope.'
   }
   $auroraChecks++
@@ -3050,9 +3049,9 @@ if($Mode -eq 'UiSmokeTest'){
      $form.Controls.GetChildIndex($script:northernHome) -ne 0){throw 'Northern compact home is not the default visible window.'}
   $northChecks++
   if($script:northernHome.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
-     $script:northernHome.Height -ne [int][Math]::Round(840*$script:auroraScale) -or
-     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 672){
-   throw 'Northern compact home does not fit the reference-look 944x672 window envelope.'
+     $script:northernHome.Height -ne [int][Math]::Round(800*$script:auroraScale) -or
+     $form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 640){
+   throw 'Northern compact home does not fit the reference-look 944x640 window envelope.'
   }
   $northChecks++
   if($null -eq $script:northTitle -or $script:northTitle.Text -cne 'DVINHOLM' -or
@@ -3136,17 +3135,17 @@ if($Mode -eq 'UiSmokeTest'){
   $dpiChecks=0
   $normal=Get-NorthernCompactGeometry 1920 1000 16 38
   if([Math]::Abs($normal.Scale-0.80) -gt 0.0001 -or
-     $normal.ViewWidth -ne 944 -or $normal.ViewHeight -ne 672 -or
+     $normal.ViewWidth -ne 944 -or $normal.ViewHeight -ne 640 -or
      $normal.RequiresScroll){throw '100% effective desktop: incorrect fit.'}
   $dpiChecks++
 
   $d125=Get-NorthernCompactGeometry 1536 800 16 38
-  if($d125.ViewWidth -ne 944 -or $d125.ViewHeight -ne 672 -or
+  if($d125.ViewWidth -ne 944 -or $d125.ViewHeight -ne 640 -or
      $d125.RequiresScroll){throw '125% effective desktop: incorrect fit.'}
   $dpiChecks++
 
   $d150=Get-NorthernCompactGeometry 1280 667 16 38
-  if($d150.ViewWidth -ne 839 -or $d150.ViewHeight -ne 597 -or
+  if($d150.ViewWidth -ne 881 -or $d150.ViewHeight -ne 597 -or
      $d150.RequiresScroll){throw '150% effective desktop: incorrectly scrolled or clipped.'}
   $dpiChecks++
 
@@ -3195,7 +3194,7 @@ if($Mode -eq 'UiSmokeTest'){
   # content, even at the minimum 0.65 factor. No dead off-canvas actions.
   foreach($control in @($script:northLaunch,$script:northUpdates,
     $script:northComponents,$script:northDrivers,$script:northSettings,
-    $script:northAbout,$script:northVersion,$script:northChannel,$script:northActivity)){
+    $script:northAbout)){
    if($control.Left -lt 0 -or $control.Top -lt 0 -or
       $control.Right -gt $live.FullWidth -or
       $control.Bottom -gt $live.FullHeight){
@@ -3256,6 +3255,59 @@ if($Mode -eq 'UiSmokeTest'){
   $focusChecks++
   if($focusChecks -ne 8){throw 'Wrong Northern keyboard acceptance count.'}
   Write-Host 'Northern Aurora keyboard and background focus 8/8 offline checks passed.'
+
+  # Eight removal/compactness checks for the user-requested Home footer.
+  # The scenic White Sea artwork remains; only the redundant data strip
+  # under the five working actions is removed from the real WinForms tree.
+  $stripChecks=0
+  if($null -ne $script:northVersion -or $null -ne $script:northChannel -or
+     $null -ne $script:northActivity){
+   throw 'Obsolete Northern Home status-strip controls still exist.'
+  }
+  $stripChecks++
+  foreach($c in @($script:northernHome.Controls)){
+   if($c -is [Windows.Forms.Label] -and
+      $c.Text -match '^(Установлено|Installed|Канал|Channel|Восстановление|Recovery):'){
+    throw 'Redundant version/channel/recovery label remains on Home.'
+   }
+  }
+  $stripChecks++
+  if($script:northernHome.ClientSize.Height -ne
+      [int][Math]::Round(800*$script:auroraScale)){
+   throw 'Northern Home still reserves room for the discarded strip.'
+  }
+  $stripChecks++
+  if($script:northAbout.Bottom -ge [int][Math]::Round(738*$script:auroraScale) -or
+     $script:northSettings.Bottom -ge [int][Math]::Round(738*$script:auroraScale)){
+   throw 'Secondary action row overlaps the coastal artwork.'
+  }
+  $stripChecks++
+  if($normal.ViewHeight -ne 640 -or $d125.ViewHeight -ne 640){
+   throw 'Compact reference viewport includes the old status-strip height.'
+  }
+  $stripChecks++
+  if($script:northRuntime.Parent -ne $script:northernHome -or
+     $script:northWinApp.Parent -ne $script:northernHome -or
+     $script:northDriver.Parent -ne $script:northernHome){
+   throw 'Footer removal discarded live prerequisite evidence cards.'
+  }
+  $stripChecks++
+  Show-NorthernUpdates
+  if(-not $script:northernDetailOpen -or
+     $installed.Parent -ne $form -or $available.Parent -ne $form -or
+     $recovery.Parent -ne $form){
+   throw 'Removal of Home strip damaged genuine worker-backed details.'
+  }
+  $stripChecks++
+  Show-NorthernHome
+  if($script:northernDetailOpen -or
+     $form.Controls.GetChildIndex($script:northernHome) -ne 0 -or
+     $script:northReturn.Visible){
+   throw 'Footer removal damaged Updates-to-Home navigation.'
+  }
+  $stripChecks++
+  if($stripChecks -ne 8){throw 'Wrong compact footer-removal test count.'}
+  Write-Host 'Northern Aurora footer strip removal 8/8 offline checks passed.'
 
  }finally{
   $script:child=$null
