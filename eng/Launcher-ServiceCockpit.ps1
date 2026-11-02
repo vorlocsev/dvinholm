@@ -732,6 +732,37 @@ $script:northAbout.Add_Click({
   'Dvinholm Launcher',[Windows.Forms.MessageBoxButtons]::OK,
   [Windows.Forms.MessageBoxIcon]::Information)
 })
+# Preserve complete multiword runtime states from the trusted worker.
+# Delimiters are the four spaces between the underlying status fields.
+function Get-NorthernDependencyValue([string]$inventory,[string]$key){
+ if([string]::IsNullOrWhiteSpace($inventory)){return ''}
+ $separator=switch -CaseSensitive ($key){
+  'DotNet' {'\.NET x86:'}
+  'WinApp' {'WinApp:'}
+  default {return ''}
+ }
+ $next=if($key -ceq 'DotNet'){'WinApp:'}else{'VC\+\+ x86:'}
+ $pattern='(?:^|\s{3,})'+$separator+'\s*(.*?)\s*(?=\s{3,}'+$next+'|$)'
+ $match=[regex]::Match($inventory,$pattern,
+  [Text.RegularExpressions.RegexOptions]::IgnoreCase)
+ if(-not $match.Success){return ''}
+ return $match.Groups[1].Value.Trim()
+}
+function Format-NorthernDependencyValue([string]$raw){
+ if([string]::IsNullOrWhiteSpace($raw) -or $raw -ceq '?'){
+  return $(if($script:launcherLanguage -eq 'RU'){'не проверено'}else{'not checked'})
+ }
+ if($script:launcherLanguage -ne 'RU'){return $raw}
+ switch -CaseSensitive ($raw){
+  'Installed' {return 'установлено'}
+  'Missing' {return 'отсутствует'}
+  'Unknown' {return 'неизвестно'}
+  'Not checked' {return 'не проверено'}
+  'Not installed' {return 'не установлено'}
+  'Outdated' {return 'устарело'}
+  default {return $raw}
+ }
+}
 function Update-NorthernCompactSnapshot {
  if($null -eq $script:northLaunch -or $script:northLaunch.IsDisposed){return}
  # Copy actual worker and inventory readings. No fabricated version or
@@ -741,17 +772,11 @@ function Update-NorthernCompactSnapshot {
  $script:northDrivers.Enabled=$driverQuick.Enabled
  $script:northSettings.Enabled=$settingsQuick.Enabled
  $script:northAbout.Enabled=($null -eq $script:child -and $null -eq $script:vendor)
- $parts=$deps.Text
- foreach($spec in @(
-  @($script:northRuntime,'\.NET x86:\s*([^ ]+)',' .NET x86: '),
-  @($script:northWinApp,'WinApp:\s*([^ ]+)',' WinApp: ')
-  )){
-  $value=if($parts -match $spec[1]){$Matches[1]}else{''}
-  if([string]::IsNullOrWhiteSpace($value) -or $value -ceq '?'){
-   $value=if($script:launcherLanguage -eq 'RU'){'не проверено'}else{'not checked'}
-  }
-  $spec[0].Text=$spec[2]+$value
- }
+ $parts=[string]$deps.Text
+ $script:northRuntime.Text='.NET x86: '+(Format-NorthernDependencyValue (
+  Get-NorthernDependencyValue $parts 'DotNet'))
+ $script:northWinApp.Text='WinApp: '+(Format-NorthernDependencyValue (
+  Get-NorthernDependencyValue $parts 'WinApp'))
  if($script:driversWereProbed){
   $script:northDriver.Text='J2534: '+$driverStatus.Text
  }else{
