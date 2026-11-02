@@ -78,6 +78,15 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - This stage validates process waiting and directory refusal only. Before a real updater exists: independently approved and pinned signing key, signed release provenance, backup creation and independent verification, single-instance coordination, transaction replay after forced termination, safe extraction to a separately verified staging directory, and a **reviewed** narrow privileged replacement helper with recovery/rollback are required.
 - Full regression CI and the x64 pilot CI must both pass on the same reviewed branch head. Stable and independent Virtual Car must not be modified.
 
+## Stage 12: unified installation-readiness audit (read-only)
+
+- `UnifiedX64InstallReadinessGate.Inspect` brings previously separate checks into one **read-only, fail-closed decision**: official x64 candidate metadata, exact staged ZIP identity, fresh ZIP SHA-256/AMD64/runtimes and file count, journalled backup under a dedicated non-overlapping backup root, current backup receipt/inventory and pinned publisher attestation.
+- No single successful subsystem result is approval for an install. `UnifiedX64InstallReadiness.CanInstall` remains **unconditionally false** and `PRODUCTION_INSTALL_HANDOFF_UNAVAILABLE` is always reported, since no audited live helper or crash-recovery transaction has been accepted.
+- The publisher public key is deliberately **not provisioned**. `PUBLISHER_KEY_NOT_PROVISIONED` and `SIGNED_RELEASE_NOT_VERIFIED` must be returned even for a valid local ZIP and backup. Publishing `SHA256SUMS.txt` next to the ZIP does **not** prove publisher provenance.
+- Eight offline tests cover: valid local archive/backup still refuses install; absent or x86 metadata; absent stage; altered ZIP; absent/tampered snapshot; foreign backup root; changed installed inventory. These use synthetic temporary files and do not replace installed Dvinholm.
+- The CI packaging script and the ZIP verifier now explicitly reject a bundled `Dvinholm.UpdateHandoffProbe.exe`. The probe remains a non-shipping CI-only helper; the approved user-facing package contains only the WinUI app and its runtime dependencies.
+- This gate does **not** create a backup, attach a signer, enable a user-facing Install button, relaunch the app or provide automatic rollback. Final review still requires an independently verified signing key and protected signing process, signed x64 release assets, a production post-exit helper with full transactional recovery, and manual Windows DPI/J2534 acceptance.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
