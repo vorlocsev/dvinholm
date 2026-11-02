@@ -147,6 +147,14 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - All changes are defensive validation only. The test-only copy/rollback process remains confined to specially named and marked temporary directories. No signed publisher key, production install helper, live EXE replacement or real Windows hardware/J2534 acceptance was added.
 - The previous Stage-18 x64 pilot run was green; the entire regression suite must pass on the final Stage-19 head before certification. No merge to main or Stable release until that check and manual x64 GUI/device testing.
 
+## Stage 20: full source re-verification before snapshot publication (offline)
+
+- Previous snapshot creation verified each source file immediately after its copy, but a file already processed could be modified again **before** the snapshot journal was committed. `UnifiedX64BackupSnapshot.Create` now verifies the completed pending snapshot against the **entire current source tree**, including every file's SHA-256 and exact inventory, immediately before publishing the backup directory. It re-checks again after the directory rename and before returning a receipt. A failed precommit audit removes only the unique pending snapshot, never the installed source.
+- The optional `afterCopyForTests` fault injection hook can only run for a disposable, GUID-named `dvinholm-snapshot-{GUID}` folder directly under the system temp path, with the expected `app/`, `stage/` and `backups/` structure and no ancestor reparse points. Normal backup creation never calls this hook. It cannot be used for an arbitrary installed app path.
+- Eight deterministic offline tests cover: an unchanged source; a **same-length** settings rewrite after its copy; same-length executable mutation; a newly inserted file; a removed file; a renamed file; injected copy-completion failure with cleanup; and rejection of test hook use outside a designated scratch fixture. Tests check that an invalid snapshot is **never committed**.
+- This is a bounded race-risk reduction, not an unconditional filesystem transaction or guarantee against modification immediately after the final validation. A production installer must arrange exclusive process shutdown, prevent concurrent writers, independently validate the backup and signer, and exercise interrupted/disk-full/locked-file scenarios on a disposable Windows machine. `CanInstall` remains unconditionally false.
+- No Stable, Virtual Car, live Dvinholm files, release assets or publisher credentials are modified.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
