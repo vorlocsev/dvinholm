@@ -67,6 +67,7 @@ try{
   @('Binaries/Dvinholm-icon.png','assets/dvinholm-icon.png'),
   @('Binaries/dvinholm-banner.webp','assets/dvinholm-banner.webp'),
   @('Binaries/launcher-service-cockpit-banner.jpg','assets/launcher-service-cockpit-banner.jpg'),
+  @('Binaries/launcher-approved-reference-atlas.jpg','assets/launcher-approved-reference-atlas.jpg'),
   @('Binaries/Launcher-AuroraTheme.ps1','eng/Launcher-AuroraTheme.ps1'),
   @('Binaries/Launcher-ServiceCockpit.ps1','eng/Launcher-ServiceCockpit.ps1'),
   @('Binaries/Launcher-ReleaseDiscovery.ps1','eng/Launcher-ReleaseDiscovery.ps1'),
