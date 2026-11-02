@@ -449,9 +449,11 @@ $script:northernHome.Add_Paint({
   $footerFont=[Drawing.Font]::new('Segoe UI',[single]12,[Drawing.FontStyle]::Regular)
   $footerBrush=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(195,220,236))
   try{
-   $footer='СЕВЕРНАЯ ДВИНА  ·  БЕЛОЕ МОРЕ  ·  НАСЛЕДИЕ ВИКИНГОВ'
-   $sz=$g.MeasureString($footer,$footerFont)
-   $g.DrawString($footer,$footerFont,$footerBrush,[single]((1180-$sz.Width)/2),799)
+   if(-not ($script:approvedFooterArt -and $script:launcherLanguage -eq 'RU')){
+    $footer='СЕВЕРНАЯ ДВИНА  ·  БЕЛОЕ МОРЕ  ·  НАСЛЕДИЕ ВИКИНГОВ'
+    $sz=$g.MeasureString($footer,$footerFont)
+    $g.DrawString($footer,$footerFont,$footerBrush,[single]((1180-$sz.Width)/2),799)
+   }
   }finally{$footerFont.Dispose();$footerBrush.Dispose()}
  }finally{
   $night.Dispose();$veil.Dispose();$metal.Dispose()
