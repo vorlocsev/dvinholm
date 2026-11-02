@@ -43,6 +43,15 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - Eight isolated tests cover valid dry-run inventory; previously installed x86; overlapping backup/install; overlapping backup/stage; staging-path tampering; changed ZIP bytes; unsigned public release rejection; and cryptographic verification of fixture signatures including wrong key, tag and digest.
 - All acceptance tests remain **offline, no J2534 hardware**. Physical adapter testing and Windows DPI/GUI acceptance are separate follow-up gates.
 
+## Stage 8: isolated backup snapshot and journal (no install)
+
+- `UnifiedX64BackupSnapshot.Create` is an **offline snapshot-preparation primitive only**. Given a successful stage-7 preflight, it re-evaluates the install/staging safety conditions; checks that installed file count and bytes have not changed; and creates a unique `.snapshot-{GUID}` staging directory in an **external** backup root.
+- It copies live application files as read-only inputs into `payload/`, hashes every copied file with SHA-256, re-hashes the source to reject modified-in-flight data, and writes `snapshot-journal.json` with **schema 1** and state `BackupVerified_NoInstall`. The journal is flushed before the temporary folder is renamed to the proposed `backup-{GUID}` name. A backup with the same target name is never replaced or deleted.
+- `UnifiedX64BackupSnapshot.Verify` checks journal schema/state, unique safe relative paths, exact tracked file inventory, file lengths and per-file SHA-256. It rejects unexpected backup files and root entries. This is local data-integrity evidence, **not** a publisher signature or permission to replace/restart the running EXE.
+- Eight isolated tests cover successful snapshot, unchanged independent backup after source modification, file tampering, journal tampering, unexpected files, stale preflight, existing-backup refusal and staged ZIP tampering.
+- Neither snapshot creation nor a rollback application command is wired to the visible Updates page yet. **No installation, startup helper, running EXE replacement, automatic recovery or user-data migrations are activated.** An interrupted `.snapshot-*` directory must not be mistaken for a completed backup.
+- Pending later gates: independently vetted signing key, **publisher-provenance validation for the actual downloaded release**, explicit user approval, reliable on-disk transaction log, safe post-exit replacement, startup recovery, restored-file verification and Windows x64 physical GUI/J2534 acceptance.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
