@@ -70,8 +70,8 @@ internal static class UnifiedX64RecoveryPreflight
                     staged.Sha256.Length != 64 ||
                     !Regex.IsMatch(staged.Sha256, @"^[0-9a-f]{64}$") ||
                     !string.Equals(
-                        Convert.ToHexString(SHA256.HashData(File.ReadAllBytes(staged.ZipPath))),
-                        staged.Sha256, StringComparison.OrdinalIgnoreCase))
+                        HashFile(staged.ZipPath), staged.Sha256,
+                        StringComparison.OrdinalIgnoreCase))
                     blockers.Add("STAGING_EVIDENCE_MISMATCH");
             }
             catch (Exception ex) when (ex is IOException or UnauthorizedAccessException)
@@ -137,6 +137,14 @@ internal static class UnifiedX64RecoveryPreflight
         return new UnifiedX64RecoveryPlan(
             install, stage, backupPath, inventoryCount, inventoryBytes,
             blockers.Distinct(StringComparer.Ordinal).ToArray());
+    }
+
+    private static string HashFile(string fileName)
+    {
+        using var stream = new FileStream(
+            fileName, FileMode.Open, FileAccess.Read, FileShare.Read,
+            64 * 1024, FileOptions.SequentialScan);
+        return Convert.ToHexString(SHA256.HashData(stream)).ToLowerInvariant();
     }
 
     internal static bool Overlap(string first, string second)
