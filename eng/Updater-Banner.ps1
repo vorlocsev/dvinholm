@@ -2135,7 +2135,10 @@ function Update-ActionAvailability {
  }else{[string]$Channel}
  $install.Enabled=($ready -and -not $busy -and
   (Test-CockpitUpdateAvailable $script:lastCurrent $script:lastAvailable $selectedChannel))
- $launch.Enabled=($ready -and -not $busy)
+ # A clean recovery journal alone is not evidence the app can start.
+ # Full runtime + verified application presence is computed from the
+ # completed worker snapshot; never enable Start from recovery alone.
+ $launch.Enabled=($ready -and -not $busy -and $script:serviceIsReady)
  $refresh.Enabled=-not $busy
  $versionsButton.Enabled=-not $busy
  $rollback.Enabled=($ready -and -not $busy)
@@ -2154,6 +2157,7 @@ function Begin-Action([string]$action){
  if($script:child -or $script:vendor){return}
  if($action -in @('Install','Rollback','Check','Launch') -and
     $script:recoveryStatus -cne 'Ready'){return}
+ if($action -ceq 'Launch' -and -not $script:serviceIsReady){return}
  $selectedChannel=if($null -ne $choice.SelectedItem){
   [string]$choice.SelectedItem
  }else{[string]$Channel}
@@ -2852,9 +2856,9 @@ if($Mode -eq 'UiSmokeTest'){
   $checks++
   $script:recoveryStatus='Ready';Update-ActionAvailability
   if($install.Enabled -or -not $check.Enabled -or
-     -not $launch.Enabled -or -not $rollback.Enabled -or
+     $launch.Enabled -or -not $rollback.Enabled -or
      $repair.Enabled -or $repairInstall.Enabled){
-   throw 'Ready-state button policy failed: install must await a version check.'
+   throw 'Ready recovery alone enabled Start before runtime verification.'
   }
   $checks++
   $script:recoveryStatus='Repair install';Update-ActionAvailability
@@ -2932,6 +2936,54 @@ if($Mode -eq 'UiSmokeTest'){
   $snapshotChecks++
   if($snapshotChecks -ne 6){throw 'Wrong worker state synchronization test count.'}
   Write-Host 'Updater Banner 6/6 WinForms worker-state synchronization checks passed.'
+
+  # Eight launch gates: the recovery journal can be Ready while the app
+  # itself is absent or Windows x86 prerequisites have not been verified.
+  # Only completed trustworthy worker snapshots may authorize Start.
+  $launchChecks=0
+  $launchTemplate=[pscustomobject]@{
+   Done=$true;Failed=$false;Recovery='Ready';Current='ci-4118'
+   Available='ci-4119';DotNet='Installed';WinApp='Installed'
+   VC='Installed';Detail='Completed'
+  }
+  $script:serviceIsReady=$false
+  $script:recoveryStatus='Ready';Update-ActionAvailability
+  if($launch.Enabled -or $script:northLaunch.Enabled){
+   throw 'Clean recovery without a verified worker enabled Start.'
+  }
+  $launchChecks++
+  foreach($case in @(
+   @('Current','Not installed'),
+   @('Current','Unverified installation'),
+   @('DotNet','Missing'),
+   @('WinApp','Missing'),
+   @('VC','Missing')
+  )){
+   $snapshot=$launchTemplate | Select-Object *
+   $snapshot.([string]$case[0])=[string]$case[1]
+   if(-not (Apply-WorkerSnapshot $snapshot) -or
+      $launch.Enabled -or $script:serviceIsReady){
+    throw ('Unverified launch prerequisites enabled Start: '+$case[0]+'='+$case[1])
+   }
+   $launchChecks++
+  }
+  if(-not (Apply-WorkerSnapshot $launchTemplate) -or
+     -not $script:serviceIsReady -or -not $launch.Enabled){
+   throw 'Fully verified installed runtime did not permit Start.'
+  }
+  $launchChecks++
+  $script:child=[pscustomobject]@{HasExited=$false}
+  Update-ActionAvailability
+  if($launch.Enabled -or $script:northLaunch.Enabled){
+   throw 'Busy updater permitted Start despite its full prerequisite snapshot.'
+  }
+  $script:child=$null
+  $launchChecks++
+  $script:serviceIsReady=$false
+  $script:recoveryStatus='Not checked';Update-ActionAvailability
+  if($launchChecks -ne 8){throw 'Wrong launch prerequisite gate count.'}
+  Write-Host 'Launcher verified prerequisites 8/8 offline Start gates passed.'
+
   $vendorChecks=0
   $script:recoveryStatus='Ready';Update-ActionAvailability
   if(-not $dot.Enabled -or -not $win.Enabled -or -not $vc.Enabled){
