@@ -139,6 +139,14 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - The `fixture-transaction.json` journal state must be `RolledBack` **only after all original file hashes and exact inventory are verified**. A crash after the final file but before the commit checkpoint must still result in a full rollback, not an ambiguous success.
 - All code remains confined to `%TEMP%\\dvinholm-recovery-fixture-{GUID}` and uses artificial PE/runtime fixtures. It does **not** enable live Dvinholm replacement, production helper privileges, recovery after physical power loss, signer enrollment, unattended installation or release publication. Separate Windows/J2534 GUI acceptance remains required.
 
+## Stage 19: corrupt journal rejection before recovery filesystem access
+
+- Stage-8 snapshot verification now **rejects null file records and missing SHA-256 strings** before dereferencing or hashing anything. It validates every intermediate payload folder for reparse-point/junction redirection **before opening each recorded file**, not after following the record path.
+- Stage-9 recovery transaction journal now rejects null snapshot identities, null file records, missing candidate/original digests and malformed JSON as **InvalidDataException** (instead of an unexpected null reference or JSON exception). A missing/reparse-point marker or a marker with the wrong size/value stops fixture operations.
+- Eight negative offline tests mutate snapshot/transaction JSON and assert fail-closed results without touching the synthetic installed files: null snapshot record, null backup digest, journal traversal, duplicate backup name ignoring case, null transaction record, null snapshot identity, null candidate digest and truncated JSON.
+- All changes are defensive validation only. The test-only copy/rollback process remains confined to specially named and marked temporary directories. No signed publisher key, production install helper, live EXE replacement or real Windows hardware/J2534 acceptance was added.
+- The previous Stage-18 x64 pilot run was green; the entire regression suite must pass on the final Stage-19 head before certification. No merge to main or Stable release until that check and manual x64 GUI/device testing.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
