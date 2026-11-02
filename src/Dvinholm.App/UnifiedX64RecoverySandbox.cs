@@ -119,6 +119,11 @@ internal static class UnifiedX64RecoverySandbox
         WriteJournal(root, journal with { State = StateRolledBack });
     }
 
+    // Stage-17 fixture bridge may validate the same strict root marker before
+    // creating candidate files. This is NOT a production path validator.
+    internal static void ValidateFixtureRootForTests(string fixtureRoot) =>
+        _ = RequireScratch(fixtureRoot);
+
     internal static string ReadState(string fixtureRoot) =>
         ReadJournal(RequireScratch(fixtureRoot)).State;
 
