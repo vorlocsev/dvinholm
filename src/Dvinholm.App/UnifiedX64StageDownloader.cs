@@ -84,7 +84,9 @@ internal static class UnifiedX64StageDownloader
         UnifiedX64ReleaseFeed.TrustedAssetUrl(
             value.PackageUrl, value.Tag, UnifiedX64ReleaseFeed.PackageAsset) &&
         UnifiedX64ReleaseFeed.TrustedAssetUrl(
-            value.ChecksumUrl, value.Tag, UnifiedX64ReleaseFeed.ChecksumsAsset);
+            value.ChecksumUrl, value.Tag, UnifiedX64ReleaseFeed.ChecksumsAsset) &&
+        (value.SignatureUrl is null || UnifiedX64ReleaseFeed.TrustedAssetUrl(
+            value.SignatureUrl, value.Tag, UnifiedX64ReleaseFeed.SignatureAsset));
 
     private static async Task<string> ReadBoundedTextAsync(
         HttpClient client, string url, int maxBytes, CancellationToken token)
