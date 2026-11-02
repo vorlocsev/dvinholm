@@ -166,7 +166,8 @@ internal static class UnifiedX64RecoverySandbox
 
     private static string SnapshotPath(string root, string name)
     {
-        if (!Regex.IsMatch(name, @"^backup-[a-f0-9]{32}$", RegexOptions.CultureInvariant))
+        if (string.IsNullOrEmpty(name) ||
+            !Regex.IsMatch(name, @"^backup-[a-f0-9]{32}$", RegexOptions.CultureInvariant))
             throw new InvalidDataException("Unsafe snapshot identifier.");
         return Path.Combine(root, "snapshots", name);
     }
@@ -219,8 +220,11 @@ internal static class UnifiedX64RecoverySandbox
         for (DirectoryInfo? current = new(root); current is not null; current = current.Parent)
             if (current.Exists && (current.Attributes & FileAttributes.ReparsePoint) != 0)
                 throw new InvalidDataException("Reparse-point fixture is forbidden.");
-        if (!File.Exists(Path.Combine(root, Marker)) ||
-            File.ReadAllText(Path.Combine(root, Marker)) != MarkerValue)
+        var marker = Path.Combine(root, Marker);
+        if (!File.Exists(marker) ||
+            (File.GetAttributes(marker) & FileAttributes.ReparsePoint) != 0 ||
+            new FileInfo(marker).Length != MarkerValue.Length ||
+            File.ReadAllText(marker) != MarkerValue)
             throw new InvalidOperationException("Offline fixture marker missing.");
         return root;
     }
@@ -297,16 +301,29 @@ internal static class UnifiedX64RecoverySandbox
         if (!info.Exists || (info.Attributes & FileAttributes.ReparsePoint) != 0 ||
             info.Length is <= 0 or > MaxJournalBytes)
             throw new InvalidDataException("Fixture journal is missing or unsafe.");
-        var journal = JsonSerializer.Deserialize<Journal>(File.ReadAllBytes(path))
-            ?? throw new InvalidDataException("Fixture journal is missing.");
+        Journal journal;
+        try
+        {
+            journal = JsonSerializer.Deserialize<Journal>(File.ReadAllBytes(path))
+                ?? throw new InvalidDataException("Fixture journal is missing.");
+        }
+        catch (JsonException ex)
+        {
+            throw new InvalidDataException("Malformed fixture transaction journal.", ex);
+        }
         if (journal.Schema != 1 || journal.Files is null ||
             journal.Files.Length is 0 or > UnifiedX64RecoveryPreflight.MaximumFiles ||
             journal.State is not (StateReady or StateApplying or StateRecovering or
                 StateApplied or StateRolledBack) ||
+            string.IsNullOrEmpty(journal.SnapshotName) ||
+            string.IsNullOrEmpty(journal.SnapshotJournalSha256) ||
             !Regex.IsMatch(journal.SnapshotJournalSha256, @"^[a-f0-9]{64}$") ||
             journal.Files.Any(x =>
+                x is null ||
                 !UnifiedX64PackageVerifier.ValidEntryName(x.RelativePath) ||
+                string.IsNullOrEmpty(x.OriginalSha256) ||
                 !Regex.IsMatch(x.OriginalSha256, @"^[a-f0-9]{64}$") ||
+                string.IsNullOrEmpty(x.CandidateSha256) ||
                 !Regex.IsMatch(x.CandidateSha256, @"^[a-f0-9]{64}$")) ||
             journal.Files.Length != journal.Files.Select(x => x.RelativePath)
                 .Distinct(StringComparer.OrdinalIgnoreCase).Count())
