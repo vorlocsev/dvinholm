@@ -3543,14 +3543,15 @@ if($Mode -eq 'UiSmokeTest'){
      $null -eq $script:northDriver){
    throw 'Northern home lost its prerequisite evidence labels.'
   }
-  # Verify exact worker-projection values, not assumed text translations.
-  $unknownExpected=if($script:launcherLanguage -eq 'RU'){'не проверено'}else{'not checked'}
-  $expectedDot=if($deps.Text -match '\.NET x86:\s*([^ ]+)'){$Matches[1]}else{''}
-  $expectedWin=if($deps.Text -match 'WinApp:\s*([^ ]+)'){$Matches[1]}else{''}
-  if([string]::IsNullOrWhiteSpace($expectedDot) -or $expectedDot -ceq '?'){$expectedDot=$unknownExpected}
-  if([string]::IsNullOrWhiteSpace($expectedWin) -or $expectedWin -ceq '?'){$expectedWin=$unknownExpected}
-  if(-not $script:northRuntime.Text.Contains($expectedDot) -or
-     -not $script:northWinApp.Text.Contains($expectedWin)){
+  # Verify the full real worker evidence through the same parser and
+  # display translator as the Home cards. Older one-word regex checks
+  # rejected valid multiword RU/EN dependency states.
+  $expectedDot=Format-NorthernDependencyValue (
+   Get-NorthernDependencyValue ([string]$deps.Text) 'DotNet')
+  $expectedWin=Format-NorthernDependencyValue (
+   Get-NorthernDependencyValue ([string]$deps.Text) 'WinApp')
+  if($script:northRuntime.Text -cne ('.NET x86: '+$expectedDot) -or
+     $script:northWinApp.Text -cne ('WinApp: '+$expectedWin)){
    throw 'Northern home prerequisite values differ from the actual worker snapshot.'
   }
   $priorDrivers=$script:driversWereProbed
