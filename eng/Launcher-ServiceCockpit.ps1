@@ -443,7 +443,7 @@ $script:northernHome.Add_Paint({
     [Drawing.GraphicsUnit]::Pixel)
    $g.DrawImage($script:approvedAtlas,
     [Drawing.Rectangle]::new(0,778,1180,62),
-    [Drawing.Rectangle]::new(0,276,960,80),
+    [Drawing.Rectangle]::new(0,395,1376,115),
     [Drawing.GraphicsUnit]::Pixel)
   }
   $footerFont=[Drawing.Font]::new('Segoe UI',[single]12,[Drawing.FontStyle]::Regular)
