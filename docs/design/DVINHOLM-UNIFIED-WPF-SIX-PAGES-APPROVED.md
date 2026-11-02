@@ -20,7 +20,8 @@ The user approved **all six page mockups** based on their supplied compact navy/
 - Dark navy application chrome, one narrow **left navigation sidebar**, vivid cyan → blue → violet highlights and thin glass-like card borders.
 - Top brand area `Dvinholm`, approved **gear/seagull/arrow icon #9** from the existing branding decision; a triangular auto-generated symbol in the illustration is **not** a replacement logo.
 - Persistent **top status bar** with actual `J2534` connection state, exact detected adapter name, verified vehicle identity and CEM P/N if truly read. Show explicit `Not connected` / `Not checked` instead of placeholders when absent.
-- Sidebar from top: **Подключение**, **Обновление**, **CEM PIN**, **Конфигурация CEM**, **Ошибки (DTC)**, **Блоки (ECU)**. **Настройки** anchored at the bottom. RU and EN labels use the same navigation layout.
+- Sidebar contains exactly six main items, from top: **Подключение**, **Обновление**, **CEM PIN**, **Конфигурация CEM**, **Ошибки (DTC)**, **Блоки (ECU)**. There is **no Настройки / Settings navigation item or separate Settings page** in the approved design. RU and EN use the same layout.
+- Keep relevant controls contextual: J2534 adapter and CAN parameters in **Подключение**, update channel and behavior in **Обновление**, and RU/EN language selection in the compact top bar. Do not add a seventh screen or a settings drawer without a new design decision.
 - Cyan/violet active navigation marker; all inactive labels remain readable. No decorative dead buttons or clickable-looking placeholders.
 - Northern-lights atmospheric graphic in the sidebar only, keeping tables and controls legible. Dark matte content background with blue/purple focus and intentional green/amber/red system states.
 - Consistent typography and density, bounded window/minimum size, DPI-aware WPF scaling, keyboard access, accessible focus indication, no horizontal clipping at 100%, 125% and 150%.
@@ -76,7 +77,7 @@ The user approved **all six page mockups** based on their supplied compact navy/
 
 ## Stage gates (6–8 checks each, no long micro-fix chain)
 
-1. **Foundation (8):** WPF x86 build, launch on clean supported Windows, no separate runtime download, no dead nav item, RU/EN, DPI 100/125/150, safe initial state, clean shutdown.
+1. **Foundation (8):** WPF x86 build, launch on clean supported Windows, no separate runtime download, exactly six items/no Settings, RU/EN, DPI 100/125/150, safe initial state, clean shutdown.
 2. **Connection (8):** enumeration, missing driver, wrong-bitness DLL, connection failure, correct disconnect, RX timeout, cancellation, virtual adapter read-only path.
 3. **Updates (8):** Stable/Development, remembered channel, authentic manifest, digest/signature/provenance, staged download, failure recovery, verified restart, rollback.
 4. **Diagnostics (8):** CAN/ISO-TP baseline, ECU inventory, DTC filtering, no-response, benign read-only service, no unverified write, saved profiles, status/log parity.
