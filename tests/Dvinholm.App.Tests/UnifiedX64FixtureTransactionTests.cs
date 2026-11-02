@@ -207,6 +207,139 @@ public sealed class UnifiedX64FixtureTransactionTests
         });
 
     [Fact]
+    public void CrashImmediatelyAfterApplyingJournalCanRestoreUntouchedInstall() =>
+        InFixture(f =>
+        {
+            Prepare(f, Extract(f));
+            Assert.Throws<IOException>(() => UnifiedX64RecoverySandbox.ApplyFixture(
+                f.RecoveryRoot, interruptAfterFiles: 0));
+            Assert.Equal(UnifiedX64RecoverySandbox.StateApplying,
+                UnifiedX64RecoverySandbox.ReadState(f.RecoveryRoot));
+            AssertOriginal(f);
+            UnifiedX64RecoverySandbox.RecoverFixture(f.RecoveryRoot);
+            AssertOriginal(f);
+            Assert.Equal(UnifiedX64RecoverySandbox.StateRolledBack,
+                UnifiedX64RecoverySandbox.ReadState(f.RecoveryRoot));
+        });
+
+    [Fact]
+    public void CrashAfterEachOfFourAppliedFilesRestoresCompleteBackup()
+    {
+        for (var boundary = 1; boundary <= 4; boundary++)
+        {
+            var stop = boundary;
+            InFixture(f =>
+            {
+                Prepare(f, Extract(f));
+                Assert.Throws<IOException>(() => UnifiedX64RecoverySandbox.ApplyFixture(
+                    f.RecoveryRoot, interruptAfterFiles: stop));
+                UnifiedX64RecoverySandbox.RecoverFixture(f.RecoveryRoot);
+                AssertOriginal(f);
+                Assert.Equal(UnifiedX64RecoverySandbox.StateRolledBack,
+                    UnifiedX64RecoverySandbox.ReadState(f.RecoveryRoot));
+            });
+        }
+    }
+
+    [Fact]
+    public void CrashAfterFinalApplyFileStillRefusesFalseCommit() =>
+        InFixture(f =>
+        {
+            Prepare(f, Extract(f));
+            Assert.Throws<IOException>(() => UnifiedX64RecoverySandbox.ApplyFixture(
+                f.RecoveryRoot, interruptAfterFiles: 4));
+            Assert.Equal(Executable(2), File.ReadAllBytes(Path.Combine(
+                f.RecoveryRoot, "installed", "Dvinholm.exe")));
+            Assert.Equal(UnifiedX64RecoverySandbox.StateApplying,
+                UnifiedX64RecoverySandbox.ReadState(f.RecoveryRoot));
+            UnifiedX64RecoverySandbox.RecoverFixture(f.RecoveryRoot);
+            AssertOriginal(f);
+        });
+
+    [Fact]
+    public void CrashAfterRecoveryJournalBeforeFirstRestoreReplaysSafely() =>
+        InFixture(f =>
+        {
+            Prepare(f, Extract(f));
+            Assert.Throws<IOException>(() => UnifiedX64RecoverySandbox.ApplyFixture(
+                f.RecoveryRoot, interruptAfterFiles: 2));
+            Assert.Throws<IOException>(() => UnifiedX64RecoverySandbox.RecoverFixture(
+                f.RecoveryRoot, interruptAfterFiles: 0));
+            Assert.Equal(UnifiedX64RecoverySandbox.StateRecovering,
+                UnifiedX64RecoverySandbox.ReadState(f.RecoveryRoot));
+            UnifiedX64RecoverySandbox.RecoverFixture(f.RecoveryRoot);
+            AssertOriginal(f);
+        });
+
+    [Fact]
+    public void CrashAfterEachOfFourRecoveryFilesIsRepeatable()
+    {
+        for (var boundary = 1; boundary <= 4; boundary++)
+        {
+            var stop = boundary;
+            InFixture(f =>
+            {
+                Prepare(f, Extract(f));
+                Assert.Throws<IOException>(() => UnifiedX64RecoverySandbox.ApplyFixture(
+                    f.RecoveryRoot, interruptAfterFiles: 1));
+                Assert.Throws<IOException>(() => UnifiedX64RecoverySandbox.RecoverFixture(
+                    f.RecoveryRoot, interruptAfterFiles: stop));
+                Assert.Equal(UnifiedX64RecoverySandbox.StateRecovering,
+                    UnifiedX64RecoverySandbox.ReadState(f.RecoveryRoot));
+                UnifiedX64RecoverySandbox.RecoverFixture(f.RecoveryRoot);
+                UnifiedX64RecoverySandbox.RecoverFixture(f.RecoveryRoot);
+                AssertOriginal(f);
+            });
+        }
+    }
+
+    [Fact]
+    public void InvalidFaultInjectionCountFailsBeforeJournalTransition() =>
+        InFixture(f =>
+        {
+            Prepare(f, Extract(f));
+            foreach (var point in new[] { -2, 5 })
+                Assert.Throws<ArgumentOutOfRangeException>(() =>
+                    UnifiedX64RecoverySandbox.ApplyFixture(
+                        f.RecoveryRoot, interruptAfterFiles: point));
+            Assert.Equal(UnifiedX64RecoverySandbox.StateReady,
+                UnifiedX64RecoverySandbox.ReadState(f.RecoveryRoot));
+            AssertOriginal(f);
+        });
+
+    [Fact]
+    public void RecoveryOfCommittedFixtureIsNotMisreportedAsInterrupted() =>
+        InFixture(f =>
+        {
+            Prepare(f, Extract(f));
+            UnifiedX64RecoverySandbox.ApplyFixture(f.RecoveryRoot);
+            Assert.Equal(UnifiedX64RecoverySandbox.StateApplied,
+                UnifiedX64RecoverySandbox.ReadState(f.RecoveryRoot));
+            Assert.Throws<InvalidDataException>(() =>
+                UnifiedX64RecoverySandbox.RecoverFixture(f.RecoveryRoot));
+            Assert.Throws<InvalidDataException>(() =>
+                UnifiedX64RecoverySandbox.ApplyFixture(f.RecoveryRoot));
+        });
+
+    [Fact]
+    public void ExtraFileDuringRollbackPreventsJournalCertificationUntilRemoved() =>
+        InFixture(f =>
+        {
+            Prepare(f, Extract(f));
+            Assert.Throws<IOException>(() => UnifiedX64RecoverySandbox.ApplyFixture(
+                f.RecoveryRoot, interruptAfterFiles: 1));
+            var foreign = Path.Combine(f.RecoveryRoot, "installed", "untracked.dll");
+            File.WriteAllText(foreign, "untracked");
+            Assert.Throws<InvalidDataException>(() =>
+                UnifiedX64RecoverySandbox.RecoverFixture(f.RecoveryRoot));
+            Assert.Equal(UnifiedX64RecoverySandbox.StateRecovering,
+                UnifiedX64RecoverySandbox.ReadState(f.RecoveryRoot));
+            File.Delete(foreign);
+            UnifiedX64RecoverySandbox.RecoverFixture(f.RecoveryRoot);
+            AssertOriginal(f);
+        });
+
+    [Fact]
     public void MissingRecoveryFixtureMarkerBlocksAllHandoffWrites() =>
         InFixture(f =>
         {
