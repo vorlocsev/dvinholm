@@ -2861,6 +2861,74 @@ if($Mode -eq 'UiPreview'){
   Assert-NorthernStartMuted 'EN'
   Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-EN.png' $script:northernHome
   $previewChecks++
+
+  # Eight genuine Windows bitmap/UI contracts for the final RU/EN artwork.
+  # The approved footer coast remains, but its baked-in tagline is cropped
+  # away; the EN hero now shares the same gull, car and harbour panorama.
+  $artChecks=0
+  if(-not $script:northTitle.Visible -or
+     $script:northCaption.Text -cnotmatch 'SERVICES' -or
+     $script:northSource.Text -cne 'FOR VOLVO'){
+   throw 'English Aurora header missing native translated title and caption.'
+  }
+  $artChecks++
+  $cockpitSource=Join-Path $PSScriptRoot 'Launcher-ServiceCockpit.ps1'
+  $artSource=[IO.File]::ReadAllText($cockpitSource)
+  if($artSource -match 'NORTHERN DVINA\s+·\s+WHITE SEA' -or
+     $artSource -match 'СЕВЕРНАЯ ДВИНА\s+·\s+БЕЛОЕ МОРЕ'){
+   throw 'Old bilingual footer slogan still exists in the UI painter.'
+  }
+  $artChecks++
+  $ruPath=Join-Path $PreviewDirectory 'Launcher-Aurora-Home-RU.png'
+  $enPath=Join-Path $PreviewDirectory 'Launcher-Aurora-Home-EN.png'
+  $ruBitmap=[Drawing.Bitmap]::new($ruPath)
+  $enBitmap=[Drawing.Bitmap]::new($enPath)
+  try{
+   if($ruBitmap.Width -ne $enBitmap.Width -or
+      $ruBitmap.Height -ne $enBitmap.Height){
+    throw 'RU/EN preview canvas dimensions no longer match.'
+   }
+   $artChecks++
+   foreach($bitmap in @($ruBitmap,$enBitmap)){
+    $letters=0
+    # Native scenery is dark in the bottom centre; white tagline glyphs
+    # would produce numerous light pixels here.
+    for($y=605;$y -lt 627;$y++){
+     for($x=290;$x -lt 680;$x+=2){
+      $pixel=$bitmap.GetPixel($x,$y)
+      if($pixel.R -gt 135 -and $pixel.G -gt 145 -and
+         $pixel.B -gt 150){$letters++}
+     }
+    }
+    if($letters -gt 12){
+     throw ('Decorative coast footer contains suspicious bright caption pixels: '+
+       $letters)
+    }
+    $artChecks++
+   }
+   foreach($point in @(
+     [Drawing.Point]::new(108,82),
+     [Drawing.Point]::new(880,130))){
+    $ruPixel=$ruBitmap.GetPixel($point.X,$point.Y)
+    $enPixel=$enBitmap.GetPixel($point.X,$point.Y)
+    $distance=[Math]::Abs([int]$ruPixel.R-[int]$enPixel.R)+
+       [Math]::Abs([int]$ruPixel.G-[int]$enPixel.G)+
+       [Math]::Abs([int]$ruPixel.B-[int]$enPixel.B)
+    if($distance -gt 60){
+     throw ('English hero no longer reuses approved RU visual art at '+
+       $point.X+','+$point.Y+' difference='+$distance)
+    }
+    $artChecks++
+   }
+  }finally{$ruBitmap.Dispose();$enBitmap.Dispose()}
+  if($script:child -or $script:vendor -or
+     $script:northLaunch.Enabled -or $launch.Enabled){
+   throw 'Bilingual artwork preview started a worker or unlocked Launch.'
+  }
+  $artChecks++
+  if($artChecks -ne 8){throw 'Wrong bilingual artwork test count.'}
+  Write-Host 'Northern Aurora clean RU/EN coast and shared hero 8/8 checks passed.'
+
   $files=@(
    'Launcher-Aurora-Home-RU.png',
    'Launcher-Aurora-Updates-RU.png',
