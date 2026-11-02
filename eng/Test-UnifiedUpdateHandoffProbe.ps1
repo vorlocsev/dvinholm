@@ -178,3 +178,7 @@ try {
 
 if ($checks -ne 8) { throw 'Unexpected number of offline handoff checks.' }
 Write-Host 'PASS: 8/8 Windows x64 handoff helper fixture checks, no real install.'
+# Intentionally rejected child invocations exit 2 or 3. PowerShell preserves
+# the last native exit code across script return, even when all checks pass.
+# Reset it explicitly only after verifying all eight assertions.
+$global:LASTEXITCODE = 0
