@@ -107,8 +107,8 @@ public sealed class NorthernLauncherEmblemContractTests
     public void TheApprovedNorthernHomeUsesMatchingGullGearAndWaves()
     {
         var cockpit = Read("eng/Launcher-ServiceCockpit.ps1");
-        Assert.Contains("Northern identity", cockpit);
-        Assert.Contains("Gear + ring/arrow + white-gull silhouette", cockpit);
+        Assert.Contains("approved Launcher.exe Techno-North #9", cockpit);
+        Assert.Contains("gull, steel sea waves and a real through-arrow", cockpit);
         Assert.Contains("$g.DrawEllipse($metal", cockpit);
         Assert.Contains("$g.FillEllipse($rivet", cockpit);
         Assert.Contains("$g.DrawLine($metal,222,106,305,25)", cockpit);
