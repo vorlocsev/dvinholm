@@ -49,8 +49,7 @@ public sealed partial class MainWindow
         if (completed is null) return;
         // The staging service returns a freshly generated pending-GUID path.
         // Never delete an installation directory or a user-selected path.
-        var root = Path.GetFullPath(Path.Combine(
-            DvinholmUserDataDirectory.Current, "update-staging"));
+        var root = Path.GetFullPath(UnifiedX64StoragePaths.StagingRoot);
         var expectedParent = Path.GetDirectoryName(Path.GetFullPath(completed.Directory));
         var leaf = Path.GetFileName(Path.TrimEndingDirectorySeparator(completed.Directory));
         if (!string.Equals(expectedParent, root, StringComparison.OrdinalIgnoreCase) ||
@@ -70,7 +69,7 @@ public sealed partial class MainWindow
 
         try
         {
-            var backups = Path.Combine(DvinholmUserDataDirectory.Current, "update-backups");
+            var backups = UnifiedX64StoragePaths.BackupRoot;
             var plan = UnifiedX64RecoveryPreflight.Inspect(
                 AppContext.BaseDirectory, staged, backups);
             if (!plan.CanPlanBackup)
@@ -130,7 +129,7 @@ public sealed partial class MainWindow
             using var client = new HttpClient { Timeout = TimeSpan.FromMinutes(8) };
             client.DefaultRequestHeaders.UserAgent.Add(
                 new ProductInfoHeaderValue("Dvinholm", "0.2.4"));
-            var root = Path.Combine(DvinholmUserDataDirectory.Current, "update-staging");
+            var root = UnifiedX64StoragePaths.StagingRoot;
             var staged = await UnifiedX64StageDownloader.StageAsync(
                 candidate, root, client, cts.Token);
 
