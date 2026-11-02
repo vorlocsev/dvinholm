@@ -260,8 +260,8 @@ internal static class UnifiedX64RecoverySandbox
                 !UnifiedX64PackageVerifier.ValidEntryName(x.RelativePath) ||
                 !Regex.IsMatch(x.OriginalSha256, @"^[a-f0-9]{64}$") ||
                 !Regex.IsMatch(x.CandidateSha256, @"^[a-f0-9]{64}$")) ||
-            !SameKeys(journal.Files.Select(x => x.RelativePath),
-                journal.Files.Select(x => x.RelativePath).Distinct(StringComparer.OrdinalIgnoreCase)))
+            journal.Files.Length != journal.Files.Select(x => x.RelativePath)
+                .Distinct(StringComparer.OrdinalIgnoreCase).Count())
             throw new InvalidDataException("Invalid fixture transaction journal.");
         SnapshotPath(root, journal.SnapshotName);
         return journal;
