@@ -42,9 +42,8 @@ public sealed partial class MainWindow
         UnifiedUpdateChannel.SelectedIndex = saved == UpdateSourceChannel.Stable ? 0 : 1;
         _unifiedChannelReady = true;
         _unifiedLocaleReady = true;
-        UnifiedCheckUpdateButton.IsEnabled =
-            Environment.Is64BitProcess && !DvinholmUserDataDirectory.IsAcceptanceLaunch;
         ApplyUnifiedLocalization();
+        RefreshUnifiedDownloadButtons();
     }
 
     private void UnifiedLanguageSelector_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -85,6 +84,14 @@ public sealed partial class MainWindow
             "Сведения о релизе не подтверждают целостность ZIP. Установка отключена до проверки SHA-256, разрядности, резервной копии и восстановления.",
             "Release metadata does not verify ZIP integrity. Installation stays disabled until SHA-256, architecture, backup and recovery are validated.");
         UnifiedCheckUpdateButton.Content = L("Проверить x64-релизы", "Check x64 releases");
+        UnifiedStageUpdateButton.Content = L("Скачать и проверить ZIP", "Download and verify ZIP");
+        UnifiedCancelStageButton.Content = L("Отменить загрузку", "Cancel download");
+        ToolTipService.SetToolTip(UnifiedStageUpdateButton, L(
+            "Скачать x64 ZIP в отдельный временный каталог, проверить SHA-256 и структуру. Без установки.",
+            "Stage x64 ZIP privately; verify SHA-256 and archive structure. No installation."));
+        ToolTipService.SetToolTip(UnifiedCancelStageButton, L(
+            "Отменить загрузку и удалить частичный ZIP.",
+            "Cancel the download and discard partial ZIP."));
         ToolTipService.SetToolTip(UnifiedCheckUpdateButton, L(
             "Только чтение метаданных официальных релизов, без загрузки ZIP.",
             "Read official release metadata only. No ZIP download."));
@@ -160,6 +167,7 @@ public sealed partial class MainWindow
         if (!_unifiedChannelReady || _unifiedChannelPreferences is null)
             return;
         _unifiedCheckCts?.Cancel();
+        InvalidateUnifiedCandidate();
         if (UnifiedUpdateChannel.SelectedItem is not ComboBoxItem item)
             return;
         var choice = (item.Tag as string) switch
@@ -188,14 +196,15 @@ public sealed partial class MainWindow
 
     private async void UnifiedCheckUpdate_Click(object sender, RoutedEventArgs e)
     {
-        if (_closing || _unifiedCheckCts is not null ||
-            !Environment.Is64BitProcess || DvinholmUserDataDirectory.IsAcceptanceLaunch)
+        if (!UnifiedNetworkAllowed || _unifiedCheckCts is not null ||
+            _unifiedStageCts is not null)
             return;
+        InvalidateUnifiedCandidate();
         var channel = UnifiedUpdateChannel.SelectedItem is ComboBoxItem { Tag: "stable" }
             ? UpdateSourceChannel.Stable : UpdateSourceChannel.Development;
         using var cts = new CancellationTokenSource();
         _unifiedCheckCts = cts;
-        UnifiedCheckUpdateButton.IsEnabled = false;
+        RefreshUnifiedDownloadButtons();
         SetUnifiedStatus("Чтение опубликованных x64-релизов GitHub…",
             "Reading published x64 releases from GitHub…");
         try
@@ -210,8 +219,9 @@ public sealed partial class MainWindow
             }
             else
             {
-                // Candidate metadata is NOT a checked update, regardless of
-                // version. Do not enable installer or misstate availability.
+                // Metadata only: user must separately opt in to download and
+                // SHA-256/AMD64 inspection. This is never installation approval.
+                _unifiedCandidate = candidate;
                 SetUnifiedStatus(
                     $"Найдены метаданные x64-кандидата {candidate.Tag}. ZIP ещё не скачан и не проверен, установка отключена.",
                     $"x64 candidate metadata found: {candidate.Tag}. ZIP not downloaded or verified; installation disabled.");
@@ -231,9 +241,7 @@ public sealed partial class MainWindow
         {
             if (ReferenceEquals(_unifiedCheckCts, cts))
                 _unifiedCheckCts = null;
-            if (!_closing)
-                UnifiedCheckUpdateButton.IsEnabled =
-                    Environment.Is64BitProcess && !DvinholmUserDataDirectory.IsAcceptanceLaunch;
+            RefreshUnifiedDownloadButtons();
         }
     }
 
