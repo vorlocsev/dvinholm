@@ -1,0 +1,49 @@
+name: Unified WinUI 3 self-contained Windows x64 pilot
+
+on:
+  pull_request:
+    paths:
+      - 'src/Dvinholm.App/**'
+      - 'eng/Package-UnifiedWinUIX64Pilot.ps1'
+      - '.github/workflows/winui3-unified-x64.yml'
+      - 'docs/design/DVINHOLM-UNIFIED-WINUI3-X64-APPROVED.md'
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+concurrency:
+  group: dvinholm-winui3-x64-pilot-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  publish-x64:
+    runs-on: windows-latest
+    steps:
+      - uses: actions/checkout@v7
+      - uses: actions/setup-dotnet@v6
+        with:
+          global-json-file: global.json
+
+      # New pipeline only: DO NOT change the active legacy x86 release feed.
+      # Windows App SDK and .NET are packed into the standalone release tree.
+      - name: Publish WinUI 3 x64 self-contained application
+        shell: pwsh
+        run: |
+          dotnet publish src/Dvinholm.App/Dvinholm.App.csproj --configuration Release --runtime win-x64 --self-contained true -p:Platform=x64 -p:PlatformTarget=x64 -p:RuntimeIdentifier=win-x64 -p:AssemblyName=Dvinholm -p:WindowsPackageType=None -p:WindowsAppSDKSelfContained=true -p:PublishTrimmed=false -p:PublishAot=false -p:PublishSingleFile=false -p:DebugType=none -p:DebugSymbols=false -p:DvinholmDevelopmentFeatures=false --output artifacts/winui3-unified-x64
+          if ($LASTEXITCODE -ne 0) { throw 'WinUI 3 Windows x64 publish failed.' }
+
+      - name: Verify packaged native x64 WinUI 3 runtime and integrity (8 checks)
+        shell: pwsh
+        run: |
+          ./eng/Package-UnifiedWinUIX64Pilot.ps1 -PublishDirectory artifacts/winui3-unified-x64 -ZipPath artifacts/Dvinholm-WinUI3-Windows-x64-PR.zip
+
+      - name: Upload unified x64 review artifact (no release)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-WinUI3-Windows-x64-PR
+          path: artifacts/Dvinholm-WinUI3-Windows-x64-PR.zip
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
