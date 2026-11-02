@@ -11,7 +11,7 @@ Add-Type -AssemblyName System.IO.Compression.FileSystem
 $zipFile=(Resolve-Path -LiteralPath $ZipPath).Path
 $expected=@('Launcher.exe','Binaries/Updater-Banner.ps1',
  'Binaries/Manage-Lite-Dependencies.ps1','Binaries/Assert-LauncherSelfUpdatePackage.ps1','Binaries/Invoke-LauncherReplacement.ps1','Binaries/launcher-build.txt',
- 'Binaries/Launcher-AuroraTheme.ps1','Binaries/Launcher-ServiceCockpit.ps1','Binaries/Launcher-ReleaseDiscovery.ps1','Binaries/Launcher-VerifiedDownload.ps1','Binaries/Launcher-ApplyPrepared.ps1','Binaries/Launcher-RebootRecovery.ps1','Binaries/Inspect-LauncherRecovery.ps1','Binaries/dvinholm-banner.webp','Binaries/launcher-service-cockpit-banner.jpg','Binaries/J2534-DriverManager.ps1',
+ 'Binaries/Launcher-AuroraTheme.ps1','Binaries/Launcher-ServiceCockpit.ps1','Binaries/Launcher-ReleaseDiscovery.ps1','Binaries/Launcher-VerifiedDownload.ps1','Binaries/Launcher-ApplyPrepared.ps1','Binaries/Launcher-RebootRecovery.ps1','Binaries/Inspect-LauncherRecovery.ps1','Binaries/dvinholm-banner.webp','Binaries/launcher-service-cockpit-banner.jpg','Binaries/launcher-approved-reference-atlas.jpg','Binaries/J2534-DriverManager.ps1',
  'Binaries/J2534-DriverUI.ps1','Binaries/Dvinholm-icon.png')
 $source=(Resolve-Path -LiteralPath (Join-Path $PSScriptRoot '..')).Path
 $root=Join-Path ([IO.Path]::GetTempPath()) ('dvinholm-native-smoke-'+[guid]::NewGuid().ToString('N'))
