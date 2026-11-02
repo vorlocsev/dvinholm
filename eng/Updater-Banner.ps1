@@ -3126,10 +3126,72 @@ if($Mode -eq 'UiPreview'){
   if($evidenceChecks -ne 8){throw 'Incorrect runtime evidence test count.'}
   Write-Host 'Northern Aurora full RU/EN runtime evidence 8/8 checks passed.'
 
+  # Eight real-control English Updates gates and a fourth offscreen PNG.
+  # Earlier previews covered English Home but only Russian Updates.
+  # Evidence collection only: never simulate a successful worker result.
+  $englishDetailsChecks=0
+  $script:launcherLanguage='EN'
+  Apply-LauncherLanguage
+  Show-NorthernUpdates
+  [Windows.Forms.Application]::DoEvents()
+  if(-not $script:northernDetailOpen -or $script:northernHome.Visible){
+   throw 'English Updates page failed to replace Home.'
+  }
+  $englishDetailsChecks++
+  if(-not $script:northReturn.Visible -or
+     $script:northReturn.Text -cne '← Home'){
+   throw 'English Updates has no correctly localized Back control.'
+  }
+  $englishDetailsChecks++
+  if($form.Text -cne 'Dvinholm | Launcher' -or
+     $settingsQuick.Text -match '[А-Яа-яЁё]'){
+   throw 'English Updates kept a Russian window title or Settings control.'
+  }
+  $englishDetailsChecks++
+  if([string]::IsNullOrWhiteSpace($updateHeading.Text) -or
+     $updateHeading.Text -match '[А-Яа-яЁё]' -or
+     $updateHint.Text -match '[А-Яа-яЁё]'){
+   throw 'English update section contains untranslated text.'
+  }
+  $englishDetailsChecks++
+  if($windowsHeading.Text -match '[А-Яа-яЁё]' -or
+     $windowsHint.Text -match '[А-Яа-яЁё]' -or
+     $windowsQuick.Text -match '[А-Яа-яЁё]'){
+   throw 'English Windows prerequisites section contains untranslated text.'
+  }
+  $englishDetailsChecks++
+  if($driversHeading.Text -match '[А-Яа-яЁё]' -or
+     $driversHint.Text -match '[А-Яа-яЁё]' -or
+     $driverScanQuick.Text -match '[А-Яа-яЁё]'){
+   throw 'English J2534 drivers section contains untranslated text.'
+  }
+  $englishDetailsChecks++
+  if($check.Text -cne 'Check updates' -or
+     $install.Text -cne 'Download / Install' -or
+     $launch.Text -cne 'Start Dvinholm' -or
+     -not $choice.Visible -or -not $check.Visible -or
+     -not $install.Visible){
+   throw 'English Updates lost a native worker-backed action.'
+  }
+  $englishDetailsChecks++
+  if($check.Enabled -or $install.Enabled -or $launch.Enabled -or
+     $script:northLaunch.Enabled -or $script:child -or $script:vendor){
+   throw 'English Updates preview falsely enabled an unverified action.'
+  }
+  $englishDetailsChecks++
+  if($englishDetailsChecks -ne 8){
+   throw 'Wrong English Updates offscreen accessibility gate count.'
+  }
+  Save-NorthernWinFormsPreview 'Launcher-Aurora-Updates-EN.png' $form
+  Show-NorthernHome
+  [Windows.Forms.Application]::DoEvents()
+  Write-Host 'Northern Aurora English Updates UI 8/8 checks passed.'
+
   $files=@(
    'Launcher-Aurora-Home-RU.png',
    'Launcher-Aurora-Updates-RU.png',
-   'Launcher-Aurora-Home-EN.png')
+   'Launcher-Aurora-Home-EN.png',
+   'Launcher-Aurora-Updates-EN.png')
   $digests=@()
   foreach($file in $files){
    $path=Join-Path $PreviewDirectory $file
@@ -3139,7 +3201,7 @@ if($Mode -eq 'UiPreview'){
    }
    $digests+=((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash)
   }
-  if(@($digests|Select-Object -Unique).Count -ne 3){
+  if(@($digests|Select-Object -Unique).Count -ne 4){
    throw 'WinForms previews are identical; view or language rendering did not change.'
   }
   $previewChecks++
