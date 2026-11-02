@@ -155,6 +155,14 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - This is a bounded race-risk reduction, not an unconditional filesystem transaction or guarantee against modification immediately after the final validation. A production installer must arrange exclusive process shutdown, prevent concurrent writers, independently validate the backup and signer, and exercise interrupted/disk-full/locked-file scenarios on a disposable Windows machine. `CanInstall` remains unconditionally false.
 - No Stable, Virtual Car, live Dvinholm files, release assets or publisher credentials are modified.
 
+## Stage 21: bounded disk-exhaustion and exclusive-file-lock tests
+
+- `UnifiedX64BackupSnapshot.Create` can now simulate **exhaustion of the available snapshot-write budget** after an exact cumulative byte count. This uses an internal optional `failAfterCopiedBytesForTests` parameter; it never fills a disk or alters storage quotas. The injection is accepted only for disposable `%TEMP%\\dvinholm-snapshot-{GUID}\\app` fixtures, not for any installed application or production update.
+- Snapshot payloads are streamed through a byte-accounting copy routine; an injected `IOException` at the configured byte boundary causes creation to fail and removes only the unique incomplete `.snapshot-{GUID}` folder. A snapshot journal cannot be committed after the simulated write failure, even when all payload bytes were copied before the error. Original installed files remain unmodified.
+- Eight offline cases: zero remaining capacity; first byte; half copied data; 1024-byte boundary; one byte before complete; failure after copying the entire 1026-byte fixture before commit; Windows exclusive lock on `settings.json` with successful retry after lock release; and rejection of negative, excessive and out-of-fixture fault limits.
+- The tests do **not** claim to reproduce a physical full disk, interrupted power, real Windows GUI behavior, J2534 compatibility or production updater semantics. Actual disk-volume quota, locked executable replacement and post-crash recovery need separate disposable Windows integration tests and independent publisher signing approval.
+- User-facing `CanInstall` remains false. This stage does not change Stable, Virtual Car, any actual installation, CI release distribution or signing credentials.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
