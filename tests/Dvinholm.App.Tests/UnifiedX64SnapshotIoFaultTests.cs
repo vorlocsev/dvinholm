@@ -126,8 +126,14 @@ public sealed class UnifiedX64SnapshotIoFaultTests
             {
                 Assert.ThrowsAny<IOException>(() =>
                     UnifiedX64BackupSnapshot.Create(plan, stage));
-                AssertUncommitted(plan);
+                // The file is intentionally exclusive-locked here, so only
+                // inspect the snapshot directory until the lock is released.
+                Assert.False(Directory.Exists(plan.BackupDirectory));
+                var backupRoot = Path.GetDirectoryName(plan.BackupDirectory)!;
+                if (Directory.Exists(backupRoot))
+                    Assert.Empty(Directory.EnumerateDirectories(backupRoot, ".snapshot-*"));
             }
+            AssertUncommitted(plan);
             // The failed attempt must not destroy the ability to retry safely.
             var refreshed = UnifiedX64RecoveryPreflight.Inspect(
                 plan.InstallDirectory, stage, Path.GetDirectoryName(plan.BackupDirectory)!);
