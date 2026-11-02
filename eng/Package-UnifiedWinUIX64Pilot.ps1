@@ -82,7 +82,7 @@ try {
             try { $zipDigest = [Convert]::ToBase64String($hash.ComputeHash($input)) }
             finally { $input.Dispose(); $hash.Dispose() }
             $sourceDigest = (Get-FileHash -LiteralPath $diskFile.FullName -Algorithm SHA256).Hash
-            $zipHex = [Convert]::ToHexString([Convert]::FromBase64String($zipDigest))
+            $zipHex = [BitConverter]::ToString([Convert]::FromBase64String($zipDigest)).Replace('-','')
             if ($zipHex -cne $sourceDigest) {
                 throw ('ZIP SHA-256 mismatch: '+$name)
             }
