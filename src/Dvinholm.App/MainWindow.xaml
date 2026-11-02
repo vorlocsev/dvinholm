@@ -186,6 +186,12 @@
                                 <TextBlock x:Name="ShellConnectionText" Text="Не подключено" />
                             </StackPanel>
                         </Button>
+                        <ComboBox x:Name="UnifiedLanguageSelector" Header="RU / EN"
+                                  MinWidth="98" SelectedIndex="0"
+                                  SelectionChanged="UnifiedLanguageSelector_SelectionChanged">
+                            <ComboBoxItem Content="Русский" Tag="ru" />
+                            <ComboBoxItem Content="English" Tag="en" />
+                        </ComboBox>
                         <Button x:Name="CancelUdsButton" Visibility="Collapsed" Content="Отменить операцию" IsEnabled="False" Click="CancelUds_Click" VerticalAlignment="Bottom" />
                     </StackPanel>
                 </Grid>
@@ -219,6 +225,9 @@
                                 <StackPanel Spacing="12">
                                     <TextBlock x:Name="UnifiedUpdateSafetyTitle" Text="Проверка и установка" FontSize="20" FontWeight="SemiBold" />
                                     <TextBlock x:Name="UnifiedUpdateStatus" Text="Для x64 ещё не опубликован проверенный канал обновлений. Скачивание, установка и перезапуск заблокированы до подключения безопасного x64-обновлятора." TextWrapping="Wrap" Foreground="#BED1E3" />
+                                    <Button x:Name="UnifiedCheckUpdateButton" Content="Проверить наличие x64-обновлений"
+                                            Click="UnifiedCheckUpdate_Click" HorizontalAlignment="Left"
+                                            ToolTipService.ToolTip="Только чтение списка официальных релизов GitHub; без загрузки ZIP и установки." />
                                     <TextBlock x:Name="UnifiedUpdateSafety" Text="Перед установкой потребуются проверка SHA-256, совместимости win-x64, резервная копия и безопасное восстановление после сбоя." TextWrapping="Wrap" Foreground="#93B2CD" />
                                 </StackPanel>
                             </Border>
