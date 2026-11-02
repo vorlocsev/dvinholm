@@ -154,12 +154,18 @@ internal static class UnifiedX64BackupSnapshot
         long total = 0;
         foreach (var record in journal.Files)
         {
-            if (!UnifiedX64PackageVerifier.ValidEntryName(record.RelativePath) ||
+            if (record is null ||
+                !UnifiedX64PackageVerifier.ValidEntryName(record.RelativePath) ||
                 !names.Add(record.RelativePath) ||
                 record.Bytes < 0 ||
+                string.IsNullOrEmpty(record.Sha256) ||
                 !Regex.IsMatch(record.Sha256, @"^[a-f0-9]{64}$", RegexOptions.CultureInvariant))
                 throw new InvalidDataException("Unsafe backup record.");
-            var file = Path.Combine(path, PayloadFolder,
+            var payload = Path.Combine(path, PayloadFolder);
+            // Reject link/junction ancestors before opening the leaf. Checking
+            // only the file reparse bit allows a nested junction to escape.
+            EnsureSafeRelativePath(payload, record.RelativePath);
+            var file = Path.Combine(payload,
                 record.RelativePath.Replace('/', Path.DirectorySeparatorChar));
             var info = new FileInfo(file);
             if (!info.Exists || (info.Attributes & FileAttributes.ReparsePoint) != 0 ||
@@ -225,6 +231,25 @@ internal static class UnifiedX64BackupSnapshot
                 else
                     yield return (relative, entry);
             }
+        }
+    }
+
+    private static void EnsureSafeRelativePath(string root, string relative)
+    {
+        if (!UnifiedX64PackageVerifier.ValidEntryName(relative) ||
+            !Directory.Exists(root) ||
+            (File.GetAttributes(root) & FileAttributes.ReparsePoint) != 0)
+            throw new InvalidDataException("Unsafe snapshot payload directory.");
+
+        var path = root;
+        var segments = relative.Split('/');
+        for (var i = 0; i < segments.Length - 1; i++)
+        {
+            path = Path.Combine(path, segments[i]);
+            var attrs = File.GetAttributes(path);
+            if ((attrs & FileAttributes.Directory) == 0 ||
+                (attrs & FileAttributes.ReparsePoint) != 0)
+                throw new InvalidDataException("Linked snapshot ancestor is forbidden.");
         }
     }
 
