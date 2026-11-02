@@ -302,6 +302,28 @@ if(Test-Path -LiteralPath $atlasPath -PathType Leaf){
   }
  }catch{$script:approvedAtlas=$null}
 }
+# Cache an English-only aurora-sky texture from a wordmark-free region of
+# the same trusted local atlas. No new binary, network request or fake UI.
+$script:northernEnglishSky=$null
+if($script:approvedAtlas){
+ $skyBitmap=$null
+ $skyGraphics=$null
+ try{
+  $skyBitmap=[Drawing.Bitmap]::new(570,235)
+  $skyGraphics=[Drawing.Graphics]::FromImage($skyBitmap)
+  $skyGraphics.InterpolationMode=[Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
+  $skyGraphics.DrawImage($script:approvedAtlas,
+   [Drawing.Rectangle]::new(0,0,570,235),
+   [Drawing.Rectangle]::new(740,0,325,142),
+   [Drawing.GraphicsUnit]::Pixel)
+  $script:northernEnglishSky=$skyBitmap
+  $skyBitmap=$null
+ }catch{$script:northernEnglishSky=$null}
+ finally{
+  if($skyGraphics){$skyGraphics.Dispose()}
+  if($skyBitmap){$skyBitmap.Dispose()}
+ }
+}
 
 # Approved Northern Compact home (2026-11-01, final/fourth concept).
 # Use only the existing GDI+/WinForms runtime and the bundled panorama.
@@ -483,8 +505,9 @@ $script:northernHome.Add_Paint({
     [Drawing.Rectangle]::new(0,0,1376,395),
     [Drawing.GraphicsUnit]::Pixel)
   }elseif($script:approvedAtlas -and $script:launcherLanguage -eq 'EN'){
-   # Same gull/gear, longship and Volvo skyline as the approved RU atlas.
-   # Cover only the Cyrillic-bearing centre and paint native EN text over it.
+   # Exactly the same real gull/gear, Viking prow and Volvo as the RU art.
+   # Paint the safe side crops, then reuse wordmark-free aurora sky from
+   # that image behind *live* English labels. No flat rectangular panel.
    $g.DrawImage($script:approvedAtlas,
     [Drawing.Rectangle]::new(0,0,390,348),
     [Drawing.Rectangle]::new(0,0,455,395),
@@ -493,43 +516,47 @@ $script:northernHome.Add_Paint({
     [Drawing.Rectangle]::new(800,0,380,348),
     [Drawing.Rectangle]::new(934,0,442,395),
     [Drawing.GraphicsUnit]::Pixel)
-
-   # Draw the central sky without the Russian printed lettering.
-   $enSky=[Drawing.Drawing2D.LinearGradientBrush]::new(
-    [Drawing.Rectangle]::new(390,0,410,235),
-    [Drawing.Color]::FromArgb(5,23,45),
-    [Drawing.Color]::FromArgb(9,39,62),0.0)
-   try{$g.FillRectangle($enSky,390,0,410,235)}
-   finally{$enSky.Dispose()}
-
-   # Feather both vertical borders to the surrounding approved photograph.
-   # The fade must reach full opacity at the exact x=390/800 join, not
-   # halfway through it (previously a visible rectangular seam).
-   $enLeftFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
-    [Drawing.Rectangle]::new(340,0,51,235),
-    [Drawing.Color]::FromArgb(0,7,29,48),
-    [Drawing.Color]::FromArgb(255,7,29,48),0.0)
-   $enRightFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
-    [Drawing.Rectangle]::new(799,0,63,235),
-    [Drawing.Color]::FromArgb(255,8,34,55),
-    [Drawing.Color]::FromArgb(0,8,34,55),0.0)
-   try{
-    $g.FillRectangle($enLeftFade,340,0,51,235)
-    $g.FillRectangle($enRightFade,799,0,63,235)
-   }finally{$enLeftFade.Dispose();$enRightFade.Dispose()}
-
-   # Use a single, unbroken source band across ALL three hero sections.
-   # This is the wordmark-free bottom 135px of the approved atlas.
-   # It removes the former hard-edged opaque English horizon rectangle.
+   if($script:northernEnglishSky){
+    $skyImage=$script:northernEnglishSky
+    $g.DrawImage($skyImage,
+     [Drawing.Rectangle]::new(390,0,410,235),
+     [Drawing.Rectangle]::new(80,0,410,235),
+     [Drawing.GraphicsUnit]::Pixel)
+    # Fade the photographic sky over the seams in eight narrow strips
+    # instead of covering the approved scene with an opaque rectangle.
+    $alphaAttr=[Drawing.Imaging.ImageAttributes]::new()
+    try{
+     for($i=0;$i -lt 8;$i++){
+      $alphaLeft=[Drawing.Imaging.ColorMatrix]::new()
+      $alphaLeft.Matrix33=[single](($i+1)/9.0)
+      $alphaAttr.SetColorMatrix($alphaLeft)
+      $g.DrawImage($skyImage,
+       [Drawing.Rectangle]::new(310+$i*10,0,10,235),
+       [single]($i*10),[single]0,[single]10,[single]235,
+       [Drawing.GraphicsUnit]::Pixel,$alphaAttr)
+      $alphaRight=[Drawing.Imaging.ColorMatrix]::new()
+      $alphaRight.Matrix33=[single]((8-$i)/9.0)
+      $alphaAttr.SetColorMatrix($alphaRight)
+      $g.DrawImage($skyImage,
+       [Drawing.Rectangle]::new(800+$i*10,0,10,235),
+       [single](490+$i*10),[single]0,[single]10,[single]235,
+       [Drawing.GraphicsUnit]::Pixel,$alphaAttr)
+     }
+    }finally{$alphaAttr.Dispose()}
+   }else{
+    # Corrupt/unavailable atlas derivative remains an offline safe fallback.
+    $fallbackSky=[Drawing.Drawing2D.LinearGradientBrush]::new(
+     [Drawing.Rectangle]::new(390,0,410,235),
+     [Drawing.Color]::FromArgb(5,23,45),
+     [Drawing.Color]::FromArgb(9,39,62),0.0)
+    try{$g.FillRectangle($fallbackSky,390,0,410,235)}
+    finally{$fallbackSky.Dispose()}
+   }
+   # Keep the shared, uninterrupted skyline and water below real labels.
    $g.DrawImage($script:approvedAtlas,
     [Drawing.Rectangle]::new(0,230,1180,118),
     [Drawing.Rectangle]::new(0,260,1376,135),
     [Drawing.GraphicsUnit]::Pixel)
-
-   # A subtle Aurora ribbon over the clean English title, not a fake tile.
-   $enGlow=[Drawing.Pen]::new([Drawing.Color]::FromArgb(37,35,187,159),11)
-   try{$g.DrawBezier($enGlow,520,8,610,-30,715,50,805,4)}
-   finally{$enGlow.Dispose()}
   }
   if($script:approvedAtlas){
    # The original image's central footer includes a baked-in slogan.
@@ -825,6 +852,9 @@ function Update-NorthernCompactSnapshot {
 $script:northernHome.BringToFront()
 Set-NorthernLegacyTabStops $false
 $form.Add_FormClosed({
+ if($script:northernEnglishSky){
+  $script:northernEnglishSky.Dispose();$script:northernEnglishSky=$null
+ }
  if($script:approvedAtlas){$script:approvedAtlas.Dispose();$script:approvedAtlas=$null}
 })
 # Show the compact approved screen on normal launch. Existing Service
