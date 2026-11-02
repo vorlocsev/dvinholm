@@ -2139,6 +2139,12 @@ function Update-ActionAvailability {
  # Full runtime + verified application presence is computed from the
  # completed worker snapshot; never enable Start from recovery alone.
  $launch.Enabled=($ready -and -not $busy -and $script:serviceIsReady)
+ # Reflect a new worker lock immediately on the visible Home control.
+ # The periodic snapshot still handles text and component evidence; it is
+ # not the only safety mechanism for the primary Start presentation.
+ if($null -ne $script:northLaunch -and -not $script:northLaunch.IsDisposed){
+  $script:northLaunch.Enabled=$launch.Enabled
+ }
  $refresh.Enabled=-not $busy
  $versionsButton.Enabled=-not $busy
  $rollback.Enabled=($ready -and -not $busy)
@@ -2968,8 +2974,9 @@ if($Mode -eq 'UiSmokeTest'){
    $launchChecks++
   }
   if(-not (Apply-WorkerSnapshot $launchTemplate) -or
-     -not $script:serviceIsReady -or -not $launch.Enabled){
-   throw 'Fully verified installed runtime did not permit Start.'
+     -not $script:serviceIsReady -or -not $launch.Enabled -or
+     -not $script:northLaunch.Enabled){
+   throw 'Fully verified installed runtime did not permit Start on both pages.'
   }
   $launchChecks++
   $script:child=[pscustomobject]@{HasExited=$false}
