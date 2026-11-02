@@ -43,7 +43,8 @@ internal static class UnifiedX64RecoverySandbox
         var current = Inventory(Path.Combine(root, "installed"));
         var incoming = Inventory(Path.Combine(root, "candidate"));
         if (originals.Count == 0 || originals.Count != incoming.Count ||
-            !SameKeys(originals, current) || !SameKeys(originals, incoming))
+            !SameKeys(originals.Keys, current.Keys) ||
+            !SameKeys(originals.Keys, incoming.Keys))
             throw new InvalidDataException("Update fixture inventory mismatch.");
         var entries = originals.Keys.OrderBy(x => x, StringComparer.Ordinal)
             .Select(name =>
