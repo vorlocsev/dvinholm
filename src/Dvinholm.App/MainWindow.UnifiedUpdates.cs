@@ -86,6 +86,10 @@ public sealed partial class MainWindow
         UnifiedCheckUpdateButton.Content = L("Проверить x64-релизы", "Check x64 releases");
         UnifiedStageUpdateButton.Content = L("Скачать и проверить ZIP", "Download and verify ZIP");
         UnifiedCancelStageButton.Content = L("Отменить загрузку", "Cancel download");
+        UnifiedPreflightButton.Content = L("Проверить готовность", "Run backup preflight");
+        ToolTipService.SetToolTip(UnifiedPreflightButton, L(
+            "Офлайн-аудит x64 и будущей резервной копии. Без записи или установки.",
+            "Read-only x64 and backup-path audit. No install or file changes."));
         ToolTipService.SetToolTip(UnifiedStageUpdateButton, L(
             "Скачать x64 ZIP в отдельный временный каталог, проверить SHA-256 и структуру. Без установки.",
             "Stage x64 ZIP privately; verify SHA-256 and archive structure. No installation."));
