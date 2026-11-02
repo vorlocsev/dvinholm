@@ -22,7 +22,7 @@ try{
   'Binaries/Manage-Lite-Dependencies.ps1','Binaries/Assert-LauncherSelfUpdatePackage.ps1','Binaries/Invoke-LauncherReplacement.ps1','Binaries/launcher-build.txt','Binaries/Updater-Banner.ps1',
   'Binaries/Launcher-AuroraTheme.ps1','Binaries/Launcher-ServiceCockpit.ps1','Binaries/Launcher-ReleaseDiscovery.ps1','Binaries/Launcher-VerifiedDownload.ps1','Binaries/Launcher-ApplyPrepared.ps1','Binaries/Launcher-RebootRecovery.ps1','Binaries/Inspect-LauncherRecovery.ps1',
   'Binaries/J2534-DriverManager.ps1','Binaries/J2534-DriverUI.ps1',
-  'Binaries/Dvinholm-icon.png','Binaries/dvinholm-banner.webp','Binaries/launcher-service-cockpit-banner.jpg')){
+  'Binaries/Dvinholm-icon.png','Binaries/dvinholm-banner.webp','Binaries/launcher-service-cockpit-banner.jpg','Binaries/launcher-approved-reference-atlas.jpg')){
   if($names -cnotcontains $name){throw "Missing first-run archive member $name"}
  }
  $checks++
