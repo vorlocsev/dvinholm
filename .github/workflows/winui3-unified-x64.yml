@@ -4,6 +4,8 @@ on:
   pull_request:
     paths:
       - 'src/Dvinholm.App/**'
+      - 'src/Dvinholm.UpdateHandoffProbe/**'
+      - 'eng/Test-UnifiedUpdateHandoffProbe.ps1'
       - 'eng/Package-UnifiedWinUIX64Pilot.ps1'
       - '.github/workflows/winui3-unified-x64.yml'
       - 'docs/design/DVINHOLM-UNIFIED-WINUI3-X64-APPROVED.md'
@@ -51,6 +53,21 @@ jobs:
           $verified = (Get-Content -LiteralPath 'artifacts/SHA256SUMS.txt' -Raw).TrimEnd()
           if ($verified -cne $record) { throw 'x64 checksum record changed.' }
           Write-Host ('Verified x64 package hash: ' + $digest)
+
+      # Built and tested separately, never copied into the user-facing
+      # Dvinholm-Windows-x64.zip or a published release.
+      - name: Publish isolated Windows x64 process-exit probe (not shipped)
+        shell: pwsh
+        run: |
+          dotnet publish src/Dvinholm.UpdateHandoffProbe/Dvinholm.UpdateHandoffProbe.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false --output artifacts/fixture-handoff-probe
+          if ($LASTEXITCODE -ne 0) { throw 'Fixture handoff probe build failed.' }
+          if (-not (Test-Path 'artifacts/fixture-handoff-probe/Dvinholm.UpdateHandoffProbe.exe')) { throw 'Fixture helper EXE missing.' }
+
+      - name: Verify x64 post-exit helper only in marked temporary fixtures (8 checks)
+        shell: pwsh
+        run: |
+          ./eng/Test-UnifiedUpdateHandoffProbe.ps1 -ProbeExe 'artifacts/fixture-handoff-probe/Dvinholm.UpdateHandoffProbe.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'Fixture helper checks failed.' }
 
       - name: Upload unified x64 review artifact (no release)
         if: github.event_name == 'pull_request'
