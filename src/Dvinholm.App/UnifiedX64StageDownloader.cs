@@ -112,15 +112,10 @@ internal static class UnifiedX64StageDownloader
         }
         // SHA256SUMS format is ASCII; rejecting non-ASCII prevents alternate
         // Unicode spellings from masquerading as verified filenames.
-        if (memory.GetBuffer().AsSpan(0, (int)memory.Length)
-            .IndexOfAnyExceptInRange((byte)0x0A, (byte)0x7E) >= 0)
-        {
-            // Permit CR as well, which is below LF in ASCII order.
-            foreach (var b in memory.GetBuffer().AsSpan(0, (int)memory.Length))
-                if (b != (byte)'\r' && b != (byte)'\n' &&
-                    (b < 0x20 || b > 0x7E))
-                    throw new InvalidDataException("Non-ASCII checksum body.");
-        }
+        foreach (var b in memory.GetBuffer().AsSpan(0, (int)memory.Length))
+            if (b != (byte)'\r' && b != (byte)'\n' &&
+                (b < 0x20 || b > 0x7E))
+                throw new InvalidDataException("Non-ASCII checksum body.");
         return Encoding.ASCII.GetString(memory.GetBuffer(), 0, (int)memory.Length);
     }
 
