@@ -2858,6 +2858,37 @@ if($Mode -eq 'UiPreview'){
      $script:northUpdates.Text -cnotmatch 'UPDATES'){
    throw 'English Northern preview not localized.'
   }
+  # Eight exact control-layout checks on the actual scaled English home.
+  # Position native text alongside the approved panorama, not down in
+  # the harbour picture. RU is unchanged because its atlas has wordmarks.
+  $headerChecks=0
+  foreach($label in @($script:northTitle,$script:northSubtitle,
+      $script:northCaption,$script:northSource)){
+   if(-not $label.Visible){throw 'English wordmark label is hidden.'}
+   $headerChecks++
+  }
+  if($script:northTitle.Top -ge $script:northSubtitle.Top){
+   throw 'English Aurora title/subtitle order is incorrect.'
+  }
+  $headerChecks++
+  if($script:northSubtitle.Bottom -gt $script:northCaption.Top -or
+     $script:northCaption.Bottom -gt $script:northSource.Top){
+   throw 'English Aurora header labels overlap.'
+  }
+  $headerChecks++
+  if($script:northTitle.Top -gt [int][Math]::Round(45*$script:auroraScale) -or
+     $script:northTitle.Left -lt [int][Math]::Round(380*$script:auroraScale)){
+   throw 'English title is too low or overlays the northern emblem.'
+  }
+  $headerChecks++
+  if($script:northSource.Bottom -gt
+      [int][Math]::Round(245*$script:auroraScale)){
+   throw 'English subtitle spilled into the shared harbour scenery.'
+  }
+  $headerChecks++
+  if($headerChecks -ne 8){throw 'Wrong English hero label alignment gate count.'}
+  Write-Host 'Northern Aurora English wordmark layout 8/8 checks passed.'
+
   Assert-NorthernStartMuted 'EN'
   Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-EN.png' $script:northernHome
   $previewChecks++
