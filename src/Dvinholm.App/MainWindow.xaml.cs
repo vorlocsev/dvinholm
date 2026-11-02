@@ -79,9 +79,9 @@ public sealed partial class MainWindow : Window
         DllPath.Text = LoadSavedDllPath();
         DllPath.TextChanged += DllPath_TextChanged;
         Title = LatestBuildUpdater.CurrentWindowTitle;
-        // Updates and dependency management belong to the standalone Launcher.
-        // Legacy update handlers remain temporarily compiled for migration safety,
-        // but the diagnostic window exposes no update controls.
+        // Show the user's six-screen Aurora shell, with a safe local Updates channel.
+        // Install/download actions remain unavailable until verified x64 updater migration.
+        InitializeUnifiedUpdates();
         // The EXE also embeds this icon; SetIcon applies it to the WinUI title bar and taskbar.
         var iconPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "Dvinholm.ico");
         if (System.IO.File.Exists(iconPath))
@@ -93,6 +93,7 @@ public sealed partial class MainWindow : Window
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
         RefreshDashboardSummary();
+        DashboardNavigate(null, AuroraDestination.J2534Connection);
         // The standalone launcher owns updates and all Lite runtime management.
         if (DvinholmUserDataDirectory.IsAcceptanceLaunch)
             ConnectButton.IsEnabled = false;
@@ -219,8 +220,9 @@ public sealed partial class MainWindow : Window
         _workspaceDestination = destination;
         ShowDashboardWorkspace();
         foreach (var panel in new FrameworkElement[] { CemPinPage, CemConfigPage, DtcPage, EcuPage,
-            DiagnosticsPage, CanMonitorPage, ProfilesPage, ConnectionPage })
+            DiagnosticsPage, CanMonitorPage, ProfilesPage, ConnectionPage, UnifiedUpdatesPage })
             panel.Visibility = panel.Name == section.Panel ? Visibility.Visible : Visibility.Collapsed;
+        _unifiedUpdatesActive = false;
         WorkspaceTitle.Text = section.Title;
         WorkspaceDescription.Text = section.Description;
         DiagnosticResultsCard.Visibility = destination is AuroraDestination.CemPinReadiness or
@@ -247,12 +249,17 @@ public sealed partial class MainWindow : Window
     {
         foreach (var button in SidebarNavPanel.Children.OfType<Button>())
         {
-            var selected = button == SidebarHomeButton ? destination is null :
-                AuroraWorkspaceNavigation.TryParse(button.Tag as string, out var target) && target == destination;
+            var selected = AuroraWorkspaceNavigation.TryParse(button.Tag as string, out var target)
+                && target == destination && !_unifiedUpdatesActive;
             button.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(selected
                 ? Windows.UI.Color.FromArgb(255, 8, 101, 199) : Windows.UI.Color.FromArgb(0, 0, 0, 0));
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(button, selected ? "Выбран" : "");
         }
+        SidebarUpdatesButton.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+            _unifiedUpdatesActive ? Windows.UI.Color.FromArgb(255, 8, 101, 199)
+                : Windows.UI.Color.FromArgb(0, 0, 0, 0));
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(
+            SidebarUpdatesButton, _unifiedUpdatesActive ? "Выбран" : "");
     }
 
     private void ShowDashboardWorkspace()
@@ -263,14 +270,8 @@ public sealed partial class MainWindow : Window
 
     private void DashboardReturn_Click(object sender, RoutedEventArgs e)
     {
-        _udsCts?.Cancel();
-        ClearDiagnosticReadResult();
-        _workspaceDestination = null;
-        SelectWorkspaceNavigation(null);
-        AuroraWorkspaceHost.Visibility = Visibility.Collapsed;
-        AuroraLanding.Visibility = Visibility.Visible;
-        AuroraLanding.ReturnToTop();
-        RefreshDashboardSummary();
+        // Legacy home callbacks now go to the first approved destination.
+        DashboardNavigate(sender, AuroraDestination.J2534Connection);
     }
 
     private void RefreshDashboardSummary()
