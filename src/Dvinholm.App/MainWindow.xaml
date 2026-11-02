@@ -225,9 +225,19 @@
                                 <StackPanel Spacing="12">
                                     <TextBlock x:Name="UnifiedUpdateSafetyTitle" Text="Проверка и установка" FontSize="20" FontWeight="SemiBold" />
                                     <TextBlock x:Name="UnifiedUpdateStatus" Text="Для x64 ещё не опубликован проверенный канал обновлений. Скачивание, установка и перезапуск заблокированы до подключения безопасного x64-обновлятора." TextWrapping="Wrap" Foreground="#BED1E3" />
-                                    <Button x:Name="UnifiedCheckUpdateButton" Content="Проверить наличие x64-обновлений"
-                                            Click="UnifiedCheckUpdate_Click" HorizontalAlignment="Left"
-                                            ToolTipService.ToolTip="Только чтение списка официальных релизов GitHub; без загрузки ZIP и установки." />
+                                    <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <Button x:Name="UnifiedCheckUpdateButton" Content="Проверить x64-релизы"
+                                                Click="UnifiedCheckUpdate_Click"
+                                                ToolTipService.ToolTip="Проверить только метаданные официальных релизов GitHub." />
+                                        <Button x:Name="UnifiedStageUpdateButton" Content="Скачать и проверить ZIP"
+                                                Click="UnifiedStageUpdate_Click" IsEnabled="False"
+                                                ToolTipService.ToolTip="Скачать ZIP во временный каталог и проверить SHA-256, x64 и структуру. Без установки." />
+                                        <Button x:Name="UnifiedCancelStageButton" Content="Отменить"
+                                                Click="UnifiedCancelStage_Click" IsEnabled="False"
+                                                ToolTipService.ToolTip="Отменить загрузку и удалить неполный пакет." />
+                                    </StackPanel>
+                                    <ProgressBar x:Name="UnifiedStageProgress" IsIndeterminate="True"
+                                                 Visibility="Collapsed" Height="4" />
                                     <TextBlock x:Name="UnifiedUpdateSafety" Text="Перед установкой потребуются проверка SHA-256, совместимости win-x64, резервная копия и безопасное восстановление после сбоя." TextWrapping="Wrap" Foreground="#93B2CD" />
                                 </StackPanel>
                             </Border>
