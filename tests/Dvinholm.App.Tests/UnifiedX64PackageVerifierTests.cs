@@ -123,6 +123,9 @@ public sealed class UnifiedX64PackageVerifierTests
         WithZip(path => Assert.Throws<InvalidDataException>(() =>
             UnifiedX64PackageVerifier.Verify(path, Manifest(path), new FileInfo(path).Length)),
             [..Normal(), ("Launcher.exe", Pe(0x8664))]);
+        WithZip(path => Assert.Throws<InvalidDataException>(() =>
+            UnifiedX64PackageVerifier.Verify(path, Manifest(path), new FileInfo(path).Length)),
+            [..Normal(), ("Dvinholm.UpdateHandoffProbe.exe", Pe(0x8664))]);
     }
 
     [Fact]
