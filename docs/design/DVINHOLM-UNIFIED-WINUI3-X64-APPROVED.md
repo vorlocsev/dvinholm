@@ -61,6 +61,14 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - Eight fixture-only tests cover journal prepare without mutation, full apply fixture, interruption and successful restoration, interruption during restoration with replay, backup tampering, journal tampering, candidate tampering, and refusal outside the marked temp fixture.
 - **Still NOT implemented:** actual live-program update, trustworthy publisher root/signing automation, authoritative installation transaction and restart handoff, recovery of a real installed version, or actual Windows hardware/DPI acceptance. Do not infer these from a passing sandbox fault-injection test.
 
+## Stage 10: process-exit handoff rehearsal (offline scratch installation only)
+
+- `UnifiedX64PostExitHandoff.WaitAndApplyFixtureAsync` waits for a **specific open Process handle to exit** before starting any synthetic file replacement. It rejects waiting on its own process, requires the fixture's verified transaction state to be `BackupVerified` both before and after waiting, and bounds the wait to 30 seconds with explicit cancellation.
+- Windows offline acceptance tests start real short-lived child processes. They verify that the synthetic original remains intact **while the child is alive**, then check the fixture journal advances only after exit. Cancellation and timeouts must leave all original fixture bytes unchanged; malformed journals, absent fixture markers and modified candidates fail closed.
+- The harness is **not an updater helper distributed with Dvinholm**. It cannot target the real Dvinholm installation because `UnifiedX64RecoverySandbox` accepts only a marked GUID-named direct child of the system temporary directory. No actual executable or user file replacement is enabled.
+- Eight process-exit handoff checks accompany the previous stage's eight interruption/rollback tests. CI compilation and full offline regression are required, with no claims of real Windows end-user handoff until a separately reviewed helper and trusted publisher signature exist.
+- Before production: explicitly approved signing trust root, signed x64 release manifest, independently verified staging and backup, a **short-lived helper launched before the app exits**, protection against PID reuse and other running app instances, fsynced transaction checkpoints, recovery at next startup, and Windows GUI/DPI/J2534 acceptance.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
