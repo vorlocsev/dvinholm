@@ -2725,6 +2725,14 @@ if($Mode -eq 'UiPreview'){
      throw ('Unreadable disabled caption in actual WinForms pixels: '+
       $description+' (light pixels='+$lightText+')')
     }
+    # A disabled button must look disabled too. Sampling the painted
+    # interior detects a bright-blue primary button that incorrectly
+    # looks ready even when worker Enabled remains false.
+    $fill=$bitmap.GetPixel(12,8)
+    if($fill.R -gt 85 -or $fill.G -gt 95 -or $fill.B -gt 115){
+     throw ('Disabled native button retains a bright/active background: '+
+      $description+' RGB '+$fill.R+'/'+$fill.G+'/'+$fill.B)
+    }
    }finally{$bitmap.Dispose()}
   }
   $contrastChecks=0
