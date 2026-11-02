@@ -220,3 +220,75 @@ is not present beside the script; installed Launcher packages still prefer
 their bundled `Binaries/` image. The CI visual gate requires this real
 automotive banner to be decoded so a dark fallback is not accepted as the
 approved design. Final Windows screenshot validation remains outstanding.
+
+## User-supplied Launcher screenshot becomes the latest UI acceptance target (2026-11-02)
+
+The user supplied a **full native Launcher screenshot** and explicitly specified
+"должно быть так". This is the **latest and overriding** visual contract for
+the launcher **window**, as distinct from the previously selected No.9
+`Launcher.exe` icon. Earlier compact four-button Home arrangements are no
+longer the target.
+
+Required composition: tall Aurora/White Sea automotive hero with a prominent
+silver mechanical seagull/gear ring and through-arrow, DVINHOLM LAUNCHER,
+northern-lights sky and Volvo vehicle; **three horizontal prerequisite status
+cards** (.NET, WinApp, J2534); **one wide green primary Start**; five genuine
+actions in a **3+2 grid** (Updates, Components, J2534 Drivers; Settings,
+About); a coastal/viking Northern Dvina/White Sea footer. Localize RU and EN.
+
+The implemented **WinForms-native composition** uses a 1180×840 reference
+canvas, normally up to **944×672** pixels, constrained by screen working area
+with scrolling. It retains PowerShell 5.1 and the native x86 launcher and
+reuses the locally bundled interim automotive banner. No dead or fake
+buttons; About uses the existing localized about text, and Updates opens
+the real Service Cockpit.
+
+**Critical truthfulness:** the supplied screenshot illustratively shows
+three green "Готово" statuses, but those statuses must **not be hardcoded**.
+Cards display actual dependency/driver inventory or "не проверено" until a
+genuine local check. The Start button remains disabled until the existing
+recovery/launch safety preflight allows it; styles must not imply success when
+unverified. A registered J2534 driver is not proof of hardware connectivity.
+
+**Asset fidelity limitation:** the exact user-provided screenshot was supplied
+in the chat, not yet committed as a licensed, decomposed source-artwork
+asset. The WinForms background/crest/landscape are native GDI+ approximations
+using the locally bundled car imagery rather than a pixel-perfect raster
+copy. A faithful asset pass requires separating the approved hero, aurora,
+vehicle and coast art from its illustrative button/status pixels, so
+dynamic controls remain truthful. Real Windows DPI 100/125/150% screenshots
+and user-side visual acceptance remain mandatory before claiming a
+pixel-perfect match.
+
+The existing `UiSmokeTest`, `UiPreview` and DPI geometry matrix are
+updated for the new proportions and five-button grid, without changing
+installer transactions, self-update recovery, Stable, or Virtual Car.
+
+
+## Approved screenshot artwork integration
+
+The user-supplied reference has been decomposed into **a single committed
+local JPEG atlas**: `assets/launcher-approved-reference-atlas.jpg`
+(1376×510). The top 1376×395 pixels contain the exact approved Northern
+Aurora / mechanical gull / Volvo panoramic hero, optimized at its original source dimensions for the compact
+native package. The bottom 1376×115 pixels contain its White Sea/Viking coast.
+No reference status tiles or simulated `Готово` labels are in these crops.
+
+`eng/Package-Updater-Banner.ps1` now bundles the atlas as
+`Binaries/launcher-approved-reference-atlas.jpg`, with the normal exact
+native ZIP whitelist, source-byte verification and 750 KiB size budget.
+The asset is local and loaded offline with .NET Framework System.Drawing
+already used by the standalone Windows PowerShell 5.1 UI.
+
+The RU Home displays the supplied image layers at the reference positions,
+hides duplicate live wordmarks drawn over the baked-in Russian artwork,
+and keeps its three live .NET/WinApp/J2534 status cards, Start and five
+genuine 3+2 actions **outside** the artwork layer. EN keeps the existing
+dynamically translated GDI+ Home because the supplied image itself has
+Russian baked-in subtitles. If the image is corrupted, absent or unsafe,
+an offline GDI+ fallback paints the Home instead. A real runtime cannot
+claim `Готово` just because a mockup depicts a green ready state.
+
+`UiPreview` and all package/recovery audits require or validate the
+decomposed asset; no external image server or installer code was added.
+Windows real-DPI 100/125/150% final visual acceptance is still needed.

@@ -32,6 +32,7 @@ $names=@(
  'Binaries/Dvinholm-icon.png',
  'Binaries/dvinholm-banner.webp',
  'Binaries/launcher-service-cockpit-banner.jpg',
+ 'Binaries/launcher-approved-reference-atlas.jpg',
  'Binaries/Assert-LauncherSelfUpdatePackage.ps1',
  'Binaries/Invoke-LauncherReplacement.ps1',
  'Binaries/launcher-build.txt'

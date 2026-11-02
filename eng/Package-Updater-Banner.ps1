@@ -36,6 +36,7 @@ $files=@{
  'Binaries/Dvinholm-icon.png'=(Join-Path $root 'assets\dvinholm-icon.png')
  'Binaries/dvinholm-banner.webp'=(Join-Path $root 'assets\dvinholm-banner.webp')
  'Binaries/launcher-service-cockpit-banner.jpg'=(Join-Path $root 'assets\launcher-service-cockpit-banner.jpg')
+ 'Binaries/launcher-approved-reference-atlas.jpg'=(Join-Path $root 'assets\launcher-approved-reference-atlas.jpg')
 }
 try{
  # The launcher and the app have independent version identities.
