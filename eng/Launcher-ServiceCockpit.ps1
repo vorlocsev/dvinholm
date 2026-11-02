@@ -255,7 +255,7 @@ if(Test-Path -LiteralPath $atlasPath -PathType Leaf){
   if($item.Length -ge 4096 -and $item.Length -le 1024KB -and
      ($item.Attributes -band [IO.FileAttributes]::ReparsePoint) -eq 0){
    $candidate=[Drawing.Image]::FromFile($atlasPath)
-   if($candidate.Width -eq 960 -and $candidate.Height -eq 356){
+   if($candidate.Width -eq 1376 -and $candidate.Height -eq 510){
     $script:approvedAtlas=$candidate
    }else{$candidate.Dispose()}
   }
