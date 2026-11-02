@@ -163,6 +163,14 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - The tests do **not** claim to reproduce a physical full disk, interrupted power, real Windows GUI behavior, J2534 compatibility or production updater semantics. Actual disk-volume quota, locked executable replacement and post-crash recovery need separate disposable Windows integration tests and independent publisher signing approval.
 - User-facing `CanInstall` remains false. This stage does not change Stable, Virtual Car, any actual installation, CI release distribution or signing credentials.
 
+## Stage 22: Windows exclusive file locks across journal transitions (offline)
+
+- Full Stage-21 regression CI `#41547873628` and WinUI 3 x64 `#41547873688` both **passed** on commit `773da67a`. This is the known-good baseline for the Stage-22 tests.
+- The fixture-only `UnifiedX64RecoverySandbox.ApplyFixture` and `RecoverFixture` now accept an **optional, test-only** `afterJournalForTests` callback. The callback runs **after** the corresponding `Applying` or `Recovering` journal transition and **before** the first file replacement. It permits a deterministic exclusive `FileShare.None` lock to simulate a Windows file handle acquired at exactly the dangerous boundary. This does not exist on the user-facing updater path.
+- Eight Windows-only offline tests use real NTFS-compatible file sharing locks in marked GUID temp fixtures: locked installed EXE during initial audit; locked candidate EXE; locked original backup; locked installed EXE immediately after `Applying`; later settings lock with earlier files already replaced; locked EXE immediately after `Recovering` with retry; locked settings during rollback with retry; and an exclusive lock on the transaction journal. They check no premature state transition, correct refusal, and replay to verified original hashes after unlocking.
+- A failed replacement **must not** be recorded as `AppliedFixtureOnly` or `RolledBack`. An interrupted `Applying` transaction is repaired using the independently verified original snapshot; a `Recovering` transaction remains replayable.
+- All tests operate on artificial `Dvinholm.exe` content and throwaway folders. **This is not a real cross-process shutdown or live upgrade test**, not a physical power-loss durability test, and does not establish J2534 or Aurora GUI compatibility. No production Install action, publisher key, release or Stable/Virtual Car modification.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
