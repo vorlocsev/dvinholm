@@ -2598,7 +2598,10 @@ if($Mode -eq 'UiPreview'){
   $previewChecks++
   if($form.ClientSize.Width -gt 944 -or $form.ClientSize.Height -gt 672 -or
      $script:northernHome.Width -ne [int][Math]::Round(1180*$script:auroraScale) -or
-     $null -eq $script:heroBackdrop -or -not $script:serviceBackdropIsApproved){
+     $null -eq $script:heroBackdrop -or -not $script:serviceBackdropIsApproved -or
+     $null -eq $script:approvedAtlas -or
+     $script:approvedAtlas.Width -ne 960 -or
+     $script:approvedAtlas.Height -ne 356){
    throw 'Preview lacks the approved local automotive panorama or compact bounds.'
   }
   $previewChecks++
@@ -2622,6 +2625,9 @@ if($Mode -eq 'UiPreview'){
   [Windows.Forms.Application]::DoEvents()
   if(-not $form.Visible -or $form.Location.X -gt -10000){
    throw 'WinForms preview did not remain offscreen.'
+  }
+  if($script:launcherLanguage -eq 'RU' -and $script:northTitle.Visible){
+   throw 'Approved Russian hero artwork printed a duplicate WinForms wordmark.'
   }
   Save-NorthernWinFormsPreview 'Launcher-Aurora-Home-RU.png' $script:northernHome
   $previewChecks++
