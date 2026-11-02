@@ -136,8 +136,8 @@ function Set-ServiceDisabledTextContrast([Windows.Forms.Button]$button){
   if($sender.Enabled -or $sender.ClientSize.Width -lt 12 -or
      $sender.ClientSize.Height -lt 12){return}
   $g=$event.Graphics
-  $inside=[Drawing.Rectangle]::new(2,2,
-   $sender.ClientSize.Width-4,$sender.ClientSize.Height-4)
+  $inside=[Drawing.Rectangle]::new(1,1,
+   $sender.ClientSize.Width-2,$sender.ClientSize.Height-2)
   # A bright enabled Install/Start fill can falsely signal that the
   # operation is available when the real worker has locked it. Render the
   # entire disabled interior in a consistent muted slate, including
@@ -145,6 +145,12 @@ function Set-ServiceDisabledTextContrast([Windows.Forms.Button]$button){
   $background=[Drawing.SolidBrush]::new(
    [Drawing.Color]::FromArgb(31,61,80))
   try{$g.FillRectangle($background,$inside)}finally{$background.Dispose()}
+  # Repaint the bright native Flat border too. A disabled action must not
+  # retain the electric-blue outline of the enabled Install/Start action.
+  $mutedBorder=[Drawing.Pen]::new([Drawing.Color]::FromArgb(65,102,121),1)
+  try{$g.DrawRectangle($mutedBorder,0,0,
+    $sender.ClientSize.Width-1,$sender.ClientSize.Height-1)}
+  finally{$mutedBorder.Dispose()}
   $textColor=[Drawing.Color]::FromArgb(192,214,227)
   $flags=[Windows.Forms.TextFormatFlags]::HorizontalCenter -bor
    [Windows.Forms.TextFormatFlags]::VerticalCenter -bor
@@ -557,19 +563,20 @@ function Set-NorthernButtonArtwork([Windows.Forms.Button]$button,[bool]$primary)
    $isPrimary=($sender.Tag -eq 'Primary')
    $hot=($isPrimary -and $sender.Enabled)
    $top=if($hot){[Drawing.Color]::FromArgb(20,185,142)}elseif($isPrimary){
-    [Drawing.Color]::FromArgb(14,99,91)}else{[Drawing.Color]::FromArgb(35,65,94)}
+    [Drawing.Color]::FromArgb(32,67,82)}else{[Drawing.Color]::FromArgb(35,65,94)}
    $bottom=if($hot){[Drawing.Color]::FromArgb(8,106,113)}elseif($isPrimary){
-    [Drawing.Color]::FromArgb(9,58,74)}else{[Drawing.Color]::FromArgb(17,37,62)}
+    [Drawing.Color]::FromArgb(19,48,67)}else{[Drawing.Color]::FromArgb(17,37,62)}
    $brush=[Drawing.Drawing2D.LinearGradientBrush]::new(
     [Drawing.Rectangle]::new(0,0,$w,$h),$top,$bottom,90.0)
    $stroke=[Drawing.Pen]::new(
-    $(if($hot){[Drawing.Color]::FromArgb(64,241,193)}else{
+    $(if($hot){[Drawing.Color]::FromArgb(64,241,193)}elseif($isPrimary){
+    [Drawing.Color]::FromArgb(62,103,125)}else{
     [Drawing.Color]::FromArgb(76,151,181)}),2)
    try{
     $graphics.FillPath($brush,$p)
     $graphics.DrawPath($stroke,$p)
     $color=if($sender.Enabled){[Drawing.Color]::White}else{
-     [Drawing.Color]::FromArgb(204,220,231)}
+     [Drawing.Color]::FromArgb(169,192,207)}
     $flags=[Windows.Forms.TextFormatFlags]::HorizontalCenter -bor
      [Windows.Forms.TextFormatFlags]::VerticalCenter -bor
      [Windows.Forms.TextFormatFlags]::SingleLine -bor
