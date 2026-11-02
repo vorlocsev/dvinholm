@@ -6,6 +6,7 @@ on:
       - 'src/Dvinholm.App/**'
       - 'src/Dvinholm.UpdateHandoffProbe/**'
       - 'eng/Test-UnifiedUpdateHandoffProbe.ps1'
+      - 'eng/Sign-UnifiedX64Release.ps1'
       - 'eng/Package-UnifiedWinUIX64Pilot.ps1'
       - '.github/workflows/winui3-unified-x64.yml'
       - 'docs/design/DVINHOLM-UNIFIED-WINUI3-X64-APPROVED.md'
@@ -26,6 +27,22 @@ jobs:
       - uses: actions/setup-dotnet@v6
         with:
           global-json-file: global.json
+
+      # Syntax-check the deliberate operator-only signing tool. Never run
+      # it in CI, and never inject/create/export a publisher private key here.
+      - name: Parse manual x64 signing script (no private key)
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $parseErrors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'eng/Sign-UnifiedX64Release.ps1').Path,
+            [ref]$tokens, [ref]$parseErrors) | Out-Null
+          if ($parseErrors.Count -ne 0) {
+            $parseErrors | ForEach-Object { Write-Error $_.Message }
+            throw 'Manual x64 signing script syntax invalid.'
+          }
+          Write-Host 'Manual signing script parses cleanly; signing was not executed.'
 
       # New pipeline only: DO NOT change the active legacy x86 release feed.
       # Windows App SDK and .NET are packed into the standalone release tree.
