@@ -452,7 +452,7 @@ $script:northernHome.Add_Paint({
    # Keep all controls, labels and status text native and localizable.
    $g.DrawImage($script:approvedAtlas,
     [Drawing.Rectangle]::new(715,0,465,344),
-    [Drawing.Rectangle]::new(840,0,536,395),
+    [Drawing.Rectangle]::new(1000,0,376,395),
     [Drawing.GraphicsUnit]::Pixel)
    $enFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
     [Drawing.Rectangle]::new(710,0,185,344),
