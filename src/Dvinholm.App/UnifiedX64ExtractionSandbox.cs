@@ -148,8 +148,8 @@ internal static class UnifiedX64ExtractionSandbox
             using var fromArchive = entry.Open();
             using var fromDisk = new FileStream(destination, FileMode.Open,
                 FileAccess.Read, FileShare.Read);
-            var archiveHash = SHA256.HashData(fromArchive);
-            var diskHash = SHA256.HashData(fromDisk);
+            var archiveHash = BoundedHash(fromArchive, entry.Length, token);
+            var diskHash = BoundedHash(fromDisk, entry.Length, token);
             if (!CryptographicOperations.FixedTimeEquals(archiveHash, diskHash))
                 throw new InvalidDataException("Extracted file was modified.");
             if (total > UnifiedX64PackageVerifier.MaximumExpandedBytes - entry.Length)
@@ -175,6 +175,26 @@ internal static class UnifiedX64ExtractionSandbox
         if (!seen.SetEquals(expected) || seen.Count != expectedFiles ||
             total != expectedBytes)
             throw new InvalidDataException("Unexpected extracted package inventory.");
+    }
+
+    private static byte[] BoundedHash(Stream source, long expectedBytes,
+        CancellationToken token)
+    {
+        using var digest = IncrementalHash.CreateHash(HashAlgorithmName.SHA256);
+        var chunk = new byte[64 * 1024];
+        long consumed = 0;
+        int read;
+        while ((read = source.Read(chunk)) != 0)
+        {
+            token.ThrowIfCancellationRequested();
+            if (consumed > expectedBytes - read)
+                throw new InvalidDataException("Archive payload exceeds declared entry length.");
+            digest.AppendData(chunk, 0, read);
+            consumed += read;
+        }
+        if (consumed != expectedBytes)
+            throw new InvalidDataException("Decompressed content was truncated.");
+        return digest.GetHashAndReset();
     }
 
     private static bool SafeWindowsName(string name) =>
@@ -224,6 +244,7 @@ internal static class UnifiedX64ExtractionSandbox
         var marker = Path.Combine(root, Marker);
         if (!File.Exists(marker) ||
             (File.GetAttributes(marker) & FileAttributes.ReparsePoint) != 0 ||
+            new FileInfo(marker).Length != MarkerValue.Length ||
             File.ReadAllText(marker) != MarkerValue)
             throw new InvalidOperationException("Offline fixture marker missing.");
         return root;
