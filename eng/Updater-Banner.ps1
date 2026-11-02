@@ -1911,7 +1911,9 @@ function Apply-LauncherLanguage {
  $repair.Text=Translate 'repair'
  $repairInstall.Text=Translate 'repairInstall'
  # Service Cockpit controls are attached by Launcher-ServiceCockpit.ps1.
- $serviceHeading.Text='DVINHOLM  ·  '+(Translate $(if($script:serviceIsReady){'cockpitReady'}else{'cockpitUnchecked'}))
+ # Detailed readiness remains in the actual worker-backed status fields.
+ # At compact scaling the former status suffix clipped the heading.
+ $serviceHeading.Text='DVINHOLM'
  $serviceStatus.Text=Translate 'cockpitCaption'
  $channelLabel.Text=Translate 'channelHeading'
  $releaseHint.Text=Translate 'stableHint'
@@ -2640,6 +2642,21 @@ if($Mode -eq 'UiPreview'){
      -not $check.Visible -or
      -not $install.Visible){
    throw 'Updates view must retain visible Back, channel, Check and Install controls even while disabled.'
+  }
+  # The former test inspected Visible but missed buttons covered by cards.
+  # Test paint order and hit-test separation on the real scaled form.
+  foreach($action in @($choice,$check,$install,$launch)){
+   $backing=if($action -eq $choice -or $action -eq $launch){
+    $script:serviceCardLeft
+   }else{$script:serviceCardUpdates}
+   if($form.Controls.GetChildIndex($action) -ge
+      $form.Controls.GetChildIndex($backing)){
+    throw ('Details view worker control is behind the backing card: '+$action.Name)
+   }
+  }
+  if($script:northReturn.Bounds.IntersectsWith($settingsQuick.Bounds) -or
+     $script:northReturn.Bottom -gt $hero.Bottom){
+   throw 'Back button overlaps Settings or extends outside the banner.'
   }
   Save-NorthernWinFormsPreview 'Launcher-Aurora-Updates-RU.png' $form
   $previewChecks++
