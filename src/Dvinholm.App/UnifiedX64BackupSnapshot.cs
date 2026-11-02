@@ -19,10 +19,18 @@ internal static class UnifiedX64BackupSnapshot
     internal sealed record Journal(int Schema, string State, FileEntry[] Files);
     internal sealed record Receipt(string Directory, string JournalSha256, int Files, long Bytes);
 
-    internal static Receipt Create(UnifiedX64RecoveryPlan plan, UnifiedX64StagedPackage staged)
+    internal static Receipt Create(UnifiedX64RecoveryPlan plan, UnifiedX64StagedPackage staged,
+        Action? afterCopyForTests = null)
     {
         ArgumentNullException.ThrowIfNull(plan);
         ArgumentNullException.ThrowIfNull(staged);
+        // This optional hook exists ONLY for deterministic, isolated tests
+        // simulating concurrent filesystem modification. It is never allowed
+        // for a real install tree, even if the caller provides a callback.
+        if (afterCopyForTests is not null &&
+            !IsIsolatedSnapshotFixture(plan, staged))
+            throw new InvalidOperationException(
+                "Snapshot race injection is restricted to disposable test directories.");
         // Recheck the live installation and staged bytes immediately before
         // reading source files; old preflight observations may be stale.
         var root = Path.GetDirectoryName(Path.GetFullPath(plan.BackupDirectory))
@@ -99,10 +107,23 @@ internal static class UnifiedX64BackupSnapshot
                 stream.Write(json);
                 stream.Flush(flushToDisk: true);
             }
-            // Validate the pending copy before the atomic name transition.
+            // Controlled tests can alter a source after it was captured,
+            // exposing races that per-file immediate checks alone miss.
+            afterCopyForTests?.Invoke();
+
+            // Hash the COMPLETE source tree against the finished journal
+            // immediately before publication. Count/size checks cannot detect
+            // a same-length rewrite or a file replaced after its copy.
             Verify(temporary);
+            if (!MatchesInstalledContents(temporary, plan.InstallDirectory))
+                throw new InvalidDataException(
+                    "Installed source changed before snapshot was committed.");
             Directory.Move(temporary, target);
-            return Verify(target);
+            var committed = Verify(target);
+            if (!MatchesInstalledContents(target, plan.InstallDirectory))
+                throw new InvalidDataException(
+                    "Installed source changed during snapshot commit.");
+            return committed;
         }
         catch
         {
@@ -115,6 +136,36 @@ internal static class UnifiedX64BackupSnapshot
             }
             throw;
         }
+    }
+
+    private static bool IsIsolatedSnapshotFixture(
+        UnifiedX64RecoveryPlan plan, UnifiedX64StagedPackage staged)
+    {
+        var temp = Path.TrimEndingDirectorySeparator(
+            Path.GetFullPath(Path.GetTempPath()));
+        var install = Path.TrimEndingDirectorySeparator(
+            Path.GetFullPath(plan.InstallDirectory));
+        var fixture = Path.GetDirectoryName(install);
+        if (fixture is null ||
+            !string.Equals(Path.GetFileName(install), "app", StringComparison.Ordinal) ||
+            !string.Equals(Path.GetDirectoryName(fixture), temp,
+                StringComparison.OrdinalIgnoreCase) ||
+            !Regex.IsMatch(Path.GetFileName(fixture),
+                @"^dvinholm-snapshot-[a-f0-9]{32}$",
+                RegexOptions.CultureInvariant) ||
+            !string.Equals(Path.GetDirectoryName(Path.GetFullPath(plan.BackupDirectory)),
+                Path.Combine(fixture, "backups"), StringComparison.OrdinalIgnoreCase) ||
+            !string.Equals(Path.GetDirectoryName(
+                Path.GetDirectoryName(Path.GetFullPath(staged.Directory))),
+                fixture, StringComparison.OrdinalIgnoreCase))
+            return false;
+
+        for (DirectoryInfo? parent = new(fixture);
+             parent is not null; parent = parent.Parent)
+            if (!parent.Exists ||
+                (parent.Attributes & FileAttributes.ReparsePoint) != 0)
+                return false;
+        return true;
     }
 
     /// <summary>
