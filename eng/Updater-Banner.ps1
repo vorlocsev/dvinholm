@@ -2576,6 +2576,34 @@ if($Mode -eq 'UiPreview'){
   try{
    $captureRoot.DrawToBitmap($image,[Drawing.Rectangle]::new(
     0,0,$image.Width,$image.Height))
+   if($captureRoot -eq $form){
+    # DrawToBitmap may reverse child Z-order and paint backing cards over
+    # native Buttons/ComboBoxes. Separately ask each REAL live control to
+    # draw its own pixels; composite in the same coordinates, only after
+    # verifying that the underlying control is visible and foregrounded.
+    # This is an OFFSCREEN DIAGNOSTIC COMPOSITE, not a desktop screenshot.
+    $clientTopLeft=$form.PointToScreen([Drawing.Point]::Empty)
+    $offsetX=$clientTopLeft.X-$form.Left
+    $offsetY=$clientTopLeft.Y-$form.Top
+    $layers=@($choice,$check,$install,$launch,$versionsButton,
+     $windowsQuick,$depsInstallQuick,$driverQuick,$driverScanQuick,
+     $settingsQuick,$script:northReturn)
+    $imageGraphics=[Drawing.Graphics]::FromImage($image)
+    try{
+     foreach($control in $layers){
+      if($null -eq $control -or $control.IsDisposed -or
+         -not $control.Visible -or $control.Parent -ne $form -or
+         $control.Width -lt 8 -or $control.Height -lt 8){continue}
+      $controlImage=[Drawing.Bitmap]::new($control.Width,$control.Height)
+      try{
+       $control.DrawToBitmap($controlImage,[Drawing.Rectangle]::new(
+        0,0,$control.Width,$control.Height))
+       $imageGraphics.DrawImageUnscaled($controlImage,
+        ($offsetX+$control.Left),($offsetY+$control.Top))
+      }finally{$controlImage.Dispose()}
+     }
+    }finally{$imageGraphics.Dispose()}
+   }
    $colors=[Collections.Generic.HashSet[int]]::new()
    for($y=0;$y -lt $image.Height;$y+=17){
     for($x=0;$x -lt $image.Width;$x+=17){
