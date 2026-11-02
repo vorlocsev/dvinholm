@@ -1,3 +1,5 @@
+> **ARCHITECTURE SUPERSEDED (2026-11-02):** Keep the **six-screen Aurora visual design**, sidebar order and **no Settings** decision from this document. The WPF / x86 / .NET Framework discussion is historical; the approved implementation is now **WinUI 3 + .NET 10 + self-contained + Windows x64**, specified in [DVINHOLM-UNIFIED-WINUI3-X64-APPROVED.md](DVINHOLM-UNIFIED-WINUI3-X64-APPROVED.md). Do not implement or merge the prior WPF pilot.
+
 # Dvinholm Unified WPF: approved six-screen Aurora design
 
 Status: **DESIGN APPROVED by user (2026-11-02)**. This document is a UI/UX contract, **not** evidence that the screens, CEM operations, or updater have been implemented.
