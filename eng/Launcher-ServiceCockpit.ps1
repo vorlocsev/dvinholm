@@ -66,7 +66,7 @@ $script:serviceCardUpdates=New-ServiceCard 430 194 736 155
 $script:serviceCardWindows=New-ServiceCard 430 357 736 155
 $script:serviceCardDrivers=New-ServiceCard 430 520 736 156
 
-$serviceHeading=New-ServiceLabel 'DVINHOLM  •  READY' 88 215 300 38 20 $true '#EAF6FF'
+$serviceHeading=New-ServiceLabel 'DVINHOLM' 88 215 300 38 20 $true '#EAF6FF'
 $serviceStatus=New-ServiceLabel 'Windows x86  |  J2534 diagnostics' 36 258 362 29 11 $false
 $channelLabel=New-ServiceLabel 'Канал обновлений' 35 300 355 24 11 $true '#A8CADC'
 $releaseHint=New-ServiceLabel 'Stable: release  /  Development: CI' 35 373 368 25 10 $false
@@ -551,7 +551,7 @@ foreach($action in @($script:northUpdates,$script:northComponents,
                       $script:northDrivers,$script:northSettings,$script:northAbout)){
  Set-NorthernButtonArtwork $action $false
 }
-$script:northReturn=New-ServiceButton '← Главная' 25 133 176 36
+$script:northReturn=New-ServiceButton '← Главная' 785 135 186 35
 $script:northReturn.Visible=$false
 function Show-NorthernHome {
  $script:northernDetailOpen=$false
@@ -561,12 +561,22 @@ function Show-NorthernHome {
 }
 $script:northReturn.Add_Click({Show-NorthernHome})
 function Show-NorthernUpdates {
- # Advanced service cockpit retains its genuine Check, Install, worker
- # progress, actual versions and confirmation-gated driver controls.
+ # The legacy worker-backed controls stay on the form and under Home.
+ # Bring them above Service Cockpit backing cards when switching pages:
+ # Visible=true alone cannot guarantee painting or click hit-testing.
  $script:northernDetailOpen=$true
  $script:northernHome.Visible=$false
+ foreach($control in @($choice,$installed,$available,$status,$recovery,
+     $launch,$check,$install,$bar,$deps,$versionsButton,
+     $windowsQuick,$depsInstallQuick,$driverQuick,$driverScanQuick,
+     $settingsQuick)){
+  if($null -ne $control -and -not $control.IsDisposed -and $control.Visible){
+   $control.BringToFront()
+  }
+ }
  $script:northReturn.Visible=$true
  $script:northReturn.BringToFront()
+ $form.Invalidate($true)
 }
 $script:northLaunch.Add_Click({
  if($launch.Enabled){$launch.PerformClick()}
