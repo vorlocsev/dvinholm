@@ -236,8 +236,8 @@ cards** (.NET, WinApp, J2534); **one wide green primary Start**; five genuine
 actions in a **3+2 grid** (Updates, Components, J2534 Drivers; Settings,
 About); a coastal/viking Northern Dvina/White Sea footer. Localize RU and EN.
 
-The implemented **WinForms-native composition** uses a 1180×840 reference
-canvas, normally up to **944×672** pixels, constrained by screen working area
+The implemented **WinForms-native composition** now uses a 1180×800 reference
+canvas, normally up to **944×640** pixels, constrained by screen working area
 with scrolling. It retains PowerShell 5.1 and the native x86 launcher and
 reuses the locally bundled interim automotive banner. No dead or fake
 buttons; About uses the existing localized about text, and Updates opens
@@ -292,3 +292,28 @@ claim `Готово` just because a mockup depicts a green ready state.
 `UiPreview` and all package/recovery audits require or validate the
 decomposed asset; no external image server or installer code was added.
 Windows real-DPI 100/125/150% final visual acceptance is still needed.
+
+
+## Removed redundant bottom status strip (2026-11-02)
+
+The user explicitly removed the narrow **Installed / Channel / Recovery**
+information row beneath the five actions. The five **real WinForms buttons**
+remain in their approved 3+2 arrangement, as do the live .NET, WinApp and
+J2534 status cards, the vehicle/aurora banner, and the separate illustrated
+Northern Dvina / White Sea coast footer. This is a layout reduction, **not**
+a request to remove the decorative coast and its lettering.
+
+The reference canvas is now **1180×800**, normally **944×640** at the 0.8
+scale factor. The coastal artwork moves up 40 reference pixels so it starts
+10 pixels below the five-button row; the old 40-pixel status band is gone.
+Installed version, selected channel and recovery messages are still available
+from their real worker-backed controls in **Updates**. The underlying worker
+status tokens and launch/update/recovery safety conditions are unchanged.
+
+Windows-only CI performs eight dedicated offline acceptance gates that check
+no status-strip controls remain, the Home labels do not leak back, the
+compact viewport/spacing, three live prerequisites, and Updates/Home access.
+The 100/125/150% virtual-work-area calculations are adjusted to the smaller
+canvas but **must not be confused with real Windows desktop DPI testing**.
+The previous visual contract is preserved except for this explicit footer-row
+removal. Neither Stable nor the separate Virtual Car project is changed.
