@@ -239,6 +239,31 @@ function Set-AuroraCompactLayout {
 }
 
 
+# Optional *user-approved* screenshot artwork. Only the automotive hero and
+# coastal footer are raster layers. Buttons, status and installer state remain
+# native WinForms controls with real event handlers and real worker evidence.
+# JPEGs may be placed in Binaries/ on Windows. Stock fallback stays offline.
+$script:approvedHeroArt=$null
+$script:approvedFooterArt=$null
+function Read-NorthernReferenceArt([string]$name,[int]$minWidth,[int]$minHeight){
+ $path=Join-Path $PSScriptRoot $name
+ if(-not(Test-Path -LiteralPath $path -PathType Leaf)){return $null}
+ try{
+  $file=Get-Item -LiteralPath $path -Force
+  if($file.Length -gt 1024KB -or $file.Length -lt 2048 -or
+     ($file.Attributes -band [IO.FileAttributes]::ReparsePoint) -ne 0){
+   return $null
+  }
+  $image=[Drawing.Image]::FromFile($path)
+  if($image.Width -lt $minWidth -or $image.Height -lt $minHeight){
+   $image.Dispose();return $null
+  }
+  return $image
+ }catch{return $null}
+}
+$script:approvedHeroArt=Read-NorthernReferenceArt 'launcher-approved-hero.jpg' 1000 280
+$script:approvedFooterArt=Read-NorthernReferenceArt 'launcher-approved-footer.jpg' 1000 80
+
 # Approved Northern Compact home (2026-11-01, final/fourth concept).
 # Use only the existing GDI+/WinForms runtime and the bundled panorama.
 # All updates, drivers, safe launch and recovery remain handled above.
@@ -408,6 +433,19 @@ $script:northernHome.Add_Paint({
     [Drawing.Point]::new(1095,788),[Drawing.Point]::new(1140,758),
     [Drawing.Point]::new(1180,782),[Drawing.Point]::new(1180,840)))
   }finally{$coast.Dispose()}
+  # The supplied screenshot's *art-only* layers override the vector fallback
+  # in RU, after scenery painting but before real WinForms controls are drawn.
+  # They contain no fictitious green "Ready" tiles or clickable buttons.
+  if($script:launcherLanguage -eq 'RU'){
+   if($script:approvedHeroArt){
+    $g.DrawImage($script:approvedHeroArt,
+     [Drawing.Rectangle]::new(0,0,1180,348))
+   }
+   if($script:approvedFooterArt){
+    $g.DrawImage($script:approvedFooterArt,
+     [Drawing.Rectangle]::new(0,778,1180,62))
+   }
+  }
   $footerFont=[Drawing.Font]::new('Segoe UI',[single]12,[Drawing.FontStyle]::Regular)
   $footerBrush=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(195,220,236))
   try{
@@ -587,6 +625,15 @@ function Update-NorthernCompactSnapshot {
   $script:northAbout.Text='ⓘ  О ПРОГРАММЕ'
   $script:northReturn.Text='← Главная'
  }
+ # Text and exact user artwork are mutually exclusive: no double printing.
+ $useReference=($null -ne $script:approvedHeroArt -and
+                $script:launcherLanguage -eq 'RU')
+ foreach($label in @($script:northTitle,$script:northSubtitle,
+                     $script:northCaption,$script:northSource)){
+  $label.Visible=-not $useReference
+ }
+ $script:northernHome.Invalidate()
+
 }
 # The hidden back button is created after the home panel and would otherwise
 # take the top z-order before the window becomes visible.
