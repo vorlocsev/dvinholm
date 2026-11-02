@@ -533,10 +533,16 @@ $script:northernHome.Add_Paint({
    finally{$enGlow.Dispose()}
   }
   if($script:approvedAtlas){
-   # The original atlas footer has a caption baked through its centre.
-   # Retain only its text-free scenery at the left and right edges;
-   # the centre stays the clean native dark sea background. No slogans
-   # are printed in either language, including the image fallback path.
+   # The original image's central footer includes a baked-in slogan.
+   # Restore the user's approved text-free coast as one uninterrupted
+   # native sea band, and overlay only safe atlas end-caps (trees/waves).
+   # No label or fake control is ever painted into the background.
+   $seaGradient=[Drawing.Drawing2D.LinearGradientBrush]::new(
+    [Drawing.Rectangle]::new(0,738,1180,62),
+    [Drawing.Color]::FromArgb(8,31,50),
+    [Drawing.Color]::FromArgb(4,24,43),90.0)
+   try{$g.FillRectangle($seaGradient,0,738,1180,62)}
+   finally{$seaGradient.Dispose()}
    $g.DrawImage($script:approvedAtlas,
     [Drawing.Rectangle]::new(0,738,309,62),
     [Drawing.Rectangle]::new(0,395,360,115),
@@ -558,6 +564,14 @@ $script:northernHome.Add_Paint({
     $g.FillRectangle($fadeToSea,270,738,42,62)
     $g.FillRectangle($fadeFromSea,890,738,42,62)
    }finally{$fadeToSea.Dispose();$fadeFromSea.Dispose()}
+   # Continuous low-contrast sea ripples bridge the left wooded shore
+   # and the right Arctic waves; keep all strokes below the button row.
+   $lowWave=[Drawing.Pen]::new([Drawing.Color]::FromArgb(38,27,130,137),2)
+   $deepWave=[Drawing.Pen]::new([Drawing.Color]::FromArgb(27,32,83,116),2)
+   try{
+    $g.DrawBezier($lowWave,220,779,470,771,735,793,954,777)
+    $g.DrawBezier($deepWave,260,792,510,782,710,803,916,789)
+   }finally{$lowWave.Dispose();$deepWave.Dispose()}
   }
  }finally{
   $night.Dispose();$veil.Dispose();$metal.Dispose()
