@@ -291,7 +291,7 @@ function New-NorthernButton([string]$value,[int]$x,[int]$y,
  $button=New-Object Windows.Forms.Button
  $button.Text=$value
  $button.SetBounds($x,$y,$width,$height)
- $button.Font=[Drawing.Font]::new('Segoe UI',$(if($primary){17}else{11}),
+ $button.Font=[Drawing.Font]::new('Segoe UI',$(if($primary){25}else{17}),
   [Drawing.FontStyle]::Bold)
  $button.BackColor=if($primary){
   [Drawing.Color]::FromArgb(8,118,113)
@@ -404,6 +404,8 @@ $script:northernHome.Add_Paint({
   $blue=[Drawing.SolidBrush]::new([Drawing.Color]::FromArgb(37,164,234))
   try{
    $g.FillRectangle($purple,51,373,53,53)
+   $netFont=[Drawing.Font]::new('Segoe UI',[single]13,[Drawing.FontStyle]::Bold)
+   try{$g.DrawString('.NET',$netFont,$bird,53,389)}finally{$netFont.Dispose()}
    foreach($left in @(433,463)){
     foreach($top in @(376,405)){$g.FillRectangle($blue,$left,$top,24,24)}
    }
@@ -468,9 +470,9 @@ $script:northSource=New-NorthernLabel 'ДЛЯ VOLVO' 371 253 650 27 13
 $script:northRuntimeTitle=New-NorthernLabel '.NET Runtime' 117 373 260 29 17 $true
 $script:northWinAppTitle=New-NorthernLabel 'WinApp Runtime' 505 373 262 29 17 $true
 $script:northDriverTitle=New-NorthernLabel 'J2534' 892 373 237 29 17 $true
-$script:northRuntime=New-NorthernLabel '.NET x86: не проверено' 117 405 265 25 11 $true
-$script:northWinApp=New-NorthernLabel 'WinApp: не проверено' 505 405 261 25 11 $true
-$script:northDriver=New-NorthernLabel 'J2534: не проверено' 892 405 241 25 11 $true
+$script:northRuntime=New-NorthernLabel '.NET x86: не проверено' 117 405 265 25 13 $true
+$script:northWinApp=New-NorthernLabel 'WinApp: не проверено' 505 405 261 25 13 $true
+$script:northDriver=New-NorthernLabel 'J2534: не проверено' 892 405 241 25 13 $true
 $script:northLaunch=New-NorthernButton '▶  ЗАПУСТИТЬ DVINHOLM' 272 467 636 81 $true
 $script:northUpdates=New-NorthernButton '↻  ОБНОВЛЕНИЯ' 44 577 351 68
 $script:northComponents=New-NorthernButton '◇  КОМПОНЕНТЫ' 414 577 351 68
