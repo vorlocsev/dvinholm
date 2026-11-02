@@ -180,6 +180,32 @@ internal static class UnifiedX64BackupSnapshot
             names.Count, total);
     }
 
+    /// <summary>
+    /// A complete backup can still be stale if the live installation changed.
+    /// Rehash the installed source against each journal entry, including
+    /// same-size modifications; no installed files are modified.
+    /// </summary>
+    internal static bool MatchesInstalledContents(
+        string snapshotDirectory, string installedDirectory)
+    {
+        Verify(snapshotDirectory);
+        var bytes = File.ReadAllBytes(Path.Combine(snapshotDirectory, JournalFile));
+        var journal = JsonSerializer.Deserialize<Journal>(bytes)
+            ?? throw new InvalidDataException("Snapshot journal cannot be read.");
+        var expected = journal.Files.ToDictionary(
+            e => e.RelativePath, e => e, StringComparer.OrdinalIgnoreCase);
+        var observed = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+        foreach (var (name, fullPath) in EnumerateSafeFiles(installedDirectory))
+        {
+            if (!expected.TryGetValue(name, out var entry) ||
+                !observed.Add(name) ||
+                new FileInfo(fullPath).Length != entry.Bytes ||
+                !string.Equals(HashFile(fullPath), entry.Sha256, StringComparison.Ordinal))
+                return false;
+        }
+        return observed.Count == expected.Count;
+    }
+
     private static IEnumerable<(string Name, string FullPath)> EnumerateSafeFiles(string root)
     {
         var pending = new Stack<string>();
