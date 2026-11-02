@@ -509,8 +509,8 @@ $script:northernHome.Add_Paint({
    # Paint the safe side crops, then reuse wordmark-free aurora sky from
    # that image behind *live* English labels. No flat rectangular panel.
    $g.DrawImage($script:approvedAtlas,
-    [Drawing.Rectangle]::new(0,0,385,348),
-    [Drawing.Rectangle]::new(0,0,449,395),
+    [Drawing.Rectangle]::new(0,0,390,348),
+    [Drawing.Rectangle]::new(0,0,455,395),
     [Drawing.GraphicsUnit]::Pixel)
    $g.DrawImage($script:approvedAtlas,
     [Drawing.Rectangle]::new(800,0,380,348),
@@ -519,11 +519,12 @@ $script:northernHome.Add_Paint({
    if($script:northernEnglishSky){
     $skyImage=$script:northernEnglishSky
     $g.DrawImage($skyImage,
-     [Drawing.Rectangle]::new(425,0,375,235),
-     [Drawing.Rectangle]::new(125,0,375,235),
+     [Drawing.Rectangle]::new(390,0,410,235),
+     [Drawing.Rectangle]::new(90,0,410,235),
      [Drawing.GraphicsUnit]::Pixel)
-    # Feather starts AFTER the entire gull-and-arrow mark, so violet
-    # aurora can never wash out the approved left emblem.
+    # Left artwork ends exactly where the sky begins (x390), with a 30px
+    # blend over intact image pixels, not over an empty 40px gap.
+    # Keep the blend right of the gull-and-arrow emblem.
     $alphaAttr=[Drawing.Imaging.ImageAttributes]::new()
     try{
      for($i=0;$i -lt 6;$i++){
@@ -531,8 +532,8 @@ $script:northernHome.Add_Paint({
       $leftMatrix.Matrix33=[single](($i+1)/7.0)
       $alphaAttr.SetColorMatrix($leftMatrix)
       $g.DrawImage($skyImage,
-       [Drawing.Rectangle]::new(365+$i*10,0,10,235),
-       [single](65+$i*10),[single]0,[single]10,[single]235,
+       [Drawing.Rectangle]::new(360+$i*5,0,5,235),
+       [single](60+$i*5),[single]0,[single]5,[single]235,
        [Drawing.GraphicsUnit]::Pixel,$alphaAttr)
      }
      for($i=0;$i -lt 8;$i++){
@@ -545,6 +546,15 @@ $script:northernHome.Add_Paint({
        [Drawing.GraphicsUnit]::Pixel,$alphaAttr)
      }
     }finally{$alphaAttr.Dispose()}
+    # Tint the first portion of the generated sky toward the original
+    # dark northern horizon. Fully transparent at the far edge so the
+    # real aurora remains vivid without a rectangular title backdrop.
+    $leftVeil=[Drawing.Drawing2D.LinearGradientBrush]::new(
+     [Drawing.Rectangle]::new(390,0,165,235),
+     [Drawing.Color]::FromArgb(175,8,27,47),
+     [Drawing.Color]::FromArgb(0,8,27,47),0.0)
+    try{$g.FillRectangle($leftVeil,390,0,165,235)}
+    finally{$leftVeil.Dispose()}
    }else{
     # Corrupt/unavailable atlas derivative remains an offline safe fallback.
     $fallbackSky=[Drawing.Drawing2D.LinearGradientBrush]::new(

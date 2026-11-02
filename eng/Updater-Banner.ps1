@@ -2958,6 +2958,30 @@ if($Mode -eq 'UiPreview'){
   if($cleanSkyChecks -ne 8){throw 'Incorrect clean English sky check count.'}
   Write-Host 'Northern Aurora no ghost Cyrillic pixels 8/8 checks passed.'
 
+  # Eight true Windows offscreen bitmap seam gates. Read after saving
+  # English PNG: ensure the formerly empty x385..425 band is now
+  # photographed sky rather than a black rectangular interruption.
+  $seamChecks=0
+  $seamImage=[Drawing.Bitmap]::new(
+   (Join-Path $PreviewDirectory 'Launcher-Aurora-Home-EN.png'))
+  try{
+   foreach($seamY in @(12,16,20,24,28,32,36,40)){
+    $seamInk=0
+    foreach($seamX in @(306,310,314,318,322)){
+     $c=$seamImage.GetPixel($seamX,$seamY)
+     if($c.B -ge 32 -and $c.G -ge 12 -and $c.R -le 180){
+      $seamInk++
+     }
+    }
+    if($seamInk -lt 5){
+     throw ('English sky returned an empty seam at y='+$seamY)
+    }
+    $seamChecks++
+   }
+  }finally{$seamImage.Dispose()}
+  if($seamChecks -ne 8){throw 'Wrong English seam gate count.'}
+  Write-Host 'Northern Aurora continuous English sky 8/8 checks passed.'
+
   # Eight genuine Windows bitmap/UI contracts for the final RU/EN artwork.
   # The approved footer coast remains, but its baked-in tagline is cropped
   # away; the EN hero now shares the same gull, car and harbour panorama.
