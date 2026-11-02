@@ -2901,7 +2901,7 @@ if($Mode -eq 'UiPreview'){
    throw 'English Aurora sky texture was not loaded from the local atlas.'
   }
   $cleanSkyChecks++
-  if($script:northernEnglishSky.Width -ne 630){
+  if($script:northernEnglishSky.Width -ne 410){
    throw 'English sky cached with an unexpected width.'
   }
   $cleanSkyChecks++

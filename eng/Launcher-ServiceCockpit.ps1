@@ -302,19 +302,20 @@ if(Test-Path -LiteralPath $atlasPath -PathType Leaf){
   }
  }catch{$script:approvedAtlas=$null}
 }
-# Cache English-only sky from atlas pixels x1000..1375, y0..104. This
-# region has no baked RU letters or vehicle, preventing ghost glyphs. No new binary, network request or fake UI.
+# Cache only wordmark-free top sky from atlas x460..934, y0..47.
+# The source x limits match the two neighboring photographic crops,
+# preventing unnatural violet seams while avoiding baked RU letters. No new binary, network request or fake UI.
 $script:northernEnglishSky=$null
 if($script:approvedAtlas){
  $skyBitmap=$null
  $skyGraphics=$null
  try{
-  $skyBitmap=[Drawing.Bitmap]::new(630,235)
+  $skyBitmap=[Drawing.Bitmap]::new(410,235)
   $skyGraphics=[Drawing.Graphics]::FromImage($skyBitmap)
   $skyGraphics.InterpolationMode=[Drawing.Drawing2D.InterpolationMode]::HighQualityBicubic
   $skyGraphics.DrawImage($script:approvedAtlas,
-   [Drawing.Rectangle]::new(0,0,630,235),
-   [Drawing.Rectangle]::new(1000,0,376,105),
+   [Drawing.Rectangle]::new(0,0,410,235),
+   [Drawing.Rectangle]::new(460,0,475,48),
    [Drawing.GraphicsUnit]::Pixel)
   $script:northernEnglishSky=$skyBitmap
   $skyBitmap=$null
@@ -520,7 +521,7 @@ $script:northernHome.Add_Paint({
     $skyImage=$script:northernEnglishSky
     $g.DrawImage($skyImage,
      [Drawing.Rectangle]::new(390,0,410,235),
-     [Drawing.Rectangle]::new(90,0,410,235),
+     [Drawing.Rectangle]::new(0,0,410,235),
      [Drawing.GraphicsUnit]::Pixel)
     # Left artwork ends exactly where the sky begins (x390), with a 30px
     # blend over intact image pixels, not over an empty 40px gap.
@@ -533,7 +534,7 @@ $script:northernHome.Add_Paint({
       $alphaAttr.SetColorMatrix($leftMatrix)
       $g.DrawImage($skyImage,
        [Drawing.Rectangle]::new(360+$i*5,0,5,235),
-       [single](60+$i*5),[single]0,[single]5,[single]235,
+       [single]($i*5),[single]0,[single]5,[single]235,
        [Drawing.GraphicsUnit]::Pixel,$alphaAttr)
      }
      for($i=0;$i -lt 8;$i++){
@@ -542,19 +543,10 @@ $script:northernHome.Add_Paint({
       $alphaAttr.SetColorMatrix($rightMatrix)
       $g.DrawImage($skyImage,
        [Drawing.Rectangle]::new(800+$i*10,0,10,235),
-       [single](500+$i*10),[single]0,[single]10,[single]235,
+       [single](330+$i*10),[single]0,[single]10,[single]235,
        [Drawing.GraphicsUnit]::Pixel,$alphaAttr)
      }
     }finally{$alphaAttr.Dispose()}
-    # Tint the first portion of the generated sky toward the original
-    # dark northern horizon. Fully transparent at the far edge so the
-    # real aurora remains vivid without a rectangular title backdrop.
-    $leftVeil=[Drawing.Drawing2D.LinearGradientBrush]::new(
-     [Drawing.Rectangle]::new(390,0,165,235),
-     [Drawing.Color]::FromArgb(175,8,27,47),
-     [Drawing.Color]::FromArgb(0,8,27,47),0.0)
-    try{$g.FillRectangle($leftVeil,390,0,165,235)}
-    finally{$leftVeil.Dispose()}
    }else{
     # Corrupt/unavailable atlas derivative remains an offline safe fallback.
     $fallbackSky=[Drawing.Drawing2D.LinearGradientBrush]::new(

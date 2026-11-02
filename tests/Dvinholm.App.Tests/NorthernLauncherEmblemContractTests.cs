@@ -126,7 +126,8 @@ public sealed class NorthernLauncherEmblemContractTests
         Assert.Contains("[Drawing.Rectangle]::new(390,0,410,235)", cockpit);
         Assert.Contains("[Drawing.Rectangle]::new(360+$i*5,0,5,235)", cockpit);
         // English sky comes from the approved atlas's wordmark-free upper right.
-        Assert.Contains("[Drawing.Rectangle]::new(1000,0,376,105)", cockpit);
+        Assert.Contains("[Drawing.Rectangle]::new(460,0,475,48)", cockpit);
+        Assert.Contains("[Drawing.Rectangle]::new(0,0,410,235)", cockpit);
         Assert.DoesNotContain("[Drawing.Rectangle]::new(740,0,325,142)", cockpit);
         Assert.Contains("[Drawing.Rectangle]::new(934,0,442,395)", cockpit);
         Assert.Contains("$script:northCaption.Text='SERVICES  ·  TOOLS  ·  DRIVERS'", cockpit);
