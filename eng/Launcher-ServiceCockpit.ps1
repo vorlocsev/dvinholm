@@ -503,16 +503,30 @@ $script:northernHome.Add_Paint({
    # a continuous dark sky for native English words. Fade into the real
    # waterfront at the bottom, keeping the same car, gull and Viking art.
    $enSky=[Drawing.Drawing2D.LinearGradientBrush]::new(
-    [Drawing.Rectangle]::new(390,0,410,288),
+    [Drawing.Rectangle]::new(390,0,410,245),
     [Drawing.Color]::FromArgb(5,23,45),
     [Drawing.Color]::FromArgb(9,39,62),0.0)
-   try{$g.FillRectangle($enSky,390,0,410,288)}finally{$enSky.Dispose()}
+   try{$g.FillRectangle($enSky,390,0,410,245)}finally{$enSky.Dispose()}
    $enHorizon=[Drawing.Drawing2D.LinearGradientBrush]::new(
-    [Drawing.Rectangle]::new(390,255,410,64),
-    [Drawing.Color]::FromArgb(235,7,31,51),
+    [Drawing.Rectangle]::new(390,245,410,95),
+    [Drawing.Color]::FromArgb(255,7,31,51),
     [Drawing.Color]::FromArgb(0,7,31,51),90.0)
-   try{$g.FillRectangle($enHorizon,390,255,410,64)}
+   try{$g.FillRectangle($enHorizon,390,245,410,95)}
    finally{$enHorizon.Dispose()}
+   # The English sky blends into the two atlas halves instead of leaving
+   # a visible rectangular cutoff behind the wordmark and coastline.
+   $enLeftFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
+    [Drawing.Rectangle]::new(365,0,57,245),
+    [Drawing.Color]::FromArgb(0,7,28,47),
+    [Drawing.Color]::FromArgb(255,7,28,47),0.0)
+   $enRightFade=[Drawing.Drawing2D.LinearGradientBrush]::new(
+    [Drawing.Rectangle]::new(776,0,58,245),
+    [Drawing.Color]::FromArgb(255,8,34,55),
+    [Drawing.Color]::FromArgb(0,8,34,55),0.0)
+   try{
+    $g.FillRectangle($enLeftFade,365,0,57,245)
+    $g.FillRectangle($enRightFade,776,0,58,245)
+   }finally{$enLeftFade.Dispose();$enRightFade.Dispose()}
    # Two subtle aurora strokes live above, not behind, the English caption.
    $enGlow=[Drawing.Pen]::new([Drawing.Color]::FromArgb(37,35,187,159),11)
    try{$g.DrawBezier($enGlow,520,8,610,-30,715,50,805,4)}
