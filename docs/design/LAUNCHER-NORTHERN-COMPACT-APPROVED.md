@@ -317,3 +317,30 @@ The 100/125/150% virtual-work-area calculations are adjusted to the smaller
 canvas but **must not be confused with real Windows desktop DPI testing**.
 The previous visual contract is preserved except for this explicit footer-row
 removal. Neither Stable nor the separate Virtual Car project is changed.
+
+
+## Final approved RU/EN artwork without bottom motto (2026-11-02)
+
+The user subsequently approved an updated **Russian** and **English** launcher
+home-screen concept with **no slogan at all in the decorative lower band**.
+This supersedes the preceding note that the coast's lettering must be retained.
+The coast, water, forest and mountain shapes remain; the `Northern Dvina ·
+White Sea · Viking heritage` caption and its Russian equivalent do not.
+
+The EN home must use the same approved gull/gear/arrow identity, Viking prow,
+Aurora harbour and Volvo SUV as RU. Earlier EN fallback art showed a different
+flat logo and only the right-hand slice of the Volvo photo; this is not the
+approved English concept. The current native WinForms painter instead reuses
+the bundled local artwork through safe, language-specific source crops and a
+native translated text layer. It does **not** bake in false readiness states.
+No additional network image dependency or pre-rendered interactive button was
+introduced. The original generated English mockup is still a visual reference,
+not a claim of exact pixel parity with the reconstructed WinForms composition.
+
+All five actions and the three actual dependency/driver labels stay live.
+English header text is `DVINHOLM LAUNCHER`, `SERVICES · TOOLS · DRIVERS`,
+`FOR VOLVO`; Russian retains the approved local-language headings.
+Eight offline WinForms bitmap checks now cover both rendered home screens,
+empty footer centre, common emblem/car samples, translation and fail-closed
+startup. Manual 100/125/150% desktop DPI and navigation acceptance is still
+required before merge. Stable and the separate Virtual Car are unchanged.
