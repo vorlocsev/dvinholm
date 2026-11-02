@@ -2950,6 +2950,62 @@ if($Mode -eq 'UiPreview'){
   if($seaChecks -ne 8){throw 'Wrong sea continuity pixel check count.'}
   Write-Host 'Northern Aurora bilingual coast continuity 8/8 checks passed.'
 
+  # Eight offline checks ensure multiword runtime evidence remains intact
+  # on the real RU/EN home cards. No worker state is changed or fabricated.
+  $evidenceChecks=0
+  $savedDeps=[string]$deps.Text
+  $savedLanguage=[string]$script:launcherLanguage
+  try{
+   $inventory='.NET x86: Not installed    WinApp: Not checked    VC++ x86: Missing'
+   if((Get-NorthernDependencyValue $inventory 'DotNet') -cne 'Not installed'){
+    throw 'DotNet state truncated to first word.'
+   }
+   $evidenceChecks++
+   if((Get-NorthernDependencyValue $inventory 'WinApp') -cne 'Not checked'){
+    throw 'WinApp state truncated to first word.'
+   }
+   $evidenceChecks++
+   $inventory='.NET x86: Installed    WinApp: Missing    VC++ x86: Installed'
+   if((Get-NorthernDependencyValue $inventory 'DotNet') -cne 'Installed'){
+    throw 'Healthy .NET state not extracted.'
+   }
+   $evidenceChecks++
+   if((Get-NorthernDependencyValue $inventory 'WinApp') -cne 'Missing'){
+    throw 'Missing WinApp state not extracted.'
+   }
+   $evidenceChecks++
+   if((Get-NorthernDependencyValue $inventory 'BadKey') -cne ''){
+    throw 'Unexpected dependency evidence key accepted.'
+   }
+   $evidenceChecks++
+   $script:launcherLanguage='RU'
+   if((Format-NorthernDependencyValue 'Not installed') -cne 'не установлено' -or
+      (Format-NorthernDependencyValue 'Unknown') -cne 'неизвестно'){
+    throw 'Russian runtime status localization failed.'
+   }
+   $evidenceChecks++
+   $deps.Text='.NET x86: Not installed    WinApp: Not checked    VC++ x86: Missing'
+   Update-NorthernCompactSnapshot
+   if($script:northRuntime.Text -cne '.NET x86: не установлено' -or
+      $script:northWinApp.Text -cne 'WinApp: не проверено'){
+    throw 'Real RU status cards dropped multiword runtime evidence.'
+   }
+   $evidenceChecks++
+   $script:launcherLanguage='EN'
+   Update-NorthernCompactSnapshot
+   if($script:northRuntime.Text -cne '.NET x86: Not installed' -or
+      $script:northWinApp.Text -cne 'WinApp: Not checked'){
+    throw 'Real EN status cards dropped multiword runtime evidence.'
+   }
+   $evidenceChecks++
+  }finally{
+   $deps.Text=$savedDeps
+   $script:launcherLanguage=$savedLanguage
+   Apply-LauncherLanguage
+  }
+  if($evidenceChecks -ne 8){throw 'Incorrect runtime evidence test count.'}
+  Write-Host 'Northern Aurora full RU/EN runtime evidence 8/8 checks passed.'
+
   $files=@(
    'Launcher-Aurora-Home-RU.png',
    'Launcher-Aurora-Updates-RU.png',
