@@ -29,8 +29,8 @@ public sealed class AuroraSectionNavigationTests
             Assert.False(string.IsNullOrWhiteSpace(section.Title));
             Assert.False(string.IsNullOrWhiteSpace(section.Description));
         });
-        Assert.Equal("Collapsed", (string?)Named(doc, "AuroraWorkspaceHost").Attribute("Visibility"));
-        Assert.Null(Named(doc, "AuroraLanding").Attribute("Visibility"));
+        Assert.Equal("Visible", (string?)Named(doc, "AuroraWorkspaceHost").Attribute("Visibility"));
+        Assert.Equal("Collapsed", (string?)Named(doc, "AuroraLanding").Attribute("Visibility"));
     }
 
     [Fact]
@@ -39,11 +39,14 @@ public sealed class AuroraSectionNavigationTests
         var doc = Document();
         var sidebar = Named(doc, "SidebarNavPanel");
         var tags = sidebar.Elements().Where(e => e.Attribute("Tag") is not null).Select(e => (string)e.Attribute("Tag")!).ToArray();
-        Assert.Equal(Enum.GetValues<AuroraDestination>().Length, tags.Length);
+        Assert.Equal(5, tags.Length);
+        Assert.Equal(new[] { "J2534Connection", "CemPinReadiness",
+            "CemConfigurationCatalog", "DtcFaults", "EcuWorkspace" }, tags);
         Assert.All(tags, tag => Assert.True(AuroraWorkspaceNavigation.TryParse(tag, out _)));
         Assert.DoesNotContain(Named(doc, "AuroraWorkspaceHost"), sidebar.Ancestors());
         Assert.All(sidebar.Elements().Where(e => e.Attribute("Tag") is not null),
             e => Assert.Equal("WorkspaceNavigate_Click", (string?)e.Attribute("Click")));
+        Assert.Equal("UnifiedUpdatesNavigate_Click", (string?)Named(doc, "SidebarUpdatesButton").Attribute("Click"));
     }
 
     [Fact]
