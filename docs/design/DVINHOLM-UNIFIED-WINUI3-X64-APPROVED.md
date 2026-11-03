@@ -183,6 +183,17 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - Eight Windows-only offline DPAPI tests cover opaque encrypted roundtrip, capped inventory, oversized record rejection, GUID-bound record integrity, exclusive file locks, truncated staging cleanup, targeted idempotent deletion and prior-secret zeroization on replacement. All tests use synthetic six-byte test values in disposable OS temp directories.
 - **No change to vehicle PIN extraction**, credential usage, adapter discovery, ECU programming, authenticated physical CEM capability, or PIN transmission. The experimental route remains excluded from Stable, and the production `CanInstall` update gate remains false. No Stable or Virtual Car releases are modified.
 
+
+## Stage 24: passive J2534 driver PE-architecture audit (no vehicle I/O)
+
+- Added `J2534PeInspector`: a bounded read-only PE COFF machine-header check. It recognizes AMD64 (x64), I386 (x86), ARM64 and unknown/invalid files. The inspector never executes a vendor DLL or calls PassThruOpen.
+- Device registry discovery now audits both 64-bit and 32-bit Windows registry views under PassThruSupport.05.00, 04.04 and legacy 02.02. Registered files with an incompatible DLL architecture are reported as such rather than presented in the adapter selector as working drivers.
+- `J2534DeviceDiscovery.SelectCompatible` requires **both** the process registry view and its PE machine to match. Misregistered x86 DLLs under Registry64 are also excluded. The legacy x86 executable retains the corresponding x86 rule.
+- `J2534Native.Load` checks the selected DLL header before calling `NativeLibrary.Load`; manual paths cannot bypass bitness preflight. The UI reports compatible/wrong-bitness/unsupported counts on explicit adapter refresh, without showing local DLL paths in public status messages.
+- Eight offline tests cover: genuine-header AMD64, I386, ARM64, missing DOS header, wrong PE signature, invalid PE offsets, truncated or missing files, and exact registry-view/architecture selection including duplicate entries.
+- **Important limit:** a correct PE header neither establishes that a driver exports J2534 functions nor guarantees DiCE/Mongoose support, hardware operation, or publisher authenticity. Physical PassThruOpen, CAN commands and real-car tests have **not** been performed. No x86 bridge has been introduced.
+- CI on this branch must prove both Windows x64 packaging and the legacy full regression before merge. No Stable, Virtual Car, production install activation or release publishing.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
