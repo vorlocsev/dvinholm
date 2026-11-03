@@ -489,24 +489,24 @@
                                 </Grid.ColumnDefinitions>
                                 <Border x:Name="UpdatesVersionPane" Style="{StaticResource AuroraCard}" Grid.Column="0">
                                     <StackPanel Spacing="12">
-                                        <TextBlock x:Name="UnifiedCurrentVersionTitle" Text="Установленная версия" FontSize="20" FontWeight="SemiBold" />
-                                        <TextBlock x:Name="UnifiedCurrentVersion" Text="Не определена" FontSize="27" FontWeight="Bold" Foreground="#B7DDFF" />
-                                        <TextBlock x:Name="UnifiedVersionNote" Text="Данные о доступном обновлении ещё не проверены." Foreground="#A6BED2" />
+                                        <TextBlock x:Name="UnifiedCurrentVersionTitle" TextWrapping="Wrap" Text="Установленная версия" FontSize="20" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="UnifiedCurrentVersion" TextWrapping="Wrap" Text="Не определена" FontSize="27" FontWeight="Bold" Foreground="#B7DDFF" />
+                                        <TextBlock x:Name="UnifiedVersionNote" TextWrapping="Wrap" Text="Данные о доступном обновлении ещё не проверены." Foreground="#A6BED2" />
                                     </StackPanel>
                                 </Border>
                                 <Border x:Name="UpdatesChannelPane" Style="{StaticResource AuroraCard}" Grid.Column="1">
                                     <StackPanel Spacing="12">
-                                        <TextBlock x:Name="UnifiedChannelTitle" Text="Канал обновлений" FontSize="20" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="UnifiedChannelTitle" TextWrapping="Wrap" Text="Канал обновлений" FontSize="20" FontWeight="SemiBold" />
                                         <ComboBox x:Name="UnifiedUpdateChannel" HorizontalAlignment="Stretch" SelectionChanged="UnifiedUpdateChannel_SelectionChanged">
                                             <ComboBoxItem Content="Stable" Tag="stable" />
                                             <ComboBoxItem Content="Development" Tag="development" />
                                         </ComboBox>
-                                        <TextBlock x:Name="UnifiedChannelNote" Text="Выбор сохраняется для этого пользователя." Foreground="#A6BED2" />
+                                        <TextBlock x:Name="UnifiedChannelNote" TextWrapping="Wrap" Text="Выбор сохраняется для этого пользователя." Foreground="#A6BED2" />
                                     </StackPanel>
                                 </Border>
                             <Border x:Name="UpdatesActionPane" Style="{StaticResource AuroraCard}" Grid.Column="2">
                                 <StackPanel Spacing="12">
-                                    <TextBlock x:Name="UnifiedUpdateSafetyTitle" Text="Проверка и установка" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="UnifiedUpdateSafetyTitle" TextWrapping="Wrap" Text="Проверка и установка" FontSize="20" FontWeight="SemiBold" />
                                     <TextBlock x:Name="UnifiedUpdateStatus" Text="Для x64 ещё не опубликован проверенный канал обновлений. Скачивание, установка и перезапуск заблокированы до подключения безопасного x64-обновлятора." TextWrapping="Wrap" Foreground="#BED1E3" />
                                     <StackPanel x:Name="UnifiedUpdateActionList" Spacing="8">
                                         <Button x:Name="UnifiedCheckUpdateButton" Content="Проверить x64-релизы"
@@ -1237,7 +1237,7 @@
                                         <StackPanel Orientation="Horizontal" Spacing="10">
                                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE950;"
                                                       Foreground="#55CEED" FontSize="21" />
-                                            <TextBlock x:Name="ConnectionPageHeading" Text="Интерфейс автомобиля"
+                                            <TextBlock x:Name="ConnectionPageHeading" TextWrapping="Wrap" Text="Интерфейс автомобиля"
                                                        FontSize="19" FontWeight="SemiBold" />
                                         </StackPanel>
                                         <TextBlock x:Name="ConnectionPageIntro"
@@ -1266,7 +1266,7 @@
                                         <StackPanel Orientation="Horizontal" Spacing="10">
                                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE713;"
                                                       Foreground="#55CEED" FontSize="21" />
-                                            <TextBlock x:Name="ConnectionBusHeading"
+                                            <TextBlock x:Name="ConnectionBusHeading" TextWrapping="Wrap"
                                                        Text="Параметры CAN" FontSize="19"
                                                        FontWeight="SemiBold" />
                                         </StackPanel>
@@ -1295,14 +1295,14 @@
                                         <StackPanel Orientation="Horizontal" Spacing="10">
                                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE753;"
                                                       Foreground="#55CEED" FontSize="21" />
-                                            <TextBlock x:Name="ConnectionDriverHeading"
+                                            <TextBlock x:Name="ConnectionDriverHeading" TextWrapping="Wrap"
                                                        Text="Сведения об адаптере" FontSize="19"
                                                        FontWeight="SemiBold" />
                                         </StackPanel>
                                         <TextBlock x:Name="ConnectionSessionState"
                                                    Text="{Binding Text, ElementName=ShellConnectionText}"
                                                    FontSize="17" Foreground="#728FA8" FontWeight="SemiBold" />
-                                        <TextBlock x:Name="ConnectionDriverIntro"
+                                        <TextBlock x:Name="ConnectionDriverIntro" TextWrapping="Wrap"
                                                    Text="Информация текущего подключения."
                                                    Foreground="#A9C7DE" FontSize="12" />
                                         <TextBlock x:Name="AdapterMetadataText"
