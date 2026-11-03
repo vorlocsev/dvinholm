@@ -61,5 +61,7 @@
     <None Update="Assets\Dvinholm.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\assets\dvinholm-banner.webp" Link="Assets\Dvinholm-Banner.webp" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\assets\dvinholm-banner.png" Link="Assets\Dvinholm-Banner.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Reuse the user-approved No. 9 gear / gull emblem, never a generated placeholder. -->
+    <Content Include="..\..\assets\launcher-northern-emblem.svg" Link="Assets\Launcher-Northern-Emblem.svg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>
