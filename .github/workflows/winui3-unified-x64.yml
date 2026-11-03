@@ -83,7 +83,7 @@ jobs:
           "Native x64 Release ZIP + metadata: $passed/8 safe offline checks; no physical J2534 test was run." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
       # Exercise the real native x64 managed test host, not only a x64 PE
-      # publish. Run eleven relevant suites with virtual adapters /
+      # publish. Run twelve relevant suites with virtual adapters /
       # synthetic data only. No vendor DLL, vehicle, PIN operation or updater.
       # The development switch is for test fixtures, never for the user ZIP.
       - name: Run CEM and J2534 x64 offline test suites
@@ -101,6 +101,7 @@ jobs:
             'FullyQualifiedName~CemSafeReleaseWorkspaceTests'
             'FullyQualifiedName~AuroraCemCatalogLocalizationTests'
             'FullyQualifiedName~AuroraVisualEnglishLocalizationTests'
+            'FullyQualifiedName~AuroraApprovedVisualParityTests'
           ) -join '|'
           dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release --runtime win-x64 -p:Platform=x64 -p:PlatformTarget=x64 -p:RuntimeIdentifier=win-x64 -p:DvinholmDevelopmentFeatures=true --filter $filter --results-directory artifacts/x64-offline-tests --logger 'trx;LogFileName=x64-cem-j2534.trx'
           if ($LASTEXITCODE -ne 0) { throw 'Windows x64 CEM/J2534 offline tests failed.' }
