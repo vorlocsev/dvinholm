@@ -109,6 +109,9 @@ public sealed partial class MainWindow
         // selection, rescanning the bus, or modifying the underlying evidence.
         foreach (var row in _ecus)
             row.SetPresentationLanguage(_unifiedEnglish);
+        // Re-render the existing passive scan's status, picker captions and
+        // selected read-only evidence without changing any selected item.
+        RefreshPassiveDiscoveryLanguage();
         RefreshCemPrerequisitePresentation();
         RefreshCemIdentityEvidencePresentation();
         RefreshJ2534ArchitectureAuditPresentation();
