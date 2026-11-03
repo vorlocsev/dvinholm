@@ -13,16 +13,38 @@ public sealed class EcuProfileActionLayoutTests
         "http://schemas.microsoft.com/winfx/2006/xaml";
 
     [Fact]
-    public void ProfileActionsUseTwoRowsAndFourFlexibleColumns()
+    public void ProfileActionsReserveFourCompactRowsAndKeepFourFlexibleWideColumns()
     {
         var panel = Actions();
         Assert.Equal("Grid", panel.Name.LocalName);
         Assert.Equal("1", Attr(panel, "Grid.Row"));
-        Assert.Equal(2, RowDefinitions(panel).Count());
+        // Stage 82 keeps four flexible columns above 980 DIP and reserves
+        // four rows so all seven commands fit into two live compact columns.
+        Assert.Equal(4, RowDefinitions(panel).Count());
         Assert.Equal(new[] { "*", "*", "*", "*" },
             ColumnDefinitions(panel).Select(x => Attr(x, "Width")));
         Assert.Equal("6", Attr(panel, "RowSpacing"));
         Assert.Equal("8", Attr(panel, "ColumnSpacing"));
+
+        var wide = Named("ProfileWide");
+        var compact = Named("ProfileCompact");
+        Assert.Equal("980", wide.Descendants()
+            .Single(e => e.Name.LocalName == "AdaptiveTrigger")
+            .Attribute("MinWindowWidth")?.Value);
+        Assert.Equal("0", compact.Descendants()
+            .Single(e => e.Name.LocalName == "AdaptiveTrigger")
+            .Attribute("MinWindowWidth")?.Value);
+        var setters = compact.Descendants()
+            .Where(e => e.Name.LocalName == "Setter")
+            .ToDictionary(e => Attr(e, "Target")!, e => Attr(e, "Value")!,
+                StringComparer.Ordinal);
+        Assert.Equal("0", setters["ProfileActionThirdColumn.Width"]);
+        Assert.Equal("0", setters["ProfileActionFourthColumn.Width"]);
+        Assert.Equal("1", setters["ProfileImportButton.(Grid.Row)"]);
+        Assert.Equal("1", setters["ProfileExportButton.(Grid.Row)"]);
+        Assert.Equal("2", setters["CaptureSnapshotButton.(Grid.Row)"]);
+        Assert.Equal("3", setters["InspectSnapshotButton.(Grid.Row)"]);
+        Assert.Equal("3", setters["CompareSnapshotsButton.(Grid.Row)"]);
     }
 
     [Fact]
