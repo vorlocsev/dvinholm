@@ -163,4 +163,84 @@ public sealed class AuroraPrimaryViewportClarityTests
             .Where(x => x is not null).ToArray();
         Assert.Equal(names.Length, names.Distinct(StringComparer.Ordinal).Count());
     }
+
+    // Stage 66: four page-rhythm cases and four duplicate-route/safety cases.
+    // These are XAML contracts, not native screenshot or hardware acceptance.
+    [Theory]
+    [InlineData("CemPinPage")]
+    [InlineData("CemConfigPage")]
+    [InlineData("DtcPage")]
+    [InlineData("EcuPage")]
+    public void PrimaryAuroraPagesAvoidCompoundedCardGutters(string pageName)
+    {
+        var doc = Layout();
+        var page = Named(doc, pageName);
+        Assert.Equal("0", (string?)page.Attribute("Spacing"));
+        Assert.Equal("Collapsed", (string?)page.Attribute("Visibility"));
+        Assert.Contains(page.Descendants(), element =>
+            element.Name.LocalName == "Border" &&
+            (string?)element.Attribute("Style") == "{StaticResource AuroraCard}");
+        var style = doc.Descendants().Single(element =>
+            element.Name.LocalName == "Style" &&
+            (string?)element.Attribute(X + "Key") == "AuroraCard");
+        Assert.Equal("0,0,0,12", (string?)style.Descendants()
+            .Single(element => (string?)element.Attribute("Property") == "Margin")
+            .Attribute("Value"));
+    }
+
+    [Fact]
+    public void EcuDoesNotRenderSecondProfilesButtonBelowItsActionCard()
+    {
+        var doc = Layout();
+        var redundant = Named(doc, "EcuOpenProfilesButton");
+        Assert.Equal("Collapsed", (string?)redundant.Attribute("Visibility"));
+        Assert.Contains(Named(doc, "EcuPage"), redundant.Ancestors());
+        Assert.DoesNotContain(Named(doc, "EcuToolsFooter"), redundant.Ancestors());
+        Assert.Equal("EcuProfiles", (string?)redundant.Attribute("Tag"));
+        Assert.Equal("WorkspaceNavigate_Click", (string?)redundant.Attribute("Click"));
+    }
+
+    [Fact]
+    public void ProfilesRemainAccessibleThroughVisibleEcuActionRail()
+    {
+        var doc = Layout();
+        var footer = Named(doc, "EcuToolsFooter");
+        var profiles = Named(doc, "EcuProfilesNavigateButton");
+        Assert.Contains(footer, profiles.Ancestors());
+        Assert.Null(profiles.Attribute("Visibility"));
+        Assert.Equal("EcuProfiles", (string?)profiles.Attribute("Tag"));
+        Assert.Equal("WorkspaceNavigate_Click", (string?)profiles.Attribute("Click"));
+        Assert.Equal(3, Named(doc, "EcuToolsGrid").Elements()
+            .Count(element => element.Name.LocalName == "Button"));
+    }
+
+    [Fact]
+    public void HiddenDuplicateCannotDisruptRuEnPresentationProjection()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+        Assert.Contains("EcuOpenProfilesButton.Content = L(", source);
+        Assert.Contains("EcuProfilesNavigateButton.Content = L(", source);
+        Assert.DoesNotContain("Connect_Click(", source);
+        Assert.DoesNotContain("ReadDtc_Click(", source);
+        Assert.DoesNotContain("ReadCemPin_Click(", source);
+    }
+
+    [Fact]
+    public void VisualRhythmDoesNotActivatePinWriteOrDtcEraseOperations()
+    {
+        var doc = Layout();
+        foreach (var id in new[] { "CemConfigReadButton", "CemConfigWriteButton",
+            "DtcClearButton" })
+        {
+            var button = Named(doc, id);
+            Assert.Equal("False", (string?)button.Attribute("IsEnabled"));
+            Assert.Null(button.Attribute("Click"));
+        }
+        Assert.Equal("Collapsed",
+            (string?)Named(doc, "CemPinSearchCard").Attribute("Visibility"));
+        Assert.Equal(6, Named(doc, "SidebarNavPanel").Elements()
+            .Count(element => element.Name.LocalName == "Button"));
+        Assert.DoesNotContain(doc.Descendants(), element =>
+            (string?)element.Attribute(X + "Name") is "SettingsPage" or "LauncherPage");
+    }
 }
