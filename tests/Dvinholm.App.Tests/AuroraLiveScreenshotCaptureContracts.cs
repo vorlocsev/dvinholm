@@ -89,6 +89,9 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("measuredWidthDip", script);
         Assert.Contains("actualWidthPx", script);
         Assert.Contains("actualClientWidthPx", script);
+        Assert.Contains("Confirm-WorkspaceState $page", script);
+        Assert.Contains("verifiedVisibleWorkspaceTitle", script);
+        Assert.Contains("verifiedSelectedLanguage", script);
         Assert.Contains("$outerWidthPx = $requestedClientWidthPx + $borderWidth", script);
         Assert.Contains("[Math]::Abs($actualClientWidth-$requestedClientWidthPx) -gt 4", script);
         Assert.Contains("Preflight every selected width", script);
@@ -103,6 +106,9 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("[int]$HeightDip = 700", script);
         Assert.Contains("Cannot fit", script, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("operatorSelectedLanguage", script);
+        Assert.Contains("expectedTitles", script);
+        Assert.Contains("DvinholmWorkspaceTitle", script);
+        Assert.Contains("DvinholmLanguageSelector", script);
         Assert.Contains("sourceCommitOperatorDeclared", script);
     }
 
