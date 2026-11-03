@@ -300,6 +300,11 @@
                                 <StackPanel Spacing="18">
                                     <TextBlock Text="Совместимость и доступ" FontSize="20" FontWeight="SemiBold" />
                                     <TextBlock Text="Сведения о процедуре и ограничениях текущей реализации." Foreground="#9EB8CC" />
+                                    <Border Background="#10253D" BorderBrush="#315572" BorderThickness="1"
+                                            CornerRadius="8" Padding="12">
+                                        <TextBlock x:Name="CemIdentityEvidencePinText" TextWrapping="Wrap"
+                                                   Text="Идентификация CEM: неизвестна. Физический блок и ревизия не подтверждены." />
+                                    </Border>
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
@@ -318,6 +323,11 @@
                                 <StackPanel Spacing="14">
                                     <TextBlock Text="Конфигурация CEM" FontSize="24" FontWeight="SemiBold" />
                                     <TextBlock Text="Каталог Volvo P2 · офлайн. Выбор пункта показывает источник, но не читает или меняет автомобиль." Foreground="#9EB8CC" TextWrapping="Wrap" />
+                                    <Border Background="#10253D" BorderBrush="#315572" BorderThickness="1"
+                                            CornerRadius="8" Padding="12">
+                                        <TextBlock x:Name="CemIdentityEvidenceConfigText" TextWrapping="Wrap"
+                                                   Text="Идентификация CEM: неизвестна. Справочный каталог не подтверждает совместимость." />
+                                    </Border>
                                     <Grid ColumnSpacing="8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
