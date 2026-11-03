@@ -6,6 +6,20 @@
 
 Use an isolated Windows 11 x64 test machine with a known restore point / disposable installation. Obtain the ZIP only from the GitHub Actions artifact for the **exact PR head commit** whose automated x64 pilot and full regression runs both passed. Do not treat successful publishing as Windows GUI acceptance. Never use an actual vehicle or live CEM PIN/configuration service for this checklist.
 
+## Optional real desktop screenshot collection (NOT RUN)
+
+This is **not** part of GitHub Actions. Run the opt-in `eng/Capture-UnifiedAuroraWinUI3.ps1` on the same **interactive Windows 11 desktop** where the exact-head PR artifact is open. It captures genuine on-screen window pixels, not XAML approximations, browser mockups or offscreen Windows CI rendering. The tool never launches an installer, connects to a driver, starts a PIN search, reads an ECU, clears a DTC, uploads images or alters any update channel. It invokes only existing sidebar navigation buttons.
+
+Before capture: use a **separate, clean x64 review install** with no real J2534 cable or active vehicle session; inspect all visible inputs/status/logs and remove VIN, PIN, DLL paths, usernames and other private data. Select the intended RU or EN language in Dvinholm manually. Use Windows PowerShell 5.1 (`powershell.exe`), not `pwsh`; run from a trusted checkout and review the script first. For example, after selecting Russian:
+
+```powershell
+powershell.exe -NoProfile -File .\eng\Capture-UnifiedAuroraWinUI3.ps1 -Language ru -OutputDirectory C:\Dvinholm-Aurora-RU -IConfirmOfflineNoSecrets
+```
+
+For English, select **English** inside Dvinholm, repeat with `-Language en` and **a different empty directory**. A confirmed commit SHA can optionally be recorded with `-CommitSha <40-character SHA>`; the script labels this as operator-declared, **not independently authenticated**. The tool attempts six approved pages at 640/800/980/1280/1440 *effective DIP widths*, with 700 DIP viewport height, records actual per-window DPI / pixel dimensions and a local JSON manifest, and **refuses** window-size mismatch, missing accessibility controls, unfit monitor, hidden/covered window, noninteractive CI and screenshot paths inside the Git checkout. If a target cannot fit, do not call it PASS: record NOT RUN with monitor size and use a suitable display. These are **visible viewport captures only**, not full scrollable-page screenshots.
+
+Manually compare the actual PNG images against the approved six-page Aurora reference for banner cropping, brand position, glass-card spacing, first-fold density, readable captions, disabled buttons, panel reflow, 100%/125% display scale, and RU/EN. A screenshot alone does **not** prove visual equivalence, data correctness or J2534 compatibility. Captures remain local until manually redacted and approved for sharing. All screenshot and pixel-comparison acceptance is **NOT RUN** until actual Windows outputs are reviewed.
+
 ## Eight bounded checks (record PASS / FAIL / NOT RUN)
 
 1. **Package and executable.** Confirm the reviewed x64 ZIP passes published SHA-256 and extraction checks. Run from a clean user-writable directory, not from inside the ZIP. Confirm there is one primary `Dvinholm.exe` window; the old separate launcher is not required in this new x64 pilot. This is not a certificate-signing test.
