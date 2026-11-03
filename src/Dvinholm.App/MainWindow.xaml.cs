@@ -293,14 +293,21 @@ public sealed partial class MainWindow : Window
         var adapter = (J2534Devices.SelectedItem as J2534Device)?.Label;
         var baud = (BaudRate.SelectedItem as ComboBoxItem)?.Content?.ToString();
         AuroraLanding.UpdateConnection(_connected, adapter, baud);
-        // Only an established J2534 session may turn the visual status green.
+        // All three connection cues use one truthful session predicate:
+        // a registered driver or selected adapter is never a connection.
+        var j2534SessionConnected = _connected && _session.IsConnected;
+        var connectionBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+            j2534SessionConnected
+                ? Windows.UI.Color.FromArgb(255, 42, 222, 147)
+                : Windows.UI.Color.FromArgb(255, 114, 143, 168));
         if (StatusFooterDot is not null)
-            StatusFooterDot.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-                _connected && _session.IsConnected
-                    ? Windows.UI.Color.FromArgb(255, 42, 222, 147)
-                    : Windows.UI.Color.FromArgb(255, 114, 143, 168));
+            StatusFooterDot.Foreground = connectionBrush;
+        if (ShellConnectionDot is not null)
+            ShellConnectionDot.Foreground = connectionBrush;
+        if (ConnectionSessionState is not null)
+            ConnectionSessionState.Foreground = connectionBrush;
         if (ShellConnectionText is not null)
-            ShellConnectionText.Text = _connected && _session.IsConnected
+            ShellConnectionText.Text = j2534SessionConnected
                 ? L("J2534 подключён", "J2534 connected")
                 : L("Не подключено", "Disconnected");
         RefreshCemIdentityEvidencePresentation();
