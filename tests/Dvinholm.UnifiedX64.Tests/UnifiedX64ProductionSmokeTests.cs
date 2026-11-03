@@ -173,6 +173,17 @@ public sealed class UnifiedX64ProductionSmokeTests
         var dll = zip.GetEntry("Dvinholm.dll");
         Assert.NotNull(exe);
         Assert.NotNull(dll);
+        // The visual approval contract requires the real scenic PNG and
+        // approved gull/gear SVG in the *published* package, not just sources.
+        foreach (var asset in new[]
+        {
+            "Assets/Dvinholm-Banner.png",
+            "Assets/Launcher-Northern-Emblem.svg"
+        })
+            Assert.Contains(zip.Entries, entry =>
+                entry.FullName.Replace('\\', '/').EndsWith(asset,
+                    StringComparison.OrdinalIgnoreCase) &&
+                entry.Length > 1000);
         Assert.Contains(zip.Entries, e =>
             e.FullName.EndsWith("coreclr.dll", StringComparison.OrdinalIgnoreCase));
         Assert.Contains(zip.Entries, e =>
