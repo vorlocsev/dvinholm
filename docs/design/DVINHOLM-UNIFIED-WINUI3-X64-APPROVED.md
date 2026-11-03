@@ -171,6 +171,15 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - A failed replacement **must not** be recorded as `AppliedFixtureOnly` or `RolledBack`. An interrupted `Applying` transaction is repaired using the independently verified original snapshot; a `Recovering` transaction remains replayable.
 - All tests operate on artificial `Dvinholm.exe` content and throwaway folders. **This is not a real cross-process shutdown or live upgrade test**, not a physical power-loss durability test, and does not establish J2534 or Aurora GUI compatibility. No production Install action, publisher key, release or Stable/Virtual Car modification.
 
+## Stage 23: CEM PIN vault hardening (Windows, offline, experimental only)
+
+- After the Stage-22 updater fault-injection work, development priority returns to **CEM PIN** and **CEM configuration**. This stage strengthens the *existing* development-only saved-PIN workflow instead of adding another unsupported ECU service.
+- `CemPinStore.List` inspects at most **128 encrypted record paths** per request; an overflow is reported through the existing unavailable count without decrypting or displaying additional records. Records remain per-user Windows DPAPI protected; no plaintext or VIN is stored.
+- Snapshot-like safety for saved secrets: `CemPinStore` refuses reparse-point/junction vault directories and linked `.dpapi` files before decrypting or deleting; encrypted output is bounded to 8192 bytes and staged with create-new/flush semantics. Loading and listing failures remain redacted.
+- When the development UI loads a different saved PIN, `MainWindow.CemPinSaved` calls `ClearCemPinMaterial` before assigning the new secret. This disposes and zeroes the previous in-memory secret, stops the old reveal timer and invalidates its session guard; the new result remains hidden by default.
+- Eight Windows-only offline DPAPI tests cover opaque encrypted roundtrip, capped inventory, oversized record rejection, GUID-bound record integrity, exclusive file locks, truncated staging cleanup, targeted idempotent deletion and prior-secret zeroization on replacement. All tests use synthetic six-byte test values in disposable OS temp directories.
+- **No change to vehicle PIN extraction**, credential usage, adapter discovery, ECU programming, authenticated physical CEM capability, or PIN transmission. The experimental route remains excluded from Stable, and the production `CanInstall` update gate remains false. No Stable or Virtual Car releases are modified.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
