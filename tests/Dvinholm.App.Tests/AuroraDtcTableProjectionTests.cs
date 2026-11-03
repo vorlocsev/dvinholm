@@ -57,7 +57,7 @@ public sealed class AuroraDtcTableProjectionTests
         Assert.Contains("подтверждённый DTC", row.Status);
         Assert.Contains("неподдерживаемые биты 0x01", row.Status);
         Assert.DoesNotContain("тест не пройден", row.Status);
-        Assert.Contains("ECU-supported mask: 0x08", row.Details);
+        Assert.Contains("Маска поддерживаемых ECU битов: 0x08", row.Details);
     }
 
     [Fact]
@@ -169,7 +169,7 @@ public sealed class AuroraDtcTableProjectionTests
         Assert.Contains(expectedEn, en.Status);
         Assert.Contains(expectedRu, ru.Details);
         Assert.Contains(expectedEn, en.Details);
-        Assert.Contains("ECU-supported mask: 0xFF", ru.Details);
+        Assert.Contains("Маска поддерживаемых ECU битов: 0xFF", ru.Details);
         Assert.Contains("ECU-supported mask: 0xFF", en.Details);
 
         // Presentation only. Exact flags remain ECU-provided, while DTC
