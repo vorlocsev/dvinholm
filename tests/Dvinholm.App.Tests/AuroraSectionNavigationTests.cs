@@ -87,6 +87,43 @@ public sealed class AuroraSectionNavigationTests
     }
 
     [Fact]
+    public void CompactWorkspacesRestoreTopOfPageAfterProgrammaticFocus()
+    {
+        string? code = null;
+        for (DirectoryInfo? folder = new(AppContext.BaseDirectory);
+             folder is not null; folder = folder.Parent)
+        {
+            var file = Path.Combine(folder.FullName, "src", "Dvinholm.App",
+                "MainWindow.xaml.cs");
+            if (!File.Exists(file)) continue;
+            code = File.ReadAllText(file);
+            break;
+        }
+
+        Assert.NotNull(code);
+        var start = code.IndexOf("private void DashboardNavigate(", StringComparison.Ordinal);
+        var end = code.IndexOf("private void WorkspaceNavigate_Click(", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var navigation = code[start..end];
+        var selection = navigation.IndexOf("SelectWorkspaceNavigation(destination);",
+            StringComparison.Ordinal);
+        var focusEnd = navigation.IndexOf(
+            "case AuroraDestination.J2534Connection: J2534Devices.Focus(FocusState.Programmatic); break;",
+            StringComparison.Ordinal);
+        var reset = navigation.IndexOf("WorkspaceScroll.ChangeView(null, 0, null);",
+            StringComparison.Ordinal);
+        Assert.True(selection >= 0 && focusEnd > selection && reset > focusEnd,
+            "Navigation must reset the first fold after all focus-induced scrolling.");
+        Assert.Equal(1, navigation.Split("WorkspaceScroll.ChangeView(null, 0, null);").Length - 1);
+        foreach (var focus in new[] { "EcuSelector.Focus(", "UdsRequestId.Focus(",
+            "IdFilter.Focus(", "ProfileSearch.Focus(", "J2534Devices.Focus(" })
+            Assert.Contains(focus, navigation);
+        Assert.DoesNotContain("Connect_Click(", navigation);
+        Assert.DoesNotContain("ReadDtc_Click(", navigation);
+        Assert.DoesNotContain("ReadCemPin_Click(", navigation);
+    }
+
+    [Fact]
     public void InvalidRoutesCannotSelectAServiceAndAllControlNamesRemainUnique()
     {
         foreach (var tag in new string?[] { null, "", "999", "Connect_Click", "ReadCemPin_Click" })
