@@ -165,4 +165,105 @@ public sealed class AuroraTightViewportHeaderTests
         Assert.Equal(6, Named(doc, "SidebarNavPanel").Elements()
             .Count(e => e.Name.LocalName == "Button"));
     }
+
+    // Stage 72: three bounded real-text cases and five responsive/safety gates.
+    // These assert source structure, not native Windows pixels.
+    [Theory]
+    [InlineData("WorkspaceTitle")]
+    [InlineData("WorkspaceDescription")]
+    [InlineData("ShellStatusText")]
+    public void HeaderTitleAndStatusTextWrapWithinRealViewport(string fieldName)
+    {
+        var doc = Layout();
+        var field = Named(doc, fieldName);
+        Assert.Equal("TextBlock", field.Name.LocalName);
+        Assert.Equal("Wrap", (string?)field.Attribute("TextWrapping"));
+        Assert.Null(field.Attribute("TextTrimming"));
+        if (fieldName == "ShellStatusText")
+        {
+            Assert.Equal("2", (string?)field.Attribute("MaxLines"));
+            Assert.Contains(Named(doc, "ShellStatusBar"), field.Ancestors());
+        }
+        else
+        {
+            Assert.Null(field.Attribute("MaxLines"));
+            Assert.Contains(Named(doc, "WorkspaceHeaderCopy"), field.Ancestors());
+        }
+    }
+
+    [Fact]
+    public void HeaderColumnsAreMeasuredAtTheirOwnGridLevel()
+    {
+        var doc = Layout();
+        var header = Named(doc, "WorkspaceHeaderGrid");
+        var columns = header.Elements().Single(element =>
+            element.Name.LocalName == "Grid.ColumnDefinitions");
+        Assert.Equal(new[] { "*", "Auto" }, columns.Elements()
+            .Select(element => (string?)element.Attribute("Width")));
+        Assert.Contains(Named(doc, "HeaderConnectionStatusButton"), header.Descendants());
+        Assert.Equal("Grid", Named(doc, "HeaderConnectionStatusButton")
+            .Elements().Single().Name.LocalName);
+    }
+
+    [Fact]
+    public void CompactTitleAlwaysRemainsVisibleWhenDescriptionCollapses()
+    {
+        var doc = Layout();
+        var compact = Setters(doc, "HeaderTitleOnly");
+        Assert.Equal("Collapsed", compact["WorkspaceDescription.Visibility"]);
+        Assert.Equal("Collapsed", compact["WorkspaceScopeLabel.Visibility"]);
+        Assert.DoesNotContain("WorkspaceTitle.Visibility", compact.Keys);
+        Assert.Null(Named(doc, "WorkspaceTitle").Attribute("Visibility"));
+        Assert.Equal("23", Setters(doc, "ShellCompact")["WorkspaceTitle.FontSize"]);
+    }
+
+    [Fact]
+    public void WrappedDescriptionKeepsOriginalMaximumWidthAndTranslations()
+    {
+        var doc = Layout();
+        var subtitle = Named(doc, "WorkspaceDescription");
+        Assert.Equal("760", (string?)subtitle.Attribute("MaxWidth"));
+        Assert.Equal("Left", (string?)subtitle.Attribute("HorizontalAlignment"));
+        var locale = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
+        Assert.Contains("WorkspaceDescription.Text = _unifiedEnglish ? destination switch", locale);
+        Assert.Contains("WorkspaceTitle.Text = _unifiedEnglish ? destination switch", locale);
+        Assert.Contains("WorkspaceTitle.Text = L(\"Обновление\", \"Updates\");", locale);
+        Assert.DoesNotContain("Connect_Click(", locale);
+    }
+
+    [Fact]
+    public void FooterStatusKeepsActualBoundTextAndTwoLineLimit()
+    {
+        var doc = Layout();
+        var footer = Named(doc, "ShellStatusText");
+        Assert.Equal("{Binding Text, ElementName=StatusText}",
+            (string?)footer.Attribute("Text"));
+        Assert.Equal("1", (string?)footer.Attribute("Grid.Column"));
+        Assert.Equal("2", (string?)footer.Attribute("MaxLines"));
+        Assert.Contains(Named(doc, "ShellStatusBar"), footer.Ancestors());
+        Assert.Equal("2", (string?)Named(doc, "ShellStatusBar").Attribute("Grid.Row"));
+        Assert.Equal("Disabled",
+            (string?)Named(doc, "WorkspaceScroll").Attribute("HorizontalScrollBarVisibility"));
+    }
+
+    [Fact]
+    public void TextWrappingDoesNotImplyConnectedAdapterOrUnlockWrites()
+    {
+        var doc = Layout();
+        Assert.Equal("#728FA8", (string?)Named(doc, "ShellConnectionDot")
+            .Attribute("Foreground"));
+        Assert.Equal("Не подключено", (string?)Named(doc, "ShellConnectionText")
+            .Attribute("Text"));
+        Assert.Equal("WorkspaceNavigate_Click",
+            (string?)Named(doc, "HeaderConnectionStatusButton").Attribute("Click"));
+        foreach (var id in new[] { "CemConfigReadButton", "CemConfigWriteButton",
+            "DtcClearButton" })
+        {
+            var button = Named(doc, id);
+            Assert.Equal("False", (string?)button.Attribute("IsEnabled"));
+            Assert.Null(button.Attribute("Click"));
+        }
+        Assert.Equal(6, Named(doc, "SidebarNavPanel").Elements()
+            .Count(element => element.Name.LocalName == "Button"));
+    }
 }
