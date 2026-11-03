@@ -107,6 +107,18 @@ public sealed partial class MainWindow
         CemConfigBackupButton.Content = L("Резервная копия", "Backup");
         CemConfigCompareButton.Content = L("Сравнить", "Compare");
         CemConfigPrepareButton.Content = L("Подготовить изменения", "Prepare changes");
+        ToolTipService.SetToolTip(P2ConfigCatalogButton, L(
+            "Только локальные источники. Без CAN, PIN и записи CEM.",
+            "Offline sources only. No CAN, PIN or CEM write."));
+        ToolTipService.SetToolTip(CemConfigBackupButton, L(
+            "Чтение и резервирование реальной конфигурации CEM не подтверждены.",
+            "Actual CEM configuration reading and backup are unverified."));
+        ToolTipService.SetToolTip(CemConfigCompareButton, L(
+            "Нет проверенного снимка для сравнения.",
+            "No verified configuration snapshot available for comparison."));
+        ToolTipService.SetToolTip(CemConfigPrepareButton, L(
+            "Непроверенные параметры нельзя записывать в блок.",
+            "Unverified parameters cannot be written to the ECU."));
 
         foreach (var item in CemConfigEvidenceTier.Items.OfType<ComboBoxItem>())
             item.Content = (item.Tag as string) switch
