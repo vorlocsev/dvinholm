@@ -133,5 +133,27 @@ public sealed class AuroraLiveScreenshotCaptureContracts
             (string?)buttons.Single(e => (string?)e.Attribute(x + "Name") == "SidebarUpdatesButton").Attribute("Click"));
         Assert.DoesNotContain(xaml.Descendants(), e =>
             (string?)e.Attribute(x + "Name") == "SettingsPage");
+
+        // Stage-40 spacing correction: long RU/EN action labels must wrap,
+        // while their existing Click and disabled-state contracts remain.
+        var actionStyle = xaml.Descendants().Single(e =>
+            e.Name.LocalName == "Style" &&
+            (string?)e.Attribute(x + "Key") == "AuroraActionCaptionButton");
+        Assert.Contains(actionStyle.Descendants(), e =>
+            e.Name.LocalName == "Setter" &&
+            (string?)e.Attribute("Property") == "ContentTemplate" &&
+            (string?)e.Attribute("Value") == "{StaticResource AuroraWrapCaption}");
+        foreach (var name in new[] {
+            "P2ConfigCatalogButton", "CemConfigReadButton", "CemConfigBackupButton",
+            "CemConfigCompareButton", "CemConfigPrepareButton", "CemConfigWriteButton",
+            "EcuDiagnosticsNavigateButton", "EcuMonitorNavigateButton",
+            "EcuProfilesNavigateButton", "ReadDtcButton", "DtcClearButton"
+        })
+        {
+            var control = xaml.Descendants().Single(e =>
+                (string?)e.Attribute(x + "Name") == name);
+            Assert.Equal("{StaticResource AuroraActionCaptionButton}",
+                (string?)control.Attribute("Style"));
+        }
     }
 }
