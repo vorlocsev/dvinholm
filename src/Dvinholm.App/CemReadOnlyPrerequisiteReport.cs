@@ -35,7 +35,10 @@ internal sealed record CemReadOnlyPrerequisiteAssessment(
 {
     // This is only a snapshot of UI/session preconditions. Re-evaluate under
     // the live diagnostic gate before a separately authorized request.
-    internal bool EligibleForSourceDefinedPartReadOnly => Checks.All(c => c.Satisfied);
+    internal bool EligibleForSourceDefinedPartReadOnly =>
+        Checks.Count == 8 &&
+        Checks.Select(c => c.Kind).Distinct().Count() == 8 &&
+        Checks.All(c => Enum.IsDefined(c.Kind) && c.Satisfied);
     internal bool HasAuthenticatedPhysicalCem => false;
     internal bool MayAcquirePin => false;
     internal bool MayReadConfiguration => false;
