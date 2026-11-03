@@ -44,9 +44,9 @@ internal static class AuroraDtcTableProjection
                       $"ECU-supported mask: 0x{read.StatusAvailabilityMask:X2}. " +
                       $"Supported status: {status}.{extra} " +
                       "No verified Volvo fault cause, description or repair."
-                    : $"Код: 0x{record.Code:X6}. Raw status: 0x{record.Status:X2}. " +
-                      $"ECU-supported mask: 0x{read.StatusAvailabilityMask:X2}. " +
-                      $"Supported status: {status}.{extra} " +
+                    : $"Код: 0x{record.Code:X6}. Исходный статус: 0x{record.Status:X2}. " +
+                      $"Маска поддерживаемых ECU битов: 0x{read.StatusAvailabilityMask:X2}. " +
+                      $"Поддерживаемые биты статуса: {status}.{extra} " +
                       "Причина, описание Volvo и способ устранения не подтверждены."));
         }
 
