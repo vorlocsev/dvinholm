@@ -69,11 +69,12 @@ public sealed class AuroraUpdatesFirstFoldFocusTests
     public void WideThreeCardWorkspacePreservesChannelKeyboardFocus()
     {
         var method = Navigation();
+        var doc = Layout();
         Assert.Contains("if (RootLayout.ActualWidth >= 1280)\n            UnifiedUpdateChannel.Focus(FocusState.Programmatic);", method);
         Assert.Equal("UnifiedUpdateChannel_SelectionChanged",
-            (string?)Named(Layout(), "UnifiedUpdateChannel").Attribute("SelectionChanged"));
-        Assert.Contains(Named(Layout(), "UnifiedUpdateChannel"),
-            Named(Layout(), "UpdatesChannelPane").Descendants());
+            (string?)Named(doc, "UnifiedUpdateChannel").Attribute("SelectionChanged"));
+        Assert.Contains(Named(doc, "UnifiedUpdateChannel"),
+            Named(doc, "UpdatesChannelPane").Descendants());
     }
 
     [Fact]
