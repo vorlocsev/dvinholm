@@ -173,6 +173,9 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 
 ## Stage 23: CEM PIN vault hardening (Windows, offline, experimental only)
 
+- **CI correction from Stage 22:** full regression #41549406427 ran 2454 tests: **2450 passed, 4 failed** solely in new Windows locked-file assertions. The four locked destination cases returned `UnauthorizedAccessException` rather than the test's expected `IOException`. The check now explicitly allows **either Windows lock/access exception** while requiring a failure; it does not count arbitrary exceptions or silently ignore lock violations.
+
+
 - After the Stage-22 updater fault-injection work, development priority returns to **CEM PIN** and **CEM configuration**. This stage strengthens the *existing* development-only saved-PIN workflow instead of adding another unsupported ECU service.
 - `CemPinStore.List` inspects at most **128 encrypted record paths** per request; an overflow is reported through the existing unavailable count without decrypting or displaying additional records. Records remain per-user Windows DPAPI protected; no plaintext or VIN is stored.
 - Snapshot-like safety for saved secrets: `CemPinStore` refuses reparse-point/junction vault directories and linked `.dpapi` files before decrypting or deleting; encrypted output is bounded to 8192 bytes and staged with create-new/flush semantics. Loading and listing failures remain redacted.
