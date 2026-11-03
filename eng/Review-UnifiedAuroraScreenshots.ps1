@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Create a PRIVATE, local RU/EN Aurora screenshot comparison sheet.
