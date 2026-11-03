@@ -330,6 +330,44 @@
                             </Border>
                         </StackPanel>
                         <StackPanel x:Name="CemPinPage" Visibility="Collapsed" Spacing="4">
+                            <!-- Approved 3-step Aurora visual. Stages 2 and 3 are not authenticated
+                                 or executable in Release. No fabricated progress or PIN. -->
+                            <Border x:Name="CemPinStepper" Style="{StaticResource AuroraCard}">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <StackPanel Grid.Column="0" Spacing="8" HorizontalAlignment="Center">
+                                        <Border Width="40" Height="40" CornerRadius="20" BorderBrush="#19D9EF"
+                                                BorderThickness="2" Background="#143A58" HorizontalAlignment="Center">
+                                            <TextBlock Text="1" FontSize="19" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock x:Name="CemPinStepIdentity" Text="Идентификация"
+                                                   FontSize="12" TextAlignment="Center" Foreground="#C1EFFF" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Spacing="8" HorizontalAlignment="Center">
+                                        <Border Width="40" Height="40" CornerRadius="20" BorderBrush="#54657F"
+                                                BorderThickness="1" Background="#12243C" HorizontalAlignment="Center">
+                                            <TextBlock Text="2" FontSize="19" FontWeight="SemiBold"
+                                                       Foreground="#A7B7CD" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock x:Name="CemPinStepResearch" Text="Поиск PIN недоступен"
+                                                   FontSize="12" TextAlignment="Center" Foreground="#A5B7CE" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Spacing="8" HorizontalAlignment="Center">
+                                        <Border Width="40" Height="40" CornerRadius="20" BorderBrush="#54657F"
+                                                BorderThickness="1" Background="#12243C" HorizontalAlignment="Center">
+                                            <TextBlock Text="3" FontSize="19" FontWeight="SemiBold"
+                                                       Foreground="#A7B7CD" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock x:Name="CemPinStepResult" Text="Нет результата"
+                                                   FontSize="12" TextAlignment="Center" Foreground="#A5B7CE" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
                             <Border Style="{StaticResource AuroraCard}" x:Name="CemPinIdentityCard" Visibility="Visible">
                                 <StackPanel Spacing="18">
                                     <TextBlock x:Name="CemPinIdentitySectionTitle" Text="01  ·  Идентификация CEM" FontSize="20" FontWeight="SemiBold" />
