@@ -57,6 +57,7 @@
                         <Setter Target="WorkspaceHeaderCopy.Margin" Value="16,10,16,0" />
                         <Setter Target="WorkspacePageContainer.Padding" Value="12,0,12,16" />
                         <Setter Target="ShellStatusBar.Padding" Value="12,10" />
+                        <Setter Target="StatusFooterVersion.Visibility" Value="Collapsed" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
@@ -323,7 +324,7 @@
                         </Button>
                     </StackPanel>
                 </ScrollViewer>
-                <StackPanel x:Name="SidebarFooter" Grid.Row="1" Padding="22,18" Spacing="6">
+                <StackPanel x:Name="SidebarFooter" Grid.Row="1" Padding="22,18" Spacing="6" Visibility="Collapsed">
                     <TextBlock Text="WINUI 3 · .NET 10" FontSize="10" Foreground="#80A5C3" />
                     <TextBlock x:Name="SidebarFooterLocale" Text="AURORA · ЕДИНОЕ ПРИЛОЖЕНИЕ" FontSize="11" Foreground="#80A5C3" />
                 </StackPanel>
@@ -582,7 +583,7 @@
                         <StackPanel x:Name="CemConfigPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="14">
-                                    <TextBlock x:Name="CemConfigPageTitle" Text="Конфигурация CEM" FontSize="24" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="CemConfigPageTitle" Text="Конфигурация CEM" FontSize="24" FontWeight="SemiBold" Visibility="Collapsed" />
                                     <TextBlock x:Name="CemConfigPageIntro" Text="Каталог Volvo P2 · офлайн. Выбор пункта показывает источник, но не читает или меняет автомобиль." Foreground="#9EB8CC" TextWrapping="Wrap" />
                                     <Border Background="#10253D" BorderBrush="#315572" BorderThickness="1"
                                             CornerRadius="8" Padding="12">
@@ -926,7 +927,7 @@
                         <StackPanel x:Name="DtcPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="16">
-                                    <TextBlock x:Name="DtcPageHeading" Text="Ошибки / DTC" FontSize="23" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="DtcPageHeading" Text="Ошибки / DTC" FontSize="23" FontWeight="SemiBold" Visibility="Collapsed" />
                                     <TextBlock x:Name="DtcPageIntro" Text="Чтение неисправностей одного выбранного ECU. Перед чтением подтвердите адреса TX/RX в разделе «Диагностика»." Foreground="#A9C5DC" TextWrapping="Wrap" />
                                     <Border x:Name="DtcActionRail" CornerRadius="10" Padding="14"
                                             BorderBrush="#2D567C" BorderThickness="1" Background="#0C2944">
