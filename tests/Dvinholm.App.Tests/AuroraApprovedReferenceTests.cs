@@ -49,9 +49,15 @@ public sealed class AuroraApprovedReferenceTests
     public void CEMUsesThreePaneResearchBrowserWithExistingSourceAction()
     {
         var doc = Layout();
-        foreach (var name in new[] { "CemConfigCategory", "CemConfigSearch",
-            "CemConfigResults", "CemConfigDetailTitle", "CemConfigDetailEvidence" })
+        foreach (var name in new[] { "CemConfigCategory", "CemConfigEvidenceTier",
+            "CemConfigSearch", "CemConfigResults", "CemConfigDetailTitle",
+            "CemConfigDetailEvidence" })
             Assert.Contains(Named(doc, name), Named(doc, "CemConfigPage").Descendants());
+        Assert.Equal("CemConfigEvidenceTier_SelectionChanged",
+            (string?)Named(doc, "CemConfigEvidenceTier").Attribute("SelectionChanged"));
+        Assert.Equal(new[] { "All", "Vendor", "Volvo" },
+            Named(doc, "CemConfigEvidenceTier").Elements()
+                .Select(item => (string?)item.Attribute("Tag")));
         Assert.Equal("P2ConfigCatalog_Click", (string?)Named(doc, "P2ConfigCatalogButton").Attribute("Click"));
         var results = Named(doc, "CemConfigResults");
         Assert.Equal("CemConfigResults_SelectionChanged", (string?)results.Attribute("SelectionChanged"));
@@ -76,10 +82,13 @@ public sealed class AuroraApprovedReferenceTests
     public void ConfigurationRowsNeverManufactureRawOrLiveValues()
     {
         var source = ReadSource("src/Dvinholm.App/MainWindow.AuroraReference.cs");
-        Assert.Contains("VolvoP2CemConfigOptionManifest.Entries", source);
-        Assert.Contains("public string Current => \"Не прочитано\"", source);
+        var filter = ReadSource("src/Dvinholm.App/AuroraCemConfigReferenceFilter.cs");
+        Assert.Contains("VolvoP2CemConfigOptionManifest.Entries", filter);
+        Assert.Contains("VolvoP2CemCatalogSearch.Find(query, tier)", filter);
+        Assert.Contains("public string Current => English ?", source);
         Assert.Contains("public string Proposed => \"—\"", source);
-        Assert.Contains("Values", source);
+        Assert.Contains("CemConfigDetailValues.Text", source);
+        Assert.Contains("AuroraCemConfigReferenceFilter.Find(query, category, tier)", source);
         Assert.DoesNotContain("PassThru", source);
         Assert.DoesNotContain("SendAsync(", source);
         Assert.DoesNotContain("WriteMemory", source);
