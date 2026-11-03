@@ -293,6 +293,12 @@ public sealed partial class MainWindow : Window
         var adapter = (J2534Devices.SelectedItem as J2534Device)?.Label;
         var baud = (BaudRate.SelectedItem as ComboBoxItem)?.Content?.ToString();
         AuroraLanding.UpdateConnection(_connected, adapter, baud);
+        // Only an established J2534 session may turn the visual status green.
+        if (StatusFooterDot is not null)
+            StatusFooterDot.Foreground = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+                _connected && _session.IsConnected
+                    ? Windows.UI.Color.FromArgb(255, 42, 222, 147)
+                    : Windows.UI.Color.FromArgb(255, 114, 143, 168));
         if (ShellConnectionText is not null)
             ShellConnectionText.Text = _connected && _session.IsConnected
                 ? L("J2534 подключён", "J2534 connected")
