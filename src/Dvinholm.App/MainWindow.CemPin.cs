@@ -83,7 +83,7 @@ public sealed partial class MainWindow
         const bool developmentContext = false;
 #endif
         var evidence = CemIdentityEvidenceReport.Assess(
-            observed, guardCurrent, _connected && _session.IsConnected,
+            observed, guardCurrent, !_closing && _connected && _session.IsConnected,
             developmentContext);
         var text = CemIdentityEvidenceReport.Format(evidence, _unifiedEnglish);
         CemIdentityEvidencePinText.Text = text;
