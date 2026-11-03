@@ -138,6 +138,19 @@
                         <AdaptiveTrigger MinWindowWidth="1280" />
                     </VisualState.StateTriggers>
                 </VisualState>
+                <VisualState x:Name="ConnectionTwoColumns">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="980" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ConnectionAdapterColumn.Width" Value="*" />
+                        <Setter Target="ConnectionBusColumn.Width" Value="*" />
+                        <Setter Target="ConnectionStatusColumn.Width" Value="0" />
+                        <Setter Target="ConnectionStatusPane.(Grid.Column)" Value="0" />
+                        <Setter Target="ConnectionStatusPane.(Grid.Row)" Value="1" />
+                        <Setter Target="ConnectionStatusPane.(Grid.ColumnSpan)" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
                 <VisualState x:Name="ConnectionVerticalPanels">
                     <VisualState.StateTriggers>
                         <AdaptiveTrigger MinWindowWidth="0" />
@@ -158,6 +171,19 @@
                     <VisualState.StateTriggers>
                         <AdaptiveTrigger MinWindowWidth="1280" />
                     </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="UpdatesTwoColumns">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="980" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="UpdatesVersionColumn.Width" Value="*" />
+                        <Setter Target="UpdatesChannelColumn.Width" Value="*" />
+                        <Setter Target="UpdatesActionColumn.Width" Value="0" />
+                        <Setter Target="UpdatesActionPane.(Grid.Column)" Value="0" />
+                        <Setter Target="UpdatesActionPane.(Grid.Row)" Value="1" />
+                        <Setter Target="UpdatesActionPane.(Grid.ColumnSpan)" Value="2" />
+                    </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="UpdatesVerticalPanels">
                     <VisualState.StateTriggers>
