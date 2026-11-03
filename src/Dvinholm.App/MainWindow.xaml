@@ -344,7 +344,7 @@
                     </Border>
                     <StackPanel x:Name="WorkspaceHeaderCopy" Spacing="7" Margin="16,13,0,12" VerticalAlignment="Center">
                         <TextBlock x:Name="WorkspaceScopeLabel" Text="DVINHOLM / РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" CharacterSpacing="120" Foreground="#65BFF2" />
-                        <TextBlock x:Name="WorkspaceTitle" FontSize="30" FontWeight="SemiBold"
+                        <TextBlock x:Name="WorkspaceTitle" AutomationProperties.AutomationId="DvinholmWorkspaceTitle" FontSize="30" FontWeight="SemiBold"
                                    Foreground="#F5FAFF" />
                         <TextBlock x:Name="WorkspaceDescription" Foreground="#BDD4E8" MaxWidth="760"
                                    FontSize="13" HorizontalAlignment="Left" />
@@ -357,7 +357,7 @@
                                 <TextBlock x:Name="ShellConnectionText" Text="Не подключено" />
                             </StackPanel>
                         </Button>
-                        <ComboBox x:Name="UnifiedLanguageSelector" Header="RU / EN"
+                        <ComboBox x:Name="UnifiedLanguageSelector" AutomationProperties.AutomationId="DvinholmLanguageSelector" Header="RU / EN"
                                   MinWidth="98" SelectedIndex="0"
                                   SelectionChanged="UnifiedLanguageSelector_SelectionChanged">
                             <ComboBoxItem Content="Русский" Tag="ru" />
