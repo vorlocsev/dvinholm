@@ -342,19 +342,27 @@
                 <ScrollViewer x:Name="WorkspaceScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="WorkspacePageContainer" Padding="28,0,28,24" MaxWidth="1200" HorizontalAlignment="Stretch">
                         <StackPanel x:Name="UnifiedUpdatesPage" Visibility="Collapsed" Spacing="12">
-                            <Grid ColumnSpacing="16" RowSpacing="10">
+                            <!-- Three approved review panels: installed version | channel | verified check.
+                                 Does not imply install or trusted release availability. -->
+                            <Grid x:Name="UpdatesThreeCardGrid" ColumnSpacing="12" RowSpacing="12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
                                 <Grid.ColumnDefinitions>
-                                    <ColumnDefinition Width="*" />
-                                    <ColumnDefinition Width="*" />
+                                    <ColumnDefinition x:Name="UpdatesVersionColumn" Width="*" />
+                                    <ColumnDefinition x:Name="UpdatesChannelColumn" Width="*" />
+                                    <ColumnDefinition x:Name="UpdatesActionColumn" Width="1.15*" />
                                 </Grid.ColumnDefinitions>
-                                <Border Style="{StaticResource AuroraCard}" Grid.Column="0">
+                                <Border x:Name="UpdatesVersionPane" Style="{StaticResource AuroraCard}" Grid.Column="0">
                                     <StackPanel Spacing="12">
                                         <TextBlock x:Name="UnifiedCurrentVersionTitle" Text="Установленная версия" FontSize="20" FontWeight="SemiBold" />
                                         <TextBlock x:Name="UnifiedCurrentVersion" Text="Не определена" FontSize="27" FontWeight="Bold" Foreground="#B7DDFF" />
                                         <TextBlock x:Name="UnifiedVersionNote" Text="Данные о доступном обновлении ещё не проверены." Foreground="#A6BED2" />
                                     </StackPanel>
                                 </Border>
-                                <Border Style="{StaticResource AuroraCard}" Grid.Column="1">
+                                <Border x:Name="UpdatesChannelPane" Style="{StaticResource AuroraCard}" Grid.Column="1">
                                     <StackPanel Spacing="12">
                                         <TextBlock x:Name="UnifiedChannelTitle" Text="Канал обновлений" FontSize="20" FontWeight="SemiBold" />
                                         <ComboBox x:Name="UnifiedUpdateChannel" HorizontalAlignment="Stretch" SelectionChanged="UnifiedUpdateChannel_SelectionChanged">
@@ -364,34 +372,34 @@
                                         <TextBlock x:Name="UnifiedChannelNote" Text="Выбор сохраняется для этого пользователя." Foreground="#A6BED2" />
                                     </StackPanel>
                                 </Border>
-                            </Grid>
-                            <Border Style="{StaticResource AuroraCard}">
+                            <Border x:Name="UpdatesActionPane" Style="{StaticResource AuroraCard}" Grid.Column="2">
                                 <StackPanel Spacing="12">
                                     <TextBlock x:Name="UnifiedUpdateSafetyTitle" Text="Проверка и установка" FontSize="20" FontWeight="SemiBold" />
                                     <TextBlock x:Name="UnifiedUpdateStatus" Text="Для x64 ещё не опубликован проверенный канал обновлений. Скачивание, установка и перезапуск заблокированы до подключения безопасного x64-обновлятора." TextWrapping="Wrap" Foreground="#BED1E3" />
-                                    <StackPanel Spacing="8">
-                                        <StackPanel Orientation="Horizontal" Spacing="10">
-                                            <Button x:Name="UnifiedCheckUpdateButton" Content="Проверить x64-релизы"
-                                                    Click="UnifiedCheckUpdate_Click"
-                                                    ToolTipService.ToolTip="Проверить только метаданные официальных релизов GitHub." />
-                                            <Button x:Name="UnifiedStageUpdateButton" Content="Скачать и проверить ZIP"
-                                                    Click="UnifiedStageUpdate_Click" IsEnabled="False"
-                                                    ToolTipService.ToolTip="Скачать ZIP во временный каталог и проверить SHA-256, x64 и структуру. Без установки." />
-                                        </StackPanel>
-                                        <StackPanel Orientation="Horizontal" Spacing="10">
-                                            <Button x:Name="UnifiedCancelStageButton" Content="Отменить"
-                                                    Click="UnifiedCancelStage_Click" IsEnabled="False"
-                                                    ToolTipService.ToolTip="Отменить загрузку и удалить неполный пакет." />
-                                            <Button x:Name="UnifiedPreflightButton" Content="Проверить готовность"
-                                                    Click="UnifiedPreflight_Click" IsEnabled="False"
-                                                    ToolTipService.ToolTip="Проверить каталог программы и будущую резервную копию без изменения файлов." />
-                                        </StackPanel>
+                                    <StackPanel x:Name="UnifiedUpdateActionList" Spacing="8">
+                                        <Button x:Name="UnifiedCheckUpdateButton" Content="Проверить x64-релизы"
+                                                Click="UnifiedCheckUpdate_Click" HorizontalAlignment="Stretch"
+                                                ContentTemplate="{StaticResource AuroraWrapCaption}"
+                                                ToolTipService.ToolTip="Проверить только метаданные официальных релизов GitHub." />
+                                        <Button x:Name="UnifiedStageUpdateButton" Content="Скачать и проверить ZIP"
+                                                Click="UnifiedStageUpdate_Click" IsEnabled="False" HorizontalAlignment="Stretch"
+                                                ContentTemplate="{StaticResource AuroraWrapCaption}"
+                                                ToolTipService.ToolTip="Скачать ZIP во временный каталог и проверить SHA-256, x64 и структуру. Без установки." />
+                                        <Button x:Name="UnifiedCancelStageButton" Content="Отменить"
+                                                Click="UnifiedCancelStage_Click" IsEnabled="False" HorizontalAlignment="Stretch"
+                                                ContentTemplate="{StaticResource AuroraWrapCaption}"
+                                                ToolTipService.ToolTip="Отменить загрузку и удалить неполный пакет." />
+                                        <Button x:Name="UnifiedPreflightButton" Content="Проверить готовность"
+                                                Click="UnifiedPreflight_Click" IsEnabled="False" HorizontalAlignment="Stretch"
+                                                ContentTemplate="{StaticResource AuroraWrapCaption}"
+                                                ToolTipService.ToolTip="Проверить каталог программы и будущую резервную копию без изменения файлов." />
                                     </StackPanel>
                                     <ProgressBar x:Name="UnifiedStageProgress" IsIndeterminate="True"
                                                  Visibility="Collapsed" Height="4" />
                                     <TextBlock x:Name="UnifiedUpdateSafety" Text="Перед установкой потребуются проверка SHA-256, совместимости win-x64, резервная копия и безопасное восстановление после сбоя." TextWrapping="Wrap" Foreground="#93B2CD" />
                                 </StackPanel>
                             </Border>
+                            </Grid>
                         </StackPanel>
                         <StackPanel x:Name="CemPinPage" Visibility="Collapsed" Spacing="4">
                             <!-- Approved 3-step Aurora visual. Stages 2 and 3 are not authenticated
