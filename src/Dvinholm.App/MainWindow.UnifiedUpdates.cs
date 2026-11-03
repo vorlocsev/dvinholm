@@ -105,6 +105,7 @@ public sealed partial class MainWindow
         ApplyAuroraCemConfigLocalization();
         RefreshCemPrerequisitePresentation();
         RefreshCemIdentityEvidencePresentation();
+        RefreshJ2534ArchitectureAuditPresentation();
         if (_unifiedUpdatesActive)
             UpdateUnifiedWorkspaceHeader();
         else if (_workspaceDestination is AuroraDestination current)
