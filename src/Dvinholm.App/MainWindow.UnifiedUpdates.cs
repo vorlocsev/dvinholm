@@ -115,6 +115,9 @@ public sealed partial class MainWindow
         RefreshCemPrerequisitePresentation();
         RefreshCemIdentityEvidencePresentation();
         RefreshJ2534ArchitectureAuditPresentation();
+        // Update only the private Connection card. Do not publish vendor API,
+        // firmware or DLL metadata to the shared activity/history surface.
+        RefreshLocalAdapterMetadataLanguage();
         if (_unifiedUpdatesActive)
             UpdateUnifiedWorkspaceHeader();
         else if (_workspaceDestination is AuroraDestination current)
