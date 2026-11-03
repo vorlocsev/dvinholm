@@ -90,6 +90,9 @@ public static class DvinholmWinUiCaptureNative
     public static extern bool GetWindowRect(IntPtr hwnd, out RECT rect);
 
     [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool GetClientRect(IntPtr hwnd, out RECT rect);
+
+    [DllImport("user32.dll", SetLastError = true)]
     public static extern bool MoveWindow(IntPtr hwnd, int x, int y,
         int width, int height, bool repaint);
 
@@ -156,6 +159,35 @@ function Invoke-OnlyNavigation([string]$page) {
     Start-Sleep -Milliseconds 500
 }
 
+# AdaptiveTrigger examines XAML/client width, not the outer window rectangle.
+# Windows borders/title-bar pixels must be added when sizing the outer HWND.
+# Preflight every selected width before any local image is created.
+$previewDpi = [DvinholmWinUiCaptureNative]::GetDpiForWindow($handle)
+$previewOuter = New-Object DvinholmWinUiCaptureNative+RECT
+$previewClient = New-Object DvinholmWinUiCaptureNative+RECT
+if ($previewDpi -lt 96 -or $previewDpi -gt 480 -or
+    -not [DvinholmWinUiCaptureNative]::GetWindowRect($handle, [ref]$previewOuter) -or
+    -not [DvinholmWinUiCaptureNative]::GetClientRect($handle, [ref]$previewClient)) {
+    throw 'Unable to preflight physical DPI and client area; no screenshot was created.'
+}
+$borderWidth = ($previewOuter.Right - $previewOuter.Left) -
+    ($previewClient.Right - $previewClient.Left)
+$borderHeight = ($previewOuter.Bottom - $previewOuter.Top) -
+    ($previewClient.Bottom - $previewClient.Top)
+if ($borderWidth -lt 0 -or $borderHeight -lt 0 -or
+    $borderWidth -gt 200 -or $borderHeight -gt 300) {
+    throw 'Unexpected non-client frame; cannot guarantee responsive-layout width.'
+}
+$preflightWorkArea = [System.Windows.Forms.Screen]::FromHandle($handle).WorkingArea
+foreach ($requestedDip in $WidthsDip) {
+    $neededOuterWidth = [int][Math]::Round($requestedDip * $previewDpi / 96.0) + $borderWidth
+    $neededOuterHeight = [int][Math]::Round($HeightDip * $previewDpi / 96.0) + $borderHeight
+    if ($neededOuterWidth -gt $preflightWorkArea.Width - 24 -or
+        $neededOuterHeight -gt $preflightWorkArea.Height - 24) {
+        throw "Requested $requestedDip DIP client width cannot fit on this monitor at $previewDpi DPI. Use a larger monitor or a smaller -WidthsDip set."
+    }
+}
+
 if (-not (Test-Path -LiteralPath $output -PathType Container)) {
     [void](New-Item -ItemType Directory -Path $output -Force)
 }
@@ -170,29 +202,35 @@ foreach ($page in $Pages) {
         if ($dpi -lt 96 -or $dpi -gt 480) {
             throw "Unexpected window DPI: $dpi. Refusing mislabelled screenshot."
         }
-        $widthPx = [int][Math]::Round($dip * $dpi / 96.0)
-        $heightPx = [int][Math]::Round($HeightDip * $dpi / 96.0)
+        $requestedClientWidthPx = [int][Math]::Round($dip * $dpi / 96.0)
+        $requestedClientHeightPx = [int][Math]::Round($HeightDip * $dpi / 96.0)
+        $outerWidthPx = $requestedClientWidthPx + $borderWidth
+        $outerHeightPx = $requestedClientHeightPx + $borderHeight
         $work = [System.Windows.Forms.Screen]::FromHandle($handle).WorkingArea
-        if ($widthPx -gt $work.Width - 24 -or $heightPx -gt $work.Height - 24) {
-            throw "Requested $dip DIP at $dpi DPI cannot fit on this monitor. Reduce HeightDip or choose a larger monitor."
+        if ($outerWidthPx -gt $work.Width - 24 -or $outerHeightPx -gt $work.Height - 24) {
+            throw "Requested $dip DIP client width at $dpi DPI cannot fit on the current monitor."
         }
         $left = $work.Left + 12
         $top = $work.Top + 12
         if (-not [DvinholmWinUiCaptureNative]::MoveWindow(
-            $handle, $left, $top, $widthPx, $heightPx, $true)) {
+            $handle, $left, $top, $outerWidthPx, $outerHeightPx, $true)) {
             throw 'MoveWindow failed. Do not label this capture as a responsive-layout result.'
         }
         [void][DvinholmWinUiCaptureNative]::SetForegroundWindow($handle)
         Start-Sleep -Milliseconds 550
         $rect = New-Object DvinholmWinUiCaptureNative+RECT
-        if (-not [DvinholmWinUiCaptureNative]::GetWindowRect($handle, [ref]$rect)) {
-            throw 'Could not read actual Dvinholm window bounds.'
+        $client = New-Object DvinholmWinUiCaptureNative+RECT
+        if (-not [DvinholmWinUiCaptureNative]::GetWindowRect($handle, [ref]$rect) -or
+            -not [DvinholmWinUiCaptureNative]::GetClientRect($handle, [ref]$client)) {
+            throw 'Could not read actual Dvinholm outer or client window bounds.'
         }
         $actualWidth = $rect.Right - $rect.Left
         $actualHeight = $rect.Bottom - $rect.Top
-        if ([Math]::Abs($actualWidth-$widthPx) -gt 24 -or
-            [Math]::Abs($actualHeight-$heightPx) -gt 24) {
-            throw "The app/window manager did not accept $dip DIP at $dpi DPI; no misleading screenshot will be saved."
+        $actualClientWidth = $client.Right - $client.Left
+        $actualClientHeight = $client.Bottom - $client.Top
+        if ([Math]::Abs($actualClientWidth-$requestedClientWidthPx) -gt 4 -or
+            [Math]::Abs($actualClientHeight-$requestedClientHeightPx) -gt 4) {
+            throw "The app/window manager did not accept $dip DIP client width at $dpi DPI; refusing misleading viewport screenshot."
         }
         $foreground = [DvinholmWinUiCaptureNative]::GetForegroundWindow()
         if ([DvinholmWinUiCaptureNative]::GetAncestor($foreground, 2) -ne $handle) {
@@ -219,7 +257,10 @@ foreach ($page in $Pages) {
             page = $page
             operatorSelectedLanguage = $Language
             requestedWidthDip = $dip
-            measuredWidthDip = [Math]::Round($actualWidth * 96.0 / $dpi, 1)
+            measuredWidthDip = [Math]::Round($actualClientWidth * 96.0 / $dpi, 1)
+            measuredClientHeightDip = [Math]::Round($actualClientHeight * 96.0 / $dpi, 1)
+            actualClientWidthPx = $actualClientWidth
+            actualClientHeightPx = $actualClientHeight
             actualWidthPx = $actualWidth
             actualHeightPx = $actualHeight
             windowDpi = $dpi
@@ -227,7 +268,7 @@ foreach ($page in $Pages) {
             screenshotUtc = [DateTime]::UtcNow.ToString('o')
             evidence = 'real desktop viewport only; manual privacy and visual review still required'
         }
-        Write-Host "Captured $filename ($actualWidth x $actualHeight physical px at $dpi DPI)"
+        Write-Host "Captured $filename (client $actualClientWidth x $actualClientHeight; outer $actualWidth x $actualHeight px; $dpi DPI)"
     }
 }
 $report = Join-Path $output "Aurora-$Language-capture-manifest.json"
