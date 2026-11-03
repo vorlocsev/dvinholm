@@ -148,4 +148,113 @@ public sealed class AuroraHonestConnectionVisualTests
             .Where(name => name is not null).ToArray();
         Assert.Equal(names.Length, names.Distinct(StringComparer.Ordinal).Count());
     }
+
+    // Stage 71: eight source contracts for the bounded, truthful J2534 chip.
+    // Layout only; native screenshots and real adapter tests are separate gates.
+    [Theory]
+    [InlineData("ShellConnectionDot", "0")]
+    [InlineData("ShellConnectionText", "1")]
+    public void RealStatusGlyphAndTextShareTheSameBoundedGrid(string name, string column)
+    {
+        var doc = Layout();
+        var chip = Named(doc, "HeaderConnectionStatusButton");
+        var grid = chip.Elements().Single();
+        Assert.Equal("Grid", grid.Name.LocalName);
+        var field = Named(doc, name);
+        Assert.Contains(grid, field.Ancestors());
+        Assert.Equal(column, (string?)field.Attribute("Grid.Column") ?? "0");
+        Assert.Null(field.Attribute("Visibility"));
+    }
+
+    [Fact]
+    public void CompactHeaderStatusChipHasFiniteWidthAndStretchedContent()
+    {
+        var doc = Layout();
+        var chip = Named(doc, "HeaderConnectionStatusButton");
+        Assert.Equal("184", (string?)chip.Attribute("MaxWidth"));
+        Assert.Equal("Stretch", (string?)chip.Attribute("HorizontalContentAlignment"));
+        Assert.Null(chip.Attribute("MinWidth"));
+        Assert.Equal("Bottom", (string?)chip.Attribute("VerticalAlignment"));
+        Assert.Contains(Named(doc, "WorkspaceHeaderActions"), chip.Ancestors());
+    }
+
+    [Fact]
+    public void SessionGlyphKeepsAutoColumnAndTextUsesRemainingStarWidth()
+    {
+        var doc = Layout();
+        var grid = Named(doc, "HeaderConnectionStatusButton").Elements().Single();
+        Assert.Equal("8", (string?)grid.Attribute("ColumnSpacing"));
+        var defs = grid.Elements()
+            .Single(element => element.Name.LocalName == "Grid.ColumnDefinitions")
+            .Elements().Select(element => (string?)element.Attribute("Width")).ToArray();
+        Assert.Equal(new[] { "Auto", "*" }, defs);
+        Assert.Equal("Center",
+            (string?)Named(doc, "ShellConnectionDot").Attribute("VerticalAlignment"));
+    }
+
+    [Fact]
+    public void J2534TextWrapsWithinFiniteWidthWithoutEllipsis()
+    {
+        var status = Named(Layout(), "ShellConnectionText");
+        Assert.Equal("Не подключено", (string?)status.Attribute("Text"));
+        Assert.Equal("Wrap", (string?)status.Attribute("TextWrapping"));
+        Assert.Equal("128", (string?)status.Attribute("MaxWidth"));
+        Assert.Equal("Center", (string?)status.Attribute("VerticalAlignment"));
+        Assert.Null(status.Attribute("TextTrimming"));
+        Assert.Null(status.Attribute("MaxLines"));
+    }
+
+    [Fact]
+    public void RealConnectionStateStillGatesHeaderTextAndColor()
+    {
+        var app = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        var locale = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
+        Assert.Contains("var j2534SessionConnected = _connected && _session.IsConnected;", app);
+        Assert.Contains("ShellConnectionText.Text = j2534SessionConnected", app);
+        Assert.Contains("ShellConnectionDot.Foreground = connectionBrush;", app);
+        Assert.Contains("StatusFooterDot.Foreground = connectionBrush;", app);
+        Assert.Contains("ShellConnectionText.Text = _connected && _session.IsConnected", locale);
+        Assert.Contains("L(\"Не подключено\", \"Disconnected\")", locale);
+        Assert.Contains("L(\"J2534 подключён\", \"J2534 connected\")", locale);
+    }
+
+    [Fact]
+    public void WrappingDoesNotTurnHeaderNavigationIntoConnectOperation()
+    {
+        var doc = Layout();
+        var chip = Named(doc, "HeaderConnectionStatusButton");
+        Assert.Equal("J2534Connection", (string?)chip.Attribute("Tag"));
+        Assert.Equal("WorkspaceNavigate_Click", (string?)chip.Attribute("Click"));
+        Assert.Equal("DvinholmHeaderConnectionStatus",
+            (string?)chip.Attribute("AutomationProperties.AutomationId"));
+        Assert.DoesNotContain("Connect_Click", chip.ToString());
+        Assert.DoesNotContain("PassThruConnect", chip.ToString());
+        var actions = Named(doc, "WorkspaceHeaderActions").Elements()
+            .Select(element => (string?)element.Attribute(X + "Name")).ToArray();
+        Assert.Equal(new[] { "HeaderConnectionStatusButton",
+            "UnifiedLanguageSelector", "CancelUdsButton" }, actions);
+    }
+
+    [Fact]
+    public void CompactAndWideHeaderStillPreserveLanguageAndCancellationGates()
+    {
+        var doc = Layout();
+        var compact = Named(doc, "ShellCompact").Descendants()
+            .Where(element => element.Name.LocalName == "Setter")
+            .ToDictionary(element => (string)element.Attribute("Target")!,
+                element => (string)element.Attribute("Value")!);
+        Assert.Equal("Horizontal", compact["WorkspaceHeaderActions.Orientation"]);
+        Assert.Equal("1", compact["WorkspaceHeaderActions.(Grid.Row)"]);
+        Assert.Equal("1280", (string?)Named(doc, "HeaderActionsInline").Descendants()
+            .Single(element => element.Name.LocalName == "AdaptiveTrigger")
+            .Attribute("MinWindowWidth"));
+        Assert.Equal("ru", (string?)Named(doc, "UnifiedLanguageSelector")
+            .Elements().First().Attribute("Tag"));
+        Assert.Equal("Collapsed",
+            (string?)Named(doc, "CancelUdsButton").Attribute("Visibility"));
+        Assert.Equal("False",
+            (string?)Named(doc, "CancelUdsButton").Attribute("IsEnabled"));
+        Assert.Equal(6, Named(doc, "SidebarNavPanel").Elements()
+            .Count(element => element.Name.LocalName == "Button"));
+    }
 }
