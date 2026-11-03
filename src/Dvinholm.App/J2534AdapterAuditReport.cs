@@ -89,8 +89,10 @@ internal static class J2534AdapterAuditReport
         if (summary.Inspected < 0 || summary.Compatible < 0 || summary.Rejected < 0 ||
             summary.Compatible + summary.Rejected != summary.Inspected ||
             summary.Items is null || summary.Items.Count > MaximumRows ||
+            (!summary.Truncated && summary.Items.Count != summary.Inspected) ||
             summary.Items.Any(item => item is null ||
-                !Enum.IsDefined(item.Outcome) || item.DisplayName.Length > 56))
+                !Enum.IsDefined(item.Outcome) || string.IsNullOrWhiteSpace(item.DisplayName) ||
+                item.DisplayName.Length > 56))
             throw new InvalidDataException("Malformed J2534 audit summary.");
 
         var text = new StringBuilder();
@@ -109,7 +111,7 @@ internal static class J2534AdapterAuditReport
                 ? "No existing registered DLL files were located in the scanned views."
                 : "В проверенных разделах реестра не найдены существующие зарегистрированные DLL.");
         foreach (var item in summary.Items)
-            text.Append("• ").Append(item.DisplayName).Append(": ")
+            text.Append("• ").Append(RedactName(item.DisplayName)).Append(": ")
                 .AppendLine(Status(item.Outcome, english));
 
         if (summary.Truncated)
