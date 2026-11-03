@@ -30,7 +30,7 @@ internal static class AuroraDtcTableProjection
             var unsupported = (byte)(record.Status & ~read.StatusAvailabilityMask);
             var status = supported == 0
                 ? (english ? "Status not verified" : "Статус не подтверждён")
-                : UdsDtcStatusFormatter.Format(supported);
+                : UdsDtcStatusFormatter.Format(supported, english);
             var extra = unsupported == 0 ? string.Empty
                 : english
                     ? $" · unsupported bits 0x{unsupported:X2}"
