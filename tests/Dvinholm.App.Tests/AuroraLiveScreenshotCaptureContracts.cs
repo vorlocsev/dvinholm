@@ -79,7 +79,7 @@ public sealed class AuroraLiveScreenshotCaptureContracts
     {
         var script = Capture();
         foreach (var symbol in new[] {
-            "GetDpiForWindow", "GetWindowRect", "MoveWindow",
+            "GetDpiForWindow", "GetWindowRect", "GetClientRect", "MoveWindow",
             "GetForegroundWindow", "GetAncestor", "CopyFromScreen",
             "SetProcessDpiAwarenessContext", "GetThreadDpiAwarenessContext"
         })
@@ -88,6 +88,10 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("requestedWidthDip", script);
         Assert.Contains("measuredWidthDip", script);
         Assert.Contains("actualWidthPx", script);
+        Assert.Contains("actualClientWidthPx", script);
+        Assert.Contains("$outerWidthPx = $requestedClientWidthPx + $borderWidth", script);
+        Assert.Contains("[Math]::Abs($actualClientWidth-$requestedClientWidthPx) -gt 4", script);
+        Assert.Contains("Preflight every selected width", script);
     }
 
     [Fact]
