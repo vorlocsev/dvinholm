@@ -81,17 +81,18 @@ public sealed class AuroraIntermediateEcuTwoPaneLayoutTests
     }
 
     [Fact]
-    public void IntermediateToolbarRetainsCompactSequentialButtonsNotOverflowingFirstFold()
+    public void IntermediateToolbarPlacesScanButtonsBesideEachOtherUnderFullWidthSelector()
     {
         var doc = Layout();
         var mid = Setters(doc, "EcuTwoColumns");
-        Assert.Equal("0", mid["EcuScanToolbarActionColumn.Width"]);
+        Assert.Equal("*", mid["EcuScanToolbarActionColumn.Width"]);
+        Assert.Equal("2", mid["EcuSelector.(Grid.ColumnSpan)"]);
         Assert.Equal("0", mid["EcuScanToolbarCancelColumn.Width"]);
         Assert.Equal("0", mid["DiscoverButton.(Grid.Column)"]);
         Assert.Equal("1", mid["DiscoverButton.(Grid.Row)"]);
         Assert.Equal("Stretch", mid["DiscoverButton.HorizontalAlignment"]);
-        Assert.Equal("0", mid["CancelDiscoveryButton.(Grid.Column)"]);
-        Assert.Equal("2", mid["CancelDiscoveryButton.(Grid.Row)"]);
+        Assert.Equal("1", mid["CancelDiscoveryButton.(Grid.Column)"]);
+        Assert.Equal("1", mid["CancelDiscoveryButton.(Grid.Row)"]);
         Assert.Equal("Stretch", mid["CancelDiscoveryButton.HorizontalAlignment"]);
         Assert.Equal("Discover_Click", (string?)Named(doc, "DiscoverButton").Attribute("Click"));
         Assert.Equal("CancelDiscovery_Click", (string?)Named(doc, "CancelDiscoveryButton").Attribute("Click"));
@@ -157,7 +158,7 @@ public sealed class AuroraIntermediateEcuTwoPaneLayoutTests
     {
         var doc = Layout();
         var mid = Setters(doc, "EcuTwoColumns");
-        Assert.Equal(16, mid.Count);
+        Assert.Equal(17, mid.Count);
         Assert.All(mid.Keys, target => Assert.DoesNotContain("IsEnabled", target));
         Assert.All(mid.Keys, target => Assert.DoesNotContain("Click", target));
         Assert.All(mid.Keys, target => Assert.DoesNotContain("Visibility", target));
