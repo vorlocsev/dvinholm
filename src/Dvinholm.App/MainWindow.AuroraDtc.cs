@@ -13,9 +13,10 @@ internal sealed record AuroraDtcRow(string Code, string Description, string Stat
 internal static class AuroraDtcTableProjection
 {
     internal const string MissingDescription = "Нет проверенного описания";
+    internal const string MissingDescriptionEnglish = "No verified description";
     internal const int MaxVisibleRows = 1024;
 
-    internal static IReadOnlyList<AuroraDtcRow> Project(UdsDtcReadResult read)
+    internal static IReadOnlyList<AuroraDtcRow> Project(UdsDtcReadResult read, bool english = false)
     {
         ArgumentNullException.ThrowIfNull(read);
         ArgumentNullException.ThrowIfNull(read.Records);
@@ -28,18 +29,25 @@ internal static class AuroraDtcTableProjection
             var supported = (byte)(record.Status & read.StatusAvailabilityMask);
             var unsupported = (byte)(record.Status & ~read.StatusAvailabilityMask);
             var status = supported == 0
-                ? "Статус не подтверждён"
+                ? (english ? "Status not verified" : "Статус не подтверждён")
                 : UdsDtcStatusFormatter.Format(supported);
             var extra = unsupported == 0 ? string.Empty
-                : $" · неподдерживаемые биты 0x{unsupported:X2}";
+                : english
+                    ? $" · unsupported bits 0x{unsupported:X2}"
+                    : $" · неподдерживаемые биты 0x{unsupported:X2}";
             rows.Add(new AuroraDtcRow(
                 $"0x{record.Code:X6}",
-                MissingDescription,
+                english ? MissingDescriptionEnglish : MissingDescription,
                 $"0x{record.Status:X2}: {status}{extra}",
-                $"Код: 0x{record.Code:X6}. Raw status: 0x{record.Status:X2}. " +
-                $"ECU-supported mask: 0x{read.StatusAvailabilityMask:X2}. " +
-                $"Supported status: {status}.{extra} " +
-                "Причина, описание Volvo и способ устранения не подтверждены."));
+                english
+                    ? $"Code: 0x{record.Code:X6}. Raw status: 0x{record.Status:X2}. " +
+                      $"ECU-supported mask: 0x{read.StatusAvailabilityMask:X2}. " +
+                      $"Supported status: {status}.{extra} " +
+                      "No verified Volvo fault cause, description or repair."
+                    : $"Код: 0x{record.Code:X6}. Raw status: 0x{record.Status:X2}. " +
+                      $"ECU-supported mask: 0x{read.StatusAvailabilityMask:X2}. " +
+                      $"Supported status: {status}.{extra} " +
+                      "Причина, описание Volvo и способ устранения не подтверждены."));
         }
 
         return rows;
@@ -49,6 +57,10 @@ internal static class AuroraDtcTableProjection
 public sealed partial class MainWindow
 {
     private readonly ObservableCollection<AuroraDtcRow> _auroraDtcRows = new();
+    // Retain only the latest session-scoped DTC read already displayed in
+    // this workspace, so language switches can re-render it without CAN I/O.
+    // ClearAuroraDtcTable releases it on any diagnostic-context invalidation.
+    private UdsDtcReadResult? _lastAuroraDtcRead;
 
     private void InitializeAuroraDtcTable()
     {
@@ -59,23 +71,59 @@ public sealed partial class MainWindow
 
     private void ClearAuroraDtcTable()
     {
+        _lastAuroraDtcRead = null;
         _auroraDtcRows.Clear();
         if (DtcTableSummary is not null)
-            DtcTableSummary.Text = "Коды не считывались в текущем диагностическом контексте.";
+            DtcTableSummary.Text = L(
+                "Коды не считывались в текущем диагностическом контексте.",
+                "No DTCs read in the current diagnostic context.");
         if (DtcSelectedRecordDetails is not null)
-            DtcSelectedRecordDetails.Text = "Выберите считанную ошибку, чтобы посмотреть сырые данные и маску статуса.";
+            DtcSelectedRecordDetails.Text = L(
+                "Выберите считанную ошибку, чтобы посмотреть сырые данные и маску статуса.",
+                "Select a DTC to inspect its raw code and status mask.");
     }
 
     private void PublishAuroraDtcTable(UdsDtcReadResult result)
     {
-        var rows = AuroraDtcTableProjection.Project(result);
+        _lastAuroraDtcRead = result;
+        RefreshAuroraDtcTableLocalization();
+    }
+
+    private void RefreshAuroraDtcTableLocalization()
+    {
+        if (DtcTableSummary is null || DtcSelectedRecordDetails is null)
+            return;
+        if (_lastAuroraDtcRead is not { } result)
+        {
+            DtcTableSummary.Text = L(
+                "Коды не считывались в текущем диагностическом контексте.",
+                "No DTCs read in the current diagnostic context.");
+            DtcSelectedRecordDetails.Text = L(
+                "Выберите считанную ошибку, чтобы посмотреть сырые данные и маску статуса.",
+                "Select a DTC to inspect its raw code and status mask.");
+            return;
+        }
+
+        var selectedCode = (DtcRecordsView.SelectedItem as AuroraDtcRow)?.Code;
+        var rows = AuroraDtcTableProjection.Project(result, _unifiedEnglish);
         _auroraDtcRows.Clear();
         foreach (var row in rows) _auroraDtcRows.Add(row);
         DtcTableSummary.Text = result.Records.Count == 0
-            ? "ECU вернул 0 записей для выбранного фильтра. Это не доказывает отсутствие неисправностей."
-            : $"Получено {result.Records.Count} записей одного ECU · показано {rows.Count}. " +
-              $"Маска поддерживаемых битов: 0x{result.StatusAvailabilityMask:X2}.";
-        DtcSelectedRecordDetails.Text = "Выберите строку для просмотра исходного кода и битов статуса.";
+            ? L(
+                "ECU вернул 0 записей для выбранного фильтра. Это не доказывает отсутствие неисправностей.",
+                "The selected ECU returned 0 DTCs for this filter. This does not prove the vehicle is fault-free.")
+            : _unifiedEnglish
+                ? $"Received {result.Records.Count} DTCs from one ECU · showing {rows.Count}. " +
+                  $"ECU status availability mask: 0x{result.StatusAvailabilityMask:X2}."
+                : $"Получено {result.Records.Count} записей одного ECU · показано {rows.Count}. " +
+                  $"Маска поддерживаемых битов: 0x{result.StatusAvailabilityMask:X2}.";
+        var selected = rows.FirstOrDefault(row =>
+            string.Equals(row.Code, selectedCode, StringComparison.Ordinal));
+        if (selected is not null)
+            DtcRecordsView.SelectedItem = selected;
+        DtcSelectedRecordDetails.Text = selected?.Details ?? L(
+            "Выберите строку для просмотра исходного кода и битов статуса.",
+            "Select a row to inspect the raw code and status bits.");
     }
 
     private void DtcRecordsView_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -83,6 +131,7 @@ public sealed partial class MainWindow
         if (DtcSelectedRecordDetails is null) return;
         DtcSelectedRecordDetails.Text = DtcRecordsView.SelectedItem is AuroraDtcRow row
             ? row.Details
-            : "Выберите считанную ошибку, чтобы посмотреть сырые данные и маску статуса.";
+            : L("Выберите считанную ошибку, чтобы посмотреть сырые данные и маску статуса.",
+                "Select a DTC to inspect its raw code and status mask.");
     }
 }
