@@ -259,6 +259,16 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - The legacy x86 regression remains a **separate required CI**. This additional x64 gate does not waive full regression, manual WinUI launch/UX, real x64 vendor DLL testing, publisher-signing review, update rollback acceptance or future physical vehicle safety review.
 - Stage-29 head `19e52511` passed the x64 packaging pilot [#41559504591](https://github.com/vorlocsev/dvinholm/actions/runs/41559504591); its full CI had not completed when this stage began. Stage 30 must be evaluated at the **latest head SHA** and both workflows must pass before merge/release.
 
+
+## Stage 31: make safe CEM identification available in x64 Release
+
+- Previous exact-head `3f026831` **passed both** [native x64 pilot #41560040984](https://github.com/vorlocsev/dvinholm/actions/runs/41560040984) **and** [complete PR CI #41560041004](https://github.com/vorlocsev/dvinholm/actions/runs/41560041004). This confirms automated package/test gates only, not actual Windows GUI or physical J2534 adapter acceptance.
+- Corrected an actual Release UX issue: `CemPinIdentityCard` had been **Collapsed** in XAML even though it contains the safe local-only eight-condition preflight button. The card is now **Visible by default** on the CEM PIN page, including the production-like self-contained x64 Release build.
+- Only the **safe card** and its offline preflight/evidence presentation are exposed. The source-defined experimental part-number button remains `Collapsed` and disabled by default, while the entire PIN search card and live PIN panel remain `Collapsed`. PIN read and secret-reveal controls stay disabled and are never accidentally enabled by Release startup.
+- Added named RU/EN heading/intro labels in the identity card and used the existing `ApplyUnifiedLocalization` / identity refresh lifecycle. The intro explicitly disclaims verified CEM identity and says the experimental read is Development-only. The Release-only `safeResearchContext=false` rule continues to block preflight authorization even if all other connection inputs are present.
+- Eight new deterministic offline test groups confirm visible safe card and preflight, hidden/disabled experimental controls, hidden PIN search, disabled reveal, RU/EN wording, Release gate denial and shared identity-status consistency across CEM PIN/Configuration. The x64 pilot now includes this ninth suite in its targeted managed test filter; the published Release ZIP continues to exclude all Development features.
+- No vehicle request, PIN calculation/attempt, proprietary DID guess, write/configuration operation, launcher, production update installation, Stable or Virtual Car modification. PR remains OPEN/HOLD until the **new current head** passes x64 pilot and full CI and the separate Windows/manual J2534 acceptance is performed.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
