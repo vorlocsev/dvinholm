@@ -86,7 +86,7 @@ public sealed class AuroraWindowsPowerShell51EncodingTests
         var workflow = Source(".github/workflows/winui3-unified-x64.yml");
         Assert.Contains("eng/Capture-UnifiedAuroraWinUI3.ps1", workflow);
         Assert.Contains("eng/Review-UnifiedAuroraScreenshots.ps1", workflow);
-        Assert.Contains("No screenshot", workflow, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("CI must not execute either helper", workflow);
         Assert.DoesNotContain("powershell.exe -File eng/Capture-UnifiedAuroraWinUI3.ps1", workflow);
         Assert.DoesNotContain("powershell.exe -File eng/Review-UnifiedAuroraScreenshots.ps1", workflow);
         Assert.DoesNotContain("Aurora-ru-capture-manifest.json", workflow);
