@@ -178,6 +178,7 @@ jobs:
           path: |
             artifacts/Dvinholm-Windows-x64.zip
             artifacts/SHA256SUMS.txt
+            eng/Capture-UnifiedAuroraWinUI3.ps1
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
