@@ -98,7 +98,7 @@ public sealed class AuroraVisualEnglishLocalizationTests
         Assert.Equal("1", setters["CemReferenceValuesPane.(Grid.Row)"]);
         Assert.Equal("2", setters["CemReferenceDetailPane.(Grid.Row)"]);
         Assert.Equal("1", setters["CemConfigCompareButton.(Grid.Row)"]);
-        Assert.Equal("1", setters["CemConfigPrepareButton.(Grid.Row)"]);
+        Assert.Equal("2", setters["CemConfigPrepareButton.(Grid.Row)"]);
         foreach (var name in new[] { "CemConfigBackupButton", "CemConfigCompareButton",
             "CemConfigPrepareButton" })
         {
