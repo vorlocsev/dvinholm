@@ -211,6 +211,12 @@
             <DataTemplate x:Key="AuroraWrapCaption">
                 <TextBlock Text="{Binding}" TextWrapping="Wrap" TextAlignment="Center" />
             </DataTemplate>
+            <!-- Keep RU/EN action captions readable in dense Aurora footers. -->
+            <Style x:Key="AuroraActionCaptionButton" TargetType="Button" BasedOn="{StaticResource AuroraButton}">
+                <Setter Property="ContentTemplate" Value="{StaticResource AuroraWrapCaption}" />
+                <Setter Property="MinHeight" Value="48" />
+                <Setter Property="Padding" Value="8,9" />
+            </Style>
         </Grid.Resources>
         <Grid.ColumnDefinitions>
             <ColumnDefinition x:Name="ShellSidebarColumn" Width="216" />
@@ -636,12 +642,12 @@
                                                     <ColumnDefinition x:Name="CemConfigActionFifthColumn" Width="*" />
                                                     <ColumnDefinition x:Name="CemConfigActionSixthColumn" Width="*" />
                                                 </Grid.ColumnDefinitions>
-                                                <Button x:Name="P2ConfigCatalogButton" Grid.Column="0" Content="Источники (offline)" Click="P2ConfigCatalog_Click" HorizontalAlignment="Stretch" Background="#0B5F81" ToolTipService.ToolTip="Open reference sources offline; no vehicle queries, PIN or configuration writes." />
-                                                <Button x:Name="CemConfigReadButton" Grid.Column="1" Content="Прочитать" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Реальная операция чтения CEM не подтверждена." />
-                                                <Button x:Name="CemConfigBackupButton" Grid.Column="2" Content="Резервная копия" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет проверенной операции чтения конфигурации CEM." />
-                                                <Button x:Name="CemConfigCompareButton" Grid.Column="3" Content="Сравнить" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет считанной конфигурации и проверенного резервного снимка." />
-                                                <Button x:Name="CemConfigPrepareButton" Grid.Column="4" Content="Подготовить изменения" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Не проверены байтовая карта, допустимые значения и зависимости." />
-                                                <Button x:Name="CemConfigWriteButton" Grid.Column="5" Content="Записать в CEM" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Запись недоступна без проверенного протокола, резервной копии и восстановления." />
+                                                <Button x:Name="P2ConfigCatalogButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="0" Content="Источники (offline)" Click="P2ConfigCatalog_Click" HorizontalAlignment="Stretch" Background="#0B5F81" ToolTipService.ToolTip="Open reference sources offline; no vehicle queries, PIN or configuration writes." />
+                                                <Button x:Name="CemConfigReadButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="1" Content="Прочитать" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Реальная операция чтения CEM не подтверждена." />
+                                                <Button x:Name="CemConfigBackupButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="2" Content="Резервная копия" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет проверенной операции чтения конфигурации CEM." />
+                                                <Button x:Name="CemConfigCompareButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="3" Content="Сравнить" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет считанной конфигурации и проверенного резервного снимка." />
+                                                <Button x:Name="CemConfigPrepareButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="4" Content="Подготовить изменения" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Не проверены байтовая карта, допустимые значения и зависимости." />
+                                                <Button x:Name="CemConfigWriteButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="5" Content="Записать в CEM" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Запись недоступна без проверенного протокола, резервной копии и восстановления." />
                                             </Grid>
                                         </StackPanel>
                                     </Border>
@@ -822,9 +828,9 @@
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition x:Name="EcuToolsThirdColumn" Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <Button x:Name="EcuDiagnosticsNavigateButton" Tag="DiagnosticsWorkspace" Content="Диагностические данные" Click="WorkspaceNavigate_Click" Grid.Column="0" HorizontalAlignment="Stretch" />
-                                        <Button x:Name="EcuMonitorNavigateButton" Tag="CanMonitor" Content="CAN-монитор" Click="WorkspaceNavigate_Click" Grid.Column="1" HorizontalAlignment="Stretch" />
-                                        <Button x:Name="EcuProfilesNavigateButton" Tag="EcuProfiles" Content="Профили ECU" Click="WorkspaceNavigate_Click" Grid.Column="2" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="EcuDiagnosticsNavigateButton" Style="{StaticResource AuroraActionCaptionButton}" Tag="DiagnosticsWorkspace" Content="Диагностические данные" Click="WorkspaceNavigate_Click" Grid.Column="0" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="EcuMonitorNavigateButton" Style="{StaticResource AuroraActionCaptionButton}" Tag="CanMonitor" Content="CAN-монитор" Click="WorkspaceNavigate_Click" Grid.Column="1" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="EcuProfilesNavigateButton" Style="{StaticResource AuroraActionCaptionButton}" Tag="EcuProfiles" Content="Профили ECU" Click="WorkspaceNavigate_Click" Grid.Column="2" HorizontalAlignment="Stretch" />
                                     </Grid>
                                 </StackPanel>
                             </Border>
@@ -902,11 +908,11 @@
                                                     <ComboBoxItem Content="Confirmed DTC" Tag="08" />
                                                     <ComboBoxItem Content="Warning indicator requested" Tag="80" />
                                                 </ComboBox>
-                                                <Button x:Name="ReadDtcButton" Content="Read DTC" Grid.Column="1" IsEnabled="False"
+                                                <Button x:Name="ReadDtcButton" Style="{StaticResource AuroraActionCaptionButton}" Content="Read DTC" Grid.Column="1" IsEnabled="False"
                                                         Click="ReadDtc_Click" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
                                                         Background="#0865C7" BorderBrush="#348DEA"
                                                         ToolTipService.ToolTip="Read DTCs from only the selected ECU using verified TX/RX addressing. No DTC clear or full-vehicle scan." />
-                                                <Button x:Name="DtcClearButton" Grid.Column="2" Content="Стереть ошибки"
+                                                <Button x:Name="DtcClearButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="2" Content="Стереть ошибки"
                                                         IsEnabled="False" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
                                                         ToolTipService.ToolTip="Стирание не реализовано: нет проверенного полномочия, сервиса, защиты и восстановления." />
                                             </Grid>
