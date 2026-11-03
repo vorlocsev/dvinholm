@@ -47,6 +47,14 @@ public sealed class J2534PeInspectorTests
             Assert.Equal(J2534PeArchitecture.X86, machine);
             Assert.False(J2534PeInspector.CanLoad(machine, true));
             Assert.True(J2534PeInspector.CanLoad(machine, false));
+            if (OperatingSystem.IsWindows() && Environment.Is64BitProcess)
+            {
+                // Actual wrapper refusal, before any attempt to load/execute
+                // the synthetic x86 image on this x64 test worker.
+                var native = new J2534Native();
+                Assert.False(native.Load(path, out var error));
+                Assert.Contains("x64", error, StringComparison.OrdinalIgnoreCase);
+            }
         });
 
     [Fact]
