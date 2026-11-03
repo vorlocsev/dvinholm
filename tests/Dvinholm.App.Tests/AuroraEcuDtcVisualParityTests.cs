@@ -183,4 +183,52 @@ public sealed class AuroraEcuDtcVisualParityTests
         Assert.Equal(6, Named(doc, "SidebarNavPanel").Elements()
             .Count(e => e.Name.LocalName == "Button"));
     }
+
+    // Stage 70: eight source-level RU/EN narrow viewport caption guards.
+    // These do not imply native Windows screenshots or a live J2534 session.
+    [Theory]
+    [InlineData("DtcCodeHeading", "DtcPage", "DtcResultsPane")]
+    [InlineData("DtcDescriptionHeading", "DtcPage", "DtcResultsPane")]
+    [InlineData("DtcStatusHeading", "DtcPage", "DtcResultsPane")]
+    [InlineData("DtcDetailsHeading", "DtcPage", "DtcDetailsPane")]
+    [InlineData("DiagnosticsAddressHeading", "DiagnosticsPage", "DiagnosticsPage")]
+    [InlineData("DiagnosticsAddressIntro", "DiagnosticsPage", "DiagnosticsPage")]
+    [InlineData("DiagnosticsReadHeading", "DiagnosticsPage", "DiagnosticsPage")]
+    [InlineData("DiagnosticsReadIntro", "DiagnosticsPage", "DiagnosticsPage")]
+    public void NarrowDtcAndDiagnosticCaptionsRemainReadableInBothLocales(
+        string name, string page, string panel)
+    {
+        var doc = Layout();
+        var text = Named(doc, name);
+        Assert.Equal("TextBlock", text.Name.LocalName);
+        Assert.Contains(Named(doc, page), text.Ancestors());
+        Assert.Contains(Named(doc, panel), text.Ancestors());
+        Assert.Equal("Wrap", (string?)text.Attribute("TextWrapping"));
+        Assert.Null(text.Attribute("MaxLines"));
+        Assert.Null(text.Attribute("TextTrimming"));
+
+        var locale = Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+        Assert.Contains(name + ".Text = L(", locale);
+
+        if (name is "DtcCodeHeading" or "DtcDescriptionHeading" or "DtcStatusHeading")
+        {
+            var header = text.Parent!;
+            Assert.Equal("Grid", header.Name.LocalName);
+            Assert.Equal("8", (string?)header.Attribute("ColumnSpacing"));
+            Assert.Equal(new[] { "96", "*", "124" },
+                header.Descendants().Where(element =>
+                    element.Name.LocalName == "ColumnDefinition")
+                    .Select(element => (string?)element.Attribute("Width")));
+        }
+
+        // A typography-only change must never activate unverified operations.
+        var clear = Named(doc, "DtcClearButton");
+        Assert.Equal("False", (string?)clear.Attribute("IsEnabled"));
+        Assert.Null(clear.Attribute("Click"));
+        var write = Named(doc, "CemConfigWriteButton");
+        Assert.Equal("False", (string?)write.Attribute("IsEnabled"));
+        Assert.Null(write.Attribute("Click"));
+        Assert.Equal("Disabled",
+            (string?)Named(doc, "WorkspaceScroll").Attribute("HorizontalScrollBarVisibility"));
+    }
 }
