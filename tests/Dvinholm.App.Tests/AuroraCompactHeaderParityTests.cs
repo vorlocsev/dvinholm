@@ -73,8 +73,8 @@ public sealed class AuroraCompactHeaderParityTests
     {
         var xml = Layout();
         var header = Named(xml, "WorkspaceHeaderGrid");
-        Assert.Equal("28,16,28,16", (string?)header.Attribute("Margin"));
-        Assert.Equal("150", (string?)header.Attribute("MinHeight"));
+        Assert.Equal("24,12,24,12", (string?)header.Attribute("Margin"));
+        Assert.Equal("132", (string?)header.Attribute("MinHeight"));
         Assert.Equal("1", (string?)Named(xml, "WorkspaceHeaderActions").Attribute("Grid.Column"));
         Assert.Null(Named(xml, "WorkspaceHeaderActions").Attribute("Grid.Row"));
         Assert.Equal("2", (string?)Named(xml, "AuroraHeaderArtwork").Attribute("Grid.RowSpan"));
