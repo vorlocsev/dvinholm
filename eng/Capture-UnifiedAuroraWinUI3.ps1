@@ -1,4 +1,4 @@
-#Requires -Version 5.1
+﻿#Requires -Version 5.1
 <#
 .SYNOPSIS
     Capture genuine, visible Dvinholm WinUI 3 screenshots from a signed-in
