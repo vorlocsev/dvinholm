@@ -2211,8 +2211,12 @@ public sealed partial class MainWindow : Window
     }
 
 
-    private sealed class EcuRow
+    // Passive ECU observations are immutable vehicle evidence. Only their UI
+    // captions are translated, with no rescan or changes to RX/TX data.
+    private sealed class EcuRow : System.ComponentModel.INotifyPropertyChanged
     {
+        private bool _english;
+
         public UdsEcuCandidate Candidate { get; }
         public string Response => Candidate.ResponseId.ToString(Candidate.IsExtended ? "X8" : "X3");
         public string Request => Candidate.RequestId?.ToString(Candidate.IsExtended ? "X8" : "X3") ?? "-";
@@ -2220,9 +2224,31 @@ public sealed partial class MainWindow : Window
         public string Type => Candidate.IsExtended ? "29-bit" : "11-bit";
         public int Frames => Candidate.ResponseCount;
         public string MaxPayload => Candidate.MaxDataLength?.ToString() ?? "-";
-        public string RequestBasis => Candidate.RequestId is null ? "Unknown" : "Inferred";
+        public string FramesCaption => _english ? "Frames" : "Кадры";
+        public string MaxPayloadCaption => _english ? "Max bytes" : "Макс. байт";
+        public string RequestBasis => Candidate.RequestId is null
+            ? (_english ? "Unknown" : "Неизвестно")
+            : (_english ? "Inferred" : "Предполагается");
 
-        internal EcuRow(UdsEcuCandidate candidate) => Candidate = candidate;
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+        internal EcuRow(UdsEcuCandidate candidate, bool english)
+        {
+            Candidate = candidate;
+            _english = english;
+        }
+
+        internal void SetPresentationLanguage(bool english)
+        {
+            if (_english == english) return;
+            _english = english;
+            PropertyChanged?.Invoke(this,
+                new System.ComponentModel.PropertyChangedEventArgs(nameof(FramesCaption)));
+            PropertyChanged?.Invoke(this,
+                new System.ComponentModel.PropertyChangedEventArgs(nameof(MaxPayloadCaption)));
+            PropertyChanged?.Invoke(this,
+                new System.ComponentModel.PropertyChangedEventArgs(nameof(RequestBasis)));
+        }
     }
 
     private async void Discover_Click(object sender, RoutedEventArgs e)
@@ -2324,7 +2350,7 @@ public sealed partial class MainWindow : Window
         ClearPassiveDiscoverySelection();
         foreach (var candidate in found)
         {
-            var row = new EcuRow(candidate);
+            var row = new EcuRow(candidate, _unifiedEnglish);
             _ecus.Add(row);
             EcuSelector.Items.Add(UdsPassiveEcuListPresentation.SelectorLabel(candidate, complete));
         }
