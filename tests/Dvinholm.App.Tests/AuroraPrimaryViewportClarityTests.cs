@@ -92,7 +92,7 @@ public sealed class AuroraPrimaryViewportClarityTests
         var footer = Named(doc, "SidebarFooter");
         Assert.Equal("Collapsed", (string?)footer.Attribute("Visibility"));
         Assert.Contains("WINUI 3", footer.ToString());
-        Assert.Equal("2", (string?)footer.Attribute("Grid.Row"));
+        Assert.Equal("1", (string?)footer.Attribute("Grid.Row"));
         Assert.Contains(Named(doc, "SidebarNavPanel"), footer.Parent!.Descendants());
         Assert.Equal(6, Named(doc, "SidebarNavPanel").Elements()
             .Count(e => e.Name.LocalName == "Button"));
