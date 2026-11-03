@@ -162,6 +162,11 @@ jobs:
             'FullyQualifiedName~AuroraIntermediateEcuScanToolbarTests'
             'FullyQualifiedName~AuroraEcuInventoryLocalizationTests'
             'FullyQualifiedName~AuroraPassiveDiscoveryBilingualTests'
+            # Exact tests that protect the passive-scan locale projection and
+            # manual TX-address gate; full CI also runs these independently.
+            'FullyQualifiedName~UdsPassiveDiscoveryActivityTests'
+            'FullyQualifiedName~UdsPassiveEcuListPresentationTests'
+            'FullyQualifiedName~AuroraEcuThreePaneWorkspaceTests'
             'FullyQualifiedName~AuroraJ2534MetadataBilingualTests'
           ) -join '|'
           dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release --runtime win-x64 -p:Platform=x64 -p:PlatformTarget=x64 -p:RuntimeIdentifier=win-x64 -p:DvinholmDevelopmentFeatures=true --filter $filter --results-directory artifacts/x64-offline-tests --logger 'trx;LogFileName=x64-cem-j2534.trx'
