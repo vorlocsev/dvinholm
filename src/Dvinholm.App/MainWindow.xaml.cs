@@ -3302,7 +3302,7 @@ public sealed partial class MainWindow : Window
                 _connected = false;
                 ClearPassiveDiscoverySelection();
                 _activeHardwareFilterId = null;
-                HardwareFilterButton.Content = "Apply HW filter";
+                RefreshHardwareFilterCaption();
                 HardwareFilterButton.IsEnabled = false;
                 ConnectButton.Content = AuroraUiText("Подключить", "Connect");
                 SetStatus("Disconnected");
@@ -3316,7 +3316,7 @@ public sealed partial class MainWindow : Window
                 _connected = false;
                 ClearPassiveDiscoverySelection();
                 _activeHardwareFilterId = null;
-                HardwareFilterButton.Content = "Apply HW filter";
+                RefreshHardwareFilterCaption();
                 HardwareFilterButton.IsEnabled = false;
                 StartButton.IsEnabled = false;
                 SetUdsEnabled(false);
@@ -3635,7 +3635,7 @@ public sealed partial class MainWindow : Window
                 }
 
                 _activeHardwareFilterId = null;
-                HardwareFilterButton.Content = "Apply HW filter";
+                RefreshHardwareFilterCaption();
                 SetStatus("J2534 hardware filter removed.");
                 return;
             }
@@ -3668,7 +3668,7 @@ public sealed partial class MainWindow : Window
             }
 
             _activeHardwareFilterId = filterId;
-            HardwareFilterButton.Content = "Remove HW filter";
+            RefreshHardwareFilterCaption();
             SetStatus($"J2534 hardware filter active for 0x{id:X} ({(extended ? "29-bit" : "11-bit")}).");
         }
         catch (Exception)
