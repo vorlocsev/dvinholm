@@ -4,6 +4,7 @@ on:
   pull_request:
     paths:
       - 'src/Dvinholm.App/**'
+      - 'tests/Dvinholm.App.Tests/**'
       - 'src/Dvinholm.UpdateHandoffProbe/**'
       - 'eng/Test-UnifiedUpdateHandoffProbe.ps1'
       - 'eng/Sign-UnifiedX64Release.ps1'
@@ -56,6 +57,39 @@ jobs:
         shell: pwsh
         run: |
           ./eng/Package-UnifiedWinUIX64Pilot.ps1 -PublishDirectory artifacts/winui3-unified-x64 -ZipPath artifacts/Dvinholm-Windows-x64.zip
+
+      # Exercise the real native x64 managed test host, not only a x64 PE
+      # publish. Run eight existing, relevant suites with virtual adapters /
+      # synthetic data only. No vendor DLL, vehicle, PIN operation or updater.
+      # The development switch is for test fixtures, never for the user ZIP.
+      - name: Run 8 CEM and J2534 x64 offline test suites
+        shell: pwsh
+        run: |
+          $filter = @(
+            'FullyQualifiedName~CemPartNumberFrameDecoderTests'
+            'FullyQualifiedName~CemPartNumberReaderTests'
+            'FullyQualifiedName~CemReadOnlyPrerequisiteReportTests'
+            'FullyQualifiedName~CemIdentityEvidenceReportTests'
+            'FullyQualifiedName~AuroraCemConfigReferenceFilterTests'
+            'FullyQualifiedName~J2534PeInspectorTests'
+            'FullyQualifiedName~J2534AdapterAuditReportTests'
+            'FullyQualifiedName~AuroraApprovedReferenceTests'
+          ) -join '|'
+          dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release --runtime win-x64 -p:Platform=x64 -p:PlatformTarget=x64 -p:RuntimeIdentifier=win-x64 -p:DvinholmDevelopmentFeatures=true --filter $filter --results-directory artifacts/x64-offline-tests --logger 'trx;LogFileName=x64-cem-j2534.trx'
+          if ($LASTEXITCODE -ne 0) { throw 'Windows x64 CEM/J2534 offline tests failed.' }
+          $trx = 'artifacts/x64-offline-tests/x64-cem-j2534.trx'
+          if (-not (Test-Path -LiteralPath $trx -PathType Leaf)) {
+            throw 'Windows x64 test result file was not generated.'
+          }
+          [xml]$report = Get-Content -LiteralPath $trx -Raw
+          $counters = $report.SelectSingleNode("//*[local-name()='Counters']")
+          if ($null -eq $counters) { throw 'Windows x64 test counters are missing.' }
+          $total = [int]$counters.GetAttribute('total')
+          $failed = [int]$counters.GetAttribute('failed')
+          if ($total -lt 48 -or $failed -ne 0) {
+            throw "Windows x64 coverage below expected floor or failed tests ($total total, $failed failed)."
+          }
+          "Windows x64 synthetic CEM/J2534 suites: $total tests, $failed failed; physical adapter testing NOT performed." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
       # Prepare an exact-name candidate pair for later offline verification.
       # This is PR-only; generating a checksum is NOT a release signature.
