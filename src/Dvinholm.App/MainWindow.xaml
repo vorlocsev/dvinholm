@@ -811,8 +811,8 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <ComboBox x:Name="EcuSelector" PlaceholderText="Observed response" IsEnabled="False" SelectionChanged="EcuSelector_SelectionChanged" ToolTipService.ToolTip="Selection does not send a request or verify the inferred request address." Grid.Column="0" />
-                                        <Button x:Name="DiscoverButton" Content="Discover ECUs" Click="Discover_Click" IsEnabled="False" Grid.Column="1" />
-                                        <Button x:Name="CancelDiscoveryButton" Content="Cancel scan" Click="CancelDiscovery_Click" IsEnabled="False" Grid.Column="2" />
+                                        <Button x:Name="DiscoverButton" Content="Discover ECUs" Click="Discover_Click" IsEnabled="False" Grid.Column="1" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="CancelDiscoveryButton" Content="Cancel scan" Click="CancelDiscovery_Click" IsEnabled="False" Grid.Column="2" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                     </Grid>
                                     <TextBlock x:Name="DiscoveryStatus" TextWrapping="Wrap" VerticalAlignment="Center" Text="Not scanned" />
                                     <Grid x:Name="EcuWorkbenchGrid" ColumnSpacing="12" RowSpacing="12">
@@ -973,7 +973,7 @@
                                                     <TextBlock x:Name="EcuSelectionInfo" Text="Пассивный поиск · выберите наблюдаемый RX. Идентичность ECU и TX-адрес не установлены." TextWrapping="Wrap" IsTextSelectionEnabled="True" />
                                                 </ScrollViewer>
                                                 <TextBlock x:Name="EcuSelectionDisclaimer" Text="Нет подтверждённого сопоставления наблюдаемых CAN ID с позициями на автомобиле." FontSize="12" Foreground="#E9C48D" TextWrapping="Wrap" />
-                                                <Button x:Name="EcuOpenDiagnosticsButton" Content="Диагностика ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" ToolTipService.ToolTip="Открыть экран диагностики. Не отправляет запросы и не подтверждает адрес ECU." />
+                                                <Button x:Name="EcuOpenDiagnosticsButton" Content="Диагностика ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" ToolTipService.ToolTip="Открыть экран диагностики. Не отправляет запросы и не подтверждает адрес ECU." ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                             </StackPanel>
                                         </Border>
                                     </Grid>
@@ -1145,7 +1145,7 @@
                                     </StackPanel>
                                     </Border>
                                     </Grid>
-                                    <Button x:Name="DtcCheckAddressesButton" Content="Проверить адреса ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" HorizontalAlignment="Left" ToolTipService.ToolTip="Только навигация к параметрам подключения. Запросы к автомобилю не отправляются." />
+                                    <Button x:Name="DtcCheckAddressesButton" Content="Проверить адреса ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" HorizontalAlignment="Left" ToolTipService.ToolTip="Только навигация к параметрам подключения. Запросы к автомобилю не отправляются." ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
@@ -1369,7 +1369,7 @@
                                         </Grid>
                                         <TextBlock x:Name="ConnectionSessionState"
                                                    Text="{Binding Text, ElementName=ShellConnectionText}"
-                                                   FontSize="17" Foreground="#728FA8" FontWeight="SemiBold" />
+                                                   TextWrapping="Wrap" FontSize="17" Foreground="#728FA8" FontWeight="SemiBold" />
                                         <TextBlock x:Name="ConnectionDriverIntro" TextWrapping="Wrap"
                                                    Text="Информация текущего подключения."
                                                    Foreground="#A9C7DE" FontSize="12" />
@@ -1385,11 +1385,11 @@
                                             </Grid.ColumnDefinitions>
                                             <Button x:Name="ConnectionRefreshButton" Grid.Column="0"
                                                     Content="Refresh" Click="RefreshJ2534Devices_Click"
-                                                    HorizontalAlignment="Stretch" />
+                                                    HorizontalAlignment="Stretch" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                             <Button x:Name="ConnectButton" Grid.Column="1"
                                                     Content="Connect" Click="Connect_Click"
                                                     HorizontalAlignment="Stretch"
-                                                    Background="#0865C7" BorderBrush="#348DEA" />
+                                                    Background="#0865C7" BorderBrush="#348DEA" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                         </Grid>
                                     </StackPanel>
                                 </Border>
