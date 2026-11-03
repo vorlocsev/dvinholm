@@ -474,9 +474,9 @@
                     <StackPanel x:Name="WorkspaceHeaderCopy" Spacing="7" Margin="16,13,0,12" VerticalAlignment="Center">
                         <TextBlock x:Name="WorkspaceScopeLabel" Text="DVINHOLM / РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" CharacterSpacing="120" Foreground="#65BFF2" />
                         <TextBlock x:Name="WorkspaceTitle" AutomationProperties.AutomationId="DvinholmWorkspaceTitle" FontSize="30" FontWeight="SemiBold"
-                                   Foreground="#F5FAFF" />
+                                   Foreground="#F5FAFF" TextWrapping="Wrap" />
                         <TextBlock x:Name="WorkspaceDescription" Foreground="#BDD4E8" MaxWidth="760"
-                                   FontSize="13" HorizontalAlignment="Left" />
+                                   FontSize="13" HorizontalAlignment="Left" TextWrapping="Wrap" />
                     </StackPanel>
                     <StackPanel x:Name="WorkspaceHeaderActions" Grid.Column="1" Spacing="10"
                                 Margin="0,12,16,10" VerticalAlignment="Center">
@@ -1436,7 +1436,7 @@
                                    Foreground="#728FA8" VerticalAlignment="Center" />
                         <TextBlock x:Name="ShellStatusText" Grid.Column="1"
                                    Text="{Binding Text, ElementName=StatusText}"
-                                   Foreground="#C0D5E7" FontSize="12" MaxLines="2"
+                                   Foreground="#C0D5E7" FontSize="12" MaxLines="2" TextWrapping="Wrap"
                                    VerticalAlignment="Center" />
                         <TextBlock x:Name="StatusFooterVersion" Grid.Column="2"
                                    Text="Dvinholm" Foreground="#80AFC9" FontSize="11"
