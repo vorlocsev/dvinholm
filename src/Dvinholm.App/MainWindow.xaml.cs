@@ -3367,7 +3367,8 @@ public sealed partial class MainWindow : Window
         ClearDiagnosticReadResult();
         // Stale information must not survive a failed replacement connection.
         _adapterMetadataConnected = false;
-            AdapterMetadataText.Text = J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);
+        AdapterMetadataText.Text =
+            J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);
         ConnectButton.IsEnabled = false;
         StartButton.IsEnabled = false;
         SetUdsEnabled(false);
