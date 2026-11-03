@@ -238,6 +238,17 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - Previous Stage-27 x64 pilot [#41557178457](https://github.com/vorlocsev/dvinholm/actions/runs/41557178457) passed; complete CI [#41557178498](https://github.com/vorlocsev/dvinholm/actions/runs/41557178498) was cancelled on newer pushes. All Stage-28 code must pass both workflows on the latest commit before acceptance or merge.
 - No separate launcher returned, no project Settings tab, and no Stable, Virtual Car, public release, signed updater installation or physical J2534/CEM procedures were changed.
 
+
+## Stage 29: isolated CEM P/N response frame decoding
+
+- The existing Development-only, explicitly consent-gated CEM part-number read retains its **single original request**, 500 kbit/s/29-bit transport constraints, strict source receive filter, bounded timeout, cancellation and cleanup. No additional J2534 command, ECU service, PIN attempt or configuration operation is introduced.
+- Extracted the two-fragment BCD reply decoder from the bus read loop into a **per-read-instance**, pure `CemPartNumberFrameDecoder`. The decoder accepts only eight-byte extended, non-remote frames matching the pre-existing source filter; it pairs first/second fragments from the **same full arbitration ID**.
+- A new first fragment clears any earlier unfinished prefix. Invalid second fragments, wrong full source IDs, invalid BCD digits, noncanonical lengths and out-of-range numeric observations never produce a part-number result or leave a reusable prefix. No data is persisted, no source is authenticated, and a decoded value is still explicitly **unattested research evidence**.
+- The guarded `CemPartNumberReader` continues checking its independent session lease, RX overflow and cancellation immediately before publishing any observation, and it uses a fresh decoder for each request. Existing virtual adapter tests remain applicable.
+- Eight offline decoder tests cover a valid pair; tail-only/new-operation isolation; malformed CAN frames; invalid BCD; mixed-source rejection; replacement first fragment; unexpected second-fragment flags; and seven/eight-digit boundary values. Physical DiCE/Mongoose/real XC90 compatibility remains untested and must not be inferred.
+- The previously built Stage-28 head `3598e97a` passed [x64 pilot #41558258305](https://github.com/vorlocsev/dvinholm/actions/runs/41558258305). Its full regression [#41558258504](https://github.com/vorlocsev/dvinholm/actions/runs/41558258504) was still in progress when newer commits started, and must not be claimed green. This stage requires current-head x64 and full CI success before review.
+- This remains a PR-only change. No Stable or Virtual Car code change, public release, publisher signing, production self-update or physical J2534 acceptance.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
