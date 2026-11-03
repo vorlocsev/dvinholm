@@ -652,7 +652,7 @@
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
                                     <TextBlock x:Name="CemPinResearchTitle" Text="Совместимость и доступ" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="CemPinResearchIntro" Text="Сведения о процедуре и ограничениях текущей реализации." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="CemPinResearchIntro" Text="Сведения о процедуре и ограничениях текущей реализации." Foreground="#9EB8CC" TextWrapping="Wrap" />
                                     <Border Background="#10253D" BorderBrush="#315572" BorderThickness="1"
                                             CornerRadius="8" Padding="12">
                                         <TextBlock x:Name="CemIdentityEvidencePinText" TextWrapping="Wrap"
@@ -694,7 +694,7 @@
                                             </Grid.RowDefinitions>
                                             <Border x:Name="CemReferenceCategoryPane" Grid.Column="0" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
                                                 <StackPanel Spacing="12">
-                                                    <TextBlock x:Name="CemConfigCategoriesTitle" Text="Категории" FontSize="17" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="CemConfigCategoriesTitle" Text="Категории" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap" />
                                                     <ComboBox x:Name="CemConfigCategory" Header="Группа" HorizontalAlignment="Stretch" SelectionChanged="CemConfigCategory_SelectionChanged" />
                                                     <ComboBox x:Name="CemConfigEvidenceTier" Header="Источник" HorizontalAlignment="Stretch" SelectedIndex="0" SelectionChanged="CemConfigEvidenceTier_SelectionChanged">
                                                         <ComboBoxItem Tag="All" Content="Все источники" />
@@ -707,7 +707,7 @@
                                             </Border>
                                             <Border x:Name="CemReferenceValuesPane" Grid.Column="1" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
                                                 <StackPanel Spacing="10">
-                                                    <TextBlock x:Name="CemConfigResultsTitle" Text="Параметры и значения" FontSize="17" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="CemConfigResultsTitle" Text="Параметры и значения" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap" />
                                                     <TextBlock x:Name="CemConfigCount" Text="Загрузка локальных данных…" Foreground="#9CC9E1" TextWrapping="Wrap" />
                                                     <ListView x:Name="CemConfigResults" Height="310" SelectionMode="Single" SelectionChanged="CemConfigResults_SelectionChanged">
                                                         <ListView.Header>
@@ -718,10 +718,10 @@
                                                                     <ColumnDefinition Width="76" />
                                                                     <ColumnDefinition Width="60" />
                                                                 </Grid.ColumnDefinitions>
-                                                                <TextBlock x:Name="CemConfigListParameterHeader" Text="Параметр (ID / название)" FontWeight="SemiBold" FontSize="12" />
-                                                                <TextBlock x:Name="CemConfigListInitialHeader" Grid.Column="1" Text="Исходное" FontWeight="SemiBold" FontSize="11" />
-                                                                <TextBlock x:Name="CemConfigListCurrentHeader" Grid.Column="2" Text="Текущее" FontWeight="SemiBold" FontSize="11" />
-                                                                <TextBlock x:Name="CemConfigListProposedHeader" Grid.Column="3" Text="Новое" FontWeight="SemiBold" FontSize="11" />
+                                                                <TextBlock x:Name="CemConfigListParameterHeader" Text="Параметр (ID / название)" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap" />
+                                                                <TextBlock x:Name="CemConfigListInitialHeader" Grid.Column="1" Text="Исходное" FontWeight="SemiBold" FontSize="11" TextWrapping="Wrap" />
+                                                                <TextBlock x:Name="CemConfigListCurrentHeader" Grid.Column="2" Text="Текущее" FontWeight="SemiBold" FontSize="11" TextWrapping="Wrap" />
+                                                                <TextBlock x:Name="CemConfigListProposedHeader" Grid.Column="3" Text="Новое" FontWeight="SemiBold" FontSize="11" TextWrapping="Wrap" />
                                                             </Grid>
                                                         </ListView.Header>
                                                         <ListView.ItemTemplate>
@@ -1053,7 +1053,7 @@
                                             BorderBrush="#2D567C" BorderThickness="1" Background="#0C2944">
                                         <StackPanel Spacing="10">
                                             <TextBlock x:Name="DtcActionsHeading" Text="Чтение неисправностей одного ECU"
-                                                       FontSize="15" FontWeight="SemiBold" Foreground="#B9EAFD" />
+                                                       FontSize="15" FontWeight="SemiBold" Foreground="#B9EAFD" TextWrapping="Wrap" />
                                             <Grid x:Name="DtcActionsGrid" ColumnSpacing="10" RowSpacing="10">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="2*" />
