@@ -99,6 +99,10 @@ public sealed partial class MainWindow
         ToolTipService.SetToolTip(UnifiedCheckUpdateButton, L(
             "Только чтение метаданных официальных релизов, без загрузки ZIP.",
             "Read official release metadata only. No ZIP download."));
+
+        // Keep the offline CEM evidence browser consistent with the selected
+        // shell language. This does not localize all legacy diagnostics.
+        ApplyAuroraCemConfigLocalization();
         if (_unifiedUpdatesActive)
             UpdateUnifiedWorkspaceHeader();
         else if (_workspaceDestination is AuroraDestination current)
