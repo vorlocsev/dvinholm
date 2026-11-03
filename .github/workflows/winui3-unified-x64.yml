@@ -153,6 +153,7 @@ jobs:
             'FullyQualifiedName~AuroraReviewEvidenceConsistencyTests'
             'FullyQualifiedName~AuroraPrimaryViewportClarityTests'
             'FullyQualifiedName~AuroraMonitorResultCaptionLayoutTests'
+            'FullyQualifiedName~AuroraCompactEcuProfileLayoutTests'
             'FullyQualifiedName~CanMonitorCounterLocalizationTests'
             'FullyQualifiedName~CanHardwareFilterCaptionTests'
             'FullyQualifiedName~UdsReadinessCaptionLocalizationTests'
