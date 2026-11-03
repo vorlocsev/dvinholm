@@ -329,3 +329,12 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
+
+## Stage 38: approved CEM PIN / configuration visual hierarchy (no hardware changes)
+
+- CEM PIN now has an unobtrusive, **non-interactive** line connecting the three existing visual stages. Identification, unavailable PIN search and no result remain textual states; no PIN value, simulated percentage, ECU identity or active search is implied.
+- The CEM configuration view keeps its source-attributed category / parameter list / evidence detail **three-pane** research layout. The center table now reflects the approved **parameter / original / current / new** columns. Until actual verified readings/backups exist, the row projection explicitly says **No backup / Not read / —** (translated RU/EN), never fake OEM values.
+- Moved configuration actions into a distinct **footer rail below the research panes**, with Source catalog as the only active action. Added visual but **disabled and handler-free Read CEM and Write to CEM buttons** to show the intended task order without exposing unsupported operations. Backup, compare and prepare remain disabled. All safety tooltips and labels are translated RU/EN without changing canonical research IDs or creating CAN traffic.
+- Wide view uses six equal action columns. Below the existing 1280 effective-pixel breakpoint the actions reflow into **three rows of two**, while the CEM research triptych stacks. No forced horizontal width, hidden warning, or enabled write is introduced.
+- Added eight new offline source/XAML safeguards in `AuroraCemVisualParityTests`; included the suite in the x64 pilot CI filter and reconciled the existing compact-row expectation. The manual Windows checklist now asks for the four data columns, decorative stepper, six-button footer and wrap behavior at the same 640/800/980/1280/1440 widths and 100/125% scale.
+- This is **source layout work only**, not proof of pixel-level resemblance or successful GUI rendering on Windows. The latest-head x64 pilot and full regression must pass. PR #702 stays **OPEN/HOLD**: no merge, x86 Stable / Virtual Car changes, release, trusted update installation or physical J2534 tests.
