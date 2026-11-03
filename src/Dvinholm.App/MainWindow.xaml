@@ -33,6 +33,33 @@
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
+            <VisualStateGroup x:Name="CemReferenceResponsiveStates">
+                <VisualState x:Name="CemReferenceWide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1280" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="CemReferenceStacked">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="CemReferenceCategoryColumn.Width" Value="*" />
+                        <Setter Target="CemReferenceValuesColumn.Width" Value="0" />
+                        <Setter Target="CemReferenceDetailColumn.Width" Value="0" />
+                        <Setter Target="CemReferenceValuesPane.(Grid.Column)" Value="0" />
+                        <Setter Target="CemReferenceValuesPane.(Grid.Row)" Value="1" />
+                        <Setter Target="CemReferenceDetailPane.(Grid.Column)" Value="0" />
+                        <Setter Target="CemReferenceDetailPane.(Grid.Row)" Value="2" />
+                        <Setter Target="CemConfigActionThirdColumn.Width" Value="0" />
+                        <Setter Target="CemConfigActionFourthColumn.Width" Value="0" />
+                        <Setter Target="CemConfigCompareButton.(Grid.Column)" Value="0" />
+                        <Setter Target="CemConfigCompareButton.(Grid.Row)" Value="1" />
+                        <Setter Target="CemConfigPrepareButton.(Grid.Column)" Value="1" />
+                        <Setter Target="CemConfigPrepareButton.(Grid.Row)" Value="1" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
             <VisualStateGroup x:Name="EcuResponsiveStates">
                 <VisualState x:Name="EcuThreeColumns">
                     <VisualState.StateTriggers>
@@ -89,8 +116,8 @@
                 <Setter Property="Background" Value="#0D263B" />
                 <Setter Property="BorderBrush" Value="#23445F" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="16" />
-                <Setter Property="Padding" Value="24" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="20" />
                 <Setter Property="Margin" Value="0,0,0,16" />
             </Style>
             <DataTemplate x:Key="AuroraWrapCaption">
@@ -328,26 +355,34 @@
                                         <TextBlock x:Name="CemIdentityEvidenceConfigText" TextWrapping="Wrap"
                                                    Text="Идентификация CEM: неизвестна. Справочный каталог не подтверждает совместимость." />
                                     </Border>
-                                    <Grid ColumnSpacing="8">
+                                    <Grid x:Name="CemConfigActionsGrid" ColumnSpacing="8" RowSpacing="8">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition x:Name="CemConfigActionThirdColumn" Width="*" />
+                                            <ColumnDefinition x:Name="CemConfigActionFourthColumn" Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <Button x:Name="P2ConfigCatalogButton" Grid.Column="0" Content="Источники (offline)" Click="P2ConfigCatalog_Click" HorizontalAlignment="Stretch" Background="#0B5F81" ToolTipService.ToolTip="Open reference sources offline; no vehicle queries, PIN or configuration writes." />
                                         <Button x:Name="CemConfigBackupButton" Grid.Column="1" Content="Резервная копия" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет проверенной операции чтения конфигурации CEM." />
                                         <Button x:Name="CemConfigCompareButton" Grid.Column="2" Content="Сравнить" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет считанной конфигурации и проверенного резервного снимка." />
                                         <Button x:Name="CemConfigPrepareButton" Grid.Column="3" Content="Подготовить изменения" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Не проверены байтовая карта, допустимые значения и зависимости." />
                                     </Grid>
-                                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                                        <Grid MinWidth="730" ColumnSpacing="10">
+                                    <Grid x:Name="CemReferenceGrid" ColumnSpacing="10" RowSpacing="10">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="163" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="235" />
+                                                <ColumnDefinition x:Name="CemReferenceCategoryColumn" Width="180" />
+                                                <ColumnDefinition x:Name="CemReferenceValuesColumn" Width="*" />
+                                                <ColumnDefinition x:Name="CemReferenceDetailColumn" Width="250" />
                                             </Grid.ColumnDefinitions>
-                                            <Border Grid.Column="0" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Border x:Name="CemReferenceCategoryPane" Grid.Column="0" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
                                                 <StackPanel Spacing="12">
                                                     <TextBlock x:Name="CemConfigCategoriesTitle" Text="Категории" FontSize="17" FontWeight="SemiBold" />
                                                     <ComboBox x:Name="CemConfigCategory" Header="Группа" HorizontalAlignment="Stretch" SelectionChanged="CemConfigCategory_SelectionChanged" />
@@ -360,7 +395,7 @@
                                                     <TextBlock x:Name="CemConfigFilterSafetyNote" Text="Данные получены из локального каталога источников. Совместимость не подтверждена." Foreground="#A5C0D4" FontSize="12" TextWrapping="Wrap" />
                                                 </StackPanel>
                                             </Border>
-                                            <Border Grid.Column="1" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
+                                            <Border x:Name="CemReferenceValuesPane" Grid.Column="1" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
                                                 <StackPanel Spacing="10">
                                                     <TextBlock x:Name="CemConfigResultsTitle" Text="Параметры и значения" FontSize="17" FontWeight="SemiBold" />
                                                     <TextBlock x:Name="CemConfigCount" Text="Загрузка локальных данных…" Foreground="#9CC9E1" TextWrapping="Wrap" />
@@ -393,7 +428,7 @@
                                                     </ListView>
                                                 </StackPanel>
                                             </Border>
-                                            <Border Grid.Column="2" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
+                                            <Border x:Name="CemReferenceDetailPane" Grid.Column="2" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
                                                 <StackPanel Spacing="12">
                                                     <TextBlock x:Name="CemConfigDetailHeading" Text="Описание" FontSize="17" FontWeight="SemiBold" />
                                                     <TextBlock x:Name="CemConfigDetailTitle" Text="Выберите параметр" FontWeight="SemiBold" TextWrapping="Wrap" />
@@ -404,8 +439,7 @@
                                                     <TextBlock x:Name="CemConfigDetailSafety" Text="Изменение и запись недоступны до проверки протокола и резервного восстановления." FontSize="12" Foreground="#EBC280" TextWrapping="Wrap" />
                                                 </StackPanel>
                                             </Border>
-                                        </Grid>
-                                    </ScrollViewer>
+                                    </Grid>
                                     <Border Background="#10253D" CornerRadius="7" Padding="11" BorderBrush="#2B5878" BorderThickness="1">
                                         <TextBlock x:Name="CemConfigReadOnlyNotice" Text="Чтение, изменение и запись CEM пока заблокированы. Никаких реальных значений, адресов или прав на запись этот каталог не подтверждает." TextWrapping="Wrap" Foreground="#C7DFF2" />
                                     </Border>
