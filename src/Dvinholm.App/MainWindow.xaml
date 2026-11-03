@@ -321,8 +321,8 @@
                         <StackPanel x:Name="CemConfigPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="14">
-                                    <TextBlock Text="Конфигурация CEM" FontSize="24" FontWeight="SemiBold" />
-                                    <TextBlock Text="Каталог Volvo P2 · офлайн. Выбор пункта показывает источник, но не читает или меняет автомобиль." Foreground="#9EB8CC" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="CemConfigPageTitle" Text="Конфигурация CEM" FontSize="24" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="CemConfigPageIntro" Text="Каталог Volvo P2 · офлайн. Выбор пункта показывает источник, но не читает или меняет автомобиль." Foreground="#9EB8CC" TextWrapping="Wrap" />
                                     <Border Background="#10253D" BorderBrush="#315572" BorderThickness="1"
                                             CornerRadius="8" Padding="12">
                                         <TextBlock x:Name="CemIdentityEvidenceConfigText" TextWrapping="Wrap"
@@ -336,9 +336,9 @@
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <Button x:Name="P2ConfigCatalogButton" Grid.Column="0" Content="Источники (offline)" Click="P2ConfigCatalog_Click" HorizontalAlignment="Stretch" Background="#0B5F81" ToolTipService.ToolTip="Open reference sources offline; no vehicle queries, PIN or configuration writes." />
-                                        <Button Grid.Column="1" Content="Резервная копия" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет проверенной операции чтения конфигурации CEM." />
-                                        <Button Grid.Column="2" Content="Сравнить" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет считанной конфигурации и проверенного резервного снимка." />
-                                        <Button Grid.Column="3" Content="Подготовить изменения" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Не проверены байтовая карта, допустимые значения и зависимости." />
+                                        <Button x:Name="CemConfigBackupButton" Grid.Column="1" Content="Резервная копия" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет проверенной операции чтения конфигурации CEM." />
+                                        <Button x:Name="CemConfigCompareButton" Grid.Column="2" Content="Сравнить" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет считанной конфигурации и проверенного резервного снимка." />
+                                        <Button x:Name="CemConfigPrepareButton" Grid.Column="3" Content="Подготовить изменения" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Не проверены байтовая карта, допустимые значения и зависимости." />
                                     </Grid>
                                     <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
                                         <Grid MinWidth="730" ColumnSpacing="10">
@@ -349,7 +349,7 @@
                                             </Grid.ColumnDefinitions>
                                             <Border Grid.Column="0" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
                                                 <StackPanel Spacing="12">
-                                                    <TextBlock Text="Категории" FontSize="17" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="CemConfigCategoriesTitle" Text="Категории" FontSize="17" FontWeight="SemiBold" />
                                                     <ComboBox x:Name="CemConfigCategory" Header="Группа" HorizontalAlignment="Stretch" SelectionChanged="CemConfigCategory_SelectionChanged" />
                                                     <ComboBox x:Name="CemConfigEvidenceTier" Header="Источник" HorizontalAlignment="Stretch" SelectedIndex="0" SelectionChanged="CemConfigEvidenceTier_SelectionChanged">
                                                         <ComboBoxItem Tag="All" Content="Все источники" />
@@ -357,12 +357,12 @@
                                                         <ComboBoxItem Tag="Volvo" Content="Меню Volvo" />
                                                     </ComboBox>
                                                     <TextBox x:Name="CemConfigSearch" Header="Найти параметр" PlaceholderText="Код или название" MaxLength="80" TextChanged="CemConfigSearch_TextChanged" />
-                                                    <TextBlock Text="Данные получены из локального каталога источников. Совместимость не подтверждена." Foreground="#A5C0D4" FontSize="12" TextWrapping="Wrap" />
+                                                    <TextBlock x:Name="CemConfigFilterSafetyNote" Text="Данные получены из локального каталога источников. Совместимость не подтверждена." Foreground="#A5C0D4" FontSize="12" TextWrapping="Wrap" />
                                                 </StackPanel>
                                             </Border>
                                             <Border Grid.Column="1" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
                                                 <StackPanel Spacing="10">
-                                                    <TextBlock Text="Параметры и значения" FontSize="17" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="CemConfigResultsTitle" Text="Параметры и значения" FontSize="17" FontWeight="SemiBold" />
                                                     <TextBlock x:Name="CemConfigCount" Text="Загрузка локальных данных…" Foreground="#9CC9E1" TextWrapping="Wrap" />
                                                     <ListView x:Name="CemConfigResults" Height="310" SelectionMode="Single" SelectionChanged="CemConfigResults_SelectionChanged">
                                                         <ListView.Header>
@@ -371,8 +371,8 @@
                                                                     <ColumnDefinition Width="*" />
                                                                     <ColumnDefinition Width="97" />
                                                                 </Grid.ColumnDefinitions>
-                                                                <TextBlock Text="Параметр (ID / название)" FontWeight="SemiBold" />
-                                                                <TextBlock Grid.Column="1" Text="Текущее" FontWeight="SemiBold" />
+                                                                <TextBlock x:Name="CemConfigListParameterHeader" Text="Параметр (ID / название)" FontWeight="SemiBold" />
+                                                                <TextBlock x:Name="CemConfigListCurrentHeader" Grid.Column="1" Text="Текущее" FontWeight="SemiBold" />
                                                             </Grid>
                                                         </ListView.Header>
                                                         <ListView.ItemTemplate>
@@ -395,7 +395,7 @@
                                             </Border>
                                             <Border Grid.Column="2" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
                                                 <StackPanel Spacing="12">
-                                                    <TextBlock Text="Описание" FontSize="17" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="CemConfigDetailHeading" Text="Описание" FontSize="17" FontWeight="SemiBold" />
                                                     <TextBlock x:Name="CemConfigDetailTitle" Text="Выберите параметр" FontWeight="SemiBold" TextWrapping="Wrap" />
                                                     <TextBlock x:Name="CemConfigDetailCode" Text="Код и источник появятся после выбора." FontSize="12" TextWrapping="Wrap" />
                                                     <TextBlock x:Name="CemConfigDetailSource" Text="" FontSize="12" TextWrapping="Wrap" />
@@ -407,7 +407,7 @@
                                         </Grid>
                                     </ScrollViewer>
                                     <Border Background="#10253D" CornerRadius="7" Padding="11" BorderBrush="#2B5878" BorderThickness="1">
-                                        <TextBlock Text="Чтение, изменение и запись CEM пока заблокированы. Никаких реальных значений, адресов или прав на запись этот каталог не подтверждает." TextWrapping="Wrap" Foreground="#C7DFF2" />
+                                        <TextBlock x:Name="CemConfigReadOnlyNotice" Text="Чтение, изменение и запись CEM пока заблокированы. Никаких реальных значений, адресов или прав на запись этот каталог не подтверждает." TextWrapping="Wrap" Foreground="#C7DFF2" />
                                     </Border>
                                 </StackPanel>
                             </Border>
