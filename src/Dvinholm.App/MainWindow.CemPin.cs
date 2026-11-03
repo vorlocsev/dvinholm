@@ -61,6 +61,35 @@ public sealed partial class MainWindow
                 "Select local prerequisite inspection. This does not establish CEM access.");
     }
 
+    /// <summary>
+    /// The two visible Aurora CEM workspaces share one payload-free status.
+    /// Never use a profile label or DID snapshot as authenticated CEM identity.
+    /// On every refresh, re-evaluate the original session guard; no value is
+    /// persisted, sent to the vehicle or inserted into the activity log.
+    /// </summary>
+    private void RefreshCemIdentityEvidencePresentation()
+    {
+        if (CemIdentityEvidencePinText is null ||
+            CemIdentityEvidenceConfigText is null)
+            return;
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        uint? observed = _cemIdentity?.PartNumber;
+        var guardCurrent = _cemIdentityGuard?.IsCurrent == true;
+        var developmentContext = !_closing && _demoTimer is null &&
+            !DvinholmUserDataDirectory.IsAcceptanceLaunch;
+#else
+        uint? observed = null;
+        const bool guardCurrent = false;
+        const bool developmentContext = false;
+#endif
+        var evidence = CemIdentityEvidenceReport.Assess(
+            observed, guardCurrent, _connected && _session.IsConnected,
+            developmentContext);
+        var text = CemIdentityEvidenceReport.Format(evidence, _unifiedEnglish);
+        CemIdentityEvidencePinText.Text = text;
+        CemIdentityEvidenceConfigText.Text = text;
+    }
+
     private void CemPinRangeChanged(object sender, TextChangedEventArgs e)
     {
 #if DVINHOLM_DEVELOPMENT_FEATURES
@@ -94,6 +123,7 @@ public sealed partial class MainWindow
         _cemIdentityGuard = null;
         _cemIdentity = null;
         Interlocked.Exchange(ref _cemIdentityContext, new object());
+        RefreshCemIdentityEvidencePresentation();
     }
 
     private void ClearCemPinMaterial()
