@@ -104,6 +104,7 @@ public sealed partial class MainWindow
         // shell language. This does not localize all legacy diagnostics.
         ApplyAuroraCemConfigLocalization();
         RefreshCemPrerequisitePresentation();
+        RefreshCemIdentityEvidencePresentation();
         if (_unifiedUpdatesActive)
             UpdateUnifiedWorkspaceHeader();
         else if (_workspaceDestination is AuroraDestination current)
