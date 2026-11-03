@@ -8,16 +8,17 @@ namespace Dvinholm.App;
 /// Display projection of source-attributed P2 configuration research. Unknown
 /// hardware mapping and unread vehicle values never become writable defaults.
 /// </summary>
-internal sealed record AuroraCemConfigRow(VolvoP2CemConfigOptionDefinition Option)
+internal sealed record AuroraCemConfigRow(VolvoP2CemConfigOptionDefinition Option, bool English)
 {
     public string Code => Option.CanonicalId;
     public string Name => Option.DisplayName;
-    public string Current => "Не прочитано";
+    public string Current => English ? "Not read" : "Не прочитано";
     public string Proposed => "—";
     public string Source => Option.Provenance switch
     {
-        VolvoP2CemOptionProvenance.VolvoPublishedCemServiceMenu => "Volvo · меню",
-        _ => "Сторонний источник"
+        VolvoP2CemOptionProvenance.VolvoPublishedCemServiceMenu =>
+            English ? "Volvo service menu" : "Volvo · меню",
+        _ => English ? "Third-party advertisement" : "Сторонний источник"
     };
 }
 
@@ -54,32 +55,78 @@ public sealed partial class MainWindow
         if (_cemConfigReferenceReady) RefreshAuroraConfigReference();
     }
 
+    private void CemConfigEvidenceTier_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_cemConfigReferenceReady) RefreshAuroraConfigReference();
+    }
+
     private void CemConfigSearch_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (_cemConfigReferenceReady) RefreshAuroraConfigReference();
     }
 
+    private void ApplyAuroraCemConfigLocalization()
+    {
+        CemConfigCategory.Header = L("Группа", "Category");
+        CemConfigEvidenceTier.Header = L("Источник", "Evidence source");
+        CemConfigSearch.Header = L("Найти параметр", "Search research labels");
+        CemConfigSearch.PlaceholderText = L("Код или название", "Code or name");
+
+        foreach (var item in CemConfigEvidenceTier.Items.OfType<ComboBoxItem>())
+            item.Content = (item.Tag as string) switch
+            {
+                "Vendor" => L("Сторонние публикации", "Third-party publications"),
+                "Volvo" => L("Меню Volvo", "Volvo service menus"),
+                _ => L("Все источники", "All sources")
+            };
+
+        if (_cemConfigReferenceReady)
+            RefreshAuroraConfigReference();
+        else
+            ClearAuroraConfigDetail();
+    }
+
     private void RefreshAuroraConfigReference()
     {
         if (!_cemConfigReferenceReady) return;
-        var category = CemConfigCategory.SelectedItem as string;
-        var query = CemConfigSearch.Text?.Trim();
-        // Search input is local, bounded, and never sent to a vehicle or log.
-        if (query?.Length > 80) query = query[..80];
-        var matches = VolvoP2CemConfigOptionManifest.Entries
-            .Where(row => category is null || category == "Все категории" ||
-                string.Equals(row.Category, category, StringComparison.Ordinal))
-            .Where(row => string.IsNullOrWhiteSpace(query) ||
-                row.CanonicalId.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                row.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase))
-            .Take(128)
-            .Select(row => new AuroraCemConfigRow(row))
-            .ToArray();
+
+        var category = CemConfigCategory.SelectedIndex <= 0
+            ? null : CemConfigCategory.SelectedItem as string;
+        var query = CemConfigSearch.Text;
+        var tier = ((CemConfigEvidenceTier.SelectedItem as ComboBoxItem)?.Tag as string) switch
+        {
+            "Vendor" => VolvoP2CemCatalogEvidenceTier.VendorAdvertisement,
+            "Volvo" => VolvoP2CemCatalogEvidenceTier.VolvoPublishedServiceMenu,
+            _ => VolvoP2CemCatalogEvidenceTier.All
+        };
+        var previousSelection = (CemConfigResults.SelectedItem as AuroraCemConfigRow)?.Code;
+        IReadOnlyList<VolvoP2CemConfigOptionDefinition> matches;
+        try
+        {
+            matches = AuroraCemConfigReferenceFilter.Find(query, category, tier);
+        }
+        catch (InvalidDataException)
+        {
+            // Reject invalid local search without leaking the input or using
+            // stale results from a previously valid filter.
+            matches = Array.Empty<VolvoP2CemConfigOptionDefinition>();
+        }
+
         _cemConfigRows.Clear();
-        foreach (var row in matches) _cemConfigRows.Add(row);
-        CemConfigCount.Text = $"{matches.Length} справочных пунктов · значения автомобиля не прочитаны";
-        CemConfigResults.SelectedIndex = -1;
-        ClearAuroraConfigDetail();
+        foreach (var row in matches)
+            _cemConfigRows.Add(new AuroraCemConfigRow(row, _unifiedEnglish));
+        CemConfigCount.Text = L(
+            $"{matches.Count} справочных пунктов · значения автомобиля не прочитаны",
+            $"{matches.Count} research labels · no vehicle values read");
+
+        var index = previousSelection is null ? -1 :
+            _cemConfigRows.ToList().FindIndex(row => string.Equals(
+                row.Code, previousSelection, StringComparison.Ordinal));
+        CemConfigResults.SelectedIndex = index;
+        if (index < 0)
+            ClearAuroraConfigDetail();
+        else
+            PresentAuroraConfigDetail(_cemConfigRows[index]);
     }
 
     private void CemConfigResults_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -90,26 +137,40 @@ public sealed partial class MainWindow
             ClearAuroraConfigDetail();
             return;
         }
+        PresentAuroraConfigDetail(selected);
+    }
+
+    private void PresentAuroraConfigDetail(AuroraCemConfigRow selected)
+    {
         var row = selected.Option;
         CemConfigDetailTitle.Text = row.DisplayName;
-        CemConfigDetailCode.Text = "Идентификатор исследования: " + row.CanonicalId;
-        CemConfigDetailSource.Text = "Источник: " + selected.Source;
-        CemConfigDetailEvidence.Text = "Ссылка на свидетельство: " + row.EvidenceReference;
-        CemConfigDetailValues.Text = "Текущее значение: неизвестно · допустимые значения: не подтверждены.";
+        CemConfigDetailCode.Text = L("Идентификатор исследования: ", "Research ID: ") + row.CanonicalId;
+        CemConfigDetailSource.Text = L("Источник: ", "Source: ") + selected.Source;
+        CemConfigDetailEvidence.Text = L("Ссылка на свидетельство: ", "Evidence reference: ") +
+            row.EvidenceReference;
+        CemConfigDetailValues.Text = L(
+            "Текущее значение: неизвестно · допустимые значения: не подтверждены.",
+            "Current value: unknown · permitted values: unverified.");
         CemConfigDetailSafety.Text = row.AdditionalSafetyOrEquipmentReviewRequired
-            ? "Нужно отдельно проверить оборудование, безопасность и совместимость."
-            : "Физическое соответствие CEM и карта значений пока не подтверждены.";
+            ? L("Нужно отдельно проверить оборудование, безопасность и совместимость.",
+                "Hardware, safety and compatibility require independent review.")
+            : L("Физическое соответствие CEM и карта значений пока не подтверждены.",
+                "Physical CEM identity and value mapping remain unverified.");
     }
 
     private void ClearAuroraConfigDetail()
     {
         if (CemConfigDetailTitle is null) return;
-        CemConfigDetailTitle.Text = "Выберите параметр";
-        CemConfigDetailCode.Text = "Код и источник появятся после выбора.";
+        CemConfigDetailTitle.Text = L("Выберите параметр", "Select a research label");
+        CemConfigDetailCode.Text = L("Код и источник появятся после выбора.",
+            "Research code and source appear after selection.");
         CemConfigDetailSource.Text = string.Empty;
         CemConfigDetailEvidence.Text = string.Empty;
-        CemConfigDetailValues.Text = "Значения автомобиля не считывались.";
-        CemConfigDetailSafety.Text = "Изменение и запись недоступны до проверки протокола и резервного восстановления.";
+        CemConfigDetailValues.Text = L("Значения автомобиля не считывались.",
+            "No vehicle values have been read.");
+        CemConfigDetailSafety.Text = L(
+            "Изменение и запись недоступны до проверки протокола и резервного восстановления.",
+            "Editing and writing are disabled pending protocol and recovery validation.");
     }
 
     /// <summary>
