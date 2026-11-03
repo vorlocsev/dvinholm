@@ -2224,11 +2224,10 @@ public sealed partial class MainWindow : Window
         public string Type => Candidate.IsExtended ? "29-bit" : "11-bit";
         public int Frames => Candidate.ResponseCount;
         public string MaxPayload => Candidate.MaxDataLength?.ToString() ?? "-";
-        public string FramesCaption => _english ? "Frames" : "Кадры";
-        public string MaxPayloadCaption => _english ? "Max bytes" : "Макс. байт";
-        public string RequestBasis => Candidate.RequestId is null
-            ? (_english ? "Unknown" : "Неизвестно")
-            : (_english ? "Inferred" : "Предполагается");
+        public string FramesCaption => AuroraEcuInventoryCaptions.Frames(_english);
+        public string MaxPayloadCaption => AuroraEcuInventoryCaptions.MaxPayload(_english);
+        public string RequestBasis => AuroraEcuInventoryCaptions.RequestBasis(
+            _english, Candidate.RequestId is not null);
 
         public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
 
