@@ -39,7 +39,9 @@ public sealed class AuroraUpdatesFirstFoldFocusTests
         var source = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
         var start = source.IndexOf("private void UnifiedUpdatesNavigate_Click(", StringComparison.Ordinal);
         Assert.True(start >= 0);
-        return source[start..];
+        // Git checkouts on Windows can use CRLF; test logical C# statements,
+        // not the host's physical text-file newline convention.
+        return source[start..].Replace("\r\n", "\n").Replace('\r', '\n');
     }
 
     [Fact]
