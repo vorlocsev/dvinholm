@@ -13,6 +13,7 @@ internal static class J2534DeviceDiscovery
 {
     private static readonly string[] RegistryKeys =
     [
+        @"SOFTWARE\PassThruSupport.05.00",
         @"SOFTWARE\PassThruSupport.04.04",
         @"SOFTWARE\PassThruSupport.02.02"
     ];
@@ -22,80 +23,75 @@ internal static class J2534DeviceDiscovery
     internal static RegistryView RegistryViewForProcess(bool is64BitProcess) =>
         is64BitProcess ? RegistryView.Registry64 : RegistryView.Registry32;
 
-    internal static IReadOnlyList<J2534Device> FindRegisteredDevices()
+    // An audit examines both registry views without opening a J2534 device.
+    // Registered does not imply installed, usable, trusted, or compatible.
+    internal sealed record RegisteredAudit(J2534Device Device, RegistryView View,
+        J2534PeArchitecture Architecture);
+
+    internal static IReadOnlyList<RegisteredAudit> AuditRegisteredDevices()
     {
-        var devices = new List<J2534Device>();
-        var seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
-
-        try
+        var found = new List<RegisteredAudit>();
+        foreach (var view in new[] { RegistryView.Registry64, RegistryView.Registry32 })
         {
-            using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, RegistryViewForProcess(Environment.Is64BitProcess));
-            foreach (var registryPath in RegistryKeys)
+            var seenPaths = new HashSet<string>(StringComparer.OrdinalIgnoreCase);
+            try
             {
-                // Isolate each root: a damaged or inaccessible 04.04 branch must
-                // not prevent discovery from the legacy 02.02 branch.
-                IgnoreRegistryRootFailure(() =>
+                using var machine = RegistryKey.OpenBaseKey(RegistryHive.LocalMachine, view);
+                foreach (var registryPath in RegistryKeys)
                 {
-                    using var root = machine.OpenSubKey(registryPath);
-                    if (root is null)
-                        return;
-
-                    foreach (var subKeyName in root.GetSubKeyNames())
+                    // A corrupt or inaccessible vendor key cannot hide other keys.
+                    IgnoreRegistryRootFailure(() =>
                     {
-                        try
+                        using var root = machine.OpenSubKey(registryPath);
+                        if (root is null) return;
+                        foreach (var subKeyName in root.GetSubKeyNames())
                         {
-                            using var subKey = root.OpenSubKey(subKeyName);
-                            if (subKey is null)
-                                continue;
-
-                            var name = ReadString(subKey, "Name");
-                            var vendor = ReadString(subKey, "Vendor");
-                            var dllPath = ReadString(subKey, "FunctionLibrary");
-                            if (string.IsNullOrWhiteSpace(dllPath))
-                                dllPath = ReadString(subKey, "FunctionLibraryLocation");
-
-                            if (!TryCreateDevice(subKeyName, name, vendor, dllPath, registryPath, out var device))
-                                continue;
-
-                            if (!File.Exists(device.DllPath) || !seenPaths.Add(device.DllPath))
-                                continue;
-
-                            devices.Add(device);
+                            try
+                            {
+                                using var subKey = root.OpenSubKey(subKeyName);
+                                if (subKey is null) continue;
+                                var name = ReadString(subKey, "Name");
+                                var vendor = ReadString(subKey, "Vendor");
+                                var dllPath = ReadString(subKey, "FunctionLibrary");
+                                if (string.IsNullOrWhiteSpace(dllPath))
+                                    dllPath = ReadString(subKey, "FunctionLibraryLocation");
+                                if (!TryCreateDevice(subKeyName, name, vendor, dllPath,
+                                        registryPath, out var device) ||
+                                    !File.Exists(device.DllPath) ||
+                                    !seenPaths.Add(device.DllPath))
+                                    continue;
+                                found.Add(new RegisteredAudit(device, view,
+                                    J2534PeInspector.Inspect(device.DllPath)));
+                            }
+                            catch (UnauthorizedAccessException) { }
+                            catch (IOException) { }
+                            catch (System.Security.SecurityException) { }
                         }
-                        catch (UnauthorizedAccessException)
-                        {
-                            // One inaccessible vendor key should not hide other adapters.
-                        }
-                        catch (IOException)
-                        {
-                            // Registry can change while vendor software is being installed.
-                        }
-                        catch (System.Security.SecurityException)
-                        {
-                            // An ACL failure for one vendor key should not hide other adapters.
-                        }
-                    }
-                });
+                    });
+                }
             }
+            catch (UnauthorizedAccessException) { }
+            catch (IOException) { }
+            catch (System.Security.SecurityException) { }
         }
-        catch (UnauthorizedAccessException)
-        {
-            // Report an empty list; the UI remains usable for manual DLL selection.
-        }
-        catch (IOException)
-        {
-            // Report an empty list; the UI remains usable for manual DLL selection.
-        }
-        catch (System.Security.SecurityException)
-        {
-            // Report an empty list; the UI remains usable for manual DLL selection.
-        }
+        return found;
+    }
 
-        return devices
+    // A 32-bit registry entry or DLL must NEVER be offered as a loadable
+    // adapter for the self-contained x64 app. The same holds in reverse for
+    // old x86 installations. The audit still keeps those entries visible.
+    internal static IReadOnlyList<J2534Device> SelectCompatible(
+        IEnumerable<RegisteredAudit> audit, bool is64BitProcess) =>
+        audit.Where(entry => entry.View == RegistryViewForProcess(is64BitProcess) &&
+                J2534PeInspector.CanLoad(entry.Architecture, is64BitProcess))
+            .Select(entry => entry.Device)
+            .DistinctBy(device => device.DllPath, StringComparer.OrdinalIgnoreCase)
             .OrderBy(device => device.Name, StringComparer.OrdinalIgnoreCase)
             .ThenBy(device => device.Vendor, StringComparer.OrdinalIgnoreCase)
             .ToArray();
-    }
+
+    internal static IReadOnlyList<J2534Device> FindRegisteredDevices() =>
+        SelectCompatible(AuditRegisteredDevices(), Environment.Is64BitProcess);
 
     internal static void IgnoreRegistryRootFailure(Action readRoot)
     {
