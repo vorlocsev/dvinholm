@@ -233,6 +233,11 @@ public sealed partial class MainWindow : Window
         WorkspaceTitle.Text = section.Title;
         WorkspaceDescription.Text = section.Description;
         ApplyUnifiedWorkspaceSection(destination);
+        // Re-evaluate live identity guard and read-only prerequisites after
+        // navigation so a disconnected/stale session is never left looking
+        // like current CEM evidence on a different screen.
+        RefreshCemIdentityEvidencePresentation();
+        RefreshCemPrerequisitePresentation();
         DiagnosticResultsCard.Visibility = destination is AuroraDestination.CemPinReadiness or
             AuroraDestination.DiagnosticsWorkspace or AuroraDestination.DtcFaults ? Visibility.Visible : Visibility.Collapsed;
         WorkspaceScroll.ChangeView(null, 0, null);
