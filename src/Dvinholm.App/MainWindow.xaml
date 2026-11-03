@@ -187,7 +187,7 @@
                 </ScrollViewer>
                 <StackPanel x:Name="SidebarFooter" Grid.Row="1" Padding="22,18" Spacing="6">
                     <TextBlock Text="WINUI 3 · .NET 10" FontSize="10" Foreground="#80A5C3" />
-                    <TextBlock Text="AURORA · ЕДИНОЕ ПРИЛОЖЕНИЕ" FontSize="11" Foreground="#80A5C3" />
+                    <TextBlock x:Name="SidebarFooterLocale" Text="AURORA · ЕДИНОЕ ПРИЛОЖЕНИЕ" FontSize="11" Foreground="#80A5C3" />
                 </StackPanel>
             </Grid>
         </Border>
@@ -209,7 +209,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <StackPanel Spacing="7">
-                        <TextBlock Text="DVINHOLM / РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" CharacterSpacing="120" Foreground="#65BFF2" />
+                        <TextBlock x:Name="WorkspaceScopeLabel" Text="DVINHOLM / РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" CharacterSpacing="120" Foreground="#65BFF2" />
                         <TextBlock x:Name="WorkspaceTitle" FontSize="32" FontWeight="SemiBold" />
                         <TextBlock x:Name="WorkspaceDescription" Foreground="#9EB8CC" MaxWidth="760" HorizontalAlignment="Left" />
                     </StackPanel>
@@ -332,8 +332,8 @@
                             </Border>
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="Совместимость и доступ" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Сведения о процедуре и ограничениях текущей реализации." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="CemPinResearchTitle" Text="Совместимость и доступ" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="CemPinResearchIntro" Text="Сведения о процедуре и ограничениях текущей реализации." Foreground="#9EB8CC" />
                                     <Border Background="#10253D" BorderBrush="#315572" BorderThickness="1"
                                             CornerRadius="8" Padding="12">
                                         <TextBlock x:Name="CemIdentityEvidencePinText" TextWrapping="Wrap"
@@ -456,19 +456,19 @@
                         <StackPanel x:Name="EcuPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="10">
-                                    <TextBlock Text="Дополнительные инструменты ECU" FontWeight="SemiBold" FontSize="18" />
-                                    <TextBlock Text="Проверенные функции не удалены: откройте профиль, монитор CAN или чтение данных из рабочей области ECU." Foreground="#93B2CD" />
+                                    <TextBlock x:Name="EcuToolsTitle" Text="Дополнительные инструменты ECU" FontWeight="SemiBold" FontSize="18" />
+                                    <TextBlock x:Name="EcuToolsIntro" Text="Проверенные функции не удалены: откройте профиль, монитор CAN или чтение данных из рабочей области ECU." Foreground="#93B2CD" />
                                     <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <Button Tag="DiagnosticsWorkspace" Content="Диагностические данные" Click="WorkspaceNavigate_Click" />
-                                        <Button Tag="CanMonitor" Content="CAN-монитор" Click="WorkspaceNavigate_Click" />
-                                        <Button Tag="EcuProfiles" Content="Профили ECU" Click="WorkspaceNavigate_Click" />
+                                        <Button x:Name="EcuDiagnosticsNavigateButton" Tag="DiagnosticsWorkspace" Content="Диагностические данные" Click="WorkspaceNavigate_Click" />
+                                        <Button x:Name="EcuMonitorNavigateButton" Tag="CanMonitor" Content="CAN-монитор" Click="WorkspaceNavigate_Click" />
+                                        <Button x:Name="EcuProfilesNavigateButton" Tag="EcuProfiles" Content="Профили ECU" Click="WorkspaceNavigate_Click" />
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="Обнаружение блоков" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Пассивное наблюдение ответов. Выбор записи не подтверждает идентичность блока и не отправляет запрос." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="EcuDiscoveryTitle" Text="Обнаружение блоков" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="EcuDiscoveryIntro" Text="Пассивное наблюдение ответов. Выбор записи не подтверждает идентичность блока и не отправляет запрос." Foreground="#9EB8CC" />
                                     <Grid x:Name="EcuScanToolbarGrid" ColumnSpacing="16" RowSpacing="8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -498,13 +498,13 @@
                                         </Grid.RowDefinitions>
                                         <Border x:Name="EcuWorkbenchListPane" Grid.Column="0" Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
                                             <StackPanel Spacing="10">
-                                                <TextBlock Text="Ответы ECU" FontSize="18" FontWeight="SemiBold" />
-                                                <TextBlock Text="Выберите наблюдаемый RX. Имена блоков не подтверждены." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="EcuListTitle" Text="Ответы ECU" FontSize="18" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="EcuListIntro" Text="Выберите наблюдаемый RX. Имена блоков не подтверждены." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
                                     <ListView x:Name="EcusView" Height="260" SelectionMode="Single" IsEnabled="False" SelectionChanged="Ecu_SelectionChanged" ToolTipService.ToolTip="Passive response observations only. No verified ECU identity or request ID.">
                                         <ListView.Header>
                                             <StackPanel Spacing="3">
-                                                <TextBlock Text="Observed RX" FontWeight="SemiBold" FontSize="12" />
-                                                <TextBlock Text="Guessed TX · inferred only" Foreground="#A0BBD0" FontSize="11" />
+                                                <TextBlock x:Name="EcuListObservedHeader" Text="Observed RX" FontWeight="SemiBold" FontSize="12" />
+                                                <TextBlock x:Name="EcuListInferredHeader" Text="Guessed TX · inferred only" Foreground="#A0BBD0" FontSize="11" />
                                             </StackPanel>
                                         </ListView.Header>
                                         <ListView.ItemTemplate>
@@ -538,7 +538,7 @@
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Карта автомобиля" FontSize="18" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="EcuVehicleHeading" Text="Карта автомобиля" FontSize="18" FontWeight="SemiBold" />
                                                     <ComboBox x:Name="EcuVehicleModel" Grid.Column="1" Width="150" SelectedIndex="0" SelectionChanged="EcuVehicleModel_SelectionChanged" AutomationProperties.Name="Схема автомобиля">
                                                         <ComboBoxItem Content="XC90 · P2" />
                                                         <ComboBoxItem Content="XC70 · P3" />
@@ -583,7 +583,7 @@
                                                             <Ellipse Canvas.Left="509" Canvas.Top="181" Width="32" Height="32" Fill="#173A54" Stroke="#B4D8E4" StrokeThickness="3" />
                                                         </Canvas>
                                                         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,4,0,0">
-                                                            <TextBlock Text="ПЕРЕД → ЗАД" Foreground="#8FC5DF" FontSize="12" />
+                                                            <TextBlock x:Name="EcuVehicleOrientation" Text="ПЕРЕД → ЗАД" Foreground="#8FC5DF" FontSize="12" />
                                                         </StackPanel>
                                                     </Grid>
                                                 </Viewbox>
@@ -594,30 +594,30 @@
                                                 </ScrollViewer>
                                                 <TextBlock x:Name="EcuObservationRailSummary" Text="Нет завершённого пассивного наблюдения. На изображении нет отметок физических ECU." Foreground="#E9C48D" FontSize="12" TextWrapping="Wrap" />
                                                 <TextBlock x:Name="EcuDiagramCaption" Text="XC90 P2 · условный боковой силуэт, выбран вручную" Foreground="#B5D8ED" TextWrapping="Wrap" />
-                                                <TextBlock Text="Схема не указывает физические позиции ECU; местоположение и статус блоков не подтверждаются изображением." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="EcuDiagramDisclaimer" Text="Схема не указывает физические позиции ECU; местоположение и статус блоков не подтверждаются изображением." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Border>
                                         <Border x:Name="EcuWorkbenchDetailPane" Grid.Column="2" Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
                                             <StackPanel Spacing="12">
-                                                <TextBlock Text="Выбранный ответ" FontSize="18" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="EcuSelectedHeading" Text="Выбранный ответ" FontSize="18" FontWeight="SemiBold" />
                                                 <ScrollViewer MaxHeight="86" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                                     <TextBlock x:Name="EcuSelectionInfo" Text="Пассивный поиск · выберите наблюдаемый RX. Идентичность ECU и TX-адрес не установлены." TextWrapping="Wrap" IsTextSelectionEnabled="True" />
                                                 </ScrollViewer>
-                                                <TextBlock Text="Нет подтверждённого сопоставления наблюдаемых CAN ID с позициями на автомобиле." FontSize="12" Foreground="#E9C48D" TextWrapping="Wrap" />
-                                                <Button Content="Диагностика ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" ToolTipService.ToolTip="Открыть экран диагностики. Не отправляет запросы и не подтверждает адрес ECU." />
+                                                <TextBlock x:Name="EcuSelectionDisclaimer" Text="Нет подтверждённого сопоставления наблюдаемых CAN ID с позициями на автомобиле." FontSize="12" Foreground="#E9C48D" TextWrapping="Wrap" />
+                                                <Button x:Name="EcuOpenDiagnosticsButton" Content="Диагностика ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" ToolTipService.ToolTip="Открыть экран диагностики. Не отправляет запросы и не подтверждает адрес ECU." />
                                             </StackPanel>
                                         </Border>
                                     </Grid>
 
                                 </StackPanel>
                             </Border>
-                            <Button Content="Перейти к профилям ECU →" Tag="EcuProfiles" Click="WorkspaceNavigate_Click" />
+                            <Button x:Name="EcuOpenProfilesButton" Content="Перейти к профилям ECU →" Tag="EcuProfiles" Click="WorkspaceNavigate_Click" />
                         </StackPanel>
                         <StackPanel x:Name="DiagnosticsPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="Адресация выбранного ECU" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Введите проверенные CAN-адреса. Пассивное обнаружение не определяет адрес запроса." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="DiagnosticsAddressHeading" Text="Адресация выбранного ECU" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="DiagnosticsAddressIntro" Text="Введите проверенные CAN-адреса. Пассивное обнаружение не определяет адрес запроса." Foreground="#9EB8CC" />
                                     <Grid ColumnSpacing="16" RowSpacing="16">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -658,8 +658,8 @@
                         <StackPanel x:Name="DtcPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="16">
-                                    <TextBlock Text="Ошибки / DTC" FontSize="23" FontWeight="SemiBold" />
-                                    <TextBlock Text="Чтение неисправностей одного выбранного ECU. Перед чтением подтвердите адреса TX/RX в разделе «Диагностика»." Foreground="#A9C5DC" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="DtcPageHeading" Text="Ошибки / DTC" FontSize="23" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="DtcPageIntro" Text="Чтение неисправностей одного выбранного ECU. Перед чтением подтвердите адреса TX/RX в разделе «Диагностика»." Foreground="#A9C5DC" TextWrapping="Wrap" />
                                     <Grid ColumnSpacing="10" RowSpacing="10">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="2*" />
@@ -684,9 +684,9 @@
                                                     <ColumnDefinition Width="*" />
                                                     <ColumnDefinition Width="155" />
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Text="Код DTC" FontWeight="SemiBold" />
-                                                <TextBlock Grid.Column="1" Text="Описание" FontWeight="SemiBold" />
-                                                <TextBlock Grid.Column="2" Text="Статус" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="DtcCodeHeading" Text="Код DTC" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="DtcDescriptionHeading" Grid.Column="1" Text="Описание" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="DtcStatusHeading" Grid.Column="2" Text="Статус" FontWeight="SemiBold" />
                                             </Grid>
                                             <TextBlock x:Name="DtcTableSummary" Text="Коды не считывались в текущем диагностическом контексте." Foreground="#9CD8ED" TextWrapping="Wrap" />
                                             <ListView x:Name="DtcRecordsView" Height="260" SelectionMode="Single" SelectionChanged="DtcRecordsView_SelectionChanged" AutomationProperties.Name="Коды неисправностей выбранного ECU" ToolTipService.ToolTip="Только реально считанные DTC одного ECU. Нет подтверждённого словаря причин Volvo.">
@@ -705,23 +705,23 @@
                                                     </DataTemplate>
                                                 </ListView.ItemTemplate>
                                             </ListView>
-                                            <TextBlock Text="Коды появляются только после явного чтения. Подтверждённого каталога описаний Volvo пока нет. Ни одна ошибка здесь не подставляется автоматически." Foreground="#A8C7DF" FontSize="12" TextWrapping="Wrap" />
+                                            <TextBlock x:Name="DtcEvidenceDisclaimer" Text="Коды появляются только после явного чтения. Подтверждённого каталога описаний Volvo пока нет. Ни одна ошибка здесь не подставляется автоматически." Foreground="#A8C7DF" FontSize="12" TextWrapping="Wrap" />
                                         </StackPanel>
                                     </Border>
                                     <StackPanel Spacing="7">
-                                        <TextBlock Text="Подробности" FontSize="19" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="DtcDetailsHeading" Text="Подробности" FontSize="19" FontWeight="SemiBold" />
                                         <TextBlock x:Name="DtcSelectedRecordDetails" Text="Выберите считанную ошибку, чтобы посмотреть сырые данные и маску статуса." Foreground="#B2CBDE" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
-                                        <TextBlock Text="После чтения реальные 24-битные коды DTC, маски статуса и поддерживаемые ECU биты появятся в панели «Результат операции» ниже. Описания причин и рекомендаций требуют проверенного каталога для выбранной модели." Foreground="#B2CBDE" TextWrapping="Wrap" FontSize="12" />
+                                        <TextBlock x:Name="DtcDetailsEvidence" Text="После чтения реальные 24-битные коды DTC, маски статуса и поддерживаемые ECU биты появятся в панели «Результат операции» ниже. Описания причин и рекомендаций требуют проверенного каталога для выбранной модели." Foreground="#B2CBDE" TextWrapping="Wrap" FontSize="12" />
                                     </StackPanel>
-                                    <Button Content="Проверить адреса ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" HorizontalAlignment="Left" ToolTipService.ToolTip="Только навигация к параметрам подключения. Запросы к автомобилю не отправляются." />
+                                    <Button x:Name="DtcCheckAddressesButton" Content="Проверить адреса ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" HorizontalAlignment="Left" ToolTipService.ToolTip="Только навигация к параметрам подключения. Запросы к автомобилю не отправляются." />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
                         <StackPanel x:Name="CanMonitorPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="Поток CAN" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Запускайте и останавливайте наблюдение независимо от переходов между разделами." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="CanMonitorHeading" Text="Поток CAN" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="CanMonitorIntro" Text="Запускайте и останавливайте наблюдение независимо от переходов между разделами." Foreground="#9EB8CC" />
                                     <StackPanel Orientation="Horizontal" Spacing="12">
                                         <Button x:Name="StartButton" Content="Start monitor" Click="Start_Click" VerticalAlignment="Bottom" IsEnabled="False" Background="#0865C7" BorderBrush="#348DEA" />
                                     </StackPanel>
@@ -844,8 +844,8 @@
                         <StackPanel x:Name="ConnectionPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="Интерфейс автомобиля" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Выберите установленный J2534-адаптер и параметры канала." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="ConnectionPageHeading" Text="Интерфейс автомобиля" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="ConnectionPageIntro" Text="Выберите установленный J2534-адаптер и параметры канала." Foreground="#9EB8CC" />
                                     <TextBox x:Name="DllPath" PlaceholderText="Path to compatible J2534 DLL" Header="J2534 DLL" />
                                     <Grid ColumnSpacing="16" RowSpacing="16">
                                         <Grid.ColumnDefinitions>
@@ -866,15 +866,15 @@
                                         </StackPanel>
                                     </Grid>
                                     <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Button Content="Refresh" Click="RefreshJ2534Devices_Click" VerticalAlignment="Bottom" />
+                                        <Button x:Name="ConnectionRefreshButton" Content="Refresh" Click="RefreshJ2534Devices_Click" VerticalAlignment="Bottom" />
                                         <Button x:Name="ConnectButton" Content="Connect" Click="Connect_Click" VerticalAlignment="Bottom" Background="#0865C7" BorderBrush="#348DEA" />
                                     </StackPanel>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="Сведения об адаптере" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Информация текущего подключения." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="ConnectionDriverHeading" Text="Сведения об адаптере" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="ConnectionDriverIntro" Text="Информация текущего подключения." Foreground="#9EB8CC" />
                                     <TextBlock x:Name="AdapterMetadataText" Text="J2534 adapter details: disconnected." FontSize="12" Foreground="#C1D7E8" TextWrapping="Wrap" IsTextSelectionEnabled="True" ToolTipService.ToolTip="Unverified values returned by the driver. Local diagnostic details, not an ECU identity or authorization." />
                                     <Expander x:Name="J2534ArchitectureAuditExpander" Header="Аудит разрядности драйверов (офлайн)" IsExpanded="False">
                                         <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
@@ -889,7 +889,7 @@
                         </StackPanel>
                         <Border x:Name="DiagnosticResultsCard" Visibility="Collapsed" Style="{StaticResource AuroraCard}">
                             <StackPanel Spacing="18">
-                                <TextBlock Text="Результат операции" FontSize="20" FontWeight="SemiBold" />
+                                <TextBlock x:Name="DiagnosticResultHeading" Text="Результат операции" FontSize="20" FontWeight="SemiBold" />
                                 <TextBlock Text="Данные отображаются локально. Проверьте содержимое перед передачей." Foreground="#9EB8CC" />
                                 <StackPanel x:Name="StatusPanel" Spacing="6">
                                     <Expander x:Name="DiagnosticResultExpander" Header="Diagnostic read result (VIN / DID / DTC, review before sharing)" IsExpanded="False">
