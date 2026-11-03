@@ -283,6 +283,40 @@
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
+            <!-- The secondary ECU-profile editor must not squeeze four RU/EN
+                 actions and two input controls into the 640-DIP shell. -->
+            <VisualStateGroup x:Name="ProfileResponsiveStates">
+                <VisualState x:Name="ProfileWide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="980" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="ProfileCompact">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ProfileSearchColumn.Width" Value="*" />
+                        <Setter Target="ProfileSelectorColumn.Width" Value="0" />
+                        <Setter Target="ProfileFiltersThirdColumn.Width" Value="0" />
+                        <Setter Target="ProfileSelector.(Grid.Column)" Value="0" />
+                        <Setter Target="ProfileSelector.(Grid.Row)" Value="1" />
+                        <Setter Target="MarkedVerifiedOnly.(Grid.ColumnSpan)" Value="1" />
+                        <Setter Target="MarkedVerifiedOnly.(Grid.Row)" Value="2" />
+                        <Setter Target="ProfileActionThirdColumn.Width" Value="0" />
+                        <Setter Target="ProfileActionFourthColumn.Width" Value="0" />
+                        <Setter Target="ProfileImportButton.(Grid.Column)" Value="0" />
+                        <Setter Target="ProfileImportButton.(Grid.Row)" Value="1" />
+                        <Setter Target="ProfileExportButton.(Grid.Column)" Value="1" />
+                        <Setter Target="ProfileExportButton.(Grid.Row)" Value="1" />
+                        <Setter Target="CaptureSnapshotButton.(Grid.Row)" Value="2" />
+                        <Setter Target="InspectSnapshotButton.(Grid.Column)" Value="0" />
+                        <Setter Target="InspectSnapshotButton.(Grid.Row)" Value="3" />
+                        <Setter Target="CompareSnapshotsButton.(Grid.Column)" Value="1" />
+                        <Setter Target="CompareSnapshotsButton.(Grid.Row)" Value="3" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
             <!-- Monitor commands stay reachable at compact widths without a
                  horizontal-scrolling workspace or clipped RU/EN captions. -->
             <VisualStateGroup x:Name="CanMonitorToolbarStates">
@@ -1282,30 +1316,33 @@
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
-                                    <Grid Grid.Row="0" ColumnSpacing="8">
+                                    <Grid x:Name="ProfileFiltersGrid" Grid.Row="0" ColumnSpacing="8" RowSpacing="8">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="2*" />
-                                            <ColumnDefinition Width="2*" />
-                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition x:Name="ProfileSearchColumn" Width="2*" />
+                                            <ColumnDefinition x:Name="ProfileSelectorColumn" Width="2*" />
+                                            <ColumnDefinition x:Name="ProfileFiltersThirdColumn" Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBox x:Name="ProfileSearch" Grid.Column="0" Header="Find ECU profile" PlaceholderText="Name, ID, CAN ID, DID or source" TextChanged="ProfileSearch_TextChanged" />
-                                        <ComboBox x:Name="ProfileSelector" Grid.Column="1" Header="ECU profiles" PlaceholderText="Select profile" SelectionChanged="ProfileSelector_SelectionChanged" />
-                                        <CheckBox x:Name="MarkedVerifiedOnly" Grid.Column="0" Content="Marked verified only" Checked="MarkedVerifiedOnly_Changed" Unchecked="MarkedVerifiedOnly_Changed" VerticalAlignment="Bottom" Grid.Row="1" Grid.ColumnSpan="3" />
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
+                                        <TextBox x:Name="ProfileSearch" Grid.Column="0" Header="Find ECU profile" PlaceholderText="Name, ID, CAN ID, DID or source" TextChanged="ProfileSearch_TextChanged" HorizontalAlignment="Stretch" />
+                                        <ComboBox x:Name="ProfileSelector" Grid.Column="1" Header="ECU profiles" PlaceholderText="Select profile" SelectionChanged="ProfileSelector_SelectionChanged" HorizontalAlignment="Stretch" />
+                                        <CheckBox x:Name="MarkedVerifiedOnly" Grid.Column="0" Content="Marked verified only" Checked="MarkedVerifiedOnly_Changed" Unchecked="MarkedVerifiedOnly_Changed" VerticalAlignment="Bottom" Grid.Row="1" Grid.ColumnSpan="3" />
                                     </Grid>
                                     <Grid x:Name="ProfileActionsPanel" Grid.Row="1" RowSpacing="6" ColumnSpacing="8">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition x:Name="ProfileActionThirdColumn" Width="*" />
+                                            <ColumnDefinition x:Name="ProfileActionFourthColumn" Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <Button x:Name="CreateProfileButton" Grid.Row="0" Grid.Column="0" Content="New profile" HorizontalAlignment="Stretch" Click="CreateProfile_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                         <Button x:Name="EditProfileButton" Grid.Row="0" Grid.Column="1" Content="Edit selected" HorizontalAlignment="Stretch" Click="EditProfile_Click" IsEnabled="False" ContentTemplate="{StaticResource AuroraWrapCaption}" />
