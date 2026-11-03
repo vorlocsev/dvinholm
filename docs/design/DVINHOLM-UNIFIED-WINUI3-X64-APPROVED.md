@@ -216,6 +216,17 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - Eight deterministic offline test groups cover all-failed, all-present-but-no-authority, each independently missing prerequisite, stable ordered checks, immutable result, safe RU/EN presentation, forged assessment rejection and strict XAML/handler wiring without transport calls.
 - No new diagnostic addresses, DID mappings, brute-force behavior, update installation, production signing, physical J2534 acceptance or release publication. This stage remains confined to PR #702 until both current-head CI workflows and a manual Windows GUI acceptance check pass.
 
+
+## Stage 27: shared current-session CEM identity evidence (offline presentation)
+
+- The two approved Aurora workspaces **CEM PIN** and **CEM Configuration** now show the same payload-free CEM identity status, derived from the existing experimental CEM part-number observation only when its session guard is still current, J2534 remains connected, and the development-only research context is active.
+- The new `CemIdentityEvidenceReport` supports only **NoCurrentEvidence** and **UnattestedPartNumberObservation**. Both permanently deny authenticated physical CEM identity, verified HW/SW revision, PIN acquisition, configuration reading and writing. No match is derived from user-selected ECU profiles or ordinary generic DID snapshots.
+- The shared status is intentionally **not** a new CEM read button. No new CAN ID, DID, J2534 request, credential operation or storage is added. The observed part number is not copied to the status panel, logs, cross-screen activity feed, settings, or configuration records.
+- Identity presentation updates after existing guarded part-number read success, source observation invalidation, shell-language change, primary navigation, and connection-summary refresh. Both workspaces revalidate the existing guard rather than trusting a cached positive status; disconnect, invalidated guard and Stable builds show no current CEM evidence.
+- The approved six primary navigation destinations and three-column configuration browser remain unchanged. Existing unverified backup, compare and configuration-write actions remain disabled.
+- Eight offline synthetic test groups cover missing observation; current unattributed observation; expired guard; disconnected session; Stable/offline denial; boundary part-number shapes; RU/EN redaction and non-authorization; malformed state refusal and both-screen source contracts (no transport calls).
+- Stage-26 x64 pilot [#41556424762](https://github.com/vorlocsev/dvinholm/actions/runs/41556424762) **passed**; Stage-26 full CI [#41556424862](https://github.com/vorlocsev/dvinholm/actions/runs/41556424862) was **cancelled on newer changes**, not certified green. Stage 27 requires a successful x64 self-contained workflow and complete regression on its final head, plus installed Windows UI and physical J2534 acceptance before any merge or release. Production update installation remains blocked, no signing key is provisioned, Stable and Virtual Car unchanged.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
