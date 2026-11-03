@@ -30,6 +30,18 @@
                         <Setter Target="ShellNavEcuLabel.Visibility" Value="Collapsed" />
                         <Setter Target="ShellNavConnectionLabel.Visibility" Value="Collapsed" />
                         <Setter Target="ShellNavUpdatesLabel.Visibility" Value="Collapsed" />
+                        <Setter Target="SidebarConnectionButton.HorizontalContentAlignment" Value="Center" />
+                        <Setter Target="SidebarConnectionButton.Padding" Value="0,9" />
+                        <Setter Target="SidebarUpdatesButton.HorizontalContentAlignment" Value="Center" />
+                        <Setter Target="SidebarUpdatesButton.Padding" Value="0,9" />
+                        <Setter Target="SidebarCemPinButton.HorizontalContentAlignment" Value="Center" />
+                        <Setter Target="SidebarCemPinButton.Padding" Value="0,9" />
+                        <Setter Target="SidebarCemConfigButton.HorizontalContentAlignment" Value="Center" />
+                        <Setter Target="SidebarCemConfigButton.Padding" Value="0,9" />
+                        <Setter Target="SidebarDtcButton.HorizontalContentAlignment" Value="Center" />
+                        <Setter Target="SidebarDtcButton.Padding" Value="0,9" />
+                        <Setter Target="SidebarEcuButton.HorizontalContentAlignment" Value="Center" />
+                        <Setter Target="SidebarEcuButton.Padding" Value="0,9" />
                         <Setter Target="WorkspaceHeaderGrid.Margin" Value="12,10,12,10" />
                         <Setter Target="WorkspaceHeaderGrid.MinHeight" Value="116" />
                         <Setter Target="SidebarAuroraRibbon.Opacity" Value="0.12" />
@@ -273,7 +285,7 @@
                         <Image x:Name="SidebarCompactBrand" Source="ms-appx:///Assets/Launcher-Northern-Emblem.svg"
                                Width="44" Height="44" Margin="0,0,0,14" HorizontalAlignment="Center"
                                Stretch="Uniform" Visibility="Collapsed" AutomationProperties.Name="Dvinholm" />
-                        <Button Tag="J2534Connection" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Подключение" ToolTipService.ToolTip="Подключение">
+                        <Button x:Name="SidebarConnectionButton" Tag="J2534Connection" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Подключение" ToolTipService.ToolTip="Подключение">
                             <StackPanel Orientation="Horizontal" Spacing="14">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
                                 <TextBlock x:Name="ShellNavConnectionLabel" Text="Подключение" />
@@ -285,25 +297,25 @@
                                 <TextBlock x:Name="ShellNavUpdatesLabel" Text="Обновление" />
                             </StackPanel>
                         </Button>
-                        <Button Tag="CemPinReadiness" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="CEM PIN" ToolTipService.ToolTip="CEM PIN">
+                        <Button x:Name="SidebarCemPinButton" Tag="CemPinReadiness" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="CEM PIN" ToolTipService.ToolTip="CEM PIN">
                             <StackPanel Orientation="Horizontal" Spacing="14">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
                                 <TextBlock x:Name="ShellNavCemPinLabel" Text="CEM PIN" />
                             </StackPanel>
                         </Button>
-                        <Button Tag="CemConfigurationCatalog" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Конфигурация CEM" ToolTipService.ToolTip="Конфигурация CEM">
+                        <Button x:Name="SidebarCemConfigButton" Tag="CemConfigurationCatalog" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Конфигурация CEM" ToolTipService.ToolTip="Конфигурация CEM">
                             <StackPanel Orientation="Horizontal" Spacing="14">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
                                 <TextBlock x:Name="ShellNavConfigLabel" Text="Конфигурация CEM" />
                             </StackPanel>
                         </Button>
-                        <Button Tag="DtcFaults" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Ошибки (DTC)" ToolTipService.ToolTip="Ошибки (DTC)">
+                        <Button x:Name="SidebarDtcButton" Tag="DtcFaults" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Ошибки (DTC)" ToolTipService.ToolTip="Ошибки (DTC)">
                             <StackPanel Orientation="Horizontal" Spacing="14">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
                                 <TextBlock x:Name="ShellNavDtcLabel" Text="Ошибки (DTC)" />
                             </StackPanel>
                         </Button>
-                        <Button Tag="EcuWorkspace" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Блоки (ECU)" ToolTipService.ToolTip="Блоки (ECU)">
+                        <Button x:Name="SidebarEcuButton" Tag="EcuWorkspace" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Блоки (ECU)" ToolTipService.ToolTip="Блоки (ECU)">
                             <StackPanel Orientation="Horizontal" Spacing="14">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
                                 <TextBlock x:Name="ShellNavEcuLabel" Text="Блоки (ECU)" />
