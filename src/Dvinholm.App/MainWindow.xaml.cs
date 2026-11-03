@@ -21,6 +21,8 @@ public sealed partial class MainWindow : Window
     private Task? _monitorTask;
     private CanRxDispatcher.Subscription? _monitorSubscription;
     private bool _connected;
+    // Prevent a locale toggle during disconnect from restoring stale driver metadata.
+    private bool _adapterMetadataConnected;
 #if DVINHOLM_DEVELOPMENT_FEATURES
     private DispatcherQueueTimer? _demoTimer;
     private uint _demoTick;
@@ -2207,6 +2209,17 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private void RefreshLocalAdapterMetadataLanguage()
+    {
+        // Display sensitive vendor-reported values exclusively inside the
+        // Connection workspace. Never route them through public SetStatus.
+        if (AdapterMetadataText is null) return;
+        AdapterMetadataText.Text = _adapterMetadataConnected && _connected && _session.IsConnected
+            ? J2534ConnectionPresentation.LocalDetails(
+                _session.AdapterVersion, _session.AdapterCapabilities, _unifiedEnglish)
+            : J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);
+    }
+
     private void J2534Device_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (J2534Devices.SelectedItem is J2534Device device)
@@ -3267,7 +3280,8 @@ public sealed partial class MainWindow : Window
             }
 
             ClearDiagnosticReadResult();
-            AdapterMetadataText.Text = J2534ConnectionPresentation.DisconnectedDetails;
+            _adapterMetadataConnected = false;
+            AdapterMetadataText.Text = J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);
             ConnectButton.IsEnabled = false;
             HardwareFilterButton.IsEnabled = false;
             StartButton.IsEnabled = false;
@@ -3352,7 +3366,8 @@ public sealed partial class MainWindow : Window
         var dllPath = DllPath.Text.Trim();
         ClearDiagnosticReadResult();
         // Stale information must not survive a failed replacement connection.
-        AdapterMetadataText.Text = J2534ConnectionPresentation.DisconnectedDetails;
+        _adapterMetadataConnected = false;
+            AdapterMetadataText.Text = J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);
         ConnectButton.IsEnabled = false;
         StartButton.IsEnabled = false;
         SetUdsEnabled(false);
@@ -3385,8 +3400,9 @@ public sealed partial class MainWindow : Window
             DiscoverButton.IsEnabled = true;
             // Keep vendor-supplied version strings in the dedicated local
             // adapter area. The same SetStatus text is shared with Aurora home.
+            _adapterMetadataConnected = true;
             AdapterMetadataText.Text = J2534ConnectionPresentation.LocalDetails(
-                _session.AdapterVersion, _session.AdapterCapabilities);
+                _session.AdapterVersion, _session.AdapterCapabilities, _unifiedEnglish);
             SetStatus(J2534ConnectionPresentation.ConnectedActivity);
         }
         catch (Exception)
