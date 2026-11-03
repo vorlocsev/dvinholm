@@ -58,6 +58,10 @@ public sealed partial class MainWindow : Window
     private int _profileFilterGeneration;
     private int _rateFrames;
     private int _lastMonitorRate;
+    // Last evaluated readiness belongs to UI presentation only. Translation
+    // cannot re-run the UDS gate or change armed diagnostic buttons.
+    private bool _udsReadinessConnected;
+    private bool _udsReadinessReady;
     private uint? _activeHardwareFilterId;
     public MainWindow()
     {
@@ -2502,15 +2506,22 @@ public sealed partial class MainWindow : Window
         ReadDtcButton.IsEnabled = ready && TryGetSelectedDtcStatusMask(out _);
         ReadDidButton.IsEnabled = ready &&
             UdsReadAddressReadiness.ValidDid(UdsDid?.Text);
-        UdsReadinessHint.Text = ready
-            ? "Read-only UDS address syntax valid. Verify ECU identity and service support before reading."
-            : connected
-                ? "Read-only UDS disabled. Enter two distinct valid source-checked CAN IDs (TX and RX). Passive RX alone is not sufficient."
-                : "Read-only UDS disabled until connected with manually checked request and response CAN IDs.";
+        _udsReadinessConnected = connected;
+        _udsReadinessReady = ready;
+        RefreshUdsReadinessHint();
         RefreshSnapshotCaptureAvailability();
 #if DVINHOLM_DEVELOPMENT_FEATURES
         RefreshCemPartReadAvailability();
 #endif
+    }
+
+    private void RefreshUdsReadinessHint()
+    {
+        // Re-translate the last evaluated result. Never re-arm reads,
+        // perform diagnostics or infer TX addresses from passive RX.
+        if (UdsReadinessHint is null) return;
+        UdsReadinessHint.Text = UdsReadinessCaption.Text(
+            _udsReadinessConnected, _udsReadinessReady, _unifiedEnglish);
     }
 
     private long ClearDiagnosticReadResult()
