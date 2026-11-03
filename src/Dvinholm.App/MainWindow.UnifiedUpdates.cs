@@ -284,8 +284,16 @@ public sealed partial class MainWindow
                 ? Visibility.Visible : Visibility.Collapsed;
         UpdateUnifiedWorkspaceHeader();
         DiagnosticResultsCard.Visibility = Visibility.Collapsed;
-        WorkspaceScroll.ChangeView(null, 0, null);
         SelectWorkspaceNavigation(null);
-        UnifiedUpdateChannel.Focus(FocusState.Programmatic);
+        // A ComboBox focus below the first card can make WinUI scroll the
+        // vertically-stacked Updates workspace past the installed-version
+        // overview on 640/800/980 DIP windows. Keep keyboard focus on the
+        // selected sidebar route in that layout; the channel is still
+        // reachable with Tab. On >=1280 DIP the three cards share a row.
+        if (RootLayout.ActualWidth >= 1280)
+            UnifiedUpdateChannel.Focus(FocusState.Programmatic);
+        else
+            SidebarUpdatesButton.Focus(FocusState.Programmatic);
+        WorkspaceScroll.ChangeView(null, 0, null);
     }
 }
