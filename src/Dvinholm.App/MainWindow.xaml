@@ -812,22 +812,51 @@
                                         </ListView.Header>
                                         <ListView.ItemTemplate>
                                             <DataTemplate>
-                                                <StackPanel Spacing="5" Padding="2,6">
-                                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <TextBlock Text="{Binding Response}" FontFamily="Consolas" Foreground="#75DCEC" FontWeight="SemiBold" />
-                                                        <TextBlock Text="{Binding Type}" FontSize="11" Foreground="#A7C9DD" />
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                                <StackPanel Spacing="6" Padding="2,6">
+                                                    <!-- Star columns constrain the passive RX text to the actual
+                                                         218-DIP inventory panel even for 29-bit IDs. -->
+                                                    <Grid ColumnSpacing="6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding Response}" TextWrapping="Wrap"
+                                                                   FontFamily="Consolas" Foreground="#75DCEC"
+                                                                   FontWeight="SemiBold" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding Type}"
+                                                                   TextWrapping="Wrap" FontSize="11" Foreground="#A7C9DD" />
+                                                    </Grid>
+                                                    <!-- TX remains explicitly inferred; the source qualifier gets
+                                                         its own bounded vertical space rather than overflowing. -->
+                                                    <Grid ColumnSpacing="6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
                                                         <TextBlock Text="TX?" FontSize="11" Foreground="#E6C68D" />
-                                                        <TextBlock Text="{Binding Request}" FontFamily="Consolas" FontSize="11" />
-                                                        <TextBlock Text="{Binding RequestBasis}" FontSize="11" Foreground="#E6C68D" />
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <TextBlock Text="Frames" FontSize="11" Foreground="#A7C9DD" />
-                                                        <TextBlock Text="{Binding Frames}" FontSize="11" />
-                                                        <TextBlock Text="Max bytes" FontSize="11" Foreground="#A7C9DD" />
-                                                        <TextBlock Text="{Binding MaxPayload}" FontSize="11" />
-                                                    </StackPanel>
+                                                        <StackPanel Grid.Column="1" Spacing="2">
+                                                            <TextBlock Text="{Binding Request}" TextWrapping="Wrap"
+                                                                       FontFamily="Consolas" FontSize="11" />
+                                                            <TextBlock Text="{Binding RequestBasis}" TextWrapping="Wrap"
+                                                                       FontSize="11" Foreground="#E6C68D" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <!-- Two compact metadata columns, rather than four unconstrained
+                                                         text blocks on a single line. Values remain actual RX data. -->
+                                                    <Grid ColumnSpacing="8">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Spacing="2">
+                                                            <TextBlock Text="Frames" FontSize="11" Foreground="#A7C9DD" />
+                                                            <TextBlock Text="{Binding Frames}" TextWrapping="Wrap" FontSize="11" />
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="1" Spacing="2">
+                                                            <TextBlock Text="Max bytes" FontSize="11" Foreground="#A7C9DD" />
+                                                            <TextBlock Text="{Binding MaxPayload}" TextWrapping="Wrap" FontSize="11" />
+                                                        </StackPanel>
+                                                    </Grid>
                                                 </StackPanel>
                                             </DataTemplate>
                                         </ListView.ItemTemplate>
