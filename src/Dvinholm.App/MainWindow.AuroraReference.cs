@@ -11,7 +11,7 @@ namespace Dvinholm.App;
 internal sealed record AuroraCemConfigRow(VolvoP2CemConfigOptionDefinition Option, bool English)
 {
     public string Code => Option.CanonicalId;
-    public string Name => Option.DisplayName;
+    public string Name => AuroraCemCatalogLocalization.OptionLabel(Option, English);
     public string Current => English ? "Not read" : "Не прочитано";
     public string Proposed => "—";
     public string Source => Option.Provenance switch
@@ -38,13 +38,7 @@ public sealed partial class MainWindow
 
         _cemConfigReferenceReady = false;
         CemConfigResults.ItemsSource = _cemConfigRows;
-        var categories = new[] { "Все категории" }
-            .Concat(VolvoP2CemConfigOptionManifest.Entries
-                .Select(row => row.Category)
-                .Distinct(StringComparer.Ordinal)
-                .OrderBy(x => x, StringComparer.CurrentCulture))
-            .ToArray();
-        CemConfigCategory.ItemsSource = categories;
+        CemConfigCategory.ItemsSource = AuroraCemCatalogLocalization.Categories(_unifiedEnglish);
         CemConfigCategory.SelectedIndex = 0;
         _cemConfigReferenceReady = true;
         RefreshAuroraConfigReference();
@@ -72,6 +66,48 @@ public sealed partial class MainWindow
         CemConfigSearch.Header = L("Найти параметр", "Search research labels");
         CemConfigSearch.PlaceholderText = L("Код или название", "Code or name");
 
+        // Category keys remain immutable regardless of displayed language.
+        // Suppress SelectionChanged while repopulating, then restore the
+        // canonical selection and previous research-row ID.
+        var selectedCategory = (CemConfigCategory.SelectedItem as
+            AuroraCemCategoryChoice)?.CanonicalCategory;
+        var wasReady = _cemConfigReferenceReady;
+        _cemConfigReferenceReady = false;
+        try
+        {
+            var categories = AuroraCemCatalogLocalization.Categories(_unifiedEnglish);
+            CemConfigCategory.ItemsSource = categories;
+            var index = categories.ToList().FindIndex(choice =>
+                string.Equals(choice.CanonicalCategory, selectedCategory,
+                    StringComparison.Ordinal));
+            CemConfigCategory.SelectedIndex = index < 0 ? 0 : index;
+        }
+        finally
+        {
+            _cemConfigReferenceReady = wasReady;
+        }
+
+        CemConfigPageTitle.Text = L("Конфигурация CEM", "CEM configuration");
+        CemConfigPageIntro.Text = L(
+            "Каталог Volvo P2 · офлайн. Выбор пункта показывает источник, но не читает или меняет автомобиль.",
+            "Offline Volvo P2 catalog. Selecting a label shows its source, not a vehicle read or configuration edit.");
+        CemConfigCategoriesTitle.Text = L("Категории", "Categories");
+        CemConfigFilterSafetyNote.Text = L(
+            "Данные получены из локального каталога источников. Совместимость не подтверждена.",
+            "Only local research source labels are shown. Vehicle compatibility is unverified.");
+        CemConfigResultsTitle.Text = L("Параметры и значения", "Research labels and values");
+        CemConfigListParameterHeader.Text = L("Параметр (ID / название)",
+            "Research label (ID / name)");
+        CemConfigListCurrentHeader.Text = L("Текущее", "Current");
+        CemConfigDetailHeading.Text = L("Описание", "Details");
+        CemConfigReadOnlyNotice.Text = L(
+            "Чтение, изменение и запись CEM пока заблокированы. Никаких реальных значений, адресов или прав на запись этот каталог не подтверждает.",
+            "CEM reading, editing and writing remain blocked. No real values, addresses or write permissions are verified.");
+        P2ConfigCatalogButton.Content = L("Источники (offline)", "Sources (offline)");
+        CemConfigBackupButton.Content = L("Резервная копия", "Backup");
+        CemConfigCompareButton.Content = L("Сравнить", "Compare");
+        CemConfigPrepareButton.Content = L("Подготовить изменения", "Prepare changes");
+
         foreach (var item in CemConfigEvidenceTier.Items.OfType<ComboBoxItem>())
             item.Content = (item.Tag as string) switch
             {
@@ -90,8 +126,8 @@ public sealed partial class MainWindow
     {
         if (!_cemConfigReferenceReady) return;
 
-        var category = CemConfigCategory.SelectedIndex <= 0
-            ? null : CemConfigCategory.SelectedItem as string;
+        var category = (CemConfigCategory.SelectedItem as
+            AuroraCemCategoryChoice)?.CanonicalCategory;
         var query = CemConfigSearch.Text;
         var tier = ((CemConfigEvidenceTier.SelectedItem as ComboBoxItem)?.Tag as string) switch
         {
@@ -103,7 +139,9 @@ public sealed partial class MainWindow
         IReadOnlyList<VolvoP2CemConfigOptionDefinition> matches;
         try
         {
-            matches = AuroraCemConfigReferenceFilter.Find(query, category, tier);
+            matches = _unifiedEnglish
+                ? AuroraCemConfigReferenceFilter.Find(query, category, tier)
+                : AuroraCemConfigReferenceFilter.FindLocalized(query, category, tier);
         }
         catch (InvalidDataException)
         {
@@ -143,7 +181,8 @@ public sealed partial class MainWindow
     private void PresentAuroraConfigDetail(AuroraCemConfigRow selected)
     {
         var row = selected.Option;
-        CemConfigDetailTitle.Text = row.DisplayName;
+        CemConfigDetailTitle.Text = AuroraCemCatalogLocalization.OptionLabel(
+            row, _unifiedEnglish);
         CemConfigDetailCode.Text = L("Идентификатор исследования: ", "Research ID: ") + row.CanonicalId;
         CemConfigDetailSource.Text = L("Источник: ", "Source: ") + selected.Source;
         CemConfigDetailEvidence.Text = L("Ссылка на свидетельство: ", "Evidence reference: ") +
