@@ -106,6 +106,7 @@ public sealed partial class MainWindow
         ApplyAuroraCemConfigLocalization();
         ApplyAuroraPrimaryScreenLocalization();
         RefreshCanMonitorCounterLanguage();
+        RefreshUdsReadinessHint();
         // Relabel already observed passive RX items without clearing their
         // selection, rescanning the bus, or modifying the underlying evidence.
         foreach (var row in _ecus)
