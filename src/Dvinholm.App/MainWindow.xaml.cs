@@ -57,6 +57,7 @@ public sealed partial class MainWindow : Window
     private bool _loadingProfiles;
     private int _profileFilterGeneration;
     private int _rateFrames;
+    private int _lastMonitorRate;
     private uint? _activeHardwareFilterId;
     public MainWindow()
     {
@@ -3479,6 +3480,8 @@ public sealed partial class MainWindow : Window
         SetStatus("Monitoring CAN...");
         _rate.Restart();
         _rateFrames = 0;
+        _lastMonitorRate = 0;
+        UpdateMonitorRateText();
 
         _monitorTask = Task.Run(() =>
         {
@@ -3571,21 +3574,33 @@ public sealed partial class MainWindow : Window
 
         if (_rate.ElapsedMilliseconds >= 1000)
         {
-            FrameRateText.Text = $"{_rateFrames} frames/s";
+            _lastMonitorRate = _rateFrames;
+            UpdateMonitorRateText();
             _rateFrames = 0;
             _rate.Restart();
         }
     }
 
+    private void UpdateMonitorRateText() =>
+        FrameRateText.Text = CanMonitorCounterCaptions.Rate(_lastMonitorRate, _unifiedEnglish);
+
     private void UpdateFrameCountText() =>
-        FrameCountText.Text = $"{_frames.Count:N0} shown / {_total:N0} rx";
+        FrameCountText.Text = CanMonitorCounterCaptions.Frames(
+            _frames.Count, _total, _unifiedEnglish);
 
     private void UpdateRxDropCountText()
     {
         var drops = _rxDropTracker.Snapshot(_monitorSubscription?.DroppedFrameCount);
-        DroppedFrameText.Text = drops is long count
-            ? $"{count:N0} dropped since clear"
-            : "drops unknown";
+        DroppedFrameText.Text = CanMonitorCounterCaptions.Drops(drops, _unifiedEnglish);
+    }
+
+    private void RefreshCanMonitorCounterLanguage()
+    {
+        // Re-project the actual counters without clearing observed frames,
+        // changing the filter or touching the physical bus.
+        UpdateMonitorRateText();
+        UpdateFrameCountText();
+        UpdateRxDropCountText();
     }
 
     private void RefreshMonitorFilter()
@@ -3675,8 +3690,9 @@ public sealed partial class MainWindow : Window
         _frames.Clear();
         _total = 0;
         _rateFrames = 0;
+        _lastMonitorRate = 0;
         _rate.Restart();
-        FrameRateText.Text = "0 frames/s";
+        UpdateMonitorRateText();
         UpdateFrameCountText();
         UpdateRxDropCountText();
     }
