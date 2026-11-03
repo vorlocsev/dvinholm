@@ -100,9 +100,9 @@ public sealed class AuroraBoundedEcuInventoryRowsTests
         Assert.Equal(2, cells.Length);
         Assert.Null(cells[0].Attribute("Grid.Column"));
         Assert.Equal("1", (string?)cells[1].Attribute("Grid.Column"));
-        Assert.Equal(new[] { "Frames", "{Binding Frames}" },
+        Assert.Equal(new[] { "{Binding FramesCaption}", "{Binding Frames}" },
             cells[0].Elements().Select(e => (string?)e.Attribute("Text")));
-        Assert.Equal(new[] { "Max bytes", "{Binding MaxPayload}" },
+        Assert.Equal(new[] { "{Binding MaxPayloadCaption}", "{Binding MaxPayload}" },
             cells[1].Elements().Select(e => (string?)e.Attribute("Text")));
         foreach (var cell in cells)
             Assert.Equal("Wrap", (string?)cell.Elements().Last().Attribute("TextWrapping"));
@@ -113,7 +113,7 @@ public sealed class AuroraBoundedEcuInventoryRowsTests
     {
         var template = ItemTemplate(Layout()).ToString();
         foreach (var field in new[] { "Response", "Type", "Request",
-            "RequestBasis", "Frames", "MaxPayload" })
+            "RequestBasis", "Frames", "MaxPayload", "FramesCaption", "MaxPayloadCaption" })
             Assert.Equal(1, template.Split("{Binding " + field + "}").Length - 1);
         Assert.DoesNotContain("{Binding VerifiedEcuName}", template);
         Assert.DoesNotContain("{Binding PhysicalLocation}", template);
