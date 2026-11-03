@@ -48,37 +48,37 @@ jobs:
           }
           Write-Host 'Manual signing script parses cleanly; signing was not executed.'
 
-      # Parse only. Hosted CI has no validated interactive WinUI desktop.
-      # Never invoke the opt-in capture tool, open the app, or upload screenshots.
-      - name: Parse Aurora desktop capture tool (never execute)
-        shell: pwsh
+      # Parse in the ACTUAL operator runtime: Windows PowerShell 5.1 reads
+      # UTF-8 without BOM as the ANSI code page, corrupting Russian literal
+      # strings and potentially breaking syntax. PowerShell 7 did not catch it.
+      # CI must not execute either helper, open the UI or upload screenshots.
+      - name: Parse Aurora desktop helpers in Windows PowerShell 5.1 (never execute)
+        shell: powershell
         run: |
-          $tokens = $null
-          $parseErrors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile(
-            (Resolve-Path 'eng/Capture-UnifiedAuroraWinUI3.ps1').Path,
-            [ref]$tokens, [ref]$parseErrors) | Out-Null
-          if ($parseErrors.Count -ne 0) {
-            $parseErrors | ForEach-Object { Write-Error $_.Message }
-            throw 'Aurora screenshot helper syntax invalid.'
+          if ($PSVersionTable.PSVersion.Major -ne 5 -or
+              $PSVersionTable.PSEdition -ne 'Desktop') {
+            throw 'Aurora capture helper must be validated with Windows PowerShell 5.1.'
           }
-          Write-Host 'Screenshot helper syntax only: no GUI screenshot was captured in GitHub Actions.'
-
-      # Review report is also strictly operator-only. No sample/fake GUI images
-      # are generated, and CI must never read or publish private screenshot data.
-      - name: Parse private Aurora RU-EN screenshot review tool (never execute)
-        shell: pwsh
-        run: |
-          $tokens = $null
-          $parseErrors = $null
-          [System.Management.Automation.Language.Parser]::ParseFile(
-            (Resolve-Path 'eng/Review-UnifiedAuroraScreenshots.ps1').Path,
-            [ref]$tokens, [ref]$parseErrors) | Out-Null
-          if ($parseErrors.Count -ne 0) {
-            $parseErrors | ForEach-Object { Write-Error $_.Message }
-            throw 'Private RU-EN review script syntax invalid.'
+          foreach ($relative in @(
+            'eng/Capture-UnifiedAuroraWinUI3.ps1',
+            'eng/Review-UnifiedAuroraScreenshots.ps1'
+          )) {
+            $path = (Resolve-Path -LiteralPath $relative).Path
+            $bytes = [IO.File]::ReadAllBytes($path)
+            if ($bytes.Length -lt 3 -or $bytes[0] -ne 0xEF -or
+                $bytes[1] -ne 0xBB -or $bytes[2] -ne 0xBF) {
+              throw "$relative must be saved as UTF-8 with BOM for Windows PowerShell 5.1."
+            }
+            $tokens = $null
+            $parseErrors = $null
+            [System.Management.Automation.Language.Parser]::ParseFile(
+              $path, [ref]$tokens, [ref]$parseErrors) | Out-Null
+            if ($parseErrors.Count -ne 0) {
+              $parseErrors | ForEach-Object { Write-Error $_.Message }
+              throw "Windows PowerShell 5.1 syntax invalid for $relative."
+            }
+            Write-Host "Windows PowerShell 5.1 recognized BOM and parsed $relative (no execution)."
           }
-          Write-Host 'Local review script parsed; no screenshots or report were produced.'
 
       # New pipeline only: DO NOT change the active legacy x86 release feed.
       # Windows App SDK and .NET are packed into the standalone release tree.
