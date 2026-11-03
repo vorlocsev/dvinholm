@@ -155,6 +155,13 @@ public sealed partial class MainWindow
         CanMonitorIntro.Text = L(
             "Запускайте и останавливайте наблюдение независимо от переходов между разделами.",
             "Start and stop monitoring independently of workspace navigation.");
+        // Real frame table columns stay aligned to their original data
+        // bindings. Locale switching changes captions, never monitor state.
+        CanMonitorTimestampHeader.Text = L("Время (мс)", "Timestamp (ms)");
+        CanMonitorIdHeader.Text = "ID";
+        CanMonitorTypeHeader.Text = L("Тип", "Type");
+        CanMonitorDlcHeader.Text = "DLC";
+        CanMonitorDataHeader.Text = L("Данные", "Data");
         IdFilter.Header = L("Фильтр CAN ID · hex", "CAN ID filter (hex)");
         CanMonitorClearButton.Content = L("Очистить", "Clear");
         HardwareFilterButton.Content = _activeHardwareFilterId is null
