@@ -29,7 +29,19 @@ internal static class AuroraCemCatalogLocalization
     internal static string CategoryLabel(string category, bool english)
     {
         ArgumentNullException.ThrowIfNull(category);
-        if (english) return category;
+        if (english) return category switch
+        {
+            "AuxiliaryHeating" => "Auxiliary heating",
+            "ExteriorLighting" => "Exterior lighting",
+            "Region" => "Market and region",
+            "ParkingAssistance" => "Parking assistance",
+            "LockingAndAlarm" => "Locking and alarm",
+            "Maintenance" => "Maintenance",
+            "WheelAndTyre" => "Wheels and tyres",
+            "VehicleSpeedPolicy" => "Speed limit policy",
+            "XC90 CEM service menu" => "XC90 CEM service menu",
+            _ => category
+        };
         return category switch
         {
             "AuxiliaryHeating" => "Дополнительный отопитель",
