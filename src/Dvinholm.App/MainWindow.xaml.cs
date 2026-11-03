@@ -2130,7 +2130,11 @@ public sealed partial class MainWindow : Window
     private void RefreshJ2534Devices(bool updateStatus)
     {
         var selectedPath = (J2534Devices.SelectedItem as J2534Device)?.DllPath;
-        var devices = J2534DeviceDiscovery.FindRegisteredDevices();
+        // Read both views and the physical PE headers. Never offer an x86
+        // vendor DLL as directly loadable by the unified x64 executable.
+        var audit = J2534DeviceDiscovery.AuditRegisteredDevices();
+        var devices = J2534DeviceDiscovery.SelectCompatible(
+            audit, Environment.Is64BitProcess);
 
         _j2534Devices.Clear();
         foreach (var device in devices)
@@ -2147,9 +2151,17 @@ public sealed partial class MainWindow : Window
 
         if (updateStatus)
         {
-            SetStatus(devices.Count == 0
-                ? "No registered J2534 DLL found. You can still enter the DLL path manually."
-                : $"Found {devices.Count} registered J2534 adapter(s). Select one or enter a DLL path manually.");
+            var otherBitness = audit.Count(entry =>
+                Environment.Is64BitProcess
+                    ? entry.Architecture == J2534PeArchitecture.X86
+                    : entry.Architecture == J2534PeArchitecture.X64);
+            var unsafeImages = audit.Count(entry =>
+                entry.Architecture is J2534PeArchitecture.Unknown or
+                    J2534PeArchitecture.Arm64);
+            var message = L(
+                $"Совместимых J2534 DLL: {devices.Count}. Несовместимая разрядность: {otherBitness}, неподдерживаемые/нечитаемые: {unsafeImages}. Для подключения выберите DLL нужной разрядности.",
+                $"Compatible J2534 DLLs: {devices.Count}. Wrong bitness: {otherBitness}, unsupported/unreadable: {unsafeImages}. Select a DLL matching this process.");
+            SetStatus(message);
         }
     }
 
