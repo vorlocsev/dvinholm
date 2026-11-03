@@ -876,11 +876,11 @@
                                                             <ColumnDefinition Width="*" />
                                                         </Grid.ColumnDefinitions>
                                                         <StackPanel Spacing="2">
-                                                            <TextBlock Text="Frames" FontSize="11" Foreground="#A7C9DD" />
+                                                            <TextBlock Text="{Binding FramesCaption}" FontSize="11" Foreground="#A7C9DD" />
                                                             <TextBlock Text="{Binding Frames}" TextWrapping="Wrap" FontSize="11" />
                                                         </StackPanel>
                                                         <StackPanel Grid.Column="1" Spacing="2">
-                                                            <TextBlock Text="Max bytes" FontSize="11" Foreground="#A7C9DD" />
+                                                            <TextBlock Text="{Binding MaxPayloadCaption}" FontSize="11" Foreground="#A7C9DD" />
                                                             <TextBlock Text="{Binding MaxPayload}" TextWrapping="Wrap" FontSize="11" />
                                                         </StackPanel>
                                                     </Grid>
