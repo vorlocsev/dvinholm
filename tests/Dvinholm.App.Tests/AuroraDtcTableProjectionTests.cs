@@ -44,8 +44,8 @@ public sealed class AuroraDtcTableProjectionTests
         Assert.Equal("0x010203", rows[0].Code);
         Assert.Equal("0x000001", rows[1].Code);
         Assert.All(rows, row => Assert.Equal(AuroraDtcTableProjection.MissingDescription, row.Description));
-        Assert.Contains("confirmed DTC", rows[0].Status);
-        Assert.Contains("test failed", rows[1].Status);
+        Assert.Contains("подтверждённый DTC", rows[0].Status);
+        Assert.Contains("тест не пройден", rows[1].Status);
     }
 
     [Fact]
@@ -54,9 +54,9 @@ public sealed class AuroraDtcTableProjectionTests
         var read = new UdsDtcReadResult(0x08, new[] { new UdsDtcRecord(0x123456, 0x09) });
         var row = Assert.Single(AuroraDtcTableProjection.Project(read));
         Assert.Contains("0x09", row.Status);
-        Assert.Contains("confirmed DTC", row.Status);
+        Assert.Contains("подтверждённый DTC", row.Status);
         Assert.Contains("неподдерживаемые биты 0x01", row.Status);
-        Assert.DoesNotContain("test failed", row.Status);
+        Assert.DoesNotContain("тест не пройден", row.Status);
         Assert.Contains("ECU-supported mask: 0x08", row.Details);
     }
 
