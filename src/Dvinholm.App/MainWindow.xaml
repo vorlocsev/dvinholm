@@ -283,6 +283,33 @@
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
+            <!-- Monitor commands stay reachable at compact widths without a
+                 horizontal-scrolling workspace or clipped RU/EN captions. -->
+            <VisualStateGroup x:Name="CanMonitorToolbarStates">
+                <VisualState x:Name="CanMonitorToolbarWide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="980" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="CanMonitorToolbarCompact">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="CanMonitorFilterColumn.Width" Value="*" />
+                        <Setter Target="CanMonitorClearColumn.Width" Value="*" />
+                        <Setter Target="CanMonitorHardwareColumn.Width" Value="*" />
+                        <Setter Target="CanMonitorCsvColumn.Width" Value="0" />
+                        <Setter Target="IdFilter.(Grid.ColumnSpan)" Value="3" />
+                        <Setter Target="CanMonitorClearButton.(Grid.Column)" Value="0" />
+                        <Setter Target="CanMonitorClearButton.(Grid.Row)" Value="1" />
+                        <Setter Target="HardwareFilterButton.(Grid.Column)" Value="1" />
+                        <Setter Target="HardwareFilterButton.(Grid.Row)" Value="1" />
+                        <Setter Target="CanMonitorCsvButton.(Grid.Column)" Value="2" />
+                        <Setter Target="CanMonitorCsvButton.(Grid.Row)" Value="1" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
         <Grid.Resources>
             <LinearGradientBrush x:Key="AuroraPanelGradient" StartPoint="0,0" EndPoint="1,1">
@@ -1171,27 +1198,40 @@
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                     </Grid>
-                                    <Grid ColumnSpacing="16" RowSpacing="16">
+                                    <Grid x:Name="CanMonitorFilterToolbar" ColumnSpacing="10" RowSpacing="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition x:Name="CanMonitorFilterColumn" Width="2*" />
+                                            <ColumnDefinition x:Name="CanMonitorClearColumn" Width="*" />
+                                            <ColumnDefinition x:Name="CanMonitorHardwareColumn" Width="*" />
+                                            <ColumnDefinition x:Name="CanMonitorCsvColumn" Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="IdFilter" Header="ID filter (hex)" PlaceholderText="7E0,7E8" TextChanged="Filter_Changed" Grid.Column="0" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="CanMonitorClearButton" Grid.Column="1" Content="Clear" Click="Clear_Click" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="HardwareFilterButton" Content="Apply HW filter" Click="HardwareFilter_Click" VerticalAlignment="Bottom" IsEnabled="False" Grid.Column="2" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="CanMonitorCsvButton" Grid.Column="3" Content="CSV log" Click="Csv_Click" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                    </Grid>
+                                    <Grid x:Name="CanMonitorReviewActions" ColumnSpacing="10">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBox x:Name="IdFilter" Header="ID filter (hex)" PlaceholderText="7E0,7E8" TextChanged="Filter_Changed" Grid.Column="0" />
-                                        <Button x:Name="CanMonitorClearButton" Grid.Column="1" Content="Clear" Click="Clear_Click" VerticalAlignment="Bottom" />
-                                        <Button x:Name="HardwareFilterButton" Content="Apply HW filter" Click="HardwareFilter_Click" VerticalAlignment="Bottom" IsEnabled="False" Grid.Column="2" />
-                                        <Button x:Name="CanMonitorCsvButton" Grid.Column="3" Content="CSV log" Click="Csv_Click" VerticalAlignment="Bottom" />
+                                        <Button x:Name="CanRxSummaryButton" Grid.Column="0" Content="RX summary" Click="CanRxSummary_Click" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource AuroraWrapCaption}" ToolTipService.ToolTip="Review buffered CAN RX ID/DLC counts without frame data. Copy only by explicit approval. No diagnostic requests." />
+                                        <Button x:Name="CanTraceInspectButton" Grid.Column="1" Content="Inspect trace" Click="InspectCanCsv_Click" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource AuroraWrapCaption}" ToolTipService.ToolTip="Offline review of a selected Dvinholm CAN CSV or metadata-only J2534 JSONL. Never connects or changes the monitor. Sensitive identifiers and payload stay hidden." />
                                     </Grid>
-                                    <StackPanel Orientation="Horizontal" Spacing="16">
-                                        <Button x:Name="CanRxSummaryButton" Content="RX summary" Click="CanRxSummary_Click" ToolTipService.ToolTip="Review buffered CAN RX ID/DLC counts without frame data. Copy only by explicit approval. No diagnostic requests." />
-                                        <Button x:Name="CanTraceInspectButton" Content="Inspect trace" Click="InspectCanCsv_Click" ToolTipService.ToolTip="Offline review of a selected Dvinholm CAN CSV or metadata-only J2534 JSONL. Never connects or changes the monitor. Sensitive identifiers and payload stay hidden." />
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Spacing="24">
-                                        <TextBlock x:Name="FrameRateText" VerticalAlignment="Center" Text="0 frames/s" />
-                                        <TextBlock x:Name="FrameCountText" VerticalAlignment="Center" Text="0 shown / 0 rx" HorizontalAlignment="Right" />
-                                        <TextBlock x:Name="DroppedFrameText" VerticalAlignment="Center" Text="0 dropped" HorizontalAlignment="Right" />
-                                    </StackPanel>
+                                    <Grid x:Name="CanMonitorCounters" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="FrameRateText" Grid.Column="0" VerticalAlignment="Center" Text="0 frames/s" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="FrameCountText" Grid.Column="1" VerticalAlignment="Center" Text="0 shown / 0 rx" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="DroppedFrameText" Grid.Column="2" VerticalAlignment="Center" Text="0 dropped" TextWrapping="Wrap" />
+                                    </Grid>
                                     <ListView x:Name="FramesView" SelectionMode="None" Height="380">
                                         <ListView.Header>
                                             <Grid ColumnSpacing="12">
