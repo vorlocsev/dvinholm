@@ -36,6 +36,11 @@
                         <Setter Target="WorkspaceHeaderActions.(Grid.Row)" Value="1" />
                         <Setter Target="WorkspaceHeaderActions.(Grid.Column)" Value="0" />
                         <Setter Target="WorkspaceHeaderActions.HorizontalAlignment" Value="Left" />
+                        <Setter Target="WorkspaceHeaderActions.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="WorkspaceHeaderActions.Orientation" Value="Horizontal" />
+                        <Setter Target="WorkspaceHeaderActions.Margin" Value="16,0,16,10" />
+                        <Setter Target="WorkspaceHeaderActions.Spacing" Value="8" />
+                        <Setter Target="WorkspaceHeaderCopy.Margin" Value="16,10,16,0" />
                         <Setter Target="WorkspacePageContainer.Padding" Value="12,0,12,16" />
                         <Setter Target="ShellStatusBar.Padding" Value="12,10" />
                     </VisualState.Setters>
@@ -337,7 +342,7 @@
                             </Viewbox>
                         </Grid>
                     </Border>
-                    <StackPanel Spacing="7" Margin="16,13,0,12" VerticalAlignment="Center">
+                    <StackPanel x:Name="WorkspaceHeaderCopy" Spacing="7" Margin="16,13,0,12" VerticalAlignment="Center">
                         <TextBlock x:Name="WorkspaceScopeLabel" Text="DVINHOLM / РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" CharacterSpacing="120" Foreground="#65BFF2" />
                         <TextBlock x:Name="WorkspaceTitle" FontSize="30" FontWeight="SemiBold"
                                    Foreground="#F5FAFF" />
