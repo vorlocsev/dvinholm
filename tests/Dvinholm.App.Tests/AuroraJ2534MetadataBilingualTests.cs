@@ -132,6 +132,11 @@ public sealed class AuroraJ2534MetadataBilingualTests
         Assert.True(start >= 0 && end > start);
         var method = source[start..end];
         Assert.Equal(2, method.Split("_adapterMetadataConnected = false;").Length - 1);
+        var disconnect = method[..method.IndexOf("if (string.IsNullOrWhiteSpace(DllPath.Text))",
+            StringComparison.Ordinal)];
+        Assert.True(disconnect.IndexOf("_adapterMetadataConnected = false;", StringComparison.Ordinal) <
+            disconnect.IndexOf("await monitorTask;", StringComparison.Ordinal),
+            "Disconnection must invalidate vendor metadata before asynchronous monitor teardown.");
         Assert.Equal(2, method.Split(
             "J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish)").Length - 1);
         Assert.Contains("_adapterMetadataConnected = true;", method);
