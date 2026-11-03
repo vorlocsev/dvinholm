@@ -139,6 +139,8 @@ jobs:
             'FullyQualifiedName~AuroraConnectionUpdatesVisualParityTests'
             'FullyQualifiedName~AuroraCemVisualParityTests'
             'FullyQualifiedName~AuroraEcuDtcVisualParityTests'
+            'FullyQualifiedName~AuroraDtcTableProjectionTests'
+            'FullyQualifiedName~UdsDtcStatusFormatterTests'
             'FullyQualifiedName~AuroraLiveScreenshotCaptureContracts'
             'FullyQualifiedName~AuroraCompactHeaderParityTests'
             'FullyQualifiedName~AuroraScreenshotIdentityContracts'
