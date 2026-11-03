@@ -20,6 +20,20 @@ For English, select **English** inside Dvinholm, repeat with `-Language en` and 
 
 Manually compare the actual PNG images against the approved six-page Aurora reference for banner cropping, brand position, glass-card spacing, first-fold density, readable captions, disabled buttons, panel reflow, 100%/125% display scale, and RU/EN. A screenshot alone does **not** prove visual equivalence, data correctness or J2534 compatibility. Captures remain local until manually redacted and approved for sharing. All screenshot and pixel-comparison acceptance is **NOT RUN** until actual Windows outputs are reviewed.
 
+## Optional private RU/EN side-by-side review (NOT RUN)
+
+After running the two screenshot captures, place their **existing** outputs in separate folders, for example `C:\Dvinholm-AuroraReview\ru` and `C:\Dvinholm-AuroraReview\en`. Use `-OutputDirectory C:\Dvinholm-AuroraReview\ru` for Russian capture, and similarly `...\en` for English. The exact-head x64 **PR review artifact** includes `eng/Review-UnifiedAuroraScreenshots.ps1` alongside the capture helper, separate from the production app ZIP.
+
+Run the new report tool on the same private interactive Windows desktop after reviewing its source and confirming that **neither set contains private VIN, PIN, file paths or other secrets**:
+
+```powershell
+powershell.exe -NoProfile -File .\eng\Review-UnifiedAuroraScreenshots.ps1 -CaptureRoot C:\Dvinholm-AuroraReview -IConfirmPrivateOfflineReview
+```
+
+Open `C:\Dvinholm-AuroraReview\Aurora-local-review.html` in a local browser. It displays every approved page at 640, 800, 980, 1280 and 1440 client DIP, with **RU and EN side-by-side**. It validates language/page manifest evidence, unique page/width records, PNG signature and recorded dimensions, DPI/width tolerance and operator-declared commit consistency before creating a report. Missing screenshots are explicitly marked **NOT RUN**, and even an existing screenshot is **not** marked a visual PASS. The tool contains no upload action, JavaScript, or image embedding: the HTML links to the existing local `ru/` and `en/` PNG files without copying them. The report and image folders **must remain outside the Git repository** and must not be uploaded before privacy review. A full set contains 60 local images; fewer images are an incomplete review, not a passing result.
+
+**The original user-approved raster remains necessary** to judge composition, lighting, car silhouette and proportions. The repository wireframe SVG is an approximation, not the visual acceptance target. The local report is a comparison aid, not a screenshot generator or automated pixel matching test. Both the screenshot capture and this report remain **NOT RUN** until exercised on a real Windows desktop.
+
 ## Eight bounded checks (record PASS / FAIL / NOT RUN)
 
 1. **Package and executable.** Confirm the reviewed x64 ZIP passes published SHA-256 and extraction checks. Run from a clean user-writable directory, not from inside the ZIP. Confirm there is one primary `Dvinholm.exe` window; the old separate launcher is not required in this new x64 pilot. This is not a certificate-signing test.
