@@ -154,6 +154,7 @@ jobs:
             'FullyQualifiedName~AuroraPrimaryViewportClarityTests'
             'FullyQualifiedName~AuroraMonitorResultCaptionLayoutTests'
             'FullyQualifiedName~AuroraCompactEcuProfileLayoutTests'
+            'FullyQualifiedName~EcuProfileActionLayoutTests'
             'FullyQualifiedName~CanMonitorCounterLocalizationTests'
             'FullyQualifiedName~CanHardwareFilterCaptionTests'
             'FullyQualifiedName~UdsReadinessCaptionLocalizationTests'
