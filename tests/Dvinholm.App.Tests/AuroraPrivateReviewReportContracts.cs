@@ -84,6 +84,8 @@ public sealed class AuroraPrivateReviewReportContracts
         Assert.Contains("$pixelWidth -ne [int]$entry.actualWidthPx", script);
         Assert.Contains("$pixelHeight -ne [int]$entry.actualHeightPx", script);
         Assert.Contains("PNG dimensions do not match", script);
+        Assert.Contains("[int]$entry.windowDpi -lt 96", script);
+        Assert.Contains("[Math]::Abs([double]$entry.measuredWidthDip - $width) -gt 5", script);
     }
 
     [Fact]
@@ -94,6 +96,7 @@ public sealed class AuroraPrivateReviewReportContracts
         Assert.Contains("^[0-9a-fA-F]{40}$", script);
         Assert.Contains("$declaredSha -cne $sha", script);
         Assert.Contains("RU and EN captures refer to different operator-declared commits.", script);
+        Assert.Contains("Some screenshots lack the operator-declared commit", script);
         Assert.Contains("Operator-declared source commit (not authenticated)", script);
         Assert.Contains("No source commit authenticated or operator-declared.", script);
     }
