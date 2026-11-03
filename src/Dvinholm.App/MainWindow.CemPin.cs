@@ -72,6 +72,11 @@ public sealed partial class MainWindow
         if (CemIdentityEvidencePinText is null ||
             CemIdentityEvidenceConfigText is null)
             return;
+        CemPinIdentitySectionTitle.Text = L(
+            "01  ·  Идентификация CEM", "01  ·  CEM identification");
+        CemPinIdentitySectionIntro.Text = L(
+            "Идентификация CEM пока не подтверждена. Локальная проверка не обращается к автомобилю; экспериментальное чтение доступно только в Development.",
+            "CEM identity is not yet verified. Local inspection does not contact the vehicle; experimental reading is Development-only.");
 #if DVINHOLM_DEVELOPMENT_FEATURES
         uint? observed = _cemIdentity?.PartNumber;
         var guardCurrent = _cemIdentityGuard?.IsCurrent == true;
