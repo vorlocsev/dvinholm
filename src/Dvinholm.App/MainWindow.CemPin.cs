@@ -11,6 +11,56 @@ public sealed partial class MainWindow
     private bool _cemPinLoadedFromStore;
     private static CemPinStore OpenCemPinStore() => new(Path.Combine(DvinholmUserDataDirectory.Current, "cem-pin-vault"));
 #endif
+    private bool _cemPartPrerequisitesInspected;
+
+    private CemReadOnlyPrerequisiteAssessment InspectCemReadOnlyPrerequisites()
+    {
+        // No CAN/J2534 calls. This is just a momentary snapshot of the
+        // session state already owned by MainWindow; no PIN material is used.
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        var safeResearchContext = !_closing && _demoTimer is null &&
+            !DvinholmUserDataDirectory.IsAcceptanceLaunch;
+#else
+        // The experimental CEM P/N route is excluded from Stable builds.
+        const bool safeResearchContext = false;
+#endif
+        return CemReadOnlyPrerequisiteReport.Assess(new(
+            Connected: _connected && _session.IsConnected,
+            Baud500K: _session.ConnectedBaudRate == 500_000,
+            Extended29Bit: _session.ConnectedExtended == true,
+            HardwareCanFilters: _session.AdapterCapabilities?.HardwareCanFilters == true,
+            NoUserFilter: _activeHardwareFilterId is null,
+            MonitorStopped: _monitorTask is null,
+            DiagnosticGateIdle: _udsGate.CurrentCount != 0 && _discoveryCts is null,
+            SafeResearchContext: safeResearchContext));
+    }
+
+    private void CheckCemPrerequisites_Click(object sender, RoutedEventArgs e)
+    {
+        if (_closing) return;
+        _cemPartPrerequisitesInspected = true;
+        RefreshCemPrerequisitePresentation();
+        CemPartPrerequisiteExpander.IsExpanded = true;
+        // Not even a read-only CEM request is sent by this callback.
+    }
+
+    private void RefreshCemPrerequisitePresentation()
+    {
+        if (CemPartPrerequisiteButton is null) return;
+        CemPartPrerequisiteButton.Content = L(
+            "Проверить условия локально", "Inspect prerequisites locally");
+        ToolTipService.SetToolTip(CemPartPrerequisiteButton, L(
+            "Только состояние приложения, без диагностических запросов.",
+            "Application state only; no diagnostic requests."));
+        CemPartPrerequisiteExpander.Header = L(
+            "Результат проверки (без запросов)", "Preflight result (no requests)");
+        CemPartPrerequisiteText.Text = _cemPartPrerequisitesInspected
+            ? CemReadOnlyPrerequisiteReport.Format(
+                InspectCemReadOnlyPrerequisites(), _unifiedEnglish)
+            : L("Нажмите «Проверить условия локально». Это не подтверждает доступ к CEM.",
+                "Select local prerequisite inspection. This does not establish CEM access.");
+    }
+
     private void CemPinRangeChanged(object sender, TextChangedEventArgs e)
     {
 #if DVINHOLM_DEVELOPMENT_FEATURES
