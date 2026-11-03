@@ -294,6 +294,8 @@ public sealed partial class MainWindow : Window
             ShellConnectionText.Text = _connected && _session.IsConnected
                 ? L("J2534 подключён", "J2534 connected")
                 : L("Не подключено", "Disconnected");
+        RefreshCemIdentityEvidencePresentation();
+        RefreshCemPrerequisitePresentation();
         AuroraLanding.UpdateProfile((ProfileSelector.SelectedItem as EcuProfile)?.Name);
 #if DVINHOLM_DEVELOPMENT_FEATURES
         RefreshCemPartReadAvailability();
@@ -2906,6 +2908,7 @@ public sealed partial class MainWindow : Window
             var identityContext = _cemIdentityContext;
             _cemIdentityGuard = CemPinSessionGuard.Capture(_session, identityContext,
                 () => !Volatile.Read(ref _closing) ? Volatile.Read(ref _cemIdentityContext) : null, true);
+            RefreshCemIdentityEvidencePresentation();
             // P/N and response payload must not enter the Aurora activity feed.
             SetStatus(CemText("Чтение номера CEM завершено (экспериментально).", "CEM part-number read completed (experimental)."));
         }
