@@ -227,6 +227,17 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - Eight offline synthetic test groups cover missing observation; current unattributed observation; expired guard; disconnected session; Stable/offline denial; boundary part-number shapes; RU/EN redaction and non-authorization; malformed state refusal and both-screen source contracts (no transport calls).
 - Stage-26 x64 pilot [#41556424762](https://github.com/vorlocsev/dvinholm/actions/runs/41556424762) **passed**; Stage-26 full CI [#41556424862](https://github.com/vorlocsev/dvinholm/actions/runs/41556424862) was **cancelled on newer changes**, not certified green. Stage 27 requires a successful x64 self-contained workflow and complete regression on its final head, plus installed Windows UI and physical J2534 acceptance before any merge or release. Production update installation remains blocked, no signing key is provisioned, Stable and Virtual Car unchanged.
 
+
+## Stage 28: x64 J2534 driver audit details and Windows GUI acceptance
+
+- The **Connection** workspace now exposes a collapsed, read-only **Driver architecture audit** next to the connected-adapter metadata. It reuses the existing two-registry-view + PE-header scan upon Refresh (including startup scan) and displays bilingual **RU/EN** compatibility reasons. The scanner never loads vendor DLLs, opens J2534 devices, or touches a vehicle.
+- The bounded `J2534AdapterAuditReport` categorizes registered DLL files as matching PE+registry architecture, wrong bitness, wrong registry view, unsupported ARM64 or unreadable/unknown header. Counts cover at most **256** scanned entries, with at most **16** displayed rows; extra results are visibly marked truncated. Names are sanitized; private DLL paths and registry keys are not rendered.
+- Even a matching x64 DLL is explicitly **not certified** as a working DiCE/Mongoose cable, verified Windows driver, protocol implementation, or physical adapter. It does not grant auto-connection, PIN operations, CEM configuration or any other vehicle capability.
+- Eight offline groups cover empty registries; strict x64 selection; old x86 selection; wrong registry view; ARM64 and damaged headers; sensitive path/name redaction; bounded output; malformed/forged state and UI/localization integration.
+- A separate manual-acceptance sheet at `docs/acceptance/UNIFIED-WINUI3-X64-MANUAL-SMOKE.md` lists **eight Windows checks**: portable package, clean launch, six screens, language/updater UX, registry audit, bitness rejection, CEM safety and lifecycle. The checklist is **NOT RUN** until an operator actually executes it on Windows.
+- Previous Stage-27 x64 pilot [#41557178457](https://github.com/vorlocsev/dvinholm/actions/runs/41557178457) passed; complete CI [#41557178498](https://github.com/vorlocsev/dvinholm/actions/runs/41557178498) was cancelled on newer pushes. All Stage-28 code must pass both workflows on the latest commit before acceptance or merge.
+- No separate launcher returned, no project Settings tab, and no Stable, Virtual Car, public release, signed updater installation or physical J2534/CEM procedures were changed.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
