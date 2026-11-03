@@ -370,4 +370,87 @@ public sealed class AuroraPrimaryViewportClarityTests
             .Count(e => e.Name.LocalName == "Button"));
         Assert.Null(Named(doc, "CanMonitorCsvButton").Attribute("IsEnabled"));
     }
+
+    // Stage 75: five live monitor column labels plus three read-only
+    // localization guards. Source tests, not native screenshot acceptance.
+    [Theory]
+    [InlineData("CanMonitorTimestampHeader", "0", "Время (мс)", "Timestamp (ms)")]
+    [InlineData("CanMonitorIdHeader", "1", "ID", "ID")]
+    [InlineData("CanMonitorTypeHeader", "2", "Тип", "Type")]
+    [InlineData("CanMonitorDlcHeader", "3", "DLC", "DLC")]
+    [InlineData("CanMonitorDataHeader", "4", "Данные", "Data")]
+    public void CanMonitorTableHeaderUsesSelectedLanguage(
+        string id, string column, string ru, string en)
+    {
+        var doc = Layout();
+        var table = Named(doc, "FramesView");
+        var header = table.Elements().Single(e => e.Name.LocalName == "ListView.Header")
+            .Elements().Single(e => e.Name.LocalName == "Grid");
+        var label = Named(doc, id);
+        Assert.Contains(label, header.Elements());
+        Assert.Equal(column, (string?)label.Attribute("Grid.Column") ?? "0");
+        Assert.Equal("Wrap", (string?)label.Attribute("TextWrapping"));
+        Assert.Null(label.Attribute("TextTrimming"));
+        var source = Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+        Assert.Contains(id + ".Text =", source);
+        if (ru == en)
+            Assert.Contains(id + ".Text = \"" + ru + "\";", source);
+        else
+            Assert.Contains(id + ".Text = L(\"" + ru + "\", \"" + en + "\");", source);
+    }
+
+    [Fact]
+    public void CanMonitorLocalizedHeadersKeepFiveRealFrameBindingsAndMatchingWidths()
+    {
+        var doc = Layout();
+        var table = Named(doc, "FramesView");
+        var header = table.Elements().Single(e => e.Name.LocalName == "ListView.Header")
+            .Elements().Single(e => e.Name.LocalName == "Grid");
+        var row = table.Elements().Single(e => e.Name.LocalName == "ListView.ItemTemplate")
+            .Descendants().Single(e => e.Name.LocalName == "Grid");
+        string[] Columns(System.Xml.Linq.XElement grid) => grid.Elements()
+            .Single(e => e.Name.LocalName == "Grid.ColumnDefinitions")
+            .Elements().Select(e => (string)e.Attribute("Width")!).ToArray();
+        Assert.Equal(new[] { "130", "90", "80", "55", "*" }, Columns(header));
+        Assert.Equal(Columns(header), Columns(row));
+        foreach (var property in new[] { "Timestamp", "Id", "Type", "Dlc", "Data" })
+            Assert.Contains("{Binding " + property + "}", row.ToString());
+        Assert.Equal("None", (string?)table.Attribute("SelectionMode"));
+        Assert.Contains(Named(doc, "CanMonitorPage"), table.Ancestors());
+    }
+
+    [Fact]
+    public void MonitorHeaderLocaleProjectionDoesNotChangeBusOrClearEvidence()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+        var start = source.IndexOf("CanMonitorTimestampHeader.Text =", StringComparison.Ordinal);
+        var end = source.IndexOf("IdFilter.Header =", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var captions = source[start..end];
+        foreach (var id in new[] { "CanMonitorTimestampHeader", "CanMonitorIdHeader",
+            "CanMonitorTypeHeader", "CanMonitorDlcHeader", "CanMonitorDataHeader" })
+            Assert.Contains(id + ".Text =", captions);
+        Assert.DoesNotContain("_session.", captions);
+        Assert.DoesNotContain("Start_Click(", captions);
+        Assert.DoesNotContain("Clear_Click(", captions);
+        Assert.DoesNotContain("_frames.Clear()", captions);
+        var locale = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
+        Assert.Contains("ApplyAuroraPrimaryScreenLocalization();", locale);
+    }
+
+    [Fact]
+    public void MonitorColumnTranslationDoesNotUnlockRealHardwareOrExtraRoutes()
+    {
+        var doc = Layout();
+        Assert.Equal("False", (string?)Named(doc, "StartButton").Attribute("IsEnabled"));
+        Assert.Equal("False", (string?)Named(doc, "HardwareFilterButton")
+            .Attribute("IsEnabled"));
+        Assert.Equal("Start_Click", (string?)Named(doc, "StartButton").Attribute("Click"));
+        Assert.Equal("Filter_Changed", (string?)Named(doc, "IdFilter")
+            .Attribute("TextChanged"));
+        Assert.Equal("Disabled", (string?)Named(doc, "WorkspaceScroll")
+            .Attribute("HorizontalScrollBarVisibility"));
+        Assert.Equal(6, Named(doc, "SidebarNavPanel").Elements()
+            .Count(e => e.Name.LocalName == "Button"));
+    }
 }
