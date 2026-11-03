@@ -636,8 +636,8 @@
                             </Border>
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="Чтение данных" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="VIN и диагностические параметры выбранного блока. Ошибки вынесены на отдельный экран." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="DiagnosticsReadHeading" Text="Чтение данных" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="DiagnosticsReadIntro" Text="VIN и диагностические параметры выбранного блока. Ошибки вынесены на отдельный экран." Foreground="#9EB8CC" />
                                     <Grid ColumnSpacing="16" RowSpacing="16">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -890,7 +890,7 @@
                         <Border x:Name="DiagnosticResultsCard" Visibility="Collapsed" Style="{StaticResource AuroraCard}">
                             <StackPanel Spacing="18">
                                 <TextBlock x:Name="DiagnosticResultHeading" Text="Результат операции" FontSize="20" FontWeight="SemiBold" />
-                                <TextBlock Text="Данные отображаются локально. Проверьте содержимое перед передачей." Foreground="#9EB8CC" />
+                                <TextBlock x:Name="DiagnosticResultIntro" Text="Данные отображаются локально. Проверьте содержимое перед передачей." Foreground="#9EB8CC" />
                                 <StackPanel x:Name="StatusPanel" Spacing="6">
                                     <Expander x:Name="DiagnosticResultExpander" Header="Diagnostic read result (VIN / DID / DTC, review before sharing)" IsExpanded="False">
                                         <ScrollViewer MaxHeight="170" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
