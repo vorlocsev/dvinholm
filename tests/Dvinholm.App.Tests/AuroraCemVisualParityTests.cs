@@ -168,7 +168,7 @@ public sealed class AuroraCemVisualParityTests
             "CemConfigActionsHeading" })
             Assert.Contains(control + ".", locale);
         Assert.Contains("ApplyAuroraCemConfigLocalization();",
-            Source("src/Dvinholm.App/MainWindow.AuroraLabels.cs"));
+            Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs"));
         Assert.DoesNotContain("PassThru", locale);
     }
 }
