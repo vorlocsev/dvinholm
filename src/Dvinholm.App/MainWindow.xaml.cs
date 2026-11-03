@@ -3262,6 +3262,11 @@ public sealed partial class MainWindow : Window
                 return;
             }
             _udsGate.Release();
+            // Invalidate local vendor metadata before awaiting monitor teardown:
+            // a RU/EN toggle during that await must not restore stale details.
+            _adapterMetadataConnected = false;
+            AdapterMetadataText.Text =
+                J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);
             // StopMonitor requests cancellation and waits briefly, but retains
             // the task if its worker has not fully unwound. Do not dispose the
             // session/bus until that subscriber has exited.
@@ -3280,8 +3285,6 @@ public sealed partial class MainWindow : Window
             }
 
             ClearDiagnosticReadResult();
-            _adapterMetadataConnected = false;
-            AdapterMetadataText.Text = J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);
             ConnectButton.IsEnabled = false;
             HardwareFilterButton.IsEnabled = false;
             StartButton.IsEnabled = false;
