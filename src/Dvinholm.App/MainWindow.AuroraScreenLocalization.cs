@@ -127,6 +127,10 @@ public sealed partial class MainWindow
         ConnectionPageIntro.Text = L(
             "Выберите установленный J2534-адаптер и параметры канала.",
             "Select a registered J2534 adapter and verify the bus parameters.");
+        ConnectionBusHeading.Text = L("Параметры CAN", "CAN parameters");
+        ConnectionBusEvidenceNote.Text = L(
+            "Скорость и формат CAN должны соответствовать проверенному автомобилю.",
+            "CAN speed and addressing must match a verified vehicle and network.");
         ConnectionDriverHeading.Text = L("Сведения об адаптере", "Adapter information");
         ConnectionDriverIntro.Text = L("Информация текущего подключения.",
             "Information from the current connection.");
