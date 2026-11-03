@@ -30,7 +30,9 @@
                         <Setter Target="ShellNavEcuLabel.Visibility" Value="Collapsed" />
                         <Setter Target="ShellNavConnectionLabel.Visibility" Value="Collapsed" />
                         <Setter Target="ShellNavUpdatesLabel.Visibility" Value="Collapsed" />
-                        <Setter Target="WorkspaceHeaderGrid.Margin" Value="12,12,12,12" />
+                        <Setter Target="WorkspaceHeaderGrid.Margin" Value="12,10,12,10" />
+                        <Setter Target="WorkspaceHeaderGrid.MinHeight" Value="116" />
+                        <Setter Target="SidebarAuroraRibbon.Opacity" Value="0.12" />
                         <Setter Target="WorkspaceHeaderGrid.RowSpacing" Value="8" />
                         <Setter Target="WorkspaceTitle.FontSize" Value="23" />
                         <Setter Target="WorkspaceHeaderActions.(Grid.Row)" Value="1" />
@@ -210,8 +212,8 @@
                 <Setter Property="BorderBrush" Value="#23445F" />
                 <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="CornerRadius" Value="12" />
-                <Setter Property="Padding" Value="20" />
-                <Setter Property="Margin" Value="0,0,0,16" />
+                <Setter Property="Padding" Value="16" />
+                <Setter Property="Margin" Value="0,0,0,12" />
             </Style>
             <DataTemplate x:Key="AuroraWrapCaption">
                 <TextBlock Text="{Binding}" TextWrapping="Wrap" TextAlignment="Center" />
@@ -227,12 +229,35 @@
             <ColumnDefinition x:Name="ShellSidebarColumn" Width="216" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <Border Background="#0A2038" BorderBrush="#244B73" BorderThickness="0,0,1,0">
+        <Border x:Name="AuroraSidebarSurface" Background="#0A2038" BorderBrush="#244B73" BorderThickness="0,0,1,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
+                <!-- Northern-light atmosphere behind navigation, never CAN state or a hit target. -->
+                <Border x:Name="SidebarAuroraBackdrop" Grid.RowSpan="2" IsHitTestVisible="False">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#091A2F" Offset="0" />
+                            <GradientStop Color="#102744" Offset="0.48" />
+                            <GradientStop Color="#1D1A3C" Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+                <Viewbox x:Name="SidebarAuroraRibbon" Grid.RowSpan="2" Height="480"
+                         HorizontalAlignment="Stretch" VerticalAlignment="Top" Stretch="Fill"
+                         Opacity="0.24" IsHitTestVisible="False">
+                    <Canvas Width="216" Height="480">
+                        <Path Data="M-44,14 C42,41 77,94 130,148 C187,205 182,273 267,333"
+                              Stroke="#15DDBD" StrokeThickness="24" StrokeStartLineCap="Round"
+                              Fill="Transparent" Opacity="0.38" />
+                        <Path Data="M-37,80 C53,108 69,164 149,226 C198,273 203,333 266,380"
+                              Stroke="#3EB5EC" StrokeThickness="17" Fill="Transparent" Opacity="0.32" />
+                        <Path Data="M-31,135 C37,173 82,211 145,271 C199,321 197,400 248,461"
+                              Stroke="#9B81EB" StrokeThickness="20" Fill="Transparent" Opacity="0.24" />
+                    </Canvas>
+                </Viewbox>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="SidebarNavPanel" Padding="16,24" Spacing="5">
                         <!-- The approved Techno-North No.9 gull / gear artwork, not a temporary glyph. -->
@@ -300,7 +325,7 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Grid x:Name="WorkspaceHeaderGrid" Margin="28,16,28,16" ColumnSpacing="20" MinHeight="150">
+                <Grid x:Name="WorkspaceHeaderGrid" Margin="24,12,24,12" ColumnSpacing="20" MinHeight="132">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -367,7 +392,7 @@
                     </StackPanel>
                 </Grid>
                 <ScrollViewer x:Name="WorkspaceScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel x:Name="WorkspacePageContainer" Padding="28,0,28,24" MaxWidth="1200" HorizontalAlignment="Stretch">
+                    <StackPanel x:Name="WorkspacePageContainer" Padding="24,0,24,20" MaxWidth="1200" HorizontalAlignment="Stretch">
                         <StackPanel x:Name="UnifiedUpdatesPage" Visibility="Collapsed" Spacing="12">
                             <!-- Three approved review panels: installed version | channel | verified check.
                                  Does not imply install or trusted release availability. -->
