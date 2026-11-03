@@ -130,4 +130,53 @@ public sealed class AuroraPrivateReviewReportContracts
         Assert.Contains("eng/Review-UnifiedAuroraScreenshots.ps1", workflow);
         Assert.DoesNotContain("powershell.exe -NoProfile -File eng/Review-", workflow);
     }
+
+    // Stage 68: six manual rubric evidence checks and two DPI provenance gates.
+    // These only validate the offline review script, not actual screen pixels.
+    [Theory]
+    [InlineData("Banner / emblem / Aurora colors versus approved image")]
+    [InlineData("Exactly six navigation routes and sidebar alignment")]
+    [InlineData("Connection: real adapter, CAN speed and session state")]
+    [InlineData("Updates: real version, channel and safe non-installable actions")]
+    [InlineData("CEM PIN/configuration: honest evidence and disabled write actions")]
+    [InlineData("DTC/ECU: table captions, schematic disclaimers and wrapping")]
+    public void ReviewChecklistIncludesAllPrimaryVisualRiskAreas(string criterion)
+    {
+        var script = Script();
+        Assert.Contains(criterion, script);
+        Assert.Contains("Manual visual acceptance checklist (all unreviewed)", script);
+        Assert.Contains("NOT RUN until human comparison", script);
+        Assert.DoesNotContain("visual PASS</li>", script);
+    }
+
+    [Fact]
+    public void MixedWindowDpiWithinOneLanguageMustFailBeforeReportCreation()
+    {
+        var script = Script();
+        Assert.Contains("$observedDpi = $null", script);
+        Assert.Contains("$observedDpi -ne $dpi", script);
+        Assert.Contains("Mixed window DPI within $lang captures.", script);
+        Assert.Contains("$manifestDpi[$lang] = $dpis", script);
+        Assert.True(script.IndexOf("Mixed window DPI within $lang captures.",
+                StringComparison.Ordinal) <
+            script.IndexOf("$html = New-Object", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void CrossLanguageDpiMismatchRefusesAndCaptionsShowMeasuredScale()
+    {
+        var script = Script();
+        Assert.Contains("$manifestDpi['ru'].ContainsKey($key)", script);
+        Assert.Contains("$manifestDpi['en'].ContainsKey($key)", script);
+        Assert.Contains("$manifestDpi['ru'][$key] -ne $manifestDpi['en'][$key]", script);
+        Assert.Contains("RU/EN window DPI mismatch for $key.", script);
+        Assert.Contains("$dpi = $manifestDpi[$lang][$key]", script);
+        Assert.Contains("$scale = [Math]::Round($dpi * 100.0 / 96.0)", script);
+        Assert.Contains("Recorded DPI describes the actual Dvinholm window", script);
+        Assert.True(script.IndexOf("RU/EN window DPI mismatch for $key.",
+                StringComparison.Ordinal) <
+            script.IndexOf("[IO.File]::WriteAllText($output", StringComparison.Ordinal));
+        Assert.DoesNotContain("Invoke-WebRequest", script);
+        Assert.DoesNotContain("Copy-Item", script);
+    }
 }
