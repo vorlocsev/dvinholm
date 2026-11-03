@@ -149,6 +149,7 @@ jobs:
             'FullyQualifiedName~AuroraPrivateReviewReportContracts'
             'FullyQualifiedName~AuroraReviewEvidenceConsistencyTests'
             'FullyQualifiedName~AuroraPrimaryViewportClarityTests'
+            'FullyQualifiedName~CanMonitorCounterLocalizationTests'
             'FullyQualifiedName~AuroraTightViewportHeaderTests'
             'FullyQualifiedName~AuroraWideHeaderActionLayoutTests'
             'FullyQualifiedName~AuroraUpdatesFirstFoldFocusTests'
