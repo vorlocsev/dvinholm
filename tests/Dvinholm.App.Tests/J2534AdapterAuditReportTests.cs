@@ -147,5 +147,34 @@ public sealed class J2534AdapterAuditReportTests
                 }));
             Assert.Contains("fixture", J2534AdapterAuditReport.Format(result, false, true));
         }
+
+        static string ReadSource(string path)
+        {
+            for (DirectoryInfo? folder = new(AppContext.BaseDirectory);
+                 folder is not null; folder = folder.Parent)
+            {
+                var candidate = Path.Combine(folder.FullName,
+                    path.Replace('/', Path.DirectorySeparatorChar));
+                if (File.Exists(candidate)) return File.ReadAllText(candidate);
+            }
+            throw new FileNotFoundException(path);
+        }
+
+        var xaml = ReadSource("src/Dvinholm.App/MainWindow.xaml");
+        var window = ReadSource("src/Dvinholm.App/MainWindow.xaml.cs");
+        var localization = ReadSource("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
+        Assert.Contains("x:Name=\"J2534ArchitectureAuditExpander\"", xaml);
+        Assert.Contains("x:Name=\"J2534ArchitectureAuditText\"", xaml);
+        Assert.Contains("J2534AdapterAuditReport.Assess(", window);
+        Assert.Contains("J2534DeviceDiscovery.AuditRegisteredDevices()", window);
+        Assert.Contains("RefreshJ2534ArchitectureAuditPresentation();", localization);
+
+        var refresh = window.IndexOf("private void RefreshJ2534Devices(", StringComparison.Ordinal);
+        var next = window.IndexOf("private void J2534Device_SelectionChanged(", refresh, StringComparison.Ordinal);
+        Assert.True(refresh > 0 && next > refresh);
+        var code = window[refresh..next];
+        Assert.DoesNotContain("PassThruOpen", code);
+        Assert.DoesNotContain("NativeLibrary.Load", code);
+        Assert.DoesNotContain("Send(", code);
     }
 }
