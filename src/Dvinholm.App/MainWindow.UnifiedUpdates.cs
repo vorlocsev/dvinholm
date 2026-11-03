@@ -105,6 +105,10 @@ public sealed partial class MainWindow
         // shell language. This does not localize all legacy diagnostics.
         ApplyAuroraCemConfigLocalization();
         ApplyAuroraPrimaryScreenLocalization();
+        // Relabel already observed passive RX items without clearing their
+        // selection, rescanning the bus, or modifying the underlying evidence.
+        foreach (var row in _ecus)
+            row.SetPresentationLanguage(_unifiedEnglish);
         RefreshCemPrerequisitePresentation();
         RefreshCemIdentityEvidencePresentation();
         RefreshJ2534ArchitectureAuditPresentation();
