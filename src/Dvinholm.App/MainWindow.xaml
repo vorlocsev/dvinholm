@@ -815,6 +815,14 @@
                                     <TextBlock Text="Сведения об адаптере" FontSize="20" FontWeight="SemiBold" />
                                     <TextBlock Text="Информация текущего подключения." Foreground="#9EB8CC" />
                                     <TextBlock x:Name="AdapterMetadataText" Text="J2534 adapter details: disconnected." FontSize="12" Foreground="#C1D7E8" TextWrapping="Wrap" IsTextSelectionEnabled="True" ToolTipService.ToolTip="Unverified values returned by the driver. Local diagnostic details, not an ECU identity or authorization." />
+                                    <Expander x:Name="J2534ArchitectureAuditExpander" Header="Аудит разрядности драйверов (офлайн)" IsExpanded="False">
+                                        <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
+                                            <TextBlock x:Name="J2534ArchitectureAuditText"
+                                                       Text="Нажмите Refresh для повторной проверки зарегистрированных J2534 DLL."
+                                                       TextWrapping="Wrap" IsTextSelectionEnabled="True"
+                                                       FontFamily="Consolas" FontSize="12" />
+                                        </ScrollViewer>
+                                    </Expander>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
