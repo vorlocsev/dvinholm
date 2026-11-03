@@ -481,13 +481,21 @@
                     <StackPanel x:Name="WorkspaceHeaderActions" Grid.Column="1" Spacing="10"
                                 Margin="0,12,16,10" VerticalAlignment="Center">
                         <Button x:Name="HeaderConnectionStatusButton" AutomationProperties.AutomationId="DvinholmHeaderConnectionStatus" Tag="J2534Connection"
-                                Click="WorkspaceNavigate_Click" VerticalAlignment="Bottom"
+                                Click="WorkspaceNavigate_Click" VerticalAlignment="Bottom" MaxWidth="184"
+                                HorizontalContentAlignment="Stretch"
                                 ToolTipService.ToolTip="Открыть параметры J2534. Это не подключает автомобиль.">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
                                 <TextBlock x:Name="ShellConnectionDot" Text="●" Foreground="#728FA8"
+                                           VerticalAlignment="Center"
                                            AutomationProperties.Name="Состояние соединения J2534" />
-                                <TextBlock x:Name="ShellConnectionText" Text="Не подключено" />
-                            </StackPanel>
+                                <TextBlock x:Name="ShellConnectionText" Grid.Column="1"
+                                           Text="Не подключено" TextWrapping="Wrap"
+                                           MaxWidth="128" VerticalAlignment="Center" />
+                            </Grid>
                         </Button>
                         <ComboBox x:Name="UnifiedLanguageSelector" AutomationProperties.AutomationId="DvinholmLanguageSelector" Header="RU / EN"
                                   MinWidth="98" SelectedIndex="0"
