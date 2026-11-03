@@ -204,4 +204,48 @@ public sealed class AuroraConnectionUpdatesVisualParityTests
         Assert.Contains("Dvinholm-Banner.png",
             Named(doc, "AuroraHeaderArtwork").ToString());
     }
+
+    // Stage 65: six actual cards plus two grid-breakpoint cases = eight
+    // independent offline visual-rhythm checks. Native pixels are still NOT RUN.
+    [Theory]
+    [InlineData("ConnectionAdapterPane", "ConnectionThreeCardGrid")]
+    [InlineData("ConnectionBusPane", "ConnectionThreeCardGrid")]
+    [InlineData("ConnectionStatusPane", "ConnectionThreeCardGrid")]
+    [InlineData("UpdatesVersionPane", "UpdatesThreeCardGrid")]
+    [InlineData("UpdatesChannelPane", "UpdatesThreeCardGrid")]
+    [InlineData("UpdatesActionPane", "UpdatesThreeCardGrid")]
+    public void DashboardCardsUseGridOwnedSpacingWithoutSecondBottomMargin(
+        string paneName, string gridName)
+    {
+        var document = Layout();
+        var pane = Named(document, paneName);
+        var grid = Named(document, gridName);
+        Assert.Contains(grid, pane.Ancestors());
+        Assert.Equal("{StaticResource AuroraCard}", (string?)pane.Attribute("Style"));
+        Assert.Equal("0", (string?)pane.Attribute("Margin"));
+        Assert.Equal("12", (string?)grid.Attribute("RowSpacing"));
+    }
+
+    [Theory]
+    [InlineData("ConnectionThreeCardGrid", "ConnectionThreeColumns",
+        "ConnectionTwoColumns", "ConnectionVerticalPanels")]
+    [InlineData("UpdatesThreeCardGrid", "UpdatesThreeColumns",
+        "UpdatesTwoColumns", "UpdatesVerticalPanels")]
+    public void ThreeTwoAndOneColumnLayoutsPreserveSingleTwelveDipGutter(
+        string gridName, string wide, string middle, string narrow)
+    {
+        var document = Layout();
+        var grid = Named(document, gridName);
+        Assert.Equal("12", (string?)grid.Attribute("RowSpacing"));
+        Assert.Equal("12", (string?)grid.Attribute("ColumnSpacing"));
+        Assert.Null(grid.Attribute("MinWidth"));
+        Assert.Equal(new[] { "1280", "980", "0" },
+            new[] { wide, middle, narrow }.Select(name =>
+                (string?)State(document, name).Descendants()
+                    .Single(element => element.Name.LocalName == "AdaptiveTrigger")
+                    .Attribute("MinWindowWidth")));
+        foreach (var state in new[] { wide, middle, narrow })
+            Assert.DoesNotContain(Setters(document, state).Keys,
+                target => target.Contains("Margin", StringComparison.Ordinal));
+    }
 }
