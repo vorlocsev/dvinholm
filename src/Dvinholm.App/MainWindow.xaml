@@ -521,31 +521,31 @@
                                     <Border x:Name="CemPinStepperTrack" Grid.ColumnSpan="3" Margin="50,20,50,0"
                                             Height="2" VerticalAlignment="Top" IsHitTestVisible="False"
                                             Background="#36617F" Opacity="0.8" />
-                                    <StackPanel Grid.Column="0" Spacing="8" HorizontalAlignment="Center">
+                                    <StackPanel Grid.Column="0" Spacing="8" HorizontalAlignment="Stretch">
                                         <Border Width="40" Height="40" CornerRadius="20" BorderBrush="#19D9EF"
                                                 BorderThickness="2" Background="#143A58" HorizontalAlignment="Center">
                                             <TextBlock Text="1" FontSize="19" FontWeight="SemiBold"
                                                        VerticalAlignment="Center" HorizontalAlignment="Center" />
                                         </Border>
-                                        <TextBlock x:Name="CemPinStepIdentity" Text="Идентификация"
+                                        <TextBlock x:Name="CemPinStepIdentity" Text="Идентификация" TextWrapping="Wrap" HorizontalAlignment="Stretch" Margin="4,0"
                                                    FontSize="12" TextAlignment="Center" Foreground="#C1EFFF" />
                                     </StackPanel>
-                                    <StackPanel Grid.Column="1" Spacing="8" HorizontalAlignment="Center">
+                                    <StackPanel Grid.Column="1" Spacing="8" HorizontalAlignment="Stretch">
                                         <Border Width="40" Height="40" CornerRadius="20" BorderBrush="#54657F"
                                                 BorderThickness="1" Background="#12243C" HorizontalAlignment="Center">
                                             <TextBlock Text="2" FontSize="19" FontWeight="SemiBold"
                                                        Foreground="#A7B7CD" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                         </Border>
-                                        <TextBlock x:Name="CemPinStepResearch" Text="Поиск PIN недоступен"
+                                        <TextBlock x:Name="CemPinStepResearch" Text="Поиск PIN недоступен" TextWrapping="Wrap" HorizontalAlignment="Stretch" Margin="4,0"
                                                    FontSize="12" TextAlignment="Center" Foreground="#A5B7CE" />
                                     </StackPanel>
-                                    <StackPanel Grid.Column="2" Spacing="8" HorizontalAlignment="Center">
+                                    <StackPanel Grid.Column="2" Spacing="8" HorizontalAlignment="Stretch">
                                         <Border Width="40" Height="40" CornerRadius="20" BorderBrush="#54657F"
                                                 BorderThickness="1" Background="#12243C" HorizontalAlignment="Center">
                                             <TextBlock Text="3" FontSize="19" FontWeight="SemiBold"
                                                        Foreground="#A7B7CD" VerticalAlignment="Center" HorizontalAlignment="Center" />
                                         </Border>
-                                        <TextBlock x:Name="CemPinStepResult" Text="Нет результата"
+                                        <TextBlock x:Name="CemPinStepResult" Text="Нет результата" TextWrapping="Wrap" HorizontalAlignment="Stretch" Margin="4,0"
                                                    FontSize="12" TextAlignment="Center" Foreground="#A5B7CE" />
                                     </StackPanel>
                                 </Grid>
