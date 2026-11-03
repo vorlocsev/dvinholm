@@ -47,6 +47,9 @@ public sealed partial class MainWindow : Window
     private readonly ObservableCollection<EcuRow> _ecus = new();
     private readonly UdsReadResultLifetime _udsResultLifetime = new();
     private bool _ecuScanComplete;
+    private bool _hasEcuScanOutcome;
+    private string _ecuDiscoveryStatusRu = "Сканирование не выполнялось";
+    private string _ecuDiscoveryStatusEn = "Not scanned";
     private EcuProfileCatalog _profileCatalog = new();
     private bool _snapshotInspectionBusy;
     private bool _loadingProfiles;
@@ -2260,7 +2263,8 @@ public sealed partial class MainWindow : Window
         // Serialize them so passive discovery cannot overlap a diagnostic request.
         if (!await _udsGate.WaitAsync(0))
         {
-            DiscoveryStatus.Text = "UDS request is already running";
+            SetPassiveDiscoveryStatus("Уже выполняется запрос UDS",
+                "UDS request is already running");
             return;
         }
 
@@ -2270,7 +2274,7 @@ public sealed partial class MainWindow : Window
         CancelDiscoveryButton.IsEnabled = true;
         ConnectButton.IsEnabled = false;
         SetUdsEnabled(false);
-        DiscoveryStatus.Text = "Scanning...";
+        SetPassiveDiscoveryStatus("Сканирование...", "Scanning...");
         ClearDiagnosticReadResult();
         ClearPassiveDiscoverySelection();
 
@@ -2281,17 +2285,25 @@ public sealed partial class MainWindow : Window
             var found = await _discoveryTask;
 
             ShowDiscoveredEcus(found, complete: true);
-            DiscoveryStatus.Text = UdsPassiveEcuListPresentation.ScanSummary(found.Count, true);
+            SetPassiveDiscoveryStatus(
+                UdsPassiveEcuListPresentation.ScanSummary(found.Count, true, english: false),
+                UdsPassiveEcuListPresentation.ScanSummary(found.Count, true, english: true));
 
             SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.Completed));
         }
         catch (UdsEcuDiscoveryCancelledException ex)
         {
             ShowDiscoveredEcus(ex.Candidates, complete: false);
-            DiscoveryStatus.Text = "Cancelled · " +
-                UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false);
+            var cancelledRu = "Отменено · " +
+                UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false, english: false);
+            var cancelledEn = "Cancelled · " +
+                UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false, english: true);
             if (ex.DroppedFrameCount > 0)
-                DiscoveryStatus.Text += $" · {ex.DroppedFrameCount} frame(s) dropped";
+            {
+                cancelledRu += $" · потеряно кадров: {ex.DroppedFrameCount}";
+                cancelledEn += $" · {ex.DroppedFrameCount} frame(s) dropped";
+            }
+            SetPassiveDiscoveryStatus(cancelledRu, cancelledEn);
             // Discovery exception messages are implementation details. The
             // status is mirrored to Aurora, so use a fixed outcome instead.
             SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.CancelledWithObservations));
@@ -2299,20 +2311,24 @@ public sealed partial class MainWindow : Window
         catch (UdsEcuDiscoveryIncompleteException ex)
         {
             ShowDiscoveredEcus(ex.Candidates, complete: false);
-            DiscoveryStatus.Text = UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false) +
-                $" · {ex.DroppedFrameCount} frame(s) dropped";
+            SetPassiveDiscoveryStatus(
+                UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false, english: false) +
+                    $" · потеряно кадров: {ex.DroppedFrameCount}",
+                UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false, english: true) +
+                    $" · {ex.DroppedFrameCount} frame(s) dropped");
             SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.IncompleteWithDrops));
         }
         catch (OperationCanceledException)
         {
             // Cancellation before the scan worker starts has no observations
             // to preserve.
-            DiscoveryStatus.Text = "Cancelled · no scan results available";
+            SetPassiveDiscoveryStatus("Отменено · результатов сканирования нет",
+                "Cancelled · no scan results available");
             SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.CancelledBeforeStart));
         }
         catch (Exception)
         {
-            DiscoveryStatus.Text = "Failed";
+            SetPassiveDiscoveryStatus("Ошибка сканирования", "Failed");
             SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.Failed));
         }
         finally
@@ -2332,6 +2348,7 @@ public sealed partial class MainWindow : Window
     {
         // Never carry a guessed address across scans or adapter sessions.
         _ecuScanComplete = false;
+        _hasEcuScanOutcome = false;
         EcusView.IsEnabled = false;
         EcuSelector.IsEnabled = false;
         EcusView.SelectedIndex = -1;
@@ -2341,7 +2358,9 @@ public sealed partial class MainWindow : Window
         EcuSelector.Items.Clear();
         UdsRequestId.Text = string.Empty;
         UdsResponseId.Text = string.Empty;
-        EcuSelectionInfo.Text = "No verified ECU selection. Passive observations do not identify a module.";
+        EcuSelectionInfo.Text = L(
+            "Нет подтверждённого выбора ECU. Пассивные ответы не устанавливают идентичность блока.",
+            "No verified ECU selection. Passive observations do not identify a module.");
     }
 
     private void ShowDiscoveredEcus(IReadOnlyList<UdsEcuCandidate> found, bool complete)
@@ -2351,22 +2370,60 @@ public sealed partial class MainWindow : Window
         {
             var row = new EcuRow(candidate, _unifiedEnglish);
             _ecus.Add(row);
-            EcuSelector.Items.Add(UdsPassiveEcuListPresentation.SelectorLabel(candidate, complete));
+            // Keep selected ComboBoxItem identity stable when its RU/EN caption changes.
+            EcuSelector.Items.Add(new ComboBoxItem
+            {
+                Content = UdsPassiveEcuListPresentation.SelectorLabel(
+                    candidate, complete, _unifiedEnglish)
+            });
         }
 
         // Incomplete scans are visible but never selectable; complete scans
         // require explicit selection and manual TX address verification.
         _ecuScanComplete = complete;
+        _hasEcuScanOutcome = true;
         EcusView.IsEnabled = complete && found.Count > 0;
         EcuSelector.IsEnabled = complete && found.Count > 0;
-        EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.ScanSummary(found.Count, complete);
+        EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.ScanSummary(
+            found.Count, complete, _unifiedEnglish);
         ShowAuroraEcuObservationRail(found, complete);
+    }
+
+    private void SetPassiveDiscoveryStatus(string russian, string english)
+    {
+        _ecuDiscoveryStatusRu = russian;
+        _ecuDiscoveryStatusEn = english;
+        DiscoveryStatus.Text = L(russian, english);
+    }
+
+    private void RefreshPassiveDiscoveryLanguage()
+    {
+        // Never replace or clear ComboBox items: that would change the selected
+        // index and could clear the session-scoped read results.
+        DiscoveryStatus.Text = L(_ecuDiscoveryStatusRu, _ecuDiscoveryStatusEn);
+        for (var i = 0; i < _ecus.Count && i < EcuSelector.Items.Count; i++)
+        {
+            if (EcuSelector.Items[i] is ComboBoxItem item)
+                item.Content = UdsPassiveEcuListPresentation.SelectorLabel(
+                    _ecus[i].Candidate, _ecuScanComplete, _unifiedEnglish);
+        }
+
+        if (_ecuScanComplete && EcusView.SelectedItem is EcuRow selected)
+            EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.SelectionDetails(
+                selected.Candidate, _unifiedEnglish);
+        else if (_hasEcuScanOutcome)
+            EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.ScanSummary(
+                _ecus.Count, _ecuScanComplete, _unifiedEnglish);
+        else
+            EcuSelectionInfo.Text = L(
+                "Нет подтверждённого выбора ECU. Пассивные ответы не устанавливают идентичность блока.",
+                "No verified ECU selection. Passive observations do not identify a module.");
     }
 
     private void CancelDiscovery_Click(object sender, RoutedEventArgs e)
     {
         _discoveryCts?.Cancel();
-        DiscoveryStatus.Text = "Cancelling...";
+        SetPassiveDiscoveryStatus("Отмена сканирования...", "Cancelling...");
         CancelDiscoveryButton.IsEnabled = false;
     }
 
@@ -2402,7 +2459,8 @@ public sealed partial class MainWindow : Window
         UdsResponseId.Text = UdsPassiveEcuListPresentation.Hex(
             row.Candidate.ResponseId, row.Candidate.IsExtended);
         CanIdFormat.SelectedIndex = row.Candidate.IsExtended ? 1 : 0;
-        EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.SelectionDetails(row.Candidate);
+        EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.SelectionDetails(
+            row.Candidate, _unifiedEnglish);
         HighlightAuroraEcuObservation(index);
 
         if (EcuSelector.SelectedIndex != index)
