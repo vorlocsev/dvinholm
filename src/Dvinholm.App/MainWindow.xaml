@@ -1234,12 +1234,16 @@
                                 <Border x:Name="ConnectionAdapterPane" Grid.Column="0"
                                         Style="{StaticResource AuroraCard}">
                                     <StackPanel Spacing="14">
-                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <Grid x:Name="ConnectionAdapterHeadingGrid" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
                                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE950;"
                                                       Foreground="#55CEED" FontSize="21" />
-                                            <TextBlock x:Name="ConnectionPageHeading" TextWrapping="Wrap" Text="Интерфейс автомобиля"
+                                            <TextBlock Grid.Column="1" VerticalAlignment="Center" x:Name="ConnectionPageHeading" TextWrapping="Wrap" Text="Интерфейс автомобиля"
                                                        FontSize="19" FontWeight="SemiBold" />
-                                        </StackPanel>
+                                        </Grid>
                                         <TextBlock x:Name="ConnectionPageIntro"
                                                    Text="Выберите установленный J2534-адаптер и параметры канала."
                                                    Foreground="#A9C7DE" TextWrapping="Wrap" FontSize="12" />
@@ -1263,13 +1267,17 @@
                                 <Border x:Name="ConnectionBusPane" Grid.Column="1"
                                         Style="{StaticResource AuroraCard}">
                                     <StackPanel Spacing="14">
-                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <Grid x:Name="ConnectionBusHeadingGrid" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
                                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE713;"
                                                       Foreground="#55CEED" FontSize="21" />
-                                            <TextBlock x:Name="ConnectionBusHeading" TextWrapping="Wrap"
+                                            <TextBlock Grid.Column="1" VerticalAlignment="Center" x:Name="ConnectionBusHeading" TextWrapping="Wrap"
                                                        Text="Параметры CAN" FontSize="19"
                                                        FontWeight="SemiBold" />
-                                        </StackPanel>
+                                        </Grid>
                                         <ComboBox x:Name="BaudRate" Header="CAN speed" SelectedIndex="0"
                                                   HorizontalAlignment="Stretch"
                                                   ToolTipService.ToolTip="Volvo XC90 P2 HS-CAN guidance: through model year 2004 250 kbit/s; from model year 2005 500 kbit/s. Other networks differ. Verify actual model year, bus and adapter before connecting; Dvinholm does not adjust the speed automatically.">
@@ -1292,13 +1300,17 @@
                                 <Border x:Name="ConnectionStatusPane" Grid.Column="2"
                                         Style="{StaticResource AuroraCard}">
                                     <StackPanel Spacing="14">
-                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                        <Grid x:Name="ConnectionDriverHeadingGrid" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
                                             <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE753;"
                                                       Foreground="#55CEED" FontSize="21" />
-                                            <TextBlock x:Name="ConnectionDriverHeading" TextWrapping="Wrap"
+                                            <TextBlock Grid.Column="1" VerticalAlignment="Center" x:Name="ConnectionDriverHeading" TextWrapping="Wrap"
                                                        Text="Сведения об адаптере" FontSize="19"
                                                        FontWeight="SemiBold" />
-                                        </StackPanel>
+                                        </Grid>
                                         <TextBlock x:Name="ConnectionSessionState"
                                                    Text="{Binding Text, ElementName=ShellConnectionText}"
                                                    FontSize="17" Foreground="#728FA8" FontWeight="SemiBold" />
