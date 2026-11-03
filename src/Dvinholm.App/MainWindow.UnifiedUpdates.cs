@@ -103,6 +103,7 @@ public sealed partial class MainWindow
         // Keep the offline CEM evidence browser consistent with the selected
         // shell language. This does not localize all legacy diagnostics.
         ApplyAuroraCemConfigLocalization();
+        ApplyAuroraPrimaryScreenLocalization();
         RefreshCemPrerequisitePresentation();
         RefreshCemIdentityEvidencePresentation();
         RefreshJ2534ArchitectureAuditPresentation();
