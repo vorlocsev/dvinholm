@@ -130,6 +130,12 @@
                         <Setter Target="DtcDetailColumn.Width" Value="0" />
                         <Setter Target="DtcDetailsPane.(Grid.Column)" Value="0" />
                         <Setter Target="DtcDetailsPane.(Grid.Row)" Value="1" />
+                        <Setter Target="DtcActionReadColumn.Width" Value="0" />
+                        <Setter Target="DtcActionClearColumn.Width" Value="0" />
+                        <Setter Target="ReadDtcButton.(Grid.Column)" Value="0" />
+                        <Setter Target="ReadDtcButton.(Grid.Row)" Value="1" />
+                        <Setter Target="DtcClearButton.(Grid.Column)" Value="0" />
+                        <Setter Target="DtcClearButton.(Grid.Row)" Value="2" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
@@ -151,6 +157,10 @@
                         <Setter Target="EcuWorkbenchVehiclePane.(Grid.Row)" Value="1" />
                         <Setter Target="EcuWorkbenchDetailPane.(Grid.Column)" Value="0" />
                         <Setter Target="EcuWorkbenchDetailPane.(Grid.Row)" Value="2" />
+                        <Setter Target="EcuToolsThirdColumn.Width" Value="0" />
+                        <Setter Target="EcuProfilesNavigateButton.(Grid.Column)" Value="0" />
+                        <Setter Target="EcuProfilesNavigateButton.(Grid.Row)" Value="1" />
+                        <Setter Target="EcuProfilesNavigateButton.(Grid.ColumnSpan)" Value="2" />
                         <Setter Target="EcuScanToolbarActionColumn.Width" Value="0" />
                         <Setter Target="EcuScanToolbarCancelColumn.Width" Value="0" />
                         <Setter Target="DiscoverButton.(Grid.Column)" Value="0" />
@@ -643,17 +653,6 @@
                         </StackPanel>
                         <StackPanel x:Name="EcuPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
-                                <StackPanel Spacing="10">
-                                    <TextBlock x:Name="EcuToolsTitle" Text="Дополнительные инструменты ECU" FontWeight="SemiBold" FontSize="18" />
-                                    <TextBlock x:Name="EcuToolsIntro" Text="Проверенные функции не удалены: откройте профиль, монитор CAN или чтение данных из рабочей области ECU." Foreground="#93B2CD" />
-                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                        <Button x:Name="EcuDiagnosticsNavigateButton" Tag="DiagnosticsWorkspace" Content="Диагностические данные" Click="WorkspaceNavigate_Click" />
-                                        <Button x:Name="EcuMonitorNavigateButton" Tag="CanMonitor" Content="CAN-монитор" Click="WorkspaceNavigate_Click" />
-                                        <Button x:Name="EcuProfilesNavigateButton" Tag="EcuProfiles" Content="Профили ECU" Click="WorkspaceNavigate_Click" />
-                                    </StackPanel>
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
                                     <TextBlock x:Name="EcuDiscoveryTitle" Text="Обнаружение блоков" FontSize="20" FontWeight="SemiBold" />
                                     <TextBlock x:Name="EcuDiscoveryIntro" Text="Пассивное наблюдение ответов. Выбор записи не подтверждает идентичность блока и не отправляет запрос." Foreground="#9EB8CC" />
@@ -742,6 +741,10 @@
                                                                 <GradientStop Color="#0A1930" Offset="1" />
                                                             </LinearGradientBrush>
                                                         </Grid.Background>
+                                                        <!-- Aurora coastal horizon is presentation-only, not a topology map. -->
+                                                        <Path Data="M0,31 Q128,0 255,29 T512,22 T640,12" Stroke="#1CC2DB" StrokeThickness="14" Opacity="0.13" />
+                                                        <Path Data="M0,70 Q165,19 325,56 T640,35" Stroke="#8666F0" StrokeThickness="9" Opacity="0.12" />
+                                                        <Path Data="M15,234 L625,234" Stroke="#3D7292" StrokeThickness="1" Opacity="0.6" />
                                                         <Canvas x:Name="EcuP2SideProfile" Width="640" Height="255">
                                                             <Path Data="M30,156 L59,145 L82,112 Q95,93 128,87 L170,82 Q202,43 245,43 L418,43 Q471,53 501,102 L550,116 Q590,129 596,148 L603,180 L567,186 L53,186 L24,176 Z" Fill="#173D56" Stroke="#31C7EA" StrokeThickness="3" />
                                                             <Path Data="M205,83 L241,52 L409,52 Q443,54 468,98 L205,98 Z" Fill="#0B1B33" Stroke="#83B8D4" StrokeThickness="2" />
@@ -770,6 +773,12 @@
                                                             <Ellipse Canvas.Left="140" Canvas.Top="181" Width="32" Height="32" Fill="#173A54" Stroke="#B4D8E4" StrokeThickness="3" />
                                                             <Ellipse Canvas.Left="509" Canvas.Top="181" Width="32" Height="32" Fill="#173A54" Stroke="#B4D8E4" StrokeThickness="3" />
                                                         </Canvas>
+                                                        <Border x:Name="EcuVehicleSchematicStamp" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                                Margin="0,8,10,0" Padding="10,5" CornerRadius="8" IsHitTestVisible="False"
+                                                                Background="#C40C2842" BorderBrush="#346582" BorderThickness="1">
+                                                            <TextBlock x:Name="EcuVehicleSchematicLabel" Text="УСЛОВНАЯ СХЕМА"
+                                                                       FontSize="11" Foreground="#AEDBED" FontWeight="SemiBold" />
+                                                        </Border>
                                                         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,4,0,0">
                                                             <TextBlock x:Name="EcuVehicleOrientation" Text="ПЕРЕД → ЗАД" Foreground="#8FC5DF" FontSize="12" />
                                                         </StackPanel>
@@ -797,6 +806,26 @@
                                         </Border>
                                     </Grid>
 
+                                </StackPanel>
+                            </Border>
+                            <Border x:Name="EcuToolsFooter" Style="{StaticResource AuroraCard}">
+                                <StackPanel Spacing="11">
+                                    <TextBlock x:Name="EcuToolsTitle" Text="Дополнительные инструменты ECU" FontWeight="SemiBold" FontSize="18" />
+                                    <TextBlock x:Name="EcuToolsIntro" Text="Проверенные функции не удалены: откройте профиль, монитор CAN или чтение данных из рабочей области ECU." Foreground="#93B2CD" />
+                                    <Grid x:Name="EcuToolsGrid" ColumnSpacing="10" RowSpacing="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition x:Name="EcuToolsThirdColumn" Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button x:Name="EcuDiagnosticsNavigateButton" Tag="DiagnosticsWorkspace" Content="Диагностические данные" Click="WorkspaceNavigate_Click" Grid.Column="0" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="EcuMonitorNavigateButton" Tag="CanMonitor" Content="CAN-монитор" Click="WorkspaceNavigate_Click" Grid.Column="1" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="EcuProfilesNavigateButton" Tag="EcuProfiles" Content="Профили ECU" Click="WorkspaceNavigate_Click" Grid.Column="2" HorizontalAlignment="Stretch" />
+                                    </Grid>
                                 </StackPanel>
                             </Border>
                             <Button x:Name="EcuOpenProfilesButton" Content="Перейти к профилям ECU →" Tag="EcuProfiles" Click="WorkspaceNavigate_Click" />
@@ -848,22 +877,41 @@
                                 <StackPanel Spacing="16">
                                     <TextBlock x:Name="DtcPageHeading" Text="Ошибки / DTC" FontSize="23" FontWeight="SemiBold" />
                                     <TextBlock x:Name="DtcPageIntro" Text="Чтение неисправностей одного выбранного ECU. Перед чтением подтвердите адреса TX/RX в разделе «Диагностика»." Foreground="#A9C5DC" TextWrapping="Wrap" />
-                                    <Grid ColumnSpacing="10" RowSpacing="10">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="2*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <ComboBox x:Name="DtcStatusMaskSelector" Header="Read DTC status filter" SelectedIndex="0" ToolTipService.ToolTip="Choose which status bit the ECU should report via one read-only UDS 0x19/0x02 request. This does not prove ECU identity or clear faults.">
-                                        <ComboBoxItem Content="All status bits" Tag="FF" />
-                                        <ComboBoxItem Content="Test failed" Tag="01" />
-                                        <ComboBoxItem Content="Pending DTC" Tag="04" />
-                                        <ComboBoxItem Content="Confirmed DTC" Tag="08" />
-                                        <ComboBoxItem Content="Warning indicator requested" Tag="80" />
-                                    </ComboBox>
-                                        <Button x:Name="ReadDtcButton" Content="Read DTC" Grid.Column="1" IsEnabled="False" Click="ReadDtc_Click" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Background="#0865C7" BorderBrush="#348DEA" ToolTipService.ToolTip="Read DTCs from only the selected ECU using verified TX/RX addressing. No DTC clear or full-vehicle scan." />
-                                        <Button x:Name="DtcClearButton" Grid.Column="2" Content="Стереть ошибки" IsEnabled="False" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Стирание не реализовано: нет проверенного полномочия, сервиса, защиты и восстановления." />
-                                    </Grid>
+                                    <Border x:Name="DtcActionRail" CornerRadius="10" Padding="14"
+                                            BorderBrush="#2D567C" BorderThickness="1" Background="#0C2944">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock x:Name="DtcActionsHeading" Text="Чтение неисправностей одного ECU"
+                                                       FontSize="15" FontWeight="SemiBold" Foreground="#B9EAFD" />
+                                            <Grid x:Name="DtcActionsGrid" ColumnSpacing="10" RowSpacing="10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="2*" />
+                                                    <ColumnDefinition x:Name="DtcActionReadColumn" Width="*" />
+                                                    <ColumnDefinition x:Name="DtcActionClearColumn" Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <ComboBox x:Name="DtcStatusMaskSelector" Header="Read DTC status filter"
+                                                          SelectedIndex="0" HorizontalAlignment="Stretch"
+                                                          ToolTipService.ToolTip="Choose which status bit the ECU should report via one read-only UDS 0x19/0x02 request. This does not prove ECU identity or clear faults.">
+                                                    <ComboBoxItem Content="All status bits" Tag="FF" />
+                                                    <ComboBoxItem Content="Test failed" Tag="01" />
+                                                    <ComboBoxItem Content="Pending DTC" Tag="04" />
+                                                    <ComboBoxItem Content="Confirmed DTC" Tag="08" />
+                                                    <ComboBoxItem Content="Warning indicator requested" Tag="80" />
+                                                </ComboBox>
+                                                <Button x:Name="ReadDtcButton" Content="Read DTC" Grid.Column="1" IsEnabled="False"
+                                                        Click="ReadDtc_Click" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                                                        Background="#0865C7" BorderBrush="#348DEA"
+                                                        ToolTipService.ToolTip="Read DTCs from only the selected ECU using verified TX/RX addressing. No DTC clear or full-vehicle scan." />
+                                                <Button x:Name="DtcClearButton" Grid.Column="2" Content="Стереть ошибки"
+                                                        IsEnabled="False" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                                                        ToolTipService.ToolTip="Стирание не реализовано: нет проверенного полномочия, сервиса, защиты и восстановления." />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
                                     <Grid x:Name="DtcWorkbenchGrid" ColumnSpacing="12" RowSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="2*" />
@@ -876,6 +924,14 @@
                                     <Border x:Name="DtcResultsPane" Grid.Column="0" Background="#112B47"
                                             BorderBrush="#2B5878" BorderThickness="1" CornerRadius="10" Padding="13">
                                         <StackPanel Spacing="9">
+                                            <Border x:Name="DtcResultsAccent" Height="3" CornerRadius="2" IsHitTestVisible="False">
+                                                <Border.Background>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                        <GradientStop Color="#1AD4ED" Offset="0" />
+                                                        <GradientStop Color="#6A6DDB" Offset="1" />
+                                                    </LinearGradientBrush>
+                                                </Border.Background>
+                                            </Border>
                                             <Grid ColumnSpacing="14">
                                                 <Grid.ColumnDefinitions>
                                                     <ColumnDefinition Width="112" />
@@ -909,6 +965,8 @@
                                     <Border x:Name="DtcDetailsPane" Grid.Column="1" Background="#102943"
                                             BorderBrush="#2B5878" BorderThickness="1" CornerRadius="10" Padding="14">
                                     <StackPanel Spacing="7">
+                                        <Border x:Name="DtcDetailsAccent" Height="3" CornerRadius="2"
+                                                IsHitTestVisible="False" Background="#5F71C5" />
                                         <TextBlock x:Name="DtcDetailsHeading" Text="Подробности" FontSize="19" FontWeight="SemiBold" />
                                         <TextBlock x:Name="DtcSelectedRecordDetails" Text="Выберите считанную ошибку, чтобы посмотреть сырые данные и маску статуса." Foreground="#B2CBDE" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
                                         <TextBlock x:Name="DtcDetailsEvidence" Text="После чтения реальные 24-битные коды DTC, маски статуса и поддерживаемые ECU биты появятся в панели «Результат операции» ниже. Описания причин и рекомендаций требуют проверенного каталога для выбранной модели." Foreground="#B2CBDE" TextWrapping="Wrap" FontSize="12" />
