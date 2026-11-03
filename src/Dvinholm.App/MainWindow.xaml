@@ -99,6 +99,11 @@
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
         <Grid.Resources>
+            <LinearGradientBrush x:Key="AuroraPanelGradient" StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#122F4E" Offset="0" />
+                <GradientStop Color="#0E263F" Offset="0.45" />
+                <GradientStop Color="#0B1E33" Offset="1" />
+            </LinearGradientBrush>
             <Style x:Key="AuroraButton" TargetType="Button">
                 <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="Padding" Value="16,10" />
@@ -121,7 +126,7 @@
                 <Setter Property="TextWrapping" Value="Wrap" />
             </Style>
             <Style x:Key="AuroraCard" TargetType="Border">
-                <Setter Property="Background" Value="#0D263B" />
+                <Setter Property="Background" Value="{StaticResource AuroraPanelGradient}" />
                 <Setter Property="BorderBrush" Value="#23445F" />
                 <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="CornerRadius" Value="12" />
