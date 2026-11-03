@@ -249,6 +249,16 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - The previously built Stage-28 head `3598e97a` passed [x64 pilot #41558258305](https://github.com/vorlocsev/dvinholm/actions/runs/41558258305). Its full regression [#41558258504](https://github.com/vorlocsev/dvinholm/actions/runs/41558258504) was still in progress when newer commits started, and must not be claimed green. This stage requires current-head x64 and full CI success before review.
 - This remains a PR-only change. No Stable or Virtual Car code change, public release, publisher signing, production self-update or physical J2534 acceptance.
 
+
+## Stage 30: native Windows x64 CEM/J2534 offline test gate
+
+- The self-contained x64 pilot continues to publish and verify the **Release, development-features-off** application ZIP. It now separately runs relevant managed tests on an actual **Windows x64** test process rather than trusting only PE/header and package validation.
+- Added one fail-closed `dotnet test --runtime win-x64 -p:Platform=x64` job step with **eight existing source-level suites**: `CemPartNumberFrameDecoderTests`, `CemPartNumberReaderTests`, `CemReadOnlyPrerequisiteReportTests`, `CemIdentityEvidenceReportTests`, `AuroraCemConfigReferenceFilterTests`, `J2534PeInspectorTests`, `J2534AdapterAuditReportTests` and `AuroraApprovedReferenceTests`.
+- All selected suites use **synthetic frames, offline manifests, in-memory registry audit or virtual J2534 fixtures**. Developer features are enabled **only while building tests**, not in the review ZIP that is already packaged. Physical DiCE/Mongoose compatibility, real CEM identity, PIN and configuration service acceptance remain untested.
+- GitHub Actions rejects test-run failure, missing TRX result, missing counters, fewer than **48** matched test cases, or any failed test. Test and CI triggers now include edits under `tests/Dvinholm.App.Tests/**`, preventing new CEM/J2534 test-only changes from silently bypassing the pilot.
+- The legacy x86 regression remains a **separate required CI**. This additional x64 gate does not waive full regression, manual WinUI launch/UX, real x64 vendor DLL testing, publisher-signing review, update rollback acceptance or future physical vehicle safety review.
+- Stage-29 head `19e52511` passed the x64 packaging pilot [#41559504591](https://github.com/vorlocsev/dvinholm/actions/runs/41559504591); its full CI had not completed when this stage began. Stage 30 must be evaluated at the **latest head SHA** and both workflows must pass before merge/release.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
