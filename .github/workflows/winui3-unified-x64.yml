@@ -5,6 +5,7 @@ on:
     paths:
       - 'src/Dvinholm.App/**'
       - 'tests/Dvinholm.App.Tests/**'
+      - 'tests/Dvinholm.UnifiedX64.Tests/**'
       - 'src/Dvinholm.UpdateHandoffProbe/**'
       - 'eng/Test-UnifiedUpdateHandoffProbe.ps1'
       - 'eng/Sign-UnifiedX64Release.ps1'
@@ -57,6 +58,29 @@ jobs:
         shell: pwsh
         run: |
           ./eng/Package-UnifiedWinUIX64Pilot.ps1 -PublishDirectory artifacts/winui3-unified-x64 -ZipPath artifacts/Dvinholm-Windows-x64.zip
+
+      # Verify the actual production-mode x64 ZIP and managed Release
+      # assembly before building any Development-only virtual-J2534 fixtures.
+      # This test project is deliberately separate from legacy x86 Stable CI.
+      - name: Verify actual x64 Release ZIP and forbidden developer types (8 checks)
+        shell: pwsh
+        run: |
+          dotnet test tests/Dvinholm.UnifiedX64.Tests/Dvinholm.UnifiedX64.Tests.csproj --configuration Release --runtime win-x64 -p:Platform=x64 -p:PlatformTarget=x64 -p:RuntimeIdentifier=win-x64 -p:DvinholmDevelopmentFeatures=false --results-directory artifacts/x64-release-tests --logger 'trx;LogFileName=x64-release-smoke.trx'
+          if ($LASTEXITCODE -ne 0) { throw 'Actual x64 Release profile safety tests failed.' }
+          $trx = 'artifacts/x64-release-tests/x64-release-smoke.trx'
+          if (-not (Test-Path -LiteralPath $trx -PathType Leaf)) {
+            throw 'Actual x64 Release smoke result file was not generated.'
+          }
+          [xml]$report = Get-Content -LiteralPath $trx -Raw
+          $counters = $report.SelectSingleNode("//*[local-name()='Counters']")
+          if ($null -eq $counters) { throw 'Actual x64 Release smoke counters are missing.' }
+          $total = [int]$counters.GetAttribute('total')
+          $passed = [int]$counters.GetAttribute('passed')
+          $failed = [int]$counters.GetAttribute('failed')
+          if ($total -ne 8 -or $passed -ne 8 -or $failed -ne 0) {
+            throw "x64 Release smoke gate must pass all eight checks ($total total, $passed passed, $failed failed)."
+          }
+          "Native x64 Release ZIP + metadata: $passed/8 safe offline checks; no physical J2534 test was run." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
 
       # Exercise the real native x64 managed test host, not only a x64 PE
       # publish. Run ten relevant suites with virtual adapters /
