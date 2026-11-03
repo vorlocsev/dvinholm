@@ -52,6 +52,7 @@ public sealed partial class MainWindow
             "Inferred TX · unverified");
         EcuVehicleHeading.Text = L("Карта автомобиля", "Vehicle outline");
         EcuVehicleOrientation.Text = L("ПЕРЕД → ЗАД", "FRONT → REAR");
+        EcuVehicleSchematicLabel.Text = L("УСЛОВНАЯ СХЕМА", "SCHEMATIC ONLY");
         EcuObservationHeading.Text = L("Наблюдаемые RX · не позиции ECU",
             "Observed RX · not ECU locations");
         EcuDiagramDisclaimer.Text = L(
@@ -77,6 +78,8 @@ public sealed partial class MainWindow
             "Navigating to diagnostics does not transmit vehicle requests."));
 
         DtcPageHeading.Text = L("Ошибки / DTC", "Fault codes / DTC");
+        DtcActionsHeading.Text = L(
+            "Чтение неисправностей одного ECU", "Single-ECU fault reading");
         DtcPageIntro.Text = L(
             "Чтение неисправностей одного выбранного ECU. Перед чтением подтвердите адреса TX/RX в разделе «Диагностика».",
             "Read DTCs from one selected ECU. Verify the TX/RX addresses under Diagnostics first.");
