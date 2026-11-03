@@ -332,6 +332,11 @@
                                                 <StackPanel Spacing="12">
                                                     <TextBlock Text="Категории" FontSize="17" FontWeight="SemiBold" />
                                                     <ComboBox x:Name="CemConfigCategory" Header="Группа" HorizontalAlignment="Stretch" SelectionChanged="CemConfigCategory_SelectionChanged" />
+                                                    <ComboBox x:Name="CemConfigEvidenceTier" Header="Источник" HorizontalAlignment="Stretch" SelectedIndex="0" SelectionChanged="CemConfigEvidenceTier_SelectionChanged">
+                                                        <ComboBoxItem Tag="All" Content="Все источники" />
+                                                        <ComboBoxItem Tag="Vendor" Content="Сторонние публикации" />
+                                                        <ComboBoxItem Tag="Volvo" Content="Меню Volvo" />
+                                                    </ComboBox>
                                                     <TextBox x:Name="CemConfigSearch" Header="Найти параметр" PlaceholderText="Код или название" MaxLength="80" TextChanged="CemConfigSearch_TextChanged" />
                                                     <TextBlock Text="Данные получены из локального каталога источников. Совместимость не подтверждена." Foreground="#A5C0D4" FontSize="12" TextWrapping="Wrap" />
                                                 </StackPanel>
