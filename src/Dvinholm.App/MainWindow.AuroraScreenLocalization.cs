@@ -145,6 +145,31 @@ public sealed partial class MainWindow
             "Запускайте и останавливайте наблюдение независимо от переходов между разделами.",
             "Start and stop monitoring independently of workspace navigation.");
         IdFilter.Header = L("Фильтр CAN ID · hex", "CAN ID filter (hex)");
+        CanMonitorClearButton.Content = L("Очистить", "Clear");
+        HardwareFilterButton.Content = _activeHardwareFilterId is null
+            ? L("Применить аппаратный фильтр", "Apply HW filter")
+            : L("Убрать аппаратный фильтр", "Remove HW filter");
+        CanMonitorCsvButton.Content = L("Журнал CSV", "CSV log");
+        CanRxSummaryButton.Content = L("Сводка RX", "RX summary");
+        CanTraceInspectButton.Content = L("Анализ трассы", "Inspect trace");
+
+        ProfileSearch.Header = L("Найти профиль ECU", "Find ECU profile");
+        ProfileSearch.PlaceholderText = L("Название, CAN ID, DID или источник",
+            "Name, CAN ID, DID or source");
+        ProfileSelector.Header = L("Профиль ECU", "ECU profiles");
+        ProfileSelector.PlaceholderText = L("Выберите профиль", "Select profile");
+        MarkedVerifiedOnly.Content = L("Только отмеченные проверенными",
+            "Marked verified only");
+        CreateProfileButton.Content = L("Создать профиль", "New profile");
+        EditProfileButton.Content = L("Изменить профиль", "Edit selected");
+        ProfileImportButton.Content = L("Импорт JSON", "Import JSON");
+        ProfileExportButton.Content = L("Экспорт JSON", "Export JSON");
+        CaptureSnapshotButton.Content = L("Прочитать и сохранить снимок",
+            "Read + save snapshot");
+        InspectSnapshotButton.Content = L("Открыть снимок", "Inspect snapshot");
+        CompareSnapshotsButton.Content = L("Сравнить снимки",
+            "Compare snapshots");
+
         StartButton.Content = _monitorTask is null
             ? L("Начать мониторинг", "Start monitor")
             : L("Остановить мониторинг", "Stop monitor");
