@@ -14,6 +14,10 @@ public sealed partial class MainWindow
     {
         WorkspaceScopeLabel.Text = L("DVINHOLM / РАБОЧЕЕ ПРОСТРАНСТВО",
             "DVINHOLM / WORKSPACE");
+        SidebarBrandSubtitle.Text = L("АВТОДИАГНОСТИКА", "VEHICLE DIAGNOSTICS");
+        CemPinStepIdentity.Text = L("Идентификация", "Identification");
+        CemPinStepResearch.Text = L("Поиск PIN недоступен", "PIN search unavailable");
+        CemPinStepResult.Text = L("Нет результата", "No result");
         SidebarFooterLocale.Text = L("AURORA · ЕДИНОЕ ПРИЛОЖЕНИЕ",
             "AURORA · UNIFIED APPLICATION");
 
