@@ -2134,12 +2134,30 @@ public sealed partial class MainWindow : Window
     private void RefreshJ2534Devices_Click(object sender, RoutedEventArgs e) =>
         RefreshJ2534Devices(updateStatus: true);
 
+    private J2534AdapterAuditSummary? _lastJ2534ArchitectureAudit;
+
+    private void RefreshJ2534ArchitectureAuditPresentation()
+    {
+        if (J2534ArchitectureAuditText is null || J2534ArchitectureAuditExpander is null)
+            return;
+        J2534ArchitectureAuditExpander.Header = L(
+            "Аудит разрядности драйверов (офлайн)",
+            "Driver architecture audit (offline)");
+        J2534ArchitectureAuditText.Text = _lastJ2534ArchitectureAudit is { } summary
+            ? J2534AdapterAuditReport.Format(summary, _unifiedEnglish, Environment.Is64BitProcess)
+            : L("Записи драйверов ещё не проверялись.",
+                "Driver registrations have not been inspected.");
+    }
+
     private void RefreshJ2534Devices(bool updateStatus)
     {
         var selectedPath = (J2534Devices.SelectedItem as J2534Device)?.DllPath;
         // Read both views and the physical PE headers. Never offer an x86
         // vendor DLL as directly loadable by the unified x64 executable.
         var audit = J2534DeviceDiscovery.AuditRegisteredDevices();
+        _lastJ2534ArchitectureAudit = J2534AdapterAuditReport.Assess(
+            audit, Environment.Is64BitProcess);
+        RefreshJ2534ArchitectureAuditPresentation();
         var devices = J2534DeviceDiscovery.SelectCompatible(
             audit, Environment.Is64BitProcess);
 
