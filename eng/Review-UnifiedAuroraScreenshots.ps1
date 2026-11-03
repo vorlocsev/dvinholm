@@ -48,6 +48,7 @@ $pages = @('Connection','Updates','CemPin','CemConfiguration','Dtc','Ecu')
 $widths = @(640,800,980,1280,1440)
 $manifestData = @{}
 $declaredSha = ''
+$hasMissingDeclaration = $false
 foreach ($lang in @('ru','en')) {
     $directory = Join-Path $root $lang
     $manifestPath = Join-Path $directory ("Aurora-{0}-capture-manifest.json" -f $lang)
@@ -106,7 +107,9 @@ foreach ($lang in @('ru','en')) {
         if ($pixelWidth -ne [int]$entry.actualWidthPx -or
             $pixelHeight -ne [int]$entry.actualHeightPx -or
             [int]$entry.actualClientWidthPx -lt 100 -or
-            [int]$entry.actualClientWidthPx -gt [int]$entry.actualWidthPx) {
+            [int]$entry.actualClientWidthPx -gt [int]$entry.actualWidthPx -or
+            [int]$entry.windowDpi -lt 96 -or [int]$entry.windowDpi -gt 480 -or
+            [Math]::Abs([double]$entry.measuredWidthDip - $width) -gt 5) {
             throw "PNG dimensions do not match the captured window manifest: $lang $key."
         }
         $sha = [string]$entry.sourceCommitOperatorDeclared
@@ -118,9 +121,14 @@ foreach ($lang in @('ru','en')) {
                 throw 'RU and EN captures refer to different operator-declared commits.'
             }
             $declaredSha = $sha
+        } else {
+            $hasMissingDeclaration = $true
         }
     }
     $manifestData[$lang] = $seen
+}
+if ($declaredSha -and $hasMissingDeclaration) {
+    throw 'Some screenshots lack the operator-declared commit while others declare it.'
 }
 $html = New-Object System.Collections.Generic.List[string]
 [void]$html.Add('<!doctype html><html lang="en"><meta charset="utf-8">')
