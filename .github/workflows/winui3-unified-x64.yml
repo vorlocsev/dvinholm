@@ -143,6 +143,7 @@ jobs:
             'FullyQualifiedName~AuroraDtcEvidenceDetailLocalizationTests'
             'FullyQualifiedName~UdsDtcStatusFormatterTests'
             'FullyQualifiedName~AuroraLiveScreenshotCaptureContracts'
+            'FullyQualifiedName~AuroraWindowsPowerShell51EncodingTests'
             'FullyQualifiedName~AuroraCompactHeaderParityTests'
             'FullyQualifiedName~AuroraScreenshotIdentityContracts'
             'FullyQualifiedName~AuroraFirstFoldVisualParityTests'
