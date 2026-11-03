@@ -97,8 +97,12 @@ public sealed class CemReadOnlyPrerequisiteReportTests
             Array.AsReadOnly(Enumerable.Repeat(
                 new CemReadOnlyPrerequisiteCheck(CemReadOnlyPrerequisiteKind.Connected, true), 8)
                 .ToArray()));
+        Assert.False(forged.EligibleForSourceDefinedPartReadOnly);
         Assert.Throws<InvalidDataException>(() =>
             CemReadOnlyPrerequisiteReport.Format(forged, true));
+        var empty = new CemReadOnlyPrerequisiteAssessment(
+            Array.Empty<CemReadOnlyPrerequisiteCheck>());
+        Assert.False(empty.EligibleForSourceDefinedPartReadOnly);
     }
 
     [Fact]
