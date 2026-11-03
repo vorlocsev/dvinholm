@@ -59,6 +59,7 @@ $expectedTitles = @{
     }
 }
 $manifestData = @{}
+$manifestDpi = @{}
 $declaredSha = ''
 $hasMissingDeclaration = $false
 foreach ($lang in @('ru','en')) {
@@ -70,6 +71,8 @@ foreach ($lang in @('ru','en')) {
     $rows = @(Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json)
     if ($rows.Count -gt 30) { throw 'Unexpected extra records in screenshot manifest.' }
     $seen = @{}
+    $dpis = @{}
+    $observedDpi = $null
     foreach ($entry in $rows) {
         $page = [string]$entry.page
         $width = [int]$entry.requestedWidthDip
@@ -132,6 +135,14 @@ foreach ($lang in @('ru','en')) {
                 ([int]$entry.actualClientHeightPx * 96.0 / [int]$entry.windowDpi)) -gt 1) {
             throw "PNG dimensions do not match the captured window manifest: $lang $key."
         }
+        # A locale pass is one monitor-DPI session, not a silently mixed
+        # collection of 100%, 125% and 150% captures.
+        $dpi = [int]$entry.windowDpi
+        if ($null -ne $observedDpi -and $observedDpi -ne $dpi) {
+            throw "Mixed window DPI within $lang captures. Use a separate capture root per scale."
+        }
+        $observedDpi = $dpi
+        $dpis[$key] = $dpi
         $sha = [string]$entry.sourceCommitOperatorDeclared
         if ($sha -and $sha -cnotmatch '^[0-9a-fA-F]{40}$') {
             throw "Invalid operator-declared commit SHA: $lang $key."
@@ -146,17 +157,46 @@ foreach ($lang in @('ru','en')) {
         }
     }
     $manifestData[$lang] = $seen
+    $manifestDpi[$lang] = $dpis
+}
+# Never show RU/EN captures side-by-side as directly comparable if their
+# measured physical DPI differs. A separate review root is required per scale.
+foreach ($page in $pages) {
+    foreach ($width in $widths) {
+        $key = "$page/$width"
+        if ($manifestDpi['ru'].ContainsKey($key) -and
+            $manifestDpi['en'].ContainsKey($key) -and
+            $manifestDpi['ru'][$key] -ne $manifestDpi['en'][$key]) {
+            throw "RU/EN window DPI mismatch for $key. Capture both languages at the same scale."
+        }
+    }
 }
 if ($declaredSha -and $hasMissingDeclaration) {
     throw 'Some screenshots lack the operator-declared commit while others declare it.'
 }
 $html = New-Object System.Collections.Generic.List[string]
+$manualChecks = @(
+    'Banner / emblem / Aurora colors versus approved image',
+    'Exactly six navigation routes and sidebar alignment',
+    'Title, real J2534 status and RU/EN switch at compact/wide widths',
+    'Connection: real adapter, CAN speed and session state',
+    'Updates: real version, channel and safe non-installable actions',
+    'CEM PIN/configuration: honest evidence and disabled write actions',
+    'DTC/ECU: table captions, schematic disclaimers and wrapping',
+    'No clipped actions, missing footer or unintended horizontal scrolling'
+)
 [void]$html.Add('<!doctype html><html lang="en"><meta charset="utf-8">')
 [void]$html.Add('<meta name="viewport" content="width=device-width,initial-scale=1">')
 [void]$html.Add('<title>PRIVATE Dvinholm Aurora screenshot review</title>')
 [void]$html.Add('<style>body{font:15px Segoe UI,Arial,sans-serif;background:#071625;color:#e9f6ff;margin:20px}h1,h2{color:#9ce9ff}p{max-width:85ch}section{margin:24px 0;border-top:1px solid #31516b;padding:10px 0}.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:14px}figure{margin:0;background:#10263b;border:1px solid #365875;padding:10px;border-radius:10px}figcaption{margin-bottom:8px}img{width:100%;height:auto;display:block}.missing{color:#f2b979;border:1px dashed #bc8655;padding:16px}.privacy{color:#f1c48f}</style>')
 [void]$html.Add('<h1>Dvinholm Aurora: RU / EN visual review</h1>')
 [void]$html.Add('<p class="privacy">PRIVATE LOCAL REPORT. NOT a visual PASS, not a vehicle/J2534 test. Inspect screenshots manually against the ORIGINAL approved six-page image. Never upload before redaction. Captures are linked, not copied or embedded.</p>')
+[void]$html.Add('<p>Recorded DPI describes the actual Dvinholm window, not independently certified Windows Display scaling. Capture and review separate RU/EN sets at 96, 120 and 144 DPI (100%, 125%, 150%) when supported.</p>')
+[void]$html.Add('<h2>Manual visual acceptance checklist (all unreviewed)</h2><ol>')
+foreach ($criterion in $manualChecks) {
+    [void]$html.Add('<li>' + $criterion + ' | NOT RUN until human comparison</li>')
+}
+[void]$html.Add('</ol>')
 if ($declaredSha) {
     [void]$html.Add('<p>Operator-declared source commit (not authenticated): <code>' + $declaredSha + '</code></p>')
 } else {
@@ -171,8 +211,10 @@ foreach ($page in $pages) {
             $key = "$page/$width"
             if ($manifestData[$lang].ContainsKey($key)) {
                 $name = "Aurora-$page-$lang-$width-dip.png"
+                $dpi = $manifestDpi[$lang][$key]
+                $scale = [Math]::Round($dpi * 100.0 / 96.0)
                 [void]$html.Add('<figure><figcaption>' + $lang.ToUpperInvariant() +
-                    ' | real captured viewport, unreviewed</figcaption><img alt="' +
+                    ' | ' + $dpi + ' DPI (about ' + $scale + '%) | unreviewed</figcaption><img alt="' +
                     $page + ' ' + $lang + '" src="' + $lang + '/' + $name +
                     '"></figure>')
                 $present++
