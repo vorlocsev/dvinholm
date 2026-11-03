@@ -13,6 +13,8 @@ internal sealed record CemPinStoreInventory(IReadOnlyList<CemPinSavedEntry> Entr
 internal sealed class CemPinStore
 {
     private const int PayloadLength = 23;
+    internal const int MaxVisibleRecords = 128;
+    private const int MaxProtectedBytes = 8192;
     private readonly string _directory;
     private readonly Action<string, byte[]> _stage;
 
@@ -48,7 +50,11 @@ internal sealed class CemPinStore
             if (!result.TryReveal(bytes => bytes.CopyTo(plain.AsSpan(17))))
                 throw new InvalidOperationException();
             encrypted = CemPinWindowsProtection.Transform(plain, entry.Id, protect: true);
+            if (encrypted.Length is <= 0 or > MaxProtectedBytes)
+                throw new IOException("Protected record size rejected.");
+            RejectLinkedAncestors();
             Directory.CreateDirectory(_directory);
+            RejectLinkedAncestors();
             temporary = FilePath(entry.Id) + "." + Guid.NewGuid().ToString("N") + ".tmp";
             _stage(temporary, encrypted);
             var staged = ReadBounded(temporary);
@@ -57,6 +63,8 @@ internal sealed class CemPinStore
                 if (!staged.AsSpan().SequenceEqual(encrypted)) throw new IOException();
             }
             finally { CryptographicOperations.ZeroMemory(staged); }
+            if (File.Exists(FilePath(entry.Id)))
+                throw new IOException("PIN record collision.");
             File.Move(temporary, FilePath(entry.Id));
             return entry;
         }
@@ -81,11 +89,20 @@ internal sealed class CemPinStore
     {
         try
         {
+            RejectLinkedAncestors();
             if (!Directory.Exists(_directory)) return new(Array.Empty<CemPinSavedEntry>(), 0);
             var entries = new List<CemPinSavedEntry>();
             var unavailable = 0;
+            var inspected = 0;
             foreach (var path in Directory.EnumerateFiles(_directory, "*.dpapi"))
             {
+                // A hostile or corrupted vault directory must not trigger an
+                // unbounded number of DPAPI operations or consume arbitrary RAM.
+                if (++inspected > MaxVisibleRecords)
+                {
+                    unavailable++;
+                    break;
+                }
                 if (!Guid.TryParseExact(Path.GetFileNameWithoutExtension(path), "N", out var id))
                 { unavailable++; continue; }
                 byte[]? plain = null;
@@ -117,7 +134,16 @@ internal sealed class CemPinStore
 
     internal void Delete(Guid id)
     {
-        try { File.Delete(FilePath(id)); }
+        try
+        {
+            RejectLinkedAncestors();
+            var path = FilePath(id);
+            if (File.Exists(path))
+            {
+                RejectLinkedRecord(path);
+                File.Delete(path);
+            }
+        }
         catch (Exception) { throw new InvalidOperationException("The saved PIN record could not be deleted."); }
     }
 
@@ -125,15 +151,36 @@ internal sealed class CemPinStore
 
     private byte[] ReadPayload(Guid id)
     {
+        RejectLinkedAncestors();
         var encrypted = ReadBounded(FilePath(id));
         try { return CemPinWindowsProtection.Transform(encrypted, id, protect: false); }
         finally { CryptographicOperations.ZeroMemory(encrypted); }
     }
 
+    private void RejectLinkedAncestors()
+    {
+        // Reparse-point directories could redirect PIN records into a user-
+        // unrelated tree. Fail closed rather than following a junction.
+        for (DirectoryInfo? current = new(_directory);
+            current is not null; current = current.Parent)
+        {
+            if (current.Exists &&
+                (current.Attributes & FileAttributes.ReparsePoint) != 0)
+                throw new IOException("Linked PIN vault directory rejected.");
+        }
+    }
+
+    private static void RejectLinkedRecord(string path)
+    {
+        if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0)
+            throw new IOException("Linked PIN record rejected.");
+    }
+
     private static byte[] ReadBounded(string path)
     {
+        RejectLinkedRecord(path);
         using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
-        if (file.Length is <= 0 or > 8192) throw new IOException();
+        if (file.Length is <= 0 or > MaxProtectedBytes) throw new IOException();
         var bytes = new byte[(int)file.Length];
         file.ReadExactly(bytes);
         return bytes;
