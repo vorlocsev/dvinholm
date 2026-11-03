@@ -264,15 +264,13 @@ public sealed partial class MainWindow : Window
         {
             var selected = AuroraWorkspaceNavigation.TryParse(button.Tag as string, out var target)
                 && target == destination && !_unifiedUpdatesActive;
-            button.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(selected
-                ? Windows.UI.Color.FromArgb(255, 8, 101, 199) : Windows.UI.Color.FromArgb(0, 0, 0, 0));
-            Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(button, selected ? "Выбран" : "");
+            ApplyAuroraNavigationSurface(button, selected);
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(button, selected
+                ? L("Выбран", "Selected") : "");
         }
-        SidebarUpdatesButton.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(
-            _unifiedUpdatesActive ? Windows.UI.Color.FromArgb(255, 8, 101, 199)
-                : Windows.UI.Color.FromArgb(0, 0, 0, 0));
+        ApplyAuroraNavigationSurface(SidebarUpdatesButton, _unifiedUpdatesActive);
         Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(
-            SidebarUpdatesButton, _unifiedUpdatesActive ? "Выбран" : "");
+            SidebarUpdatesButton, _unifiedUpdatesActive ? L("Выбран", "Selected") : "");
     }
 
     private void ShowDashboardWorkspace()
