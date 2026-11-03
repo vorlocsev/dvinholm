@@ -83,9 +83,11 @@ public sealed class AuroraWideHeaderActionLayoutTests
         Assert.Equal("10", (string?)actions.Attribute("Spacing"));
         Assert.Equal("0,12,16,10", (string?)actions.Attribute("Margin"));
         Assert.Empty(Setters(doc, "ShellWide"));
-        Assert.Equal("2", (string?)Named(doc, "WorkspaceHeaderGrid")
-            .Descendants().Single(e => e.Name.LocalName == "Grid.ColumnDefinitions")
-            .Elements().Count().ToString());
+        // Only inspect the header's own columns. Nested status controls may
+        // legitimately contain their own Grid.ColumnDefinitions.
+        Assert.Equal(2, Named(doc, "WorkspaceHeaderGrid").Elements()
+            .Single(e => e.Name.LocalName == "Grid.ColumnDefinitions")
+            .Elements().Count());
     }
 
     [Fact]
