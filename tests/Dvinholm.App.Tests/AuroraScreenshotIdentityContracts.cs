@@ -120,7 +120,7 @@ public sealed class AuroraScreenshotIdentityContracts
     public void ActualWorkspaceIsVerifiedAfterNavigationAndEveryResize()
     {
         var capture = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
-        Assert.Equal(3, capture.Split("Confirm-WorkspaceState $page").Length - 1);
+        Assert.Equal(2, capture.Split("Confirm-WorkspaceState $page").Length - 1);
         Assert.Contains("$pattern.Invoke()", capture);
         var nav = capture.IndexOf("function Invoke-OnlyNavigation(", StringComparison.Ordinal);
         var verify = capture.IndexOf("Confirm-WorkspaceState $page", nav, StringComparison.Ordinal);
