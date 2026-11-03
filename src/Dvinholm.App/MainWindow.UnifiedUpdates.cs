@@ -117,6 +117,14 @@ public sealed partial class MainWindow
             ShellConnectionText.Text = _connected && _session.IsConnected
                 ? L("J2534 подключён", "J2534 connected")
                 : L("Не подключено", "Disconnected");
+        // Accessible header status is a navigation shortcut, never Connect.
+        var statusNavigationHint = L(
+            "Открыть параметры J2534. Это не подключает автомобиль.",
+            "Open J2534 connection settings. This does not connect to the vehicle.");
+        ToolTipService.SetToolTip(HeaderConnectionStatusButton, statusNavigationHint);
+        AutomationProperties.SetName(HeaderConnectionStatusButton, statusNavigationHint);
+        AutomationProperties.SetName(ShellConnectionDot,
+            L("Состояние соединения J2534", "J2534 connection indicator"));
     }
 
     private void SetPrimaryNavigationLabel(string tag, TextBlock block, string ru, string en)
