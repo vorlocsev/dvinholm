@@ -560,7 +560,7 @@
                             </Border>
                             </Grid>
                         </StackPanel>
-                        <StackPanel x:Name="CemPinPage" Visibility="Collapsed" Spacing="4">
+                        <StackPanel x:Name="CemPinPage" Visibility="Collapsed" Spacing="0">
                             <!-- Approved 3-step Aurora visual. Stages 2 and 3 are not authenticated
                                  or executable in Release. No fabricated progress or PIN. -->
                             <Border x:Name="CemPinStepper" Style="{StaticResource AuroraCard}">
@@ -671,7 +671,7 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                        <StackPanel x:Name="CemConfigPage" Visibility="Collapsed" Spacing="4">
+                        <StackPanel x:Name="CemConfigPage" Visibility="Collapsed" Spacing="0">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="14">
                                     <TextBlock x:Name="CemConfigPageTitle" Text="Конфигурация CEM" FontSize="24" FontWeight="SemiBold" Visibility="Collapsed" />
@@ -794,7 +794,7 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                        <StackPanel x:Name="EcuPage" Visibility="Collapsed" Spacing="4">
+                        <StackPanel x:Name="EcuPage" Visibility="Collapsed" Spacing="0">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
                                     <TextBlock x:Name="EcuDiscoveryTitle" TextWrapping="Wrap" Text="Обнаружение блоков" FontSize="20" FontWeight="SemiBold" />
@@ -1000,7 +1000,7 @@
                                     </Grid>
                                 </StackPanel>
                             </Border>
-                            <Button x:Name="EcuOpenProfilesButton" Content="Перейти к профилям ECU →" Tag="EcuProfiles" Click="WorkspaceNavigate_Click" />
+                            <Button x:Name="EcuOpenProfilesButton" Content="Перейти к профилям ECU →" Tag="EcuProfiles" Visibility="Collapsed" Click="WorkspaceNavigate_Click" />
                         </StackPanel>
                         <StackPanel x:Name="DiagnosticsPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
@@ -1044,7 +1044,7 @@
                             </Border>
                             <StackPanel x:Name="DevelopmentDiagnosticTools" Spacing="8" Visibility="Collapsed" />
                         </StackPanel>
-                        <StackPanel x:Name="DtcPage" Visibility="Collapsed" Spacing="4">
+                        <StackPanel x:Name="DtcPage" Visibility="Collapsed" Spacing="0">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="16">
                                     <TextBlock x:Name="DtcPageHeading" Text="Ошибки / DTC" FontSize="23" FontWeight="SemiBold" Visibility="Collapsed" />
