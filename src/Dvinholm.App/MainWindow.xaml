@@ -68,6 +68,48 @@
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
+            <VisualStateGroup x:Name="ConnectionPanelStates">
+                <VisualState x:Name="ConnectionThreeColumns">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1280" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="ConnectionVerticalPanels">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ConnectionAdapterColumn.Width" Value="*" />
+                        <Setter Target="ConnectionBusColumn.Width" Value="0" />
+                        <Setter Target="ConnectionStatusColumn.Width" Value="0" />
+                        <Setter Target="ConnectionBusPane.(Grid.Column)" Value="0" />
+                        <Setter Target="ConnectionBusPane.(Grid.Row)" Value="1" />
+                        <Setter Target="ConnectionStatusPane.(Grid.Column)" Value="0" />
+                        <Setter Target="ConnectionStatusPane.(Grid.Row)" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+            <VisualStateGroup x:Name="UpdatesPanelStates">
+                <VisualState x:Name="UpdatesThreeColumns">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1280" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="UpdatesVerticalPanels">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="UpdatesVersionColumn.Width" Value="*" />
+                        <Setter Target="UpdatesChannelColumn.Width" Value="0" />
+                        <Setter Target="UpdatesActionColumn.Width" Value="0" />
+                        <Setter Target="UpdatesChannelPane.(Grid.Column)" Value="0" />
+                        <Setter Target="UpdatesChannelPane.(Grid.Row)" Value="1" />
+                        <Setter Target="UpdatesActionPane.(Grid.Column)" Value="0" />
+                        <Setter Target="UpdatesActionPane.(Grid.Row)" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
             <VisualStateGroup x:Name="DtcResponsiveStates">
                 <VisualState x:Name="DtcTwoColumns">
                     <VisualState.StateTriggers>
@@ -961,51 +1003,115 @@
                                 </Grid>
                             </Border>
                         </StackPanel>
-                        <StackPanel x:Name="ConnectionPage" Visibility="Collapsed" Spacing="4">
-                            <Border Style="{StaticResource AuroraCard}">
-                                <StackPanel Spacing="18">
-                                    <TextBlock x:Name="ConnectionPageHeading" Text="Интерфейс автомобиля" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="ConnectionPageIntro" Text="Выберите установленный J2534-адаптер и параметры канала." Foreground="#9EB8CC" />
-                                    <TextBox x:Name="DllPath" PlaceholderText="Path to compatible J2534 DLL" Header="J2534 DLL" />
-                                    <Grid ColumnSpacing="16" RowSpacing="16">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <ComboBox x:Name="J2534Devices" Header="Registered adapters" DisplayMemberPath="Label" PlaceholderText="Select adapter" SelectionChanged="J2534Device_SelectionChanged" Grid.Column="0" />
-                                        <StackPanel Grid.Column="1" Spacing="12">
-                                            <ComboBox x:Name="BaudRate" Header="CAN speed" SelectedIndex="0" ToolTipService.ToolTip="Volvo XC90 P2 HS-CAN guidance: through model year 2004 250 kbit/s; from model year 2005 500 kbit/s. Other networks differ. Verify actual model year, bus and adapter before connecting; Dvinholm does not adjust the speed automatically.">
-                                                <ComboBoxItem Content="500 kbit/s" Tag="500000" />
-                                                <ComboBoxItem Content="250 kbit/s" Tag="250000" />
-                                                <ComboBoxItem Content="125 kbit/s" Tag="125000" />
-                                            </ComboBox>
-                                            <ComboBox x:Name="CanConnectionMode" Header="CAN channel ID format" SelectedIndex="0" Visibility="Collapsed" ToolTipService.ToolTip="Select before connecting. Reconnect to change the physical channel format.">
-                                                <ComboBoxItem Content="11-bit" />
-                                                <ComboBoxItem Content="29-bit" />
-                                            </ComboBox>
+                        <StackPanel x:Name="ConnectionPage" Visibility="Collapsed" Spacing="10">
+                            <!-- Approved visual reference: adapter | CAN parameters | real connection state.
+                                 Keep existing J2534 selection, handlers and architecture audit. -->
+                            <Grid x:Name="ConnectionThreeCardGrid" ColumnSpacing="12" RowSpacing="12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition x:Name="ConnectionAdapterColumn" Width="1.1*" />
+                                    <ColumnDefinition x:Name="ConnectionBusColumn" Width="0.95*" />
+                                    <ColumnDefinition x:Name="ConnectionStatusColumn" Width="1.05*" />
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="ConnectionAdapterPane" Grid.Column="0"
+                                        Style="{StaticResource AuroraCard}">
+                                    <StackPanel Spacing="14">
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE950;"
+                                                      Foreground="#55CEED" FontSize="21" />
+                                            <TextBlock x:Name="ConnectionPageHeading" Text="Интерфейс автомобиля"
+                                                       FontSize="19" FontWeight="SemiBold" />
                                         </StackPanel>
-                                    </Grid>
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Button x:Name="ConnectionRefreshButton" Content="Refresh" Click="RefreshJ2534Devices_Click" VerticalAlignment="Bottom" />
-                                        <Button x:Name="ConnectButton" Content="Connect" Click="Connect_Click" VerticalAlignment="Bottom" Background="#0865C7" BorderBrush="#348DEA" />
+                                        <TextBlock x:Name="ConnectionPageIntro"
+                                                   Text="Выберите установленный J2534-адаптер и параметры канала."
+                                                   Foreground="#A9C7DE" TextWrapping="Wrap" FontSize="12" />
+                                        <ComboBox x:Name="J2534Devices" Header="Registered adapters"
+                                                  DisplayMemberPath="Label" PlaceholderText="Select adapter"
+                                                  SelectionChanged="J2534Device_SelectionChanged"
+                                                  HorizontalAlignment="Stretch" />
+                                        <TextBox x:Name="DllPath" PlaceholderText="Path to compatible J2534 DLL"
+                                                 Header="J2534 DLL" />
+                                        <Expander x:Name="J2534ArchitectureAuditExpander"
+                                                  Header="Аудит разрядности драйверов (офлайн)" IsExpanded="False">
+                                            <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
+                                                <TextBlock x:Name="J2534ArchitectureAuditText"
+                                                           Text="Нажмите Refresh для повторной проверки зарегистрированных J2534 DLL."
+                                                           TextWrapping="Wrap" IsTextSelectionEnabled="True"
+                                                           FontFamily="Consolas" FontSize="12" />
+                                            </ScrollViewer>
+                                        </Expander>
                                     </StackPanel>
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource AuroraCard}">
-                                <StackPanel Spacing="18">
-                                    <TextBlock x:Name="ConnectionDriverHeading" Text="Сведения об адаптере" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="ConnectionDriverIntro" Text="Информация текущего подключения." Foreground="#9EB8CC" />
-                                    <TextBlock x:Name="AdapterMetadataText" Text="J2534 adapter details: disconnected." FontSize="12" Foreground="#C1D7E8" TextWrapping="Wrap" IsTextSelectionEnabled="True" ToolTipService.ToolTip="Unverified values returned by the driver. Local diagnostic details, not an ECU identity or authorization." />
-                                    <Expander x:Name="J2534ArchitectureAuditExpander" Header="Аудит разрядности драйверов (офлайн)" IsExpanded="False">
-                                        <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
-                                            <TextBlock x:Name="J2534ArchitectureAuditText"
-                                                       Text="Нажмите Refresh для повторной проверки зарегистрированных J2534 DLL."
-                                                       TextWrapping="Wrap" IsTextSelectionEnabled="True"
-                                                       FontFamily="Consolas" FontSize="12" />
-                                        </ScrollViewer>
-                                    </Expander>
-                                </StackPanel>
-                            </Border>
+                                </Border>
+                                <Border x:Name="ConnectionBusPane" Grid.Column="1"
+                                        Style="{StaticResource AuroraCard}">
+                                    <StackPanel Spacing="14">
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE713;"
+                                                      Foreground="#55CEED" FontSize="21" />
+                                            <TextBlock x:Name="ConnectionBusHeading"
+                                                       Text="Параметры CAN" FontSize="19"
+                                                       FontWeight="SemiBold" />
+                                        </StackPanel>
+                                        <ComboBox x:Name="BaudRate" Header="CAN speed" SelectedIndex="0"
+                                                  HorizontalAlignment="Stretch"
+                                                  ToolTipService.ToolTip="Volvo XC90 P2 HS-CAN guidance: through model year 2004 250 kbit/s; from model year 2005 500 kbit/s. Other networks differ. Verify actual model year, bus and adapter before connecting; Dvinholm does not adjust the speed automatically.">
+                                            <ComboBoxItem Content="500 kbit/s" Tag="500000" />
+                                            <ComboBoxItem Content="250 kbit/s" Tag="250000" />
+                                            <ComboBoxItem Content="125 kbit/s" Tag="125000" />
+                                        </ComboBox>
+                                        <ComboBox x:Name="CanConnectionMode"
+                                                  Header="CAN channel ID format" SelectedIndex="0"
+                                                  Visibility="Collapsed"
+                                                  ToolTipService.ToolTip="Select before connecting. Reconnect to change the physical channel format.">
+                                            <ComboBoxItem Content="11-bit" />
+                                            <ComboBoxItem Content="29-bit" />
+                                        </ComboBox>
+                                        <TextBlock x:Name="ConnectionBusEvidenceNote"
+                                                   Text="Скорость и формат CAN должны соответствовать проверенному автомобилю."
+                                                   TextWrapping="Wrap" Foreground="#A9BDD3" FontSize="12" />
+                                    </StackPanel>
+                                </Border>
+                                <Border x:Name="ConnectionStatusPane" Grid.Column="2"
+                                        Style="{StaticResource AuroraCard}">
+                                    <StackPanel Spacing="14">
+                                        <StackPanel Orientation="Horizontal" Spacing="10">
+                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE753;"
+                                                      Foreground="#55CEED" FontSize="21" />
+                                            <TextBlock x:Name="ConnectionDriverHeading"
+                                                       Text="Сведения об адаптере" FontSize="19"
+                                                       FontWeight="SemiBold" />
+                                        </StackPanel>
+                                        <TextBlock x:Name="ConnectionSessionState"
+                                                   Text="{Binding Text, ElementName=ShellConnectionText}"
+                                                   FontSize="17" Foreground="#B9E3FC" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="ConnectionDriverIntro"
+                                                   Text="Информация текущего подключения."
+                                                   Foreground="#A9C7DE" FontSize="12" />
+                                        <TextBlock x:Name="AdapterMetadataText"
+                                                   Text="J2534 adapter details: disconnected."
+                                                   FontSize="12" Foreground="#C1D7E8" TextWrapping="Wrap"
+                                                   IsTextSelectionEnabled="True"
+                                                   ToolTipService.ToolTip="Unverified values returned by the driver. Local diagnostic details, not an ECU identity or authorization." />
+                                        <Grid ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button x:Name="ConnectionRefreshButton" Grid.Column="0"
+                                                    Content="Refresh" Click="RefreshJ2534Devices_Click"
+                                                    HorizontalAlignment="Stretch" />
+                                            <Button x:Name="ConnectButton" Grid.Column="1"
+                                                    Content="Connect" Click="Connect_Click"
+                                                    HorizontalAlignment="Stretch"
+                                                    Background="#0865C7" BorderBrush="#348DEA" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
                         </StackPanel>
                         <Border x:Name="DiagnosticResultsCard" Visibility="Collapsed" Style="{StaticResource AuroraCard}">
                             <StackPanel Spacing="18">
