@@ -91,8 +91,7 @@ try {
         $hasReceipt = Test-Path (Join-Path $root 'fixture-handoff-ready.txt') -PathType Leaf
         if (!(($status -eq 0 -and $hasReceipt) -or
               ($status -eq 2 -and -not $hasReceipt))) {
-            Write-Warning ("Exited-child fixture result: code={0}; receipt={1}. " +
-                "A timeout, crash or mismatched receipt is never accepted." -f $status, $hasReceipt)
+            Write-Warning ("Exited-child fixture result: code={0}; receipt={1}. " -f $status, $hasReceipt)
         }
         Check (($status -eq 0 -and $hasReceipt) -or
                ($status -eq 2 -and -not $hasReceipt)) 'Exited child never yields false success'
