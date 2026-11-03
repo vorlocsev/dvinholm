@@ -164,9 +164,7 @@ public sealed partial class MainWindow
         CanMonitorDataHeader.Text = L("Данные", "Data");
         IdFilter.Header = L("Фильтр CAN ID · hex", "CAN ID filter (hex)");
         CanMonitorClearButton.Content = L("Очистить", "Clear");
-        HardwareFilterButton.Content = _activeHardwareFilterId is null
-            ? L("Применить аппаратный фильтр", "Apply HW filter")
-            : L("Убрать аппаратный фильтр", "Remove HW filter");
+        RefreshHardwareFilterCaption();
         CanMonitorCsvButton.Content = L("Журнал CSV", "CSV log");
         CanRxSummaryButton.Content = L("Сводка RX", "RX summary");
         CanTraceInspectButton.Content = L("Анализ трассы", "Inspect trace");
@@ -210,5 +208,14 @@ public sealed partial class MainWindow
         CancelDiscoveryButton.Content = L("Отменить поиск", "Cancel scan");
         EcuSelector.PlaceholderText = L("Наблюдаемый ответ ECU",
             "Observed ECU response");
+    }
+    private void RefreshHardwareFilterCaption()
+    {
+        // Only reflect the confirmed hardware-filter state. A locale change
+        // must not apply/remove filters or change a connected J2534 session.
+        if (HardwareFilterButton is null) return;
+        HardwareFilterButton.Content = _activeHardwareFilterId is null
+            ? L("Применить аппаратный фильтр", "Apply HW filter")
+            : L("Убрать аппаратный фильтр", "Remove HW filter");
     }
 }
