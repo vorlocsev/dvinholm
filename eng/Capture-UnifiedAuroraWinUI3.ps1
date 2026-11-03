@@ -4,7 +4,7 @@
     Capture genuine, visible Dvinholm WinUI 3 screenshots from a signed-in
     interactive Windows desktop. This is not a CI/offscreen screenshot.
 .EXAMPLE
-    pwsh -File eng/Capture-UnifiedAuroraWinUI3.ps1 -Language ru -OutputDirectory C:\AuroraReview -IConfirmOfflineNoSecrets
+    powershell.exe -NoProfile -File eng/Capture-UnifiedAuroraWinUI3.ps1 -Language ru -OutputDirectory C:\AuroraReview -IConfirmOfflineNoSecrets
 .NOTES
     Open the reviewed x64 Dvinholm.exe and choose RU or EN in the app first.
     Disconnect all real J2534 devices, clear private VIN/PIN/path data, and
@@ -46,8 +46,8 @@ if ($env:CI -eq 'true' -or $env:GITHUB_ACTIONS -eq 'true' -or
     -not [Environment]::UserInteractive) {
     throw 'Real Aurora screenshots require a signed-in interactive Windows desktop. CI is not a GUI acceptance environment.'
 }
-if ($PSVersionTable.PSVersion.Major -ge 6 -and -not $IsWindows) {
-    throw 'Windows desktop required.'
+if ($PSVersionTable.PSEdition -ne 'Desktop') {
+    throw 'Run with Windows PowerShell 5.1 (powershell.exe); desktop UI Automation assemblies are required.'
 }
 if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
     throw 'Windows desktop required.'
