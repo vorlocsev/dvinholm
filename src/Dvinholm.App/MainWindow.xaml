@@ -68,6 +68,23 @@
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
+            <VisualStateGroup x:Name="DtcResponsiveStates">
+                <VisualState x:Name="DtcTwoColumns">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1280" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="DtcStacked">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="DtcDetailColumn.Width" Value="0" />
+                        <Setter Target="DtcDetailsPane.(Grid.Column)" Value="0" />
+                        <Setter Target="DtcDetailsPane.(Grid.Row)" Value="1" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
             <VisualStateGroup x:Name="EcuResponsiveStates">
                 <VisualState x:Name="EcuThreeColumns">
                     <VisualState.StateTriggers>
@@ -765,7 +782,17 @@
                                         <Button x:Name="ReadDtcButton" Content="Read DTC" Grid.Column="1" IsEnabled="False" Click="ReadDtc_Click" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Background="#0865C7" BorderBrush="#348DEA" ToolTipService.ToolTip="Read DTCs from only the selected ECU using verified TX/RX addressing. No DTC clear or full-vehicle scan." />
                                         <Button x:Name="DtcClearButton" Grid.Column="2" Content="Стереть ошибки" IsEnabled="False" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Стирание не реализовано: нет проверенного полномочия, сервиса, защиты и восстановления." />
                                     </Grid>
-                                    <Border Background="#112B47" BorderBrush="#2B5878" BorderThickness="1" CornerRadius="10" Padding="13">
+                                    <Grid x:Name="DtcWorkbenchGrid" ColumnSpacing="12" RowSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="2*" />
+                                            <ColumnDefinition x:Name="DtcDetailColumn" Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                    <Border x:Name="DtcResultsPane" Grid.Column="0" Background="#112B47"
+                                            BorderBrush="#2B5878" BorderThickness="1" CornerRadius="10" Padding="13">
                                         <StackPanel Spacing="9">
                                             <Grid ColumnSpacing="14">
                                                 <Grid.ColumnDefinitions>
@@ -797,11 +824,15 @@
                                             <TextBlock x:Name="DtcEvidenceDisclaimer" Text="Коды появляются только после явного чтения. Подтверждённого каталога описаний Volvo пока нет. Ни одна ошибка здесь не подставляется автоматически." Foreground="#A8C7DF" FontSize="12" TextWrapping="Wrap" />
                                         </StackPanel>
                                     </Border>
+                                    <Border x:Name="DtcDetailsPane" Grid.Column="1" Background="#102943"
+                                            BorderBrush="#2B5878" BorderThickness="1" CornerRadius="10" Padding="14">
                                     <StackPanel Spacing="7">
                                         <TextBlock x:Name="DtcDetailsHeading" Text="Подробности" FontSize="19" FontWeight="SemiBold" />
                                         <TextBlock x:Name="DtcSelectedRecordDetails" Text="Выберите считанную ошибку, чтобы посмотреть сырые данные и маску статуса." Foreground="#B2CBDE" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
                                         <TextBlock x:Name="DtcDetailsEvidence" Text="После чтения реальные 24-битные коды DTC, маски статуса и поддерживаемые ECU биты появятся в панели «Результат операции» ниже. Описания причин и рекомендаций требуют проверенного каталога для выбранной модели." Foreground="#B2CBDE" TextWrapping="Wrap" FontSize="12" />
                                     </StackPanel>
+                                    </Border>
+                                    </Grid>
                                     <Button x:Name="DtcCheckAddressesButton" Content="Проверить адреса ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" HorizontalAlignment="Left" ToolTipService.ToolTip="Только навигация к параметрам подключения. Запросы к автомобилю не отправляются." />
                                 </StackPanel>
                             </Border>
