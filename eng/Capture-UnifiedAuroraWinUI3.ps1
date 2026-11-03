@@ -32,7 +32,7 @@ param(
     [ValidateRange(480,900)]
     [int]$HeightDip = 700,
 
-    [ValidatePattern('^[0-9a-fA-F]{40}$')]
+    [ValidatePattern('^$|^[0-9a-fA-F]{40}$')]
     [string]$CommitSha = ''
 )
 
@@ -46,7 +46,7 @@ if ($env:CI -eq 'true' -or $env:GITHUB_ACTIONS -eq 'true' -or
     -not [Environment]::UserInteractive) {
     throw 'Real Aurora screenshots require a signed-in interactive Windows desktop. CI is not a GUI acceptance environment.'
 }
-if (-not $IsWindows -and $PSVersionTable.PSVersion.Major -ge 6) {
+if ($PSVersionTable.PSVersion.Major -ge 6 -and -not $IsWindows) {
     throw 'Windows desktop required.'
 }
 if ([Environment]::OSVersion.Platform -ne [PlatformID]::Win32NT) {
@@ -77,6 +77,12 @@ public static class DvinholmWinUiCaptureNative
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
 
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetThreadDpiAwarenessContext();
+
+    [DllImport("user32.dll")]
+    public static extern int GetAwarenessFromDpiAwarenessContext(IntPtr dpiContext);
+
     [DllImport("user32.dll", SetLastError = true)]
     public static extern uint GetDpiForWindow(IntPtr hwnd);
 
@@ -102,8 +108,10 @@ public static class DvinholmWinUiCaptureNative
 # DPI context may reject this call: that is safe only if a reviewed desktop
 # session can establish its actual DPI context; otherwise refuse capture.
 $setDpi = [DvinholmWinUiCaptureNative]::SetProcessDpiAwarenessContext([IntPtr](-4))
-if (-not $setDpi) {
-    throw 'Cannot set per-monitor-v2 DPI awareness for trustworthy screenshot dimensions. Start in a fresh PowerShell session.'
+if (-not $setDpi -and
+    [DvinholmWinUiCaptureNative]::GetAwarenessFromDpiAwarenessContext(
+        [DvinholmWinUiCaptureNative]::GetThreadDpiAwarenessContext()) -ne 2) {
+    throw 'Per-monitor DPI awareness is unavailable. Start a fresh PowerShell session; do not trust virtualized screenshot dimensions.'
 }
 
 $windows = @(Get-Process -Name 'Dvinholm' -ErrorAction SilentlyContinue |
@@ -151,6 +159,9 @@ function Invoke-OnlyNavigation([string]$page) {
 if (-not (Test-Path -LiteralPath $output -PathType Container)) {
     [void](New-Item -ItemType Directory -Path $output -Force)
 }
+if (@(Get-ChildItem -LiteralPath $output -Force).Count -ne 0) {
+    throw 'Capture directory is not empty; choose a fresh folder to avoid mixing builds or languages.'
+}
 $results = @()
 foreach ($page in $Pages) {
     Invoke-OnlyNavigation $page
@@ -163,7 +174,7 @@ foreach ($page in $Pages) {
         $heightPx = [int][Math]::Round($HeightDip * $dpi / 96.0)
         $work = [System.Windows.Forms.Screen]::FromHandle($handle).WorkingArea
         if ($widthPx -gt $work.Width - 24 -or $heightPx -gt $work.Height - 24) {
-            throw "Requested $dip DIP at $dpi DPI cannot fit on this monitor. Reduce HeightsDip or choose a larger monitor."
+            throw "Requested $dip DIP at $dpi DPI cannot fit on this monitor. Reduce HeightDip or choose a larger monitor."
         }
         $left = $work.Left + 12
         $top = $work.Top + 12
