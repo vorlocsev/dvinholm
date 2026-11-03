@@ -140,6 +140,58 @@ $labels = @{
     }
 }
 
+# Workspaces have their own localized title, different from some sidebar names.
+# Check both title and actual locale before every capture. If UIA cannot prove
+# them, do not save a mislabelled screenshot.
+$expectedTitles = @{
+    ru = @{
+        Connection='Подключение'; Updates='Обновление'; CemPin='CEM PIN';
+        CemConfiguration='Конфигурация CEM'; Dtc='Ошибки / DTC'; Ecu='Блоки ECU'
+    }
+    en = @{
+        Connection='Connection'; Updates='Updates'; CemPin='CEM PIN';
+        CemConfiguration='CEM configuration'; Dtc='Faults (DTC)'; Ecu='Modules (ECU)'
+    }
+}
+$localeNames = @{ ru='Русский'; en='English' }
+$titleCondition = [System.Windows.Automation.PropertyCondition]::new(
+    [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+    'DvinholmWorkspaceTitle')
+$localeCondition = [System.Windows.Automation.PropertyCondition]::new(
+    [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+    'DvinholmLanguageSelector')
+
+function Confirm-WorkspaceState([string]$page) {
+    $title = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
+        $titleCondition)
+    if ($null -eq $title -or
+        $title.Current.ControlType -ne [System.Windows.Automation.ControlType]::Text) {
+        throw "Workspace title accessibility ID is not readable; refusing screenshot for $page."
+    }
+    $expectedTitle = $expectedTitles[$Language][$page]
+    $observedTitle = $title.Current.Name
+    if ($observedTitle -cne $expectedTitle -or $title.Current.IsOffscreen) {
+        throw "Expected visible workspace '$expectedTitle', observed '$observedTitle' (offscreen: $($title.Current.IsOffscreen)). No screenshot saved."
+    }
+
+    $locale = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
+        $localeCondition)
+    if ($null -eq $locale -or
+        $locale.Current.ControlType -ne [System.Windows.Automation.ControlType]::ComboBox) {
+        throw 'Language selector accessibility ID is unavailable; refusing screenshot.'
+    }
+    $selection = $locale.GetCurrentPattern(
+        [System.Windows.Automation.SelectionPattern]::Pattern)
+    if ($null -eq $selection) {
+        throw 'Language selection cannot be verified by UI Automation; refusing screenshot.'
+    }
+    $selected = @($selection.Current.GetSelection())
+    if ($selected.Count -ne 1 -or
+        $selected[0].Current.Name -cne $localeNames[$Language]) {
+        throw "Actual selected UI language does not match requested '$Language'; refusing screenshot."
+    }
+}
+
 function Invoke-OnlyNavigation([string]$page) {
     $name = $labels[$Language][$page]
     $condition = [System.Windows.Automation.PropertyCondition]::new(
@@ -157,6 +209,7 @@ function Invoke-OnlyNavigation([string]$page) {
     }
     $pattern.Invoke()
     Start-Sleep -Milliseconds 500
+    Confirm-WorkspaceState $page
 }
 
 # AdaptiveTrigger examines XAML/client width, not the outer window rectangle.
@@ -236,6 +289,8 @@ foreach ($page in $Pages) {
         if ([DvinholmWinUiCaptureNative]::GetAncestor($foreground, 2) -ne $handle) {
             throw 'The Dvinholm window is not foreground. Close overlays and retry; capture refused.'
         }
+        # Recheck after WinUI AdaptiveTrigger reflow before writing any pixels.
+        Confirm-WorkspaceState $page
         $filename = "Aurora-$page-$Language-$dip-dip.png"
         $dest = Join-Path $output $filename
         if (Test-Path -LiteralPath $dest) {
@@ -256,6 +311,8 @@ foreach ($page in $Pages) {
             file = $filename
             page = $page
             operatorSelectedLanguage = $Language
+            verifiedVisibleWorkspaceTitle = $expectedTitles[$Language][$page]
+            verifiedSelectedLanguage = $localeNames[$Language]
             requestedWidthDip = $dip
             measuredWidthDip = [Math]::Round($actualClientWidth * 96.0 / $dpi, 1)
             measuredClientHeightDip = [Math]::Round($actualClientHeight * 96.0 / $dpi, 1)
