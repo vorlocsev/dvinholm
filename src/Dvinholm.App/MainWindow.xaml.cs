@@ -240,7 +240,6 @@ public sealed partial class MainWindow : Window
         RefreshCemPrerequisitePresentation();
         DiagnosticResultsCard.Visibility = destination is AuroraDestination.CemPinReadiness or
             AuroraDestination.DiagnosticsWorkspace or AuroraDestination.DtcFaults ? Visibility.Visible : Visibility.Collapsed;
-        WorkspaceScroll.ChangeView(null, 0, null);
         SelectWorkspaceNavigation(destination);
         switch (destination)
         {
@@ -250,6 +249,10 @@ public sealed partial class MainWindow : Window
             case AuroraDestination.EcuProfiles: ProfileSearch.Focus(FocusState.Programmatic); break;
             case AuroraDestination.J2534Connection: J2534Devices.Focus(FocusState.Programmatic); break;
         }
+        // Reset the first fold *after* focus. In vertically stacked compact
+        // workspaces WinUI may bring a focused input into view and skip the
+        // page's introductory card if scrolling is reset before focus.
+        WorkspaceScroll.ChangeView(null, 0, null);
     }
 
     private void WorkspaceNavigate_Click(object sender, RoutedEventArgs e)
