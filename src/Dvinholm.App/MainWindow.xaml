@@ -1187,10 +1187,10 @@
                         <StackPanel x:Name="CanMonitorPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock x:Name="CanMonitorHeading" Text="Поток CAN" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="CanMonitorIntro" Text="Запускайте и останавливайте наблюдение независимо от переходов между разделами." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="CanMonitorHeading" Text="Поток CAN" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="CanMonitorIntro" Text="Запускайте и останавливайте наблюдение независимо от переходов между разделами." Foreground="#9EB8CC" TextWrapping="Wrap" />
                                     <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Button x:Name="StartButton" Content="Start monitor" Click="Start_Click" VerticalAlignment="Bottom" IsEnabled="False" Background="#0865C7" BorderBrush="#348DEA" />
+                                        <Button x:Name="StartButton" Content="Start monitor" Click="Start_Click" VerticalAlignment="Bottom" IsEnabled="False" Background="#0865C7" BorderBrush="#348DEA" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                     </StackPanel>
                                     <Grid x:Name="DeveloperMonitorHost" ColumnSpacing="10" Visibility="Collapsed">
                                         <Grid.ColumnDefinitions>
@@ -1445,8 +1445,8 @@
                         </StackPanel>
                         <Border x:Name="DiagnosticResultsCard" Visibility="Collapsed" Style="{StaticResource AuroraCard}">
                             <StackPanel Spacing="18">
-                                <TextBlock x:Name="DiagnosticResultHeading" Text="Результат операции" FontSize="20" FontWeight="SemiBold" />
-                                <TextBlock x:Name="DiagnosticResultIntro" Text="Данные отображаются локально. Проверьте содержимое перед передачей." Foreground="#9EB8CC" />
+                                <TextBlock x:Name="DiagnosticResultHeading" Text="Результат операции" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                <TextBlock x:Name="DiagnosticResultIntro" Text="Данные отображаются локально. Проверьте содержимое перед передачей." Foreground="#9EB8CC" TextWrapping="Wrap" />
                                 <StackPanel x:Name="StatusPanel" Spacing="6">
                                     <Expander x:Name="DiagnosticResultExpander" Header="Diagnostic read result (VIN / DID / DTC, review before sharing)" IsExpanded="False">
                                         <ScrollViewer MaxHeight="170" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
