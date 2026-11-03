@@ -21,6 +21,7 @@ public sealed class AuroraCemCatalogLocalizationTests
             var en = AuroraCemCatalogLocalization.OptionLabel(definition, true);
             var ru = AuroraCemCatalogLocalization.OptionLabel(definition, false);
             Assert.Equal(definition.DisplayName, en);
+            Assert.NotEqual(en, ru); // Every manifest entry must be translated, not silently fall back.
             Assert.False(string.IsNullOrWhiteSpace(ru));
             Assert.False(string.IsNullOrWhiteSpace(en));
             Assert.Equal(definition, VolvoP2CemConfigOptionManifest.Find(definition.CanonicalId));
@@ -56,7 +57,7 @@ public sealed class AuroraCemCatalogLocalizationTests
     public void RussianQueriesFindExactTranslatedVendorAndVolvoLabels()
     {
         Assert.Equal("p2.xc90.headlamp-washers",
-            Assert.Single(Search("омывaтели".Replace('a', 'а'))).CanonicalId);
+            Assert.Single(Search("омыватели")).CanonicalId);
         Assert.Equal("xc90.oem.cem.daytime-running-lamps",
             Assert.Single(Search("дневные ходовые")).CanonicalId);
         Assert.Equal("p2.xc90.speed-policy",
@@ -81,7 +82,7 @@ public sealed class AuroraCemCatalogLocalizationTests
     {
         Assert.Empty(Search("дневные ходовые", tier:
             VolvoP2CemCatalogEvidenceTier.VendorAdvertisement));
-        Assert.Empty(Search("омывaтели".Replace('a', 'а'), tier:
+        Assert.Empty(Search("омыватели", tier:
             VolvoP2CemCatalogEvidenceTier.VolvoPublishedServiceMenu));
         Assert.Equal("xc90.oem.cem.daytime-running-lamps",
             Assert.Single(Search("дневные ходовые",
