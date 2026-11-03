@@ -194,6 +194,17 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - **Important limit:** a correct PE header neither establishes that a driver exports J2534 functions nor guarantees DiCE/Mongoose support, hardware operation, or publisher authenticity. Physical PassThruOpen, CAN commands and real-car tests have **not** been performed. No x86 bridge has been introduced.
 - CI on this branch must prove both Windows x64 packaging and the legacy full regression before merge. No Stable, Virtual Car, production install activation or release publishing.
 
+
+## Stage 25: source-separated CEM configuration research browser (offline only)
+
+- The approved three-column **CEM Configuration** page keeps its six-screen Aurora layout and adds a compact evidence-source selector: **All / third-party advertisements / Volvo published service-menu labels**. These are provenance tiers, not proof that a particular CEM supports a setting.
+- A new pure `AuroraCemConfigReferenceFilter` uses the same `VolvoP2CemCatalogSearch` token, input validation and tier semantics as the existing offline explorer. It maps exact canonical IDs back to the single immutable manifest and then applies the selected category. No inferred parameter, VIN, software revision, ECU service or local history is created.
+- Source and category filters combine: the catalog initially shows **14 labels (8 third-party, 6 published-menu)** and never mixes vendor evidence into the OEM tier. Search input is bounded to 80 characters and is not written to files, logs or a vehicle.
+- Selection details identify the source tier and evidence reference while keeping **current values unknown** and every backup/edit/write control disabled. Invalid input clears stale results; changing filters or RU/EN preserves a valid exact-ID selection only when it remains present.
+- The tier control and details follow the top-level RU/EN switch; complete legacy diagnostic localization remains separate future work. Existing three-column composition, no Settings destination and the approved six primary pages are unchanged.
+- Eight offline pure-filter tests cover manifest count, multi-token search, exact category, cross-tier separation, absent results, invalid/unbounded input, immutable non-capability results and provenance preservation. Existing XAML structure contracts are updated to enforce the source selector and read-only UI.
+- These tests do **not** validate vehicle-year applicability, CEM configuration addresses, parameter values, physical Volvo adapters, signed updates or writing. This does not enable configuration changes, PIN acquisition, vehicle I/O, a production installer or publication.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
