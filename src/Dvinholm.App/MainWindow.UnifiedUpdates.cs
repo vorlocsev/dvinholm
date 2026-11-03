@@ -22,6 +22,7 @@ public sealed partial class MainWindow
     private void InitializeUnifiedUpdates()
     {
         UnifiedCurrentVersion.Text = LatestBuildUpdater.CurrentDisplayVersion;
+        StatusFooterVersion.Text = "Dvinholm " + LatestBuildUpdater.CurrentDisplayVersion;
         _unifiedChannelPreferences = new UpdateSourcePreferenceStore(
             Path.Combine(DvinholmUserDataDirectory.Current,
                 UpdateSourcePreferenceStore.FileName));
