@@ -48,7 +48,7 @@ function Start-Probe {
 
 function Wait-Code {
     param([Diagnostics.Process]$Process)
-    if (-not $Process.WaitForExit(15000)) {
+    if (-not $Process.WaitForExit(30000)) {
         $Process.Kill($true)
         throw 'Fixture probe exceeded test timeout.'
     }
@@ -77,14 +77,25 @@ try {
     $child = Start-Sleeper -Milliseconds 200
     try {
         $ticks = $child.StartTime.ToUniversalTime().Ticks
-        $child.WaitForExit(10000) | Out-Null
-        $probe = Start-Probe $root $child.Id $ticks 5000
+        # Windows PowerShell startup on a shared Windows runner may exceed
+        # the short sleep duration by many seconds. The contract here is
+        # explicitly ALREADY EXITED, not merely "asked to sleep briefly".
+        if (-not $child.WaitForExit(30000)) {
+            throw 'Synthetic already-exited fixture child did not exit in time.'
+        }
+        $probe = Start-Probe $root $child.Id $ticks 10000
         try { $status = Wait-Code $probe }
         finally { $probe.Dispose() }
         # On Windows, GetProcessById may fail once the OS removes an exited PID.
         # In that case the helper MUST fail closed rather than report success.
-        Check (($status -eq 0 -and (Test-Path (Join-Path $root 'fixture-handoff-ready.txt'))) -or
-               ($status -eq 2 -and -not (Test-Path (Join-Path $root 'fixture-handoff-ready.txt')))) 'Exited child never yields false success'
+        $hasReceipt = Test-Path (Join-Path $root 'fixture-handoff-ready.txt') -PathType Leaf
+        if (!(($status -eq 0 -and $hasReceipt) -or
+              ($status -eq 2 -and -not $hasReceipt))) {
+            Write-Warning ("Exited-child fixture result: code={0}; receipt={1}. " +
+                "A timeout, crash or mismatched receipt is never accepted." -f $status, $hasReceipt)
+        }
+        Check (($status -eq 0 -and $hasReceipt) -or
+               ($status -eq 2 -and -not $hasReceipt)) 'Exited child never yields false success'
     } finally { Stop-Child $child }
 } finally { Remove-Item -LiteralPath $root -Recurse -Force }
 
