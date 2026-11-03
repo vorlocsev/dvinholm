@@ -184,4 +184,71 @@ public sealed class AuroraTwoUpCardTextWrappingTests
             .Where(s => s is not null).ToArray();
         Assert.Equal(names.Length, names.Distinct(StringComparer.Ordinal).Count());
     }
+
+    // Stage 67: six localized action captions and two layout/safety contracts.
+    // These are source checks; real Windows DPI screenshots remain NOT RUN.
+    [Theory]
+    [InlineData("ConnectionRefreshButton", "RefreshJ2534Devices_Click")]
+    [InlineData("ConnectButton", "Connect_Click")]
+    [InlineData("DiscoverButton", "Discover_Click")]
+    [InlineData("CancelDiscoveryButton", "CancelDiscovery_Click")]
+    [InlineData("EcuOpenDiagnosticsButton", "WorkspaceNavigate_Click")]
+    [InlineData("DtcCheckAddressesButton", "WorkspaceNavigate_Click")]
+    public void LongRuEnActionCaptionsWrapWithoutChangingRealHandlers(
+        string controlName, string eventName)
+    {
+        var doc = Layout();
+        var button = Named(doc, controlName);
+        Assert.Equal("Button", button.Name.LocalName);
+        Assert.Equal("{StaticResource AuroraWrapCaption}",
+            (string?)button.Attribute("ContentTemplate"));
+        Assert.Equal(eventName, (string?)button.Attribute("Click"));
+        Assert.Null(button.Attribute("Width"));
+        var template = doc.Descendants().Single(element =>
+            element.Name.LocalName == "DataTemplate" &&
+            (string?)element.Attribute(X + "Key") == "AuroraWrapCaption");
+        Assert.Contains("TextWrapping=\"Wrap\"", template.ToString());
+    }
+
+    [Fact]
+    public void LocalizedSessionStatusCanWrapAndStillUsesActualSessionBinding()
+    {
+        var doc = Layout();
+        var status = Named(doc, "ConnectionSessionState");
+        Assert.Equal("Wrap", (string?)status.Attribute("TextWrapping"));
+        Assert.Equal("{Binding Text, ElementName=ShellConnectionText}",
+            (string?)status.Attribute("Text"));
+        Assert.Contains(Named(doc, "ConnectionStatusPane"), status.Ancestors());
+        Assert.Equal("#728FA8", (string?)status.Attribute("Foreground"));
+        var actions = Named(doc, "ConnectionStatusPane").Descendants()
+            .Where(element => element.Name.LocalName == "Button").ToArray();
+        Assert.Equal(new[] { "ConnectionRefreshButton", "ConnectButton" },
+            actions.Select(element => (string?)element.Attribute(X + "Name")));
+    }
+
+    [Fact]
+    public void HighDpiCaptionWrappingRetainsCompactReflowAndNoUnsafeOperations()
+    {
+        var doc = Layout();
+        var ecu = Setters(doc, "EcuVerticalWorkspace");
+        Assert.Equal("1", ecu["DiscoverButton.(Grid.Row)"]);
+        Assert.Equal("2", ecu["CancelDiscoveryButton.(Grid.Row)"]);
+        Assert.Equal("Stretch", ecu["DiscoverButton.HorizontalAlignment"]);
+        Assert.Equal("Stretch", ecu["CancelDiscoveryButton.HorizontalAlignment"]);
+        Assert.Equal("Disabled", (string?)Named(doc, "WorkspaceScroll")
+            .Attribute("HorizontalScrollBarVisibility"));
+        var language = FileText("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+        foreach (var key in new[] { "ConnectionRefreshButton", "ConnectButton",
+            "DiscoverButton", "CancelDiscoveryButton", "EcuOpenDiagnosticsButton",
+            "DtcCheckAddressesButton" })
+            Assert.Contains(key + ".Content = L(", language);
+        foreach (var key in new[] { "CemConfigWriteButton", "DtcClearButton" })
+        {
+            var button = Named(doc, key);
+            Assert.Equal("False", (string?)button.Attribute("IsEnabled"));
+            Assert.Null(button.Attribute("Click"));
+        }
+        Assert.Equal(6, Named(doc, "SidebarNavPanel").Elements()
+            .Count(element => element.Name.LocalName == "Button"));
+    }
 }
