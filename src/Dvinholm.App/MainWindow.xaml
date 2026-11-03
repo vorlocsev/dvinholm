@@ -1,5 +1,12 @@
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:local="using:Dvinholm.App" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="Dvinholm.App.MainWindow" Title="Dvinholm">
-    <Grid x:Name="RootLayout" Background="#071827" RequestedTheme="Dark">
+    <Grid x:Name="RootLayout" RequestedTheme="Dark">
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#071625" Offset="0" />
+                <GradientStop Color="#0A1D32" Offset="0.62" />
+                <GradientStop Color="#13152F" Offset="1" />
+            </LinearGradientBrush>
+        </Grid.Background>
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="ShellLayoutStates">
                 <VisualState x:Name="ShellWide">
@@ -537,31 +544,51 @@
                                                         <ComboBoxItem Content="XC70 · P3" />
                                                     </ComboBox>
                                                 </Grid>
-                                                <Viewbox Stretch="Uniform" MaxHeight="235" HorizontalAlignment="Stretch">
-                                                    <Grid Width="640" Height="255">
+                                                <Border CornerRadius="12" BorderThickness="1" BorderBrush="#2B5878" Background="#091D31" Padding="7">
+                                                    <Viewbox Stretch="Uniform" MaxHeight="235" HorizontalAlignment="Stretch">
+                                                    <Grid x:Name="EcuVehicleArtboard" Width="640" Height="255">
+                                                        <Grid.Background>
+                                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                                <GradientStop Color="#08192B" Offset="0" />
+                                                                <GradientStop Color="#133250" Offset="0.68" />
+                                                                <GradientStop Color="#0A1930" Offset="1" />
+                                                            </LinearGradientBrush>
+                                                        </Grid.Background>
                                                         <Canvas x:Name="EcuP2SideProfile" Width="640" Height="255">
                                                             <Path Data="M30,156 L59,145 L82,112 Q95,93 128,87 L170,82 Q202,43 245,43 L418,43 Q471,53 501,102 L550,116 Q590,129 596,148 L603,180 L567,186 L53,186 L24,176 Z" Fill="#173D56" Stroke="#31C7EA" StrokeThickness="3" />
                                                             <Path Data="M205,83 L241,52 L409,52 Q443,54 468,98 L205,98 Z" Fill="#0B1B33" Stroke="#83B8D4" StrokeThickness="2" />
                                                             <Path Data="M320,53 L320,98 M461,99 L461,146 M197,99 L197,165 M348,102 L348,165" Stroke="#478AAE" StrokeThickness="2" />
                                                             <Path Data="M28,163 L601,163" Stroke="#64C8EC" StrokeThickness="2" Opacity=".7" />
+                                                            <Path Data="M63,137 L96,123 M110,116 L167,109 M216,107 L452,107 M232,132 L439,132" Stroke="#91BDD5" StrokeThickness="1.5" Opacity="0.48" />
+                                                            <Path Data="M36,154 L65,146 L71,160 L32,164 Z" Fill="#AEE5FF" Opacity="0.89" />
+                                                            <Path Data="M583,142 L599,153 L602,167 L589,163 Z" Fill="#C97A97" Opacity="0.91" />
+                                                            <Path Data="M221,102 L455,102 M193,174 L464,174" Stroke="#21D5E9" StrokeThickness="1.4" Opacity="0.45" />
                                                             <Ellipse Canvas.Left="115" Canvas.Top="150" Width="88" Height="88" Fill="#0A1526" Stroke="#75A8BF" StrokeThickness="7" />
                                                             <Ellipse Canvas.Left="466" Canvas.Top="150" Width="88" Height="88" Fill="#0A1526" Stroke="#75A8BF" StrokeThickness="7" />
                                                             <Ellipse Canvas.Left="148" Canvas.Top="184" Width="23" Height="23" Fill="#18354E" Stroke="#BEDAE7" StrokeThickness="3" />
                                                             <Ellipse Canvas.Left="499" Canvas.Top="184" Width="23" Height="23" Fill="#18354E" Stroke="#BEDAE7" StrokeThickness="3" />
+                                                            <Ellipse Canvas.Left="154" Canvas.Top="190" Width="11" Height="11" Fill="#9ADBEF" Opacity="0.8" />
+                                                            <Ellipse Canvas.Left="505" Canvas.Top="190" Width="11" Height="11" Fill="#9ADBEF" Opacity="0.8" />
                                                         </Canvas>
                                                         <Canvas x:Name="EcuP3SideProfile" Width="640" Height="255" Visibility="Collapsed">
                                                             <Path Data="M22,163 L57,148 L109,142 Q146,98 197,92 L250,83 L439,85 Q488,94 519,131 L563,145 Q593,148 608,169 L608,191 L22,191 Z" Fill="#163C57" Stroke="#46D7EA" StrokeThickness="3" />
                                                             <Path Data="M182,99 Q210,89 254,91 L434,93 Q478,99 492,135 L147,135 Z" Fill="#0A1B35" Stroke="#8CBBD5" StrokeThickness="2" />
                                                             <Path Data="M310,91 L310,135 M445,96 L445,181 M167,137 L167,180 M321,137 L321,183 M31,180 L602,180" Stroke="#4893B7" StrokeThickness="2" />
+                                                            <Path Data="M50,159 L85,149 L92,162 L48,169 Z" Fill="#B7EAFF" Opacity="0.85" />
+                                                            <Path Data="M580,158 L604,172 L605,181 L588,177 Z" Fill="#CA7897" Opacity="0.91" />
+                                                            <Path Data="M183,139 L491,139 M203,176 L456,176 M182,101 L256,99" Stroke="#6AD8E9" StrokeThickness="1.2" Opacity="0.52" />
                                                             <Ellipse Canvas.Left="115" Canvas.Top="156" Width="82" Height="82" Fill="#0B1527" Stroke="#7DA7BD" StrokeThickness="7" />
                                                             <Ellipse Canvas.Left="484" Canvas.Top="156" Width="82" Height="82" Fill="#0B1527" Stroke="#7DA7BD" StrokeThickness="7" />
+                                                            <Ellipse Canvas.Left="140" Canvas.Top="181" Width="32" Height="32" Fill="#173A54" Stroke="#B4D8E4" StrokeThickness="3" />
+                                                            <Ellipse Canvas.Left="509" Canvas.Top="181" Width="32" Height="32" Fill="#173A54" Stroke="#B4D8E4" StrokeThickness="3" />
                                                         </Canvas>
                                                         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,4,0,0">
                                                             <TextBlock Text="ПЕРЕД → ЗАД" Foreground="#8FC5DF" FontSize="12" />
                                                         </StackPanel>
                                                     </Grid>
                                                 </Viewbox>
-                                                <TextBlock Text="Наблюдаемые RX · не позиции ECU" FontWeight="SemiBold" Foreground="#9EDCEA" FontSize="13" />
+                                                </Border>
+                                                <TextBlock x:Name="EcuObservationHeading" Text="Наблюдаемые RX · не позиции ECU" FontWeight="SemiBold" Foreground="#9EDCEA" FontSize="13" />
                                                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" MaxHeight="74">
                                                     <StackPanel x:Name="EcuObservationRail" Orientation="Horizontal" Spacing="2" />
                                                 </ScrollViewer>
