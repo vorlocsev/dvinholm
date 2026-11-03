@@ -65,6 +65,7 @@ public sealed partial class MainWindow
                 "XC70 P3 · schematic side profile, manually selected")
             : L("XC90 P2 · условный боковой силуэт, выбран вручную",
                 "XC90 P2 · schematic side profile, manually selected");
+        RefreshAuroraEcuObservationLocalization();
         AutomationProperties.SetName(EcuVehicleModel,
             L("Схема автомобиля", "Vehicle outline selection"));
         ToolTipService.SetToolTip(EcuOpenDiagnosticsButton, L(
