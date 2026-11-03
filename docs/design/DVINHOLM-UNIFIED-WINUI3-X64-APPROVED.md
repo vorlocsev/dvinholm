@@ -205,6 +205,17 @@ For each stage use **6–8 substantive checks** instead of long chains of micro-
 - Eight offline pure-filter tests cover manifest count, multi-token search, exact category, cross-tier separation, absent results, invalid/unbounded input, immutable non-capability results and provenance preservation. Existing XAML structure contracts are updated to enforce the source selector and read-only UI.
 - These tests do **not** validate vehicle-year applicability, CEM configuration addresses, parameter values, physical Volvo adapters, signed updates or writing. This does not enable configuration changes, PIN acquisition, vehicle I/O, a production installer or publication.
 
+
+## Stage 26: local-only CEM part-number prerequisite checklist
+
+- The existing **CEM PIN** identification page now has an explicit `Inspect prerequisites locally` button with a collapsed result panel. It does **not** open any J2534 channel, send a CAN frame, read a vehicle identifier, touch the PIN vault or start a firmware service.
+- The new `CemReadOnlyPrerequisiteReport` evaluates **eight** snapshot facts already available in the application: connected J2534 session; 500 kbit/s; 29-bit CAN mode; adapter hardware filter capability; no user hardware filter; stopped CAN monitor; no concurrent diagnostics; and active development-only non-demo/non-offline context.
+- The source-defined single CEM part-number read remains a **separate, existing, consent-gated experimental operation** which performs its own live preflight again under the diagnostic lock. The new report itself is only a momentary UI snapshot, not permission to transmit.
+- The result is bilingual RU/EN, shows passing and missing prerequisites without driver paths or vehicle values, and explicitly refuses to infer physical CEM identity, PIN support, firmware applicability or configuration read/write.
+- Stable still compiles the local-only report but hardcodes the experimental research-context prerequisite to **false**. It does not expose or re-enable experimental CEM traffic or PIN acquisition in a Stable release.
+- Eight deterministic offline test groups cover all-failed, all-present-but-no-authority, each independently missing prerequisite, stable ordered checks, immutable result, safe RU/EN presentation, forged assessment rejection and strict XAML/handler wiring without transport calls.
+- No new diagnostic addresses, DID mappings, brute-force behavior, update installation, production signing, physical J2534 acceptance or release publication. This stage remains confined to PR #702 until both current-head CI workflows and a manual Windows GUI acceptance check pass.
+
 ## Release policy
 - No x64 Stable release until CI and physical Windows acceptance. The old x86 updater feed must remain functional for installations already in the field while the new unified x64 feed is developed.
 - Backward compatibility must be explicit; an x64 package cannot silently update an x86 install with a different driver architecture or an incompatible payload.
