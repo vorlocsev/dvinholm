@@ -622,9 +622,9 @@
                                                             <Grid ColumnSpacing="8">
                                                                 <Grid.ColumnDefinitions>
                                                                     <ColumnDefinition Width="*" />
-                                                                    <ColumnDefinition Width="84" />
-                                                                    <ColumnDefinition Width="84" />
-                                                                    <ColumnDefinition Width="72" />
+                                                                    <ColumnDefinition Width="76" />
+                                                                    <ColumnDefinition Width="76" />
+                                                                    <ColumnDefinition Width="60" />
                                                                 </Grid.ColumnDefinitions>
                                                                 <TextBlock x:Name="CemConfigListParameterHeader" Text="Параметр (ID / название)" FontWeight="SemiBold" FontSize="12" />
                                                                 <TextBlock x:Name="CemConfigListInitialHeader" Grid.Column="1" Text="Исходное" FontWeight="SemiBold" FontSize="11" />
@@ -637,9 +637,9 @@
                                                                 <Grid ColumnSpacing="8" Padding="2,8">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="*" />
-                                                                        <ColumnDefinition Width="84" />
-                                                                        <ColumnDefinition Width="84" />
-                                                                        <ColumnDefinition Width="72" />
+                                                                        <ColumnDefinition Width="76" />
+                                                                        <ColumnDefinition Width="76" />
+                                                                        <ColumnDefinition Width="60" />
                                                                     </Grid.ColumnDefinitions>
                                                                     <StackPanel Spacing="2">
                                                                         <TextBlock Text="{Binding Code}" Foreground="#74DAF1" FontFamily="Consolas" FontSize="12" />
@@ -983,11 +983,11 @@
                                                     </LinearGradientBrush>
                                                 </Border.Background>
                                             </Border>
-                                            <Grid ColumnSpacing="14">
+                                            <Grid ColumnSpacing="8">
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="112" />
+                                                    <ColumnDefinition Width="96" />
                                                     <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="155" />
+                                                    <ColumnDefinition Width="124" />
                                                 </Grid.ColumnDefinitions>
                                                 <TextBlock x:Name="DtcCodeHeading" Text="Код DTC" FontWeight="SemiBold" />
                                                 <TextBlock x:Name="DtcDescriptionHeading" Grid.Column="1" Text="Описание" FontWeight="SemiBold" />
@@ -997,11 +997,11 @@
                                             <ListView x:Name="DtcRecordsView" Height="260" SelectionMode="Single" SelectionChanged="DtcRecordsView_SelectionChanged" AutomationProperties.Name="Коды неисправностей выбранного ECU" ToolTipService.ToolTip="Только реально считанные DTC одного ECU. Нет подтверждённого словаря причин Volvo.">
                                                 <ListView.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Grid ColumnSpacing="14" Padding="0,9,0,9">
+                                                        <Grid ColumnSpacing="8" Padding="0,9,0,9">
                                                             <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="112" />
+                                                                <ColumnDefinition Width="96" />
                                                                 <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="155" />
+                                                                <ColumnDefinition Width="124" />
                                                             </Grid.ColumnDefinitions>
                                                             <TextBlock Text="{Binding Code}" FontFamily="Consolas" Foreground="#8BDBF4" />
                                                             <TextBlock Grid.Column="1" Text="{Binding Description}" TextWrapping="Wrap" />
