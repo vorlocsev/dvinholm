@@ -214,8 +214,7 @@ public sealed partial class MainWindow
         // Only reflect the confirmed hardware-filter state. A locale change
         // must not apply/remove filters or change a connected J2534 session.
         if (HardwareFilterButton is null) return;
-        HardwareFilterButton.Content = _activeHardwareFilterId is null
-            ? L("Применить аппаратный фильтр", "Apply HW filter")
-            : L("Убрать аппаратный фильтр", "Remove HW filter");
+        HardwareFilterButton.Content = CanHardwareFilterCaption.Text(
+            _activeHardwareFilterId is not null, _unifiedEnglish);
     }
 }
