@@ -376,7 +376,7 @@
                     </StackPanel>
                     <StackPanel x:Name="WorkspaceHeaderActions" Grid.Column="1" Spacing="10"
                                 Margin="0,12,16,10" VerticalAlignment="Center">
-                        <Button x:Name="HeaderConnectionStatusButton" Tag="J2534Connection"
+                        <Button x:Name="HeaderConnectionStatusButton" AutomationProperties.AutomationId="DvinholmHeaderConnectionStatus" Tag="J2534Connection"
                                 Click="WorkspaceNavigate_Click"
                                 ToolTipService.ToolTip="Открыть параметры J2534. Это не подключает автомобиль.">
                             <StackPanel Orientation="Horizontal" Spacing="8">
