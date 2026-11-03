@@ -12,6 +12,7 @@ internal sealed record AuroraCemConfigRow(VolvoP2CemConfigOptionDefinition Optio
 {
     public string Code => Option.CanonicalId;
     public string Name => AuroraCemCatalogLocalization.OptionLabel(Option, English);
+    public string Initial => English ? "No backup" : "Нет копии";
     public string Current => English ? "Not read" : "Не прочитано";
     public string Proposed => "—";
     public string Source => Option.Provenance switch
@@ -98,15 +99,26 @@ public sealed partial class MainWindow
         CemConfigResultsTitle.Text = L("Параметры и значения", "Research labels and values");
         CemConfigListParameterHeader.Text = L("Параметр (ID / название)",
             "Research label (ID / name)");
+        CemConfigListInitialHeader.Text = L("Исходное", "Original");
         CemConfigListCurrentHeader.Text = L("Текущее", "Current");
+        CemConfigListProposedHeader.Text = L("Новое", "New");
+        CemConfigActionsHeading.Text = L("Действия с конфигурацией", "Configuration actions");
         CemConfigDetailHeading.Text = L("Описание", "Details");
         CemConfigReadOnlyNotice.Text = L(
             "Чтение, изменение и запись CEM пока заблокированы. Никаких реальных значений, адресов или прав на запись этот каталог не подтверждает.",
             "CEM reading, editing and writing remain blocked. No real values, addresses or write permissions are verified.");
         P2ConfigCatalogButton.Content = L("Источники (offline)", "Sources (offline)");
+        CemConfigReadButton.Content = L("Прочитать", "Read CEM");
         CemConfigBackupButton.Content = L("Резервная копия", "Backup");
         CemConfigCompareButton.Content = L("Сравнить", "Compare");
         CemConfigPrepareButton.Content = L("Подготовить изменения", "Prepare changes");
+        CemConfigWriteButton.Content = L("Записать в CEM", "Write to CEM");
+        ToolTipService.SetToolTip(CemConfigReadButton, L(
+            "Чтение недоступно: нет проверенной операции чтения CEM.",
+            "Reading disabled: no verified CEM read operation."));
+        ToolTipService.SetToolTip(CemConfigWriteButton, L(
+            "Запись недоступна без проверки протокола, совместимости и восстановления.",
+            "Writing disabled pending protocol, compatibility and recovery validation."));
         ToolTipService.SetToolTip(P2ConfigCatalogButton, L(
             "Только локальные источники. Без CAN, PIN и записи CEM.",
             "Offline sources only. No CAN, PIN or CEM write."));
