@@ -255,6 +255,15 @@
                                     <TextBlock Text="01  ·  Идентификация CEM" FontSize="20" FontWeight="SemiBold" />
                                     <TextBlock Text="Прочитайте номер блока перед поиском PIN. Для экспериментального маршрута нужен канал 500 кбит/с, 29 бит." Foreground="#9EB8CC" />
                                     <Button x:Name="CemPartNumberReadButton" Content="Read CEM P/N (experimental HS-CAN)" HorizontalAlignment="Left" ToolTipService.ToolTip="Connect a 500 kbit/s, 29-bit channel; stop the monitor and remove user hardware filters first. Source-defined experimental read, not verified CEM or PIN support." Visibility="Collapsed" IsEnabled="False" Click="ReadCemPartNumber_Click" Background="#0865C7" BorderBrush="#348DEA" />
+                                    <Button x:Name="CemPartPrerequisiteButton" Content="Проверить условия локально"
+                                            HorizontalAlignment="Left" Click="CheckCemPrerequisites_Click"
+                                            ToolTipService.ToolTip="Только чтение состояния приложения. Без CAN/J2534 запросов." />
+                                    <Expander x:Name="CemPartPrerequisiteExpander"
+                                              Header="Результат проверки (без запросов)" IsExpanded="False">
+                                        <TextBlock x:Name="CemPartPrerequisiteText" TextWrapping="Wrap"
+                                                   IsTextSelectionEnabled="True"
+                                                   Text="Нажмите «Проверить условия локально». Это не подтверждает доступ к CEM." />
+                                    </Expander>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource AuroraCard}" x:Name="CemPinSearchCard" Visibility="Collapsed">
