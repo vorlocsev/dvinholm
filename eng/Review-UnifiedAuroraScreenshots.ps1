@@ -46,6 +46,18 @@ if (Test-Path -LiteralPath $output) {
 }
 $pages = @('Connection','Updates','CemPin','CemConfiguration','Dtc','Ecu')
 $widths = @(640,800,980,1280,1440)
+# Trust neither the filename nor a merely nonempty title string. These must
+# match the actual six page titles assigned by the WinUI workspace presenter.
+$expectedTitles = @{
+    ru = @{
+        Connection='Подключение'; Updates='Обновление'; CemPin='CEM PIN'
+        CemConfiguration='Конфигурация CEM'; Dtc='Ошибки / DTC'; Ecu='Блоки ECU'
+    }
+    en = @{
+        Connection='Connection'; Updates='Updates'; CemPin='CEM PIN'
+        CemConfiguration='CEM configuration'; Dtc='Faults (DTC)'; Ecu='Modules (ECU)'
+    }
+}
 $manifestData = @{}
 $declaredSha = ''
 $hasMissingDeclaration = $false
@@ -71,8 +83,10 @@ foreach ($lang in @('ru','en')) {
             [string]$entry.verifiedSelectedLanguage -cne $(if($lang -eq 'ru'){'Русский'}else{'English'})) {
             throw "Unverified language label for $lang $key."
         }
-        if ([string]::IsNullOrWhiteSpace([string]$entry.verifiedVisibleWorkspaceTitle)) {
-            throw "Page identity is not verified for $lang $key."
+        $expectedTitle = [string]$expectedTitles[$lang][$page]
+        if ([string]::IsNullOrWhiteSpace([string]$entry.verifiedVisibleWorkspaceTitle) -or
+            [string]$entry.verifiedVisibleWorkspaceTitle -cne $expectedTitle) {
+            throw "Page identity is not verified for $lang $key. Expected the exact localized workspace title."
         }
         $name = "Aurora-$page-$lang-$width-dip.png"
         if ([string]$entry.file -cne $name) {
@@ -108,8 +122,14 @@ foreach ($lang in @('ru','en')) {
             $pixelHeight -ne [int]$entry.actualHeightPx -or
             [int]$entry.actualClientWidthPx -lt 100 -or
             [int]$entry.actualClientWidthPx -gt [int]$entry.actualWidthPx -or
+            [int]$entry.actualClientHeightPx -lt 100 -or
+            [int]$entry.actualClientHeightPx -gt [int]$entry.actualHeightPx -or
             [int]$entry.windowDpi -lt 96 -or [int]$entry.windowDpi -gt 480 -or
-            [Math]::Abs([double]$entry.measuredWidthDip - $width) -gt 5) {
+            [Math]::Abs([double]$entry.measuredWidthDip - $width) -gt 5 -or
+            [Math]::Abs([double]$entry.measuredWidthDip -
+                ([int]$entry.actualClientWidthPx * 96.0 / [int]$entry.windowDpi)) -gt 1 -or
+            [Math]::Abs([double]$entry.measuredClientHeightDip -
+                ([int]$entry.actualClientHeightPx * 96.0 / [int]$entry.windowDpi)) -gt 1) {
             throw "PNG dimensions do not match the captured window manifest: $lang $key."
         }
         $sha = [string]$entry.sourceCommitOperatorDeclared
