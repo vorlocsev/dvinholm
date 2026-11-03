@@ -990,8 +990,26 @@
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
-                <Border x:Name="ShellStatusBar" Grid.Row="2" Background="#0A2032" BorderBrush="#1E3B53" BorderThickness="0,1,0,0" Padding="28,12">
-                    <TextBlock x:Name="ShellStatusText" Text="{Binding Text, ElementName=StatusText}" Foreground="#9EB8CC" FontSize="12" MaxLines="2" />
+                <!-- Continuous low-profile status strip from the approved Aurora shell.
+                     The indicator stays neutral unless a real session is connected. -->
+                <Border x:Name="ShellStatusBar" Grid.Row="2" Background="#071B2F"
+                        BorderBrush="#2C5778" BorderThickness="0,1,0,0" Padding="28,9">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="StatusFooterDot" Text="●" FontSize="12"
+                                   Foreground="#728FA8" VerticalAlignment="Center" />
+                        <TextBlock x:Name="ShellStatusText" Grid.Column="1"
+                                   Text="{Binding Text, ElementName=StatusText}"
+                                   Foreground="#C0D5E7" FontSize="12" MaxLines="2"
+                                   VerticalAlignment="Center" />
+                        <TextBlock x:Name="StatusFooterVersion" Grid.Column="2"
+                                   Text="Dvinholm" Foreground="#80AFC9" FontSize="11"
+                                   VerticalAlignment="Center" />
+                    </Grid>
                 </Border>
             </Grid>
         </Grid>
