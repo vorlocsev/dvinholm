@@ -514,14 +514,14 @@
                                     <ColumnDefinition x:Name="UpdatesChannelColumn" Width="*" />
                                     <ColumnDefinition x:Name="UpdatesActionColumn" Width="1.15*" />
                                 </Grid.ColumnDefinitions>
-                                <Border x:Name="UpdatesVersionPane" Style="{StaticResource AuroraCard}" Grid.Column="0">
+                                <Border x:Name="UpdatesVersionPane" Style="{StaticResource AuroraCard}" Grid.Column="0" Margin="0">
                                     <StackPanel Spacing="12">
                                         <TextBlock x:Name="UnifiedCurrentVersionTitle" TextWrapping="Wrap" Text="Установленная версия" FontSize="20" FontWeight="SemiBold" />
                                         <TextBlock x:Name="UnifiedCurrentVersion" TextWrapping="Wrap" Text="Не определена" FontSize="27" FontWeight="Bold" Foreground="#B7DDFF" />
                                         <TextBlock x:Name="UnifiedVersionNote" TextWrapping="Wrap" Text="Данные о доступном обновлении ещё не проверены." Foreground="#A6BED2" />
                                     </StackPanel>
                                 </Border>
-                                <Border x:Name="UpdatesChannelPane" Style="{StaticResource AuroraCard}" Grid.Column="1">
+                                <Border x:Name="UpdatesChannelPane" Style="{StaticResource AuroraCard}" Grid.Column="1" Margin="0">
                                     <StackPanel Spacing="12">
                                         <TextBlock x:Name="UnifiedChannelTitle" TextWrapping="Wrap" Text="Канал обновлений" FontSize="20" FontWeight="SemiBold" />
                                         <ComboBox x:Name="UnifiedUpdateChannel" HorizontalAlignment="Stretch" SelectionChanged="UnifiedUpdateChannel_SelectionChanged">
@@ -531,7 +531,7 @@
                                         <TextBlock x:Name="UnifiedChannelNote" TextWrapping="Wrap" Text="Выбор сохраняется для этого пользователя." Foreground="#A6BED2" />
                                     </StackPanel>
                                 </Border>
-                            <Border x:Name="UpdatesActionPane" Style="{StaticResource AuroraCard}" Grid.Column="2">
+                            <Border x:Name="UpdatesActionPane" Style="{StaticResource AuroraCard}" Grid.Column="2" Margin="0">
                                 <StackPanel Spacing="12">
                                     <TextBlock x:Name="UnifiedUpdateSafetyTitle" TextWrapping="Wrap" Text="Проверка и установка" FontSize="20" FontWeight="SemiBold" />
                                     <TextBlock x:Name="UnifiedUpdateStatus" Text="Для x64 ещё не опубликован проверенный канал обновлений. Скачивание, установка и перезапуск заблокированы до подключения безопасного x64-обновлятора." TextWrapping="Wrap" Foreground="#BED1E3" />
@@ -1288,7 +1288,7 @@
                                     <ColumnDefinition x:Name="ConnectionStatusColumn" Width="1.05*" />
                                 </Grid.ColumnDefinitions>
                                 <Border x:Name="ConnectionAdapterPane" Grid.Column="0"
-                                        Style="{StaticResource AuroraCard}">
+                                        Style="{StaticResource AuroraCard}" Margin="0">
                                     <StackPanel Spacing="14">
                                         <Grid x:Name="ConnectionAdapterHeadingGrid" ColumnSpacing="10">
                                             <Grid.ColumnDefinitions>
@@ -1321,7 +1321,7 @@
                                     </StackPanel>
                                 </Border>
                                 <Border x:Name="ConnectionBusPane" Grid.Column="1"
-                                        Style="{StaticResource AuroraCard}">
+                                        Style="{StaticResource AuroraCard}" Margin="0">
                                     <StackPanel Spacing="14">
                                         <Grid x:Name="ConnectionBusHeadingGrid" ColumnSpacing="10">
                                             <Grid.ColumnDefinitions>
@@ -1354,7 +1354,7 @@
                                     </StackPanel>
                                 </Border>
                                 <Border x:Name="ConnectionStatusPane" Grid.Column="2"
-                                        Style="{StaticResource AuroraCard}">
+                                        Style="{StaticResource AuroraCard}" Margin="0">
                                     <StackPanel Spacing="14">
                                         <Grid x:Name="ConnectionDriverHeadingGrid" ColumnSpacing="10">
                                             <Grid.ColumnDefinitions>
