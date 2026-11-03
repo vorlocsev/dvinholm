@@ -61,6 +61,25 @@
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
+            <!-- 640-DIP first fold: keep page identity and genuine session/language
+                 controls visible, but let per-page cards own the explanation. -->
+            <VisualStateGroup x:Name="HeaderReadabilityStates">
+                <VisualState x:Name="HeaderFullContext">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="720" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="HeaderTitleOnly">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="WorkspaceScopeLabel.Visibility" Value="Collapsed" />
+                        <Setter Target="WorkspaceDescription.Visibility" Value="Collapsed" />
+                        <Setter Target="WorkspaceHeaderCopy.Spacing" Value="0" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
             <VisualStateGroup x:Name="CemReferenceResponsiveStates">
                 <VisualState x:Name="CemReferenceWide">
                     <VisualState.StateTriggers>
