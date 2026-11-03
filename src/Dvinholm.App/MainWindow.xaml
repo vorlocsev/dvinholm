@@ -739,13 +739,13 @@
                                             <ColumnDefinition Width="Auto" />
                                         </Grid.ColumnDefinitions>
                                         <TextBox x:Name="IdFilter" Header="ID filter (hex)" PlaceholderText="7E0,7E8" TextChanged="Filter_Changed" Grid.Column="0" />
-                                        <Button Grid.Column="1" Content="Clear" Click="Clear_Click" VerticalAlignment="Bottom" />
+                                        <Button x:Name="CanMonitorClearButton" Grid.Column="1" Content="Clear" Click="Clear_Click" VerticalAlignment="Bottom" />
                                         <Button x:Name="HardwareFilterButton" Content="Apply HW filter" Click="HardwareFilter_Click" VerticalAlignment="Bottom" IsEnabled="False" Grid.Column="2" />
-                                        <Button Grid.Column="3" Content="CSV log" Click="Csv_Click" VerticalAlignment="Bottom" />
+                                        <Button x:Name="CanMonitorCsvButton" Grid.Column="3" Content="CSV log" Click="Csv_Click" VerticalAlignment="Bottom" />
                                     </Grid>
                                     <StackPanel Orientation="Horizontal" Spacing="16">
-                                        <Button Content="RX summary" Click="CanRxSummary_Click" ToolTipService.ToolTip="Review buffered CAN RX ID/DLC counts without frame data. Copy only by explicit approval. No diagnostic requests." />
-                                        <Button Content="Inspect trace" Click="InspectCanCsv_Click" ToolTipService.ToolTip="Offline review of a selected Dvinholm CAN CSV or metadata-only J2534 JSONL. Never connects or changes the monitor. Sensitive identifiers and payload stay hidden." />
+                                        <Button x:Name="CanRxSummaryButton" Content="RX summary" Click="CanRxSummary_Click" ToolTipService.ToolTip="Review buffered CAN RX ID/DLC counts without frame data. Copy only by explicit approval. No diagnostic requests." />
+                                        <Button x:Name="CanTraceInspectButton" Content="Inspect trace" Click="InspectCanCsv_Click" ToolTipService.ToolTip="Offline review of a selected Dvinholm CAN CSV or metadata-only J2534 JSONL. Never connects or changes the monitor. Sensitive identifiers and payload stay hidden." />
                                     </StackPanel>
                                     <StackPanel Orientation="Horizontal" Spacing="24">
                                         <TextBlock x:Name="FrameRateText" VerticalAlignment="Center" Text="0 frames/s" />
@@ -829,8 +829,8 @@
                                         </Grid.ColumnDefinitions>
                                         <Button x:Name="CreateProfileButton" Grid.Row="0" Grid.Column="0" Content="New profile" HorizontalAlignment="Stretch" Click="CreateProfile_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                         <Button x:Name="EditProfileButton" Grid.Row="0" Grid.Column="1" Content="Edit selected" HorizontalAlignment="Stretch" Click="EditProfile_Click" IsEnabled="False" ContentTemplate="{StaticResource AuroraWrapCaption}" />
-                                        <Button Grid.Row="0" Grid.Column="2" Content="Import JSON" HorizontalAlignment="Stretch" Click="ImportProfiles_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
-                                        <Button Grid.Row="0" Grid.Column="3" Content="Export JSON" HorizontalAlignment="Stretch" Click="ExportProfiles_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="ProfileImportButton" Grid.Row="0" Grid.Column="2" Content="Import JSON" HorizontalAlignment="Stretch" Click="ImportProfiles_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="ProfileExportButton" Grid.Row="0" Grid.Column="3" Content="Export JSON" HorizontalAlignment="Stretch" Click="ExportProfiles_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                         <Button x:Name="CaptureSnapshotButton" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Content="Read + save snapshot" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Read selected profile DIDs and explicitly save a diagnostic JSON file. Not a restorable ECU backup." Click="CaptureSnapshot_Click" IsEnabled="False" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                         <Button x:Name="InspectSnapshotButton" Grid.Row="1" Grid.Column="2" Content="Inspect snapshot" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Inspect local DID JSON without connecting, transmitting CAN, or restoring ECU data." Click="InspectSnapshot_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                         <Button x:Name="CompareSnapshotsButton" Grid.Row="1" Grid.Column="3" Content="Compare snapshots" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Compare two local diagnostic JSON snapshots offline. Show only changed DID numbers, not their data." Click="CompareSnapshots_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
