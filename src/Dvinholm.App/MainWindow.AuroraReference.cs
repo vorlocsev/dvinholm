@@ -236,8 +236,10 @@ public sealed partial class MainWindow
         EcuP2SideProfile.Visibility = p3 ? Visibility.Collapsed : Visibility.Visible;
         EcuP3SideProfile.Visibility = p3 ? Visibility.Visible : Visibility.Collapsed;
         EcuDiagramCaption.Text = p3
-            ? "XC70 P3 · условный боковой силуэт, выбран вручную"
-            : "XC90 P2 · условный боковой силуэт, выбран вручную";
+            ? L("XC70 P3 · условный боковой силуэт, выбран вручную",
+                "XC70 P3 · schematic side profile, manually selected")
+            : L("XC90 P2 · условный боковой силуэт, выбран вручную",
+                "XC90 P2 · schematic side profile, manually selected");
         // The selection cannot relabel passive RX IDs as specific ECUs.
     }
 }
