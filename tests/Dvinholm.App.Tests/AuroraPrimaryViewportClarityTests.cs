@@ -243,4 +243,131 @@ public sealed class AuroraPrimaryViewportClarityTests
         Assert.DoesNotContain(doc.Descendants(), element =>
             (string?)element.Attribute(X + "Name") is "SettingsPage" or "LauncherPage");
     }
+
+    // Stage 74: eight source-based monitor toolbar/readability checks.
+    // Not a native screenshot or a real CAN/J2534 integration test.
+    [Theory]
+    [InlineData("CanMonitorClearButton", "Clear_Click", "1", "0")]
+    [InlineData("HardwareFilterButton", "HardwareFilter_Click", "2", "1")]
+    [InlineData("CanMonitorCsvButton", "Csv_Click", "3", "2")]
+    public void CanMonitorToolbarCommandsRetainHandlersAndWrap(
+        string id, string handler, string wideColumn, string compactColumn)
+    {
+        var doc = Layout();
+        var button = Named(doc, id);
+        Assert.Contains(Named(doc, "CanMonitorFilterToolbar"), button.Ancestors());
+        Assert.Equal(handler, (string?)button.Attribute("Click"));
+        Assert.Equal(wideColumn, (string?)button.Attribute("Grid.Column"));
+        Assert.Equal("Stretch", (string?)button.Attribute("HorizontalAlignment"));
+        Assert.Equal("{StaticResource AuroraWrapCaption}",
+            (string?)button.Attribute("ContentTemplate"));
+        var setters = Named(doc, "CanMonitorToolbarCompact").Descendants()
+            .Where(element => element.Name.LocalName == "Setter")
+            .ToDictionary(element => (string)element.Attribute("Target")!,
+                element => (string)element.Attribute("Value")!);
+        Assert.Equal(compactColumn, setters[id + ".(Grid.Column)"]);
+        Assert.Equal("1", setters[id + ".(Grid.Row)"]);
+    }
+
+    [Fact]
+    public void MonitorToolbarHas980DipBreakpointAndReturnsToWideDefaults()
+    {
+        var doc = Layout();
+        Assert.Equal("980", (string?)Named(doc, "CanMonitorToolbarWide").Descendants()
+            .Single(e => e.Name.LocalName == "AdaptiveTrigger")
+            .Attribute("MinWindowWidth"));
+        Assert.Equal("0", (string?)Named(doc, "CanMonitorToolbarCompact").Descendants()
+            .Single(e => e.Name.LocalName == "AdaptiveTrigger")
+            .Attribute("MinWindowWidth"));
+        Assert.DoesNotContain(Named(doc, "CanMonitorToolbarWide").Descendants(),
+            element => element.Name.LocalName == "Setter");
+        var toolbar = Named(doc, "CanMonitorFilterToolbar");
+        Assert.Contains(Named(doc, "CanMonitorPage"), toolbar.Ancestors());
+        Assert.Equal("10", (string?)toolbar.Attribute("ColumnSpacing"));
+        Assert.Equal(2, toolbar.Elements()
+            .Single(e => e.Name.LocalName == "Grid.RowDefinitions")
+            .Elements().Count());
+    }
+
+    [Fact]
+    public void CompactMonitorFilterSpansThreeEqualLiveColumns()
+    {
+        var doc = Layout();
+        var grid = Named(doc, "CanMonitorFilterToolbar");
+        var widths = grid.Elements().Single(e =>
+            e.Name.LocalName == "Grid.ColumnDefinitions")
+            .Elements().Select(e => (string?)e.Attribute("Width")).ToArray();
+        Assert.Equal(new[] { "2*", "*", "*", "*" }, widths);
+        var setters = Named(doc, "CanMonitorToolbarCompact").Descendants()
+            .Where(e => e.Name.LocalName == "Setter")
+            .ToDictionary(e => (string)e.Attribute("Target")!,
+                e => (string)e.Attribute("Value")!);
+        Assert.Equal("0", setters["CanMonitorCsvColumn.Width"]);
+        Assert.Equal("*", setters["CanMonitorFilterColumn.Width"]);
+        Assert.Equal("*", setters["CanMonitorClearColumn.Width"]);
+        Assert.Equal("*", setters["CanMonitorHardwareColumn.Width"]);
+        Assert.Equal("3", setters["IdFilter.(Grid.ColumnSpan)"]);
+        Assert.Equal("Filter_Changed", (string?)Named(doc, "IdFilter")
+            .Attribute("TextChanged"));
+    }
+
+    [Fact]
+    public void OfflineMonitorActionsStayInTwoBoundedWrappingCells()
+    {
+        var doc = Layout();
+        var grid = Named(doc, "CanMonitorReviewActions");
+        Assert.Equal(new[] { "*", "*" }, grid.Elements()
+            .Single(e => e.Name.LocalName == "Grid.ColumnDefinitions")
+            .Elements().Select(e => (string?)e.Attribute("Width")));
+        foreach (var (id, column, handler) in new[] {
+            ("CanRxSummaryButton", "0", "CanRxSummary_Click"),
+            ("CanTraceInspectButton", "1", "InspectCanCsv_Click") })
+        {
+            var button = Named(doc, id);
+            Assert.Contains(grid, button.Ancestors());
+            Assert.Equal(column, (string?)button.Attribute("Grid.Column"));
+            Assert.Equal(handler, (string?)button.Attribute("Click"));
+            Assert.Equal("Stretch", (string?)button.Attribute("HorizontalAlignment"));
+            Assert.Equal("{StaticResource AuroraWrapCaption}",
+                (string?)button.Attribute("ContentTemplate"));
+        }
+    }
+
+    [Fact]
+    public void MonitorCountersAreThreeEqualWrappingReadOnlyColumns()
+    {
+        var doc = Layout();
+        var grid = Named(doc, "CanMonitorCounters");
+        Assert.Equal(new[] { "*", "*", "*" }, grid.Elements()
+            .Single(e => e.Name.LocalName == "Grid.ColumnDefinitions")
+            .Elements().Select(e => (string?)e.Attribute("Width")));
+        foreach (var (id, column) in new[] {
+            ("FrameRateText", "0"), ("FrameCountText", "1"),
+            ("DroppedFrameText", "2") })
+        {
+            var counter = Named(doc, id);
+            Assert.Contains(grid, counter.Ancestors());
+            Assert.Equal(column, (string?)counter.Attribute("Grid.Column"));
+            Assert.Equal("Wrap", (string?)counter.Attribute("TextWrapping"));
+        }
+    }
+
+    [Fact]
+    public void MonitorReflowKeepsRealLocalizedActionsAndOfflineGate()
+    {
+        var doc = Layout();
+        var locale = Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+        foreach (var key in new[] { "CanMonitorClearButton", "HardwareFilterButton",
+            "CanMonitorCsvButton", "CanRxSummaryButton", "CanTraceInspectButton" })
+            Assert.Contains(key + ".Content =", locale);
+        Assert.Equal("False", (string?)Named(doc, "HardwareFilterButton")
+            .Attribute("IsEnabled"));
+        Assert.Equal("False", (string?)Named(doc, "StartButton")
+            .Attribute("IsEnabled"));
+        Assert.Equal("Disabled", (string?)Named(doc, "WorkspaceScroll")
+            .Attribute("HorizontalScrollBarVisibility"));
+        Assert.Equal(6, Named(doc, "SidebarNavPanel").Elements()
+            .Count(e => e.Name.LocalName == "Button"));
+        Assert.Null(Named(doc, "CanMonitorCsvButton").Attribute("IsEnabled"));
+    }
 }
