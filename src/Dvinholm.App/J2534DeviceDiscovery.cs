@@ -73,6 +73,10 @@ internal static class J2534DeviceDiscovery
             catch (UnauthorizedAccessException) { }
             catch (IOException) { }
             catch (System.Security.SecurityException) { }
+            // A 32-bit Windows host may not expose Registry64 at all.
+            // Preserve legacy x86 discovery instead of failing the scan.
+            catch (PlatformNotSupportedException) { }
+            catch (ArgumentException) { }
         }
         return found;
     }
