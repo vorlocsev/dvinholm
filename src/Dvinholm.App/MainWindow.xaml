@@ -21,6 +21,7 @@
                     <VisualState.Setters>
                         <Setter Target="ShellSidebarColumn.Width" Value="64" />
                         <Setter Target="SidebarBrand.Visibility" Value="Collapsed" />
+                        <Setter Target="SidebarCompactBrand.Visibility" Value="Visible" />
                         <Setter Target="SidebarFooter.Visibility" Value="Collapsed" />
                         <Setter Target="SidebarNavPanel.Padding" Value="6,12" />
                         <Setter Target="ShellNavCemPinLabel.Visibility" Value="Collapsed" />
@@ -143,10 +144,19 @@
                 </Grid.RowDefinitions>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="SidebarNavPanel" Padding="16,24" Spacing="5">
-                        <StackPanel x:Name="SidebarBrand" Margin="6,0,0,18" Spacing="4">
-                            <TextBlock Text="DVINHOLM" FontSize="25" FontWeight="Bold" />
-                            <TextBlock Text="DIAGNOSTICS · CONTROL" FontSize="10" Foreground="#8AB9D9" />
+                        <!-- The approved Techno-North No.9 gull / gear artwork, not a temporary glyph. -->
+                        <StackPanel x:Name="SidebarBrand" Margin="2,0,0,18" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <Image Source="ms-appx:///Assets/Launcher-Northern-Emblem.svg" Width="48" Height="48"
+                                   Stretch="Uniform" AutomationProperties.Name="Dvinholm" />
+                            <StackPanel Spacing="3" VerticalAlignment="Center">
+                                <TextBlock Text="Dvinholm" FontSize="23" FontWeight="SemiBold" />
+                                <TextBlock x:Name="SidebarBrandSubtitle" Text="АВТОДИАГНОСТИКА" FontSize="10"
+                                           Foreground="#9CBED7" />
+                            </StackPanel>
                         </StackPanel>
+                        <Image x:Name="SidebarCompactBrand" Source="ms-appx:///Assets/Launcher-Northern-Emblem.svg"
+                               Width="44" Height="44" Margin="0,0,0,14" HorizontalAlignment="Center"
+                               Stretch="Uniform" Visibility="Collapsed" AutomationProperties.Name="Dvinholm" />
                         <Button Tag="J2534Connection" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Подключение" ToolTipService.ToolTip="Подключение">
                             <StackPanel Orientation="Horizontal" Spacing="14">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
@@ -199,7 +209,7 @@
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Grid x:Name="WorkspaceHeaderGrid" Margin="28,24,28,20" ColumnSpacing="20">
+                <Grid x:Name="WorkspaceHeaderGrid" Margin="28,16,28,16" ColumnSpacing="20" MinHeight="150">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -208,12 +218,48 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Spacing="7">
+                    <!-- Actual Dvinholm scenic banner, already included in the application package.
+                         Northern-light ribbons remain decorative and must never imply CAN state. -->
+                    <Border x:Name="AuroraHeaderArtwork" Grid.RowSpan="2" Grid.ColumnSpan="2"
+                            Margin="-12,-8,-12,-8" CornerRadius="12" BorderThickness="1"
+                            BorderBrush="#326A8D" IsHitTestVisible="False">
+                        <Grid>
+                            <Grid.Background>
+                                <ImageBrush ImageSource="ms-appx:///Assets/Dvinholm-Banner.png"
+                                            Stretch="UniformToFill" AlignmentX="Center" AlignmentY="Center" />
+                            </Grid.Background>
+                            <Rectangle>
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#EC07182C" Offset="0" />
+                                        <GradientStop Color="#DA09203A" Offset="0.42" />
+                                        <GradientStop Color="#910B2138" Offset="0.74" />
+                                        <GradientStop Color="#660B1930" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <Viewbox HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Stretch="Fill"
+                                     Opacity="0.32">
+                                <Canvas Width="920" Height="145">
+                                    <Path Data="M200,21 C345,1 445,63 587,17 C682,-10 772,34 902,11"
+                                          Stroke="#19E5BD" StrokeThickness="22" Opacity="0.50" Fill="Transparent" />
+                                    <Path Data="M304,4 C429,41 557,0 683,29 C776,50 854,10 929,32"
+                                          Stroke="#63DEED" StrokeThickness="13" Opacity="0.38" Fill="Transparent" />
+                                    <Path Data="M490,0 C601,28 687,-1 783,15 C866,31 887,4 945,8"
+                                          Stroke="#A58AFF" StrokeThickness="14" Opacity="0.35" Fill="Transparent" />
+                                </Canvas>
+                            </Viewbox>
+                        </Grid>
+                    </Border>
+                    <StackPanel Spacing="7" Margin="16,13,0,12" VerticalAlignment="Center">
                         <TextBlock x:Name="WorkspaceScopeLabel" Text="DVINHOLM / РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" CharacterSpacing="120" Foreground="#65BFF2" />
-                        <TextBlock x:Name="WorkspaceTitle" FontSize="32" FontWeight="SemiBold" />
-                        <TextBlock x:Name="WorkspaceDescription" Foreground="#9EB8CC" MaxWidth="760" HorizontalAlignment="Left" />
+                        <TextBlock x:Name="WorkspaceTitle" FontSize="30" FontWeight="SemiBold"
+                                   Foreground="#F5FAFF" />
+                        <TextBlock x:Name="WorkspaceDescription" Foreground="#BDD4E8" MaxWidth="760"
+                                   FontSize="13" HorizontalAlignment="Left" />
                     </StackPanel>
-                    <StackPanel x:Name="WorkspaceHeaderActions" Grid.Column="1" Spacing="10">
+                    <StackPanel x:Name="WorkspaceHeaderActions" Grid.Column="1" Spacing="10"
+                                Margin="0,12,16,10" VerticalAlignment="Center">
                         <Button Tag="J2534Connection" Click="WorkspaceNavigate_Click">
                             <StackPanel Orientation="Horizontal" Spacing="8">
                                 <TextBlock Text="●" Foreground="#66CAED" />
