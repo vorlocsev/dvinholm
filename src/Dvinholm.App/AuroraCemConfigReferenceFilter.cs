@@ -10,6 +10,34 @@ internal static class AuroraCemConfigReferenceFilter
 {
     internal const int MaximumRows = 128;
 
+    /// <summary>
+    /// Russian UI searches include the translated display labels without
+    /// changing canonical IDs or weakening the original evidence/category
+    /// filters. Original English queries remain accepted in both locales.
+    /// </summary>
+    internal static IReadOnlyList<VolvoP2CemConfigOptionDefinition> FindLocalized(
+        string? query, string? category, VolvoP2CemCatalogEvidenceTier tier)
+    {
+        // Validate all input through the original strict search first.
+        var original = Find(query, category, tier);
+        if (string.IsNullOrWhiteSpace(query)) return original;
+
+        var terms = query.Trim().Split(' ', StringSplitOptions.RemoveEmptyEntries);
+        var allowed = Find(null, category, tier);
+        return Array.AsReadOnly(allowed.Where(option =>
+        {
+            var translatedName = AuroraCemCatalogLocalization.OptionLabel(option, false);
+            var translatedGroup = AuroraCemCatalogLocalization.CategoryLabel(
+                option.Category, false);
+            return terms.All(term =>
+                option.CanonicalId.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                option.DisplayName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                option.Category.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                translatedName.Contains(term, StringComparison.OrdinalIgnoreCase) ||
+                translatedGroup.Contains(term, StringComparison.OrdinalIgnoreCase));
+        }).Take(MaximumRows).ToArray());
+    }
+
     internal static IReadOnlyList<VolvoP2CemConfigOptionDefinition> Find(
         string? query, string? category, VolvoP2CemCatalogEvidenceTier tier)
     {
