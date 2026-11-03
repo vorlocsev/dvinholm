@@ -238,10 +238,17 @@ public sealed class AuroraTwoUpCardTextWrappingTests
         Assert.Equal("Disabled", (string?)Named(doc, "WorkspaceScroll")
             .Attribute("HorizontalScrollBarVisibility"));
         var language = FileText("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
-        foreach (var key in new[] { "ConnectionRefreshButton", "ConnectButton",
+        foreach (var key in new[] { "ConnectionRefreshButton",
             "DiscoverButton", "CancelDiscoveryButton", "EcuOpenDiagnosticsButton",
             "DtcCheckAddressesButton" })
             Assert.Contains(key + ".Content = L(", language);
+
+        // Connect is state-sensitive: both verbs must translate while the
+        // actual session gate remains authoritative. It must not be rewritten
+        // to a static "Connect" label just to satisfy a source assertion.
+        Assert.Contains("ConnectButton.Content = _connected && _session.IsConnected", language);
+        Assert.Contains("L(\"Отключить\", \"Disconnect\")", language);
+        Assert.Contains("L(\"Подключить\", \"Connect\")", language);
         foreach (var key in new[] { "CemConfigWriteButton", "DtcClearButton" })
         {
             var button = Named(doc, key);
