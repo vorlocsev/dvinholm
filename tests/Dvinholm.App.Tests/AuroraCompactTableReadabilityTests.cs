@@ -159,4 +159,47 @@ public sealed class AuroraCompactTableReadabilityTests
             .Where(name => name is not null).ToArray();
         Assert.Equal(names.Length, names.Distinct(StringComparer.Ordinal).Count());
     }
+
+    // Stage 69: eight RU/EN narrow-panel text containment cases.
+    // Source/layout checks do not count as native Windows DPI screenshot review.
+    [Theory]
+    [InlineData("CemPinResearchIntro", "CemPinPage")]
+    [InlineData("CemConfigCategoriesTitle", "CemConfigPage")]
+    [InlineData("CemConfigResultsTitle", "CemConfigPage")]
+    [InlineData("CemConfigListParameterHeader", "CemConfigPage")]
+    [InlineData("CemConfigListInitialHeader", "CemConfigPage")]
+    [InlineData("CemConfigListCurrentHeader", "CemConfigPage")]
+    [InlineData("CemConfigListProposedHeader", "CemConfigPage")]
+    [InlineData("DtcActionsHeading", "DtcPage")]
+    public void NarrowResearchAndDtcCaptionsWrapInsideTheirOwnWorkspace(
+        string captionName, string pageName)
+    {
+        var doc = Layout();
+        var caption = Named(doc, captionName);
+        Assert.Equal("TextBlock", caption.Name.LocalName);
+        Assert.Contains(Named(doc, pageName), caption.Ancestors());
+        Assert.Equal("Wrap", (string?)caption.Attribute("TextWrapping"));
+        Assert.Null(caption.Attribute("MaxLines"));
+        Assert.Null(caption.Attribute("TextTrimming"));
+
+        if (captionName.StartsWith("CemConfigList", StringComparison.Ordinal))
+        {
+            var table = Named(doc, "CemConfigResults");
+            Assert.Contains(HeaderGrid(table), caption.Ancestors());
+            Assert.Equal(Widths(HeaderGrid(table)), Widths(ItemGrid(table)));
+            Assert.Equal("8", (string?)HeaderGrid(table).Attribute("ColumnSpacing"));
+        }
+        else if (captionName == "DtcActionsHeading")
+        {
+            Assert.Contains(Named(doc, "DtcActionRail"), caption.Ancestors());
+            Assert.Equal("False", (string?)Named(doc, "DtcClearButton").Attribute("IsEnabled"));
+            Assert.Null(Named(doc, "DtcClearButton").Attribute("Click"));
+        }
+        else
+        {
+            Assert.Equal("Collapsed",
+                (string?)Named(doc, "CemPinSearchCard").Attribute("Visibility"));
+            Assert.Equal("False", (string?)Named(doc, "CemConfigWriteButton").Attribute("IsEnabled"));
+        }
+    }
 }
