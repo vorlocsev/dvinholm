@@ -770,8 +770,8 @@
                         <StackPanel x:Name="EcuPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock x:Name="EcuDiscoveryTitle" Text="Обнаружение блоков" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock x:Name="EcuDiscoveryIntro" Text="Пассивное наблюдение ответов. Выбор записи не подтверждает идентичность блока и не отправляет запрос." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="EcuDiscoveryTitle" TextWrapping="Wrap" Text="Обнаружение блоков" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="EcuDiscoveryIntro" TextWrapping="Wrap" Text="Пассивное наблюдение ответов. Выбор записи не подтверждает идентичность блока и не отправляет запрос." Foreground="#9EB8CC" />
                                     <Grid x:Name="EcuScanToolbarGrid" ColumnSpacing="16" RowSpacing="8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -787,7 +787,7 @@
                                         <Button x:Name="DiscoverButton" Content="Discover ECUs" Click="Discover_Click" IsEnabled="False" Grid.Column="1" />
                                         <Button x:Name="CancelDiscoveryButton" Content="Cancel scan" Click="CancelDiscovery_Click" IsEnabled="False" Grid.Column="2" />
                                     </Grid>
-                                    <TextBlock x:Name="DiscoveryStatus" VerticalAlignment="Center" Text="Not scanned" />
+                                    <TextBlock x:Name="DiscoveryStatus" TextWrapping="Wrap" VerticalAlignment="Center" Text="Not scanned" />
                                     <Grid x:Name="EcuWorkbenchGrid" ColumnSpacing="12" RowSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition x:Name="EcuWorkbenchListColumn" Width="218" />
@@ -801,13 +801,13 @@
                                         </Grid.RowDefinitions>
                                         <Border x:Name="EcuWorkbenchListPane" Grid.Column="0" Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
                                             <StackPanel Spacing="10">
-                                                <TextBlock x:Name="EcuListTitle" Text="Ответы ECU" FontSize="18" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="EcuListTitle" TextWrapping="Wrap" Text="Ответы ECU" FontSize="18" FontWeight="SemiBold" />
                                                 <TextBlock x:Name="EcuListIntro" Text="Выберите наблюдаемый RX. Имена блоков не подтверждены." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
                                     <ListView x:Name="EcusView" Height="260" SelectionMode="Single" IsEnabled="False" SelectionChanged="Ecu_SelectionChanged" ToolTipService.ToolTip="Passive response observations only. No verified ECU identity or request ID.">
                                         <ListView.Header>
                                             <StackPanel Spacing="3">
-                                                <TextBlock x:Name="EcuListObservedHeader" Text="Observed RX" FontWeight="SemiBold" FontSize="12" />
-                                                <TextBlock x:Name="EcuListInferredHeader" Text="Guessed TX · inferred only" Foreground="#A0BBD0" FontSize="11" />
+                                                <TextBlock x:Name="EcuListObservedHeader" TextWrapping="Wrap" Text="Observed RX" FontWeight="SemiBold" FontSize="12" />
+                                                <TextBlock x:Name="EcuListInferredHeader" TextWrapping="Wrap" Text="Guessed TX · inferred only" Foreground="#A0BBD0" FontSize="11" />
                                             </StackPanel>
                                         </ListView.Header>
                                         <ListView.ItemTemplate>
@@ -870,7 +870,7 @@
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock x:Name="EcuVehicleHeading" Text="Карта автомобиля" FontSize="18" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="EcuVehicleHeading" TextWrapping="Wrap" Text="Карта автомобиля" FontSize="18" FontWeight="SemiBold" />
                                                     <ComboBox x:Name="EcuVehicleModel" Grid.Column="1" Width="150" SelectedIndex="0" SelectionChanged="EcuVehicleModel_SelectionChanged" AutomationProperties.Name="Схема автомобиля">
                                                         <ComboBoxItem Content="XC90 · P2" />
                                                         <ComboBoxItem Content="XC70 · P3" />
@@ -930,7 +930,7 @@
                                                     </Grid>
                                                 </Viewbox>
                                                 </Border>
-                                                <TextBlock x:Name="EcuObservationHeading" Text="Наблюдаемые RX · не позиции ECU" FontWeight="SemiBold" Foreground="#9EDCEA" FontSize="13" />
+                                                <TextBlock x:Name="EcuObservationHeading" TextWrapping="Wrap" Text="Наблюдаемые RX · не позиции ECU" FontWeight="SemiBold" Foreground="#9EDCEA" FontSize="13" />
                                                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" MaxHeight="74">
                                                     <StackPanel x:Name="EcuObservationRail" Orientation="Horizontal" Spacing="2" />
                                                 </ScrollViewer>
@@ -941,7 +941,7 @@
                                         </Border>
                                         <Border x:Name="EcuWorkbenchDetailPane" Grid.Column="2" Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
                                             <StackPanel Spacing="12">
-                                                <TextBlock x:Name="EcuSelectedHeading" Text="Выбранный ответ" FontSize="18" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="EcuSelectedHeading" TextWrapping="Wrap" Text="Выбранный ответ" FontSize="18" FontWeight="SemiBold" />
                                                 <ScrollViewer MaxHeight="86" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                                     <TextBlock x:Name="EcuSelectionInfo" Text="Пассивный поиск · выберите наблюдаемый RX. Идентичность ECU и TX-адрес не установлены." TextWrapping="Wrap" IsTextSelectionEnabled="True" />
                                                 </ScrollViewer>
@@ -955,8 +955,8 @@
                             </Border>
                             <Border x:Name="EcuToolsFooter" Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="11">
-                                    <TextBlock x:Name="EcuToolsTitle" Text="Дополнительные инструменты ECU" FontWeight="SemiBold" FontSize="18" />
-                                    <TextBlock x:Name="EcuToolsIntro" Text="Проверенные функции не удалены: откройте профиль, монитор CAN или чтение данных из рабочей области ECU." Foreground="#93B2CD" />
+                                    <TextBlock x:Name="EcuToolsTitle" TextWrapping="Wrap" Text="Дополнительные инструменты ECU" FontWeight="SemiBold" FontSize="18" />
+                                    <TextBlock x:Name="EcuToolsIntro" TextWrapping="Wrap" Text="Проверенные функции не удалены: откройте профиль, монитор CAN или чтение данных из рабочей области ECU." Foreground="#93B2CD" />
                                     <Grid x:Name="EcuToolsGrid" ColumnSpacing="10" RowSpacing="10">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
