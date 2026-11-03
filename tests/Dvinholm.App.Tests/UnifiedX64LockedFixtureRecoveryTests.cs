@@ -61,6 +61,17 @@ public sealed class UnifiedX64LockedFixtureRecoveryTests
     private static FileStream Lock(string file) =>
         new(file, FileMode.Open, FileAccess.ReadWrite, FileShare.None);
 
+    private static void AssertLockDenied(Action operation)
+    {
+        // Windows can surface an exclusive sharing violation as either an
+        // IOException or UnauthorizedAccessException depending on the file
+        // replacement API/runtime path. Neither is an allowed success.
+        var failure = Record.Exception(operation);
+        Assert.NotNull(failure);
+        Assert.True(failure is IOException or UnauthorizedAccessException,
+            "Expected a Windows sharing/access denial, got: " + failure.GetType().Name);
+    }
+
     private static void AssertOriginal(string root)
     {
         Assert.Equal(Executable(1), File.ReadAllBytes(
@@ -75,7 +86,7 @@ public sealed class UnifiedX64LockedFixtureRecoveryTests
         {
             var exe = Path.Combine(root, "installed", "Dvinholm.exe");
             using (Lock(exe))
-                Assert.ThrowsAny<IOException>(() =>
+                AssertLockDenied(() =>
                     UnifiedX64RecoverySandbox.ApplyFixture(root));
             Assert.Equal(UnifiedX64RecoverySandbox.StateReady,
                 UnifiedX64RecoverySandbox.ReadState(root));
@@ -87,7 +98,7 @@ public sealed class UnifiedX64LockedFixtureRecoveryTests
         InFixture(root =>
         {
             using (Lock(Path.Combine(root, "candidate", "Dvinholm.exe")))
-                Assert.ThrowsAny<IOException>(() =>
+                AssertLockDenied(() =>
                     UnifiedX64RecoverySandbox.ApplyFixture(root));
             Assert.Equal(UnifiedX64RecoverySandbox.StateReady,
                 UnifiedX64RecoverySandbox.ReadState(root));
@@ -101,7 +112,7 @@ public sealed class UnifiedX64LockedFixtureRecoveryTests
             var backup = Directory.GetDirectories(Path.Combine(root, "snapshots"),
                 "backup-*").Single();
             using (Lock(Path.Combine(backup, "payload", "Dvinholm.exe")))
-                Assert.ThrowsAny<IOException>(() =>
+                AssertLockDenied(() =>
                     UnifiedX64RecoverySandbox.ApplyFixture(root));
             Assert.Equal(UnifiedX64RecoverySandbox.StateReady,
                 UnifiedX64RecoverySandbox.ReadState(root));
@@ -115,7 +126,7 @@ public sealed class UnifiedX64LockedFixtureRecoveryTests
             FileStream? handle = null;
             try
             {
-                Assert.ThrowsAny<IOException>(() =>
+                AssertLockDenied(() =>
                     UnifiedX64RecoverySandbox.ApplyFixture(root,
                         afterJournalForTests: () => handle = Lock(
                             Path.Combine(root, "installed", "Dvinholm.exe"))));
@@ -138,7 +149,7 @@ public sealed class UnifiedX64LockedFixtureRecoveryTests
             FileStream? handle = null;
             try
             {
-                Assert.ThrowsAny<IOException>(() =>
+                AssertLockDenied(() =>
                     UnifiedX64RecoverySandbox.ApplyFixture(root,
                         afterJournalForTests: () => handle = Lock(
                             Path.Combine(root, "installed", "settings.json"))));
@@ -161,7 +172,7 @@ public sealed class UnifiedX64LockedFixtureRecoveryTests
             FileStream? handle = null;
             try
             {
-                Assert.ThrowsAny<IOException>(() =>
+                AssertLockDenied(() =>
                     UnifiedX64RecoverySandbox.RecoverFixture(root,
                         afterJournalForTests: () => handle = Lock(
                             Path.Combine(root, "installed", "Dvinholm.exe"))));
@@ -183,7 +194,7 @@ public sealed class UnifiedX64LockedFixtureRecoveryTests
             FileStream? handle = null;
             try
             {
-                Assert.ThrowsAny<IOException>(() =>
+                AssertLockDenied(() =>
                     UnifiedX64RecoverySandbox.RecoverFixture(root,
                         afterJournalForTests: () => handle = Lock(
                             Path.Combine(root, "installed", "settings.json"))));
@@ -200,7 +211,7 @@ public sealed class UnifiedX64LockedFixtureRecoveryTests
         InFixture(root =>
         {
             using (Lock(Path.Combine(root, "fixture-transaction.json")))
-                Assert.ThrowsAny<IOException>(() =>
+                AssertLockDenied(() =>
                     UnifiedX64RecoverySandbox.ApplyFixture(root));
             Assert.Equal(UnifiedX64RecoverySandbox.StateReady,
                 UnifiedX64RecoverySandbox.ReadState(root));
