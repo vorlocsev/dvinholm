@@ -36,11 +36,13 @@ public sealed class AuroraPrivateReviewReportContracts
     }
 
     [Fact]
-    public void OnlySixApprovedPagesAndFiveRecordedClientDipWidthsAppear()
+    public void OnlySixApprovedPagesUseOneFixedClientViewport()
     {
         var script = Script();
         Assert.Contains("$pages = @('Connection','Updates','CemPin','CemConfiguration','Dtc','Ecu')", script);
-        Assert.Contains("$widths = @(640,800,980,1280,1440)", script);
+        Assert.Contains("$fixedWidthDip = 1280", script);
+        Assert.Contains("$fixedHeightDip = 800", script);
+        Assert.Contains("$widths = @($fixedWidthDip)", script);
         Assert.Contains("foreach ($lang in @('ru','en'))", script);
         Assert.Contains("$pages -cnotcontains $page", script);
         Assert.Contains("$widths -notcontains $width", script);
@@ -53,10 +55,10 @@ public sealed class AuroraPrivateReviewReportContracts
         var script = Script();
         Assert.Contains("Aurora-{0}-capture-manifest.json", script);
         Assert.Contains("The $lang capture manifest is missing.", script);
-        Assert.Contains("if ($rows.Count -gt 30)", script);
+        Assert.Contains("if ($rows.Count -gt 6)", script);
         Assert.Contains("$seen.ContainsKey($key)", script);
         Assert.Contains("Duplicate $lang screenshot entry", script);
-        Assert.Contains("Unexpected extra records in screenshot manifest.", script);
+        Assert.Contains("Unexpected extra records in fixed-viewport screenshot manifest.", script);
     }
 
     [Fact]
@@ -69,6 +71,7 @@ public sealed class AuroraPrivateReviewReportContracts
         Assert.Contains("Unverified language label for $lang $key", script);
         Assert.Contains("Page identity is not verified", script);
         Assert.Contains("Aurora-$page-$lang-$width-dip.png", script);
+        Assert.Contains("[int]$entry.requestedHeightDip -ne $fixedHeightDip", script);
         Assert.Contains("Screenshot filename differs from the expected safe name", script);
     }
 
@@ -86,6 +89,7 @@ public sealed class AuroraPrivateReviewReportContracts
         Assert.Contains("PNG dimensions do not match", script);
         Assert.Contains("[int]$entry.windowDpi -lt 96", script);
         Assert.Contains("[Math]::Abs([double]$entry.measuredWidthDip - $width) -gt 5", script);
+        Assert.Contains("[Math]::Abs([double]$entry.measuredClientHeightDip - $fixedHeightDip) -gt 5", script);
     }
 
     [Fact]
@@ -107,7 +111,7 @@ public sealed class AuroraPrivateReviewReportContracts
         var script = Script();
         Assert.Contains("Validated local PNG/manifest pairs:", script);
         Assert.Contains("$present +", script);
-        Assert.Contains(" / 60. Missing is NOT RUN; present is NOT visual PASS.", script);
+        Assert.Contains(" / 12. Missing is NOT RUN; present is NOT visual PASS.", script);
         Assert.Contains("NOT RUN (missing screenshot)", script);
         Assert.Contains("NOT a visual PASS, not a vehicle/J2534 test.", script);
         Assert.Contains("against the ORIGINAL approved six-page image", script);
