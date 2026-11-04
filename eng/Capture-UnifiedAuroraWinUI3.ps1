@@ -26,18 +26,16 @@ param(
     [ValidateSet('Connection','Updates','CemPin','CemConfiguration','Dtc','Ecu')]
     [string[]]$Pages = @('Connection','Updates','CemPin','CemConfiguration','Dtc','Ecu'),
 
-    [ValidateSet(640,800,980,1280,1440)]
-    [int[]]$WidthsDip = @(640,800,980,1280,1440),
-
-    [ValidateRange(480,900)]
-    [int]$HeightDip = 700,
-
     [ValidatePattern('^$|^[0-9a-fA-F]{40}$')]
     [string]$CommitSha = ''
 )
 
 Set-StrictMode -Version Latest
 $ErrorActionPreference = 'Stop'
+
+# One fixed desktop viewport; the app itself owns the window size.
+$fixedWidthDip = 1280
+$fixedHeightDip = 800
 
 if (-not $IConfirmOfflineNoSecrets) {
     throw 'Explicit privacy/offline confirmation is required.'
@@ -100,10 +98,6 @@ public static class DvinholmWinUiCaptureNative
 
     [DllImport("user32.dll")]
     public static extern bool IsWindowVisible(IntPtr hwnd);
-
-    [DllImport("user32.dll", SetLastError = true)]
-    public static extern bool MoveWindow(IntPtr hwnd, int x, int y,
-        int width, int height, bool repaint);
 
     [DllImport("user32.dll")]
     public static extern bool SetForegroundWindow(IntPtr hwnd);
@@ -400,9 +394,8 @@ function Invoke-OnlyNavigation([string]$page) {
     Confirm-WorkspaceState $page
 }
 
-# AdaptiveTrigger examines XAML/client width, not the outer window rectangle.
-# Windows borders/title-bar pixels must be added when sizing the outer HWND.
-# Preflight every selected width before any local image is created.
+# The application owns a fixed client viewport. Verify its actual size;
+# this helper never resizes or moves the user's Dvinholm window.
 $previewDpi = [DvinholmWinUiCaptureNative]::GetDpiForWindow($handle)
 $previewOuter = New-Object DvinholmWinUiCaptureNative+RECT
 $previewClient = New-Object DvinholmWinUiCaptureNative+RECT
@@ -417,16 +410,20 @@ $borderHeight = ($previewOuter.Bottom - $previewOuter.Top) -
     ($previewClient.Bottom - $previewClient.Top)
 if ($borderWidth -lt 0 -or $borderHeight -lt 0 -or
     $borderWidth -gt 200 -or $borderHeight -gt 300) {
-    throw 'Unexpected non-client frame; cannot guarantee responsive-layout width.'
+    throw 'Unexpected non-client frame; fixed viewport cannot be verified.'
 }
+$requestedClientWidthPx = [int][Math]::Round($fixedWidthDip * $previewDpi / 96.0)
+$requestedClientHeightPx = [int][Math]::Round($fixedHeightDip * $previewDpi / 96.0)
+$neededOuterWidth = $requestedClientWidthPx + $borderWidth
+$neededOuterHeight = $requestedClientHeightPx + $borderHeight
 $preflightWorkArea = [System.Windows.Forms.Screen]::FromHandle($handle).WorkingArea
-foreach ($requestedDip in $WidthsDip) {
-    $neededOuterWidth = [int][Math]::Round($requestedDip * $previewDpi / 96.0) + $borderWidth
-    $neededOuterHeight = [int][Math]::Round($HeightDip * $previewDpi / 96.0) + $borderHeight
-    if ($neededOuterWidth -gt $preflightWorkArea.Width - 24 -or
-        $neededOuterHeight -gt $preflightWorkArea.Height - 24) {
-        throw "Requested $requestedDip DIP client width cannot fit on this monitor at $previewDpi DPI. Use a larger monitor or a smaller -WidthsDip set."
-    }
+if ($neededOuterWidth -gt $preflightWorkArea.Width - 24 -or
+    $neededOuterHeight -gt $preflightWorkArea.Height - 24) {
+    throw "The fixed $($fixedWidthDip)x$($fixedHeightDip) DIP viewport cannot fit on this monitor at $previewDpi DPI."
+}
+if ([Math]::Abs(($previewClient.Right - $previewClient.Left) - $requestedClientWidthPx) -gt 4 -or
+    [Math]::Abs(($previewClient.Bottom - $previewClient.Top) - $requestedClientHeightPx) -gt 4) {
+    throw "Dvinholm is not using the fixed $($fixedWidthDip)x$($fixedHeightDip) DIP viewport. Restart the updated app before capture."
 }
 
 if (-not (Test-Path -LiteralPath $output -PathType Container)) {
@@ -438,83 +435,75 @@ if (@(Get-ChildItem -LiteralPath $output -Force).Count -ne 0) {
 $results = @()
 foreach ($page in $Pages) {
     Invoke-OnlyNavigation $page
-    foreach ($dip in $WidthsDip) {
-        $dpi = [DvinholmWinUiCaptureNative]::GetDpiForWindow($handle)
-        if ($dpi -lt 96 -or $dpi -gt 480) {
-            throw "Unexpected window DPI: $dpi. Refusing mislabelled screenshot."
-        }
-        $requestedClientWidthPx = [int][Math]::Round($dip * $dpi / 96.0)
-        $requestedClientHeightPx = [int][Math]::Round($HeightDip * $dpi / 96.0)
-        $outerWidthPx = $requestedClientWidthPx + $borderWidth
-        $outerHeightPx = $requestedClientHeightPx + $borderHeight
-        $work = [System.Windows.Forms.Screen]::FromHandle($handle).WorkingArea
-        if ($outerWidthPx -gt $work.Width - 24 -or $outerHeightPx -gt $work.Height - 24) {
-            throw "Requested $dip DIP client width at $dpi DPI cannot fit on the current monitor."
-        }
-        $left = $work.Left + 12
-        $top = $work.Top + 12
-        if (-not [DvinholmWinUiCaptureNative]::MoveWindow(
-            $handle, $left, $top, $outerWidthPx, $outerHeightPx, $true)) {
-            throw 'MoveWindow failed. Do not label this capture as a responsive-layout result.'
-        }
-        Set-CaptureWindowForeground
-        Start-Sleep -Milliseconds 300
-        $rect = New-Object DvinholmWinUiCaptureNative+RECT
-        $client = New-Object DvinholmWinUiCaptureNative+RECT
-        if (-not [DvinholmWinUiCaptureNative]::GetWindowRect($handle, [ref]$rect) -or
-            -not [DvinholmWinUiCaptureNative]::GetClientRect($handle, [ref]$client)) {
-            throw 'Could not read actual Dvinholm outer or client window bounds.'
-        }
-        $actualWidth = $rect.Right - $rect.Left
-        $actualHeight = $rect.Bottom - $rect.Top
-        $actualClientWidth = $client.Right - $client.Left
-        $actualClientHeight = $client.Bottom - $client.Top
-        if ([Math]::Abs($actualClientWidth-$requestedClientWidthPx) -gt 4 -or
-            [Math]::Abs($actualClientHeight-$requestedClientHeightPx) -gt 4) {
-            throw "The app/window manager did not accept $dip DIP client width at $dpi DPI; refusing misleading viewport screenshot."
-        }
-        $foreground = [DvinholmWinUiCaptureNative]::GetForegroundWindow()
-        if ([DvinholmWinUiCaptureNative]::GetAncestor($foreground, 2) -ne $handle) {
-            throw 'The Dvinholm window is not foreground. Close overlays and retry; capture refused.'
-        }
-        # Recheck after WinUI AdaptiveTrigger reflow before writing any pixels.
-        Confirm-WorkspaceState $page -RequireVisible
-        $filename = "Aurora-$page-$Language-$dip-dip.png"
-        $dest = Join-Path $output $filename
-        if (Test-Path -LiteralPath $dest) {
-            throw "File already exists: $filename. Select a new empty output directory."
-        }
-        $bitmap = [System.Drawing.Bitmap]::new($actualWidth, $actualHeight)
-        try {
-            $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
-            try {
-                $graphics.CopyFromScreen($rect.Left,$rect.Top,0,0,$bitmap.Size,
-                    [System.Drawing.CopyPixelOperation]::SourceCopy)
-            }
-            finally { $graphics.Dispose() }
-            $bitmap.Save($dest, [System.Drawing.Imaging.ImageFormat]::Png)
-        }
-        finally { $bitmap.Dispose() }
-        $results += [ordered]@{
-            file = $filename
-            page = $page
-            operatorSelectedLanguage = $Language
-            verifiedVisibleWorkspaceTitle = $expectedTitles[$Language][$page]
-            verifiedSelectedLanguage = $localeNames[$Language]
-            requestedWidthDip = $dip
-            measuredWidthDip = [Math]::Round($actualClientWidth * 96.0 / $dpi, 1)
-            measuredClientHeightDip = [Math]::Round($actualClientHeight * 96.0 / $dpi, 1)
-            actualClientWidthPx = $actualClientWidth
-            actualClientHeightPx = $actualClientHeight
-            actualWidthPx = $actualWidth
-            actualHeightPx = $actualHeight
-            windowDpi = $dpi
-            sourceCommitOperatorDeclared = $CommitSha
-            screenshotUtc = [DateTime]::UtcNow.ToString('o')
-            evidence = 'real desktop viewport only; manual privacy and visual review still required'
-        }
-        Write-Host "Captured $filename (client $actualClientWidth x $actualClientHeight; outer $actualWidth x $actualHeight px; $dpi DPI)"
+    Set-CaptureWindowForeground
+    Start-Sleep -Milliseconds 300
+    $dpi = [DvinholmWinUiCaptureNative]::GetDpiForWindow($handle)
+    if ($dpi -lt 96 -or $dpi -gt 480) {
+        throw "Unexpected window DPI: $dpi. Refusing mislabelled screenshot."
     }
+    $requestedClientWidthPx = [int][Math]::Round($fixedWidthDip * $dpi / 96.0)
+    $requestedClientHeightPx = [int][Math]::Round($fixedHeightDip * $dpi / 96.0)
+    $rect = New-Object DvinholmWinUiCaptureNative+RECT
+    $client = New-Object DvinholmWinUiCaptureNative+RECT
+    if (-not [DvinholmWinUiCaptureNative]::GetWindowRect($handle, [ref]$rect) -or
+        -not [DvinholmWinUiCaptureNative]::GetClientRect($handle, [ref]$client)) {
+        throw 'Could not read actual Dvinholm outer or client window bounds.'
+    }
+    $actualWidth = $rect.Right - $rect.Left
+    $actualHeight = $rect.Bottom - $rect.Top
+    $actualClientWidth = $client.Right - $client.Left
+    $actualClientHeight = $client.Bottom - $client.Top
+    if ([Math]::Abs($actualClientWidth-$requestedClientWidthPx) -gt 4 -or
+        [Math]::Abs($actualClientHeight-$requestedClientHeightPx) -gt 4) {
+        throw "Dvinholm must use the fixed $($fixedWidthDip)x$($fixedHeightDip) DIP client viewport; observed $([Math]::Round($actualClientWidth * 96.0 / $dpi, 1))x$([Math]::Round($actualClientHeight * 96.0 / $dpi, 1)) DIP."
+    }
+    $work = [System.Windows.Forms.Screen]::FromHandle($handle).WorkingArea
+    if ($rect.Left -lt $work.Left -or $rect.Top -lt $work.Top -or
+        $rect.Right -gt $work.Right -or $rect.Bottom -gt $work.Bottom) {
+        throw 'The fixed Dvinholm window is not fully inside the monitor working area.'
+    }
+    $foreground = [DvinholmWinUiCaptureNative]::GetForegroundWindow()
+    if ([DvinholmWinUiCaptureNative]::GetAncestor($foreground, 2) -ne $handle) {
+        throw 'The Dvinholm window is not foreground. Close overlays and retry; capture refused.'
+    }
+    # Verify the one fixed viewport and the exact localized page before pixels.
+    Confirm-WorkspaceState $page -RequireVisible
+    $filename = "Aurora-$page-$Language-$fixedWidthDip-dip.png"
+    $dest = Join-Path $output $filename
+    if (Test-Path -LiteralPath $dest) {
+        throw "File already exists: $filename. Select a new empty output directory."
+    }
+    $bitmap = [System.Drawing.Bitmap]::new($actualWidth, $actualHeight)
+    try {
+        $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+        try {
+            $graphics.CopyFromScreen($rect.Left,$rect.Top,0,0,$bitmap.Size,
+                [System.Drawing.CopyPixelOperation]::SourceCopy)
+        }
+        finally { $graphics.Dispose() }
+        $bitmap.Save($dest, [System.Drawing.Imaging.ImageFormat]::Png)
+    }
+    finally { $bitmap.Dispose() }
+    $results += [ordered]@{
+        file = $filename
+        page = $page
+        operatorSelectedLanguage = $Language
+        verifiedVisibleWorkspaceTitle = $expectedTitles[$Language][$page]
+        verifiedSelectedLanguage = $localeNames[$Language]
+        requestedWidthDip = $fixedWidthDip
+        requestedHeightDip = $fixedHeightDip
+        measuredWidthDip = [Math]::Round($actualClientWidth * 96.0 / $dpi, 1)
+        measuredClientHeightDip = [Math]::Round($actualClientHeight * 96.0 / $dpi, 1)
+        actualClientWidthPx = $actualClientWidth
+        actualClientHeightPx = $actualClientHeight
+        actualWidthPx = $actualWidth
+        actualHeightPx = $actualHeight
+        windowDpi = $dpi
+        sourceCommitOperatorDeclared = $CommitSha
+        screenshotUtc = [DateTime]::UtcNow.ToString('o')
+        evidence = 'fixed real desktop viewport only; manual privacy and visual review still required'
+    }
+    Write-Host "Captured $filename (client $actualClientWidth x $actualClientHeight; outer $actualWidth x $actualHeight px; $dpi DPI)"
 }
 $report = Join-Path $output "Aurora-$Language-capture-manifest.json"
 if (Test-Path -LiteralPath $report) {
