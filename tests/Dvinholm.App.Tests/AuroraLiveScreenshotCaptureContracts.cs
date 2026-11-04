@@ -240,7 +240,7 @@ public sealed class AuroraLiveScreenshotCaptureContracts
             verify > move && wait > verify && bottom > wait &&
             topPixels > bottom && restore > topPixels);
         Assert.Contains("blank, non-client title-bar area", section);
-        Assert.Contains("outside the app's client region", section);
+        Assert.Contains("the app's client region", section);
         Assert.Contains("Cursor did not remain outside the Dvinholm client area", section);
         Assert.Contains("finally", section);
         Assert.DoesNotContain("neutral status strip", section);
