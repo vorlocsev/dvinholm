@@ -169,17 +169,22 @@ function Set-CaptureWindowForeground {
         [void][DvinholmWinUiCaptureNative]::ShowWindow($handle, 9) # SW_RESTORE
     }
     [void][DvinholmWinUiCaptureNative]::SetForegroundWindow($handle)
-    $deadline = [DateTime]::UtcNow.AddSeconds(5)
+    $deadline = [DateTime]::UtcNow.AddSeconds(30)
+    $prompted = $false
     do {
         $foreground = [DvinholmWinUiCaptureNative]::GetForegroundWindow()
         if ([DvinholmWinUiCaptureNative]::GetAncestor($foreground, 2) -eq $handle) {
             Start-Sleep -Milliseconds 250
             return
         }
+        if (-not $prompted) {
+            Write-Host 'If PowerShell is covering Dvinholm, click the Dvinholm window now. Leave this script running; it will continue automatically.' -ForegroundColor Yellow
+            $prompted = $true
+        }
         Start-Sleep -Milliseconds 100
     } while ([DateTime]::UtcNow -lt $deadline)
 
-    throw 'Dvinholm could not be brought to the foreground. Click its window once, then rerun capture; no screenshot was saved.'
+    throw 'Dvinholm did not become the foreground window within 30 seconds. No screenshot was saved; rerun and click Dvinholm while the script is waiting.'
 }
 
 $titleCondition = [System.Windows.Automation.PropertyCondition]::new(
