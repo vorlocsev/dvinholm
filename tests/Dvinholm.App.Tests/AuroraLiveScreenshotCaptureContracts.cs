@@ -188,7 +188,7 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("-not $candidate.Current.IsOffscreen", script);
         Assert.Contains("Test-ValidUiaBounds $candidate.Current.BoundingRectangle", script);
         Assert.Contains("$footerAvailable = ($null -ne $footer)", script);
-        Assert.Contains("Footer UIA evidence NOT RUN for $page", script);
+        Assert.Contains("Footer UIA evidence NOT RUN for ${page}:", script);
         Assert.Contains("footer NOT RUN.", script);
         Assert.Contains("fixed header (UIA)", script);
         Assert.DoesNotContain("No visible footer UIA peer found for $page", script);
