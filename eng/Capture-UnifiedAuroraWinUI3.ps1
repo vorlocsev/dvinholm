@@ -149,6 +149,41 @@ if ($windows.Count -ne 1) {
 $window = $windows[0]
 $handle = $window.MainWindowHandle
 
+# A manually supplied PR head SHA is not evidence of what EXE is running.
+# The PR artifact includes a separate verified provenance record whose SHA-256
+# must match the actual *running* executable, not a nearby stale ZIP or script.
+# Fail before taking screenshots when a declared build cannot be verified.
+if (-not [string]::IsNullOrWhiteSpace($CommitSha)) {
+    $provenancePath = Join-Path $repoRoot 'artifacts/Aurora-x64-build-evidence.json'
+    if (-not (Test-Path -LiteralPath $provenancePath -PathType Leaf)) {
+        throw 'Aurora x64 build provenance missing beside this script. Extract the entire matching PR artifact (including artifacts/Aurora-x64-build-evidence.json), not only its .ps1 file, or omit -CommitSha for an unverified local-only capture.'
+    }
+    $evidence = Get-Content -LiteralPath $provenancePath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($null -eq $evidence -or
+        $evidence.schema -cne 'dvinholm.aurora.x64.provenance.v1' -or
+        $evidence.sourceHeadCommitSha -cnotmatch '^[0-9a-f]{40}$' -or
+        $evidence.checkoutCommitSha -cnotmatch '^[0-9a-f]{40}$' -or
+        $evidence.executableSha256 -cnotmatch '^[0-9a-f]{64}$' -or
+        $evidence.executableRelativePath -cne 'Dvinholm.exe') {
+        throw 'Malformed Aurora x64 build provenance: refusing build-labelled screenshots.'
+    }
+    if ($evidence.sourceHeadCommitSha -cne $CommitSha.ToLowerInvariant()) {
+        throw 'Requested PR source commit does not match this PR artifact provenance. Use the full SHA supplied with that exact artifact.'
+    }
+    $runningExe = $window.Path
+    if ([string]::IsNullOrWhiteSpace($runningExe) -or
+        -not (Test-Path -LiteralPath $runningExe -PathType Leaf)) {
+        throw 'Cannot inspect the running Dvinholm executable; build-labelled screenshots refused.'
+    }
+    $runningSha256 = (Get-FileHash -LiteralPath $runningExe -Algorithm SHA256).Hash.ToLowerInvariant()
+    if ($runningSha256 -cne $evidence.executableSha256) {
+        throw 'STALE DVINHOLM.EXE: the running executable differs from the PR artifact verified in Aurora-x64-build-evidence.json. Close Dvinholm, extract the matching ZIP into a NEW folder, launch that EXE, and retry using a NEW empty capture folder.'
+    }
+    Write-Host ('Verified running x64 Dvinholm.exe against PR artifact: source ' +
+        $CommitSha.Substring(0,7) + ', checkout ' + $evidence.checkoutCommitSha.Substring(0,7) +
+        ', matching executable SHA-256. No upload.')
+}
+
 # The app itself must be Per-Monitor V2 aware. Otherwise Windows virtualizes
 # its 96-DPI window coordinates while this helper measures physical pixels.
 $windowDpiContext = [DvinholmWinUiCaptureNative]::GetWindowDpiAwarenessContext($handle)
