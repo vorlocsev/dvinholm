@@ -284,7 +284,9 @@ public sealed partial class MainWindow : Window
 
     private void SetStatus(string text)
     {
-        StatusText.Text = text;
+        // Localize the exact disconnected idle state only. All other
+        // diagnostic/driver messages remain unchanged evidence.
+        StatusText.Text = LocalizeAuroraIdleStatus(text);
         AuroraLanding.UpdateActivity(text);
         RefreshDashboardSummary();
     }
