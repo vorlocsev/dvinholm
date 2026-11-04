@@ -70,12 +70,23 @@ foreach ($lang in @('ru','en')) {
     if (-not (Test-Path -LiteralPath $manifestPath -PathType Leaf)) {
         throw "The $lang capture manifest is missing. Generate each language separately."
     }
-    $rows = @(Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json)
+    # Windows PowerShell 5.1 emits a JSON array from ConvertFrom-Json as one
+    # pipeline object. A direct @(... | ConvertFrom-Json) therefore nests all
+    # screenshot records in one System.Object[], and [int]$entry.requestedWidthDip
+    # fails. First receive the decoded array, then enumerate its records.
+    $decoded = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+    if ($null -eq $decoded -or $decoded -isnot [System.Array]) {
+        throw "The $lang capture manifest must contain a JSON array of screenshot records."
+    }
+    $rows = @($decoded)
     if ($rows.Count -gt 6) { throw 'Unexpected extra records in fixed-viewport screenshot manifest.' }
     $seen = @{}
     $dpis = @{}
     $observedDpi = $null
     foreach ($entry in $rows) {
+        if ($null -eq $entry -or $entry -isnot [pscustomobject]) {
+            throw "The $lang capture manifest contains a non-record JSON value."
+        }
         $page = [string]$entry.page
         $width = [int]$entry.requestedWidthDip
         if ($pages -cnotcontains $page -or $widths -notcontains $width -or
