@@ -77,7 +77,7 @@ public sealed partial class MainWindow
             "Переход к диагностике не отправляет запросы к автомобилю.",
             "Navigating to diagnostics does not transmit vehicle requests."));
 
-        DtcPageHeading.Text = L("Ошибки / DTC", "Fault codes / DTC");
+        DtcPageHeading.Text = L("Ошибки (DTC)", "Fault codes / DTC");
         DtcActionsHeading.Text = L(
             "Чтение неисправностей одного ECU", "Single-ECU fault reading");
         DtcPageIntro.Text = L(
