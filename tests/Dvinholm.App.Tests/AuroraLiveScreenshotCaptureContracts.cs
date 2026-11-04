@@ -3,7 +3,7 @@ using System.Xml.Linq;
 namespace Dvinholm.App.Tests;
 
 /// <summary>
-/// Eight static offline checks for the opt-in, interactive Windows capture
+/// Static offline checks for the opt-in, fixed-viewport interactive Windows capture
 /// helper. Parser validation happens in Windows CI; none of these tests claim
 /// that a WinUI window actually rendered, or that a screenshot was produced.
 /// </summary>
