@@ -155,6 +155,55 @@ public sealed class AuroraLiveScreenshotCaptureContracts
     }
 
     [Fact]
+    public void OptionalBottomViewsRequireUiAutomationAndPreserveSixPrimaryScreenshots()
+    {
+        var script = Capture();
+        Assert.Contains("[switch]$CaptureBottomViews", script);
+        Assert.Contains("if ($CaptureBottomViews -and -not $VerifyWorkspaceScroll)", script);
+        Assert.Contains("-CaptureBottomViews requires -VerifyWorkspaceScroll", script);
+        Assert.Contains("$page -in @('CemPin','CemConfiguration','Dtc','Ecu')", script);
+        Assert.Contains("Aurora-$page-$Language-$fixedWidthDip-dip-bottom.png", script);
+        Assert.Contains("Aurora-$page-$Language-$fixedWidthDip-dip.png", script);
+        Assert.Contains("$bottomResults = @()", script);
+        Assert.Contains("$bottomResults += [ordered]@{", script);
+        Assert.Contains("scrollPosition = 'bottom'", script);
+        Assert.Contains("verifiedOuterScrollPercentAtLeast98 = $true", script);
+        Assert.Contains("Aurora-$Language-bottom-capture-manifest.json", script);
+        Assert.Contains("Aurora-$Language-capture-manifest.json", script);
+        Assert.Contains("ConvertTo-Json -InputObject @($results) -Depth 5", script);
+        Assert.Contains("ConvertTo-Json -InputObject @($bottomResults) -Depth 5", script);
+    }
+
+    [Fact]
+    public void BottomPixelsAreTakenAtVerifiedEndBeforeOriginalScrollIsRestored()
+    {
+        var script = Capture();
+        var start = script.IndexOf("function Assert-WorkspaceScrollToEnd(", StringComparison.Ordinal);
+        var end = script.IndexOf("function Invoke-OnlyNavigation(", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var section = script[start..end];
+        var toBottom = section.IndexOf("$scroll.SetScrollPercent($noScroll, [double]100)",
+            StringComparison.Ordinal);
+        var checkedPercent = section.IndexOf("$atBottom -lt 98", toBottom,
+            StringComparison.Ordinal);
+        var checkedTitle = section.IndexOf("Confirm-WorkspaceState $page -RequireVisible",
+            checkedPercent, StringComparison.Ordinal);
+        var snapshot = section.IndexOf("$bottomBitmap.Save($bottomDestination",
+            checkedTitle, StringComparison.Ordinal);
+        var restore = section.IndexOf("$scroll.SetScrollPercent($noScroll, $originalPercent)",
+            snapshot, StringComparison.Ordinal);
+        Assert.True(toBottom >= 0 && checkedPercent > toBottom &&
+            checkedTitle > checkedPercent && snapshot > checkedTitle && restore > snapshot);
+        Assert.Contains("Test-Path -LiteralPath $bottomDestination", section);
+        Assert.Contains("Dvinholm lost foreground before bottom screenshot", section);
+        Assert.Contains("CopyFromScreen($captureLeft, $captureTop, 0, 0,", section);
+        Assert.Contains("finally { $bottomBitmap.Dispose() }", section);
+        Assert.Contains("finally {", section);
+        Assert.DoesNotContain("ReadDtc_Click(", section);
+        Assert.DoesNotContain("PassThruOpen(", section);
+    }
+
+    [Fact]
     public void CaptureNeverPublishesImagesOrReadsCarData()
     {
         var script = Capture();
@@ -204,7 +253,8 @@ public sealed class AuroraLiveScreenshotCaptureContracts
 
         Assert.Contains("[switch]$VerifyWorkspaceScroll", script);
         Assert.Contains("if ($VerifyWorkspaceScroll)", script);
-        Assert.Contains("function Assert-WorkspaceScrollToEnd([string]$page)", script);
+        Assert.Contains("function Assert-WorkspaceScrollToEnd(", script);
+        Assert.Contains("[string]$page,", script);
         Assert.Contains("if ($page -notin @('CemPin','CemConfiguration','Dtc','Ecu'))", script);
         Assert.Contains("TryGetCurrentPattern(", script);
         Assert.Contains("[System.Windows.Automation.ScrollPattern]::Pattern", script);
