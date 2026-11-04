@@ -194,7 +194,7 @@ $localeCondition = [System.Windows.Automation.PropertyCondition]::new(
     [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
     'DvinholmLanguageSelector')
 
-function Confirm-WorkspaceState([string]$page) {
+function Confirm-WorkspaceState([string]$page, [switch]$RequireVisible) {
     Set-CaptureWindowForeground
     $title = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
         $titleCondition)
@@ -204,7 +204,11 @@ function Confirm-WorkspaceState([string]$page) {
     }
     $expectedTitle = $expectedTitles[$Language][$page]
     $observedTitle = $title.Current.Name
-    if ($observedTitle -cne $expectedTitle -or $title.Current.IsOffscreen) {
+    # Navigation happens before the capture loop positions/resizes the window.
+    # At that point the title may legitimately be outside the current viewport.
+    # Enforce IsOffscreen only after MoveWindow has placed the final viewport.
+    if ($observedTitle -cne $expectedTitle -or
+        ($RequireVisible -and $title.Current.IsOffscreen)) {
         throw "Expected visible workspace '$expectedTitle', observed '$observedTitle' (offscreen: $($title.Current.IsOffscreen)). No screenshot saved."
     }
 
@@ -324,7 +328,7 @@ foreach ($page in $Pages) {
             throw 'The Dvinholm window is not foreground. Close overlays and retry; capture refused.'
         }
         # Recheck after WinUI AdaptiveTrigger reflow before writing any pixels.
-        Confirm-WorkspaceState $page
+        Confirm-WorkspaceState $page -RequireVisible
         $filename = "Aurora-$page-$Language-$dip-dip.png"
         $dest = Join-Path $output $filename
         if (Test-Path -LiteralPath $dest) {
