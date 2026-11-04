@@ -99,6 +99,12 @@ public static class DvinholmWinUiCaptureNative
     [DllImport("user32.dll")]
     public static extern bool SetForegroundWindow(IntPtr hwnd);
 
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool ShowWindow(IntPtr hwnd, int command);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsIconic(IntPtr hwnd);
+
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
 
@@ -154,6 +160,28 @@ $expectedTitles = @{
     }
 }
 $localeNames = @{ ru='Русский'; en='English' }
+
+# UI Automation reports IsOffscreen when another window (notably the
+# PowerShell console running this script) covers the app. Bring Dvinholm to
+# the foreground BEFORE using IsOffscreen as a screenshot-safety gate.
+function Set-CaptureWindowForeground {
+    if ([DvinholmWinUiCaptureNative]::IsIconic($handle)) {
+        [void][DvinholmWinUiCaptureNative]::ShowWindow($handle, 9) # SW_RESTORE
+    }
+    [void][DvinholmWinUiCaptureNative]::SetForegroundWindow($handle)
+    $deadline = [DateTime]::UtcNow.AddSeconds(5)
+    do {
+        $foreground = [DvinholmWinUiCaptureNative]::GetForegroundWindow()
+        if ([DvinholmWinUiCaptureNative]::GetAncestor($foreground, 2) -eq $handle) {
+            Start-Sleep -Milliseconds 250
+            return
+        }
+        Start-Sleep -Milliseconds 100
+    } while ([DateTime]::UtcNow -lt $deadline)
+
+    throw 'Dvinholm could not be brought to the foreground. Click its window once, then rerun capture; no screenshot was saved.'
+}
+
 $titleCondition = [System.Windows.Automation.PropertyCondition]::new(
     [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
     'DvinholmWorkspaceTitle')
@@ -162,6 +190,7 @@ $localeCondition = [System.Windows.Automation.PropertyCondition]::new(
     'DvinholmLanguageSelector')
 
 function Confirm-WorkspaceState([string]$page) {
+    Set-CaptureWindowForeground
     $title = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
         $titleCondition)
     if ($null -eq $title -or
@@ -269,8 +298,8 @@ foreach ($page in $Pages) {
             $handle, $left, $top, $outerWidthPx, $outerHeightPx, $true)) {
             throw 'MoveWindow failed. Do not label this capture as a responsive-layout result.'
         }
-        [void][DvinholmWinUiCaptureNative]::SetForegroundWindow($handle)
-        Start-Sleep -Milliseconds 550
+        Set-CaptureWindowForeground
+        Start-Sleep -Milliseconds 300
         $rect = New-Object DvinholmWinUiCaptureNative+RECT
         $client = New-Object DvinholmWinUiCaptureNative+RECT
         if (-not [DvinholmWinUiCaptureNative]::GetWindowRect($handle, [ref]$rect) -or
