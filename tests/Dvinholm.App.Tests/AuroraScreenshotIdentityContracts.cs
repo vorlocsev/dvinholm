@@ -165,7 +165,10 @@ public sealed class AuroraScreenshotIdentityContracts
         Assert.Contains("SetForegroundWindow($handle)", helper);
         Assert.Contains("GetForegroundWindow()", helper);
         Assert.Contains("GetAncestor($foreground, 2)", helper);
-        Assert.Contains("Click its window once", helper);
+        Assert.Contains("AddSeconds(30)", helper);
+        Assert.Contains("click the Dvinholm window now", helper);
+        Assert.Contains("Leave this script running", helper);
+        Assert.Contains("click Dvinholm while the script is waiting", helper);
 
         var confirmStart = capture.IndexOf("function Confirm-WorkspaceState", StringComparison.Ordinal);
         var confirmEnd = capture.IndexOf("function Invoke-OnlyNavigation", confirmStart, StringComparison.Ordinal);
