@@ -124,7 +124,7 @@ public sealed class AuroraScreenshotIdentityContracts
         Assert.Contains("Connection='Подключение'; Updates='Обновление'; CemPin='CEM PIN'", source);
         Assert.Contains("CemConfiguration='Конфигурация CEM'; Dtc='Ошибки (DTC)'; Ecu='Блоки ECU'", source);
         foreach (var title in new[] { "Подключение", "CEM PIN", "Конфигурация CEM",
-            "Ошибки / DTC", "Блоки ECU" })
+            "Ошибки (DTC)", "Блоки ECU" })
             Assert.Contains($"\"{title}\"", app);
         Assert.Contains("UpdateUnifiedWorkspaceHeader()", Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs"));
     }
@@ -185,6 +185,38 @@ public sealed class AuroraScreenshotIdentityContracts
         Assert.True(nav >= 0 && verify > nav && finalVerify > verify && pixels > finalVerify);
         Assert.Contains("verifiedVisibleWorkspaceTitle", capture);
         Assert.Contains("verifiedSelectedLanguage", capture);
+    }
+
+    [Fact]
+    public void IdleStatusFooterChangesLanguageWithoutRewritingDiagnostics()
+    {
+        var updates = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
+        var application = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        var xaml = Layout();
+        Assert.Equal("{Binding Text, ElementName=StatusText}",
+            (string?)Named(xaml, "ShellStatusText").Attribute("Text"));
+        Assert.Contains("StatusText.Text = LocalizeAuroraIdleStatus(StatusText.Text);", updates);
+        Assert.Contains("text is \"Disconnected\" or \"Не подключено\"", updates);
+        Assert.Contains("? L(\"Не подключено\", \"Disconnected\") : text;", updates);
+        Assert.Contains("StatusText.Text = LocalizeAuroraIdleStatus(text);", application);
+        Assert.Contains("AuroraLanding.UpdateActivity(text);", application);
+    }
+
+    [Fact]
+    public void ScreenshotCaptureParksAndRestoresCursorAroundVisiblePixelCapture()
+    {
+        var capture = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
+        var save = capture.IndexOf("$bitmap.Save($dest", StringComparison.Ordinal);
+        var preserve = capture.IndexOf("GetCursorPos([ref]$savedCursor)", StringComparison.Ordinal);
+        var park = capture.IndexOf("SetCursorPos($neutralX, $neutralY)", StringComparison.Ordinal);
+        var settle = capture.IndexOf("Start-Sleep -Milliseconds 850", StringComparison.Ordinal);
+        var verify = capture.IndexOf("Confirm-WorkspaceState $page -RequireVisible", settle, StringComparison.Ordinal);
+        var restore = capture.IndexOf("SetCursorPos($savedCursor.X, $savedCursor.Y)", StringComparison.Ordinal);
+        Assert.True(preserve >= 0 && park > preserve && settle > park &&
+            verify > settle && save > verify && restore > save);
+        Assert.Contains("finally {", capture);
+        Assert.Contains("status strip", capture);
+        Assert.DoesNotContain("MoveWindow(", capture);
     }
 
     [Fact]
