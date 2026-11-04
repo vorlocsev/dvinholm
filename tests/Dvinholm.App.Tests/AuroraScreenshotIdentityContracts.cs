@@ -196,7 +196,6 @@ public sealed class AuroraScreenshotIdentityContracts
         Assert.True(confirm.IndexOf("Set-CaptureWindowForeground", StringComparison.Ordinal) <
                     confirm.IndexOf("$root.FindFirst", StringComparison.Ordinal));
         Assert.Contains("$titleOffscreen = $title.Current.IsOffscreen", confirm);
-        Assert.Contains("$titleOffscreen = $title.Current.IsOffscreen", confirm);
         Assert.Contains("($RequireVisible -and -not ($titleVisible -or $headerVisible))", confirm);
         Assert.Contains("$headerName -cne $expectedTitle", confirm);
         Assert.Contains("Test-BoundsIntersectClient $headerBounds $clientBounds", confirm);
