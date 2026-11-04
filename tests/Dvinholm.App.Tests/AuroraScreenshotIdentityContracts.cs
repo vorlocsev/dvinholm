@@ -136,20 +136,43 @@ public sealed class AuroraScreenshotIdentityContracts
     }
 
     [Fact]
-    public void ActualWorkspaceIsVerifiedAfterNavigationAndEveryResize()
+    public void ActualWorkspaceIsVerifiedAtOneFixedViewportWithoutResizing()
     {
         var capture = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
         Assert.Equal(2, capture.Split("Confirm-WorkspaceState $page").Length - 1);
+        Assert.Contains("$fixedWidthDip = 1280", capture);
+        Assert.Contains("$fixedHeightDip = 800", capture);
+        Assert.Contains("requestedHeightDip = $fixedHeightDip", capture);
+        Assert.DoesNotContain("MoveWindow(", capture);
+        Assert.DoesNotContain("$WidthsDip", capture);
         Assert.Contains("$pattern.Invoke()", capture);
         var nav = capture.IndexOf("function Invoke-OnlyNavigation(", StringComparison.Ordinal);
         var verify = capture.IndexOf("Confirm-WorkspaceState $page", nav, StringComparison.Ordinal);
-        var resize = capture.IndexOf("MoveWindow(", verify, StringComparison.Ordinal);
-        var again = capture.IndexOf("Confirm-WorkspaceState $page", resize, StringComparison.Ordinal);
-        var pixels = capture.IndexOf("$bitmap.Save($dest", again, StringComparison.Ordinal);
-        Assert.True(nav >= 0 && verify > nav && resize > verify &&
-            again > resize && pixels > again);
+        var finalVerify = capture.IndexOf("Confirm-WorkspaceState $page -RequireVisible", verify, StringComparison.Ordinal);
+        var pixels = capture.IndexOf("$bitmap.Save($dest", finalVerify, StringComparison.Ordinal);
+        Assert.True(nav >= 0 && verify > nav && finalVerify > verify && pixels > finalVerify);
         Assert.Contains("verifiedVisibleWorkspaceTitle", capture);
         Assert.Contains("verifiedSelectedLanguage", capture);
+    }
+
+    [Fact]
+    public void MainWindowUsesFixedDpiAwareNonResizableAuroraViewport()
+    {
+        var application = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        Assert.Contains("FixedAuroraClientWidthDip = 1280", application);
+        Assert.Contains("FixedAuroraClientHeightDip = 800", application);
+        Assert.Contains("ConfigureFixedAuroraWindow();", application);
+        Assert.Contains("presenter.IsResizable = false;", application);
+        Assert.Contains("presenter.IsMaximizable = false;", application);
+        Assert.Contains("presenter.IsMinimizable = true;", application);
+        Assert.Contains("GetDpiForWindow(handle)", application);
+        Assert.Contains("DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest)", application);
+        Assert.Contains("AppWindow.Resize(new Windows.Graphics.SizeInt32(outerWidth, outerHeight))", application);
+        Assert.Contains("AppWindow.Move(new Windows.Graphics.PointInt32(", application);
+        var initialize = application.IndexOf("InitializeComponent();", StringComparison.Ordinal);
+        var configure = application.IndexOf("ConfigureFixedAuroraWindow();", initialize, StringComparison.Ordinal);
+        var navigation = application.IndexOf("AuroraLanding.UseSharedNavigation();", configure, StringComparison.Ordinal);
+        Assert.True(initialize >= 0 && configure > initialize && navigation > configure);
     }
 
     [Fact]
@@ -208,12 +231,13 @@ public sealed class AuroraScreenshotIdentityContracts
         Assert.Contains("Confirm-WorkspaceState $page", navigation);
         Assert.DoesNotContain("Confirm-WorkspaceState $page -RequireVisible", navigation);
 
-        var resize = capture.IndexOf("MoveWindow(", StringComparison.Ordinal);
-        var resizeForeground = capture.IndexOf("Set-CaptureWindowForeground", resize, StringComparison.Ordinal);
-        var resizedConfirm = capture.IndexOf("Confirm-WorkspaceState $page -RequireVisible", resizeForeground, StringComparison.Ordinal);
-        var pixels = capture.IndexOf("$bitmap.Save($dest", resizedConfirm, StringComparison.Ordinal);
-        Assert.True(resize >= 0 && resizeForeground > resize &&
-                    resizedConfirm > resizeForeground && pixels > resizedConfirm);
+        var captureLoop = capture.IndexOf("foreach ($page in $Pages)", StringComparison.Ordinal);
+        var foreground = capture.IndexOf("Set-CaptureWindowForeground", captureLoop, StringComparison.Ordinal);
+        var visibleConfirm = capture.IndexOf("Confirm-WorkspaceState $page -RequireVisible", foreground, StringComparison.Ordinal);
+        var pixels = capture.IndexOf("$bitmap.Save($dest", visibleConfirm, StringComparison.Ordinal);
+        Assert.DoesNotContain("MoveWindow(", capture);
+        Assert.True(captureLoop >= 0 && foreground > captureLoop &&
+                    visibleConfirm > foreground && pixels > visibleConfirm);
     }
 
     [Fact]
