@@ -188,12 +188,17 @@ public sealed class AuroraLiveScreenshotCaptureContracts
             StringComparison.Ordinal);
         var checkedTitle = section.IndexOf("Confirm-WorkspaceState $page -RequireVisible",
             checkedPercent, StringComparison.Ordinal);
-        var snapshot = section.IndexOf("$bottomBitmap.Save($bottomDestination",
+        var recheck = section.IndexOf("$captureScrollPercent = [double]$scroll.Current.VerticalScrollPercent",
             checkedTitle, StringComparison.Ordinal);
+        var snapshot = section.IndexOf("$bottomBitmap.Save($bottomDestination",
+            recheck, StringComparison.Ordinal);
         var restore = section.IndexOf("$scroll.SetScrollPercent($noScroll, $originalPercent)",
             snapshot, StringComparison.Ordinal);
         Assert.True(toBottom >= 0 && checkedPercent > toBottom &&
-            checkedTitle > checkedPercent && snapshot > checkedTitle && restore > snapshot);
+            checkedTitle > checkedPercent && recheck > checkedTitle &&
+            snapshot > recheck && restore > snapshot);
+        Assert.Contains("$captureScrollPercent -lt 98", section);
+        Assert.Contains("[Math]::Abs($captureScrollPercent - $atBottom) -gt 1", section);
         Assert.Contains("Test-Path -LiteralPath $bottomDestination", section);
         Assert.Contains("Dvinholm lost foreground before bottom screenshot", section);
         Assert.Contains("CopyFromScreen($captureLeft, $captureTop, 0, 0,", section);
