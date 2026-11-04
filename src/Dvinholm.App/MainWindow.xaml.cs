@@ -2239,9 +2239,13 @@ public sealed partial class MainWindow : Window
     {
         if (J2534ArchitectureAuditText is null || J2534ArchitectureAuditExpander is null)
             return;
-        J2534ArchitectureAuditExpander.Header = L(
+        // Keep the complete localized audit label visible at fixed 1280 DIP:
+        // the Expander header presents a wrapping TextBlock, not clipped text.
+        J2534ArchitectureAuditHeaderText.Text = L(
             "Аудит разрядности драйверов (офлайн)",
             "Driver architecture audit (offline)");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            J2534ArchitectureAuditExpander, J2534ArchitectureAuditHeaderText.Text);
         J2534ArchitectureAuditText.Text = _lastJ2534ArchitectureAudit is { } summary
             ? J2534AdapterAuditReport.Format(summary, _unifiedEnglish, Environment.Is64BitProcess)
             : L("Записи драйверов ещё не проверялись.",
