@@ -170,16 +170,25 @@ public sealed class AuroraScreenshotIdentityContracts
         Assert.Contains("Leave this script running", helper);
         Assert.Contains("click Dvinholm while the script is waiting", helper);
 
+        Assert.Contains("function Confirm-WorkspaceState([string]$page, [switch]$RequireVisible)", capture);
         var confirmStart = capture.IndexOf("function Confirm-WorkspaceState", StringComparison.Ordinal);
         var confirmEnd = capture.IndexOf("function Invoke-OnlyNavigation", confirmStart, StringComparison.Ordinal);
         Assert.True(confirmStart >= 0 && confirmEnd > confirmStart);
         var confirm = capture[confirmStart..confirmEnd];
         Assert.True(confirm.IndexOf("Set-CaptureWindowForeground", StringComparison.Ordinal) <
                     confirm.IndexOf("$root.FindFirst", StringComparison.Ordinal));
+        Assert.Contains("($RequireVisible -and $title.Current.IsOffscreen)", confirm);
+
+        var navigationStart = confirmEnd;
+        var navigationEnd = capture.IndexOf("$previewDpi", navigationStart, StringComparison.Ordinal);
+        Assert.True(navigationEnd > navigationStart);
+        var navigation = capture[navigationStart..navigationEnd];
+        Assert.Contains("Confirm-WorkspaceState $page", navigation);
+        Assert.DoesNotContain("Confirm-WorkspaceState $page -RequireVisible", navigation);
 
         var resize = capture.IndexOf("MoveWindow(", StringComparison.Ordinal);
         var resizeForeground = capture.IndexOf("Set-CaptureWindowForeground", resize, StringComparison.Ordinal);
-        var resizedConfirm = capture.IndexOf("Confirm-WorkspaceState $page", resizeForeground, StringComparison.Ordinal);
+        var resizedConfirm = capture.IndexOf("Confirm-WorkspaceState $page -RequireVisible", resizeForeground, StringComparison.Ordinal);
         var pixels = capture.IndexOf("$bitmap.Save($dest", resizedConfirm, StringComparison.Ordinal);
         Assert.True(resize >= 0 && resizeForeground > resize &&
                     resizedConfirm > resizeForeground && pixels > resizedConfirm);
