@@ -151,6 +151,47 @@ public sealed class AuroraVisualEnglishLocalizationTests
     }
 
     [Fact]
+    public void SelectedCemEvidenceTierRefreshesSelectionBoxWithoutChangingCanonicalTier()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.AuroraReference.cs");
+        var start = source.IndexOf("private void ApplyAuroraCemConfigLocalization()", StringComparison.Ordinal);
+        var end = source.IndexOf("private void RefreshAuroraConfigReference()", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var projection = source[start..end];
+
+        Assert.Contains("selectedEvidenceTier = CemConfigEvidenceTier.SelectedItem", projection);
+        Assert.Contains("var evidenceReady = _cemConfigReferenceReady;", projection);
+        Assert.Contains("_cemConfigReferenceReady = false;", projection);
+        Assert.Contains("CemConfigEvidenceTier.SelectedItem = null;", projection);
+        Assert.Contains("CemConfigEvidenceTier.SelectedItem = selectedEvidenceTier;", projection);
+        Assert.Contains("_cemConfigReferenceReady = evidenceReady;", projection);
+        Assert.Contains("L(\"Все источники\", \"All sources\")", projection);
+        Assert.True(projection.IndexOf("CemConfigEvidenceTier.SelectedItem = null;", StringComparison.Ordinal) <
+            projection.IndexOf("CemConfigEvidenceTier.SelectedItem = selectedEvidenceTier;", StringComparison.Ordinal));
+    }
+
+    [Fact]
+    public void SelectedDtcStatusMaskRefreshesSelectionBoxWithoutResettingReadContext()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+        var start = source.IndexOf("DtcStatusMaskSelector.Header = L(", StringComparison.Ordinal);
+        var end = source.IndexOf("ReadDtcButton.Content = L(", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var projection = source[start..end];
+
+        Assert.Contains("selectedStatusMask = DtcStatusMaskSelector.SelectedItem", projection);
+        Assert.Contains("SelectionChanged -= DtcStatusMask_SelectionChanged;", projection);
+        Assert.Contains("DtcStatusMaskSelector.SelectedItem = null;", projection);
+        Assert.Contains("DtcStatusMaskSelector.SelectedItem = selectedStatusMask;", projection);
+        Assert.Contains("SelectionChanged += DtcStatusMask_SelectionChanged;", projection);
+        Assert.Contains("L(\"Все статусы\", \"All status bits\")", projection);
+        Assert.DoesNotContain("ClearDiagnosticReadResult(", projection);
+        Assert.DoesNotContain("ReadDtc_Click(", projection);
+        Assert.True(projection.IndexOf("SelectionChanged -= DtcStatusMask_SelectionChanged;", StringComparison.Ordinal) <
+            projection.IndexOf("DtcStatusMaskSelector.SelectedItem = null;", StringComparison.Ordinal));
+    }
+
+    [Fact]
     public void DtcEnglishProjectionKeepsRawCodesAndNeverInventsFaultDescriptions()
     {
         var read = new UdsDtcReadResult(0x08, new[]
