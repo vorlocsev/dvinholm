@@ -117,6 +117,12 @@ public static class DvinholmWinUiCaptureNative
     [DllImport("user32.dll")]
     public static extern IntPtr GetForegroundWindow();
 
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool GetCursorPos(out POINT point);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool SetCursorPos(int x, int y);
+
     [DllImport("user32.dll")]
     public static extern IntPtr GetAncestor(IntPtr hwnd, uint flags);
 }
@@ -483,8 +489,22 @@ foreach ($page in $Pages) {
     if ([DvinholmWinUiCaptureNative]::GetAncestor($foreground, 2) -ne $handle) {
         throw 'The Dvinholm window is not foreground. Close overlays and retry; capture refused.'
     }
-    # Verify the one fixed viewport and the exact localized page before pixels.
-    Confirm-WorkspaceState $page -RequireVisible
+    # A pointer left hovering over the sidebar can leave an open tooltip
+    # on the real Windows screenshot. Temporarily park it on the neutral
+    # status strip; restore its original position even if capture fails.
+    $savedCursor = New-Object DvinholmWinUiCaptureNative+POINT
+    if (-not [DvinholmWinUiCaptureNative]::GetCursorPos([ref]$savedCursor)) {
+        throw 'Could not preserve cursor position; refusing a tooltip-obscured screenshot.'
+    }
+    try {
+        $neutralX = $rect.Left + [int][Math]::Floor($actualWidth / 2)
+        $neutralY = $rect.Bottom - [int][Math]::Max(12, [Math]::Round(14 * $dpi / 96.0))
+        if (-not [DvinholmWinUiCaptureNative]::SetCursorPos($neutralX, $neutralY)) {
+            throw 'Could not park cursor away from sidebar tooltips.'
+        }
+        Start-Sleep -Milliseconds 850
+        # Verify the exact localized workspace after the pointer settles.
+        Confirm-WorkspaceState $page -RequireVisible
     $filename = "Aurora-$page-$Language-$fixedWidthDip-dip.png"
     $dest = Join-Path $output $filename
     if (Test-Path -LiteralPath $dest) {
@@ -521,6 +541,10 @@ foreach ($page in $Pages) {
         evidence = 'fixed real desktop viewport only; manual privacy and visual review still required'
     }
     Write-Host "Captured $filename (client $actualClientWidth x $actualClientHeight; outer $actualWidth x $actualHeight px; $dpi DPI)"
+    }
+    finally {
+        [void][DvinholmWinUiCaptureNative]::SetCursorPos($savedCursor.X, $savedCursor.Y)
+    }
 }
 $report = Join-Path $output "Aurora-$Language-capture-manifest.json"
 if (Test-Path -LiteralPath $report) {
