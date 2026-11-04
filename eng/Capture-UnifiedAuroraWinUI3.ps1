@@ -683,20 +683,34 @@ foreach ($page in $Pages) {
     if ([DvinholmWinUiCaptureNative]::GetAncestor($foreground, 2) -ne $handle) {
         throw 'The Dvinholm window is not foreground. Close overlays and retry; capture refused.'
     }
-    # A pointer left hovering over the sidebar can leave an open tooltip
-    # on the real Windows screenshot. Temporarily park it on the neutral
-    # status strip; restore its original position even if capture fails.
+    # A pointer left hovering over a sidebar or page control can keep a WinUI
+    # tooltip visible. Park it in the blank, non-client title-bar area, outside
+    # the app's client region, and verify the physical cursor position before
+    # taking either the top or bottom screenshot. Restore it even on failure.
     $savedCursor = New-Object DvinholmWinUiCaptureNative+POINT
     if (-not [DvinholmWinUiCaptureNative]::GetCursorPos([ref]$savedCursor)) {
         throw 'Could not preserve cursor position; refusing a tooltip-obscured screenshot.'
     }
     try {
-        $neutralX = $rect.Left + [int][Math]::Floor($actualWidth / 2)
-        $neutralY = $rect.Bottom - [int][Math]::Max(12, [Math]::Round(14 * $dpi / 96.0))
-        if (-not [DvinholmWinUiCaptureNative]::SetCursorPos($neutralX, $neutralY)) {
-            throw 'Could not park cursor away from sidebar tooltips.'
+        $neutralX = $rect.Left + [int][Math]::Round(180 * $dpi / 96.0)
+        $neutralY = $rect.Top + [int][Math]::Round(12 * $dpi / 96.0)
+        $clientBounds = Get-ClientScreenBounds
+        if ($null -eq $clientBounds -or
+            ($neutralX -ge $clientBounds.Left -and $neutralX -lt $clientBounds.Right -and
+             $neutralY -ge $clientBounds.Top -and $neutralY -lt $clientBounds.Bottom)) {
+            throw 'Could not identify a non-client title-bar parking point; refusing tooltip-obscured capture.'
         }
-        Start-Sleep -Milliseconds 850
+        if (-not [DvinholmWinUiCaptureNative]::SetCursorPos($neutralX, $neutralY)) {
+            throw 'Could not park cursor in the non-client title-bar area.'
+        }
+        $parkedCursor = New-Object DvinholmWinUiCaptureNative+POINT
+        if (-not [DvinholmWinUiCaptureNative]::GetCursorPos([ref]$parkedCursor) -or
+            $parkedCursor.X -ne $neutralX -or $parkedCursor.Y -ne $neutralY -or
+            ($parkedCursor.X -ge $clientBounds.Left -and $parkedCursor.X -lt $clientBounds.Right -and
+             $parkedCursor.Y -ge $clientBounds.Top -and $parkedCursor.Y -lt $clientBounds.Bottom)) {
+            throw 'Cursor did not remain outside the Dvinholm client area; refusing screenshot.'
+        }
+        Start-Sleep -Milliseconds 1100
         # Verify the exact localized workspace after the pointer settles.
         Confirm-WorkspaceState $page -RequireVisible
         if ($VerifyWorkspaceScroll) {
