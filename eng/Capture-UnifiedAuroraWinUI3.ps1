@@ -202,11 +202,52 @@ $titleCondition = [System.Windows.Automation.PropertyCondition]::new(
 $localeCondition = [System.Windows.Automation.PropertyCondition]::new(
     [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
     'DvinholmLanguageSelector')
+$headerCondition = [System.Windows.Automation.PropertyCondition]::new(
+    [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+    'DvinholmWorkspaceHeaderCopy')
 
 function Format-UiaBounds($bounds) {
     if ($null -eq $bounds) { return 'unavailable' }
     return ('x={0}; y={1}; width={2}; height={3}' -f
         $bounds.X, $bounds.Y, $bounds.Width, $bounds.Height)
+}
+
+function Test-ValidUiaBounds($bounds) {
+    if ($null -eq $bounds) { return $false }
+    foreach ($value in @($bounds.X, $bounds.Y, $bounds.Width, $bounds.Height)) {
+        if ([double]::IsNaN([double]$value) -or [double]::IsInfinity([double]$value)) {
+            return $false
+        }
+    }
+    return ($bounds.Width -gt 0 -and $bounds.Height -gt 0)
+}
+
+function Get-ClientScreenBounds {
+    $client = New-Object DvinholmWinUiCaptureNative+RECT
+    $origin = New-Object DvinholmWinUiCaptureNative+POINT
+    if (-not [DvinholmWinUiCaptureNative]::GetClientRect($handle, [ref]$client) -or
+        -not [DvinholmWinUiCaptureNative]::ClientToScreen($handle, [ref]$origin)) {
+        return $null
+    }
+    return [pscustomobject]@{
+        Left = $origin.X
+        Top = $origin.Y
+        Right = $origin.X + $client.Right
+        Bottom = $origin.Y + $client.Bottom
+    }
+}
+
+function Test-BoundsIntersectClient($bounds, $clientBounds) {
+    if (-not (Test-ValidUiaBounds $bounds) -or $null -eq $clientBounds) {
+        return $false
+    }
+    $intersectionWidth = [Math]::Min(
+        ($bounds.X + $bounds.Width), $clientBounds.Right) -
+        [Math]::Max($bounds.X, $clientBounds.Left)
+    $intersectionHeight = [Math]::Min(
+        ($bounds.Y + $bounds.Height), $clientBounds.Bottom) -
+        [Math]::Max($bounds.Y, $clientBounds.Top)
+    return ($intersectionWidth -ge 20 -and $intersectionHeight -ge 12)
 }
 
 function Get-CaptureDiagnostics(
@@ -245,6 +286,20 @@ function Get-CaptureDiagnostics(
         $monitor.Left, $monitor.Top, $monitor.Width, $monitor.Height))
     $lines.Add(('workingArea=left:{0},top:{1},width:{2},height:{3}' -f
         $work.Left, $work.Top, $work.Width, $work.Height))
+    $header = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
+        $headerCondition)
+    if ($null -ne $header) {
+        $headerCurrent = $header.Current
+        $headerBounds = $headerCurrent.BoundingRectangle
+        $clientBounds = Get-ClientScreenBounds
+        $headerVisible = (-not $headerCurrent.IsOffscreen) -and
+            (Test-BoundsIntersectClient $headerBounds $clientBounds)
+        $lines.Add(('headerAnchor name="{0}"; offscreen={1}; visibleInClient={2}; bounds=({3})' -f
+            $headerCurrent.Name, $headerCurrent.IsOffscreen, $headerVisible,
+            (Format-UiaBounds $headerBounds)))
+    } else {
+        $lines.Add('headerAnchor=not-found')
+    }
 
     $walker = [System.Windows.Automation.TreeWalker]::ControlViewWalker
     $node = $titleElement
@@ -276,19 +331,39 @@ function Confirm-WorkspaceState([string]$page, [switch]$RequireVisible) {
     }
     $expectedTitle = $expectedTitles[$Language][$page]
     $observedTitle = $title.Current.Name
-    # Navigation happens before the capture loop positions/resizes the window.
-    # At that point the title may legitimately be outside the current viewport.
-    # Enforce IsOffscreen only after MoveWindow has placed the final viewport.
+    $header = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
+        $headerCondition)
+    if ($null -eq $header) {
+        throw 'Workspace header visibility anchor is unavailable; refusing screenshot.'
+    }
+    $headerCurrent = $header.Current
+    $headerName = $headerCurrent.Name
+    if ($headerName -cne $expectedTitle) {
+        throw "Workspace header identity mismatch: expected '$expectedTitle', observed '$headerName'."
+    }
+
+    # Some WinUI 3 TextBlock peers expose the correct Name but return an
+    # infinite BoundingRectangle and IsOffscreen=True. In that case, verify
+    # the explicitly exposed header container, its localized identity, and
+    # its real intersection with the HWND client area instead of trusting
+    # the broken child peer geometry.
     $titleOffscreen = $title.Current.IsOffscreen
+    $titleBounds = $title.Current.BoundingRectangle
+    $clientBounds = Get-ClientScreenBounds
+    $titleVisible = (-not $titleOffscreen) -and
+        (Test-BoundsIntersectClient $titleBounds $clientBounds)
+    $headerBounds = $headerCurrent.BoundingRectangle
+    $headerVisible = (-not $headerCurrent.IsOffscreen) -and
+        (Test-BoundsIntersectClient $headerBounds $clientBounds)
     if ($observedTitle -cne $expectedTitle -or
-        ($RequireVisible -and $titleOffscreen)) {
+        ($RequireVisible -and -not ($titleVisible -or $headerVisible))) {
         $diagnostics = ''
-        if ($RequireVisible -and $titleOffscreen) {
+        if ($RequireVisible -and -not ($titleVisible -or $headerVisible)) {
             $diagnostics = [Environment]::NewLine +
                 "Capture geometry diagnostics (no screenshot was saved):" +
                 [Environment]::NewLine + (Get-CaptureDiagnostics $title)
         }
-        throw "Expected visible workspace '$expectedTitle', observed '$observedTitle' (offscreen: $titleOffscreen). No screenshot saved.$diagnostics"
+        throw "Expected visible workspace '$expectedTitle', observed '$observedTitle' (titleOffscreen: $titleOffscreen; titleBoundsValid: $(Test-ValidUiaBounds $titleBounds); headerVisible: $headerVisible). No screenshot saved.$diagnostics"
     }
 
     $locale = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
