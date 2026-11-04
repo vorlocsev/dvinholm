@@ -209,6 +209,44 @@ public sealed class AuroraLiveScreenshotCaptureContracts
     }
 
     [Fact]
+    public void CaptureParksCursorOutsideClientAreaToDismissHoverTooltips()
+    {
+        var script = Capture();
+        var loop = script.IndexOf("foreach ($page in $Pages)", StringComparison.Ordinal);
+        var report = script.IndexOf("$report = Join-Path", loop, StringComparison.Ordinal);
+        Assert.True(loop >= 0 && report > loop);
+        var section = script[loop..report];
+
+        var park = section.IndexOf(
+            "$neutralX = $rect.Left + [int][Math]::Round(180 * $dpi / 96.0)",
+            StringComparison.Ordinal);
+        var bounds = section.IndexOf("$clientBounds = Get-ClientScreenBounds",
+            park, StringComparison.Ordinal);
+        var move = section.IndexOf("SetCursorPos($neutralX, $neutralY)",
+            bounds, StringComparison.Ordinal);
+        var verify = section.IndexOf("GetCursorPos([ref]$parkedCursor)",
+            move, StringComparison.Ordinal);
+        var wait = section.IndexOf("Start-Sleep -Milliseconds 1100",
+            verify, StringComparison.Ordinal);
+        var bottom = section.IndexOf("Assert-WorkspaceScrollToEnd $page",
+            wait, StringComparison.Ordinal);
+        var topPixels = section.IndexOf("$graphics.CopyFromScreen($rect.Left",
+            bottom, StringComparison.Ordinal);
+        var restore = section.IndexOf(
+            "SetCursorPos($savedCursor.X, $savedCursor.Y)",
+            topPixels, StringComparison.Ordinal);
+
+        Assert.True(park >= 0 && bounds > park && move > bounds &&
+            verify > move && wait > verify && bottom > wait &&
+            topPixels > bottom && restore > topPixels);
+        Assert.Contains("blank, non-client title-bar area", section);
+        Assert.Contains("outside the app's client region", section);
+        Assert.Contains("Cursor did not remain outside the Dvinholm client area", section);
+        Assert.Contains("finally", section);
+        Assert.DoesNotContain("neutral status strip", section);
+    }
+
+    [Fact]
     public void CaptureNeverPublishesImagesOrReadsCarData()
     {
         var script = Capture();
