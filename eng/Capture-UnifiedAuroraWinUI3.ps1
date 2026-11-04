@@ -456,10 +456,17 @@ function Assert-WorkspaceScrollToEnd([string]$page) {
             break
         }
     }
-    if ($null -eq $footer) {
-        throw "No visible footer UIA peer found for $page (tried status text, version text, Border). Scroll verification NOT RUN; ordinary capture remains available."
+    # WinUI can omit decorative Borders AND their TextBlock children from
+    # the UIA tree. This is an unavailable measurement, not a scroll failure.
+    # Never claim footer anchoring unless a visible, valid peer was measured.
+    $footerAvailable = ($null -ne $footer)
+    if (-not $footerAvailable) {
+        Write-Warning "Footer UIA evidence NOT RUN for $page: no visible status/version/Border peer. Review the fixed bottom strip manually."
     }
-    $footerBefore = $footer.Current.BoundingRectangle
+    $footerBefore = $null
+    if ($footerAvailable) {
+        $footerBefore = $footer.Current.BoundingRectangle
+    }
     $headerBefore = $header.Current.BoundingRectangle
     if (-not (Test-ValidUiaBounds $headerBefore) -or
         $header.Current.IsOffscreen) {
@@ -472,18 +479,28 @@ function Assert-WorkspaceScrollToEnd([string]$page) {
         $scroll.SetScrollPercent($noScroll, [double]100)
         Start-Sleep -Milliseconds 600
         $atBottom = [double]$scroll.Current.VerticalScrollPercent
-        $footerAfter = $footer.Current.BoundingRectangle
         $headerAfter = $header.Current.BoundingRectangle
         if ($atBottom -lt 98 -or
-            $footer.Current.IsOffscreen -or $header.Current.IsOffscreen -or
-            -not (Test-ValidUiaBounds $footerAfter) -or
+            $header.Current.IsOffscreen -or
             -not (Test-ValidUiaBounds $headerAfter) -or
-            [Math]::Abs($footerAfter.Y - $footerBefore.Y) -gt 4 -or
             [Math]::Abs($headerAfter.Y - $headerBefore.Y) -gt 4) {
-            throw "Scroll-to-bottom/anchored header-footer check failed for $page (reported $atBottom%)."
+            throw "Scroll-to-bottom/anchored header check failed for $page (reported $atBottom%)."
+        }
+        if ($footerAvailable) {
+            $footerAfter = $footer.Current.BoundingRectangle
+            if ($footer.Current.IsOffscreen -or
+                -not (Test-ValidUiaBounds $footerAfter) -or
+                [Math]::Abs($footerAfter.Y - $footerBefore.Y) -gt 4) {
+                throw "Fixed footer moved or became invisible while scrolling $page."
+            }
         }
         Confirm-WorkspaceState $page -RequireVisible
-        Write-Host ("Verified $page outer workspace scroll reached {0:N1}% with fixed header/footer via $footerId (UIA only)." -f $atBottom)
+        if ($footerAvailable) {
+            Write-Host ("Verified $page outer workspace scroll reached {0:N1}% with fixed header/footer via $footerId (UIA only)." -f $atBottom)
+        }
+        else {
+            Write-Host ("Verified $page outer workspace scroll reached {0:N1}% with fixed header (UIA); footer NOT RUN." -f $atBottom)
+        }
     }
     finally {
         # A failed probe must never leave the operator on a different fold.
