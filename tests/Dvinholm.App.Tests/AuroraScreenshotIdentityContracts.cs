@@ -3,7 +3,7 @@ using System.Xml.Linq;
 namespace Dvinholm.App.Tests;
 
 /// <summary>
-/// Eight offline contracts for identity-safe Aurora screenshot collection.
+/// Offline contracts for identity-safe Aurora screenshot collection.
 /// They are source checks, not actual UI Automation or pixel acceptance.
 /// </summary>
 public sealed class AuroraScreenshotIdentityContracts
@@ -46,6 +46,24 @@ public sealed class AuroraScreenshotIdentityContracts
             (string?)element.Attribute("AutomationProperties.AutomationId")
                 == "DvinholmWorkspaceTitle");
         Assert.Contains(Named(doc, "WorkspaceHeaderGrid"), title.Ancestors());
+    }
+
+    [Fact]
+    public void WorkspaceHeaderContainerExposesLocalizedUiaVisibilityAnchor()
+    {
+        var doc = Layout();
+        var header = Named(doc, "WorkspaceHeaderCopy");
+        Assert.Equal("DvinholmWorkspaceHeaderCopy",
+            (string?)header.Attribute("AutomationProperties.AutomationId"));
+        Assert.Equal("Control",
+            (string?)header.Attribute("AutomationProperties.AccessibilityView"));
+
+        var application = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        var titleAssignment = application.IndexOf("WorkspaceTitle.Text = section.Title;", StringComparison.Ordinal);
+        var anchorName = application.IndexOf(
+            "AutomationProperties.SetName(\n            WorkspaceHeaderCopy, section.Title);",
+            titleAssignment, StringComparison.Ordinal);
+        Assert.True(titleAssignment >= 0 && anchorName > titleAssignment);
     }
 
     [Fact]
@@ -178,7 +196,10 @@ public sealed class AuroraScreenshotIdentityContracts
         Assert.True(confirm.IndexOf("Set-CaptureWindowForeground", StringComparison.Ordinal) <
                     confirm.IndexOf("$root.FindFirst", StringComparison.Ordinal));
         Assert.Contains("$titleOffscreen = $title.Current.IsOffscreen", confirm);
-        Assert.Contains("($RequireVisible -and $titleOffscreen)", confirm);
+        Assert.Contains("$titleOffscreen = $title.Current.IsOffscreen", confirm);
+        Assert.Contains("($RequireVisible -and -not ($titleVisible -or $headerVisible))", confirm);
+        Assert.Contains("$headerName -cne $expectedTitle", confirm);
+        Assert.Contains("Test-BoundsIntersectClient $headerBounds $clientBounds", confirm);
 
         var navigationStart = confirmEnd;
         var navigationEnd = capture.IndexOf("$previewDpi", navigationStart, StringComparison.Ordinal);
@@ -216,13 +237,14 @@ public sealed class AuroraScreenshotIdentityContracts
         Assert.Contains("BoundingRectangle", diagnostic);
         Assert.Contains("IsOffscreen", diagnostic);
         Assert.Contains("foregroundIsDvinholm", diagnostic);
+        Assert.Contains("headerAnchor name=", diagnostic);
         Assert.DoesNotContain("$bitmap.Save", diagnostic);
 
         var confirmStart = diagnosticEnd;
         var confirmEnd = capture.IndexOf("function Invoke-OnlyNavigation", confirmStart, StringComparison.Ordinal);
         Assert.True(confirmEnd > confirmStart);
         var confirm = capture[confirmStart..confirmEnd];
-        var refusal = confirm.IndexOf("($RequireVisible -and $titleOffscreen)", StringComparison.Ordinal);
+        var refusal = confirm.IndexOf("($RequireVisible -and -not ($titleVisible -or $headerVisible))", StringComparison.Ordinal);
         var report = confirm.IndexOf("Get-CaptureDiagnostics $title", StringComparison.Ordinal);
         var throwIndex = confirm.IndexOf("throw \"Expected visible workspace", StringComparison.Ordinal);
         Assert.True(refusal >= 0 && report > refusal && throwIndex > report);
