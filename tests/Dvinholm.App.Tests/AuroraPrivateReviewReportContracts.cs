@@ -46,7 +46,7 @@ public sealed class AuroraPrivateReviewReportContracts
         Assert.Contains("foreach ($lang in @('ru','en'))", script);
         Assert.Contains("$pages -cnotcontains $page", script);
         Assert.Contains("$widths -notcontains $width", script);
-        Assert.Contains("Unexpected page or DIP width", script);
+        Assert.Contains("Unexpected page or fixed viewport dimensions", script);
     }
 
     [Fact]
