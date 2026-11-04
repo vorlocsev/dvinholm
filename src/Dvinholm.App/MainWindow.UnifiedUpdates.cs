@@ -129,6 +129,11 @@ public sealed partial class MainWindow
             ShellConnectionText.Text = _connected && _session.IsConnected
                 ? L("J2534 подключён", "J2534 connected")
                 : L("Не подключено", "Disconnected");
+        // The footer is bound to StatusText, not ShellConnectionText.
+        // Reproject only the known idle label. Preserve other raw diagnostic
+        // activity messages instead of inventing translations or hiding data.
+        if (StatusText is not null)
+            StatusText.Text = LocalizeAuroraIdleStatus(StatusText.Text);
         // Accessible header status is a navigation shortcut, never Connect.
         var statusNavigationHint = L(
             "Открыть параметры J2534. Это не подключает автомобиль.",
@@ -150,6 +155,10 @@ public sealed partial class MainWindow
     }
 
     private string L(string ru, string en) => _unifiedEnglish ? en : ru;
+
+    private string LocalizeAuroraIdleStatus(string text) =>
+        text is "Disconnected" or "Не подключено"
+            ? L("Не подключено", "Disconnected") : text;
 
     private void ApplyUnifiedWorkspaceSection(AuroraDestination destination)
     {
