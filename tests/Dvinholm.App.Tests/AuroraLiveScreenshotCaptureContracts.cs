@@ -79,7 +79,7 @@ public sealed class AuroraLiveScreenshotCaptureContracts
     {
         var script = Capture();
         foreach (var symbol in new[] {
-            "GetDpiForWindow", "GetWindowRect", "GetClientRect", "MoveWindow",
+            "GetDpiForWindow", "GetWindowRect", "GetClientRect",
             "GetForegroundWindow", "GetAncestor", "CopyFromScreen",
             "SetProcessDpiAwarenessContext", "GetThreadDpiAwarenessContext"
         })
@@ -92,18 +92,25 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("Confirm-WorkspaceState $page", script);
         Assert.Contains("verifiedVisibleWorkspaceTitle", script);
         Assert.Contains("verifiedSelectedLanguage", script);
-        Assert.Contains("$outerWidthPx = $requestedClientWidthPx + $borderWidth", script);
+        Assert.Contains("$fixedWidthDip = 1280", script);
+        Assert.Contains("$fixedHeightDip = 800", script);
+        Assert.Contains("$requestedClientWidthPx = [int][Math]::Round($fixedWidthDip * $previewDpi / 96.0)", script);
         Assert.Contains("[Math]::Abs($actualClientWidth-$requestedClientWidthPx) -gt 4", script);
-        Assert.Contains("Preflight every selected width", script);
+        Assert.Contains("fixed viewport 1280x800 DIP", script);
+        Assert.DoesNotContain("MoveWindow", script);
     }
 
     [Fact]
-    public void CaptureWidthsAndLanguagesMatchReviewMatrix()
+    public void CaptureUsesOneFixedViewportAndBothLanguages()
     {
         var script = Capture();
         Assert.Contains("ValidateSet('ru','en')", script);
-        Assert.Contains("640,800,980,1280,1440", script);
-        Assert.Contains("[int]$HeightDip = 700", script);
+        Assert.Contains("$fixedWidthDip = 1280", script);
+        Assert.Contains("$fixedHeightDip = 800", script);
+        Assert.DoesNotContain("WidthsDip", script);
+        Assert.DoesNotContain("HeightDip", script);
+        Assert.DoesNotContain("MoveWindow", script);
+        Assert.Contains("requestedHeightDip", script);
         Assert.Contains("Cannot fit", script, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("operatorSelectedLanguage", script);
         Assert.Contains("expectedTitles", script);
