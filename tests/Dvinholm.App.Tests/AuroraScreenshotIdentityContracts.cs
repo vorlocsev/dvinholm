@@ -177,7 +177,8 @@ public sealed class AuroraScreenshotIdentityContracts
         var confirm = capture[confirmStart..confirmEnd];
         Assert.True(confirm.IndexOf("Set-CaptureWindowForeground", StringComparison.Ordinal) <
                     confirm.IndexOf("$root.FindFirst", StringComparison.Ordinal));
-        Assert.Contains("($RequireVisible -and $title.Current.IsOffscreen)", confirm);
+        Assert.Contains("$titleOffscreen = $title.Current.IsOffscreen", confirm);
+        Assert.Contains("($RequireVisible -and $titleOffscreen)", confirm);
 
         var navigationStart = confirmEnd;
         var navigationEnd = capture.IndexOf("$previewDpi", navigationStart, StringComparison.Ordinal);
