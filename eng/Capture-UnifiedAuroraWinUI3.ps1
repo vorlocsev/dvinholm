@@ -74,6 +74,9 @@ public static class DvinholmWinUiCaptureNative
     [StructLayout(LayoutKind.Sequential)]
     public struct RECT { public int Left, Top, Right, Bottom; }
 
+    [StructLayout(LayoutKind.Sequential)]
+    public struct POINT { public int X, Y; }
+
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool SetProcessDpiAwarenessContext(IntPtr dpiContext);
 
@@ -91,6 +94,12 @@ public static class DvinholmWinUiCaptureNative
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool GetClientRect(IntPtr hwnd, out RECT rect);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    public static extern bool ClientToScreen(IntPtr hwnd, ref POINT point);
+
+    [DllImport("user32.dll")]
+    public static extern bool IsWindowVisible(IntPtr hwnd);
 
     [DllImport("user32.dll", SetLastError = true)]
     public static extern bool MoveWindow(IntPtr hwnd, int x, int y,
@@ -194,6 +203,69 @@ $localeCondition = [System.Windows.Automation.PropertyCondition]::new(
     [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
     'DvinholmLanguageSelector')
 
+function Format-UiaBounds($bounds) {
+    if ($null -eq $bounds) { return 'unavailable' }
+    return ('x={0}; y={1}; width={2}; height={3}' -f
+        $bounds.X, $bounds.Y, $bounds.Width, $bounds.Height)
+}
+
+function Get-CaptureDiagnostics(
+    [System.Windows.Automation.AutomationElement]$titleElement) {
+    $lines = New-Object 'System.Collections.Generic.List[string]'
+    $windowRect = New-Object DvinholmWinUiCaptureNative+RECT
+    $clientRect = New-Object DvinholmWinUiCaptureNative+RECT
+    $clientOrigin = New-Object DvinholmWinUiCaptureNative+POINT
+    $gotWindow = [DvinholmWinUiCaptureNative]::GetWindowRect($handle, [ref]$windowRect)
+    $gotClient = [DvinholmWinUiCaptureNative]::GetClientRect($handle, [ref]$clientRect)
+    $clientOrigin.X = 0
+    $clientOrigin.Y = 0
+    $gotOrigin = [DvinholmWinUiCaptureNative]::ClientToScreen($handle, [ref]$clientOrigin)
+    $foreground = [DvinholmWinUiCaptureNative]::GetForegroundWindow()
+    $foregroundRoot = [DvinholmWinUiCaptureNative]::GetAncestor($foreground, 2)
+    $dpi = [DvinholmWinUiCaptureNative]::GetDpiForWindow($handle)
+    $screen = [System.Windows.Forms.Screen]::FromHandle($handle)
+    $work = $screen.WorkingArea
+    $monitor = $screen.Bounds
+
+    $lines.Add(('HWND=0x{0:X}; visible={1}; minimized={2}; dpi={3}' -f
+        $handle.ToInt64(), [DvinholmWinUiCaptureNative]::IsWindowVisible($handle),
+        [DvinholmWinUiCaptureNative]::IsIconic($handle), $dpi))
+    $lines.Add(('foreground=0x{0:X}; foregroundRoot=0x{1:X}; foregroundIsDvinholm={2}' -f
+        $foreground.ToInt64(), $foregroundRoot.ToInt64(), ($foregroundRoot -eq $handle)))
+    if ($gotWindow) {
+        $lines.Add(('outerRect=left:{0},top:{1},right:{2},bottom:{3}' -f
+            $windowRect.Left, $windowRect.Top, $windowRect.Right, $windowRect.Bottom))
+    } else { $lines.Add('outerRect=unavailable') }
+    if ($gotClient -and $gotOrigin) {
+        $lines.Add(('clientScreenRect=left:{0},top:{1},right:{2},bottom:{3}' -f
+            $clientOrigin.X, $clientOrigin.Y,
+            ($clientOrigin.X + $clientRect.Right), ($clientOrigin.Y + $clientRect.Bottom)))
+    } else { $lines.Add('clientScreenRect=unavailable') }
+    $lines.Add(('monitorBounds=left:{0},top:{1},width:{2},height:{3}' -f
+        $monitor.Left, $monitor.Top, $monitor.Width, $monitor.Height))
+    $lines.Add(('workingArea=left:{0},top:{1},width:{2},height:{3}' -f
+        $work.Left, $work.Top, $work.Width, $work.Height))
+
+    $walker = [System.Windows.Automation.TreeWalker]::ControlViewWalker
+    $node = $titleElement
+    for ($depth = 0; $depth -lt 8 -and $null -ne $node; $depth++) {
+        try {
+            $current = $node.Current
+            $name = ($current.Name -replace '[\r\n\t]', ' ').Trim()
+            if ($name.Length -gt 80) { $name = $name.Substring(0, 80) }
+            $bounds = $current.BoundingRectangle
+            $lines.Add(('uia[{0}] type={1}; id={2}; name="{3}"; offscreen={4}; bounds=({5})' -f
+                $depth, $current.ControlType.ProgrammaticName, $current.AutomationId,
+                $name, $current.IsOffscreen, (Format-UiaBounds $bounds)))
+            $node = $walker.GetParent($node)
+        } catch {
+            $lines.Add(('uia[{0}] unavailable: {1}' -f $depth, $_.Exception.Message))
+            break
+        }
+    }
+    return ($lines -join [Environment]::NewLine)
+}
+
 function Confirm-WorkspaceState([string]$page, [switch]$RequireVisible) {
     Set-CaptureWindowForeground
     $title = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
@@ -207,9 +279,16 @@ function Confirm-WorkspaceState([string]$page, [switch]$RequireVisible) {
     # Navigation happens before the capture loop positions/resizes the window.
     # At that point the title may legitimately be outside the current viewport.
     # Enforce IsOffscreen only after MoveWindow has placed the final viewport.
+    $titleOffscreen = $title.Current.IsOffscreen
     if ($observedTitle -cne $expectedTitle -or
-        ($RequireVisible -and $title.Current.IsOffscreen)) {
-        throw "Expected visible workspace '$expectedTitle', observed '$observedTitle' (offscreen: $($title.Current.IsOffscreen)). No screenshot saved."
+        ($RequireVisible -and $titleOffscreen)) {
+        $diagnostics = ''
+        if ($RequireVisible -and $titleOffscreen) {
+            $diagnostics = [Environment]::NewLine +
+                "Capture geometry diagnostics (no screenshot was saved):" +
+                [Environment]::NewLine + (Get-CaptureDiagnostics $title)
+        }
+        throw "Expected visible workspace '$expectedTitle', observed '$observedTitle' (offscreen: $titleOffscreen). No screenshot saved.$diagnostics"
     }
 
     $locale = $root.FindFirst([System.Windows.Automation.TreeScope]::Descendants,
