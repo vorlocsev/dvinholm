@@ -50,6 +50,25 @@ public sealed class AuroraPrivateReviewReportContracts
     }
 
     [Fact]
+    public void WindowsPowerShell51JsonArrayIsUnwrappedBeforeRecordFieldCasts()
+    {
+        var script = Script();
+        const string read = "$decoded = Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json";
+        const string enumerate = "$rows = @($decoded)";
+        const string cast = "$width = [int]$entry.requestedWidthDip";
+        var readAt = script.IndexOf(read, StringComparison.Ordinal);
+        var arrayGuardAt = script.IndexOf("$decoded -isnot [System.Array]", StringComparison.Ordinal);
+        var enumerateAt = script.IndexOf(enumerate, StringComparison.Ordinal);
+        var castAt = script.IndexOf(cast, StringComparison.Ordinal);
+
+        Assert.True(readAt >= 0 && arrayGuardAt > readAt &&
+            enumerateAt > arrayGuardAt && castAt > enumerateAt);
+        Assert.DoesNotContain("$rows = @(Get-Content", script);
+        Assert.Contains("$entry -isnot [pscustomobject]", script);
+        Assert.Contains("capture manifest contains a non-record JSON value.", script);
+    }
+
+    [Fact]
     public void MissingOrDuplicateManifestEvidenceIsRejected()
     {
         var script = Script();
