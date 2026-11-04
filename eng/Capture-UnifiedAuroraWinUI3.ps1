@@ -545,6 +545,13 @@ function Assert-WorkspaceScrollToEnd(
         }
         Confirm-WorkspaceState $page -RequireVisible
         if (-not [string]::IsNullOrWhiteSpace($bottomDestination)) {
+            # Foreground/locale UIA rechecks must not silently move the
+            # workspace away from its verified bottom before pixel capture.
+            $captureScrollPercent = [double]$scroll.Current.VerticalScrollPercent
+            if ($captureScrollPercent -lt 98 -or
+                [Math]::Abs($captureScrollPercent - $atBottom) -gt 1) {
+                throw "Workspace moved before bottom pixels for $page; refusing mislabelled screenshot."
+            }
             if ($captureWidth -le 0 -or $captureHeight -le 0 -or
                 (Test-Path -LiteralPath $bottomDestination)) {
                 throw "Invalid or existing bottom capture target for $page."
