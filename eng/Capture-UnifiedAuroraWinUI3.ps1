@@ -170,9 +170,9 @@ $expectedTitles = @{
 }
 $localeNames = @{ ru='Русский'; en='English' }
 
-# UI Automation reports IsOffscreen when another window (notably the
-# PowerShell console running this script) covers the app. Bring Dvinholm to
-# the foreground BEFORE using IsOffscreen as a screenshot-safety gate.
+# Foreground activation is required for a genuine unobstructed desktop
+# capture. UIA IsOffscreen is a layout/viewport signal, not an occlusion test;
+# if it disagrees with the visible HWND geometry, report both before refusing.
 function Set-CaptureWindowForeground {
     if ([DvinholmWinUiCaptureNative]::IsIconic($handle)) {
         [void][DvinholmWinUiCaptureNative]::ShowWindow($handle, 9) # SW_RESTORE
