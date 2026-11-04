@@ -81,7 +81,8 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         foreach (var symbol in new[] {
             "GetDpiForWindow", "GetWindowRect", "GetClientRect",
             "GetForegroundWindow", "GetAncestor", "CopyFromScreen",
-            "SetProcessDpiAwarenessContext", "GetThreadDpiAwarenessContext"
+            "SetProcessDpiAwarenessContext", "GetThreadDpiAwarenessContext",
+            "GetWindowDpiAwarenessContext", "AreDpiAwarenessContextsEqual"
         })
             Assert.Contains(symbol, script);
         Assert.Contains("The Dvinholm window is not foreground", script);
@@ -97,6 +98,9 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("$requestedClientWidthPx = [int][Math]::Round($fixedWidthDip * $previewDpi / 96.0)", script);
         Assert.Contains("[Math]::Abs($actualClientWidth-$requestedClientWidthPx) -gt 4", script);
         Assert.Contains("fixed viewport 1280x800 DIP", script);
+        Assert.Contains("Per-Monitor V2 DPI awareness", script);
+        Assert.Contains("$windowDpiContext", script);
+        Assert.Contains("[IntPtr](-4)", script);
         Assert.DoesNotContain("MoveWindow", script);
     }
 
@@ -133,6 +137,44 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.DoesNotContain("ClearDiagnosticInformation", script);
         Assert.Contains("sourceCommitOperatorDeclared", script);
         Assert.Contains("manual privacy and visual review still required", script);
+    }
+
+    [Fact]
+    public void UnpackagedWinUi3ManifestDeclaresPerMonitorV2DpiAwareness()
+    {
+        var project = XDocument.Parse(Source("src/Dvinholm.App/Dvinholm.App.csproj"));
+        Assert.Equal("app.manifest",
+            project.Root?.Elements("PropertyGroup")
+                .Elements("ApplicationManifest").Single().Value);
+
+        var manifest = XDocument.Parse(Source("src/Dvinholm.App/app.manifest"));
+        XNamespace asmV3 = "urn:schemas-microsoft-com:asm.v3";
+        XNamespace windowsSettings2005 = "http://schemas.microsoft.com/SMI/2005/WindowsSettings";
+        XNamespace windowsSettings2016 = "http://schemas.microsoft.com/SMI/2016/WindowsSettings";
+        var settings = manifest.Root?.Element(asmV3 + "application")
+            ?.Element(asmV3 + "windowsSettings");
+
+        Assert.NotNull(settings);
+        Assert.Equal("true/pm", settings!.Element(windowsSettings2005 + "dpiAware")?.Value);
+        Assert.Equal("PerMonitorV2",
+            settings.Element(windowsSettings2016 + "dpiAwareness")?.Value);
+    }
+
+    [Theory]
+    [InlineData(96, 1280, 800)]
+    [InlineData(120, 1600, 1000)]
+    [InlineData(144, 1920, 1200)]
+    [InlineData(192, 2560, 1600)]
+    public void FixedAuroraViewportConvertsDipToPhysicalPixelsAtDisplayDpi(
+        int dpi, int expectedWidthPx, int expectedHeightPx)
+    {
+        var actualWidthPx = (int)Math.Round(1280 * dpi / 96.0);
+        var actualHeightPx = (int)Math.Round(800 * dpi / 96.0);
+
+        Assert.Equal(expectedWidthPx, actualWidthPx);
+        Assert.Equal(expectedHeightPx, actualHeightPx);
+        Assert.Equal(1280, (int)Math.Round(actualWidthPx * 96.0 / dpi));
+        Assert.Equal(800, (int)Math.Round(actualHeightPx * 96.0 / dpi));
     }
 
     [Fact]
