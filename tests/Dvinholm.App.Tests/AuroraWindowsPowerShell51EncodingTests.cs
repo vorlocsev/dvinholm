@@ -24,7 +24,7 @@ public sealed class AuroraWindowsPowerShell51EncodingTests
         var text = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
         foreach (var phrase in new[] {
             "Подключение", "Обновление", "Конфигурация CEM",
-            "Ошибки (DTC)", "Ошибки / DTC",
+            "Ошибки (DTC)",
             "Блоки (ECU)", "Блоки ECU", "Русский"
         })
             Assert.Contains(phrase, text);
@@ -38,7 +38,7 @@ public sealed class AuroraWindowsPowerShell51EncodingTests
         var text = Source("eng/Review-UnifiedAuroraScreenshots.ps1");
         foreach (var phrase in new[] {
             "Подключение", "Обновление", "Конфигурация CEM",
-            "Ошибки / DTC", "Блоки ECU", "Русский"
+            "Ошибки (DTC)", "Блоки ECU", "Русский"
         })
             Assert.Contains(phrase, text);
         Assert.Contains("actualClientWidthPx", text);
