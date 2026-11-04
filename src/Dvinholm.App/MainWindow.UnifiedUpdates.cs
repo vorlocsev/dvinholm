@@ -166,6 +166,9 @@ public sealed partial class MainWindow
             AuroraDestination.EcuProfiles => "ECU profiles",
             _ => section.Title
         } : section.Title;
+        // The screenshot verifier observes this UIA container, not just the
+        // TextBlock. Keep it synchronized for all localized workspace routes.
+        AutomationProperties.SetName(WorkspaceHeaderCopy, WorkspaceTitle.Text);
         WorkspaceDescription.Text = _unifiedEnglish ? destination switch
         {
             AuroraDestination.J2534Connection => "J2534 adapter and CAN connection",
@@ -183,6 +186,9 @@ public sealed partial class MainWindow
     private void UpdateUnifiedWorkspaceHeader()
     {
         WorkspaceTitle.Text = L("Обновление", "Updates");
+        // Updates has its own navigation handler, so it must explicitly
+        // publish the same localized header identity as other destinations.
+        AutomationProperties.SetName(WorkspaceHeaderCopy, WorkspaceTitle.Text);
         WorkspaceDescription.Text = L(
             "Каналы Stable / Development и проверка x64-релизов",
             "Stable / Development channels and x64 release check");
