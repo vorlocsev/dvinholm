@@ -140,6 +140,40 @@ public sealed class AuroraLiveScreenshotCaptureContracts
     }
 
     [Fact]
+    public void OptionalScrollProbeChecksOuterWorkspaceAndRestoresPositionWithoutBusActions()
+    {
+        var script = Capture();
+        var xaml = XDocument.Parse(Source("src/Dvinholm.App/MainWindow.xaml"));
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+
+        var scroll = xaml.Descendants().Single(e =>
+            (string?)e.Attribute(x + "Name") == "WorkspaceScroll");
+        var footer = xaml.Descendants().Single(e =>
+            (string?)e.Attribute(x + "Name") == "ShellStatusBar");
+        Assert.Equal("DvinholmWorkspaceScroll",
+            (string?)scroll.Attribute("AutomationProperties.AutomationId"));
+        Assert.Equal("DvinholmShellStatusBar",
+            (string?)footer.Attribute("AutomationProperties.AutomationId"));
+        Assert.Equal("Control",
+            (string?)footer.Attribute("AutomationProperties.AccessibilityView"));
+
+        Assert.Contains("[switch]$VerifyWorkspaceScroll", script);
+        Assert.Contains("if ($VerifyWorkspaceScroll)", script);
+        Assert.Contains("function Assert-WorkspaceScrollToEnd([string]$page)", script);
+        Assert.Contains("if ($page -notin @('CemPin','CemConfiguration','Dtc','Ecu'))", script);
+        Assert.Contains("TryGetCurrentPattern(", script);
+        Assert.Contains("[System.Windows.Automation.ScrollPattern]::Pattern", script);
+        Assert.Contains("DvinholmShellStatusBar", script);
+        Assert.Contains("$scroll.SetScrollPercent($noScroll, [double]100)", script);
+        Assert.Contains("$atBottom -lt 98", script);
+        Assert.Contains("Confirm-WorkspaceState $page -RequireVisible", script);
+        Assert.Contains("$scroll.SetScrollPercent($noScroll, $originalPercent)", script);
+        Assert.DoesNotContain("PassThruOpen(", script);
+        Assert.DoesNotContain("ReadDtc_Click(", script);
+        Assert.DoesNotContain("SetFocus(", script);
+    }
+
+    [Fact]
     public void UnpackagedWinUi3ManifestDeclaresPerMonitorV2DpiAwareness()
     {
         var project = XDocument.Parse(Source("src/Dvinholm.App/Dvinholm.App.csproj"));
