@@ -532,7 +532,7 @@
                             </Viewbox>
                         </Grid>
                     </Border>
-                    <StackPanel x:Name="WorkspaceHeaderCopy" Spacing="7" Margin="16,13,0,12" VerticalAlignment="Center">
+                    <StackPanel x:Name="WorkspaceHeaderCopy" AutomationProperties.AutomationId="DvinholmWorkspaceHeaderCopy" AutomationProperties.AccessibilityView="Control" Spacing="7" Margin="16,13,0,12" VerticalAlignment="Center">
                         <TextBlock x:Name="WorkspaceScopeLabel" Text="DVINHOLM / РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" CharacterSpacing="120" Foreground="#65BFF2" />
                         <TextBlock x:Name="WorkspaceTitle" AutomationProperties.AutomationId="DvinholmWorkspaceTitle" FontSize="30" FontWeight="SemiBold"
                                    Foreground="#F5FAFF" TextWrapping="Wrap" />
