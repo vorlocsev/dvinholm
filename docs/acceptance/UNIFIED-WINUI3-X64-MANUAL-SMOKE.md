@@ -40,6 +40,14 @@ The review script **refuses** inconsistent DPI across records in one language, o
 
 **The original user-approved raster remains necessary** to judge composition, lighting, car silhouette and proportions. The repository wireframe SVG is an approximation, not the visual acceptance target. The local report is a comparison aid, not a screenshot generator or automated pixel matching test. Both the screenshot capture and this report remain **NOT RUN** until exercised on a real Windows desktop.
 
+### Stage 104: fixed-window scroll and J2534 audit header (manual only)
+
+On the **new exact-head x64 PR build**, inspect **Connection** in RU and EN at 1280 × 800 DIP (include Windows 200% / 192 DPI when the monitor can fit the full window). The **full** “Аудит разрядности драйверов (офлайн)” / “Driver architecture audit (offline)” caption should **wrap inside its Expander** rather than being cut off. Confirm the localized accessible name remains the same full caption. Expanding it must show only the existing read-only audit and its bounded **inner** scrolling; no auto-connect, driver load or J2534/CAN request is allowed. Sanitise absolute paths before sharing any evidence.
+
+For each **CEM PIN, CEM configuration, Faults (DTC) and Modules (ECU)** destination, navigate to the page top, scroll the **workspace area** to the very bottom with the pointer away from nested ComboBox/ListView controls, then scroll back to the top. Confirm the final page controls, research/action warnings and schematic disclaimers remain reachable, the bottom content has a small visible gap **above** the permanently visible status strip, the banner remains in place, the sidebar does not shift and there is no outer horizontal scrollbar. Test wheel and the page's vertical scrollbar. Nested CEM/DTC/ECU result lists may have their own bounded scrollbars: do not mistake their scrolling for the page reaching its end. On an empty/offline state, never fabricate rows or send vehicle requests. Check both RU/EN; record PASS/FAIL for each of the four pages separately.
+
+The XAML/CI checks confirm only that the layout uses an explicit vertical workspace scroller in the star-sized middle Grid row, a separate auto-sized status row, bottom spacing, and bounded inner lists; **they cannot prove the last rendered item is visible on the operator's monitor**. Mark real scroll-to-bottom acceptance **NOT RUN** until an interactive Windows inspection, with sanitized private screenshots if necessary. Do not resize or maximize the fixed viewport to make a check pass.
+
 ## Eight bounded checks (record PASS / FAIL / NOT RUN)
 
 1. **Package and executable.** Confirm the reviewed x64 ZIP passes published SHA-256 and extraction checks. Run from a clean user-writable directory, not from inside the ZIP. Confirm there is one primary `Dvinholm.exe` window; the old separate launcher is not required in this new x64 pilot. This is not a certificate-signing test.
