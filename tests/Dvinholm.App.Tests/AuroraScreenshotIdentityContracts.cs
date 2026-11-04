@@ -58,7 +58,8 @@ public sealed class AuroraScreenshotIdentityContracts
         Assert.Equal("Control",
             (string?)header.Attribute("AutomationProperties.AccessibilityView"));
 
-        var application = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        var application = Source("src/Dvinholm.App/MainWindow.xaml.cs")
+            .Replace("\r\n", "\n", StringComparison.Ordinal);
         var titleAssignment = application.IndexOf("WorkspaceTitle.Text = section.Title;", StringComparison.Ordinal);
         var anchorName = application.IndexOf(
             "AutomationProperties.SetName(\n            WorkspaceHeaderCopy, section.Title);",
