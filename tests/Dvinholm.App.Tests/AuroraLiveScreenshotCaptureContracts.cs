@@ -187,9 +187,15 @@ public sealed class AuroraLiveScreenshotCaptureContracts
             borderIndex > versionIndex);
         Assert.Contains("-not $candidate.Current.IsOffscreen", script);
         Assert.Contains("Test-ValidUiaBounds $candidate.Current.BoundingRectangle", script);
-        Assert.Contains("ordinary capture remains available", script);
+        Assert.Contains("$footerAvailable = ($null -ne $footer)", script);
+        Assert.Contains("Footer UIA evidence NOT RUN for $page", script);
+        Assert.Contains("footer NOT RUN.", script);
+        Assert.Contains("fixed header (UIA)", script);
+        Assert.DoesNotContain("No visible footer UIA peer found for $page", script);
         Assert.Contains("$scroll.SetScrollPercent($noScroll, [double]100)", script);
         Assert.Contains("$atBottom -lt 98", script);
+        Assert.Contains("if ($footerAvailable)", script);
+        Assert.Contains("Fixed footer moved or became invisible", script);
         Assert.Contains("Confirm-WorkspaceState $page -RequireVisible", script);
         Assert.Contains("$scroll.SetScrollPercent($noScroll, $originalPercent)", script);
         Assert.DoesNotContain("PassThruOpen(", script);
