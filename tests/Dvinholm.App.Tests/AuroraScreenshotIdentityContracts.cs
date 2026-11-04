@@ -222,13 +222,19 @@ public sealed class AuroraScreenshotIdentityContracts
         var save = capture.IndexOf("$bitmap.Save($dest", StringComparison.Ordinal);
         var preserve = capture.IndexOf("GetCursorPos([ref]$savedCursor)", StringComparison.Ordinal);
         var park = capture.IndexOf("SetCursorPos($neutralX, $neutralY)", StringComparison.Ordinal);
-        var settle = capture.IndexOf("Start-Sleep -Milliseconds 850", StringComparison.Ordinal);
+        var settle = capture.IndexOf("Start-Sleep -Milliseconds 1100", StringComparison.Ordinal);
         var verify = capture.IndexOf("Confirm-WorkspaceState $page -RequireVisible", settle, StringComparison.Ordinal);
+        var bounds = capture.IndexOf("$clientBounds = Get-ClientScreenBounds", park, StringComparison.Ordinal);
+        var parked = capture.IndexOf("GetCursorPos([ref]$parkedCursor)", bounds, StringComparison.Ordinal);
         var restore = capture.IndexOf("SetCursorPos($savedCursor.X, $savedCursor.Y)", StringComparison.Ordinal);
-        Assert.True(preserve >= 0 && park > preserve && settle > park &&
-            verify > settle && save > verify && restore > save);
+        Assert.True(preserve >= 0 && park > preserve && bounds > park &&
+            parked > bounds && settle > parked && verify > settle &&
+            save > verify && restore > save);
+        Assert.Contains("blank, non-client title-bar area", capture);
+        Assert.Contains("the app's client region", capture);
+        Assert.Contains("Cursor did not remain outside the Dvinholm client area", capture);
         Assert.Contains("finally {", capture);
-        Assert.Contains("status strip", capture);
+        Assert.DoesNotContain("status strip", capture);
         Assert.DoesNotContain("MoveWindow(", capture);
     }
 
