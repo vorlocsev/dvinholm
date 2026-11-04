@@ -226,6 +226,59 @@ jobs:
           if ($verified -cne $record) { throw 'x64 checksum record changed.' }
           Write-Host ('Verified x64 package hash: ' + $digest)
 
+      # Keep the PR source SHA, actual checkout/merge SHA and packaged
+      # executable bytes together. The human desktop capture helper checks
+      # this manifest against the *running* EXE, preventing stale-GUI reviews.
+      # This is a reproducible provenance record, NOT a release signature.
+      - name: Write and verify Aurora GUI executable provenance
+        shell: pwsh
+        env:
+          AURORA_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          $exe = 'artifacts/winui3-unified-x64/Dvinholm.exe'
+          $zip = 'artifacts/Dvinholm-Windows-x64.zip'
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
+            throw 'Published x64 executable absent; no provenance manifest.'
+          }
+          if ($env:AURORA_PR_HEAD_SHA -notmatch '^[a-fA-F0-9]{40}$' -or
+              $env:GITHUB_SHA -notmatch '^[a-fA-F0-9]{40}$') {
+            throw 'GitHub PR head or checkout SHA is missing.'
+          }
+          $exeSha = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          $zipSha = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          Add-Type -AssemblyName System.IO.Compression
+          $archive = [IO.Compression.ZipFile]::OpenRead((Resolve-Path -LiteralPath $zip).Path)
+          try {
+            $entry = $archive.GetEntry('Dvinholm.exe')
+            if ($null -eq $entry) { throw 'Packaged Dvinholm.exe not found.' }
+            $stream = $entry.Open()
+            $sha = [Security.Cryptography.SHA256]::Create()
+            try { $packedHash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-','').ToLowerInvariant() }
+            finally { $stream.Dispose(); $sha.Dispose() }
+            if ($packedHash -cne $exeSha) {
+              throw 'Packaged EXE differs from verified published binary.'
+            }
+          }
+          finally { $archive.Dispose() }
+          $evidence = [ordered]@{
+            schema = 'dvinholm.aurora.x64.provenance.v1'
+            sourceHeadCommitSha = $env:AURORA_PR_HEAD_SHA.ToLowerInvariant()
+            checkoutCommitSha = $env:GITHUB_SHA.ToLowerInvariant()
+            executableRelativePath = 'Dvinholm.exe'
+            executableSha256 = $exeSha
+            packageSha256 = $zipSha
+          }
+          $target = 'artifacts/Aurora-x64-build-evidence.json'
+          [IO.File]::WriteAllText((Join-Path (Get-Location) $target), ($evidence | ConvertTo-Json -Depth 4) + "`n",
+            [Text.UTF8Encoding]::new($false))
+          $decoded = Get-Content -LiteralPath $target -Raw | ConvertFrom-Json
+          if ($decoded.sourceHeadCommitSha -cne $evidence.sourceHeadCommitSha -or
+              $decoded.checkoutCommitSha -cne $evidence.checkoutCommitSha -or
+              $decoded.executableSha256 -cne $exeSha) {
+            throw 'Aurora x64 provenance JSON round-trip mismatch.'
+          }
+          Write-Host 'Verified Aurora x64 PR head, checkout SHA and packaged EXE SHA-256 (no private data).'
+
       # Built and tested separately, never copied into the user-facing
       # Dvinholm-Windows-x64.zip or a published release.
       - name: Publish isolated Windows x64 process-exit probe (not shipped)
@@ -249,6 +302,7 @@ jobs:
           path: |
             artifacts/Dvinholm-Windows-x64.zip
             artifacts/SHA256SUMS.txt
+            artifacts/Aurora-x64-build-evidence.json
             eng/Capture-UnifiedAuroraWinUI3.ps1
             eng/Review-UnifiedAuroraScreenshots.ps1
           if-no-files-found: error
