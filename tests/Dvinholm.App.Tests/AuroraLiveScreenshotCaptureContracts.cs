@@ -52,7 +52,7 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("$archive.GetEntry('Dvinholm.exe')", workflow);
         Assert.Contains("if ($packedHash -cne $exeSha)", workflow);
         Assert.Contains("artifacts/Aurora-x64-build-evidence.json", workflow);
-        Assert.Contains("artifacts/Aurora-x64-build-evidence.json\n", workflow);
+        Assert.Contains("            artifacts/Aurora-x64-build-evidence.json", workflow);
     }
 
     [Fact]
