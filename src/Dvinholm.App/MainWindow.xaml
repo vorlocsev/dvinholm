@@ -567,7 +567,9 @@
                         <Button x:Name="CancelUdsButton" Visibility="Collapsed" Content="Отменить операцию" IsEnabled="False" Click="CancelUds_Click" VerticalAlignment="Bottom" />
                     </StackPanel>
                 </Grid>
-                <ScrollViewer x:Name="WorkspaceScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
+                <ScrollViewer x:Name="WorkspaceScroll" AutomationProperties.AutomationId="DvinholmWorkspaceScroll"
+                              Grid.Row="1" VerticalScrollMode="Enabled" VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="WorkspacePageContainer" Padding="24,0,24,20" MaxWidth="1200" HorizontalAlignment="Stretch">
                         <StackPanel x:Name="UnifiedUpdatesPage" Visibility="Collapsed" Spacing="12">
                             <!-- Three approved review panels: installed version | channel | verified check.
@@ -1395,7 +1397,12 @@
                                         <TextBox x:Name="DllPath" PlaceholderText="Path to compatible J2534 DLL"
                                                  Header="J2534 DLL" />
                                         <Expander x:Name="J2534ArchitectureAuditExpander"
-                                                  Header="Аудит разрядности драйверов (офлайн)" IsExpanded="False">
+                                                  AutomationProperties.Name="Аудит разрядности драйверов (офлайн)" IsExpanded="False">
+                                            <Expander.Header>
+                                                <TextBlock x:Name="J2534ArchitectureAuditHeaderText"
+                                                           Text="Аудит разрядности драйверов (офлайн)"
+                                                           TextWrapping="Wrap" MaxWidth="240" />
+                                            </Expander.Header>
                                             <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
                                                 <TextBlock x:Name="J2534ArchitectureAuditText"
                                                            Text="Нажмите Refresh для повторной проверки зарегистрированных J2534 DLL."
