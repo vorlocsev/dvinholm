@@ -68,6 +68,38 @@ public sealed class AuroraScreenshotIdentityContracts
     }
 
     [Fact]
+    public void UpdatesAndAllLocalizedWorkspacesKeepUiaHeaderIdentityInSync()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
+        var routeStart = source.IndexOf("private void ApplyUnifiedWorkspaceSection(", StringComparison.Ordinal);
+        var updatesStart = source.IndexOf("private void UpdateUnifiedWorkspaceHeader()", routeStart, StringComparison.Ordinal);
+        var nextStart = source.IndexOf("private void SetUnifiedStatus(", updatesStart, StringComparison.Ordinal);
+        Assert.True(routeStart >= 0 && updatesStart > routeStart && nextStart > updatesStart);
+
+        const string synchronizedName =
+            "AutomationProperties.SetName(WorkspaceHeaderCopy, WorkspaceTitle.Text);";
+        var route = source[routeStart..updatesStart];
+        var updates = source[updatesStart..nextStart];
+
+        // Applying a page route and switching RU/EN must both publish the
+        // actual visible title to the same UIA header checked by Capture.
+        var routeTitle = route.IndexOf("WorkspaceTitle.Text = _unifiedEnglish ?", StringComparison.Ordinal);
+        var routeAnchor = route.IndexOf(synchronizedName, StringComparison.Ordinal);
+        var updateTitle = updates.IndexOf("WorkspaceTitle.Text = L(", StringComparison.Ordinal);
+        var updateAnchor = updates.IndexOf(synchronizedName, StringComparison.Ordinal);
+        Assert.True(routeTitle >= 0 && routeAnchor > routeTitle);
+        Assert.True(updateTitle >= 0 && updateAnchor > updateTitle);
+        Assert.Contains("if (_unifiedUpdatesActive)\n            UpdateUnifiedWorkspaceHeader();",
+            source.Replace("\r\n", "\n", StringComparison.Ordinal));
+        Assert.Contains("else if (_workspaceDestination is AuroraDestination current)\n            ApplyUnifiedWorkspaceSection(current);",
+            source.Replace("\r\n", "\n", StringComparison.Ordinal));
+
+        var capture = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
+        Assert.Contains("$headerName -cne $expectedTitle", capture);
+        Assert.Contains("Workspace header identity mismatch", capture);
+    }
+
+    [Fact]
     public void LanguageSelectorHasUniqueUiaIdAndBothActualChoices()
     {
         var doc = Layout();
