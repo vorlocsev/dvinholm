@@ -428,21 +428,42 @@ function Assert-WorkspaceScrollToEnd([string]$page) {
         throw "Unverifiable starting scroll position for $page."
     }
 
-    $footerCondition = [System.Windows.Automation.PropertyCondition]::new(
-        [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
-        'DvinholmShellStatusBar')
-    $footer = $root.FindFirst(
-        [System.Windows.Automation.TreeScope]::Descendants, $footerCondition)
     $header = $root.FindFirst(
         [System.Windows.Automation.TreeScope]::Descendants, $headerCondition)
-    if ($null -eq $footer -or $null -eq $header) {
-        throw 'Fixed header or footer accessibility anchor missing; refusing unverified scroll.'
+    if ($null -eq $header) {
+        throw "Fixed Aurora header UIA anchor missing for $page; scroll verification NOT RUN."
+    }
+    # A WinUI decorative Border may not create a UIA peer even with a
+    # configured AutomationId. Prefer a visible TextBlock peer in that footer,
+    # then the version label, and use the Border only as the final fallback.
+    # Never substitute window geometry: that cannot prove footer stability.
+    $footer = $null
+    $footerId = ''
+    foreach ($candidateId in @('DvinholmFooterStatusText',
+                               'DvinholmFooterVersionText',
+                               'DvinholmShellStatusBar')) {
+        $candidateCondition = [System.Windows.Automation.PropertyCondition]::new(
+            [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+            $candidateId)
+        $candidate = $root.FindFirst(
+            [System.Windows.Automation.TreeScope]::Descendants,
+            $candidateCondition)
+        if ($null -ne $candidate -and
+            -not $candidate.Current.IsOffscreen -and
+            (Test-ValidUiaBounds $candidate.Current.BoundingRectangle)) {
+            $footer = $candidate
+            $footerId = $candidateId
+            break
+        }
+    }
+    if ($null -eq $footer) {
+        throw "No visible footer UIA peer found for $page (tried status text, version text, Border). Scroll verification NOT RUN; ordinary capture remains available."
     }
     $footerBefore = $footer.Current.BoundingRectangle
     $headerBefore = $header.Current.BoundingRectangle
-    if (-not (Test-ValidUiaBounds $footerBefore) -or
-        -not (Test-ValidUiaBounds $headerBefore)) {
-        throw 'Fixed header or footer bounds are invalid before scrolling.'
+    if (-not (Test-ValidUiaBounds $headerBefore) -or
+        $header.Current.IsOffscreen) {
+        throw "Fixed header bounds are invalid for $page before scrolling."
     }
 
     $noScroll = [System.Windows.Automation.ScrollPattern]::NoScroll
@@ -462,7 +483,7 @@ function Assert-WorkspaceScrollToEnd([string]$page) {
             throw "Scroll-to-bottom/anchored header-footer check failed for $page (reported $atBottom%)."
         }
         Confirm-WorkspaceState $page -RequireVisible
-        Write-Host ("Verified $page outer workspace scroll reached {0:N1}% with fixed header/footer (UIA only)." -f $atBottom)
+        Write-Host ("Verified $page outer workspace scroll reached {0:N1}% with fixed header/footer via $footerId (UIA only)." -f $atBottom)
     }
     finally {
         # A failed probe must never leave the operator on a different fold.
