@@ -171,7 +171,20 @@ public sealed class AuroraScreenshotIdentityContracts
     public void ActualWorkspaceIsVerifiedAtOneFixedViewportWithoutResizing()
     {
         var capture = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
-        Assert.Equal(2, capture.Split("Confirm-WorkspaceState $page").Length - 1);
+        // Navigation always checks identity, and pixel capture always makes
+        // its own visible-title check. The optional scroll probe may check
+        // the same identity again without weakening either mandatory gate.
+        var navStart = capture.IndexOf("function Invoke-OnlyNavigation(", StringComparison.Ordinal);
+        var preflightStart = capture.IndexOf("# Preflight the fixed viewport", navStart, StringComparison.Ordinal);
+        var loopStart = capture.IndexOf("foreach ($page in $Pages)", preflightStart, StringComparison.Ordinal);
+        var reportStart = capture.IndexOf("$report = Join-Path $output", loopStart, StringComparison.Ordinal);
+        Assert.True(navStart >= 0 && preflightStart > navStart &&
+            loopStart > preflightStart && reportStart > loopStart);
+        var navigation = capture[navStart..preflightStart];
+        var captureLoop = capture[loopStart..reportStart];
+        Assert.Equal(1, navigation.Split("Confirm-WorkspaceState $page").Length - 1);
+        Assert.Contains("Confirm-WorkspaceState $page -RequireVisible", captureLoop);
+        Assert.Contains("if ($VerifyWorkspaceScroll)", captureLoop);
         Assert.Contains("$fixedWidthDip = 1280", capture);
         Assert.Contains("$fixedHeightDip = 800", capture);
         Assert.Contains("requestedHeightDip = $fixedHeightDip", capture);
