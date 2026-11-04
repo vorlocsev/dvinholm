@@ -84,6 +84,12 @@ public static class DvinholmWinUiCaptureNative
     [DllImport("user32.dll")]
     public static extern int GetAwarenessFromDpiAwarenessContext(IntPtr dpiContext);
 
+    [DllImport("user32.dll")]
+    public static extern IntPtr GetWindowDpiAwarenessContext(IntPtr hwnd);
+
+    [DllImport("user32.dll")]
+    public static extern bool AreDpiAwarenessContextsEqual(IntPtr dpiContextA, IntPtr dpiContextB);
+
     [DllImport("user32.dll", SetLastError = true)]
     public static extern uint GetDpiForWindow(IntPtr hwnd);
 
@@ -133,6 +139,17 @@ if ($windows.Count -ne 1) {
 }
 $window = $windows[0]
 $handle = $window.MainWindowHandle
+
+# The app itself must be Per-Monitor V2 aware. Otherwise Windows virtualizes
+# its 96-DPI window coordinates while this helper measures physical pixels.
+$windowDpiContext = [DvinholmWinUiCaptureNative]::GetWindowDpiAwarenessContext($handle)
+if (-not [DvinholmWinUiCaptureNative]::AreDpiAwarenessContextsEqual(
+    $windowDpiContext, [IntPtr](-4))) {
+    $windowAwareness = [DvinholmWinUiCaptureNative]::GetAwarenessFromDpiAwarenessContext(
+        $windowDpiContext)
+    throw "Dvinholm must use Per-Monitor V2 DPI awareness (context -4); observed awareness $windowAwareness. Rebuild and restart the updated x64 app."
+}
+
 $root = [System.Windows.Automation.AutomationElement]::FromHandle($handle)
 if ($null -eq $root) {
     throw 'Windows UI Automation cannot inspect the Dvinholm window.'
