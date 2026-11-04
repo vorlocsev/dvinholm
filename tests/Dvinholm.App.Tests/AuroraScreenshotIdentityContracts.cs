@@ -122,7 +122,7 @@ public sealed class AuroraScreenshotIdentityContracts
         var source = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
         var app = Source("src/Dvinholm.App/AuroraWorkspaceNavigation.cs");
         Assert.Contains("Connection='Подключение'; Updates='Обновление'; CemPin='CEM PIN'", source);
-        Assert.Contains("CemConfiguration='Конфигурация CEM'; Dtc='Ошибки / DTC'; Ecu='Блоки ECU'", source);
+        Assert.Contains("CemConfiguration='Конфигурация CEM'; Dtc='Ошибки (DTC)'; Ecu='Блоки ECU'", source);
         foreach (var title in new[] { "Подключение", "CEM PIN", "Конфигурация CEM",
             "Ошибки / DTC", "Блоки ECU" })
             Assert.Contains($"\"{title}\"", app);
