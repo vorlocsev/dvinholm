@@ -241,6 +241,8 @@ public sealed partial class MainWindow : Window
             panel.Visibility = panel.Name == section.Panel ? Visibility.Visible : Visibility.Collapsed;
         _unifiedUpdatesActive = false;
         WorkspaceTitle.Text = section.Title;
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            WorkspaceHeaderCopy, section.Title);
         WorkspaceDescription.Text = section.Description;
         ApplyUnifiedWorkspaceSection(destination);
         // Re-evaluate live identity guard and read-only prerequisites after
