@@ -100,16 +100,33 @@ public sealed partial class MainWindow
             "Стирание отключено: нет проверенного сервиса, доступа и восстановления.",
             "Clearing is disabled: no verified service, authorization or recovery."));
         DtcStatusMaskSelector.Header = L("Фильтр статуса DTC", "DTC status filter");
-        foreach (var item in DtcStatusMaskSelector.Items.OfType<ComboBoxItem>())
-            item.Content = (item.Tag as string) switch
+        // Refresh the WinUI ComboBox selection-box cache after relabeling.
+        // Temporarily detach the diagnostic-context handler so a language
+        // change never clears a genuine read result or changes the mask tag.
+        var selectedStatusMask = DtcStatusMaskSelector.SelectedItem;
+        DtcStatusMaskSelector.SelectionChanged -= DtcStatusMask_SelectionChanged;
+        try
+        {
+            foreach (var item in DtcStatusMaskSelector.Items.OfType<ComboBoxItem>())
+                item.Content = (item.Tag as string) switch
+                {
+                    "FF" => L("Все статусы", "All status bits"),
+                    "01" => L("Тест не пройден", "Test failed"),
+                    "04" => L("Ожидающие подтверждения", "Pending DTC"),
+                    "08" => L("Подтверждённые", "Confirmed DTC"),
+                    "80" => L("Требуется индикатор", "Warning indicator requested"),
+                    _ => item.Content
+                };
+            if (selectedStatusMask is ComboBoxItem)
             {
-                "FF" => L("Все статусы", "All status bits"),
-                "01" => L("Тест не пройден", "Test failed"),
-                "04" => L("Ожидающие подтверждения", "Pending DTC"),
-                "08" => L("Подтверждённые", "Confirmed DTC"),
-                "80" => L("Требуется индикатор", "Warning indicator requested"),
-                _ => item.Content
-            };
+                DtcStatusMaskSelector.SelectedItem = null;
+                DtcStatusMaskSelector.SelectedItem = selectedStatusMask;
+            }
+        }
+        finally
+        {
+            DtcStatusMaskSelector.SelectionChanged += DtcStatusMask_SelectionChanged;
+        }
         ReadDtcButton.Content = L("Прочитать DTC", "Read DTC");
         AutomationProperties.SetName(DtcRecordsView,
             L("Коды неисправностей выбранного ECU",
