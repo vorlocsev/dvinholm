@@ -172,7 +172,7 @@ $labels = @{
 $expectedTitles = @{
     ru = @{
         Connection='Подключение'; Updates='Обновление'; CemPin='CEM PIN';
-        CemConfiguration='Конфигурация CEM'; Dtc='Ошибки / DTC'; Ecu='Блоки ECU'
+        CemConfiguration='Конфигурация CEM'; Dtc='Ошибки (DTC)'; Ecu='Блоки ECU'
     }
     en = @{
         Connection='Connection'; Updates='Updates'; CemPin='CEM PIN';
