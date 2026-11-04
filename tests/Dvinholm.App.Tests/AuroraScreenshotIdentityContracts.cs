@@ -147,7 +147,7 @@ public sealed class AuroraScreenshotIdentityContracts
         Assert.DoesNotContain("Connect_Click", capture);
         Assert.DoesNotContain("ReadCemPin", capture);
         Assert.DoesNotContain("Invoke-WebRequest", capture);
-        Assert.Contains("Parse Aurora desktop capture tool (never execute)", workflow);
+        Assert.Contains("Parse Aurora desktop helpers in Windows PowerShell 5.1 (never execute)", workflow);
         Assert.DoesNotContain("powershell.exe -NoProfile -File eng/Capture", workflow);
     }
 }
