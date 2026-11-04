@@ -25,6 +25,37 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
 
     [Fact]
+    public void PrCaptureRejectsMismatchedRunningExeBeforeFirstScreenshot()
+    {
+        var capture = Capture();
+        var workflow = Source(".github/workflows/winui3-unified-x64.yml");
+
+        Assert.Contains("artifacts/Aurora-x64-build-evidence.json", capture);
+        Assert.Contains("dvinholm.aurora.x64.provenance.v1", capture);
+        Assert.Contains("$evidence.sourceHeadCommitSha -cne $CommitSha.ToLowerInvariant()", capture);
+        Assert.Contains("$window.Path", capture);
+        Assert.Contains("Get-FileHash -LiteralPath $runningExe -Algorithm SHA256", capture);
+        Assert.Contains("$runningSha256 -cne $evidence.executableSha256", capture);
+        Assert.Contains("STALE DVINHOLM.EXE", capture);
+        Assert.Contains("refusing build-labelled screenshots", capture);
+        Assert.Contains("Verified running x64 Dvinholm.exe against PR artifact", capture);
+        var integrityGate = capture.IndexOf("if (-not [string]::IsNullOrWhiteSpace($CommitSha))",
+            StringComparison.Ordinal);
+        var firstNavigation = capture.IndexOf("Invoke-OnlyNavigation $page", StringComparison.Ordinal);
+        var firstImageSave = capture.IndexOf("$bitmap.Save($dest", StringComparison.Ordinal);
+        Assert.True(integrityGate >= 0 && firstNavigation > integrityGate &&
+            firstImageSave > firstNavigation);
+        Assert.Contains("Write and verify Aurora GUI executable provenance", workflow);
+        Assert.Contains("AURORA_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}", workflow);
+        Assert.Contains("$env:GITHUB_SHA.ToLowerInvariant()", workflow);
+        Assert.Contains("Get-FileHash -LiteralPath $exe -Algorithm SHA256", workflow);
+        Assert.Contains("$archive.GetEntry('Dvinholm.exe')", workflow);
+        Assert.Contains("if ($packedHash -cne $exeSha)", workflow);
+        Assert.Contains("artifacts/Aurora-x64-build-evidence.json", workflow);
+        Assert.Contains("artifacts/Aurora-x64-build-evidence.json\n", workflow);
+    }
+
+    [Fact]
     public void ScriptIsExplicitDesktopPowerShellRatherThanCiScreenshotClaim()
     {
         var script = Capture();
