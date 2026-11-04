@@ -150,4 +150,36 @@ public sealed class AuroraScreenshotIdentityContracts
         Assert.Contains("Parse Aurora desktop helpers in Windows PowerShell 5.1 (never execute)", workflow);
         Assert.DoesNotContain("powershell.exe -NoProfile -File eng/Capture", workflow);
     }
+    [Fact]
+    public void CaptureRestoresAndForegroundsDvinholmBeforeCheckingOffscreenState()
+    {
+        var capture = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
+        Assert.Contains("public static extern bool ShowWindow", capture);
+        Assert.Contains("public static extern bool IsIconic", capture);
+        var helperStart = capture.IndexOf("function Set-CaptureWindowForeground", StringComparison.Ordinal);
+        var helperEnd = capture.IndexOf("$titleCondition", helperStart, StringComparison.Ordinal);
+        Assert.True(helperStart >= 0 && helperEnd > helperStart);
+        var helper = capture[helperStart..helperEnd];
+        Assert.Contains("IsIconic($handle)", helper);
+        Assert.Contains("ShowWindow($handle, 9)", helper);
+        Assert.Contains("SetForegroundWindow($handle)", helper);
+        Assert.Contains("GetForegroundWindow()", helper);
+        Assert.Contains("GetAncestor($foreground, 2)", helper);
+        Assert.Contains("Click its window once", helper);
+
+        var confirmStart = capture.IndexOf("function Confirm-WorkspaceState", StringComparison.Ordinal);
+        var confirmEnd = capture.IndexOf("function Invoke-OnlyNavigation", confirmStart, StringComparison.Ordinal);
+        Assert.True(confirmStart >= 0 && confirmEnd > confirmStart);
+        var confirm = capture[confirmStart..confirmEnd];
+        Assert.True(confirm.IndexOf("Set-CaptureWindowForeground", StringComparison.Ordinal) <
+                    confirm.IndexOf("$root.FindFirst", StringComparison.Ordinal));
+
+        var resize = capture.IndexOf("MoveWindow(", StringComparison.Ordinal);
+        var resizeForeground = capture.IndexOf("Set-CaptureWindowForeground", resize, StringComparison.Ordinal);
+        var resizedConfirm = capture.IndexOf("Confirm-WorkspaceState $page", resizeForeground, StringComparison.Ordinal);
+        var pixels = capture.IndexOf("$bitmap.Save($dest", resizedConfirm, StringComparison.Ordinal);
+        Assert.True(resize >= 0 && resizeForeground > resize &&
+                    resizedConfirm > resizeForeground && pixels > resizedConfirm);
+    }
+
 }
