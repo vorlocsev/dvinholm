@@ -6,6 +6,8 @@ using Windows.ApplicationModel.DataTransfer;
 using WinRT.Interop;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Microsoft.UI.Windowing;
 
 namespace Dvinholm.App;
 
@@ -63,9 +65,78 @@ public sealed partial class MainWindow : Window
     private bool _udsReadinessConnected;
     private bool _udsReadinessReady;
     private uint? _activeHardwareFilterId;
+
+    // One approved Aurora desktop viewport. The window may be clamped once at
+    // startup on unusually small displays, but the user cannot resize it later.
+    private const int FixedAuroraClientWidthDip = 1280;
+    private const int FixedAuroraClientHeightDip = 800;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool GetWindowRect(IntPtr hWnd, out NativeRect rect);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool GetClientRect(IntPtr hWnd, out NativeRect rect);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr hWnd);
+
+    private void ConfigureFixedAuroraWindow()
+    {
+        if (AppWindow.Presenter is not OverlappedPresenter presenter)
+            throw new InvalidOperationException("Dvinholm requires the standard Windows window presenter.");
+
+        presenter.IsResizable = false;
+        presenter.IsMaximizable = false;
+        presenter.IsMinimizable = true;
+
+        var handle = WindowNative.GetWindowHandle(this);
+        var dpi = GetDpiForWindow(handle);
+        if (dpi == 0)
+            dpi = 96;
+
+        if (!GetWindowRect(handle, out var outer) ||
+            !GetClientRect(handle, out var client))
+            throw new InvalidOperationException("Unable to determine the Dvinholm window frame.");
+
+        var frameWidth = (outer.Right - outer.Left) - (client.Right - client.Left);
+        var frameHeight = (outer.Bottom - outer.Top) - (client.Bottom - client.Top);
+        if (frameWidth < 0 || frameHeight < 0 || frameWidth > 200 || frameHeight > 300)
+            throw new InvalidOperationException("Unexpected Windows non-client frame dimensions.");
+
+        var scale = dpi / 96.0;
+        var clientWidthPx = (int)Math.Round(FixedAuroraClientWidthDip * scale);
+        var clientHeightPx = (int)Math.Round(FixedAuroraClientHeightDip * scale);
+        var requestedOuterWidth = clientWidthPx + frameWidth;
+        var requestedOuterHeight = clientHeightPx + frameHeight;
+
+        var display = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest);
+        var workArea = display.WorkArea;
+        const int workAreaMarginPx = 12;
+        var outerWidth = Math.Min(requestedOuterWidth, Math.Max(1, workArea.Width - workAreaMarginPx * 2));
+        var outerHeight = Math.Min(requestedOuterHeight, Math.Max(1, workArea.Height - workAreaMarginPx * 2));
+
+        // Preserve the wide Aurora composition on normal desktop displays.
+        // A smaller display is clamped only once, at launch; resizing/maximizing
+        // remains disabled for the lifetime of the window.
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(outerWidth, outerHeight));
+        AppWindow.Move(new Windows.Graphics.PointInt32(
+            workArea.X + (workArea.Width - outerWidth) / 2,
+            workArea.Y + (workArea.Height - outerHeight) / 2));
+    }
+
     public MainWindow()
     {
         InitializeComponent();
+        ConfigureFixedAuroraWindow();
         AuroraLanding.UseSharedNavigation();
         InitializeAuroraLabels();
         InitializeAuroraDtcTable();
