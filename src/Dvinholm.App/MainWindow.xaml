@@ -1116,7 +1116,7 @@
                         <StackPanel x:Name="DtcPage" Visibility="Collapsed" Spacing="0">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="16">
-                                    <TextBlock x:Name="DtcPageHeading" Text="Ошибки / DTC" FontSize="23" FontWeight="SemiBold" Visibility="Collapsed" />
+                                    <TextBlock x:Name="DtcPageHeading" Text="Ошибки (DTC)" FontSize="23" FontWeight="SemiBold" Visibility="Collapsed" />
                                     <TextBlock x:Name="DtcPageIntro" Text="Чтение неисправностей одного выбранного ECU. Перед чтением подтвердите адреса TX/RX в разделе «Диагностика»." Foreground="#A9C5DC" TextWrapping="Wrap" />
                                     <Border x:Name="DtcActionRail" CornerRadius="10" Padding="14"
                                             BorderBrush="#2D567C" BorderThickness="1" Background="#0C2944">
