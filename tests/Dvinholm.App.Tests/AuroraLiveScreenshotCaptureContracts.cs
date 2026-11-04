@@ -156,6 +156,20 @@ public sealed class AuroraLiveScreenshotCaptureContracts
             (string?)footer.Attribute("AutomationProperties.AutomationId"));
         Assert.Equal("Control",
             (string?)footer.Attribute("AutomationProperties.AccessibilityView"));
+        foreach (var (controlName, id) in new[] {
+            ("ShellStatusText", "DvinholmFooterStatusText"),
+            ("StatusFooterVersion", "DvinholmFooterVersionText")
+        })
+        {
+            var footerText = xaml.Descendants().Single(e =>
+                (string?)e.Attribute(x + "Name") == controlName);
+            Assert.Equal("TextBlock", footerText.Name.LocalName);
+            Assert.Contains(footer, footerText.Ancestors());
+            Assert.Equal(id,
+                (string?)footerText.Attribute("AutomationProperties.AutomationId"));
+            Assert.Equal("Control",
+                (string?)footerText.Attribute("AutomationProperties.AccessibilityView"));
+        }
 
         Assert.Contains("[switch]$VerifyWorkspaceScroll", script);
         Assert.Contains("if ($VerifyWorkspaceScroll)", script);
@@ -164,6 +178,16 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("TryGetCurrentPattern(", script);
         Assert.Contains("[System.Windows.Automation.ScrollPattern]::Pattern", script);
         Assert.Contains("DvinholmShellStatusBar", script);
+        Assert.Contains("DvinholmFooterStatusText", script);
+        Assert.Contains("DvinholmFooterVersionText", script);
+        var statusIndex = script.IndexOf("'DvinholmFooterStatusText'", StringComparison.Ordinal);
+        var versionIndex = script.IndexOf("'DvinholmFooterVersionText'", StringComparison.Ordinal);
+        var borderIndex = script.IndexOf("'DvinholmShellStatusBar'", StringComparison.Ordinal);
+        Assert.True(statusIndex >= 0 && versionIndex > statusIndex &&
+            borderIndex > versionIndex);
+        Assert.Contains("-not $candidate.Current.IsOffscreen", script);
+        Assert.Contains("Test-ValidUiaBounds $candidate.Current.BoundingRectangle", script);
+        Assert.Contains("ordinary capture remains available", script);
         Assert.Contains("$scroll.SetScrollPercent($noScroll, [double]100)", script);
         Assert.Contains("$atBottom -lt 98", script);
         Assert.Contains("Confirm-WorkspaceState $page -RequireVisible", script);
