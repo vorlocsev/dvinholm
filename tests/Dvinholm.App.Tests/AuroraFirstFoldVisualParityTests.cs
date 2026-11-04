@@ -142,6 +142,64 @@ public sealed class AuroraFirstFoldVisualParityTests
     }
 
     [Fact]
+    public void LongAuroraPagesScrollIndependentlyOfTheStatusBar()
+    {
+        var doc = Layout();
+        var host = Named(doc, "AuroraWorkspaceHost");
+        var rows = host.Elements().Single(e => e.Name.LocalName == "Grid.RowDefinitions")
+            .Elements().Select(e => (string?)e.Attribute("Height")).ToArray();
+        Assert.Equal(new[] { "Auto", "*", "Auto" }, rows);
+
+        var scroll = Named(doc, "WorkspaceScroll");
+        Assert.Same(host, scroll.Parent);
+        Assert.Equal("1", (string?)scroll.Attribute("Grid.Row"));
+        Assert.Equal("DvinholmWorkspaceScroll",
+            (string?)scroll.Attribute("AutomationProperties.AutomationId"));
+        Assert.Equal("Enabled", (string?)scroll.Attribute("VerticalScrollMode"));
+        Assert.Equal("Auto", (string?)scroll.Attribute("VerticalScrollBarVisibility"));
+        Assert.Equal("Disabled", (string?)scroll.Attribute("HorizontalScrollMode"));
+        Assert.Equal("Disabled", (string?)scroll.Attribute("HorizontalScrollBarVisibility"));
+        Assert.Equal("24,0,24,20",
+            (string?)Named(doc, "WorkspacePageContainer").Attribute("Padding"));
+
+        foreach (var page in new[] { "CemPinPage", "CemConfigPage", "DtcPage", "EcuPage" })
+            Assert.Contains(scroll, Named(doc, page).Ancestors());
+
+        var footer = Named(doc, "ShellStatusBar");
+        Assert.Same(host, footer.Parent);
+        Assert.Equal("2", (string?)footer.Attribute("Grid.Row"));
+        Assert.DoesNotContain(scroll, footer.Ancestors());
+        Assert.Equal("310", (string?)Named(doc, "CemConfigResults").Attribute("Height"));
+        Assert.Equal("260", (string?)Named(doc, "DtcRecordsView").Attribute("Height"));
+        Assert.Equal("260", (string?)Named(doc, "EcusView").Attribute("Height"));
+    }
+
+    [Fact]
+    public void ConnectionAuditHeadingWrapsInBothLanguagesWithoutClipping()
+    {
+        var doc = Layout();
+        var expander = Named(doc, "J2534ArchitectureAuditExpander");
+        Assert.Null(expander.Attribute("Header"));
+        Assert.Equal("False", (string?)expander.Attribute("IsExpanded"));
+        Assert.Equal("Аудит разрядности драйверов (офлайн)",
+            (string?)expander.Attribute("AutomationProperties.Name"));
+
+        var label = Named(doc, "J2534ArchitectureAuditHeaderText");
+        Assert.Contains(expander, label.Ancestors());
+        Assert.Equal("TextBlock", label.Name.LocalName);
+        Assert.Equal("Wrap", (string?)label.Attribute("TextWrapping"));
+        Assert.Equal("240", (string?)label.Attribute("MaxWidth"));
+        Assert.Equal("Аудит разрядности драйверов (офлайн)",
+            (string?)label.Attribute("Text"));
+
+        var source = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        Assert.Contains("J2534ArchitectureAuditHeaderText.Text = L(", source);
+        Assert.Contains("\"Driver architecture audit (offline)\"", source);
+        Assert.Contains("J2534ArchitectureAuditExpander, J2534ArchitectureAuditHeaderText.Text", source);
+        Assert.DoesNotContain("J2534ArchitectureAuditExpander.Header = L(", source);
+    }
+
+    [Fact]
     public void CoreNavigationAndRealDataViewsAreUnaffectedByAtmosphere()
     {
         var doc = Layout();
