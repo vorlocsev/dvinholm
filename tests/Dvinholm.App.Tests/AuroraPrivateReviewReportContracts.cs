@@ -126,7 +126,7 @@ public sealed class AuroraPrivateReviewReportContracts
         Assert.DoesNotContain("Copy-Item", script);
         Assert.DoesNotContain("http://", script);
         Assert.DoesNotContain("https://", script);
-        Assert.Contains("Parse private Aurora RU-EN screenshot review tool (never execute)", workflow);
+        Assert.Contains("Parse Aurora desktop helpers in Windows PowerShell 5.1 (never execute)", workflow);
         Assert.Contains("eng/Review-UnifiedAuroraScreenshots.ps1", workflow);
         Assert.DoesNotContain("powershell.exe -NoProfile -File eng/Review-", workflow);
     }
