@@ -241,12 +241,8 @@ function Test-BoundsIntersectClient($bounds, $clientBounds) {
     if (-not (Test-ValidUiaBounds $bounds) -or $null -eq $clientBounds) {
         return $false
     }
-    $intersectionWidth = [Math]::Min(
-        ($bounds.X + $bounds.Width), $clientBounds.Right) -
-        [Math]::Max($bounds.X, $clientBounds.Left)
-    $intersectionHeight = [Math]::Min(
-        ($bounds.Y + $bounds.Height), $clientBounds.Bottom) -
-        [Math]::Max($bounds.Y, $clientBounds.Top)
+    $intersectionWidth = [Math]::Min(($bounds.X + $bounds.Width), $clientBounds.Right) - [Math]::Max($bounds.X, $clientBounds.Left)
+    $intersectionHeight = [Math]::Min(($bounds.Y + $bounds.Height), $clientBounds.Bottom) - [Math]::Max($bounds.Y, $clientBounds.Top)
     return ($intersectionWidth -ge 20 -and $intersectionHeight -ge 12)
 }
 
