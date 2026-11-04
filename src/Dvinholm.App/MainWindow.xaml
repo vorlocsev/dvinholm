@@ -1509,6 +1509,8 @@
                 <!-- Continuous low-profile status strip from the approved Aurora shell.
                      The indicator stays neutral unless a real session is connected. -->
                 <Border x:Name="ShellStatusBar" Grid.Row="2" Background="#071B2F"
+                        AutomationProperties.AutomationId="DvinholmShellStatusBar"
+                        AutomationProperties.AccessibilityView="Control"
                         BorderBrush="#2C5778" BorderThickness="0,1,0,0" Padding="28,9">
                     <Grid ColumnSpacing="12">
                         <Grid.ColumnDefinitions>
