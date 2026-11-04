@@ -48,6 +48,18 @@ For each **CEM PIN, CEM configuration, Faults (DTC) and Modules (ECU)** destinat
 
 The XAML/CI checks confirm only that the layout uses an explicit vertical workspace scroller in the star-sized middle Grid row, a separate auto-sized status row, bottom spacing, and bounded inner lists; **they cannot prove the last rendered item is visible on the operator's monitor**. Mark real scroll-to-bottom acceptance **NOT RUN** until an interactive Windows inspection, with sanitized private screenshots if necessary. Do not resize or maximize the fixed viewport to make a check pass.
 
+### Stage 105: optional Windows UI Automation scroll probe (manual desktop only)
+
+In a fresh folder outside the repository, with Dvinholm started from the **matching exact-head x64 artifact** and all physical adapters disconnected, the ordinary real-desktop capture accepts an **optional** `-VerifyWorkspaceScroll` switch. It performs a read-only `ScrollPattern` test on the application's **outer** `DvinholmWorkspaceScroll` after navigating to each of CEM PIN, CEM configuration, DTC and ECU. It verifies that the UIA vertical scroll reaches at least 98%, the header and footer remain visible in their original vertical locations (within four physical pixels), and then restores the starting scroll position before capturing the page. It does not click action buttons, open a J2534 session, create extra screenshots, or change the six-page capture manifest. The optional check **fails closed** when the WinUI UI Automation pattern is unavailable; a refusal means the check is **NOT RUN/FAIL**, not proof that wheel-based scrolling is broken.
+
+Example after selecting RU in the application (replace SHA and output root for the exact build, and repeat in a separate empty EN folder):
+
+```powershell
+& .\eng\Capture-UnifiedAuroraWinUI3.ps1 -Language ru -OutputDirectory C:\Dvinholm-AuroraReview-scroll\ru -VerifyWorkspaceScroll -IConfirmOfflineNoSecrets -CommitSha <40-character-exact-head-SHA>
+```
+
+The console's four `Verified … outer workspace scroll` lines are automation evidence only, **not pixel-based proof** that every bottom control is readable. Still perform the Stage 104 human scroll-to-end and back check. Existing #508/#512 capture sets remain historical; don't modify their manifests or relabel prior images.
+
 ## Eight bounded checks (record PASS / FAIL / NOT RUN)
 
 1. **Package and executable.** Confirm the reviewed x64 ZIP passes published SHA-256 and extraction checks. Run from a clean user-writable directory, not from inside the ZIP. Confirm there is one primary `Dvinholm.exe` window; the old separate launcher is not required in this new x64 pilot. This is not a certificate-signing test.
