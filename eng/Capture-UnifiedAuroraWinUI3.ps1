@@ -30,7 +30,11 @@ param(
     [string]$CommitSha = '',
 
     # Optional real-desktop UIA probe, preserving the 12-image manifest.
-    [switch]$VerifyWorkspaceScroll
+    [switch]$VerifyWorkspaceScroll,
+
+    # Four extra BOTTOM screenshots in a separate evidence manifest.
+    # Requires the strict UIA scroll probe and explicit privacy confirmation.
+    [switch]$CaptureBottomViews
 )
 
 Set-StrictMode -Version Latest
@@ -42,6 +46,9 @@ $fixedHeightDip = 800
 
 if (-not $IConfirmOfflineNoSecrets) {
     throw 'Explicit privacy/offline confirmation is required.'
+}
+if ($CaptureBottomViews -and -not $VerifyWorkspaceScroll) {
+    throw '-CaptureBottomViews requires -VerifyWorkspaceScroll; bottom images must be UIA-verified.'
 }
 if ($env:CI -eq 'true' -or $env:GITHUB_ACTIONS -eq 'true' -or
     -not [Environment]::UserInteractive) {
@@ -435,7 +442,14 @@ function Confirm-WorkspaceState([string]$page, [switch]$RequireVisible) {
     }
 }
 
-function Assert-WorkspaceScrollToEnd([string]$page) {
+function Assert-WorkspaceScrollToEnd(
+    [string]$page,
+    [string]$bottomDestination = '',
+    [int]$captureLeft = 0,
+    [int]$captureTop = 0,
+    [int]$captureWidth = 0,
+    [int]$captureHeight = 0
+) {
     if ($page -notin @('CemPin','CemConfiguration','Dtc','Ecu')) { return }
 
     # Target the outer page scroller by its unique app-supplied UIA ID.
@@ -530,6 +544,31 @@ function Assert-WorkspaceScrollToEnd([string]$page) {
             }
         }
         Confirm-WorkspaceState $page -RequireVisible
+        if (-not [string]::IsNullOrWhiteSpace($bottomDestination)) {
+            if ($captureWidth -le 0 -or $captureHeight -le 0 -or
+                (Test-Path -LiteralPath $bottomDestination)) {
+                throw "Invalid or existing bottom capture target for $page."
+            }
+            # Save genuine on-screen pixels WHILE the verified outer ScrollPattern
+            # is at its end. The finally clause below restores the starting fold.
+            $bottomForeground = [DvinholmWinUiCaptureNative]::GetForegroundWindow()
+            if ([DvinholmWinUiCaptureNative]::GetAncestor($bottomForeground, 2) -ne $handle) {
+                throw "Dvinholm lost foreground before bottom screenshot of $page."
+            }
+            $bottomBitmap = [System.Drawing.Bitmap]::new($captureWidth, $captureHeight)
+            try {
+                $bottomGraphics = [System.Drawing.Graphics]::FromImage($bottomBitmap)
+                try {
+                    $bottomGraphics.CopyFromScreen($captureLeft, $captureTop, 0, 0,
+                        $bottomBitmap.Size, [System.Drawing.CopyPixelOperation]::SourceCopy)
+                }
+                finally { $bottomGraphics.Dispose() }
+                $bottomBitmap.Save($bottomDestination, [System.Drawing.Imaging.ImageFormat]::Png)
+            }
+            finally { $bottomBitmap.Dispose() }
+            Write-Host ("Captured bottom view for $page at {0:N1}%: {1}" -f
+                $atBottom, [IO.Path]::GetFileName($bottomDestination))
+        }
         if ($footerAvailable) {
             Write-Host ("Verified $page outer workspace scroll reached {0:N1}% with fixed header/footer via $footerId (UIA only)." -f $atBottom)
         }
@@ -603,6 +642,7 @@ if (@(Get-ChildItem -LiteralPath $output -Force).Count -ne 0) {
     throw 'Capture directory is not empty; choose a fresh folder to avoid mixing builds or languages.'
 }
 $results = @()
+$bottomResults = @()
 foreach ($page in $Pages) {
     Invoke-OnlyNavigation $page
     Set-CaptureWindowForeground
@@ -653,7 +693,33 @@ foreach ($page in $Pages) {
         # Verify the exact localized workspace after the pointer settles.
         Confirm-WorkspaceState $page -RequireVisible
         if ($VerifyWorkspaceScroll) {
-            Assert-WorkspaceScrollToEnd $page
+            if ($CaptureBottomViews -and
+                $page -in @('CemPin','CemConfiguration','Dtc','Ecu')) {
+                $bottomFilename = "Aurora-$page-$Language-$fixedWidthDip-dip-bottom.png"
+                $bottomDest = Join-Path $output $bottomFilename
+                Assert-WorkspaceScrollToEnd $page $bottomDest $rect.Left $rect.Top $actualWidth $actualHeight
+                $bottomResults += [ordered]@{
+                    file = $bottomFilename
+                    page = $page
+                    operatorSelectedLanguage = $Language
+                    verifiedVisibleWorkspaceTitle = $expectedTitles[$Language][$page]
+                    requestedWidthDip = $fixedWidthDip
+                    requestedHeightDip = $fixedHeightDip
+                    actualClientWidthPx = $actualClientWidth
+                    actualClientHeightPx = $actualClientHeight
+                    actualWidthPx = $actualWidth
+                    actualHeightPx = $actualHeight
+                    windowDpi = $dpi
+                    scrollPosition = 'bottom'
+                    verifiedOuterScrollPercentAtLeast98 = $true
+                    sourceCommitOperatorDeclared = $CommitSha
+                    screenshotUtc = [DateTime]::UtcNow.ToString('o')
+                    evidence = 'real desktop bottom fold, verified outer UIA scroll; final controls require human visual review'
+                }
+            }
+            else {
+                Assert-WorkspaceScrollToEnd $page
+            }
             Confirm-WorkspaceState $page -RequireVisible
         }
     $filename = "Aurora-$page-$Language-$fixedWidthDip-dip.png"
@@ -703,4 +769,13 @@ if (Test-Path -LiteralPath $report) {
 }
 ConvertTo-Json -InputObject @($results) -Depth 5 |
     Set-Content -LiteralPath $report -Encoding UTF8
+if ($CaptureBottomViews) {
+    $bottomManifest = Join-Path $output "Aurora-$Language-bottom-capture-manifest.json"
+    if (Test-Path -LiteralPath $bottomManifest) {
+        throw 'Bottom capture manifest already exists; use a new empty output folder.'
+    }
+    ConvertTo-Json -InputObject @($bottomResults) -Depth 5 |
+        Set-Content -LiteralPath $bottomManifest -Encoding UTF8
+    Write-Host "Bottom-review evidence: $($bottomResults.Count) images and separate bottom manifest. Manual visual acceptance remains required."
+}
 Write-Host 'Capture complete; no file was uploaded. Review/redact every screenshot before sharing.'
