@@ -80,6 +80,23 @@ jobs:
             Write-Host "Windows PowerShell 5.1 recognized BOM and parsed $relative (no execution)."
           }
 
+          # Reproduce PS 5.1's nested-array ConvertFrom-Json pipeline behavior
+          # using synthetic metadata. Do not execute either screenshot helper.
+          $fixtureJson = '[{"page":"Connection","requestedWidthDip":1280},{"page":"Updates","requestedWidthDip":1280}]'
+          $decoded = $fixtureJson | ConvertFrom-Json
+          if ($decoded -isnot [System.Array]) {
+            throw 'PowerShell 5.1 JSON array fixture did not decode to an array.'
+          }
+          $rows = @($decoded)
+          if ($rows.Count -ne 2 -or
+              $rows[0].page -cne 'Connection' -or
+              $rows[1].page -cne 'Updates' -or
+              [int]$rows[0].requestedWidthDip -ne 1280 -or
+              [int]$rows[1].requestedWidthDip -ne 1280) {
+            throw 'PowerShell 5.1 manifest record enumeration regression.'
+          }
+          Write-Host 'PowerShell 5.1 enumerated two JSON manifest records without nesting.'
+
       # New pipeline only: DO NOT change the active legacy x86 release feed.
       # Windows App SDK and .NET are packed into the standalone release tree.
       - name: Publish WinUI 3 x64 self-contained application
