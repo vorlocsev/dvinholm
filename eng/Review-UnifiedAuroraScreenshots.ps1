@@ -45,7 +45,9 @@ if (Test-Path -LiteralPath $output) {
     throw 'The report already exists. Review it before deliberately removing it and rerunning.'
 }
 $pages = @('Connection','Updates','CemPin','CemConfiguration','Dtc','Ecu')
-$widths = @(640,800,980,1280,1440)
+$fixedWidthDip = 1280
+$fixedHeightDip = 800
+$widths = @($fixedWidthDip)
 # Trust neither the filename nor a merely nonempty title string. These must
 # match the actual six page titles assigned by the WinUI workspace presenter.
 $expectedTitles = @{
@@ -69,15 +71,16 @@ foreach ($lang in @('ru','en')) {
         throw "The $lang capture manifest is missing. Generate each language separately."
     }
     $rows = @(Get-Content -LiteralPath $manifestPath -Raw -Encoding UTF8 | ConvertFrom-Json)
-    if ($rows.Count -gt 30) { throw 'Unexpected extra records in screenshot manifest.' }
+    if ($rows.Count -gt 6) { throw 'Unexpected extra records in fixed-viewport screenshot manifest.' }
     $seen = @{}
     $dpis = @{}
     $observedDpi = $null
     foreach ($entry in $rows) {
         $page = [string]$entry.page
         $width = [int]$entry.requestedWidthDip
-        if ($pages -cnotcontains $page -or $widths -notcontains $width) {
-            throw "Unexpected page or DIP width in $lang manifest."
+        if ($pages -cnotcontains $page -or $widths -notcontains $width -or
+            [int]$entry.requestedHeightDip -ne $fixedHeightDip) {
+            throw "Unexpected page or fixed viewport dimensions in $lang manifest."
         }
         $key = "$page/$width"
         if ($seen.ContainsKey($key)) { throw "Duplicate $lang screenshot entry: $key" }
@@ -129,6 +132,7 @@ foreach ($lang in @('ru','en')) {
             [int]$entry.actualClientHeightPx -gt [int]$entry.actualHeightPx -or
             [int]$entry.windowDpi -lt 96 -or [int]$entry.windowDpi -gt 480 -or
             [Math]::Abs([double]$entry.measuredWidthDip - $width) -gt 5 -or
+            [Math]::Abs([double]$entry.measuredClientHeightDip - $fixedHeightDip) -gt 5 -or
             [Math]::Abs([double]$entry.measuredWidthDip -
                 ([int]$entry.actualClientWidthPx * 96.0 / [int]$entry.windowDpi)) -gt 1 -or
             [Math]::Abs([double]$entry.measuredClientHeightDip -
@@ -178,7 +182,7 @@ $html = New-Object System.Collections.Generic.List[string]
 $manualChecks = @(
     'Banner / emblem / Aurora colors versus approved image',
     'Exactly six navigation routes and sidebar alignment',
-    'Title, real J2534 status and RU/EN switch at compact/wide widths',
+    'Title, real J2534 status and RU/EN switch in the fixed 1280x800 DIP viewport',
     'Connection: real adapter, CAN speed and session state',
     'Updates: real version, channel and safe non-installable actions',
     'CEM PIN/configuration: honest evidence and disabled write actions',
@@ -206,7 +210,7 @@ $present = 0
 foreach ($page in $pages) {
     [void]$html.Add('<section><h2>' + $page + '</h2>')
     foreach ($width in $widths) {
-        [void]$html.Add('<h3>' + $width + ' client DIP</h3><div class="pair">')
+        [void]$html.Add('<h3>' + $width + ' × ' + $fixedHeightDip + ' client DIP</h3><div class="pair">')
         foreach ($lang in @('ru','en')) {
             $key = "$page/$width"
             if ($manifestData[$lang].ContainsKey($key)) {
@@ -228,8 +232,8 @@ foreach ($page in $pages) {
     [void]$html.Add('</section>')
 }
 $html.Insert(6,'<p>Validated local PNG/manifest pairs: ' + $present +
-    ' / 60. Missing is NOT RUN; present is NOT visual PASS.</p>')
+    ' / 12. Missing is NOT RUN; present is NOT visual PASS.</p>')
 [void]$html.Add('</html>')
 [IO.File]::WriteAllText($output,($html -join [Environment]::NewLine),
     [Text.UTF8Encoding]::new($false))
-Write-Host "Local report created: $output. Validated images: $present/60. No upload."
+Write-Host "Local report created: $output. Validated images: $present/12. No upload."
