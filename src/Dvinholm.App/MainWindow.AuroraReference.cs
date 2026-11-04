@@ -132,13 +132,32 @@ public sealed partial class MainWindow
             "Непроверенные параметры нельзя записывать в блок.",
             "Unverified parameters cannot be written to the ECU."));
 
-        foreach (var item in CemConfigEvidenceTier.Items.OfType<ComboBoxItem>())
-            item.Content = (item.Tag as string) switch
+        // WinUI ComboBox may keep a cached SelectionBoxItem from the old
+        // language even when the selected ComboBoxItem.Content changes.
+        // Re-select the same canonical tier while suppressing filter events:
+        // language switching must not change the catalog or research ID.
+        var selectedEvidenceTier = CemConfigEvidenceTier.SelectedItem;
+        var evidenceReady = _cemConfigReferenceReady;
+        _cemConfigReferenceReady = false;
+        try
+        {
+            foreach (var item in CemConfigEvidenceTier.Items.OfType<ComboBoxItem>())
+                item.Content = (item.Tag as string) switch
+                {
+                    "Vendor" => L("Сторонние публикации", "Third-party publications"),
+                    "Volvo" => L("Меню Volvo", "Volvo service menus"),
+                    _ => L("Все источники", "All sources")
+                };
+            if (selectedEvidenceTier is ComboBoxItem)
             {
-                "Vendor" => L("Сторонние публикации", "Third-party publications"),
-                "Volvo" => L("Меню Volvo", "Volvo service menus"),
-                _ => L("Все источники", "All sources")
-            };
+                CemConfigEvidenceTier.SelectedItem = null;
+                CemConfigEvidenceTier.SelectedItem = selectedEvidenceTier;
+            }
+        }
+        finally
+        {
+            _cemConfigReferenceReady = evidenceReady;
+        }
 
         if (_cemConfigReferenceReady)
             RefreshAuroraConfigReference();
