@@ -394,7 +394,7 @@ function Invoke-OnlyNavigation([string]$page) {
     Confirm-WorkspaceState $page
 }
 
-# The application owns a fixed client viewport. Verify its actual size;
+# Preflight the fixed viewport 1280x800 DIP. The application owns its size;
 # this helper never resizes or moves the user's Dvinholm window.
 $previewDpi = [DvinholmWinUiCaptureNative]::GetDpiForWindow($handle)
 $previewOuter = New-Object DvinholmWinUiCaptureNative+RECT
