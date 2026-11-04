@@ -49,7 +49,7 @@ public sealed class AuroraReviewEvidenceConsistencyTests
         var titles = PageTitles(Review(), "ru");
         Assert.Equal(Pages.Length, titles.Count);
         Assert.Equal(PageTitles(Capture(), "ru"), titles);
-        Assert.Equal("Ошибки / DTC", titles["Dtc"]);
+        Assert.Equal("Ошибки (DTC)", titles["Dtc"]);
         Assert.Equal("Блоки ECU", titles["Ecu"]);
     }
 
