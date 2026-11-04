@@ -194,4 +194,38 @@ public sealed class AuroraScreenshotIdentityContracts
                     resizedConfirm > resizeForeground && pixels > resizedConfirm);
     }
 
+    [Fact]
+    public void OffscreenRefusalReportsUiaAndWin32GeometryWithoutSavingImage()
+    {
+        var capture = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
+        Assert.Contains("public struct POINT", capture);
+        Assert.Contains("public static extern bool ClientToScreen", capture);
+        Assert.Contains("public static extern bool IsWindowVisible", capture);
+
+        var diagnosticStart = capture.IndexOf("function Get-CaptureDiagnostics", StringComparison.Ordinal);
+        var diagnosticEnd = capture.IndexOf("function Confirm-WorkspaceState", diagnosticStart, StringComparison.Ordinal);
+        Assert.True(diagnosticStart >= 0 && diagnosticEnd > diagnosticStart);
+        var diagnostic = capture[diagnosticStart..diagnosticEnd];
+        Assert.Contains("GetWindowRect", diagnostic);
+        Assert.Contains("GetClientRect", diagnostic);
+        Assert.Contains("ClientToScreen", diagnostic);
+        Assert.Contains("GetDpiForWindow", diagnostic);
+        Assert.Contains("WorkingArea", diagnostic);
+        Assert.Contains("TreeWalker]::ControlViewWalker", diagnostic);
+        Assert.Contains("BoundingRectangle", diagnostic);
+        Assert.Contains("IsOffscreen", diagnostic);
+        Assert.Contains("foregroundIsDvinholm", diagnostic);
+        Assert.DoesNotContain("$bitmap.Save", diagnostic);
+
+        var confirmStart = diagnosticEnd;
+        var confirmEnd = capture.IndexOf("function Invoke-OnlyNavigation", confirmStart, StringComparison.Ordinal);
+        Assert.True(confirmEnd > confirmStart);
+        var confirm = capture[confirmStart..confirmEnd];
+        var refusal = confirm.IndexOf("($RequireVisible -and $titleOffscreen)", StringComparison.Ordinal);
+        var report = confirm.IndexOf("Get-CaptureDiagnostics $title", StringComparison.Ordinal);
+        var throwIndex = confirm.IndexOf("throw \"Expected visible workspace", StringComparison.Ordinal);
+        Assert.True(refusal >= 0 && report > refusal && throwIndex > report);
+        Assert.Contains("Capture geometry diagnostics (no screenshot was saved)", confirm);
+    }
+
 }
