@@ -1520,11 +1520,17 @@
                         </Grid.ColumnDefinitions>
                         <TextBlock x:Name="StatusFooterDot" Text="●" FontSize="12"
                                    Foreground="#728FA8" VerticalAlignment="Center" />
+                        <!-- TextBlock peers are exposed independently of the decorative
+                             Border, which some WinUI UIA providers omit entirely. -->
                         <TextBlock x:Name="ShellStatusText" Grid.Column="1"
+                                   AutomationProperties.AutomationId="DvinholmFooterStatusText"
+                                   AutomationProperties.AccessibilityView="Control"
                                    Text="{Binding Text, ElementName=StatusText}"
                                    Foreground="#C0D5E7" FontSize="12" MaxLines="2" TextWrapping="Wrap"
                                    VerticalAlignment="Center" />
                         <TextBlock x:Name="StatusFooterVersion" Grid.Column="2"
+                                   AutomationProperties.AutomationId="DvinholmFooterVersionText"
+                                   AutomationProperties.AccessibilityView="Control"
                                    Text="Dvinholm" Foreground="#80AFC9" FontSize="11"
                                    VerticalAlignment="Center" />
                     </Grid>
