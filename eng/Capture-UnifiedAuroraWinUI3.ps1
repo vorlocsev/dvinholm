@@ -461,7 +461,7 @@ function Assert-WorkspaceScrollToEnd([string]$page) {
     # Never claim footer anchoring unless a visible, valid peer was measured.
     $footerAvailable = ($null -ne $footer)
     if (-not $footerAvailable) {
-        Write-Warning "Footer UIA evidence NOT RUN for $page: no visible status/version/Border peer. Review the fixed bottom strip manually."
+        Write-Warning "Footer UIA evidence NOT RUN for ${page}: no visible status/version/Border peer. Review the fixed bottom strip manually."
     }
     $footerBefore = $null
     if ($footerAvailable) {
