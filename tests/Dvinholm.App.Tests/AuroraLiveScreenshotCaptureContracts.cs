@@ -108,7 +108,7 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("$fixedWidthDip = 1280", script);
         Assert.Contains("$fixedHeightDip = 800", script);
         Assert.DoesNotContain("WidthsDip", script);
-        Assert.DoesNotContain("HeightDip", script);
+        Assert.DoesNotContain("[int]$HeightDip", script);
         Assert.DoesNotContain("MoveWindow", script);
         Assert.Contains("requestedHeightDip", script);
         Assert.Contains("Cannot fit", script, StringComparison.OrdinalIgnoreCase);
