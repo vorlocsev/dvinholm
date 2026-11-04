@@ -132,7 +132,7 @@ public sealed class AuroraReviewEvidenceConsistencyTests
     {
         var workflow = Source(".github/workflows/winui3-unified-x64.yml");
         var review = Review();
-        Assert.Contains("Parse private Aurora RU-EN screenshot review tool (never execute)", workflow);
+        Assert.Contains("Parse Aurora desktop helpers in Windows PowerShell 5.1 (never execute)", workflow);
         Assert.Contains("'eng/Review-UnifiedAuroraScreenshots.ps1'", workflow);
         Assert.Contains("'FullyQualifiedName~AuroraReviewEvidenceConsistencyTests'", workflow);
         Assert.Contains("$env:GITHUB_ACTIONS -eq 'true'", review);
