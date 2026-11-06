@@ -116,6 +116,30 @@ foreach ($lang in @('ru','en')) {
             throw "Unexpected top-fold scroll proof for non-long page: $lang $key."
         }
         $topFolds[$key] = $topFoldVerified
+        # Optional stage-552 one-pixel native caption sample, recorded
+        # from the actual screenshot by the interactive capture helper.
+        # Older manifests intentionally remain readable as NOT SAMPLED.
+        $captionSampleProp = $entry.PSObject.Properties['observedNativeCaptionSampleHex']
+        $captionXProp = $entry.PSObject.Properties['nativeCaptionSampleXpx']
+        $captionYProp = $entry.PSObject.Properties['nativeCaptionSampleYpx']
+        $captionSampleSet = @($captionSampleProp,$captionXProp,$captionYProp |
+            Where-Object { $null -ne $_ }).Count
+        if ($captionSampleSet -ne 0 -and $captionSampleSet -ne 3) {
+            throw "Incomplete native caption sample metadata: $lang $key."
+        }
+        if ($captionSampleSet -eq 3) {
+            $captionHex = [string]$captionSampleProp.Value
+            if ($captionHex -cnotmatch '^#[0-9A-F]{6}$' -or
+                $captionXProp.Value -isnot [int] -or
+                $captionYProp.Value -isnot [int] -or
+                [int]$captionXProp.Value -lt 0 -or
+                [int]$captionXProp.Value -ge [int]$entry.actualWidthPx -or
+                [int]$captionYProp.Value -lt 0 -or
+                [int]$captionYProp.Value -ge
+                    ([int]$entry.actualHeightPx - [int]$entry.actualClientHeightPx)) {
+                throw "Invalid native caption sample metadata: $lang $key."
+            }
+        }
         # Old manifests without the new per-run token remain readable, but
         # cannot be represented as having verified capture-session continuity.
         $sessionProperty = $entry.PSObject.Properties['captureSessionId']
@@ -402,9 +426,16 @@ foreach ($page in $pages) {
                 } else {
                     'top scroll not probed'
                 }
+                $captionSample = $topEntries[$lang][$key].PSObject.Properties['observedNativeCaptionSampleHex']
+                $captionText = if ($null -eq $captionSample) {
+                    'caption NOT SAMPLED'
+                } else {
+                    'caption RGB ' + [string]$captionSample.Value + ' (one pixel only)'
+                }
                 [void]$html.Add('<figure><figcaption>' + $lang.ToUpperInvariant() +
                     ' | ' + $dpi + ' DPI (about ' + $scale + '%) | ' +
-                    $topPositionLabel + ' | visual NOT RUN</figcaption><img alt="' +
+                    $topPositionLabel + ' | ' + $captionText +
+                    ' | visual NOT RUN</figcaption><img alt="' +
                     $page + ' ' + $lang + '" src="' + $lang + '/' + $name +
                     '"></figure>')
                 $present++
