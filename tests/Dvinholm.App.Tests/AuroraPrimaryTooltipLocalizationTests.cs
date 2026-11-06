@@ -1,25 +1,27 @@
 namespace Dvinholm.App.Tests;
 
 /// <summary>
-/// Offline contracts for the eight visible RU/EN safety tooltips in the
+/// Offline contracts for eight visible RU/EN safety tooltips in the
 /// approved Aurora workspaces. These are source checks, not UI screenshot PASS.
 /// </summary>
 public sealed class AuroraPrimaryTooltipLocalizationTests
 {
-    private static string Source()
+    private static string Source() =>
+        Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+
+    private static string Source(string relative)
     {
         for (DirectoryInfo? directory = new(AppContext.BaseDirectory);
              directory is not null; directory = directory.Parent)
         {
-            var file = Path.Combine(directory.FullName, "src", "Dvinholm.App",
-                "MainWindow.AuroraScreenLocalization.cs");
+            var file = Path.Combine(directory.FullName,
+                relative.Replace('/', Path.DirectorySeparatorChar));
             if (File.Exists(file)) return File.ReadAllText(file);
         }
-        throw new FileNotFoundException("MainWindow.AuroraScreenLocalization.cs");
+        throw new FileNotFoundException(relative);
     }
 
     [Theory]
-    [InlineData("CemPartPrerequisiteButton")]
     [InlineData("EcuSelector")]
     [InlineData("EcusView")]
     [InlineData("DtcStatusMaskSelector")]
@@ -45,12 +47,17 @@ public sealed class AuroraPrimaryTooltipLocalizationTests
     }
 
     [Fact]
-    public void CemPrerequisiteTooltipNeverClaimsToReadPinOrVehicle()
+    public void CemPrerequisiteTooltipUsesOneOwningPresenterOnRefreshAndLocaleChange()
     {
-        var source = Source();
-        Assert.Contains("Только локальная проверка состояния приложения", source);
-        Assert.Contains("Inspect local application state only. No CAN or J2534 requests.", source);
-        Assert.DoesNotContain("ReadCemPin_Click(", source);
+        var screen = Source();
+        var cem = Source("src/Dvinholm.App/MainWindow.CemPin.cs");
+        var locale = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
+        Assert.DoesNotContain("ToolTipService.SetToolTip(CemPartPrerequisiteButton", screen);
+        Assert.Equal(1, cem.Split("ToolTipService.SetToolTip(CemPartPrerequisiteButton, L(").Length - 1);
+        Assert.Contains("Только локальная проверка состояния приложения", cem);
+        Assert.Contains("Inspect local application state only. No CAN or J2534 requests.", cem);
+        Assert.Contains("RefreshCemPrerequisitePresentation();", locale);
+        Assert.DoesNotContain("ReadCemPin_Click(", screen);
     }
 
     [Fact]
