@@ -136,6 +136,9 @@ public sealed partial class MainWindow : Window
     public MainWindow()
     {
         InitializeComponent();
+        // Color the native Windows caption without changing frame dimensions.
+        // Keep this before fixed-client sizing and before the first show.
+        ConfigureAuroraNativeTitleBar();
         ConfigureFixedAuroraWindow();
         AuroraLanding.UseSharedNavigation();
         InitializeAuroraLabels();
