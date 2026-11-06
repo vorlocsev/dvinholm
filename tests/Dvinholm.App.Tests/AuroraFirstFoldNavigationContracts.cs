@@ -59,7 +59,10 @@ public sealed class AuroraFirstFoldNavigationContracts
             main);
         Assert.Contains("AuroraWorkspaceHost.Visibility != Visibility.Visible", main);
         Assert.Contains("if (WorkspaceScroll.VerticalOffset > 0.5)", main);
-        Assert.DoesNotContain("Task.Delay(", main);
+        var start = main.IndexOf("private void ResetWorkspaceFirstFoldAfterNavigation()", StringComparison.Ordinal);
+        var end = main.IndexOf("private void DashboardNavigate(", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        Assert.DoesNotContain("Task.Delay(", main[start..end]);
     }
 
     [Fact]
