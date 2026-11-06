@@ -486,4 +486,152 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("return $true", probe);
     }
 
+
+    // Stage 544: finite percentage guards for real UIA scroll evidence.
+    // Static contracts only; these do not execute Windows UI Automation.
+    private static string BottomScrollProbe()
+    {
+        var source = Capture();
+        var begin = source.IndexOf("function Assert-WorkspaceScrollToEnd(", StringComparison.Ordinal);
+        var end = source.IndexOf("function Assert-WorkspaceTopBeforePixels(", begin,
+            StringComparison.Ordinal);
+        Assert.True(begin >= 0 && end > begin);
+        return source[begin..end];
+    }
+
+    private static string TopScrollProbe()
+    {
+        var source = Capture();
+        var begin = source.IndexOf("function Assert-WorkspaceTopBeforePixels(", StringComparison.Ordinal);
+        var end = source.IndexOf("function Invoke-OnlyNavigation(", begin,
+            StringComparison.Ordinal);
+        Assert.True(begin >= 0 && end > begin);
+        return source[begin..end];
+    }
+
+    [Fact]
+    public void OriginalScrollPositionRejectsNonFiniteValuesBeforeFirstScroll()
+    {
+        var section = BottomScrollProbe();
+        var read = section.IndexOf("$originalPercent = [double]$scroll.Current.VerticalScrollPercent",
+            StringComparison.Ordinal);
+        var nan = section.IndexOf("[double]::IsNaN($originalPercent)", read, StringComparison.Ordinal);
+        var infinity = section.IndexOf("[double]::IsInfinity($originalPercent)",
+            nan, StringComparison.Ordinal);
+        var range = section.IndexOf("$originalPercent -lt 0 -or $originalPercent -gt 100",
+            infinity, StringComparison.Ordinal);
+        var move = section.IndexOf("$scroll.SetScrollPercent($noScroll, [double]100)",
+            range, StringComparison.Ordinal);
+        Assert.True(read >= 0 && nan > read && infinity > nan && range > infinity &&
+            move > range);
+    }
+
+    [Fact]
+    public void ScrolledBottomRequiresFiniteInRangeMeasurement()
+    {
+        var section = BottomScrollProbe();
+        var read = section.IndexOf("$atBottom = [double]$scroll.Current.VerticalScrollPercent",
+            StringComparison.Ordinal);
+        var nan = section.IndexOf("[double]::IsNaN($atBottom)", read,
+            StringComparison.Ordinal);
+        var infinity = section.IndexOf("[double]::IsInfinity($atBottom)", nan,
+            StringComparison.Ordinal);
+        var range = section.IndexOf("$atBottom -lt 98 -or $atBottom -gt 100",
+            infinity, StringComparison.Ordinal);
+        var capture = section.IndexOf("$bottomBitmap.Save($bottomDestination", range,
+            StringComparison.Ordinal);
+        Assert.True(read >= 0 && nan > read && infinity > nan && range > infinity &&
+            capture > range);
+    }
+
+    [Fact]
+    public void RecheckedBottomRequiresFiniteMeasurementBeforePixels()
+    {
+        var section = BottomScrollProbe();
+        var read = section.IndexOf(
+            "$captureScrollPercent = [double]$scroll.Current.VerticalScrollPercent",
+            StringComparison.Ordinal);
+        var nan = section.IndexOf("[double]::IsNaN($captureScrollPercent)", read,
+            StringComparison.Ordinal);
+        var infinity = section.IndexOf("[double]::IsInfinity($captureScrollPercent)", nan,
+            StringComparison.Ordinal);
+        var range = section.IndexOf(
+            "$captureScrollPercent -lt 98 -or $captureScrollPercent -gt 100",
+            infinity, StringComparison.Ordinal);
+        var save = section.IndexOf("$bottomBitmap.Save($bottomDestination", range,
+            StringComparison.Ordinal);
+        Assert.True(read >= 0 && nan > read && infinity > nan && range > infinity &&
+            save > range);
+        Assert.Contains("[Math]::Abs($captureScrollPercent - $atBottom) -gt 1",
+            section);
+    }
+
+    [Fact]
+    public void TopProbeRejectsNaNAndInfinityAtBothReadpoints()
+    {
+        var section = TopScrollProbe();
+        foreach (var point in new[] { "atTop", "afterIdentity" })
+        {
+            var read = section.IndexOf("$" + point +
+                " = [double]$scroll.Current.VerticalScrollPercent",
+                StringComparison.Ordinal);
+            var nan = section.IndexOf("[double]::IsNaN($" + point + ")", read,
+                StringComparison.Ordinal);
+            var infinity = section.IndexOf("[double]::IsInfinity($" + point + ")",
+                nan, StringComparison.Ordinal);
+            var upper = section.IndexOf("$" + point + " -gt 2", infinity,
+                StringComparison.Ordinal);
+            Assert.True(read >= 0 && nan > read && infinity > nan && upper > infinity);
+        }
+    }
+
+    [Theory]
+    [InlineData(98.0, true)]
+    [InlineData(100.0, true)]
+    [InlineData(97.999, false)]
+    [InlineData(101.0, false)]
+    [InlineData(-1.0, false)]
+    public void RepresentativeBottomScrollValuesRespectClosedBounds(double percent, bool expected)
+    {
+        // Bounded math sanity check complements the inspected source guards.
+        var inRange = !double.IsNaN(percent) && !double.IsInfinity(percent) &&
+            percent >= 98 && percent <= 100;
+        Assert.Equal(expected, inRange);
+        var source = BottomScrollProbe();
+        Assert.Contains("$atBottom -lt 98 -or $atBottom -gt 100", source);
+    }
+
+    [Fact]
+    public void NonFiniteScrollMeasurementsCannotPassBoundedBottomEvidence()
+    {
+        foreach (var percent in new[] {
+            double.NaN, double.PositiveInfinity, double.NegativeInfinity })
+        {
+            var valid = !double.IsNaN(percent) && !double.IsInfinity(percent) &&
+                percent >= 98 && percent <= 100;
+            Assert.False(valid);
+        }
+        var section = BottomScrollProbe();
+        Assert.Contains("[double]::IsInfinity($atBottom)", section);
+        Assert.Contains("[double]::IsNaN($captureScrollPercent)", section);
+    }
+
+    [Fact]
+    public void FiniteScrollHardeningNeverAddsVehicleOrNetworkOperations()
+    {
+        var source = Capture();
+        var bottom = BottomScrollProbe();
+        var top = TopScrollProbe();
+        foreach (var forbidden in new[] {
+            "PassThruOpen(", "ReadCemPin(", "ReadDtc_Click(", "Invoke-WebRequest",
+            "Invoke-RestMethod", "Start-BitsTransfer" })
+        {
+            Assert.DoesNotContain(forbidden, bottom);
+            Assert.DoesNotContain(forbidden, top);
+            Assert.DoesNotContain(forbidden, source);
+        }
+        Assert.Contains("SetScrollPercent($noScroll, $originalPercent)", bottom);
+        Assert.DoesNotContain("SetScrollPercent(", top);
+    }
+
 }
