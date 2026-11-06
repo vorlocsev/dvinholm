@@ -642,7 +642,12 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("$captionHeightPx = $clientBounds.Top - $rect.Top", script);
         Assert.Contains("$captionSampleXpx = [int][Math]::Floor($actualWidth * 0.52)", script);
         Assert.Contains("$captionSampleYpx = [int][Math]::Floor($captionHeightPx * 0.50)", script);
-        Assert.Contains("if ($captionSampleYpx -lt 1", script);
+        // X and Y bounds are one multi-line PowerShell condition:
+        // the X check starts the if, then Y follows on the next line.
+        Assert.Contains("if ($captionSampleXpx -lt 1", script);
+        Assert.Contains("$captionSampleXpx -ge $actualWidth - 1 -or", script);
+        Assert.Contains("$captionSampleYpx -lt 1 -or", script);
+        Assert.Contains("$captionSampleYpx -ge $captionHeightPx - 1)", script);
         var screen = script.IndexOf("$graphics.CopyFromScreen(", StringComparison.Ordinal);
         var pixel = script.IndexOf("$bitmap.GetPixel($captionSampleXpx, $captionSampleYpx)",
             screen, StringComparison.Ordinal);
