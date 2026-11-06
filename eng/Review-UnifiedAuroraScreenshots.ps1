@@ -63,6 +63,7 @@ $expectedTitles = @{
 $manifestData = @{}
 $manifestDpi = @{}
 $topEntries = @{}
+$captureSessions = @{}
 $declaredSha = ''
 $hasMissingDeclaration = $false
 foreach ($lang in @('ru','en')) {
@@ -85,6 +86,8 @@ foreach ($lang in @('ru','en')) {
     $entries = @{}
     $dpis = @{}
     $observedDpi = $null
+    $observedSession = ''
+    $hasLegacySession = $false
     foreach ($entry in $rows) {
         if ($null -eq $entry -or $entry -isnot [pscustomobject]) {
             throw "The $lang capture manifest contains a non-record JSON value."
@@ -99,6 +102,21 @@ foreach ($lang in @('ru','en')) {
         if ($seen.ContainsKey($key)) { throw "Duplicate $lang screenshot entry: $key" }
         $seen[$key] = $true
         $entries[$key] = $entry
+        # Old manifests without the new per-run token remain readable, but
+        # cannot be represented as having verified capture-session continuity.
+        $sessionProperty = $entry.PSObject.Properties['captureSessionId']
+        $sessionId = if ($null -eq $sessionProperty) { '' } else { [string]$sessionProperty.Value }
+        if ($sessionId -and $sessionId -cnotmatch '^[0-9a-fA-F]{8}(-[0-9a-fA-F]{4}){3}-[0-9a-fA-F]{12}$') {
+            throw "Invalid local capture session ID: $lang $key."
+        }
+        if ($sessionId) {
+            if ($observedSession -and $observedSession -cne $sessionId) {
+                throw "Mixed capture-session IDs within $lang top pages."
+            }
+            $observedSession = $sessionId
+        } else {
+            $hasLegacySession = $true
+        }
         if ([string]$entry.operatorSelectedLanguage -cne $lang -or
             [string]$entry.verifiedSelectedLanguage -cne $(if($lang -eq 'ru'){'Русский'}else{'English'})) {
             throw "Unverified language label for $lang $key."
@@ -177,6 +195,10 @@ foreach ($lang in @('ru','en')) {
     $manifestData[$lang] = $seen
     $manifestDpi[$lang] = $dpis
     $topEntries[$lang] = $entries
+    if ($observedSession -and $hasLegacySession) {
+        throw "New and legacy capture-session evidence mixed within $lang top pages."
+    }
+    $captureSessions[$lang] = $observedSession
 }
 # Never show RU/EN captures side-by-side as directly comparable if their
 # measured physical DPI differs. A separate review root is required per scale.
@@ -235,6 +257,15 @@ foreach ($lang in @('ru','en')) {
                 $bottomEntry.verifiedOuterScrollPercentAtLeast98 -isnot [bool] -or
                 -not $bottomEntry.verifiedOuterScrollPercentAtLeast98) {
                 throw "Bottom fold is not verified by capture UI Automation: $lang $key."
+            }
+            $bottomSessionProperty = $bottomEntry.PSObject.Properties['captureSessionId']
+            $bottomSessionId = if ($null -eq $bottomSessionProperty) {
+                ''
+            } else {
+                [string]$bottomSessionProperty.Value
+            }
+            if ($bottomSessionId -cne $captureSessions[$lang]) {
+                throw "Bottom/top capture-session continuity mismatch: $lang $key."
             }
             # Bottom evidence must match the top capture's declared source,
             # physical viewport and DPI. This does not prove process identity.
@@ -329,6 +360,15 @@ if ($declaredSha) {
 }
 $present = 0
 $bottomPresent = 0
+foreach ($lang in @('ru','en')) {
+    if ($captureSessions[$lang]) {
+        [void]$html.Add('<p>' + $lang.ToUpperInvariant() +
+            ': local capture-session token consistent across top pages (not authenticated).</p>')
+    } else {
+        [void]$html.Add('<p>' + $lang.ToUpperInvariant() +
+            ': legacy capture session NOT VERIFIED; source metadata cannot establish run continuity.</p>')
+    }
+}
 foreach ($page in $pages) {
     [void]$html.Add('<section><h2>' + $page + '</h2>')
     foreach ($width in $widths) {
