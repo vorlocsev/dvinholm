@@ -1186,7 +1186,7 @@
                                                 <TextBlock x:Name="DtcStatusHeading" Grid.Column="2" Text="Статус" FontWeight="SemiBold" TextWrapping="Wrap" />
                                             </Grid>
                                             <TextBlock x:Name="DtcTableSummary" Text="Коды не считывались в текущем диагностическом контексте." Foreground="#9CD8ED" TextWrapping="Wrap" />
-                                            <ListView x:Name="DtcRecordsView" Height="260" SelectionMode="Single" SelectionChanged="DtcRecordsView_SelectionChanged" AutomationProperties.Name="Коды неисправностей выбранного ECU" ToolTipService.ToolTip="Только реально считанные DTC одного ECU. Нет подтверждённого словаря причин Volvo.">
+                                            <ListView x:Name="DtcRecordsView" Height="260" Visibility="Collapsed" SelectionMode="Single" SelectionChanged="DtcRecordsView_SelectionChanged" AutomationProperties.Name="Коды неисправностей выбранного ECU" ToolTipService.ToolTip="Только реально считанные DTC одного ECU. Нет подтверждённого словаря причин Volvo.">
                                                 <ListView.ItemTemplate>
                                                     <DataTemplate>
                                                         <Grid ColumnSpacing="8" Padding="0,9,0,9">
