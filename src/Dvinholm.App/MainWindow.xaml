@@ -500,7 +500,7 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <!-- Actual Dvinholm scenic banner, already included in the application package.
-                         Northern-light ribbons remain decorative and must never imply CAN state. -->
+                         A stronger navy mask keeps the printed banner wordmark behind the live page heading. Northern-light ribbons remain decorative, never CAN state. -->
                     <Border x:Name="AuroraHeaderArtwork" Grid.RowSpan="2" Grid.ColumnSpan="2"
                             Margin="-12,-8,-12,-8" CornerRadius="12" BorderThickness="1"
                             BorderBrush="#326A8D" IsHitTestVisible="False">
@@ -512,15 +512,15 @@
                             <Rectangle>
                                 <Rectangle.Fill>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#EC07182C" Offset="0" />
-                                        <GradientStop Color="#DA09203A" Offset="0.42" />
-                                        <GradientStop Color="#910B2138" Offset="0.74" />
-                                        <GradientStop Color="#660B1930" Offset="1" />
+                                        <GradientStop Color="#FA07182C" Offset="0" />
+                                        <GradientStop Color="#F209203A" Offset="0.42" />
+                                        <GradientStop Color="#E60B2138" Offset="0.74" />
+                                        <GradientStop Color="#C90B1930" Offset="1" />
                                     </LinearGradientBrush>
                                 </Rectangle.Fill>
                             </Rectangle>
                             <Viewbox HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Stretch="Fill"
-                                     Opacity="0.32">
+                                     Opacity="0.48">
                                 <Canvas Width="920" Height="145">
                                     <Path Data="M200,21 C345,1 445,63 587,17 C682,-10 772,34 902,11"
                                           Stroke="#19E5BD" StrokeThickness="22" Opacity="0.50" Fill="Transparent" />
