@@ -153,3 +153,18 @@ VIDA XML, VIN/PIN or CEM dumps; no Virtual Car release publication.
 
 Related design in the independent lab repository:
 docs/architecture/VIRTUALCAR-CORE-SQLITE-V1.md (proposed).
+
+## Persistent development state across chats
+
+The **canonical progress record** lives in the independent lab repository, not
+inside ChatGPT memory or an old discussion:
+
+- https://github.com/vorlocsev/virtualcar/blob/development/docs/project/STATUS.md
+- https://github.com/vorlocsev/virtualcar/blob/development/docs/project/ROADMAP.md
+- https://github.com/vorlocsev/virtualcar/blob/development/docs/project/NEXT_CHAT.md
+- https://github.com/vorlocsev/virtualcar/issues/60
+
+These files must be updated with a PR/CI result at each stage. Future chats
+should read them from GitHub first and check live PR/CI before continuing.
+Dvinholm remains the primary product; all lab dependencies must remain
+optional for its production and Stable builds.
