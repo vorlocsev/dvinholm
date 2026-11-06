@@ -149,6 +149,10 @@ public sealed partial class MainWindow
         AutomationProperties.SetName(DtcRecordsView,
             L("Коды неисправностей выбранного ECU",
                 "Fault codes from the selected ECU"));
+
+        ToolTipService.SetToolTip(DtcRecordsView, L(
+            "Только действительно считанные DTC выбранного ECU. Проверенного каталога причин неисправностей пока нет.",
+            "Only DTCs actually read from the selected ECU. No verified fault-cause catalog is available."));
         RefreshAuroraDtcTableLocalization();
 
         DiagnosticsAddressHeading.Text = L("Адресация выбранного ECU",
@@ -185,6 +189,22 @@ public sealed partial class MainWindow
         UdsResponseId.Header = L("Адрес ответа · RX", "Response CAN ID · RX");
         UdsDid.Header = L("Параметр DID · hex", "DID (hex)");
         CanIdFormat.Header = L("Формат CAN ID", "CAN ID format");
+
+        // These controls already expose truthful J2534/UDS guidance in XAML,
+        // but XAML text is fixed to one language. Project the same safety
+        // boundaries on every RU/EN switch without touching connection state.
+        ToolTipService.SetToolTip(CanIdFormat, L(
+            "Выберите формат CAN до подключения. Для изменения физического канала необходимо переподключение.",
+            "Select CAN ID format before connecting. Reconnect to change the physical channel."));
+        ToolTipService.SetToolTip(AdapterMetadataText, L(
+            "Непроверенные сведения драйвера J2534. Они не подтверждают ECU, автомобиль или полномочия доступа.",
+            "Unverified J2534 driver information. It does not establish ECU or vehicle identity or authorization."));
+        ToolTipService.SetToolTip(UdsRequestId, L(
+            "Адрес запроса по умолчанию не выбран. Введите самостоятельно проверенный TX ID. Пассивный поиск его не подтверждает.",
+            "No request ID is selected by default. Enter a source-verified TX ID; passive discovery cannot verify it."));
+        ToolTipService.SetToolTip(UdsResponseId, L(
+            "Введите проверенный RX ID или явно выберите наблюдаемый ответ. Наблюдение не подтверждает идентичность ECU.",
+            "Enter a verified RX ID or explicitly select an observed response. Observation alone does not identify an ECU."));
 
         CanMonitorHeading.Text = L("Поток CAN", "CAN traffic");
         CanMonitorIntro.Text = L(
@@ -227,6 +247,16 @@ public sealed partial class MainWindow
         CompareSnapshotsButton.Content = L("Сравнить снимки",
             "Compare snapshots");
 
+        ToolTipService.SetToolTip(CaptureSnapshotButton, L(
+            "Читает DID выбранного профиля и сохраняет диагностический JSON только после явного действия. Это не резервная копия для восстановления ECU.",
+            "Read selected profile DIDs and explicitly save a diagnostic JSON file. This is not a restorable ECU backup."));
+        ToolTipService.SetToolTip(InspectSnapshotButton, L(
+            "Офлайн-просмотр локального DID JSON, без CAN-запросов и восстановления ECU.",
+            "Inspect local DID JSON offline without CAN requests or ECU restoration."));
+        ToolTipService.SetToolTip(CompareSnapshotsButton, L(
+            "Сравнить два локальных снимка. Показываются изменённые номера DID, а не их содержимое.",
+            "Compare two local snapshots. Show changed DID numbers, not their payloads."));
+
         StartButton.Content = _monitorTask is null
             ? L("Начать мониторинг", "Start monitor")
             : L("Остановить мониторинг", "Stop monitor");
@@ -243,6 +273,10 @@ public sealed partial class MainWindow
             "Diagnostic read result · review before sharing");
         ClearDiagnosticResultButton.Content = L("Очистить результат",
             "Clear diagnostic result");
+
+        ToolTipService.SetToolTip(ClearDiagnosticResultButton, L(
+            "Очистить последний локальный результат VIN/DID/DTC и игнорировать ожидающий ответ. Не обращается к ECU.",
+            "Clear the last local VIN/DID/DTC result and ignore pending data. Does not contact the ECU."));
         ReadDidButton.Content = L("Прочитать DID", "Read DID");
         ReadVinButton.Content = L("Прочитать VIN", "Read VIN");
         DiscoverButton.Content = L("Найти блоки", "Discover ECUs");
