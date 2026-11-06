@@ -403,4 +403,32 @@ public sealed class AuroraLiveScreenshotCaptureContracts
                 (string?)control.Attribute("Style"));
         }
     }
+
+    [Fact]
+    public void OnePerInvocationCaptureTokenIsWrittenToBothTopAndBottomManifests()
+    {
+        var script = Capture();
+        Assert.Contains("$captureSessionId = [guid]::NewGuid().ToString('D')", script);
+        Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(
+            script, @"captureSessionId = \$captureSessionId").Count);
+        var tokenCreation = script.IndexOf("$captureSessionId = [guid]::NewGuid().ToString('D')",
+            StringComparison.Ordinal);
+        var pageLoop = script.IndexOf("foreach ($page in $Pages)", StringComparison.Ordinal);
+        var bottom = script.IndexOf("scrollPosition = 'bottom'", pageLoop,
+            StringComparison.Ordinal);
+        var top = script.IndexOf("measuredWidthDip =", bottom, StringComparison.Ordinal);
+        Assert.True(tokenCreation >= 0 && pageLoop > tokenCreation &&
+            bottom > pageLoop && top > bottom);
+    }
+
+    [Fact]
+    public void CaptureSessionTokenDoesNotAuthorizeDiagnosticActions()
+    {
+        var script = Capture();
+        Assert.Contains("not signed identity evidence, authentication", script);
+        Assert.DoesNotContain("PassThruOpen(", script);
+        Assert.DoesNotContain("ReadCemPin(", script);
+        Assert.DoesNotContain("Invoke-WebRequest", script);
+    }
+
 }
