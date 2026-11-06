@@ -202,4 +202,98 @@ public sealed class AuroraPrivateReviewReportContracts
         Assert.DoesNotContain("Invoke-WebRequest", script);
         Assert.DoesNotContain("Copy-Item", script);
     }
+
+    // Stage 541: seven source guards for optional real-desktop bottom-fold review.
+    // These are NOT a claim that any screenshot was visually accepted.
+    [Fact]
+    public void BottomReviewIsOptionalAndNeverInventsMissingScreenEvidence()
+    {
+        var script = Script();
+        Assert.Contains("Aurora-{0}-bottom-capture-manifest.json", script);
+        Assert.Contains("if (Test-Path -LiteralPath $bottomManifestPath -PathType Leaf)", script);
+        Assert.Contains("$bottomData[$lang] = $seenBottom", script);
+        Assert.Contains("NOT RUN (missing bottom screenshot)", script);
+        Assert.DoesNotContain("visual PASS</figcaption>", script);
+    }
+
+    [Fact]
+    public void BottomManifestCanOnlyContainFourLongPagesWithMatchingTopCaptures()
+    {
+        var script = Script();
+        Assert.Contains("$bottomPages = @('CemPin','CemConfiguration','Dtc','Ecu')", script);
+        Assert.Contains("if ($bottomRows.Count -gt 4)", script);
+        Assert.Contains("$bottomPages -cnotcontains $page", script);
+        Assert.Contains("$seenBottom.ContainsKey($key)", script);
+        Assert.Contains("$topEntries[$lang].ContainsKey($key)", script);
+        Assert.Contains("Bottom screenshot has no verified matching top page:", script);
+        Assert.Contains("Duplicate bottom screenshot:", script);
+    }
+
+    [Fact]
+    public void BottomManifestRequiresActualScrollPatternEvidenceAndLocalizedIdentity()
+    {
+        var script = Script();
+        Assert.Contains("$bottomEntry.operatorSelectedLanguage -cne $lang", script);
+        Assert.Contains("$bottomEntry.verifiedVisibleWorkspaceTitle -cne", script);
+        Assert.Contains("$bottomEntry.scrollPosition -cne 'bottom'", script);
+        Assert.Contains("$bottomEntry.verifiedOuterScrollPercentAtLeast98 -isnot [bool]", script);
+        Assert.Contains("-not $bottomEntry.verifiedOuterScrollPercentAtLeast98", script);
+        Assert.Contains("Bottom fold is not verified by capture UI Automation:", script);
+    }
+
+    [Fact]
+    public void BottomEvidenceMustMatchItsTopViewportDpiAndOperatorCommit()
+    {
+        var script = Script();
+        Assert.Contains("$topEntries[$lang][$key]", script);
+        Assert.Contains("'requestedWidthDip','requestedHeightDip','actualWidthPx','actualHeightPx'", script);
+        Assert.Contains("'actualClientWidthPx','actualClientHeightPx','windowDpi'", script);
+        Assert.Contains("$bottomEntry.PSObject.Properties[$field]", script);
+        Assert.Contains("$topEntry.PSObject.Properties[$field].Value", script);
+        Assert.Contains("Bottom/top capture geometry or DPI differs:", script);
+        Assert.Contains("$bottomEntry.sourceCommitOperatorDeclared -cne", script);
+        Assert.Contains("Bottom/top operator-declared source commit differs:", script);
+    }
+
+    [Fact]
+    public void BottomPngMustExistAndAgreeWithManifestPixelDimensions()
+    {
+        var script = Script();
+        Assert.Contains("Aurora-$page-$lang-$fixedWidthDip-dip-bottom.png", script);
+        Assert.Contains("Unsafe or mismatched bottom screenshot filename:", script);
+        Assert.Contains("Test-Path -LiteralPath $bottomPng -PathType Leaf", script);
+        Assert.Contains("$bottomInfo.Length -gt 30000000", script);
+        Assert.Contains("$bottomSignature = @(137,80,78,71,13,10,26,10)", script);
+        Assert.Contains("Missing bottom PNG IHDR:", script);
+        Assert.Contains("$bottomPixelWidth -ne [int]$bottomEntry.actualWidthPx", script);
+        Assert.Contains("$bottomPixelHeight -ne [int]$bottomEntry.actualHeightPx", script);
+    }
+
+    [Fact]
+    public void ReportPairsEightOptionalBottomViewsWithoutImplyingVisualApproval()
+    {
+        var script = Script();
+        Assert.Contains("$bottomPresent = 0", script);
+        Assert.Contains("$bottomData[$lang].ContainsKey($key)", script);
+        Assert.Contains("Outer workspace bottom | separately captured and unreviewed", script);
+        Assert.Contains("bottom UIA verified | ", script);
+        Assert.Contains("Validated bottom-fold PNG/manifest pairs:", script);
+        Assert.Contains(" / 8. Missing is NOT RUN; present is NOT visual PASS.", script);
+        Assert.Contains("Bottom folds: last CEM PIN, configuration, DTC and ECU controls", script);
+    }
+
+    [Fact]
+    public void OptionalBottomReviewNeverUploadsImagesOrTouchesJ2534()
+    {
+        var script = Script();
+        Assert.Contains("The review directory must not be inside the Git repository.", script);
+        Assert.Contains("$lang + '/' + $bottomName", script);
+        Assert.DoesNotContain("Invoke-WebRequest", script);
+        Assert.DoesNotContain("Invoke-RestMethod", script);
+        Assert.DoesNotContain("Copy-Item", script);
+        Assert.DoesNotContain("data:image/", script);
+        Assert.DoesNotContain("PassThruOpen", script);
+        Assert.DoesNotContain("ReadCemPin", script);
+    }
+
 }
