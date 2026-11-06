@@ -388,6 +388,9 @@ public sealed class AuroraPrivateReviewReportContracts
         Assert.Contains("$entry.PSObject.Properties['nativeCaptionSampleXpx']", script);
         Assert.Contains("$entry.PSObject.Properties['nativeCaptionSampleYpx']", script);
         Assert.Contains("$captionSampleSet -ne 0 -and $captionSampleSet -ne 3", script);
+        Assert.Contains("$captionSampleSet++", script);
+        Assert.Contains("$captionXProp.Value -isnot [int] -and $captionXProp.Value -isnot [long]", script);
+        Assert.Contains("$captionYProp.Value -isnot [int] -and $captionYProp.Value -isnot [long]", script);
         Assert.Contains("Invalid native caption sample metadata:", script);
         Assert.Contains("Incomplete native caption sample metadata:", script);
         Assert.Contains("caption NOT SAMPLED", script);
