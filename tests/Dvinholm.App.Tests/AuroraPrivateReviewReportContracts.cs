@@ -341,4 +341,41 @@ public sealed class AuroraPrivateReviewReportContracts
         Assert.DoesNotContain("Start-BitsTransfer", script);
     }
 
+
+    [Fact]
+    public void ReviewDistinguishesLegacyAndUnprovenTopFoldsFromActualUiaEvidence()
+    {
+        var script = Script();
+        Assert.Contains("$entry.PSObject.Properties['verifiedOuterScrollPercentAtMost2']", script);
+        Assert.Contains("if ($null -ne $topProof -and $topProof.Value -isnot [bool])", script);
+        Assert.Contains("$topFolds[$key] = $topFoldVerified", script);
+        Assert.Contains("$topFoldEvidence[$lang] = $topFolds", script);
+        Assert.Contains("top position NOT VERIFIED", script);
+        Assert.Contains("outer top UIA verified", script);
+        Assert.Contains("top scroll not probed", script);
+        Assert.DoesNotContain("$entry.verifiedOuterScrollPercentAtMost2", script);
+    }
+
+    [Fact]
+    public void OnlyFourLongPagesMayClaimVerifiedOuterTopScroll()
+    {
+        var script = Script();
+        Assert.Contains("$bottomPages = @('CemPin','CemConfiguration','Dtc','Ecu')", script);
+        Assert.Contains("if ($topFoldVerified -and $bottomPages -cnotcontains $page)", script);
+        Assert.Contains("Unexpected top-fold scroll proof for non-long page:", script);
+        Assert.Contains("Invalid boolean outer top-fold evidence:", script);
+    }
+
+    [Fact]
+    public void FirstFoldProofIsNotPromotedToPixelOrVehicleAcceptance()
+    {
+        var script = Script();
+        Assert.Contains("$topPositionLabel + ' | visual NOT RUN", script);
+        Assert.Contains("NOT a visual PASS, not a vehicle/J2534 test.", script);
+        Assert.Contains(" / 12. Missing is NOT RUN; present is NOT visual PASS.", script);
+        Assert.DoesNotContain("Invoke-WebRequest", script);
+        Assert.DoesNotContain("Copy-Item", script);
+        Assert.DoesNotContain("ReadCemPin", script);
+    }
+
 }
