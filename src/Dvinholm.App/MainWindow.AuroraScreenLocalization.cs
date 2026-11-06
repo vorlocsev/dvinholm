@@ -31,9 +31,9 @@ public sealed partial class MainWindow
         ToolTipService.SetToolTip(P2PinReviewButton, L(
             "Только справочная проверка; без поиска PIN, авторизации или запросов к автомобилю.",
             "Evidence checklist only. No PIN attempts, authentication or vehicle requests."));
-        ToolTipService.SetToolTip(CemPartPrerequisiteButton, L(
-            "Только локальная проверка состояния приложения, без CAN или J2534 запросов.",
-            "Inspect local application state only. No CAN or J2534 requests."));
+        // The CEM prerequisite caption/tooltip belong to
+        // RefreshCemPrerequisitePresentation, which runs after this projection
+        // and after the user's local-inspection click. Do not duplicate it.
 
         EcuToolsTitle.Text = L("Дополнительные инструменты ECU", "ECU tools");
         EcuToolsIntro.Text = L(
