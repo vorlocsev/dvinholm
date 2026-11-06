@@ -62,6 +62,7 @@ $expectedTitles = @{
 }
 $manifestData = @{}
 $manifestDpi = @{}
+$topEntries = @{}
 $declaredSha = ''
 $hasMissingDeclaration = $false
 foreach ($lang in @('ru','en')) {
@@ -81,6 +82,7 @@ foreach ($lang in @('ru','en')) {
     $rows = @($decoded)
     if ($rows.Count -gt 6) { throw 'Unexpected extra records in fixed-viewport screenshot manifest.' }
     $seen = @{}
+    $entries = @{}
     $dpis = @{}
     $observedDpi = $null
     foreach ($entry in $rows) {
@@ -96,6 +98,7 @@ foreach ($lang in @('ru','en')) {
         $key = "$page/$width"
         if ($seen.ContainsKey($key)) { throw "Duplicate $lang screenshot entry: $key" }
         $seen[$key] = $true
+        $entries[$key] = $entry
         if ([string]$entry.operatorSelectedLanguage -cne $lang -or
             [string]$entry.verifiedSelectedLanguage -cne $(if($lang -eq 'ru'){'Русский'}else{'English'})) {
             throw "Unverified language label for $lang $key."
@@ -173,6 +176,7 @@ foreach ($lang in @('ru','en')) {
     }
     $manifestData[$lang] = $seen
     $manifestDpi[$lang] = $dpis
+    $topEntries[$lang] = $entries
 }
 # Never show RU/EN captures side-by-side as directly comparable if their
 # measured physical DPI differs. A separate review root is required per scale.
@@ -189,6 +193,111 @@ foreach ($page in $pages) {
 if ($declaredSha -and $hasMissingDeclaration) {
     throw 'Some screenshots lack the operator-declared commit while others declare it.'
 }
+
+# The capture tool records bottom folds separately; never infer their presence
+# from top PNGs or from the operator's scroll checkbox. Both languages may
+# independently omit bottom evidence, which the HTML must label NOT RUN.
+$bottomPages = @('CemPin','CemConfiguration','Dtc','Ecu')
+$bottomData = @{}
+foreach ($lang in @('ru','en')) {
+    $seenBottom = @{}
+    $directory = Join-Path $root $lang
+    $bottomManifestPath = Join-Path $directory ("Aurora-{0}-bottom-capture-manifest.json" -f $lang)
+    if (Test-Path -LiteralPath $bottomManifestPath -PathType Leaf) {
+        $decodedBottom = Get-Content -LiteralPath $bottomManifestPath -Raw -Encoding UTF8 | ConvertFrom-Json
+        if ($null -eq $decodedBottom -or $decodedBottom -isnot [System.Array]) {
+            throw "The $lang bottom capture manifest must be a JSON array."
+        }
+        $bottomRows = @($decodedBottom)
+        if ($bottomRows.Count -gt 4) {
+            throw "Unexpected extra bottom records for $lang."
+        }
+        foreach ($bottomEntry in $bottomRows) {
+            if ($null -eq $bottomEntry -or $bottomEntry -isnot [pscustomobject]) {
+                throw "Non-record bottom capture evidence for $lang."
+            }
+            $page = [string]$bottomEntry.page
+            $key = "$page/$fixedWidthDip"
+            if ($bottomPages -cnotcontains $page) {
+                throw "Unexpected bottom page for $lang."
+            }
+            if ($seenBottom.ContainsKey($key)) {
+                throw "Duplicate bottom screenshot: $lang $key."
+            }
+            if (-not $topEntries[$lang].ContainsKey($key)) {
+                throw "Bottom screenshot has no verified matching top page: $lang $key."
+            }
+            $topEntry = $topEntries[$lang][$key]
+            if ([string]$bottomEntry.operatorSelectedLanguage -cne $lang -or
+                [string]$bottomEntry.verifiedVisibleWorkspaceTitle -cne
+                    [string]$expectedTitles[$lang][$page] -or
+                [string]$bottomEntry.scrollPosition -cne 'bottom' -or
+                $bottomEntry.verifiedOuterScrollPercentAtLeast98 -isnot [bool] -or
+                -not $bottomEntry.verifiedOuterScrollPercentAtLeast98) {
+                throw "Bottom fold is not verified by capture UI Automation: $lang $key."
+            }
+            # The bottom view must come from the same executable session,
+            # physical viewport and DPI as its validated top screenshot.
+            foreach ($field in @(
+                'requestedWidthDip','requestedHeightDip','actualWidthPx','actualHeightPx',
+                'actualClientWidthPx','actualClientHeightPx','windowDpi')) {
+                $property = $bottomEntry.PSObject.Properties[$field]
+                if ($null -eq $property -or
+                    [string]$property.Value -cne
+                        [string]$topEntry.PSObject.Properties[$field].Value) {
+                    throw "Bottom/top capture geometry or DPI differs: $lang $key ($field)."
+                }
+            }
+            if ([string]$bottomEntry.sourceCommitOperatorDeclared -cne
+                [string]$topEntry.sourceCommitOperatorDeclared) {
+                throw "Bottom/top operator-declared source commit differs: $lang $key."
+            }
+            $bottomName = "Aurora-$page-$lang-$fixedWidthDip-dip-bottom.png"
+            if ([string]$bottomEntry.file -cne $bottomName) {
+                throw "Unsafe or mismatched bottom screenshot filename: $lang $key."
+            }
+            $bottomPng = Join-Path $directory $bottomName
+            if (-not (Test-Path -LiteralPath $bottomPng -PathType Leaf)) {
+                throw "Bottom manifest refers to a missing PNG: $lang $key."
+            }
+            $bottomInfo = Get-Item -LiteralPath $bottomPng
+            if ($bottomInfo.Length -lt 24 -or $bottomInfo.Length -gt 30000000) {
+                throw "Bottom PNG outside safe review size: $lang $key."
+            }
+            $bottomBuffer = New-Object byte[] 24
+            $bottomStream = [IO.File]::OpenRead($bottomPng)
+            try {
+                if ($bottomStream.Read($bottomBuffer,0,24) -ne 24) {
+                    throw "Unreadable bottom PNG: $lang $key."
+                }
+            }
+            finally { $bottomStream.Dispose() }
+            $bottomSignature = @(137,80,78,71,13,10,26,10)
+            for ($i=0; $i -lt 8; $i++) {
+                if ($bottomBuffer[$i] -ne $bottomSignature[$i]) {
+                    throw "Invalid bottom PNG signature: $lang $key."
+                }
+            }
+            if ($bottomBuffer[12] -ne 73 -or $bottomBuffer[13] -ne 72 -or
+                $bottomBuffer[14] -ne 68 -or $bottomBuffer[15] -ne 82) {
+                throw "Missing bottom PNG IHDR: $lang $key."
+            }
+            $bottomPixelWidth = [int64]$bottomBuffer[16]*16777216 +
+                [int64]$bottomBuffer[17]*65536 + [int64]$bottomBuffer[18]*256 +
+                [int64]$bottomBuffer[19]
+            $bottomPixelHeight = [int64]$bottomBuffer[20]*16777216 +
+                [int64]$bottomBuffer[21]*65536 + [int64]$bottomBuffer[22]*256 +
+                [int64]$bottomBuffer[23]
+            if ($bottomPixelWidth -ne [int]$bottomEntry.actualWidthPx -or
+                $bottomPixelHeight -ne [int]$bottomEntry.actualHeightPx) {
+                throw "Bottom PNG pixel dimensions mismatch: $lang $key."
+            }
+            $seenBottom[$key] = $true
+        }
+    }
+    $bottomData[$lang] = $seenBottom
+}
+
 $html = New-Object System.Collections.Generic.List[string]
 $manualChecks = @(
     'Banner / emblem / Aurora colors versus approved image',
@@ -198,7 +307,8 @@ $manualChecks = @(
     'Updates: real version, channel and safe non-installable actions',
     'CEM PIN/configuration: honest evidence and disabled write actions',
     'DTC/ECU: table captions, schematic disclaimers and wrapping',
-    'No clipped actions, missing footer or unintended horizontal scrolling'
+    'No clipped actions, missing footer or unintended horizontal scrolling',
+    'Bottom folds: last CEM PIN, configuration, DTC and ECU controls fully readable'
 )
 [void]$html.Add('<!doctype html><html lang="en"><meta charset="utf-8">')
 [void]$html.Add('<meta name="viewport" content="width=device-width,initial-scale=1">')
@@ -218,6 +328,7 @@ if ($declaredSha) {
     [void]$html.Add('<p>No source commit authenticated or operator-declared.</p>')
 }
 $present = 0
+$bottomPresent = 0
 foreach ($page in $pages) {
     [void]$html.Add('<section><h2>' + $page + '</h2>')
     foreach ($width in $widths) {
@@ -240,11 +351,34 @@ foreach ($page in $pages) {
         }
         [void]$html.Add('</div>')
     }
+    if ($bottomPages -ccontains $page) {
+        [void]$html.Add('<h3>Outer workspace bottom | separately captured and unreviewed</h3><div class="pair">')
+        foreach ($lang in @('ru','en')) {
+            $key = "$page/$fixedWidthDip"
+            if ($bottomData[$lang].ContainsKey($key)) {
+                $bottomName = "Aurora-$page-$lang-$fixedWidthDip-dip-bottom.png"
+                $dpi = $manifestDpi[$lang][$key]
+                $scale = [Math]::Round($dpi * 100.0 / 96.0)
+                [void]$html.Add('<figure><figcaption>' + $lang.ToUpperInvariant() +
+                    ' | bottom UIA verified | ' + $dpi + ' DPI (about ' + $scale +
+                    '%) | visual NOT RUN</figcaption><img alt="' + $page +
+                    ' ' + $lang + ' bottom" src="' + $lang + '/' + $bottomName +
+                    '"></figure>')
+                $bottomPresent++
+            } else {
+                [void]$html.Add('<figure class="missing">' + $lang.ToUpperInvariant() +
+                    ' | NOT RUN (missing bottom screenshot)</figure>')
+            }
+        }
+        [void]$html.Add('</div>')
+    }
     [void]$html.Add('</section>')
 }
 $html.Insert(6,'<p>Validated local PNG/manifest pairs: ' + $present +
     ' / 12. Missing is NOT RUN; present is NOT visual PASS.</p>')
+$html.Insert(7,'<p>Validated bottom-fold PNG/manifest pairs: ' + $bottomPresent +
+    ' / 8. Missing is NOT RUN; present is NOT visual PASS.</p>')
 [void]$html.Add('</html>')
 [IO.File]::WriteAllText($output,($html -join [Environment]::NewLine),
     [Text.UTF8Encoding]::new($false))
-Write-Host "Local report created: $output. Validated images: $present/12. No upload."
+Write-Host "Local report created: $output. Validated top images: $present/12; bottom images: $bottomPresent/8. No upload."
