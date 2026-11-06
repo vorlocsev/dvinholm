@@ -634,4 +634,34 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.DoesNotContain("SetScrollPercent(", top);
     }
 
+
+    [Fact]
+    public void NativeCaptionSampleIsInsideMeasuredNonClientRegionAndFromRealPixels()
+    {
+        var script = Capture();
+        Assert.Contains("$captionHeightPx = $clientBounds.Top - $rect.Top", script);
+        Assert.Contains("$captionSampleXpx = [int][Math]::Floor($actualWidth * 0.52)", script);
+        Assert.Contains("$captionSampleYpx = [int][Math]::Floor($captionHeightPx * 0.50)", script);
+        Assert.Contains("if ($captionSampleYpx -lt 1", script);
+        var screen = script.IndexOf("$graphics.CopyFromScreen(", StringComparison.Ordinal);
+        var pixel = script.IndexOf("$bitmap.GetPixel($captionSampleXpx, $captionSampleYpx)",
+            screen, StringComparison.Ordinal);
+        var save = script.IndexOf("$bitmap.Save($dest", pixel, StringComparison.Ordinal);
+        var manifest = script.IndexOf("observedNativeCaptionSampleHex = $nativeCaptionSampleHex",
+            save, StringComparison.Ordinal);
+        Assert.True(screen >= 0 && pixel > screen && save > pixel && manifest > save);
+    }
+
+    [Fact]
+    public void NativeCaptionSamplingDoesNotIntroduceDwmWritesOrPermissionEscalation()
+    {
+        var script = Capture();
+        Assert.DoesNotContain("DwmSetWindowAttribute", script);
+        Assert.DoesNotContain("SetWindowLong(", script);
+        Assert.DoesNotContain("SetWindowPos(", script);
+        Assert.DoesNotContain("PassThruOpen(", script);
+        Assert.Contains("IConfirmOfflineNoSecrets", script);
+        Assert.Contains("real desktop viewport only; manual privacy and visual review", script);
+    }
+
 }
