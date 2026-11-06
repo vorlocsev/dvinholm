@@ -85,9 +85,21 @@ public sealed class AuroraUpdatesFirstFoldFocusTests
         var method = Navigation();
         var choose = method.IndexOf("SidebarUpdatesButton.Focus(FocusState.Programmatic);",
             StringComparison.Ordinal);
-        var reset = method.IndexOf("WorkspaceScroll.ChangeView(null, 0, null);",
+        var reset = method.IndexOf("ResetWorkspaceFirstFoldAfterNavigation();",
             StringComparison.Ordinal);
         Assert.True(choose >= 0 && reset > choose);
+        // The shared helper owns both the immediate reset and a guarded
+        // post-layout correction; the Updates handler must call it after focus.
+        var main = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        var helper = main.IndexOf("private void ResetWorkspaceFirstFoldAfterNavigation()",
+            StringComparison.Ordinal);
+        var navigation = main.IndexOf("private void DashboardNavigate(", helper,
+            StringComparison.Ordinal);
+        Assert.True(helper >= 0 && navigation > helper);
+        var logic = main[helper..navigation];
+        Assert.Contains("WorkspaceScroll.ChangeView(null, 0, null);", logic);
+        Assert.Contains("DispatcherQueuePriority.Low", logic);
+        Assert.Contains("generation != _workspaceFirstFoldGeneration", logic);
         var scroll = Named(Layout(), "WorkspaceScroll");
         Assert.Equal("Auto", (string?)scroll.Attribute("VerticalScrollBarVisibility"));
         Assert.Equal("Disabled", (string?)scroll.Attribute("HorizontalScrollBarVisibility"));
