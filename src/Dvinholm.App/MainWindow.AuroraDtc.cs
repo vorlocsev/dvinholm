@@ -1,4 +1,5 @@
 using System.Collections.ObjectModel;
+using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 
 namespace Dvinholm.App;
@@ -73,6 +74,11 @@ public sealed partial class MainWindow
     {
         _lastAuroraDtcRead = null;
         _auroraDtcRows.Clear();
+        // A fixed 260-DIP ListView with no records occupied most of the DTC
+        // first fold at 200% DPI. Keep its header and summary, but remove
+        // the empty rows region until a real DTC read supplies records.
+        if (DtcRecordsView is not null)
+            DtcRecordsView.Visibility = Visibility.Collapsed;
         if (DtcTableSummary is not null)
             DtcTableSummary.Text = L(
                 "Коды не считывались в текущем диагностическом контексте.",
@@ -95,6 +101,7 @@ public sealed partial class MainWindow
             return;
         if (_lastAuroraDtcRead is not { } result)
         {
+            DtcRecordsView.Visibility = Visibility.Collapsed;
             DtcTableSummary.Text = L(
                 "Коды не считывались в текущем диагностическом контексте.",
                 "No DTCs read in the current diagnostic context.");
@@ -108,6 +115,10 @@ public sealed partial class MainWindow
         var rows = AuroraDtcTableProjection.Project(result, _unifiedEnglish);
         _auroraDtcRows.Clear();
         foreach (var row in rows) _auroraDtcRows.Add(row);
+        // Zero is not proof of a fault-free car. The summary remains
+        // explicit even when the empty results list is collapsed.
+        DtcRecordsView.Visibility = rows.Count == 0
+            ? Visibility.Collapsed : Visibility.Visible;
         DtcTableSummary.Text = result.Records.Count == 0
             ? L(
                 "ECU вернул 0 записей для выбранного фильтра. Это не доказывает отсутствие неисправностей.",
