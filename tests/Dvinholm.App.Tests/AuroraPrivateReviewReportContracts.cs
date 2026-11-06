@@ -370,12 +370,38 @@ public sealed class AuroraPrivateReviewReportContracts
     public void FirstFoldProofIsNotPromotedToPixelOrVehicleAcceptance()
     {
         var script = Script();
-        Assert.Contains("$topPositionLabel + ' | visual NOT RUN", script);
+        Assert.Contains("$topPositionLabel + ' | ' + $captionText +", script);
+        Assert.Contains("' | visual NOT RUN</figcaption>", script);
         Assert.Contains("NOT a visual PASS, not a vehicle/J2534 test.", script);
         Assert.Contains(" / 12. Missing is NOT RUN; present is NOT visual PASS.", script);
         Assert.DoesNotContain("Invoke-WebRequest", script);
         Assert.DoesNotContain("Copy-Item", script);
         Assert.DoesNotContain("ReadCemPin", script);
+    }
+
+
+    [Fact]
+    public void CaptionSampleIsOptionalForLegacyReviewsAndStrictlyValidatedWhenPresent()
+    {
+        var script = Script();
+        Assert.Contains("$entry.PSObject.Properties['observedNativeCaptionSampleHex']", script);
+        Assert.Contains("$entry.PSObject.Properties['nativeCaptionSampleXpx']", script);
+        Assert.Contains("$entry.PSObject.Properties['nativeCaptionSampleYpx']", script);
+        Assert.Contains("$captionSampleSet -ne 0 -and $captionSampleSet -ne 3", script);
+        Assert.Contains("Invalid native caption sample metadata:", script);
+        Assert.Contains("Incomplete native caption sample metadata:", script);
+        Assert.Contains("caption NOT SAMPLED", script);
+    }
+
+    [Fact]
+    public void MeasuredCaptionPixelRemainsUnverifiedHumanVisualEvidence()
+    {
+        var script = Script();
+        Assert.Contains("caption RGB ", script);
+        Assert.Contains(" (one pixel only)", script);
+        Assert.Contains("' | visual NOT RUN</figcaption>", script);
+        Assert.Contains("PRIVATE LOCAL REPORT. NOT a visual PASS", script);
+        Assert.DoesNotContain("titleBarColorPASS", script);
     }
 
 }
