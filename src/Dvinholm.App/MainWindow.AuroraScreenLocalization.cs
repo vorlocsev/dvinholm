@@ -31,6 +31,9 @@ public sealed partial class MainWindow
         ToolTipService.SetToolTip(P2PinReviewButton, L(
             "Только справочная проверка; без поиска PIN, авторизации или запросов к автомобилю.",
             "Evidence checklist only. No PIN attempts, authentication or vehicle requests."));
+        ToolTipService.SetToolTip(CemPartPrerequisiteButton, L(
+            "Только локальная проверка состояния приложения, без CAN или J2534 запросов.",
+            "Inspect local application state only. No CAN or J2534 requests."));
 
         EcuToolsTitle.Text = L("Дополнительные инструменты ECU", "ECU tools");
         EcuToolsIntro.Text = L(
@@ -76,6 +79,12 @@ public sealed partial class MainWindow
         ToolTipService.SetToolTip(EcuOpenDiagnosticsButton, L(
             "Переход к диагностике не отправляет запросы к автомобилю.",
             "Navigating to diagnostics does not transmit vehicle requests."));
+        ToolTipService.SetToolTip(EcuSelector, L(
+            "Выбор ответа не отправляет запрос и не подтверждает предполагаемый адрес TX.",
+            "Selection does not send a request or verify the inferred TX address."));
+        ToolTipService.SetToolTip(EcusView, L(
+            "Только пассивно наблюдаемые ответы; идентичность ECU и адрес TX не подтверждены.",
+            "Passive response observations only. ECU identity and TX address are unverified."));
 
         DtcPageHeading.Text = L("Ошибки (DTC)", "Fault codes / DTC");
         DtcActionsHeading.Text = L(
@@ -99,6 +108,15 @@ public sealed partial class MainWindow
         ToolTipService.SetToolTip(DtcClearButton, L(
             "Стирание отключено: нет проверенного сервиса, доступа и восстановления.",
             "Clearing is disabled: no verified service, authorization or recovery."));
+        ToolTipService.SetToolTip(DtcStatusMaskSelector, L(
+            "Выберите бит статуса для одного чтения UDS 0x19/0x02. Это не подтверждает ECU и не стирает ошибки.",
+            "Choose the status bit for one read-only UDS 0x19/0x02 request. This does not verify ECU identity or clear faults."));
+        ToolTipService.SetToolTip(ReadDtcButton, L(
+            "Читать DTC только выбранного ECU с проверенными адресами TX/RX. Без стирания и сканирования всего автомобиля.",
+            "Read DTCs only from the selected ECU with verified TX/RX addresses. No clearing or full-vehicle scan."));
+        ToolTipService.SetToolTip(DtcCheckAddressesButton, L(
+            "Только переход к параметрам диагностики; запрос к автомобилю не отправляется.",
+            "Navigate to diagnostic addressing only. No vehicle request is sent."));
         DtcStatusMaskSelector.Header = L("Фильтр статуса DTC", "DTC status filter");
         // Refresh the WinUI ComboBox selection-box cache after relabeling.
         // Temporarily detach the diagnostic-context handler so a language
@@ -185,6 +203,12 @@ public sealed partial class MainWindow
         CanMonitorCsvButton.Content = L("Журнал CSV", "CSV log");
         CanRxSummaryButton.Content = L("Сводка RX", "RX summary");
         CanTraceInspectButton.Content = L("Анализ трассы", "Inspect trace");
+        ToolTipService.SetToolTip(CanRxSummaryButton, L(
+            "Сводка сохранённых RX ID и DLC без данных кадров. Копирование только по явному решению пользователя.",
+            "Review buffered RX ID and DLC counts without payloads. Copy only with explicit approval."));
+        ToolTipService.SetToolTip(CanTraceInspectButton, L(
+            "Офлайн-анализ выбранного CAN CSV или J2534 JSONL. Не подключает адаптер и не раскрывает содержимое кадров.",
+            "Offline review of a selected CAN CSV or J2534 JSONL. Does not connect or expose frame payloads."));
 
         ProfileSearch.Header = L("Найти профиль ECU", "Find ECU profile");
         ProfileSearch.PlaceholderText = L("Название, CAN ID, DID или источник",
