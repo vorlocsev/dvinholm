@@ -473,7 +473,9 @@ function Assert-WorkspaceScrollToEnd(
         throw "Unexpected scroll directions for $page; manual scroll review required."
     }
     $originalPercent = [double]$scroll.Current.VerticalScrollPercent
-    if ($originalPercent -lt 0 -or $originalPercent -gt 100) {
+    if ([double]::IsNaN($originalPercent) -or
+        [double]::IsInfinity($originalPercent) -or
+        $originalPercent -lt 0 -or $originalPercent -gt 100) {
         throw "Unverifiable starting scroll position for $page."
     }
 
@@ -529,7 +531,9 @@ function Assert-WorkspaceScrollToEnd(
         Start-Sleep -Milliseconds 600
         $atBottom = [double]$scroll.Current.VerticalScrollPercent
         $headerAfter = $header.Current.BoundingRectangle
-        if ($atBottom -lt 98 -or
+        if ([double]::IsNaN($atBottom) -or
+            [double]::IsInfinity($atBottom) -or
+            $atBottom -lt 98 -or $atBottom -gt 100 -or
             $header.Current.IsOffscreen -or
             -not (Test-ValidUiaBounds $headerAfter) -or
             [Math]::Abs($headerAfter.Y - $headerBefore.Y) -gt 4) {
@@ -548,7 +552,9 @@ function Assert-WorkspaceScrollToEnd(
             # Foreground/locale UIA rechecks must not silently move the
             # workspace away from its verified bottom before pixel capture.
             $captureScrollPercent = [double]$scroll.Current.VerticalScrollPercent
-            if ($captureScrollPercent -lt 98 -or
+            if ([double]::IsNaN($captureScrollPercent) -or
+                [double]::IsInfinity($captureScrollPercent) -or
+                $captureScrollPercent -lt 98 -or $captureScrollPercent -gt 100 -or
                 [Math]::Abs($captureScrollPercent - $atBottom) -gt 1) {
                 throw "Workspace moved before bottom pixels for $page; refusing mislabelled screenshot."
             }
@@ -617,13 +623,15 @@ function Assert-WorkspaceTopBeforePixels([string]$page) {
         throw "Top-fold scroll directions cannot be verified: $page."
     }
     $atTop = [double]$scroll.Current.VerticalScrollPercent
-    if ([double]::IsNaN($atTop) -or $atTop -lt 0 -or $atTop -gt 2) {
+    if ([double]::IsNaN($atTop) -or [double]::IsInfinity($atTop) -or
+        $atTop -lt 0 -or $atTop -gt 2) {
         throw "Top-fold position was not verified for $page (reported $atTop%)."
     }
     Confirm-WorkspaceState $page -RequireVisible
     # Do not silently move the page and mislabel the screenshot as observed top.
     $afterIdentity = [double]$scroll.Current.VerticalScrollPercent
-    if ([double]::IsNaN($afterIdentity) -or $afterIdentity -lt 0 -or
+    if ([double]::IsNaN($afterIdentity) -or
+        [double]::IsInfinity($afterIdentity) -or $afterIdentity -lt 0 -or
         $afterIdentity -gt 2) {
         throw "Top-fold moved during page identity verification: $page."
     }
