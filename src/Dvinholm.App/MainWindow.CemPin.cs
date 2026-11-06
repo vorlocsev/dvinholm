@@ -49,9 +49,11 @@ public sealed partial class MainWindow
         if (CemPartPrerequisiteButton is null) return;
         CemPartPrerequisiteButton.Content = L(
             "Проверить условия локально", "Inspect prerequisites locally");
+        // Single authoritative CEM tooltip for both locale changes and
+        // the explicit local-prerequisite action; no vehicle request is made.
         ToolTipService.SetToolTip(CemPartPrerequisiteButton, L(
-            "Только состояние приложения, без диагностических запросов.",
-            "Application state only; no diagnostic requests."));
+            "Только локальная проверка состояния приложения, без CAN или J2534 запросов.",
+            "Inspect local application state only. No CAN or J2534 requests."));
         CemPartPrerequisiteExpander.Header = L(
             "Результат проверки (без запросов)", "Preflight result (no requests)");
         CemPartPrerequisiteText.Text = _cemPartPrerequisitesInspected
