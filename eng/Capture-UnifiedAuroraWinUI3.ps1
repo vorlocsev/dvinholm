@@ -834,8 +834,8 @@ foreach ($page in $Pages) {
         # One local non-client pixel records whether the OS actually painted
         # a dark caption. Contrast, borders and controls still need human eyes.
         $nativeCaptionSample = $bitmap.GetPixel($captionSampleXpx, $captionSampleYpx)
-        $nativeCaptionSampleHex = '#{0:X2}{1:X2}{2:X2}' -f
-            $nativeCaptionSample.R, $nativeCaptionSample.G, $nativeCaptionSample.B
+        $nativeCaptionSampleHex = ('#{0:X2}{1:X2}{2:X2}' -f $nativeCaptionSample.R,
+            $nativeCaptionSample.G, $nativeCaptionSample.B)
         $bitmap.Save($dest, [System.Drawing.Imaging.ImageFormat]::Png)
     }
     finally { $bitmap.Dispose() }
