@@ -761,6 +761,20 @@ foreach ($page in $Pages) {
              $parkedCursor.Y -ge $clientBounds.Top -and $parkedCursor.Y -lt $clientBounds.Bottom)) {
             throw 'Cursor did not remain outside the Dvinholm client area; refusing screenshot.'
         }
+        # Native caption color cannot be established from a titlebar API
+        # setter alone. Sample the actual *screenshot* well away from the
+        # caption icon, system buttons and parked pointer. This is an
+        # observational RGB sample, NOT a claim of complete visual parity.
+        $captionHeightPx = $clientBounds.Top - $rect.Top
+        if ($captionHeightPx -lt 16 -or $captionHeightPx -gt 200) {
+            throw "Native caption sampling requires a measurable title bar (height $captionHeightPx px)."
+        }
+        $captionSampleXpx = [int][Math]::Floor($actualWidth * 0.52)
+        $captionSampleYpx = [int][Math]::Floor($captionHeightPx * 0.50)
+        if ($captionSampleXpx -lt 1 -or $captionSampleXpx -ge $actualWidth - 1 -or
+            $captionSampleYpx -lt 1 -or $captionSampleYpx -ge $captionHeightPx - 1) {
+            throw 'Caption sample would land outside the native non-client region.'
+        }
         Start-Sleep -Milliseconds 1100
         # Verify the exact localized workspace after the pointer settles.
         Confirm-WorkspaceState $page -RequireVisible
@@ -808,6 +822,7 @@ foreach ($page in $Pages) {
     if (Test-Path -LiteralPath $dest) {
         throw "File already exists: $filename. Select a new empty output directory."
     }
+    $nativeCaptionSampleHex = ''
     $bitmap = [System.Drawing.Bitmap]::new($actualWidth, $actualHeight)
     try {
         $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
@@ -816,6 +831,11 @@ foreach ($page in $Pages) {
                 [System.Drawing.CopyPixelOperation]::SourceCopy)
         }
         finally { $graphics.Dispose() }
+        # One local non-client pixel records whether the OS actually painted
+        # a dark caption. Contrast, borders and controls still need human eyes.
+        $nativeCaptionSample = $bitmap.GetPixel($captionSampleXpx, $captionSampleYpx)
+        $nativeCaptionSampleHex = '#{0:X2}{1:X2}{2:X2}' -f
+            $nativeCaptionSample.R, $nativeCaptionSample.G, $nativeCaptionSample.B
         $bitmap.Save($dest, [System.Drawing.Imaging.ImageFormat]::Png)
     }
     finally { $bitmap.Dispose() }
@@ -836,6 +856,9 @@ foreach ($page in $Pages) {
         windowDpi = $dpi
         captureSessionId = $captureSessionId
         verifiedOuterScrollPercentAtMost2 = $topFoldVerified
+        observedNativeCaptionSampleHex = $nativeCaptionSampleHex
+        nativeCaptionSampleXpx = $captionSampleXpx
+        nativeCaptionSampleYpx = $captionSampleYpx
         sourceCommitOperatorDeclared = $CommitSha
         screenshotUtc = [DateTime]::UtcNow.ToString('o')
         evidence = 'fixed real desktop viewport only; manual privacy and visual review still required'
