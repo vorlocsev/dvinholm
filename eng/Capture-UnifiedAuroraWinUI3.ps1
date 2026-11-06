@@ -590,6 +590,46 @@ function Assert-WorkspaceScrollToEnd(
     }
 }
 
+
+function Assert-WorkspaceTopBeforePixels([string]$page) {
+    # The app resets the first fold after navigation, but that request alone
+    # is not evidence that WinUI has actually completed the scroll.
+    # Read only the OUTER workspace UIA peer, never nested diagnostic lists.
+    if ($page -notin @('CemPin','CemConfiguration','Dtc','Ecu')) {
+        return $false
+    }
+    $condition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+        'DvinholmWorkspaceScroll')
+    $outer = $root.FindFirst(
+        [System.Windows.Automation.TreeScope]::Descendants, $condition)
+    if ($null -eq $outer) {
+        throw "Top-fold outer workspace UIA anchor unavailable: $page."
+    }
+    $rawPattern = $null
+    if (-not $outer.TryGetCurrentPattern(
+        [System.Windows.Automation.ScrollPattern]::Pattern, [ref]$rawPattern)) {
+        throw "Top-fold outer workspace ScrollPattern unavailable: $page."
+    }
+    $scroll = [System.Windows.Automation.ScrollPattern]$rawPattern
+    if (-not $scroll.Current.VerticallyScrollable -or
+        $scroll.Current.HorizontallyScrollable) {
+        throw "Top-fold scroll directions cannot be verified: $page."
+    }
+    $atTop = [double]$scroll.Current.VerticalScrollPercent
+    if ([double]::IsNaN($atTop) -or $atTop -lt 0 -or $atTop -gt 2) {
+        throw "Top-fold position was not verified for $page (reported $atTop%)."
+    }
+    Confirm-WorkspaceState $page -RequireVisible
+    # Do not silently move the page and mislabel the screenshot as observed top.
+    $afterIdentity = [double]$scroll.Current.VerticalScrollPercent
+    if ([double]::IsNaN($afterIdentity) -or $afterIdentity -lt 0 -or
+        $afterIdentity -gt 2) {
+        throw "Top-fold moved during page identity verification: $page."
+    }
+    return $true
+}
+
 function Invoke-OnlyNavigation([string]$page) {
     $name = $labels[$Language][$page]
     $condition = [System.Windows.Automation.PropertyCondition]::new(
@@ -747,6 +787,14 @@ foreach ($page in $Pages) {
             }
             Confirm-WorkspaceState $page -RequireVisible
         }
+    # Optional scroll mode must verify the actual first fold again AFTER
+    # bottom capture has restored the original position. No automatic
+    # scrolling here; if the app did not reset to top, refuse the labelled PNG.
+    $topFoldVerified = $false
+    if ($VerifyWorkspaceScroll -and
+        $page -in @('CemPin','CemConfiguration','Dtc','Ecu')) {
+        $topFoldVerified = Assert-WorkspaceTopBeforePixels $page
+    }
     $filename = "Aurora-$page-$Language-$fixedWidthDip-dip.png"
     $dest = Join-Path $output $filename
     if (Test-Path -LiteralPath $dest) {
@@ -779,6 +827,7 @@ foreach ($page in $Pages) {
         actualHeightPx = $actualHeight
         windowDpi = $dpi
         captureSessionId = $captureSessionId
+        verifiedOuterScrollPercentAtMost2 = $topFoldVerified
         sourceCommitOperatorDeclared = $CommitSha
         screenshotUtc = [DateTime]::UtcNow.ToString('o')
         evidence = 'fixed real desktop viewport only; manual privacy and visual review still required'
