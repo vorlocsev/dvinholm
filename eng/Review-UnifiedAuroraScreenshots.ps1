@@ -47,6 +47,7 @@ if (Test-Path -LiteralPath $output) {
 $pages = @('Connection','Updates','CemPin','CemConfiguration','Dtc','Ecu')
 $fixedWidthDip = 1280
 $fixedHeightDip = 800
+$bottomPages = @('CemPin','CemConfiguration','Dtc','Ecu')
 $widths = @($fixedWidthDip)
 # Trust neither the filename nor a merely nonempty title string. These must
 # match the actual six page titles assigned by the WinUI workspace presenter.
@@ -63,6 +64,7 @@ $expectedTitles = @{
 $manifestData = @{}
 $manifestDpi = @{}
 $topEntries = @{}
+$topFoldEvidence = @{}
 $captureSessions = @{}
 $declaredSha = ''
 $hasMissingDeclaration = $false
@@ -84,6 +86,7 @@ foreach ($lang in @('ru','en')) {
     if ($rows.Count -gt 6) { throw 'Unexpected extra records in fixed-viewport screenshot manifest.' }
     $seen = @{}
     $entries = @{}
+    $topFolds = @{}
     $dpis = @{}
     $observedDpi = $null
     $observedSession = ''
@@ -102,6 +105,17 @@ foreach ($lang in @('ru','en')) {
         if ($seen.ContainsKey($key)) { throw "Duplicate $lang screenshot entry: $key" }
         $seen[$key] = $true
         $entries[$key] = $entry
+        # Previous captures may have valid pixels without the newer outer
+        # top-fold UIA proof. Do not infer scroll position from the filename.
+        $topProof = $entry.PSObject.Properties['verifiedOuterScrollPercentAtMost2']
+        if ($null -ne $topProof -and $topProof.Value -isnot [bool]) {
+            throw "Invalid boolean outer top-fold evidence: $lang $key."
+        }
+        $topFoldVerified = ($null -ne $topProof -and $topProof.Value -eq $true)
+        if ($topFoldVerified -and $bottomPages -cnotcontains $page) {
+            throw "Unexpected top-fold scroll proof for non-long page: $lang $key."
+        }
+        $topFolds[$key] = $topFoldVerified
         # Old manifests without the new per-run token remain readable, but
         # cannot be represented as having verified capture-session continuity.
         $sessionProperty = $entry.PSObject.Properties['captureSessionId']
@@ -195,6 +209,7 @@ foreach ($lang in @('ru','en')) {
     $manifestData[$lang] = $seen
     $manifestDpi[$lang] = $dpis
     $topEntries[$lang] = $entries
+    $topFoldEvidence[$lang] = $topFolds
     if ($observedSession -and $hasLegacySession) {
         throw "New and legacy capture-session evidence mixed within $lang top pages."
     }
@@ -219,7 +234,6 @@ if ($declaredSha -and $hasMissingDeclaration) {
 # The capture tool records bottom folds separately; never infer their presence
 # from top PNGs or from the operator's scroll checkbox. Both languages may
 # independently omit bottom evidence, which the HTML must label NOT RUN.
-$bottomPages = @('CemPin','CemConfiguration','Dtc','Ecu')
 $bottomData = @{}
 foreach ($lang in @('ru','en')) {
     $seenBottom = @{}
@@ -379,8 +393,18 @@ foreach ($page in $pages) {
                 $name = "Aurora-$page-$lang-$width-dip.png"
                 $dpi = $manifestDpi[$lang][$key]
                 $scale = [Math]::Round($dpi * 100.0 / 96.0)
+                $topPositionLabel = if ($bottomPages -ccontains $page) {
+                    if ($topFoldEvidence[$lang][$key]) {
+                        'outer top UIA verified'
+                    } else {
+                        'top position NOT VERIFIED'
+                    }
+                } else {
+                    'top scroll not probed'
+                }
                 [void]$html.Add('<figure><figcaption>' + $lang.ToUpperInvariant() +
-                    ' | ' + $dpi + ' DPI (about ' + $scale + '%) | unreviewed</figcaption><img alt="' +
+                    ' | ' + $dpi + ' DPI (about ' + $scale + '%) | ' +
+                    $topPositionLabel + ' | visual NOT RUN</figcaption><img alt="' +
                     $page + ' ' + $lang + '" src="' + $lang + '/' + $name +
                     '"></figure>')
                 $present++
