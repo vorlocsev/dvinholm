@@ -236,8 +236,8 @@ foreach ($lang in @('ru','en')) {
                 -not $bottomEntry.verifiedOuterScrollPercentAtLeast98) {
                 throw "Bottom fold is not verified by capture UI Automation: $lang $key."
             }
-            # The bottom view must come from the same executable session,
-            # physical viewport and DPI as its validated top screenshot.
+            # Bottom evidence must match the top capture's declared source,
+            # physical viewport and DPI. This does not prove process identity.
             foreach ($field in @(
                 'requestedWidthDip','requestedHeightDip','actualWidthPx','actualHeightPx',
                 'actualClientWidthPx','actualClientHeightPx','windowDpi')) {
@@ -316,7 +316,7 @@ $manualChecks = @(
 [void]$html.Add('<style>body{font:15px Segoe UI,Arial,sans-serif;background:#071625;color:#e9f6ff;margin:20px}h1,h2{color:#9ce9ff}p{max-width:85ch}section{margin:24px 0;border-top:1px solid #31516b;padding:10px 0}.pair{display:grid;grid-template-columns:repeat(auto-fit,minmax(min(100%,430px),1fr));gap:14px}figure{margin:0;background:#10263b;border:1px solid #365875;padding:10px;border-radius:10px}figcaption{margin-bottom:8px}img{width:100%;height:auto;display:block}.missing{color:#f2b979;border:1px dashed #bc8655;padding:16px}.privacy{color:#f1c48f}</style>')
 [void]$html.Add('<h1>Dvinholm Aurora: RU / EN visual review</h1>')
 [void]$html.Add('<p class="privacy">PRIVATE LOCAL REPORT. NOT a visual PASS, not a vehicle/J2534 test. Inspect screenshots manually against the ORIGINAL approved six-page image. Never upload before redaction. Captures are linked, not copied or embedded.</p>')
-[void]$html.Add('<p>Recorded DPI describes the actual Dvinholm window, not independently certified Windows Display scaling. Capture and review separate RU/EN sets at 96, 120 and 144 DPI (100%, 125%, 150%) when supported.</p>')
+[void]$html.Add('<p>Recorded DPI describes the actual Dvinholm window, not independently certified Windows Display scaling. Capture and review separate RU/EN sets at 96, 120, 144 and 192 DPI (100%, 125%, 150%, 200%) when supported.</p>')
 [void]$html.Add('<h2>Manual visual acceptance checklist (all unreviewed)</h2><ol>')
 foreach ($criterion in $manualChecks) {
     [void]$html.Add('<li>' + $criterion + ' | NOT RUN until human comparison</li>')
