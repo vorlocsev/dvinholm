@@ -29,8 +29,8 @@ public sealed class AuroraSectionNavigationTests
             Assert.False(string.IsNullOrWhiteSpace(section.Title));
             Assert.False(string.IsNullOrWhiteSpace(section.Description));
         });
-        Assert.Equal("Collapsed", (string?)Named(doc, "AuroraWorkspaceHost").Attribute("Visibility"));
-        Assert.Null(Named(doc, "AuroraLanding").Attribute("Visibility"));
+        Assert.Equal("Visible", (string?)Named(doc, "AuroraWorkspaceHost").Attribute("Visibility"));
+        Assert.Equal("Collapsed", (string?)Named(doc, "AuroraLanding").Attribute("Visibility"));
     }
 
     [Fact]
@@ -39,11 +39,14 @@ public sealed class AuroraSectionNavigationTests
         var doc = Document();
         var sidebar = Named(doc, "SidebarNavPanel");
         var tags = sidebar.Elements().Where(e => e.Attribute("Tag") is not null).Select(e => (string)e.Attribute("Tag")!).ToArray();
-        Assert.Equal(Enum.GetValues<AuroraDestination>().Length, tags.Length);
+        Assert.Equal(5, tags.Length);
+        Assert.Equal(new[] { "J2534Connection", "CemPinReadiness",
+            "CemConfigurationCatalog", "DtcFaults", "EcuWorkspace" }, tags);
         Assert.All(tags, tag => Assert.True(AuroraWorkspaceNavigation.TryParse(tag, out _)));
         Assert.DoesNotContain(Named(doc, "AuroraWorkspaceHost"), sidebar.Ancestors());
         Assert.All(sidebar.Elements().Where(e => e.Attribute("Tag") is not null),
             e => Assert.Equal("WorkspaceNavigate_Click", (string?)e.Attribute("Click")));
+        Assert.Equal("UnifiedUpdatesNavigate_Click", (string?)Named(doc, "SidebarUpdatesButton").Attribute("Click"));
     }
 
     [Fact]
@@ -81,6 +84,50 @@ public sealed class AuroraSectionNavigationTests
         Owns("CanMonitorPage", "StartButton", "DeveloperMonitorHost", "IdFilter", "HardwareFilterButton", "FramesView", "FrameRateText");
         Assert.Equal("Dark", (string?)Named(Document(), "RootLayout").Attribute("RequestedTheme"));
         Assert.Equal("{Binding Text, ElementName=StatusText}", (string?)Named(Document(), "ShellStatusText").Attribute("Text"));
+    }
+
+    [Fact]
+    public void CompactWorkspacesRestoreTopOfPageAfterProgrammaticFocus()
+    {
+        string? code = null;
+        for (DirectoryInfo? folder = new(AppContext.BaseDirectory);
+             folder is not null; folder = folder.Parent)
+        {
+            var file = Path.Combine(folder.FullName, "src", "Dvinholm.App",
+                "MainWindow.xaml.cs");
+            if (!File.Exists(file)) continue;
+            code = File.ReadAllText(file);
+            break;
+        }
+
+        Assert.NotNull(code);
+        var start = code.IndexOf("private void DashboardNavigate(", StringComparison.Ordinal);
+        var end = code.IndexOf("private void WorkspaceNavigate_Click(", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var navigation = code[start..end];
+        var selection = navigation.IndexOf("SelectWorkspaceNavigation(destination);",
+            StringComparison.Ordinal);
+        var focusEnd = navigation.IndexOf(
+            "case AuroraDestination.J2534Connection: J2534Devices.Focus(FocusState.Programmatic); break;",
+            StringComparison.Ordinal);
+        var reset = navigation.IndexOf("ResetWorkspaceFirstFoldAfterNavigation();",
+            StringComparison.Ordinal);
+        Assert.True(selection >= 0 && focusEnd > selection && reset > focusEnd,
+            "Navigation must reset the first fold after all focus-induced scrolling.");
+        Assert.Equal(1, navigation.Split("ResetWorkspaceFirstFoldAfterNavigation();").Length - 1);
+        var helperStart = code.IndexOf("private void ResetWorkspaceFirstFoldAfterNavigation()",
+            StringComparison.Ordinal);
+        Assert.True(helperStart >= 0 && helperStart < start);
+        var helper = code[helperStart..start];
+        Assert.Contains("WorkspaceScroll.ChangeView(null, 0, null);", helper);
+        Assert.Contains("DispatcherQueuePriority.Low", helper);
+        Assert.Contains("generation != _workspaceFirstFoldGeneration", helper);
+        foreach (var focus in new[] { "EcuSelector.Focus(", "UdsRequestId.Focus(",
+            "IdFilter.Focus(", "ProfileSearch.Focus(", "J2534Devices.Focus(" })
+            Assert.Contains(focus, navigation);
+        Assert.DoesNotContain("Connect_Click(", navigation);
+        Assert.DoesNotContain("ReadDtc_Click(", navigation);
+        Assert.DoesNotContain("ReadCemPin_Click(", navigation);
     }
 
     [Fact]

@@ -79,6 +79,13 @@ internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
             if (string.IsNullOrWhiteSpace(path))
                 throw new ArgumentException("J2534 DLL path is empty.");
 
+            // Reject an x86/ARM64/malformed vendor image before invoking the
+            // Windows loader. This is file-header inspection, not execution or
+            // proof of a functional/signed J2534 implementation.
+            if (!J2534PeInspector.CanLoad(J2534PeInspector.Inspect(path),
+                    Environment.Is64BitProcess))
+                throw new BadImageFormatException("Unsupported J2534 DLL architecture.");
+
             _dll = NativeLibrary.Load(path);
             _open = Get<PassThruOpen>("PassThruOpen");
             _close = Get<PassThruClose>("PassThruClose");
@@ -107,7 +114,7 @@ internal sealed unsafe class J2534Native : IJ2534SessionAdapter, IDisposable
         {
             // NativeLibrary.Load exceptions often include the full selected
             // DLL path. Keep the UI actionable without echoing local paths.
-            error = "Unable to load the selected J2534 DLL. Check that the file exists, required exports and dependencies are present, and the DLL matches the application's x86 architecture.";
+            error = $"Unable to load the selected J2534 DLL. Check that the file exists, required exports and dependencies are present, and the DLL matches the application's {(Environment.Is64BitProcess ? "x64" : "x86")} architecture.";
             Unload();
             return false;
         }

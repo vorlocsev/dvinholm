@@ -95,9 +95,9 @@ public sealed class AuroraHomeLayoutTests
     [Fact]
     public void OriginalDiagnosticWindowIsPreservedAndInitiallyHidden()
     {
-        Assert.Equal("Collapsed", (string?)Named(Main, "AuroraWorkspaceHost")
+        Assert.Equal("Visible", (string?)Named(Main, "AuroraWorkspaceHost")
             .Attribute("Visibility"));
-        Assert.NotNull(Named(Main, "AuroraLanding"));
+        Assert.Equal("Collapsed", (string?)Named(Main, "AuroraLanding").Attribute("Visibility"));
         foreach (var oldName in new[]
                  { "ConnectButton", "StartButton", "FramesView", "EcusView",
                    "ProfileSelector", "P2PinReviewButton", "P2ConfigCatalogButton" })
@@ -121,16 +121,13 @@ public sealed class AuroraHomeLayoutTests
     }
 
     [Fact]
-    public void ExistingWorkspaceHasExplicitWayBackToHome()
+    public void UnifiedWorkspaceKeepsLegacyHomeButRoutesBackToConnection()
     {
         var main = Source("src/Dvinholm.App/MainWindow.xaml.cs");
         Assert.Contains("DashboardReturn_Click", main);
-        Assert.Contains("AuroraWorkspaceHost.Visibility = Visibility.Collapsed;", main);
-        Assert.Contains("AuroraLanding.Visibility = Visibility.Visible;", main);
-        Assert.Equal("DashboardReturn_Click", (string?)Main.Descendants()
-            .Single(x => x.Name.LocalName == "Button" &&
-                         (string?)x.Attribute("Click") == "DashboardReturn_Click")
-            .Attribute("Click"));
+        Assert.Contains("DashboardNavigate(sender, AuroraDestination.J2534Connection)", main);
+        Assert.DoesNotContain(Main.Descendants(), x => x.Name.LocalName == "Button" &&
+            (string?)x.Attribute(XamlName + "Name") == "SidebarHomeButton");
     }
 
     [Fact]

@@ -6,6 +6,8 @@ using Windows.ApplicationModel.DataTransfer;
 using WinRT.Interop;
 using System.Collections.ObjectModel;
 using System.Diagnostics;
+using System.Runtime.InteropServices;
+using Microsoft.UI.Windowing;
 
 namespace Dvinholm.App;
 
@@ -21,6 +23,8 @@ public sealed partial class MainWindow : Window
     private Task? _monitorTask;
     private CanRxDispatcher.Subscription? _monitorSubscription;
     private bool _connected;
+    // Prevent a locale toggle during disconnect from restoring stale driver metadata.
+    private bool _adapterMetadataConnected;
 #if DVINHOLM_DEVELOPMENT_FEATURES
     private DispatcherQueueTimer? _demoTimer;
     private uint _demoTick;
@@ -47,15 +51,95 @@ public sealed partial class MainWindow : Window
     private readonly ObservableCollection<EcuRow> _ecus = new();
     private readonly UdsReadResultLifetime _udsResultLifetime = new();
     private bool _ecuScanComplete;
+    private bool _hasEcuScanOutcome;
+    private string _ecuDiscoveryStatusRu = "Сканирование не выполнялось";
+    private string _ecuDiscoveryStatusEn = "Not scanned";
     private EcuProfileCatalog _profileCatalog = new();
     private bool _snapshotInspectionBusy;
     private bool _loadingProfiles;
     private int _profileFilterGeneration;
     private int _rateFrames;
+    private int _lastMonitorRate;
+    // Last evaluated readiness belongs to UI presentation only. Translation
+    // cannot re-run the UDS gate or change armed diagnostic buttons.
+    private bool _udsReadinessConnected;
+    private bool _udsReadinessReady;
     private uint? _activeHardwareFilterId;
+
+    // One approved Aurora desktop viewport. The window may be clamped once at
+    // startup on unusually small displays, but the user cannot resize it later.
+    private const int FixedAuroraClientWidthDip = 1280;
+    private const int FixedAuroraClientHeightDip = 800;
+
+    [StructLayout(LayoutKind.Sequential)]
+    private struct NativeRect
+    {
+        public int Left;
+        public int Top;
+        public int Right;
+        public int Bottom;
+    }
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool GetWindowRect(IntPtr hWnd, out NativeRect rect);
+
+    [DllImport("user32.dll", SetLastError = true)]
+    private static extern bool GetClientRect(IntPtr hWnd, out NativeRect rect);
+
+    [DllImport("user32.dll")]
+    private static extern uint GetDpiForWindow(IntPtr hWnd);
+
+    private void ConfigureFixedAuroraWindow()
+    {
+        if (AppWindow.Presenter is not OverlappedPresenter presenter)
+            throw new InvalidOperationException("Dvinholm requires the standard Windows window presenter.");
+
+        presenter.IsResizable = false;
+        presenter.IsMaximizable = false;
+        presenter.IsMinimizable = true;
+
+        var handle = WindowNative.GetWindowHandle(this);
+        var dpi = GetDpiForWindow(handle);
+        if (dpi == 0)
+            dpi = 96;
+
+        if (!GetWindowRect(handle, out var outer) ||
+            !GetClientRect(handle, out var client))
+            throw new InvalidOperationException("Unable to determine the Dvinholm window frame.");
+
+        var frameWidth = (outer.Right - outer.Left) - (client.Right - client.Left);
+        var frameHeight = (outer.Bottom - outer.Top) - (client.Bottom - client.Top);
+        if (frameWidth < 0 || frameHeight < 0 || frameWidth > 200 || frameHeight > 300)
+            throw new InvalidOperationException("Unexpected Windows non-client frame dimensions.");
+
+        var scale = dpi / 96.0;
+        var clientWidthPx = (int)Math.Round(FixedAuroraClientWidthDip * scale);
+        var clientHeightPx = (int)Math.Round(FixedAuroraClientHeightDip * scale);
+        var requestedOuterWidth = clientWidthPx + frameWidth;
+        var requestedOuterHeight = clientHeightPx + frameHeight;
+
+        var display = DisplayArea.GetFromWindowId(AppWindow.Id, DisplayAreaFallback.Nearest);
+        var workArea = display.WorkArea;
+        const int workAreaMarginPx = 12;
+        var outerWidth = Math.Min(requestedOuterWidth, Math.Max(1, workArea.Width - workAreaMarginPx * 2));
+        var outerHeight = Math.Min(requestedOuterHeight, Math.Max(1, workArea.Height - workAreaMarginPx * 2));
+
+        // Preserve the wide Aurora composition on normal desktop displays.
+        // A smaller display is clamped only once, at launch; resizing/maximizing
+        // remains disabled for the lifetime of the window.
+        AppWindow.Resize(new Windows.Graphics.SizeInt32(outerWidth, outerHeight));
+        AppWindow.Move(new Windows.Graphics.PointInt32(
+            workArea.X + (workArea.Width - outerWidth) / 2,
+            workArea.Y + (workArea.Height - outerHeight) / 2));
+    }
+
     public MainWindow()
     {
         InitializeComponent();
+        // Color the native Windows caption without changing frame dimensions.
+        // Keep this before fixed-client sizing and before the first show.
+        ConfigureAuroraNativeTitleBar();
+        ConfigureFixedAuroraWindow();
         AuroraLanding.UseSharedNavigation();
         InitializeAuroraLabels();
         InitializeAuroraDtcTable();
@@ -79,9 +163,9 @@ public sealed partial class MainWindow : Window
         DllPath.Text = LoadSavedDllPath();
         DllPath.TextChanged += DllPath_TextChanged;
         Title = LatestBuildUpdater.CurrentWindowTitle;
-        // Updates and dependency management belong to the standalone Launcher.
-        // Legacy update handlers remain temporarily compiled for migration safety,
-        // but the diagnostic window exposes no update controls.
+        // Show the user's six-screen Aurora shell, with a safe local Updates channel.
+        // Install/download actions remain unavailable until verified x64 updater migration.
+        InitializeUnifiedUpdates();
         // The EXE also embeds this icon; SetIcon applies it to the WinUI title bar and taskbar.
         var iconPath = System.IO.Path.Combine(AppContext.BaseDirectory, "Assets", "Dvinholm.ico");
         if (System.IO.File.Exists(iconPath))
@@ -93,6 +177,7 @@ public sealed partial class MainWindow : Window
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
         RefreshDashboardSummary();
+        DashboardNavigate(null, AuroraDestination.J2534Connection);
         // The standalone launcher owns updates and all Lite runtime management.
         if (DvinholmUserDataDirectory.IsAcceptanceLaunch)
             ConnectButton.IsEnabled = false;
@@ -110,6 +195,9 @@ public sealed partial class MainWindow : Window
         Closed += (_, _) =>
         {
             _closing = true;
+            _unifiedCheckCts?.Cancel();
+            _unifiedStageCts?.Cancel();
+            DeleteStagedArchive();
 #if DVINHOLM_DEVELOPMENT_FEATURES
             ClearCemIdentity();
             ClearCemPinMaterial();
@@ -199,17 +287,44 @@ public sealed partial class MainWindow : Window
 
     private void SetStatus(string text)
     {
-        StatusText.Text = text;
+        // Localize the exact disconnected idle state only. All other
+        // diagnostic/driver messages remain unchanged evidence.
+        StatusText.Text = LocalizeAuroraIdleStatus(text);
         AuroraLanding.UpdateActivity(text);
         RefreshDashboardSummary();
     }
 
     private AuroraDestination? _workspaceDestination;
+    private int _workspaceFirstFoldGeneration;
+
+    // Reset immediately after the navigation focus change, then once more
+    // after pending WinUI layout. The generation guard prevents an old queued
+    // callback from scrolling a newer destination.
+    private void ResetWorkspaceFirstFoldAfterNavigation()
+    {
+        var generation = ++_workspaceFirstFoldGeneration;
+        WorkspaceScroll.ChangeView(null, 0, null);
+        DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
+        {
+            if (_closing || generation != _workspaceFirstFoldGeneration ||
+                AuroraWorkspaceHost.Visibility != Visibility.Visible)
+                return;
+
+            // Only correct a layout/focus-driven offset. There is no user
+            // input, vehicle request, refresh or secondary navigation here.
+            if (WorkspaceScroll.VerticalOffset > 0.5)
+                WorkspaceScroll.ChangeView(null, 0, null);
+        });
+    }
 
     // Navigation changes presentation only. It never connects or sends a request.
     private void DashboardNavigate(object? sender, AuroraDestination destination)
     {
         if (_closing) return;
+        // Leaving Updates cancels any pending download; no hidden
+        // background transfer continues while the user diagnoses a car.
+        if (_unifiedUpdatesActive)
+            _unifiedStageCts?.Cancel();
         var section = AuroraWorkspaceNavigation.Describe(destination);
         if (_workspaceDestination != destination)
         {
@@ -219,13 +334,21 @@ public sealed partial class MainWindow : Window
         _workspaceDestination = destination;
         ShowDashboardWorkspace();
         foreach (var panel in new FrameworkElement[] { CemPinPage, CemConfigPage, DtcPage, EcuPage,
-            DiagnosticsPage, CanMonitorPage, ProfilesPage, ConnectionPage })
+            DiagnosticsPage, CanMonitorPage, ProfilesPage, ConnectionPage, UnifiedUpdatesPage })
             panel.Visibility = panel.Name == section.Panel ? Visibility.Visible : Visibility.Collapsed;
+        _unifiedUpdatesActive = false;
         WorkspaceTitle.Text = section.Title;
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            WorkspaceHeaderCopy, section.Title);
         WorkspaceDescription.Text = section.Description;
+        ApplyUnifiedWorkspaceSection(destination);
+        // Re-evaluate live identity guard and read-only prerequisites after
+        // navigation so a disconnected/stale session is never left looking
+        // like current CEM evidence on a different screen.
+        RefreshCemIdentityEvidencePresentation();
+        RefreshCemPrerequisitePresentation();
         DiagnosticResultsCard.Visibility = destination is AuroraDestination.CemPinReadiness or
             AuroraDestination.DiagnosticsWorkspace or AuroraDestination.DtcFaults ? Visibility.Visible : Visibility.Collapsed;
-        WorkspaceScroll.ChangeView(null, 0, null);
         SelectWorkspaceNavigation(destination);
         switch (destination)
         {
@@ -235,6 +358,9 @@ public sealed partial class MainWindow : Window
             case AuroraDestination.EcuProfiles: ProfileSearch.Focus(FocusState.Programmatic); break;
             case AuroraDestination.J2534Connection: J2534Devices.Focus(FocusState.Programmatic); break;
         }
+        // Reset after focus and after WinUI's pending layout so the page
+        // begins at its introductory card, not a previously scrolled fold.
+        ResetWorkspaceFirstFoldAfterNavigation();
     }
 
     private void WorkspaceNavigate_Click(object sender, RoutedEventArgs e)
@@ -247,12 +373,15 @@ public sealed partial class MainWindow : Window
     {
         foreach (var button in SidebarNavPanel.Children.OfType<Button>())
         {
-            var selected = button == SidebarHomeButton ? destination is null :
-                AuroraWorkspaceNavigation.TryParse(button.Tag as string, out var target) && target == destination;
-            button.Background = new Microsoft.UI.Xaml.Media.SolidColorBrush(selected
-                ? Windows.UI.Color.FromArgb(255, 8, 101, 199) : Windows.UI.Color.FromArgb(0, 0, 0, 0));
-            Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(button, selected ? "Выбран" : "");
+            var selected = AuroraWorkspaceNavigation.TryParse(button.Tag as string, out var target)
+                && target == destination && !_unifiedUpdatesActive;
+            ApplyAuroraNavigationSurface(button, selected);
+            Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(button, selected
+                ? L("Выбран", "Selected") : "");
         }
+        ApplyAuroraNavigationSurface(SidebarUpdatesButton, _unifiedUpdatesActive);
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(
+            SidebarUpdatesButton, _unifiedUpdatesActive ? L("Выбран", "Selected") : "");
     }
 
     private void ShowDashboardWorkspace()
@@ -263,14 +392,8 @@ public sealed partial class MainWindow : Window
 
     private void DashboardReturn_Click(object sender, RoutedEventArgs e)
     {
-        _udsCts?.Cancel();
-        ClearDiagnosticReadResult();
-        _workspaceDestination = null;
-        SelectWorkspaceNavigation(null);
-        AuroraWorkspaceHost.Visibility = Visibility.Collapsed;
-        AuroraLanding.Visibility = Visibility.Visible;
-        AuroraLanding.ReturnToTop();
-        RefreshDashboardSummary();
+        // Legacy home callbacks now go to the first approved destination.
+        DashboardNavigate(sender, AuroraDestination.J2534Connection);
     }
 
     private void RefreshDashboardSummary()
@@ -281,8 +404,25 @@ public sealed partial class MainWindow : Window
         var adapter = (J2534Devices.SelectedItem as J2534Device)?.Label;
         var baud = (BaudRate.SelectedItem as ComboBoxItem)?.Content?.ToString();
         AuroraLanding.UpdateConnection(_connected, adapter, baud);
+        // All three connection cues use one truthful session predicate:
+        // a registered driver or selected adapter is never a connection.
+        var j2534SessionConnected = _connected && _session.IsConnected;
+        var connectionBrush = new Microsoft.UI.Xaml.Media.SolidColorBrush(
+            j2534SessionConnected
+                ? Windows.UI.Color.FromArgb(255, 42, 222, 147)
+                : Windows.UI.Color.FromArgb(255, 114, 143, 168));
+        if (StatusFooterDot is not null)
+            StatusFooterDot.Foreground = connectionBrush;
+        if (ShellConnectionDot is not null)
+            ShellConnectionDot.Foreground = connectionBrush;
+        if (ConnectionSessionState is not null)
+            ConnectionSessionState.Foreground = connectionBrush;
         if (ShellConnectionText is not null)
-            ShellConnectionText.Text = _connected && _session.IsConnected ? "J2534 подключён" : "Не подключено";
+            ShellConnectionText.Text = j2534SessionConnected
+                ? L("J2534 подключён", "J2534 connected")
+                : L("Не подключено", "Disconnected");
+        RefreshCemIdentityEvidencePresentation();
+        RefreshCemPrerequisitePresentation();
         AuroraLanding.UpdateProfile((ProfileSelector.SelectedItem as EcuProfile)?.Name);
 #if DVINHOLM_DEVELOPMENT_FEATURES
         RefreshCemPartReadAvailability();
@@ -2116,10 +2256,36 @@ public sealed partial class MainWindow : Window
     private void RefreshJ2534Devices_Click(object sender, RoutedEventArgs e) =>
         RefreshJ2534Devices(updateStatus: true);
 
+    private J2534AdapterAuditSummary? _lastJ2534ArchitectureAudit;
+
+    private void RefreshJ2534ArchitectureAuditPresentation()
+    {
+        if (J2534ArchitectureAuditText is null || J2534ArchitectureAuditExpander is null)
+            return;
+        // Keep the complete localized audit label visible at fixed 1280 DIP:
+        // the Expander header presents a wrapping TextBlock, not clipped text.
+        J2534ArchitectureAuditHeaderText.Text = L(
+            "Аудит разрядности драйверов (офлайн)",
+            "Driver architecture audit (offline)");
+        Microsoft.UI.Xaml.Automation.AutomationProperties.SetName(
+            J2534ArchitectureAuditExpander, J2534ArchitectureAuditHeaderText.Text);
+        J2534ArchitectureAuditText.Text = _lastJ2534ArchitectureAudit is { } summary
+            ? J2534AdapterAuditReport.Format(summary, _unifiedEnglish, Environment.Is64BitProcess)
+            : L("Записи драйверов ещё не проверялись.",
+                "Driver registrations have not been inspected.");
+    }
+
     private void RefreshJ2534Devices(bool updateStatus)
     {
         var selectedPath = (J2534Devices.SelectedItem as J2534Device)?.DllPath;
-        var devices = J2534DeviceDiscovery.FindRegisteredDevices();
+        // Read both views and the physical PE headers. Never offer an x86
+        // vendor DLL as directly loadable by the unified x64 executable.
+        var audit = J2534DeviceDiscovery.AuditRegisteredDevices();
+        _lastJ2534ArchitectureAudit = J2534AdapterAuditReport.Assess(
+            audit, Environment.Is64BitProcess);
+        RefreshJ2534ArchitectureAuditPresentation();
+        var devices = J2534DeviceDiscovery.SelectCompatible(
+            audit, Environment.Is64BitProcess);
 
         _j2534Devices.Clear();
         foreach (var device in devices)
@@ -2136,10 +2302,29 @@ public sealed partial class MainWindow : Window
 
         if (updateStatus)
         {
-            SetStatus(devices.Count == 0
-                ? "No registered J2534 DLL found. You can still enter the DLL path manually."
-                : $"Found {devices.Count} registered J2534 adapter(s). Select one or enter a DLL path manually.");
+            var otherBitness = audit.Count(entry =>
+                Environment.Is64BitProcess
+                    ? entry.Architecture == J2534PeArchitecture.X86
+                    : entry.Architecture == J2534PeArchitecture.X64);
+            var unsafeImages = audit.Count(entry =>
+                entry.Architecture is J2534PeArchitecture.Unknown or
+                    J2534PeArchitecture.Arm64);
+            var message = L(
+                $"Совместимых J2534 DLL: {devices.Count}. Несовместимая разрядность: {otherBitness}, неподдерживаемые/нечитаемые: {unsafeImages}. Для подключения выберите DLL нужной разрядности.",
+                $"Compatible J2534 DLLs: {devices.Count}. Wrong bitness: {otherBitness}, unsupported/unreadable: {unsafeImages}. Select a DLL matching this process.");
+            SetStatus(message);
         }
+    }
+
+    private void RefreshLocalAdapterMetadataLanguage()
+    {
+        // Display sensitive vendor-reported values exclusively inside the
+        // Connection workspace. Never route them through public SetStatus.
+        if (AdapterMetadataText is null) return;
+        AdapterMetadataText.Text = _adapterMetadataConnected && _connected && _session.IsConnected
+            ? J2534ConnectionPresentation.LocalDetails(
+                _session.AdapterVersion, _session.AdapterCapabilities, _unifiedEnglish)
+            : J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);
     }
 
     private void J2534Device_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -2149,8 +2334,12 @@ public sealed partial class MainWindow : Window
     }
 
 
-    private sealed class EcuRow
+    // Passive ECU observations are immutable vehicle evidence. Only their UI
+    // captions are translated, with no rescan or changes to RX/TX data.
+    private sealed class EcuRow : System.ComponentModel.INotifyPropertyChanged
     {
+        private bool _english;
+
         public UdsEcuCandidate Candidate { get; }
         public string Response => Candidate.ResponseId.ToString(Candidate.IsExtended ? "X8" : "X3");
         public string Request => Candidate.RequestId?.ToString(Candidate.IsExtended ? "X8" : "X3") ?? "-";
@@ -2158,9 +2347,30 @@ public sealed partial class MainWindow : Window
         public string Type => Candidate.IsExtended ? "29-bit" : "11-bit";
         public int Frames => Candidate.ResponseCount;
         public string MaxPayload => Candidate.MaxDataLength?.ToString() ?? "-";
-        public string RequestBasis => Candidate.RequestId is null ? "Unknown" : "Inferred";
+        public string FramesCaption => AuroraEcuInventoryCaptions.Frames(_english);
+        public string MaxPayloadCaption => AuroraEcuInventoryCaptions.MaxPayload(_english);
+        public string RequestBasis => AuroraEcuInventoryCaptions.RequestBasis(
+            _english, Candidate.RequestId is not null);
 
-        internal EcuRow(UdsEcuCandidate candidate) => Candidate = candidate;
+        public event System.ComponentModel.PropertyChangedEventHandler? PropertyChanged;
+
+        internal EcuRow(UdsEcuCandidate candidate, bool english)
+        {
+            Candidate = candidate;
+            _english = english;
+        }
+
+        internal void SetPresentationLanguage(bool english)
+        {
+            if (_english == english) return;
+            _english = english;
+            PropertyChanged?.Invoke(this,
+                new System.ComponentModel.PropertyChangedEventArgs(nameof(FramesCaption)));
+            PropertyChanged?.Invoke(this,
+                new System.ComponentModel.PropertyChangedEventArgs(nameof(MaxPayloadCaption)));
+            PropertyChanged?.Invoke(this,
+                new System.ComponentModel.PropertyChangedEventArgs(nameof(RequestBasis)));
+        }
     }
 
     private async void Discover_Click(object sender, RoutedEventArgs e)
@@ -2173,7 +2383,8 @@ public sealed partial class MainWindow : Window
         // Serialize them so passive discovery cannot overlap a diagnostic request.
         if (!await _udsGate.WaitAsync(0))
         {
-            DiscoveryStatus.Text = "UDS request is already running";
+            SetPassiveDiscoveryStatus("Уже выполняется запрос UDS",
+                "UDS request is already running");
             return;
         }
 
@@ -2183,7 +2394,7 @@ public sealed partial class MainWindow : Window
         CancelDiscoveryButton.IsEnabled = true;
         ConnectButton.IsEnabled = false;
         SetUdsEnabled(false);
-        DiscoveryStatus.Text = "Scanning...";
+        SetPassiveDiscoveryStatus("Сканирование...", "Scanning...");
         ClearDiagnosticReadResult();
         ClearPassiveDiscoverySelection();
 
@@ -2194,17 +2405,25 @@ public sealed partial class MainWindow : Window
             var found = await _discoveryTask;
 
             ShowDiscoveredEcus(found, complete: true);
-            DiscoveryStatus.Text = UdsPassiveEcuListPresentation.ScanSummary(found.Count, true);
+            SetPassiveDiscoveryStatus(
+                UdsPassiveEcuListPresentation.ScanSummary(found.Count, true, english: false),
+                UdsPassiveEcuListPresentation.ScanSummary(found.Count, true, english: true));
 
             SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.Completed));
         }
         catch (UdsEcuDiscoveryCancelledException ex)
         {
             ShowDiscoveredEcus(ex.Candidates, complete: false);
-            DiscoveryStatus.Text = "Cancelled · " +
-                UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false);
+            var cancelledRu = "Отменено · " +
+                UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false, english: false);
+            var cancelledEn = "Cancelled · " +
+                UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false, english: true);
             if (ex.DroppedFrameCount > 0)
-                DiscoveryStatus.Text += $" · {ex.DroppedFrameCount} frame(s) dropped";
+            {
+                cancelledRu += $" · потеряно кадров: {ex.DroppedFrameCount}";
+                cancelledEn += $" · {ex.DroppedFrameCount} frame(s) dropped";
+            }
+            SetPassiveDiscoveryStatus(cancelledRu, cancelledEn);
             // Discovery exception messages are implementation details. The
             // status is mirrored to Aurora, so use a fixed outcome instead.
             SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.CancelledWithObservations));
@@ -2212,20 +2431,24 @@ public sealed partial class MainWindow : Window
         catch (UdsEcuDiscoveryIncompleteException ex)
         {
             ShowDiscoveredEcus(ex.Candidates, complete: false);
-            DiscoveryStatus.Text = UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false) +
-                $" · {ex.DroppedFrameCount} frame(s) dropped";
+            SetPassiveDiscoveryStatus(
+                UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false, english: false) +
+                    $" · потеряно кадров: {ex.DroppedFrameCount}",
+                UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false, english: true) +
+                    $" · {ex.DroppedFrameCount} frame(s) dropped");
             SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.IncompleteWithDrops));
         }
         catch (OperationCanceledException)
         {
             // Cancellation before the scan worker starts has no observations
             // to preserve.
-            DiscoveryStatus.Text = "Cancelled · no scan results available";
+            SetPassiveDiscoveryStatus("Отменено · результатов сканирования нет",
+                "Cancelled · no scan results available");
             SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.CancelledBeforeStart));
         }
         catch (Exception)
         {
-            DiscoveryStatus.Text = "Failed";
+            SetPassiveDiscoveryStatus("Ошибка сканирования", "Failed");
             SetStatus(UdsPassiveDiscoveryActivity.Message(UdsPassiveDiscoveryOutcome.Failed));
         }
         finally
@@ -2245,6 +2468,7 @@ public sealed partial class MainWindow : Window
     {
         // Never carry a guessed address across scans or adapter sessions.
         _ecuScanComplete = false;
+        _hasEcuScanOutcome = false;
         EcusView.IsEnabled = false;
         EcuSelector.IsEnabled = false;
         EcusView.SelectedIndex = -1;
@@ -2254,7 +2478,9 @@ public sealed partial class MainWindow : Window
         EcuSelector.Items.Clear();
         UdsRequestId.Text = string.Empty;
         UdsResponseId.Text = string.Empty;
-        EcuSelectionInfo.Text = "No verified ECU selection. Passive observations do not identify a module.";
+        EcuSelectionInfo.Text = L(
+            "Нет подтверждённого выбора ECU. Пассивные ответы не устанавливают идентичность блока.",
+            "No verified ECU selection. Passive observations do not identify a module.");
     }
 
     private void ShowDiscoveredEcus(IReadOnlyList<UdsEcuCandidate> found, bool complete)
@@ -2262,24 +2488,62 @@ public sealed partial class MainWindow : Window
         ClearPassiveDiscoverySelection();
         foreach (var candidate in found)
         {
-            var row = new EcuRow(candidate);
+            var row = new EcuRow(candidate, _unifiedEnglish);
             _ecus.Add(row);
-            EcuSelector.Items.Add(UdsPassiveEcuListPresentation.SelectorLabel(candidate, complete));
+            // Keep selected ComboBoxItem identity stable when its RU/EN caption changes.
+            EcuSelector.Items.Add(new ComboBoxItem
+            {
+                Content = UdsPassiveEcuListPresentation.SelectorLabel(
+                    candidate, complete, _unifiedEnglish)
+            });
         }
 
         // Incomplete scans are visible but never selectable; complete scans
         // require explicit selection and manual TX address verification.
         _ecuScanComplete = complete;
+        _hasEcuScanOutcome = true;
         EcusView.IsEnabled = complete && found.Count > 0;
         EcuSelector.IsEnabled = complete && found.Count > 0;
-        EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.ScanSummary(found.Count, complete);
+        EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.ScanSummary(
+            found.Count, complete, _unifiedEnglish);
         ShowAuroraEcuObservationRail(found, complete);
+    }
+
+    private void SetPassiveDiscoveryStatus(string russian, string english)
+    {
+        _ecuDiscoveryStatusRu = russian;
+        _ecuDiscoveryStatusEn = english;
+        DiscoveryStatus.Text = L(russian, english);
+    }
+
+    private void RefreshPassiveDiscoveryLanguage()
+    {
+        // Never replace or clear ComboBox items: that would change the selected
+        // index and could clear the session-scoped read results.
+        DiscoveryStatus.Text = L(_ecuDiscoveryStatusRu, _ecuDiscoveryStatusEn);
+        for (var i = 0; i < _ecus.Count && i < EcuSelector.Items.Count; i++)
+        {
+            if (EcuSelector.Items[i] is ComboBoxItem item)
+                item.Content = UdsPassiveEcuListPresentation.SelectorLabel(
+                    _ecus[i].Candidate, _ecuScanComplete, _unifiedEnglish);
+        }
+
+        if (_ecuScanComplete && EcusView.SelectedItem is EcuRow selected)
+            EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.SelectionDetails(
+                selected.Candidate, _unifiedEnglish);
+        else if (_hasEcuScanOutcome)
+            EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.ScanSummary(
+                _ecus.Count, _ecuScanComplete, _unifiedEnglish);
+        else
+            EcuSelectionInfo.Text = L(
+                "Нет подтверждённого выбора ECU. Пассивные ответы не устанавливают идентичность блока.",
+                "No verified ECU selection. Passive observations do not identify a module.");
     }
 
     private void CancelDiscovery_Click(object sender, RoutedEventArgs e)
     {
         _discoveryCts?.Cancel();
-        DiscoveryStatus.Text = "Cancelling...";
+        SetPassiveDiscoveryStatus("Отмена сканирования...", "Cancelling...");
         CancelDiscoveryButton.IsEnabled = false;
     }
 
@@ -2315,7 +2579,8 @@ public sealed partial class MainWindow : Window
         UdsResponseId.Text = UdsPassiveEcuListPresentation.Hex(
             row.Candidate.ResponseId, row.Candidate.IsExtended);
         CanIdFormat.SelectedIndex = row.Candidate.IsExtended ? 1 : 0;
-        EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.SelectionDetails(row.Candidate);
+        EcuSelectionInfo.Text = UdsPassiveEcuListPresentation.SelectionDetails(
+            row.Candidate, _unifiedEnglish);
         HighlightAuroraEcuObservation(index);
 
         if (EcuSelector.SelectedIndex != index)
@@ -2343,15 +2608,22 @@ public sealed partial class MainWindow : Window
         ReadDtcButton.IsEnabled = ready && TryGetSelectedDtcStatusMask(out _);
         ReadDidButton.IsEnabled = ready &&
             UdsReadAddressReadiness.ValidDid(UdsDid?.Text);
-        UdsReadinessHint.Text = ready
-            ? "Read-only UDS address syntax valid. Verify ECU identity and service support before reading."
-            : connected
-                ? "Read-only UDS disabled. Enter two distinct valid source-checked CAN IDs (TX and RX). Passive RX alone is not sufficient."
-                : "Read-only UDS disabled until connected with manually checked request and response CAN IDs.";
+        _udsReadinessConnected = connected;
+        _udsReadinessReady = ready;
+        RefreshUdsReadinessHint();
         RefreshSnapshotCaptureAvailability();
 #if DVINHOLM_DEVELOPMENT_FEATURES
         RefreshCemPartReadAvailability();
 #endif
+    }
+
+    private void RefreshUdsReadinessHint()
+    {
+        // Re-translate the last evaluated result. Never re-arm reads,
+        // perform diagnostics or infer TX addresses from passive RX.
+        if (UdsReadinessHint is null) return;
+        UdsReadinessHint.Text = UdsReadinessCaption.Text(
+            _udsReadinessConnected, _udsReadinessReady, _unifiedEnglish);
     }
 
     private long ClearDiagnosticReadResult()
@@ -2883,6 +3155,7 @@ public sealed partial class MainWindow : Window
             var identityContext = _cemIdentityContext;
             _cemIdentityGuard = CemPinSessionGuard.Capture(_session, identityContext,
                 () => !Volatile.Read(ref _closing) ? Volatile.Read(ref _cemIdentityContext) : null, true);
+            RefreshCemIdentityEvidencePresentation();
             // P/N and response payload must not enter the Aurora activity feed.
             SetStatus(CemText("Чтение номера CEM завершено (экспериментально).", "CEM part-number read completed (experimental)."));
         }
@@ -3103,6 +3376,11 @@ public sealed partial class MainWindow : Window
                 return;
             }
             _udsGate.Release();
+            // Invalidate local vendor metadata before awaiting monitor teardown:
+            // a RU/EN toggle during that await must not restore stale details.
+            _adapterMetadataConnected = false;
+            AdapterMetadataText.Text =
+                J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);
             // StopMonitor requests cancellation and waits briefly, but retains
             // the task if its worker has not fully unwound. Do not dispose the
             // session/bus until that subscriber has exited.
@@ -3121,7 +3399,6 @@ public sealed partial class MainWindow : Window
             }
 
             ClearDiagnosticReadResult();
-            AdapterMetadataText.Text = J2534ConnectionPresentation.DisconnectedDetails;
             ConnectButton.IsEnabled = false;
             HardwareFilterButton.IsEnabled = false;
             StartButton.IsEnabled = false;
@@ -3138,7 +3415,7 @@ public sealed partial class MainWindow : Window
                 _connected = false;
                 ClearPassiveDiscoverySelection();
                 _activeHardwareFilterId = null;
-                HardwareFilterButton.Content = "Apply HW filter";
+                RefreshHardwareFilterCaption();
                 HardwareFilterButton.IsEnabled = false;
                 ConnectButton.Content = AuroraUiText("Подключить", "Connect");
                 SetStatus("Disconnected");
@@ -3152,7 +3429,7 @@ public sealed partial class MainWindow : Window
                 _connected = false;
                 ClearPassiveDiscoverySelection();
                 _activeHardwareFilterId = null;
-                HardwareFilterButton.Content = "Apply HW filter";
+                RefreshHardwareFilterCaption();
                 HardwareFilterButton.IsEnabled = false;
                 StartButton.IsEnabled = false;
                 SetUdsEnabled(false);
@@ -3206,7 +3483,9 @@ public sealed partial class MainWindow : Window
         var dllPath = DllPath.Text.Trim();
         ClearDiagnosticReadResult();
         // Stale information must not survive a failed replacement connection.
-        AdapterMetadataText.Text = J2534ConnectionPresentation.DisconnectedDetails;
+        _adapterMetadataConnected = false;
+        AdapterMetadataText.Text =
+            J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);
         ConnectButton.IsEnabled = false;
         StartButton.IsEnabled = false;
         SetUdsEnabled(false);
@@ -3239,8 +3518,9 @@ public sealed partial class MainWindow : Window
             DiscoverButton.IsEnabled = true;
             // Keep vendor-supplied version strings in the dedicated local
             // adapter area. The same SetStatus text is shared with Aurora home.
+            _adapterMetadataConnected = true;
             AdapterMetadataText.Text = J2534ConnectionPresentation.LocalDetails(
-                _session.AdapterVersion, _session.AdapterCapabilities);
+                _session.AdapterVersion, _session.AdapterCapabilities, _unifiedEnglish);
             SetStatus(J2534ConnectionPresentation.ConnectedActivity);
         }
         catch (Exception)
@@ -3313,6 +3593,8 @@ public sealed partial class MainWindow : Window
         SetStatus("Monitoring CAN...");
         _rate.Restart();
         _rateFrames = 0;
+        _lastMonitorRate = 0;
+        UpdateMonitorRateText();
 
         _monitorTask = Task.Run(() =>
         {
@@ -3405,21 +3687,33 @@ public sealed partial class MainWindow : Window
 
         if (_rate.ElapsedMilliseconds >= 1000)
         {
-            FrameRateText.Text = $"{_rateFrames} frames/s";
+            _lastMonitorRate = _rateFrames;
+            UpdateMonitorRateText();
             _rateFrames = 0;
             _rate.Restart();
         }
     }
 
+    private void UpdateMonitorRateText() =>
+        FrameRateText.Text = CanMonitorCounterCaptions.Rate(_lastMonitorRate, _unifiedEnglish);
+
     private void UpdateFrameCountText() =>
-        FrameCountText.Text = $"{_frames.Count:N0} shown / {_total:N0} rx";
+        FrameCountText.Text = CanMonitorCounterCaptions.Frames(
+            _frames.Count, _total, _unifiedEnglish);
 
     private void UpdateRxDropCountText()
     {
         var drops = _rxDropTracker.Snapshot(_monitorSubscription?.DroppedFrameCount);
-        DroppedFrameText.Text = drops is long count
-            ? $"{count:N0} dropped since clear"
-            : "drops unknown";
+        DroppedFrameText.Text = CanMonitorCounterCaptions.Drops(drops, _unifiedEnglish);
+    }
+
+    private void RefreshCanMonitorCounterLanguage()
+    {
+        // Re-project the actual counters without clearing observed frames,
+        // changing the filter or touching the physical bus.
+        UpdateMonitorRateText();
+        UpdateFrameCountText();
+        UpdateRxDropCountText();
     }
 
     private void RefreshMonitorFilter()
@@ -3454,7 +3748,7 @@ public sealed partial class MainWindow : Window
                 }
 
                 _activeHardwareFilterId = null;
-                HardwareFilterButton.Content = "Apply HW filter";
+                RefreshHardwareFilterCaption();
                 SetStatus("J2534 hardware filter removed.");
                 return;
             }
@@ -3487,7 +3781,7 @@ public sealed partial class MainWindow : Window
             }
 
             _activeHardwareFilterId = filterId;
-            HardwareFilterButton.Content = "Remove HW filter";
+            RefreshHardwareFilterCaption();
             SetStatus($"J2534 hardware filter active for 0x{id:X} ({(extended ? "29-bit" : "11-bit")}).");
         }
         catch (Exception)
@@ -3509,8 +3803,9 @@ public sealed partial class MainWindow : Window
         _frames.Clear();
         _total = 0;
         _rateFrames = 0;
+        _lastMonitorRate = 0;
         _rate.Restart();
-        FrameRateText.Text = "0 frames/s";
+        UpdateMonitorRateText();
         UpdateFrameCountText();
         UpdateRxDropCountText();
     }

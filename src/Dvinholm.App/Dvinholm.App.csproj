@@ -8,9 +8,12 @@
     <Version>0.2.4</Version>
     <ApplicationManifest>app.manifest</ApplicationManifest>
     <ApplicationIcon>Assets\Dvinholm.ico</ApplicationIcon>
-    <Platforms>x86</Platforms>
-    <PlatformTarget>x86</PlatformTarget>
-    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <!-- Transitional: legacy release CI explicitly selects x86, new unified app explicitly selects x64. -->
+    <Platforms>x86;x64</Platforms>
+    <PlatformTarget Condition="'$(Platform)' == 'x64'">x64</PlatformTarget>
+    <PlatformTarget Condition="'$(Platform)' != 'x64'">x86</PlatformTarget>
+    <RuntimeIdentifier Condition="'$(Platform)' == 'x64'">win-x64</RuntimeIdentifier>
+    <RuntimeIdentifier Condition="'$(Platform)' != 'x64'">win-x86</RuntimeIdentifier>
     <SelfContained>true</SelfContained>
     <PublishReadyToRun>false</PublishReadyToRun>
     <!-- Keep WinUI/XAML/COM safe from unvalidated linker removal. -->
@@ -58,5 +61,7 @@
     <None Update="Assets\Dvinholm.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\assets\dvinholm-banner.webp" Link="Assets\Dvinholm-Banner.webp" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\assets\dvinholm-banner.png" Link="Assets\Dvinholm-Banner.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Reuse the user-approved No. 9 gear / gull emblem, never a generated placeholder. -->
+    <Content Include="..\..\assets\launcher-northern-emblem.svg" Link="Assets\Launcher-Northern-Emblem.svg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
 </Project>

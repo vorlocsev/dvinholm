@@ -118,12 +118,14 @@ public sealed class UdsReadResultLifetimeTests
     public void NavigationScanEcuSelectionAndAdapterChangesInvalidatePriorResults()
     {
         var code = Source("src/Dvinholm.App/MainWindow.xaml.cs");
-        var home = Between(code, "private void DashboardReturn_Click(", "private void RefreshDashboardSummary(");
+        var navigation = Between(code, "private void DashboardNavigate(", "private void WorkspaceNavigate_Click(");
+        var legacyReturn = Between(code, "private void DashboardReturn_Click(", "private void RefreshDashboardSummary(");
         var scan = Between(code, "private async void Discover_Click(", "private void ShowDiscoveredEcus(");
         // Helper is located between discovery and selection; locate exact handler independently.
         var select = Between(code, "private void ApplyEcuSelection(", "private void SetUdsEnabled(");
         var connect = Between(code, "private async void Connect_Click(", "private void Start_Click(");
-        Assert.Contains("ClearDiagnosticReadResult();", home);
+        Assert.Contains("ClearDiagnosticReadResult();", navigation);
+        Assert.Contains("DashboardNavigate(sender, AuroraDestination.J2534Connection)", legacyReturn);
         Assert.Contains("ClearDiagnosticReadResult();", scan);
         Assert.Contains("ClearDiagnosticReadResult();", select);
         Assert.True(connect.Split("ClearDiagnosticReadResult();", StringSplitOptions.None).Length >= 3);

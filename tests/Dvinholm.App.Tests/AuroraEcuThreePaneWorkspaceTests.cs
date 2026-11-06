@@ -166,7 +166,16 @@ public sealed class AuroraEcuThreePaneWorkspaceTests
         var source = Source("src/Dvinholm.App/MainWindow.xaml.cs");
         Assert.Contains("!ReferenceEquals(_ecus[index], row)", source);
         Assert.Contains("UdsRequestId.Text = string.Empty;", source);
-        Assert.Contains("UdsPassiveEcuListPresentation.SelectionDetails(row.Candidate)", source);
+        // The actual selection detail is projected in the selected locale
+        // while the inferred TX address stays blank until user verification.
+        var start = source.IndexOf("private void ApplyEcuSelection(", StringComparison.Ordinal);
+        var end = source.IndexOf("private void SetUdsEnabled(", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var selection = source[start..end];
+        Assert.Contains("UdsPassiveEcuListPresentation.SelectionDetails(", selection);
+        Assert.Contains("row.Candidate, _unifiedEnglish)", selection);
+        Assert.Contains("UdsRequestId.Text = string.Empty;", selection);
+        Assert.DoesNotContain("PassThruWriteMsgs(", selection);
         Assert.Contains("ShowAuroraEcuObservationRail(found, complete)", source);
     }
 }

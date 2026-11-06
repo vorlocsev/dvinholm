@@ -1,5 +1,12 @@
 <Window xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation" xmlns:local="using:Dvinholm.App" xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml" x:Class="Dvinholm.App.MainWindow" Title="Dvinholm">
-    <Grid x:Name="RootLayout" Background="#071827" RequestedTheme="Dark">
+    <Grid x:Name="RootLayout" RequestedTheme="Dark">
+        <Grid.Background>
+            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#071625" Offset="0" />
+                <GradientStop Color="#0A1D32" Offset="0.62" />
+                <GradientStop Color="#13152F" Offset="1" />
+            </LinearGradientBrush>
+        </Grid.Background>
         <VisualStateManager.VisualStateGroups>
             <VisualStateGroup x:Name="ShellLayoutStates">
                 <VisualState x:Name="ShellWide">
@@ -14,26 +21,205 @@
                     <VisualState.Setters>
                         <Setter Target="ShellSidebarColumn.Width" Value="64" />
                         <Setter Target="SidebarBrand.Visibility" Value="Collapsed" />
+                        <Setter Target="SidebarCompactBrand.Visibility" Value="Visible" />
                         <Setter Target="SidebarFooter.Visibility" Value="Collapsed" />
                         <Setter Target="SidebarNavPanel.Padding" Value="6,12" />
-                        <Setter Target="SidebarHomeButton.Content" Value="⌂" />
-                        <Setter Target="SidebarHomeButton.HorizontalContentAlignment" Value="Center" />
                         <Setter Target="ShellNavCemPinLabel.Visibility" Value="Collapsed" />
                         <Setter Target="ShellNavConfigLabel.Visibility" Value="Collapsed" />
                         <Setter Target="ShellNavDtcLabel.Visibility" Value="Collapsed" />
                         <Setter Target="ShellNavEcuLabel.Visibility" Value="Collapsed" />
-                        <Setter Target="ShellNavDiagnosticsLabel.Visibility" Value="Collapsed" />
-                        <Setter Target="ShellNavMonitorLabel.Visibility" Value="Collapsed" />
-                        <Setter Target="ShellNavProfilesLabel.Visibility" Value="Collapsed" />
                         <Setter Target="ShellNavConnectionLabel.Visibility" Value="Collapsed" />
-                        <Setter Target="WorkspaceHeaderGrid.Margin" Value="12,12,12,12" />
+                        <Setter Target="ShellNavUpdatesLabel.Visibility" Value="Collapsed" />
+                        <Setter Target="SidebarConnectionButton.HorizontalContentAlignment" Value="Center" />
+                        <Setter Target="SidebarConnectionButton.Padding" Value="0,9" />
+                        <Setter Target="SidebarUpdatesButton.HorizontalContentAlignment" Value="Center" />
+                        <Setter Target="SidebarUpdatesButton.Padding" Value="0,9" />
+                        <Setter Target="SidebarCemPinButton.HorizontalContentAlignment" Value="Center" />
+                        <Setter Target="SidebarCemPinButton.Padding" Value="0,9" />
+                        <Setter Target="SidebarCemConfigButton.HorizontalContentAlignment" Value="Center" />
+                        <Setter Target="SidebarCemConfigButton.Padding" Value="0,9" />
+                        <Setter Target="SidebarDtcButton.HorizontalContentAlignment" Value="Center" />
+                        <Setter Target="SidebarDtcButton.Padding" Value="0,9" />
+                        <Setter Target="SidebarEcuButton.HorizontalContentAlignment" Value="Center" />
+                        <Setter Target="SidebarEcuButton.Padding" Value="0,9" />
+                        <Setter Target="WorkspaceHeaderGrid.Margin" Value="12,10,12,10" />
+                        <Setter Target="WorkspaceHeaderGrid.MinHeight" Value="116" />
+                        <Setter Target="SidebarAuroraRibbon.Opacity" Value="0.12" />
                         <Setter Target="WorkspaceHeaderGrid.RowSpacing" Value="8" />
                         <Setter Target="WorkspaceTitle.FontSize" Value="23" />
                         <Setter Target="WorkspaceHeaderActions.(Grid.Row)" Value="1" />
                         <Setter Target="WorkspaceHeaderActions.(Grid.Column)" Value="0" />
                         <Setter Target="WorkspaceHeaderActions.HorizontalAlignment" Value="Left" />
+                        <Setter Target="WorkspaceHeaderActions.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="WorkspaceHeaderActions.Orientation" Value="Horizontal" />
+                        <Setter Target="WorkspaceHeaderActions.Margin" Value="16,0,16,10" />
+                        <Setter Target="WorkspaceHeaderActions.Spacing" Value="8" />
+                        <Setter Target="WorkspaceHeaderCopy.Margin" Value="16,10,16,0" />
                         <Setter Target="WorkspacePageContainer.Padding" Value="12,0,12,16" />
                         <Setter Target="ShellStatusBar.Padding" Value="12,10" />
+                        <Setter Target="StatusFooterVersion.Visibility" Value="Collapsed" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+            <!-- 640-DIP first fold: keep page identity and genuine session/language
+                 controls visible, but let per-page cards own the explanation. -->
+            <!-- Keep the wide banner shallow when enough real client width
+                 exists. The 980..1279 DIP right column stays vertically stacked
+                 so longer localized page titles keep usable horizontal room. -->
+            <VisualStateGroup x:Name="HeaderActionDensityStates">
+                <VisualState x:Name="HeaderActionsInline">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1280" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="WorkspaceHeaderActions.Orientation" Value="Horizontal" />
+                        <Setter Target="WorkspaceHeaderActions.Spacing" Value="8" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="HeaderActionsStacked">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+            </VisualStateGroup>
+            <VisualStateGroup x:Name="HeaderReadabilityStates">
+                <VisualState x:Name="HeaderFullContext">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="720" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="HeaderTitleOnly">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="WorkspaceScopeLabel.Visibility" Value="Collapsed" />
+                        <Setter Target="WorkspaceDescription.Visibility" Value="Collapsed" />
+                        <Setter Target="WorkspaceHeaderCopy.Spacing" Value="0" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+            <VisualStateGroup x:Name="CemReferenceResponsiveStates">
+                <VisualState x:Name="CemReferenceWide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1280" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="CemReferenceStacked">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="CemReferenceCategoryColumn.Width" Value="*" />
+                        <Setter Target="CemReferenceValuesColumn.Width" Value="0" />
+                        <Setter Target="CemReferenceDetailColumn.Width" Value="0" />
+                        <Setter Target="CemReferenceValuesPane.(Grid.Column)" Value="0" />
+                        <Setter Target="CemReferenceValuesPane.(Grid.Row)" Value="1" />
+                        <Setter Target="CemReferenceDetailPane.(Grid.Column)" Value="0" />
+                        <Setter Target="CemReferenceDetailPane.(Grid.Row)" Value="2" />
+                        <Setter Target="CemConfigActionThirdColumn.Width" Value="0" />
+                        <Setter Target="CemConfigActionFourthColumn.Width" Value="0" />
+                        <Setter Target="CemConfigActionFifthColumn.Width" Value="0" />
+                        <Setter Target="CemConfigActionSixthColumn.Width" Value="0" />
+                        <Setter Target="CemConfigBackupButton.(Grid.Column)" Value="0" />
+                        <Setter Target="CemConfigBackupButton.(Grid.Row)" Value="1" />
+                        <Setter Target="CemConfigCompareButton.(Grid.Column)" Value="1" />
+                        <Setter Target="CemConfigCompareButton.(Grid.Row)" Value="1" />
+                        <Setter Target="CemConfigPrepareButton.(Grid.Column)" Value="0" />
+                        <Setter Target="CemConfigPrepareButton.(Grid.Row)" Value="2" />
+                        <Setter Target="CemConfigWriteButton.(Grid.Column)" Value="1" />
+                        <Setter Target="CemConfigWriteButton.(Grid.Row)" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+            <VisualStateGroup x:Name="ConnectionPanelStates">
+                <VisualState x:Name="ConnectionThreeColumns">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1280" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="ConnectionTwoColumns">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="980" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ConnectionAdapterColumn.Width" Value="*" />
+                        <Setter Target="ConnectionBusColumn.Width" Value="*" />
+                        <Setter Target="ConnectionStatusColumn.Width" Value="0" />
+                        <Setter Target="ConnectionStatusPane.(Grid.Column)" Value="0" />
+                        <Setter Target="ConnectionStatusPane.(Grid.Row)" Value="1" />
+                        <Setter Target="ConnectionStatusPane.(Grid.ColumnSpan)" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="ConnectionVerticalPanels">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ConnectionAdapterColumn.Width" Value="*" />
+                        <Setter Target="ConnectionBusColumn.Width" Value="0" />
+                        <Setter Target="ConnectionStatusColumn.Width" Value="0" />
+                        <Setter Target="ConnectionBusPane.(Grid.Column)" Value="0" />
+                        <Setter Target="ConnectionBusPane.(Grid.Row)" Value="1" />
+                        <Setter Target="ConnectionStatusPane.(Grid.Column)" Value="0" />
+                        <Setter Target="ConnectionStatusPane.(Grid.Row)" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+            <VisualStateGroup x:Name="UpdatesPanelStates">
+                <VisualState x:Name="UpdatesThreeColumns">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1280" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="UpdatesTwoColumns">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="980" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="UpdatesVersionColumn.Width" Value="*" />
+                        <Setter Target="UpdatesChannelColumn.Width" Value="*" />
+                        <Setter Target="UpdatesActionColumn.Width" Value="0" />
+                        <Setter Target="UpdatesActionPane.(Grid.Column)" Value="0" />
+                        <Setter Target="UpdatesActionPane.(Grid.Row)" Value="1" />
+                        <Setter Target="UpdatesActionPane.(Grid.ColumnSpan)" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+                <VisualState x:Name="UpdatesVerticalPanels">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="UpdatesVersionColumn.Width" Value="*" />
+                        <Setter Target="UpdatesChannelColumn.Width" Value="0" />
+                        <Setter Target="UpdatesActionColumn.Width" Value="0" />
+                        <Setter Target="UpdatesChannelPane.(Grid.Column)" Value="0" />
+                        <Setter Target="UpdatesChannelPane.(Grid.Row)" Value="1" />
+                        <Setter Target="UpdatesActionPane.(Grid.Column)" Value="0" />
+                        <Setter Target="UpdatesActionPane.(Grid.Row)" Value="2" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+            <VisualStateGroup x:Name="DtcResponsiveStates">
+                <VisualState x:Name="DtcTwoColumns">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="1280" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="DtcStacked">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="DtcDetailColumn.Width" Value="0" />
+                        <Setter Target="DtcDetailsPane.(Grid.Column)" Value="0" />
+                        <Setter Target="DtcDetailsPane.(Grid.Row)" Value="1" />
+                        <Setter Target="DtcActionReadColumn.Width" Value="0" />
+                        <Setter Target="DtcActionClearColumn.Width" Value="0" />
+                        <Setter Target="ReadDtcButton.(Grid.Column)" Value="0" />
+                        <Setter Target="ReadDtcButton.(Grid.Row)" Value="1" />
+                        <Setter Target="DtcClearButton.(Grid.Column)" Value="0" />
+                        <Setter Target="DtcClearButton.(Grid.Row)" Value="2" />
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
@@ -42,6 +228,33 @@
                     <VisualState.StateTriggers>
                         <AdaptiveTrigger MinWindowWidth="1280" />
                     </VisualState.StateTriggers>
+                </VisualState>
+                <!-- Intermediate Aurora composition keeps the RX index and actual
+                     side-view car together; selected evidence spans the next row.
+                     The read-only scan/tool controls retain their compact reflow. -->
+                <VisualState x:Name="EcuTwoColumns">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="980" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="EcuWorkbenchDetailColumn.Width" Value="0" />
+                        <Setter Target="EcuWorkbenchDetailPane.(Grid.Column)" Value="0" />
+                        <Setter Target="EcuWorkbenchDetailPane.(Grid.Row)" Value="1" />
+                        <Setter Target="EcuWorkbenchDetailPane.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="EcuToolsThirdColumn.Width" Value="0" />
+                        <Setter Target="EcuProfilesNavigateButton.(Grid.Column)" Value="0" />
+                        <Setter Target="EcuProfilesNavigateButton.(Grid.Row)" Value="1" />
+                        <Setter Target="EcuProfilesNavigateButton.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="EcuScanToolbarActionColumn.Width" Value="*" />
+                        <Setter Target="EcuScanToolbarCancelColumn.Width" Value="0" />
+                        <Setter Target="EcuSelector.(Grid.ColumnSpan)" Value="2" />
+                        <Setter Target="DiscoverButton.(Grid.Column)" Value="0" />
+                        <Setter Target="DiscoverButton.(Grid.Row)" Value="1" />
+                        <Setter Target="DiscoverButton.HorizontalAlignment" Value="Stretch" />
+                        <Setter Target="CancelDiscoveryButton.(Grid.Column)" Value="1" />
+                        <Setter Target="CancelDiscoveryButton.(Grid.Row)" Value="1" />
+                        <Setter Target="CancelDiscoveryButton.HorizontalAlignment" Value="Stretch" />
+                    </VisualState.Setters>
                 </VisualState>
                 <VisualState x:Name="EcuVerticalWorkspace">
                     <VisualState.StateTriggers>
@@ -55,6 +268,10 @@
                         <Setter Target="EcuWorkbenchVehiclePane.(Grid.Row)" Value="1" />
                         <Setter Target="EcuWorkbenchDetailPane.(Grid.Column)" Value="0" />
                         <Setter Target="EcuWorkbenchDetailPane.(Grid.Row)" Value="2" />
+                        <Setter Target="EcuToolsThirdColumn.Width" Value="0" />
+                        <Setter Target="EcuProfilesNavigateButton.(Grid.Column)" Value="0" />
+                        <Setter Target="EcuProfilesNavigateButton.(Grid.Row)" Value="1" />
+                        <Setter Target="EcuProfilesNavigateButton.(Grid.ColumnSpan)" Value="2" />
                         <Setter Target="EcuScanToolbarActionColumn.Width" Value="0" />
                         <Setter Target="EcuScanToolbarCancelColumn.Width" Value="0" />
                         <Setter Target="DiscoverButton.(Grid.Column)" Value="0" />
@@ -66,8 +283,74 @@
                     </VisualState.Setters>
                 </VisualState>
             </VisualStateGroup>
+            <!-- The secondary ECU-profile editor must not squeeze four RU/EN
+                 actions and two input controls into the 640-DIP shell. -->
+            <VisualStateGroup x:Name="ProfileResponsiveStates">
+                <VisualState x:Name="ProfileWide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="980" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="ProfileCompact">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="ProfileSearchColumn.Width" Value="*" />
+                        <Setter Target="ProfileSelectorColumn.Width" Value="0" />
+                        <Setter Target="ProfileFiltersThirdColumn.Width" Value="0" />
+                        <Setter Target="ProfileSelector.(Grid.Column)" Value="0" />
+                        <Setter Target="ProfileSelector.(Grid.Row)" Value="1" />
+                        <Setter Target="MarkedVerifiedOnly.(Grid.ColumnSpan)" Value="1" />
+                        <Setter Target="MarkedVerifiedOnly.(Grid.Row)" Value="2" />
+                        <Setter Target="ProfileActionThirdColumn.Width" Value="0" />
+                        <Setter Target="ProfileActionFourthColumn.Width" Value="0" />
+                        <Setter Target="ProfileImportButton.(Grid.Column)" Value="0" />
+                        <Setter Target="ProfileImportButton.(Grid.Row)" Value="1" />
+                        <Setter Target="ProfileExportButton.(Grid.Column)" Value="1" />
+                        <Setter Target="ProfileExportButton.(Grid.Row)" Value="1" />
+                        <Setter Target="CaptureSnapshotButton.(Grid.Row)" Value="2" />
+                        <Setter Target="InspectSnapshotButton.(Grid.Column)" Value="0" />
+                        <Setter Target="InspectSnapshotButton.(Grid.Row)" Value="3" />
+                        <Setter Target="CompareSnapshotsButton.(Grid.Column)" Value="1" />
+                        <Setter Target="CompareSnapshotsButton.(Grid.Row)" Value="3" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
+            <!-- Monitor commands stay reachable at compact widths without a
+                 horizontal-scrolling workspace or clipped RU/EN captions. -->
+            <VisualStateGroup x:Name="CanMonitorToolbarStates">
+                <VisualState x:Name="CanMonitorToolbarWide">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="980" />
+                    </VisualState.StateTriggers>
+                </VisualState>
+                <VisualState x:Name="CanMonitorToolbarCompact">
+                    <VisualState.StateTriggers>
+                        <AdaptiveTrigger MinWindowWidth="0" />
+                    </VisualState.StateTriggers>
+                    <VisualState.Setters>
+                        <Setter Target="CanMonitorFilterColumn.Width" Value="*" />
+                        <Setter Target="CanMonitorClearColumn.Width" Value="*" />
+                        <Setter Target="CanMonitorHardwareColumn.Width" Value="*" />
+                        <Setter Target="CanMonitorCsvColumn.Width" Value="0" />
+                        <Setter Target="IdFilter.(Grid.ColumnSpan)" Value="3" />
+                        <Setter Target="CanMonitorClearButton.(Grid.Column)" Value="0" />
+                        <Setter Target="CanMonitorClearButton.(Grid.Row)" Value="1" />
+                        <Setter Target="HardwareFilterButton.(Grid.Column)" Value="1" />
+                        <Setter Target="HardwareFilterButton.(Grid.Row)" Value="1" />
+                        <Setter Target="CanMonitorCsvButton.(Grid.Column)" Value="2" />
+                        <Setter Target="CanMonitorCsvButton.(Grid.Row)" Value="1" />
+                    </VisualState.Setters>
+                </VisualState>
+            </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
         <Grid.Resources>
+            <LinearGradientBrush x:Key="AuroraPanelGradient" StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#122F4E" Offset="0" />
+                <GradientStop Color="#0E263F" Offset="0.45" />
+                <GradientStop Color="#0B1E33" Offset="1" />
+            </LinearGradientBrush>
             <Style x:Key="AuroraButton" TargetType="Button">
                 <Setter Property="CornerRadius" Value="8" />
                 <Setter Property="Padding" Value="16,10" />
@@ -90,99 +373,124 @@
                 <Setter Property="TextWrapping" Value="Wrap" />
             </Style>
             <Style x:Key="AuroraCard" TargetType="Border">
-                <Setter Property="Background" Value="#0D263B" />
+                <Setter Property="Background" Value="{StaticResource AuroraPanelGradient}" />
                 <Setter Property="BorderBrush" Value="#23445F" />
                 <Setter Property="BorderThickness" Value="1" />
-                <Setter Property="CornerRadius" Value="16" />
-                <Setter Property="Padding" Value="24" />
-                <Setter Property="Margin" Value="0,0,0,16" />
+                <Setter Property="CornerRadius" Value="12" />
+                <Setter Property="Padding" Value="16" />
+                <Setter Property="Margin" Value="0,0,0,12" />
             </Style>
             <DataTemplate x:Key="AuroraWrapCaption">
                 <TextBlock Text="{Binding}" TextWrapping="Wrap" TextAlignment="Center" />
             </DataTemplate>
+            <!-- Keep RU/EN action captions readable in dense Aurora footers. -->
+            <Style x:Key="AuroraActionCaptionButton" TargetType="Button" BasedOn="{StaticResource AuroraButton}">
+                <Setter Property="ContentTemplate" Value="{StaticResource AuroraWrapCaption}" />
+                <Setter Property="MinHeight" Value="48" />
+                <Setter Property="Padding" Value="8,9" />
+            </Style>
         </Grid.Resources>
         <Grid.ColumnDefinitions>
             <ColumnDefinition x:Name="ShellSidebarColumn" Width="216" />
             <ColumnDefinition Width="*" />
         </Grid.ColumnDefinitions>
-        <Border Background="#0A2038" BorderBrush="#244B73" BorderThickness="0,0,1,0">
+        <Border x:Name="AuroraSidebarSurface" Background="#0A2038" BorderBrush="#244B73" BorderThickness="0,0,1,0">
             <Grid>
                 <Grid.RowDefinitions>
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
+                <!-- Northern-light atmosphere behind navigation, never CAN state or a hit target. -->
+                <Border x:Name="SidebarAuroraBackdrop" Grid.RowSpan="2" IsHitTestVisible="False">
+                    <Border.Background>
+                        <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                            <GradientStop Color="#091A2F" Offset="0" />
+                            <GradientStop Color="#102744" Offset="0.48" />
+                            <GradientStop Color="#1D1A3C" Offset="1" />
+                        </LinearGradientBrush>
+                    </Border.Background>
+                </Border>
+                <Viewbox x:Name="SidebarAuroraRibbon" Grid.RowSpan="2" Height="480"
+                         HorizontalAlignment="Stretch" VerticalAlignment="Top" Stretch="Fill"
+                         Opacity="0.24" IsHitTestVisible="False">
+                    <Canvas Width="216" Height="480">
+                        <Path Data="M-44,14 C42,41 77,94 130,148 C187,205 182,273 267,333"
+                              Stroke="#15DDBD" StrokeThickness="24" StrokeStartLineCap="Round"
+                              Fill="Transparent" Opacity="0.38" />
+                        <Path Data="M-37,80 C53,108 69,164 149,226 C198,273 203,333 266,380"
+                              Stroke="#3EB5EC" StrokeThickness="17" Fill="Transparent" Opacity="0.32" />
+                        <Path Data="M-31,135 C37,173 82,211 145,271 C199,321 197,400 248,461"
+                              Stroke="#9B81EB" StrokeThickness="20" Fill="Transparent" Opacity="0.24" />
+                    </Canvas>
+                </Viewbox>
                 <ScrollViewer VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                     <StackPanel x:Name="SidebarNavPanel" Padding="16,24" Spacing="5">
-                        <StackPanel x:Name="SidebarBrand" Margin="6,0,0,18" Spacing="4">
-                            <TextBlock Text="DVINHOLM" FontSize="25" FontWeight="Bold" />
-                            <TextBlock Text="DIAGNOSTICS · CONTROL" FontSize="10" Foreground="#8AB9D9" />
+                        <!-- The approved Techno-North No.9 gull / gear artwork, not a temporary glyph. -->
+                        <StackPanel x:Name="SidebarBrand" Margin="2,0,0,18" Orientation="Horizontal" Spacing="10" VerticalAlignment="Center">
+                            <Image Source="ms-appx:///Assets/Launcher-Northern-Emblem.svg" Width="48" Height="48"
+                                   Stretch="Uniform" AutomationProperties.Name="Dvinholm" />
+                            <StackPanel Spacing="3" VerticalAlignment="Center">
+                                <TextBlock Text="Dvinholm" FontSize="23" FontWeight="SemiBold" />
+                                <TextBlock x:Name="SidebarBrandSubtitle" Text="АВТОДИАГНОСТИКА" FontSize="10"
+                                           Foreground="#9CBED7" />
+                            </StackPanel>
                         </StackPanel>
-                        <Button x:Name="SidebarHomeButton" Content="⌂   Главная" ToolTipService.ToolTip="Главная" AutomationProperties.Name="Главная" Style="{StaticResource AuroraNav}" Click="DashboardReturn_Click" Background="#0865C7" />
-                        <Button Tag="CemPinReadiness" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="CEM PIN" ToolTipService.ToolTip="CEM PIN">
-                            <StackPanel Orientation="Horizontal" Spacing="14">
-                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
-                                <TextBlock x:Name="ShellNavCemPinLabel" Text="CEM PIN" />
-                            </StackPanel>
-                        </Button>
-                        <Button Tag="CemConfigurationCatalog" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Конфигурация CEM" ToolTipService.ToolTip="Конфигурация CEM">
-                            <StackPanel Orientation="Horizontal" Spacing="14">
-                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
-                                <TextBlock x:Name="ShellNavConfigLabel" Text="Конфигурация CEM" />
-                            </StackPanel>
-                        </Button>
-                        <Button Tag="DtcFaults" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Ошибки / DTC" ToolTipService.ToolTip="Ошибки / DTC">
-                            <StackPanel Orientation="Horizontal" Spacing="14">
-                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
-                                <TextBlock x:Name="ShellNavDtcLabel" Text="Ошибки / DTC" />
-                            </StackPanel>
-                        </Button>
-                        <Button Tag="EcuWorkspace" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Блоки ECU" ToolTipService.ToolTip="Блоки ECU">
-                            <StackPanel Orientation="Horizontal" Spacing="14">
-                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
-                                <TextBlock x:Name="ShellNavEcuLabel" Text="Блоки ECU" />
-                            </StackPanel>
-                        </Button>
-                        <Button Tag="DiagnosticsWorkspace" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Диагностика" ToolTipService.ToolTip="Диагностика">
-                            <StackPanel Orientation="Horizontal" Spacing="14">
-                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
-                                <TextBlock x:Name="ShellNavDiagnosticsLabel" Text="Диагностика" />
-                            </StackPanel>
-                        </Button>
-                        <Button Tag="CanMonitor" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="CAN монитор" ToolTipService.ToolTip="CAN монитор">
-                            <StackPanel Orientation="Horizontal" Spacing="14">
-                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
-                                <TextBlock x:Name="ShellNavMonitorLabel" Text="CAN монитор" />
-                            </StackPanel>
-                        </Button>
-                        <Button Tag="EcuProfiles" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Профили ECU" ToolTipService.ToolTip="Профили ECU">
-                            <StackPanel Orientation="Horizontal" Spacing="14">
-                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
-                                <TextBlock x:Name="ShellNavProfilesLabel" Text="Профили ECU" />
-                            </StackPanel>
-                        </Button>
-                        <Button Tag="J2534Connection" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Подключение" ToolTipService.ToolTip="Подключение">
+                        <Image x:Name="SidebarCompactBrand" Source="ms-appx:///Assets/Launcher-Northern-Emblem.svg"
+                               Width="44" Height="44" Margin="0,0,0,14" HorizontalAlignment="Center"
+                               Stretch="Uniform" Visibility="Collapsed" AutomationProperties.Name="Dvinholm" />
+                        <Button x:Name="SidebarConnectionButton" Tag="J2534Connection" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Подключение" ToolTipService.ToolTip="Подключение">
                             <StackPanel Orientation="Horizontal" Spacing="14">
                                 <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
                                 <TextBlock x:Name="ShellNavConnectionLabel" Text="Подключение" />
                             </StackPanel>
                         </Button>
+                        <Button x:Name="SidebarUpdatesButton" Style="{StaticResource AuroraNav}" Click="UnifiedUpdatesNavigate_Click" AutomationProperties.Name="Обновление" ToolTipService.ToolTip="Обновление">
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
+                                <TextBlock x:Name="ShellNavUpdatesLabel" Text="Обновление" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="SidebarCemPinButton" Tag="CemPinReadiness" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="CEM PIN" ToolTipService.ToolTip="CEM PIN">
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
+                                <TextBlock x:Name="ShellNavCemPinLabel" Text="CEM PIN" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="SidebarCemConfigButton" Tag="CemConfigurationCatalog" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Конфигурация CEM" ToolTipService.ToolTip="Конфигурация CEM">
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
+                                <TextBlock x:Name="ShellNavConfigLabel" Text="Конфигурация CEM" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="SidebarDtcButton" Tag="DtcFaults" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Ошибки (DTC)" ToolTipService.ToolTip="Ошибки (DTC)">
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
+                                <TextBlock x:Name="ShellNavDtcLabel" Text="Ошибки (DTC)" />
+                            </StackPanel>
+                        </Button>
+                        <Button x:Name="SidebarEcuButton" Tag="EcuWorkspace" Style="{StaticResource AuroraNav}" Click="WorkspaceNavigate_Click" AutomationProperties.Name="Блоки (ECU)" ToolTipService.ToolTip="Блоки (ECU)">
+                            <StackPanel Orientation="Horizontal" Spacing="14">
+                                <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="" FontSize="18" />
+                                <TextBlock x:Name="ShellNavEcuLabel" Text="Блоки (ECU)" />
+                            </StackPanel>
+                        </Button>
                     </StackPanel>
                 </ScrollViewer>
-                <StackPanel x:Name="SidebarFooter" Grid.Row="1" Padding="22,18" Spacing="6">
-                    <TextBlock Text="WINUI 3 · WINDOWS x86" FontSize="10" Foreground="#80A5C3" />
-                    <TextBlock Text="Обновления через Launcher" FontSize="11" Foreground="#80A5C3" />
+                <StackPanel x:Name="SidebarFooter" Grid.Row="1" Padding="22,18" Spacing="6" Visibility="Collapsed">
+                    <TextBlock Text="WINUI 3 · .NET 10" FontSize="10" Foreground="#80A5C3" />
+                    <TextBlock x:Name="SidebarFooterLocale" Text="AURORA · ЕДИНОЕ ПРИЛОЖЕНИЕ" FontSize="11" Foreground="#80A5C3" />
                 </StackPanel>
             </Grid>
         </Border>
         <Grid Grid.Column="1">
-            <local:AuroraHome x:Name="AuroraLanding" />
-            <Grid x:Name="AuroraWorkspaceHost" Visibility="Collapsed">
+            <local:AuroraHome x:Name="AuroraLanding" Visibility="Collapsed" />
+            <Grid x:Name="AuroraWorkspaceHost" Visibility="Visible">
                 <Grid.RowDefinitions>
                     <RowDefinition Height="Auto" />
                     <RowDefinition Height="*" />
                     <RowDefinition Height="Auto" />
                 </Grid.RowDefinitions>
-                <Grid x:Name="WorkspaceHeaderGrid" Margin="28,24,28,20" ColumnSpacing="20">
+                <Grid x:Name="WorkspaceHeaderGrid" Margin="24,12,24,12" ColumnSpacing="20" MinHeight="132">
                     <Grid.RowDefinitions>
                         <RowDefinition Height="Auto" />
                         <RowDefinition Height="Auto" />
@@ -191,29 +499,195 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <StackPanel Spacing="7">
-                        <TextBlock Text="DVINHOLM / РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" CharacterSpacing="120" Foreground="#65BFF2" />
-                        <TextBlock x:Name="WorkspaceTitle" FontSize="32" FontWeight="SemiBold" />
-                        <TextBlock x:Name="WorkspaceDescription" Foreground="#9EB8CC" MaxWidth="760" HorizontalAlignment="Left" />
+                    <!-- Actual Dvinholm scenic banner, already included in the application package.
+                         A stronger navy mask keeps the printed banner wordmark behind the live page heading. Northern-light ribbons remain decorative, never CAN state. -->
+                    <Border x:Name="AuroraHeaderArtwork" Grid.RowSpan="2" Grid.ColumnSpan="2"
+                            Margin="-12,-8,-12,-8" CornerRadius="12" BorderThickness="1"
+                            BorderBrush="#326A8D" IsHitTestVisible="False">
+                        <Grid>
+                            <Grid.Background>
+                                <ImageBrush ImageSource="ms-appx:///Assets/Dvinholm-Banner.png"
+                                            Stretch="UniformToFill" AlignmentX="Center" AlignmentY="Center" />
+                            </Grid.Background>
+                            <Rectangle>
+                                <Rectangle.Fill>
+                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                        <GradientStop Color="#FA07182C" Offset="0" />
+                                        <GradientStop Color="#F209203A" Offset="0.42" />
+                                        <GradientStop Color="#E60B2138" Offset="0.74" />
+                                        <GradientStop Color="#C90B1930" Offset="1" />
+                                    </LinearGradientBrush>
+                                </Rectangle.Fill>
+                            </Rectangle>
+                            <Viewbox HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Stretch="Fill"
+                                     Opacity="0.48">
+                                <Canvas Width="920" Height="145">
+                                    <Path Data="M200,21 C345,1 445,63 587,17 C682,-10 772,34 902,11"
+                                          Stroke="#19E5BD" StrokeThickness="22" Opacity="0.50" Fill="Transparent" />
+                                    <Path Data="M304,4 C429,41 557,0 683,29 C776,50 854,10 929,32"
+                                          Stroke="#63DEED" StrokeThickness="13" Opacity="0.38" Fill="Transparent" />
+                                    <Path Data="M490,0 C601,28 687,-1 783,15 C866,31 887,4 945,8"
+                                          Stroke="#A58AFF" StrokeThickness="14" Opacity="0.35" Fill="Transparent" />
+                                </Canvas>
+                            </Viewbox>
+                        </Grid>
+                    </Border>
+                    <StackPanel x:Name="WorkspaceHeaderCopy" AutomationProperties.AutomationId="DvinholmWorkspaceHeaderCopy" AutomationProperties.AccessibilityView="Control" Spacing="7" Margin="16,13,0,12" VerticalAlignment="Center">
+                        <TextBlock x:Name="WorkspaceScopeLabel" Text="DVINHOLM / РАБОЧЕЕ ПРОСТРАНСТВО" FontSize="10" CharacterSpacing="120" Foreground="#65BFF2" />
+                        <TextBlock x:Name="WorkspaceTitle" AutomationProperties.AutomationId="DvinholmWorkspaceTitle" FontSize="30" FontWeight="SemiBold"
+                                   Foreground="#F5FAFF" TextWrapping="Wrap" />
+                        <TextBlock x:Name="WorkspaceDescription" Foreground="#BDD4E8" MaxWidth="760"
+                                   FontSize="13" HorizontalAlignment="Left" TextWrapping="Wrap" />
                     </StackPanel>
-                    <StackPanel x:Name="WorkspaceHeaderActions" Grid.Column="1" Spacing="10">
-                        <Button Tag="J2534Connection" Click="WorkspaceNavigate_Click">
-                            <StackPanel Orientation="Horizontal" Spacing="8">
-                                <TextBlock Text="●" Foreground="#66CAED" />
-                                <TextBlock x:Name="ShellConnectionText" Text="Не подключено" />
-                            </StackPanel>
+                    <StackPanel x:Name="WorkspaceHeaderActions" Grid.Column="1" Spacing="10"
+                                Margin="0,12,16,10" VerticalAlignment="Center">
+                        <Button x:Name="HeaderConnectionStatusButton" AutomationProperties.AutomationId="DvinholmHeaderConnectionStatus" Tag="J2534Connection"
+                                Click="WorkspaceNavigate_Click" VerticalAlignment="Bottom" MaxWidth="184"
+                                HorizontalContentAlignment="Stretch"
+                                ToolTipService.ToolTip="Открыть параметры J2534. Это не подключает автомобиль.">
+                            <Grid ColumnSpacing="8">
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition Width="Auto" />
+                                    <ColumnDefinition Width="*" />
+                                </Grid.ColumnDefinitions>
+                                <TextBlock x:Name="ShellConnectionDot" Text="●" Foreground="#728FA8"
+                                           VerticalAlignment="Center"
+                                           AutomationProperties.Name="Состояние соединения J2534" />
+                                <TextBlock x:Name="ShellConnectionText" Grid.Column="1"
+                                           Text="Не подключено" TextWrapping="Wrap"
+                                           MaxWidth="128" VerticalAlignment="Center" />
+                            </Grid>
                         </Button>
+                        <ComboBox x:Name="UnifiedLanguageSelector" AutomationProperties.AutomationId="DvinholmLanguageSelector" Header="RU / EN"
+                                  MinWidth="98" SelectedIndex="0"
+                                  SelectionChanged="UnifiedLanguageSelector_SelectionChanged">
+                            <ComboBoxItem Content="Русский" Tag="ru" />
+                            <ComboBoxItem Content="English" Tag="en" />
+                        </ComboBox>
                         <Button x:Name="CancelUdsButton" Visibility="Collapsed" Content="Отменить операцию" IsEnabled="False" Click="CancelUds_Click" VerticalAlignment="Bottom" />
                     </StackPanel>
                 </Grid>
-                <ScrollViewer x:Name="WorkspaceScroll" Grid.Row="1" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
-                    <StackPanel x:Name="WorkspacePageContainer" Padding="28,0,28,24" MaxWidth="1200" HorizontalAlignment="Stretch">
-                        <StackPanel x:Name="CemPinPage" Visibility="Collapsed" Spacing="4">
-                            <Border Style="{StaticResource AuroraCard}" x:Name="CemPinIdentityCard" Visibility="Collapsed">
+                <ScrollViewer x:Name="WorkspaceScroll" AutomationProperties.AutomationId="DvinholmWorkspaceScroll"
+                              Grid.Row="1" VerticalScrollMode="Enabled" VerticalScrollBarVisibility="Auto"
+                              HorizontalScrollMode="Disabled" HorizontalScrollBarVisibility="Disabled">
+                    <StackPanel x:Name="WorkspacePageContainer" Padding="24,0,24,20" MaxWidth="1200" HorizontalAlignment="Stretch">
+                        <StackPanel x:Name="UnifiedUpdatesPage" Visibility="Collapsed" Spacing="12">
+                            <!-- Three approved review panels: installed version | channel | verified check.
+                                 Does not imply install or trusted release availability. -->
+                            <Grid x:Name="UpdatesThreeCardGrid" ColumnSpacing="12" RowSpacing="12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition x:Name="UpdatesVersionColumn" Width="*" />
+                                    <ColumnDefinition x:Name="UpdatesChannelColumn" Width="*" />
+                                    <ColumnDefinition x:Name="UpdatesActionColumn" Width="1.15*" />
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="UpdatesVersionPane" Style="{StaticResource AuroraCard}" Grid.Column="0" Margin="0">
+                                    <StackPanel Spacing="12">
+                                        <TextBlock x:Name="UnifiedCurrentVersionTitle" TextWrapping="Wrap" Text="Установленная версия" FontSize="20" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="UnifiedCurrentVersion" TextWrapping="Wrap" Text="Не определена" FontSize="27" FontWeight="Bold" Foreground="#B7DDFF" />
+                                        <TextBlock x:Name="UnifiedVersionNote" TextWrapping="Wrap" Text="Данные о доступном обновлении ещё не проверены." Foreground="#A6BED2" />
+                                    </StackPanel>
+                                </Border>
+                                <Border x:Name="UpdatesChannelPane" Style="{StaticResource AuroraCard}" Grid.Column="1" Margin="0">
+                                    <StackPanel Spacing="12">
+                                        <TextBlock x:Name="UnifiedChannelTitle" TextWrapping="Wrap" Text="Канал обновлений" FontSize="20" FontWeight="SemiBold" />
+                                        <ComboBox x:Name="UnifiedUpdateChannel" HorizontalAlignment="Stretch" SelectionChanged="UnifiedUpdateChannel_SelectionChanged">
+                                            <ComboBoxItem Content="Stable" Tag="stable" />
+                                            <ComboBoxItem Content="Development" Tag="development" />
+                                        </ComboBox>
+                                        <TextBlock x:Name="UnifiedChannelNote" TextWrapping="Wrap" Text="Выбор сохраняется для этого пользователя." Foreground="#A6BED2" />
+                                    </StackPanel>
+                                </Border>
+                            <Border x:Name="UpdatesActionPane" Style="{StaticResource AuroraCard}" Grid.Column="2" Margin="0">
+                                <StackPanel Spacing="12">
+                                    <TextBlock x:Name="UnifiedUpdateSafetyTitle" TextWrapping="Wrap" Text="Проверка и установка" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="UnifiedUpdateStatus" Text="Для x64 ещё не опубликован проверенный канал обновлений. Скачивание, установка и перезапуск заблокированы до подключения безопасного x64-обновлятора." TextWrapping="Wrap" Foreground="#BED1E3" />
+                                    <StackPanel x:Name="UnifiedUpdateActionList" Spacing="8">
+                                        <Button x:Name="UnifiedCheckUpdateButton" Content="Проверить x64-релизы"
+                                                Click="UnifiedCheckUpdate_Click" HorizontalAlignment="Stretch"
+                                                ContentTemplate="{StaticResource AuroraWrapCaption}"
+                                                ToolTipService.ToolTip="Проверить только метаданные официальных релизов GitHub." />
+                                        <Button x:Name="UnifiedStageUpdateButton" Content="Скачать и проверить ZIP"
+                                                Click="UnifiedStageUpdate_Click" IsEnabled="False" HorizontalAlignment="Stretch"
+                                                ContentTemplate="{StaticResource AuroraWrapCaption}"
+                                                ToolTipService.ToolTip="Скачать ZIP во временный каталог и проверить SHA-256, x64 и структуру. Без установки." />
+                                        <Button x:Name="UnifiedCancelStageButton" Content="Отменить"
+                                                Click="UnifiedCancelStage_Click" IsEnabled="False" HorizontalAlignment="Stretch"
+                                                ContentTemplate="{StaticResource AuroraWrapCaption}"
+                                                ToolTipService.ToolTip="Отменить загрузку и удалить неполный пакет." />
+                                        <Button x:Name="UnifiedPreflightButton" Content="Проверить готовность"
+                                                Click="UnifiedPreflight_Click" IsEnabled="False" HorizontalAlignment="Stretch"
+                                                ContentTemplate="{StaticResource AuroraWrapCaption}"
+                                                ToolTipService.ToolTip="Проверить каталог программы и будущую резервную копию без изменения файлов." />
+                                    </StackPanel>
+                                    <ProgressBar x:Name="UnifiedStageProgress" IsIndeterminate="True"
+                                                 Visibility="Collapsed" Height="4" />
+                                    <TextBlock x:Name="UnifiedUpdateSafety" Text="Перед установкой потребуются проверка SHA-256, совместимости win-x64, резервная копия и безопасное восстановление после сбоя." TextWrapping="Wrap" Foreground="#93B2CD" />
+                                </StackPanel>
+                            </Border>
+                            </Grid>
+                        </StackPanel>
+                        <StackPanel x:Name="CemPinPage" Visibility="Collapsed" Spacing="0">
+                            <!-- Approved 3-step Aurora visual. Stages 2 and 3 are not authenticated
+                                 or executable in Release. No fabricated progress or PIN. -->
+                            <Border x:Name="CemPinStepper" Style="{StaticResource AuroraCard}">
+                                <Grid ColumnSpacing="8">
+                                    <Grid.ColumnDefinitions>
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                        <ColumnDefinition Width="*" />
+                                    </Grid.ColumnDefinitions>
+                                    <!-- Decorative progress track: stages never imply an attempted PIN read. -->
+                                    <Border x:Name="CemPinStepperTrack" Grid.ColumnSpan="3" Margin="50,20,50,0"
+                                            Height="2" VerticalAlignment="Top" IsHitTestVisible="False"
+                                            Background="#36617F" Opacity="0.8" />
+                                    <StackPanel Grid.Column="0" Spacing="8" HorizontalAlignment="Stretch">
+                                        <Border Width="40" Height="40" CornerRadius="20" BorderBrush="#19D9EF"
+                                                BorderThickness="2" Background="#143A58" HorizontalAlignment="Center">
+                                            <TextBlock Text="1" FontSize="19" FontWeight="SemiBold"
+                                                       VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock x:Name="CemPinStepIdentity" Text="Идентификация" TextWrapping="Wrap" HorizontalAlignment="Stretch" Margin="4,0"
+                                                   FontSize="12" TextAlignment="Center" Foreground="#C1EFFF" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="1" Spacing="8" HorizontalAlignment="Stretch">
+                                        <Border Width="40" Height="40" CornerRadius="20" BorderBrush="#54657F"
+                                                BorderThickness="1" Background="#12243C" HorizontalAlignment="Center">
+                                            <TextBlock Text="2" FontSize="19" FontWeight="SemiBold"
+                                                       Foreground="#A7B7CD" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock x:Name="CemPinStepResearch" Text="Поиск PIN недоступен" TextWrapping="Wrap" HorizontalAlignment="Stretch" Margin="4,0"
+                                                   FontSize="12" TextAlignment="Center" Foreground="#A5B7CE" />
+                                    </StackPanel>
+                                    <StackPanel Grid.Column="2" Spacing="8" HorizontalAlignment="Stretch">
+                                        <Border Width="40" Height="40" CornerRadius="20" BorderBrush="#54657F"
+                                                BorderThickness="1" Background="#12243C" HorizontalAlignment="Center">
+                                            <TextBlock Text="3" FontSize="19" FontWeight="SemiBold"
+                                                       Foreground="#A7B7CD" VerticalAlignment="Center" HorizontalAlignment="Center" />
+                                        </Border>
+                                        <TextBlock x:Name="CemPinStepResult" Text="Нет результата" TextWrapping="Wrap" HorizontalAlignment="Stretch" Margin="4,0"
+                                                   FontSize="12" TextAlignment="Center" Foreground="#A5B7CE" />
+                                    </StackPanel>
+                                </Grid>
+                            </Border>
+                            <Border Style="{StaticResource AuroraCard}" x:Name="CemPinIdentityCard" Visibility="Visible">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="01  ·  Идентификация CEM" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Прочитайте номер блока перед поиском PIN. Для экспериментального маршрута нужен канал 500 кбит/с, 29 бит." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="CemPinIdentitySectionTitle" Text="01  ·  Идентификация CEM" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="CemPinIdentitySectionIntro" Text="Идентификация CEM пока не подтверждена. Локальная проверка не обращается к автомобилю; экспериментальное чтение доступно только в Development." Foreground="#9EB8CC" TextWrapping="Wrap" />
                                     <Button x:Name="CemPartNumberReadButton" Content="Read CEM P/N (experimental HS-CAN)" HorizontalAlignment="Left" ToolTipService.ToolTip="Connect a 500 kbit/s, 29-bit channel; stop the monitor and remove user hardware filters first. Source-defined experimental read, not verified CEM or PIN support." Visibility="Collapsed" IsEnabled="False" Click="ReadCemPartNumber_Click" Background="#0865C7" BorderBrush="#348DEA" />
+                                    <Button x:Name="CemPartPrerequisiteButton" Content="Проверить условия локально"
+                                            HorizontalAlignment="Left" Click="CheckCemPrerequisites_Click"
+                                            ToolTipService.ToolTip="Только чтение состояния приложения. Без CAN/J2534 запросов." />
+                                    <Expander x:Name="CemPartPrerequisiteExpander"
+                                              Header="Результат проверки (без запросов)" IsExpanded="False">
+                                        <TextBlock x:Name="CemPartPrerequisiteText" TextWrapping="Wrap"
+                                                   IsTextSelectionEnabled="True"
+                                                   Text="Нажмите «Проверить условия локально». Это не подтверждает доступ к CEM." />
+                                    </Expander>
                                 </StackPanel>
                             </Border>
                             <Border Style="{StaticResource AuroraCard}" x:Name="CemPinSearchCard" Visibility="Collapsed">
@@ -248,8 +722,13 @@
                             </Border>
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="Совместимость и доступ" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Сведения о процедуре и ограничениях текущей реализации." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="CemPinResearchTitle" Text="Совместимость и доступ" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="CemPinResearchIntro" Text="Сведения о процедуре и ограничениях текущей реализации." Foreground="#9EB8CC" TextWrapping="Wrap" />
+                                    <Border Background="#10253D" BorderBrush="#315572" BorderThickness="1"
+                                            CornerRadius="8" Padding="12">
+                                        <TextBlock x:Name="CemIdentityEvidencePinText" TextWrapping="Wrap"
+                                                   Text="Идентификация CEM: неизвестна. Физический блок и ревизия не подтверждены." />
+                                    </Border>
                                     <Grid>
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
@@ -263,51 +742,57 @@
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                        <StackPanel x:Name="CemConfigPage" Visibility="Collapsed" Spacing="4">
+                        <StackPanel x:Name="CemConfigPage" Visibility="Collapsed" Spacing="0">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="14">
-                                    <TextBlock Text="Конфигурация CEM" FontSize="24" FontWeight="SemiBold" />
-                                    <TextBlock Text="Каталог Volvo P2 · офлайн. Выбор пункта показывает источник, но не читает или меняет автомобиль." Foreground="#9EB8CC" TextWrapping="Wrap" />
-                                    <Grid ColumnSpacing="8">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <Button x:Name="P2ConfigCatalogButton" Grid.Column="0" Content="Источники (offline)" Click="P2ConfigCatalog_Click" HorizontalAlignment="Stretch" Background="#0B5F81" ToolTipService.ToolTip="Open reference sources offline; no vehicle queries, PIN or configuration writes." />
-                                        <Button Grid.Column="1" Content="Резервная копия" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет проверенной операции чтения конфигурации CEM." />
-                                        <Button Grid.Column="2" Content="Сравнить" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет считанной конфигурации и проверенного резервного снимка." />
-                                        <Button Grid.Column="3" Content="Подготовить изменения" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Не проверены байтовая карта, допустимые значения и зависимости." />
-                                    </Grid>
-                                    <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled">
-                                        <Grid MinWidth="730" ColumnSpacing="10">
+                                    <TextBlock x:Name="CemConfigPageTitle" Text="Конфигурация CEM" FontSize="24" FontWeight="SemiBold" Visibility="Collapsed" />
+                                    <TextBlock x:Name="CemConfigPageIntro" Text="Каталог Volvo P2 · офлайн. Выбор пункта показывает источник, но не читает или меняет автомобиль." Foreground="#9EB8CC" TextWrapping="Wrap" />
+                                    <Border Background="#10253D" BorderBrush="#315572" BorderThickness="1"
+                                            CornerRadius="8" Padding="12">
+                                        <TextBlock x:Name="CemIdentityEvidenceConfigText" TextWrapping="Wrap"
+                                                   Text="Идентификация CEM: неизвестна. Справочный каталог не подтверждает совместимость." />
+                                    </Border>
+                                    <Grid x:Name="CemReferenceGrid" ColumnSpacing="10" RowSpacing="10">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition Width="163" />
-                                                <ColumnDefinition Width="*" />
-                                                <ColumnDefinition Width="235" />
+                                                <ColumnDefinition x:Name="CemReferenceCategoryColumn" Width="180" />
+                                                <ColumnDefinition x:Name="CemReferenceValuesColumn" Width="*" />
+                                                <ColumnDefinition x:Name="CemReferenceDetailColumn" Width="250" />
                                             </Grid.ColumnDefinitions>
-                                            <Border Grid.Column="0" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
+                                            <Grid.RowDefinitions>
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                                <RowDefinition Height="Auto" />
+                                            </Grid.RowDefinitions>
+                                            <Border x:Name="CemReferenceCategoryPane" Grid.Column="0" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
                                                 <StackPanel Spacing="12">
-                                                    <TextBlock Text="Категории" FontSize="17" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="CemConfigCategoriesTitle" Text="Категории" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap" />
                                                     <ComboBox x:Name="CemConfigCategory" Header="Группа" HorizontalAlignment="Stretch" SelectionChanged="CemConfigCategory_SelectionChanged" />
+                                                    <ComboBox x:Name="CemConfigEvidenceTier" Header="Источник" HorizontalAlignment="Stretch" SelectedIndex="0" SelectionChanged="CemConfigEvidenceTier_SelectionChanged">
+                                                        <ComboBoxItem Tag="All" Content="Все источники" />
+                                                        <ComboBoxItem Tag="Vendor" Content="Сторонние публикации" />
+                                                        <ComboBoxItem Tag="Volvo" Content="Меню Volvo" />
+                                                    </ComboBox>
                                                     <TextBox x:Name="CemConfigSearch" Header="Найти параметр" PlaceholderText="Код или название" MaxLength="80" TextChanged="CemConfigSearch_TextChanged" />
-                                                    <TextBlock Text="Данные получены из локального каталога источников. Совместимость не подтверждена." Foreground="#A5C0D4" FontSize="12" TextWrapping="Wrap" />
+                                                    <TextBlock x:Name="CemConfigFilterSafetyNote" Text="Данные получены из локального каталога источников. Совместимость не подтверждена." Foreground="#A5C0D4" FontSize="12" TextWrapping="Wrap" />
                                                 </StackPanel>
                                             </Border>
-                                            <Border Grid.Column="1" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
+                                            <Border x:Name="CemReferenceValuesPane" Grid.Column="1" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
                                                 <StackPanel Spacing="10">
-                                                    <TextBlock Text="Параметры и значения" FontSize="17" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="CemConfigResultsTitle" Text="Параметры и значения" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap" />
                                                     <TextBlock x:Name="CemConfigCount" Text="Загрузка локальных данных…" Foreground="#9CC9E1" TextWrapping="Wrap" />
                                                     <ListView x:Name="CemConfigResults" Height="310" SelectionMode="Single" SelectionChanged="CemConfigResults_SelectionChanged">
                                                         <ListView.Header>
                                                             <Grid ColumnSpacing="8">
                                                                 <Grid.ColumnDefinitions>
                                                                     <ColumnDefinition Width="*" />
-                                                                    <ColumnDefinition Width="97" />
+                                                                    <ColumnDefinition Width="76" />
+                                                                    <ColumnDefinition Width="76" />
+                                                                    <ColumnDefinition Width="60" />
                                                                 </Grid.ColumnDefinitions>
-                                                                <TextBlock Text="Параметр (ID / название)" FontWeight="SemiBold" />
-                                                                <TextBlock Grid.Column="1" Text="Текущее" FontWeight="SemiBold" />
+                                                                <TextBlock x:Name="CemConfigListParameterHeader" Text="Параметр (ID / название)" FontWeight="SemiBold" FontSize="12" TextWrapping="Wrap" />
+                                                                <TextBlock x:Name="CemConfigListInitialHeader" Grid.Column="1" Text="Исходное" FontWeight="SemiBold" FontSize="11" TextWrapping="Wrap" />
+                                                                <TextBlock x:Name="CemConfigListCurrentHeader" Grid.Column="2" Text="Текущее" FontWeight="SemiBold" FontSize="11" TextWrapping="Wrap" />
+                                                                <TextBlock x:Name="CemConfigListProposedHeader" Grid.Column="3" Text="Новое" FontWeight="SemiBold" FontSize="11" TextWrapping="Wrap" />
                                                             </Grid>
                                                         </ListView.Header>
                                                         <ListView.ItemTemplate>
@@ -315,22 +800,26 @@
                                                                 <Grid ColumnSpacing="8" Padding="2,8">
                                                                     <Grid.ColumnDefinitions>
                                                                         <ColumnDefinition Width="*" />
-                                                                        <ColumnDefinition Width="97" />
+                                                                        <ColumnDefinition Width="76" />
+                                                                        <ColumnDefinition Width="76" />
+                                                                        <ColumnDefinition Width="60" />
                                                                     </Grid.ColumnDefinitions>
                                                                     <StackPanel Spacing="2">
                                                                         <TextBlock Text="{Binding Code}" Foreground="#74DAF1" FontFamily="Consolas" FontSize="12" />
                                                                         <TextBlock Text="{Binding Name}" TextWrapping="Wrap" />
                                                                     </StackPanel>
-                                                                    <TextBlock Grid.Column="1" Text="{Binding Current}" TextWrapping="Wrap" Foreground="#C8D6E8" FontSize="12" />
+                                                                    <TextBlock Grid.Column="1" Text="{Binding Initial}" TextWrapping="Wrap" Foreground="#AABDD0" FontSize="11" />
+                                                                    <TextBlock Grid.Column="2" Text="{Binding Current}" TextWrapping="Wrap" Foreground="#C8D6E8" FontSize="11" />
+                                                                    <TextBlock Grid.Column="3" Text="{Binding Proposed}" TextWrapping="Wrap" Foreground="#8CCCE8" FontSize="12" />
                                                                 </Grid>
                                                             </DataTemplate>
                                                         </ListView.ItemTemplate>
                                                     </ListView>
                                                 </StackPanel>
                                             </Border>
-                                            <Border Grid.Column="2" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
+                                            <Border x:Name="CemReferenceDetailPane" Grid.Column="2" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
                                                 <StackPanel Spacing="12">
-                                                    <TextBlock Text="Описание" FontSize="17" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="CemConfigDetailHeading" Text="Описание" FontSize="17" FontWeight="SemiBold" />
                                                     <TextBlock x:Name="CemConfigDetailTitle" Text="Выберите параметр" FontWeight="SemiBold" TextWrapping="Wrap" />
                                                     <TextBlock x:Name="CemConfigDetailCode" Text="Код и источник появятся после выбора." FontSize="12" TextWrapping="Wrap" />
                                                     <TextBlock x:Name="CemConfigDetailSource" Text="" FontSize="12" TextWrapping="Wrap" />
@@ -339,19 +828,48 @@
                                                     <TextBlock x:Name="CemConfigDetailSafety" Text="Изменение и запись недоступны до проверки протокола и резервного восстановления." FontSize="12" Foreground="#EBC280" TextWrapping="Wrap" />
                                                 </StackPanel>
                                             </Border>
-                                        </Grid>
-                                    </ScrollViewer>
+                                    </Grid>
+                                    <!-- Approved footer action rail; only offline sources are active. -->
+                                    <Border x:Name="CemConfigActionRail" Background="#0D2942"
+                                            BorderBrush="#2D5775" BorderThickness="1"
+                                            CornerRadius="10" Padding="12">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock x:Name="CemConfigActionsHeading" Text="Действия с конфигурацией"
+                                                       FontSize="15" FontWeight="SemiBold" Foreground="#BCE9FC" />
+                                            <Grid x:Name="CemConfigActionsGrid" ColumnSpacing="8" RowSpacing="8">
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition Width="*" />
+                                                    <ColumnDefinition x:Name="CemConfigActionThirdColumn" Width="*" />
+                                                    <ColumnDefinition x:Name="CemConfigActionFourthColumn" Width="*" />
+                                                    <ColumnDefinition x:Name="CemConfigActionFifthColumn" Width="*" />
+                                                    <ColumnDefinition x:Name="CemConfigActionSixthColumn" Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Button x:Name="P2ConfigCatalogButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="0" Content="Источники (offline)" Click="P2ConfigCatalog_Click" HorizontalAlignment="Stretch" Background="#0B5F81" ToolTipService.ToolTip="Open reference sources offline; no vehicle queries, PIN or configuration writes." />
+                                                <Button x:Name="CemConfigReadButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="1" Content="Прочитать" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Реальная операция чтения CEM не подтверждена." />
+                                                <Button x:Name="CemConfigBackupButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="2" Content="Резервная копия" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет проверенной операции чтения конфигурации CEM." />
+                                                <Button x:Name="CemConfigCompareButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="3" Content="Сравнить" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Нет считанной конфигурации и проверенного резервного снимка." />
+                                                <Button x:Name="CemConfigPrepareButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="4" Content="Подготовить изменения" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Не проверены байтовая карта, допустимые значения и зависимости." />
+                                                <Button x:Name="CemConfigWriteButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="5" Content="Записать в CEM" IsEnabled="False" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Запись недоступна без проверенного протокола, резервной копии и восстановления." />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
                                     <Border Background="#10253D" CornerRadius="7" Padding="11" BorderBrush="#2B5878" BorderThickness="1">
-                                        <TextBlock Text="Чтение, изменение и запись CEM пока заблокированы. Никаких реальных значений, адресов или прав на запись этот каталог не подтверждает." TextWrapping="Wrap" Foreground="#C7DFF2" />
+                                        <TextBlock x:Name="CemConfigReadOnlyNotice" Text="Чтение, изменение и запись CEM пока заблокированы. Никаких реальных значений, адресов или прав на запись этот каталог не подтверждает." TextWrapping="Wrap" Foreground="#C7DFF2" />
                                     </Border>
                                 </StackPanel>
                             </Border>
                         </StackPanel>
-                        <StackPanel x:Name="EcuPage" Visibility="Collapsed" Spacing="4">
+                        <StackPanel x:Name="EcuPage" Visibility="Collapsed" Spacing="0">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="Обнаружение блоков" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Пассивное наблюдение ответов. Выбор записи не подтверждает идентичность блока и не отправляет запрос." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="EcuDiscoveryTitle" TextWrapping="Wrap" Text="Обнаружение блоков" FontSize="20" FontWeight="SemiBold" />
+                                    <TextBlock x:Name="EcuDiscoveryIntro" TextWrapping="Wrap" Text="Пассивное наблюдение ответов. Выбор записи не подтверждает идентичность блока и не отправляет запрос." Foreground="#9EB8CC" />
                                     <Grid x:Name="EcuScanToolbarGrid" ColumnSpacing="16" RowSpacing="8">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -364,10 +882,10 @@
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <ComboBox x:Name="EcuSelector" PlaceholderText="Observed response" IsEnabled="False" SelectionChanged="EcuSelector_SelectionChanged" ToolTipService.ToolTip="Selection does not send a request or verify the inferred request address." Grid.Column="0" />
-                                        <Button x:Name="DiscoverButton" Content="Discover ECUs" Click="Discover_Click" IsEnabled="False" Grid.Column="1" />
-                                        <Button x:Name="CancelDiscoveryButton" Content="Cancel scan" Click="CancelDiscovery_Click" IsEnabled="False" Grid.Column="2" />
+                                        <Button x:Name="DiscoverButton" Content="Discover ECUs" Click="Discover_Click" IsEnabled="False" Grid.Column="1" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="CancelDiscoveryButton" Content="Cancel scan" Click="CancelDiscovery_Click" IsEnabled="False" Grid.Column="2" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                     </Grid>
-                                    <TextBlock x:Name="DiscoveryStatus" VerticalAlignment="Center" Text="Not scanned" />
+                                    <TextBlock x:Name="DiscoveryStatus" TextWrapping="Wrap" VerticalAlignment="Center" Text="Not scanned" />
                                     <Grid x:Name="EcuWorkbenchGrid" ColumnSpacing="12" RowSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition x:Name="EcuWorkbenchListColumn" Width="218" />
@@ -381,33 +899,62 @@
                                         </Grid.RowDefinitions>
                                         <Border x:Name="EcuWorkbenchListPane" Grid.Column="0" Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
                                             <StackPanel Spacing="10">
-                                                <TextBlock Text="Ответы ECU" FontSize="18" FontWeight="SemiBold" />
-                                                <TextBlock Text="Выберите наблюдаемый RX. Имена блоков не подтверждены." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="EcuListTitle" TextWrapping="Wrap" Text="Ответы ECU" FontSize="18" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="EcuListIntro" Text="Выберите наблюдаемый RX. Имена блоков не подтверждены." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
                                     <ListView x:Name="EcusView" Height="260" SelectionMode="Single" IsEnabled="False" SelectionChanged="Ecu_SelectionChanged" ToolTipService.ToolTip="Passive response observations only. No verified ECU identity or request ID.">
                                         <ListView.Header>
                                             <StackPanel Spacing="3">
-                                                <TextBlock Text="Observed RX" FontWeight="SemiBold" FontSize="12" />
-                                                <TextBlock Text="Guessed TX · inferred only" Foreground="#A0BBD0" FontSize="11" />
+                                                <TextBlock x:Name="EcuListObservedHeader" TextWrapping="Wrap" Text="Observed RX" FontWeight="SemiBold" FontSize="12" />
+                                                <TextBlock x:Name="EcuListInferredHeader" TextWrapping="Wrap" Text="Guessed TX · inferred only" Foreground="#A0BBD0" FontSize="11" />
                                             </StackPanel>
                                         </ListView.Header>
                                         <ListView.ItemTemplate>
                                             <DataTemplate>
-                                                <StackPanel Spacing="5" Padding="2,6">
-                                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <TextBlock Text="{Binding Response}" FontFamily="Consolas" Foreground="#75DCEC" FontWeight="SemiBold" />
-                                                        <TextBlock Text="{Binding Type}" FontSize="11" Foreground="#A7C9DD" />
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Spacing="7">
+                                                <StackPanel Spacing="6" Padding="2,6">
+                                                    <!-- Star columns constrain the passive RX text to the actual
+                                                         218-DIP inventory panel even for 29-bit IDs. -->
+                                                    <Grid ColumnSpacing="6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="Auto" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <TextBlock Text="{Binding Response}" TextWrapping="Wrap"
+                                                                   FontFamily="Consolas" Foreground="#75DCEC"
+                                                                   FontWeight="SemiBold" />
+                                                        <TextBlock Grid.Column="1" Text="{Binding Type}"
+                                                                   TextWrapping="Wrap" FontSize="11" Foreground="#A7C9DD" />
+                                                    </Grid>
+                                                    <!-- TX remains explicitly inferred; the source qualifier gets
+                                                         its own bounded vertical space rather than overflowing. -->
+                                                    <Grid ColumnSpacing="6">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="Auto" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
                                                         <TextBlock Text="TX?" FontSize="11" Foreground="#E6C68D" />
-                                                        <TextBlock Text="{Binding Request}" FontFamily="Consolas" FontSize="11" />
-                                                        <TextBlock Text="{Binding RequestBasis}" FontSize="11" Foreground="#E6C68D" />
-                                                    </StackPanel>
-                                                    <StackPanel Orientation="Horizontal" Spacing="8">
-                                                        <TextBlock Text="Frames" FontSize="11" Foreground="#A7C9DD" />
-                                                        <TextBlock Text="{Binding Frames}" FontSize="11" />
-                                                        <TextBlock Text="Max bytes" FontSize="11" Foreground="#A7C9DD" />
-                                                        <TextBlock Text="{Binding MaxPayload}" FontSize="11" />
-                                                    </StackPanel>
+                                                        <StackPanel Grid.Column="1" Spacing="2">
+                                                            <TextBlock Text="{Binding Request}" TextWrapping="Wrap"
+                                                                       FontFamily="Consolas" FontSize="11" />
+                                                            <TextBlock Text="{Binding RequestBasis}" TextWrapping="Wrap"
+                                                                       FontSize="11" Foreground="#E6C68D" />
+                                                        </StackPanel>
+                                                    </Grid>
+                                                    <!-- Two compact metadata columns, rather than four unconstrained
+                                                         text blocks on a single line. Values remain actual RX data. -->
+                                                    <Grid ColumnSpacing="8">
+                                                        <Grid.ColumnDefinitions>
+                                                            <ColumnDefinition Width="*" />
+                                                            <ColumnDefinition Width="*" />
+                                                        </Grid.ColumnDefinitions>
+                                                        <StackPanel Spacing="2">
+                                                            <TextBlock Text="{Binding FramesCaption}" FontSize="11" Foreground="#A7C9DD" />
+                                                            <TextBlock Text="{Binding Frames}" TextWrapping="Wrap" FontSize="11" />
+                                                        </StackPanel>
+                                                        <StackPanel Grid.Column="1" Spacing="2">
+                                                            <TextBlock Text="{Binding MaxPayloadCaption}" FontSize="11" Foreground="#A7C9DD" />
+                                                            <TextBlock Text="{Binding MaxPayload}" TextWrapping="Wrap" FontSize="11" />
+                                                        </StackPanel>
+                                                    </Grid>
                                                 </StackPanel>
                                             </DataTemplate>
                                         </ListView.ItemTemplate>
@@ -421,66 +968,116 @@
                                                         <ColumnDefinition Width="*" />
                                                         <ColumnDefinition Width="Auto" />
                                                     </Grid.ColumnDefinitions>
-                                                    <TextBlock Text="Карта автомобиля" FontSize="18" FontWeight="SemiBold" />
+                                                    <TextBlock x:Name="EcuVehicleHeading" TextWrapping="Wrap" Text="Карта автомобиля" FontSize="18" FontWeight="SemiBold" />
                                                     <ComboBox x:Name="EcuVehicleModel" Grid.Column="1" Width="150" SelectedIndex="0" SelectionChanged="EcuVehicleModel_SelectionChanged" AutomationProperties.Name="Схема автомобиля">
                                                         <ComboBoxItem Content="XC90 · P2" />
                                                         <ComboBoxItem Content="XC70 · P3" />
                                                     </ComboBox>
                                                 </Grid>
-                                                <Viewbox Stretch="Uniform" MaxHeight="235" HorizontalAlignment="Stretch">
-                                                    <Grid Width="640" Height="255">
+                                                <Border CornerRadius="12" BorderThickness="1" BorderBrush="#2B5878" Background="#091D31" Padding="7">
+                                                    <Viewbox Stretch="Uniform" MaxHeight="235" HorizontalAlignment="Stretch">
+                                                    <Grid x:Name="EcuVehicleArtboard" Width="640" Height="255">
+                                                        <Grid.Background>
+                                                            <LinearGradientBrush StartPoint="0,0" EndPoint="1,1">
+                                                                <GradientStop Color="#08192B" Offset="0" />
+                                                                <GradientStop Color="#133250" Offset="0.68" />
+                                                                <GradientStop Color="#0A1930" Offset="1" />
+                                                            </LinearGradientBrush>
+                                                        </Grid.Background>
+                                                        <!-- Aurora coastal horizon is presentation-only, not a topology map. -->
+                                                        <Path Data="M0,31 Q128,0 255,29 T512,22 T640,12" Stroke="#1CC2DB" StrokeThickness="14" Opacity="0.13" />
+                                                        <Path Data="M0,70 Q165,19 325,56 T640,35" Stroke="#8666F0" StrokeThickness="9" Opacity="0.12" />
+                                                        <Path Data="M15,234 L625,234" Stroke="#3D7292" StrokeThickness="1" Opacity="0.6" />
                                                         <Canvas x:Name="EcuP2SideProfile" Width="640" Height="255">
                                                             <Path Data="M30,156 L59,145 L82,112 Q95,93 128,87 L170,82 Q202,43 245,43 L418,43 Q471,53 501,102 L550,116 Q590,129 596,148 L603,180 L567,186 L53,186 L24,176 Z" Fill="#173D56" Stroke="#31C7EA" StrokeThickness="3" />
                                                             <Path Data="M205,83 L241,52 L409,52 Q443,54 468,98 L205,98 Z" Fill="#0B1B33" Stroke="#83B8D4" StrokeThickness="2" />
                                                             <Path Data="M320,53 L320,98 M461,99 L461,146 M197,99 L197,165 M348,102 L348,165" Stroke="#478AAE" StrokeThickness="2" />
                                                             <Path Data="M28,163 L601,163" Stroke="#64C8EC" StrokeThickness="2" Opacity=".7" />
+                                                            <Path Data="M63,137 L96,123 M110,116 L167,109 M216,107 L452,107 M232,132 L439,132" Stroke="#91BDD5" StrokeThickness="1.5" Opacity="0.48" />
+                                                            <Path Data="M36,154 L65,146 L71,160 L32,164 Z" Fill="#AEE5FF" Opacity="0.89" />
+                                                            <Path Data="M583,142 L599,153 L602,167 L589,163 Z" Fill="#C97A97" Opacity="0.91" />
+                                                            <Path Data="M221,102 L455,102 M193,174 L464,174" Stroke="#21D5E9" StrokeThickness="1.4" Opacity="0.45" />
                                                             <Ellipse Canvas.Left="115" Canvas.Top="150" Width="88" Height="88" Fill="#0A1526" Stroke="#75A8BF" StrokeThickness="7" />
                                                             <Ellipse Canvas.Left="466" Canvas.Top="150" Width="88" Height="88" Fill="#0A1526" Stroke="#75A8BF" StrokeThickness="7" />
                                                             <Ellipse Canvas.Left="148" Canvas.Top="184" Width="23" Height="23" Fill="#18354E" Stroke="#BEDAE7" StrokeThickness="3" />
                                                             <Ellipse Canvas.Left="499" Canvas.Top="184" Width="23" Height="23" Fill="#18354E" Stroke="#BEDAE7" StrokeThickness="3" />
+                                                            <Ellipse Canvas.Left="154" Canvas.Top="190" Width="11" Height="11" Fill="#9ADBEF" Opacity="0.8" />
+                                                            <Ellipse Canvas.Left="505" Canvas.Top="190" Width="11" Height="11" Fill="#9ADBEF" Opacity="0.8" />
                                                         </Canvas>
                                                         <Canvas x:Name="EcuP3SideProfile" Width="640" Height="255" Visibility="Collapsed">
                                                             <Path Data="M22,163 L57,148 L109,142 Q146,98 197,92 L250,83 L439,85 Q488,94 519,131 L563,145 Q593,148 608,169 L608,191 L22,191 Z" Fill="#163C57" Stroke="#46D7EA" StrokeThickness="3" />
                                                             <Path Data="M182,99 Q210,89 254,91 L434,93 Q478,99 492,135 L147,135 Z" Fill="#0A1B35" Stroke="#8CBBD5" StrokeThickness="2" />
                                                             <Path Data="M310,91 L310,135 M445,96 L445,181 M167,137 L167,180 M321,137 L321,183 M31,180 L602,180" Stroke="#4893B7" StrokeThickness="2" />
+                                                            <Path Data="M50,159 L85,149 L92,162 L48,169 Z" Fill="#B7EAFF" Opacity="0.85" />
+                                                            <Path Data="M580,158 L604,172 L605,181 L588,177 Z" Fill="#CA7897" Opacity="0.91" />
+                                                            <Path Data="M183,139 L491,139 M203,176 L456,176 M182,101 L256,99" Stroke="#6AD8E9" StrokeThickness="1.2" Opacity="0.52" />
                                                             <Ellipse Canvas.Left="115" Canvas.Top="156" Width="82" Height="82" Fill="#0B1527" Stroke="#7DA7BD" StrokeThickness="7" />
                                                             <Ellipse Canvas.Left="484" Canvas.Top="156" Width="82" Height="82" Fill="#0B1527" Stroke="#7DA7BD" StrokeThickness="7" />
+                                                            <Ellipse Canvas.Left="140" Canvas.Top="181" Width="32" Height="32" Fill="#173A54" Stroke="#B4D8E4" StrokeThickness="3" />
+                                                            <Ellipse Canvas.Left="509" Canvas.Top="181" Width="32" Height="32" Fill="#173A54" Stroke="#B4D8E4" StrokeThickness="3" />
                                                         </Canvas>
+                                                        <Border x:Name="EcuVehicleSchematicStamp" HorizontalAlignment="Right" VerticalAlignment="Top"
+                                                                Margin="0,8,10,0" Padding="10,5" CornerRadius="8" IsHitTestVisible="False"
+                                                                Background="#C40C2842" BorderBrush="#346582" BorderThickness="1">
+                                                            <TextBlock x:Name="EcuVehicleSchematicLabel" Text="УСЛОВНАЯ СХЕМА"
+                                                                       FontSize="11" Foreground="#AEDBED" FontWeight="SemiBold" />
+                                                        </Border>
                                                         <StackPanel HorizontalAlignment="Left" VerticalAlignment="Top" Margin="10,4,0,0">
-                                                            <TextBlock Text="ПЕРЕД → ЗАД" Foreground="#8FC5DF" FontSize="12" />
+                                                            <TextBlock x:Name="EcuVehicleOrientation" Text="ПЕРЕД → ЗАД" Foreground="#8FC5DF" FontSize="12" />
                                                         </StackPanel>
                                                     </Grid>
                                                 </Viewbox>
-                                                <TextBlock Text="Наблюдаемые RX · не позиции ECU" FontWeight="SemiBold" Foreground="#9EDCEA" FontSize="13" />
+                                                </Border>
+                                                <TextBlock x:Name="EcuObservationHeading" TextWrapping="Wrap" Text="Наблюдаемые RX · не позиции ECU" FontWeight="SemiBold" Foreground="#9EDCEA" FontSize="13" />
                                                 <ScrollViewer HorizontalScrollBarVisibility="Auto" VerticalScrollBarVisibility="Disabled" MaxHeight="74">
                                                     <StackPanel x:Name="EcuObservationRail" Orientation="Horizontal" Spacing="2" />
                                                 </ScrollViewer>
                                                 <TextBlock x:Name="EcuObservationRailSummary" Text="Нет завершённого пассивного наблюдения. На изображении нет отметок физических ECU." Foreground="#E9C48D" FontSize="12" TextWrapping="Wrap" />
                                                 <TextBlock x:Name="EcuDiagramCaption" Text="XC90 P2 · условный боковой силуэт, выбран вручную" Foreground="#B5D8ED" TextWrapping="Wrap" />
-                                                <TextBlock Text="Схема не указывает физические позиции ECU; местоположение и статус блоков не подтверждаются изображением." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="EcuDiagramDisclaimer" Text="Схема не указывает физические позиции ECU; местоположение и статус блоков не подтверждаются изображением." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Border>
                                         <Border x:Name="EcuWorkbenchDetailPane" Grid.Column="2" Background="#102A44" BorderBrush="#2B5776" BorderThickness="1" CornerRadius="9" Padding="12">
                                             <StackPanel Spacing="12">
-                                                <TextBlock Text="Выбранный ответ" FontSize="18" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="EcuSelectedHeading" TextWrapping="Wrap" Text="Выбранный ответ" FontSize="18" FontWeight="SemiBold" />
                                                 <ScrollViewer MaxHeight="86" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
                                                     <TextBlock x:Name="EcuSelectionInfo" Text="Пассивный поиск · выберите наблюдаемый RX. Идентичность ECU и TX-адрес не установлены." TextWrapping="Wrap" IsTextSelectionEnabled="True" />
                                                 </ScrollViewer>
-                                                <TextBlock Text="Нет подтверждённого сопоставления наблюдаемых CAN ID с позициями на автомобиле." FontSize="12" Foreground="#E9C48D" TextWrapping="Wrap" />
-                                                <Button Content="Диагностика ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" ToolTipService.ToolTip="Открыть экран диагностики. Не отправляет запросы и не подтверждает адрес ECU." />
+                                                <TextBlock x:Name="EcuSelectionDisclaimer" Text="Нет подтверждённого сопоставления наблюдаемых CAN ID с позициями на автомобиле." FontSize="12" Foreground="#E9C48D" TextWrapping="Wrap" />
+                                                <Button x:Name="EcuOpenDiagnosticsButton" Content="Диагностика ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" ToolTipService.ToolTip="Открыть экран диагностики. Не отправляет запросы и не подтверждает адрес ECU." ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                             </StackPanel>
                                         </Border>
                                     </Grid>
 
                                 </StackPanel>
                             </Border>
-                            <Button Content="Перейти к профилям ECU →" Tag="EcuProfiles" Click="WorkspaceNavigate_Click" />
+                            <Border x:Name="EcuToolsFooter" Style="{StaticResource AuroraCard}">
+                                <StackPanel Spacing="11">
+                                    <TextBlock x:Name="EcuToolsTitle" TextWrapping="Wrap" Text="Дополнительные инструменты ECU" FontWeight="SemiBold" FontSize="18" />
+                                    <TextBlock x:Name="EcuToolsIntro" TextWrapping="Wrap" Text="Проверенные функции не удалены: откройте профиль, монитор CAN или чтение данных из рабочей области ECU." Foreground="#93B2CD" />
+                                    <Grid x:Name="EcuToolsGrid" ColumnSpacing="10" RowSpacing="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition x:Name="EcuToolsThirdColumn" Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <Button x:Name="EcuDiagnosticsNavigateButton" Style="{StaticResource AuroraActionCaptionButton}" Tag="DiagnosticsWorkspace" Content="Диагностические данные" Click="WorkspaceNavigate_Click" Grid.Column="0" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="EcuMonitorNavigateButton" Style="{StaticResource AuroraActionCaptionButton}" Tag="CanMonitor" Content="CAN-монитор" Click="WorkspaceNavigate_Click" Grid.Column="1" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="EcuProfilesNavigateButton" Style="{StaticResource AuroraActionCaptionButton}" Tag="EcuProfiles" Content="Профили ECU" Click="WorkspaceNavigate_Click" Grid.Column="2" HorizontalAlignment="Stretch" />
+                                    </Grid>
+                                </StackPanel>
+                            </Border>
+                            <Button x:Name="EcuOpenProfilesButton" Content="Перейти к профилям ECU →" Tag="EcuProfiles" Visibility="Collapsed" Click="WorkspaceNavigate_Click" />
                         </StackPanel>
                         <StackPanel x:Name="DiagnosticsPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="Адресация выбранного ECU" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Введите проверенные CAN-адреса. Пассивное обнаружение не определяет адрес запроса." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="DiagnosticsAddressHeading" Text="Адресация выбранного ECU" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="DiagnosticsAddressIntro" Text="Введите проверенные CAN-адреса. Пассивное обнаружение не определяет адрес запроса." Foreground="#9EB8CC" TextWrapping="Wrap" />
                                     <Grid ColumnSpacing="16" RowSpacing="16">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -499,8 +1096,8 @@
                             </Border>
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="Чтение данных" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="VIN и диагностические параметры выбранного блока. Ошибки вынесены на отдельный экран." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="DiagnosticsReadHeading" Text="Чтение данных" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="DiagnosticsReadIntro" Text="VIN и диагностические параметры выбранного блока. Ошибки вынесены на отдельный экран." Foreground="#9EB8CC" TextWrapping="Wrap" />
                                     <Grid ColumnSpacing="16" RowSpacing="16">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
@@ -518,48 +1115,85 @@
                             </Border>
                             <StackPanel x:Name="DevelopmentDiagnosticTools" Spacing="8" Visibility="Collapsed" />
                         </StackPanel>
-                        <StackPanel x:Name="DtcPage" Visibility="Collapsed" Spacing="4">
+                        <StackPanel x:Name="DtcPage" Visibility="Collapsed" Spacing="0">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="16">
-                                    <TextBlock Text="Ошибки / DTC" FontSize="23" FontWeight="SemiBold" />
-                                    <TextBlock Text="Чтение неисправностей одного выбранного ECU. Перед чтением подтвердите адреса TX/RX в разделе «Диагностика»." Foreground="#A9C5DC" TextWrapping="Wrap" />
-                                    <Grid ColumnSpacing="10" RowSpacing="10">
+                                    <TextBlock x:Name="DtcPageHeading" Text="Ошибки (DTC)" FontSize="23" FontWeight="SemiBold" Visibility="Collapsed" />
+                                    <TextBlock x:Name="DtcPageIntro" Text="Чтение неисправностей одного выбранного ECU. Перед чтением подтвердите адреса TX/RX в разделе «Диагностика»." Foreground="#A9C5DC" TextWrapping="Wrap" />
+                                    <Border x:Name="DtcActionRail" CornerRadius="10" Padding="14"
+                                            BorderBrush="#2D567C" BorderThickness="1" Background="#0C2944">
+                                        <StackPanel Spacing="10">
+                                            <TextBlock x:Name="DtcActionsHeading" Text="Чтение неисправностей одного ECU"
+                                                       FontSize="15" FontWeight="SemiBold" Foreground="#B9EAFD" TextWrapping="Wrap" />
+                                            <Grid x:Name="DtcActionsGrid" ColumnSpacing="10" RowSpacing="10">
+                                                <Grid.ColumnDefinitions>
+                                                    <ColumnDefinition Width="2*" />
+                                                    <ColumnDefinition x:Name="DtcActionReadColumn" Width="*" />
+                                                    <ColumnDefinition x:Name="DtcActionClearColumn" Width="*" />
+                                                </Grid.ColumnDefinitions>
+                                                <Grid.RowDefinitions>
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                    <RowDefinition Height="Auto" />
+                                                </Grid.RowDefinitions>
+                                                <ComboBox x:Name="DtcStatusMaskSelector" Header="Read DTC status filter"
+                                                          SelectedIndex="0" HorizontalAlignment="Stretch"
+                                                          ToolTipService.ToolTip="Choose which status bit the ECU should report via one read-only UDS 0x19/0x02 request. This does not prove ECU identity or clear faults.">
+                                                    <ComboBoxItem Content="All status bits" Tag="FF" />
+                                                    <ComboBoxItem Content="Test failed" Tag="01" />
+                                                    <ComboBoxItem Content="Pending DTC" Tag="04" />
+                                                    <ComboBoxItem Content="Confirmed DTC" Tag="08" />
+                                                    <ComboBoxItem Content="Warning indicator requested" Tag="80" />
+                                                </ComboBox>
+                                                <Button x:Name="ReadDtcButton" Style="{StaticResource AuroraActionCaptionButton}" Content="Read DTC" Grid.Column="1" IsEnabled="False"
+                                                        Click="ReadDtc_Click" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                                                        Background="#0865C7" BorderBrush="#348DEA"
+                                                        ToolTipService.ToolTip="Read DTCs from only the selected ECU using verified TX/RX addressing. No DTC clear or full-vehicle scan." />
+                                                <Button x:Name="DtcClearButton" Style="{StaticResource AuroraActionCaptionButton}" Grid.Column="2" Content="Стереть ошибки"
+                                                        IsEnabled="False" VerticalAlignment="Bottom" HorizontalAlignment="Stretch"
+                                                        ToolTipService.ToolTip="Стирание не реализовано: нет проверенного полномочия, сервиса, защиты и восстановления." />
+                                            </Grid>
+                                        </StackPanel>
+                                    </Border>
+                                    <Grid x:Name="DtcWorkbenchGrid" ColumnSpacing="12" RowSpacing="12">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="2*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition x:Name="DtcDetailColumn" Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <ComboBox x:Name="DtcStatusMaskSelector" Header="Read DTC status filter" SelectedIndex="0" ToolTipService.ToolTip="Choose which status bit the ECU should report via one read-only UDS 0x19/0x02 request. This does not prove ECU identity or clear faults.">
-                                        <ComboBoxItem Content="All status bits" Tag="FF" />
-                                        <ComboBoxItem Content="Test failed" Tag="01" />
-                                        <ComboBoxItem Content="Pending DTC" Tag="04" />
-                                        <ComboBoxItem Content="Confirmed DTC" Tag="08" />
-                                        <ComboBoxItem Content="Warning indicator requested" Tag="80" />
-                                    </ComboBox>
-                                        <Button x:Name="ReadDtcButton" Content="Read DTC" Grid.Column="1" IsEnabled="False" Click="ReadDtc_Click" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" Background="#0865C7" BorderBrush="#348DEA" ToolTipService.ToolTip="Read DTCs from only the selected ECU using verified TX/RX addressing. No DTC clear or full-vehicle scan." />
-                                        <Button x:Name="DtcClearButton" Grid.Column="2" Content="Стереть ошибки" IsEnabled="False" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Стирание не реализовано: нет проверенного полномочия, сервиса, защиты и восстановления." />
-                                    </Grid>
-                                    <Border Background="#112B47" BorderBrush="#2B5878" BorderThickness="1" CornerRadius="10" Padding="13">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                    <Border x:Name="DtcResultsPane" Grid.Column="0" Background="#112B47"
+                                            BorderBrush="#2B5878" BorderThickness="1" CornerRadius="10" Padding="13">
                                         <StackPanel Spacing="9">
-                                            <Grid ColumnSpacing="14">
+                                            <Border x:Name="DtcResultsAccent" Height="3" CornerRadius="2" IsHitTestVisible="False">
+                                                <Border.Background>
+                                                    <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
+                                                        <GradientStop Color="#1AD4ED" Offset="0" />
+                                                        <GradientStop Color="#6A6DDB" Offset="1" />
+                                                    </LinearGradientBrush>
+                                                </Border.Background>
+                                            </Border>
+                                            <Grid ColumnSpacing="8">
                                                 <Grid.ColumnDefinitions>
-                                                    <ColumnDefinition Width="112" />
+                                                    <ColumnDefinition Width="96" />
                                                     <ColumnDefinition Width="*" />
-                                                    <ColumnDefinition Width="155" />
+                                                    <ColumnDefinition Width="124" />
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Text="Код DTC" FontWeight="SemiBold" />
-                                                <TextBlock Grid.Column="1" Text="Описание" FontWeight="SemiBold" />
-                                                <TextBlock Grid.Column="2" Text="Статус" FontWeight="SemiBold" />
+                                                <TextBlock x:Name="DtcCodeHeading" Text="Код DTC" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="DtcDescriptionHeading" Grid.Column="1" Text="Описание" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="DtcStatusHeading" Grid.Column="2" Text="Статус" FontWeight="SemiBold" TextWrapping="Wrap" />
                                             </Grid>
                                             <TextBlock x:Name="DtcTableSummary" Text="Коды не считывались в текущем диагностическом контексте." Foreground="#9CD8ED" TextWrapping="Wrap" />
-                                            <ListView x:Name="DtcRecordsView" Height="260" SelectionMode="Single" SelectionChanged="DtcRecordsView_SelectionChanged" AutomationProperties.Name="Коды неисправностей выбранного ECU" ToolTipService.ToolTip="Только реально считанные DTC одного ECU. Нет подтверждённого словаря причин Volvo.">
+                                            <ListView x:Name="DtcRecordsView" Height="260" Visibility="Collapsed" SelectionMode="Single" SelectionChanged="DtcRecordsView_SelectionChanged" AutomationProperties.Name="Коды неисправностей выбранного ECU" ToolTipService.ToolTip="Только реально считанные DTC одного ECU. Нет подтверждённого словаря причин Volvo.">
                                                 <ListView.ItemTemplate>
                                                     <DataTemplate>
-                                                        <Grid ColumnSpacing="14" Padding="0,9,0,9">
+                                                        <Grid ColumnSpacing="8" Padding="0,9,0,9">
                                                             <Grid.ColumnDefinitions>
-                                                                <ColumnDefinition Width="112" />
+                                                                <ColumnDefinition Width="96" />
                                                                 <ColumnDefinition Width="*" />
-                                                                <ColumnDefinition Width="155" />
+                                                                <ColumnDefinition Width="124" />
                                                             </Grid.ColumnDefinitions>
                                                             <TextBlock Text="{Binding Code}" FontFamily="Consolas" Foreground="#8BDBF4" />
                                                             <TextBlock Grid.Column="1" Text="{Binding Description}" TextWrapping="Wrap" />
@@ -568,25 +1202,31 @@
                                                     </DataTemplate>
                                                 </ListView.ItemTemplate>
                                             </ListView>
-                                            <TextBlock Text="Коды появляются только после явного чтения. Подтверждённого каталога описаний Volvo пока нет. Ни одна ошибка здесь не подставляется автоматически." Foreground="#A8C7DF" FontSize="12" TextWrapping="Wrap" />
+                                            <TextBlock x:Name="DtcEvidenceDisclaimer" Text="Коды появляются только после явного чтения. Подтверждённого каталога описаний Volvo пока нет. Ни одна ошибка здесь не подставляется автоматически." Foreground="#A8C7DF" FontSize="12" TextWrapping="Wrap" />
                                         </StackPanel>
                                     </Border>
+                                    <Border x:Name="DtcDetailsPane" Grid.Column="1" Background="#102943"
+                                            BorderBrush="#2B5878" BorderThickness="1" CornerRadius="10" Padding="14">
                                     <StackPanel Spacing="7">
-                                        <TextBlock Text="Подробности" FontSize="19" FontWeight="SemiBold" />
+                                        <Border x:Name="DtcDetailsAccent" Height="3" CornerRadius="2"
+                                                IsHitTestVisible="False" Background="#5F71C5" />
+                                        <TextBlock x:Name="DtcDetailsHeading" Text="Подробности" FontSize="19" FontWeight="SemiBold" TextWrapping="Wrap" />
                                         <TextBlock x:Name="DtcSelectedRecordDetails" Text="Выберите считанную ошибку, чтобы посмотреть сырые данные и маску статуса." Foreground="#B2CBDE" TextWrapping="Wrap" IsTextSelectionEnabled="True" />
-                                        <TextBlock Text="После чтения реальные 24-битные коды DTC, маски статуса и поддерживаемые ECU биты появятся в панели «Результат операции» ниже. Описания причин и рекомендаций требуют проверенного каталога для выбранной модели." Foreground="#B2CBDE" TextWrapping="Wrap" FontSize="12" />
+                                        <TextBlock x:Name="DtcDetailsEvidence" Text="После чтения реальные 24-битные коды DTC, маски статуса и поддерживаемые ECU биты появятся в панели «Результат операции» ниже. Описания причин и рекомендаций требуют проверенного каталога для выбранной модели." Foreground="#B2CBDE" TextWrapping="Wrap" FontSize="12" />
                                     </StackPanel>
-                                    <Button Content="Проверить адреса ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" HorizontalAlignment="Left" ToolTipService.ToolTip="Только навигация к параметрам подключения. Запросы к автомобилю не отправляются." />
+                                    </Border>
+                                    </Grid>
+                                    <Button x:Name="DtcCheckAddressesButton" Content="Проверить адреса ECU" Tag="DiagnosticsWorkspace" Click="WorkspaceNavigate_Click" HorizontalAlignment="Left" ToolTipService.ToolTip="Только навигация к параметрам подключения. Запросы к автомобилю не отправляются." ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                 </StackPanel>
                             </Border>
                         </StackPanel>
                         <StackPanel x:Name="CanMonitorPage" Visibility="Collapsed" Spacing="4">
                             <Border Style="{StaticResource AuroraCard}">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="Поток CAN" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Запускайте и останавливайте наблюдение независимо от переходов между разделами." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="CanMonitorHeading" Text="Поток CAN" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="CanMonitorIntro" Text="Запускайте и останавливайте наблюдение независимо от переходов между разделами." Foreground="#9EB8CC" TextWrapping="Wrap" />
                                     <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Button x:Name="StartButton" Content="Start monitor" Click="Start_Click" VerticalAlignment="Bottom" IsEnabled="False" Background="#0865C7" BorderBrush="#348DEA" />
+                                        <Button x:Name="StartButton" Content="Start monitor" Click="Start_Click" VerticalAlignment="Bottom" IsEnabled="False" Background="#0865C7" BorderBrush="#348DEA" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                     </StackPanel>
                                     <Grid x:Name="DeveloperMonitorHost" ColumnSpacing="10" Visibility="Collapsed">
                                         <Grid.ColumnDefinitions>
@@ -594,27 +1234,40 @@
                                             <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
                                     </Grid>
-                                    <Grid ColumnSpacing="16" RowSpacing="16">
+                                    <Grid x:Name="CanMonitorFilterToolbar" ColumnSpacing="10" RowSpacing="10">
+                                        <Grid.RowDefinitions>
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                        </Grid.RowDefinitions>
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition x:Name="CanMonitorFilterColumn" Width="2*" />
+                                            <ColumnDefinition x:Name="CanMonitorClearColumn" Width="*" />
+                                            <ColumnDefinition x:Name="CanMonitorHardwareColumn" Width="*" />
+                                            <ColumnDefinition x:Name="CanMonitorCsvColumn" Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBox x:Name="IdFilter" Header="ID filter (hex)" PlaceholderText="7E0,7E8" TextChanged="Filter_Changed" Grid.Column="0" HorizontalAlignment="Stretch" />
+                                        <Button x:Name="CanMonitorClearButton" Grid.Column="1" Content="Clear" Click="Clear_Click" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="HardwareFilterButton" Content="Apply HW filter" Click="HardwareFilter_Click" VerticalAlignment="Bottom" IsEnabled="False" Grid.Column="2" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="CanMonitorCsvButton" Grid.Column="3" Content="CSV log" Click="Csv_Click" VerticalAlignment="Bottom" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                    </Grid>
+                                    <Grid x:Name="CanMonitorReviewActions" ColumnSpacing="10">
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
-                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition Width="*" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBox x:Name="IdFilter" Header="ID filter (hex)" PlaceholderText="7E0,7E8" TextChanged="Filter_Changed" Grid.Column="0" />
-                                        <Button Grid.Column="1" Content="Clear" Click="Clear_Click" VerticalAlignment="Bottom" />
-                                        <Button x:Name="HardwareFilterButton" Content="Apply HW filter" Click="HardwareFilter_Click" VerticalAlignment="Bottom" IsEnabled="False" Grid.Column="2" />
-                                        <Button Grid.Column="3" Content="CSV log" Click="Csv_Click" VerticalAlignment="Bottom" />
+                                        <Button x:Name="CanRxSummaryButton" Grid.Column="0" Content="RX summary" Click="CanRxSummary_Click" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource AuroraWrapCaption}" ToolTipService.ToolTip="Review buffered CAN RX ID/DLC counts without frame data. Copy only by explicit approval. No diagnostic requests." />
+                                        <Button x:Name="CanTraceInspectButton" Grid.Column="1" Content="Inspect trace" Click="InspectCanCsv_Click" HorizontalAlignment="Stretch" ContentTemplate="{StaticResource AuroraWrapCaption}" ToolTipService.ToolTip="Offline review of a selected Dvinholm CAN CSV or metadata-only J2534 JSONL. Never connects or changes the monitor. Sensitive identifiers and payload stay hidden." />
                                     </Grid>
-                                    <StackPanel Orientation="Horizontal" Spacing="16">
-                                        <Button Content="RX summary" Click="CanRxSummary_Click" ToolTipService.ToolTip="Review buffered CAN RX ID/DLC counts without frame data. Copy only by explicit approval. No diagnostic requests." />
-                                        <Button Content="Inspect trace" Click="InspectCanCsv_Click" ToolTipService.ToolTip="Offline review of a selected Dvinholm CAN CSV or metadata-only J2534 JSONL. Never connects or changes the monitor. Sensitive identifiers and payload stay hidden." />
-                                    </StackPanel>
-                                    <StackPanel Orientation="Horizontal" Spacing="24">
-                                        <TextBlock x:Name="FrameRateText" VerticalAlignment="Center" Text="0 frames/s" />
-                                        <TextBlock x:Name="FrameCountText" VerticalAlignment="Center" Text="0 shown / 0 rx" HorizontalAlignment="Right" />
-                                        <TextBlock x:Name="DroppedFrameText" VerticalAlignment="Center" Text="0 dropped" HorizontalAlignment="Right" />
-                                    </StackPanel>
+                                    <Grid x:Name="CanMonitorCounters" ColumnSpacing="12">
+                                        <Grid.ColumnDefinitions>
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition Width="*" />
+                                        </Grid.ColumnDefinitions>
+                                        <TextBlock x:Name="FrameRateText" Grid.Column="0" VerticalAlignment="Center" Text="0 frames/s" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="FrameCountText" Grid.Column="1" VerticalAlignment="Center" Text="0 shown / 0 rx" TextWrapping="Wrap" />
+                                        <TextBlock x:Name="DroppedFrameText" Grid.Column="2" VerticalAlignment="Center" Text="0 dropped" TextWrapping="Wrap" />
+                                    </Grid>
                                     <ListView x:Name="FramesView" SelectionMode="None" Height="380">
                                         <ListView.Header>
                                             <Grid ColumnSpacing="12">
@@ -625,11 +1278,11 @@
                                                     <ColumnDefinition Width="55" />
                                                     <ColumnDefinition Width="*" />
                                                 </Grid.ColumnDefinitions>
-                                                <TextBlock Text="Timestamp (ms)" />
-                                                <TextBlock Grid.Column="1" Text="ID" />
-                                                <TextBlock Grid.Column="2" Text="Type" />
-                                                <TextBlock Grid.Column="3" Text="DLC" />
-                                                <TextBlock Grid.Column="4" Text="Data" />
+                                                <TextBlock x:Name="CanMonitorTimestampHeader" Text="Timestamp (ms)" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="CanMonitorIdHeader" Grid.Column="1" Text="ID" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="CanMonitorTypeHeader" Grid.Column="2" Text="Type" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="CanMonitorDlcHeader" Grid.Column="3" Text="DLC" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="CanMonitorDataHeader" Grid.Column="4" Text="Data" TextWrapping="Wrap" />
                                             </Grid>
                                         </ListView.Header>
                                         <ListView.ItemTemplate>
@@ -665,35 +1318,38 @@
                                         <RowDefinition Height="Auto" />
                                         <RowDefinition Height="Auto" />
                                     </Grid.RowDefinitions>
-                                    <Grid Grid.Row="0" ColumnSpacing="8">
+                                    <Grid x:Name="ProfileFiltersGrid" Grid.Row="0" ColumnSpacing="8" RowSpacing="8">
                                         <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="2*" />
-                                            <ColumnDefinition Width="2*" />
-                                            <ColumnDefinition Width="Auto" />
+                                            <ColumnDefinition x:Name="ProfileSearchColumn" Width="2*" />
+                                            <ColumnDefinition x:Name="ProfileSelectorColumn" Width="2*" />
+                                            <ColumnDefinition x:Name="ProfileFiltersThirdColumn" Width="Auto" />
                                         </Grid.ColumnDefinitions>
-                                        <TextBox x:Name="ProfileSearch" Grid.Column="0" Header="Find ECU profile" PlaceholderText="Name, ID, CAN ID, DID or source" TextChanged="ProfileSearch_TextChanged" />
-                                        <ComboBox x:Name="ProfileSelector" Grid.Column="1" Header="ECU profiles" PlaceholderText="Select profile" SelectionChanged="ProfileSelector_SelectionChanged" />
-                                        <CheckBox x:Name="MarkedVerifiedOnly" Grid.Column="0" Content="Marked verified only" Checked="MarkedVerifiedOnly_Changed" Unchecked="MarkedVerifiedOnly_Changed" VerticalAlignment="Bottom" Grid.Row="1" Grid.ColumnSpan="3" />
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
+                                        <TextBox x:Name="ProfileSearch" Grid.Column="0" Header="Find ECU profile" PlaceholderText="Name, ID, CAN ID, DID or source" TextChanged="ProfileSearch_TextChanged" HorizontalAlignment="Stretch" />
+                                        <ComboBox x:Name="ProfileSelector" Grid.Column="1" Header="ECU profiles" PlaceholderText="Select profile" SelectionChanged="ProfileSelector_SelectionChanged" HorizontalAlignment="Stretch" />
+                                        <CheckBox x:Name="MarkedVerifiedOnly" Grid.Column="0" Content="Marked verified only" Checked="MarkedVerifiedOnly_Changed" Unchecked="MarkedVerifiedOnly_Changed" VerticalAlignment="Bottom" Grid.Row="1" Grid.ColumnSpan="3" />
                                     </Grid>
                                     <Grid x:Name="ProfileActionsPanel" Grid.Row="1" RowSpacing="6" ColumnSpacing="8">
                                         <Grid.RowDefinitions>
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
+                                            <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
                                         <Grid.ColumnDefinitions>
                                             <ColumnDefinition Width="*" />
                                             <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
+                                            <ColumnDefinition x:Name="ProfileActionThirdColumn" Width="*" />
+                                            <ColumnDefinition x:Name="ProfileActionFourthColumn" Width="*" />
                                         </Grid.ColumnDefinitions>
                                         <Button x:Name="CreateProfileButton" Grid.Row="0" Grid.Column="0" Content="New profile" HorizontalAlignment="Stretch" Click="CreateProfile_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                         <Button x:Name="EditProfileButton" Grid.Row="0" Grid.Column="1" Content="Edit selected" HorizontalAlignment="Stretch" Click="EditProfile_Click" IsEnabled="False" ContentTemplate="{StaticResource AuroraWrapCaption}" />
-                                        <Button Grid.Row="0" Grid.Column="2" Content="Import JSON" HorizontalAlignment="Stretch" Click="ImportProfiles_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
-                                        <Button Grid.Row="0" Grid.Column="3" Content="Export JSON" HorizontalAlignment="Stretch" Click="ExportProfiles_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="ProfileImportButton" Grid.Row="0" Grid.Column="2" Content="Import JSON" HorizontalAlignment="Stretch" Click="ImportProfiles_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        <Button x:Name="ProfileExportButton" Grid.Row="0" Grid.Column="3" Content="Export JSON" HorizontalAlignment="Stretch" Click="ExportProfiles_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                         <Button x:Name="CaptureSnapshotButton" Grid.Row="1" Grid.Column="0" Grid.ColumnSpan="2" Content="Read + save snapshot" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Read selected profile DIDs and explicitly save a diagnostic JSON file. Not a restorable ECU backup." Click="CaptureSnapshot_Click" IsEnabled="False" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                         <Button x:Name="InspectSnapshotButton" Grid.Row="1" Grid.Column="2" Content="Inspect snapshot" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Inspect local DID JSON without connecting, transmitting CAN, or restoring ECU data." Click="InspectSnapshot_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
                                         <Button x:Name="CompareSnapshotsButton" Grid.Row="1" Grid.Column="3" Content="Compare snapshots" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Compare two local diagnostic JSON snapshots offline. Show only changed DID numbers, not their data." Click="CompareSnapshots_Click" ContentTemplate="{StaticResource AuroraWrapCaption}" />
@@ -704,48 +1360,137 @@
                                 </Grid>
                             </Border>
                         </StackPanel>
-                        <StackPanel x:Name="ConnectionPage" Visibility="Collapsed" Spacing="4">
-                            <Border Style="{StaticResource AuroraCard}">
-                                <StackPanel Spacing="18">
-                                    <TextBlock Text="Интерфейс автомобиля" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Выберите установленный J2534-адаптер и параметры канала." Foreground="#9EB8CC" />
-                                    <TextBox x:Name="DllPath" PlaceholderText="Path to 32-bit J2534 DLL" Header="J2534 DLL" />
-                                    <Grid ColumnSpacing="16" RowSpacing="16">
-                                        <Grid.ColumnDefinitions>
-                                            <ColumnDefinition Width="*" />
-                                            <ColumnDefinition Width="*" />
-                                        </Grid.ColumnDefinitions>
-                                        <ComboBox x:Name="J2534Devices" Header="Registered adapters" DisplayMemberPath="Label" PlaceholderText="Select adapter" SelectionChanged="J2534Device_SelectionChanged" Grid.Column="0" />
-                                        <StackPanel Grid.Column="1" Spacing="12">
-                                            <ComboBox x:Name="BaudRate" Header="CAN speed" SelectedIndex="0" ToolTipService.ToolTip="Volvo XC90 P2 HS-CAN guidance: through model year 2004 250 kbit/s; from model year 2005 500 kbit/s. Other networks differ. Verify actual model year, bus and adapter before connecting; Dvinholm does not adjust the speed automatically.">
-                                                <ComboBoxItem Content="500 kbit/s" Tag="500000" />
-                                                <ComboBoxItem Content="250 kbit/s" Tag="250000" />
-                                                <ComboBoxItem Content="125 kbit/s" Tag="125000" />
-                                            </ComboBox>
-                                            <ComboBox x:Name="CanConnectionMode" Header="CAN channel ID format" SelectedIndex="0" Visibility="Collapsed" ToolTipService.ToolTip="Select before connecting. Reconnect to change the physical channel format.">
-                                                <ComboBoxItem Content="11-bit" />
-                                                <ComboBoxItem Content="29-bit" />
-                                            </ComboBox>
-                                        </StackPanel>
-                                    </Grid>
-                                    <StackPanel Orientation="Horizontal" Spacing="12">
-                                        <Button Content="Refresh" Click="RefreshJ2534Devices_Click" VerticalAlignment="Bottom" />
-                                        <Button x:Name="ConnectButton" Content="Connect" Click="Connect_Click" VerticalAlignment="Bottom" Background="#0865C7" BorderBrush="#348DEA" />
+                        <StackPanel x:Name="ConnectionPage" Visibility="Collapsed" Spacing="10">
+                            <!-- Approved visual reference: adapter | CAN parameters | real connection state.
+                                 Keep existing J2534 selection, handlers and architecture audit. -->
+                            <Grid x:Name="ConnectionThreeCardGrid" ColumnSpacing="12" RowSpacing="12">
+                                <Grid.RowDefinitions>
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                    <RowDefinition Height="Auto" />
+                                </Grid.RowDefinitions>
+                                <Grid.ColumnDefinitions>
+                                    <ColumnDefinition x:Name="ConnectionAdapterColumn" Width="1.1*" />
+                                    <ColumnDefinition x:Name="ConnectionBusColumn" Width="0.95*" />
+                                    <ColumnDefinition x:Name="ConnectionStatusColumn" Width="1.05*" />
+                                </Grid.ColumnDefinitions>
+                                <Border x:Name="ConnectionAdapterPane" Grid.Column="0"
+                                        Style="{StaticResource AuroraCard}" Margin="0">
+                                    <StackPanel Spacing="14">
+                                        <Grid x:Name="ConnectionAdapterHeadingGrid" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE950;"
+                                                      Foreground="#55CEED" FontSize="21" />
+                                            <TextBlock Grid.Column="1" VerticalAlignment="Center" x:Name="ConnectionPageHeading" TextWrapping="Wrap" Text="Интерфейс автомобиля"
+                                                       FontSize="19" FontWeight="SemiBold" />
+                                        </Grid>
+                                        <TextBlock x:Name="ConnectionPageIntro"
+                                                   Text="Выберите установленный J2534-адаптер и параметры канала."
+                                                   Foreground="#A9C7DE" TextWrapping="Wrap" FontSize="12" />
+                                        <ComboBox x:Name="J2534Devices" Header="Registered adapters"
+                                                  DisplayMemberPath="Label" PlaceholderText="Select adapter"
+                                                  SelectionChanged="J2534Device_SelectionChanged"
+                                                  HorizontalAlignment="Stretch" />
+                                        <TextBox x:Name="DllPath" PlaceholderText="Path to compatible J2534 DLL"
+                                                 Header="J2534 DLL" />
+                                        <Expander x:Name="J2534ArchitectureAuditExpander"
+                                                  AutomationProperties.Name="Аудит разрядности драйверов (офлайн)" IsExpanded="False">
+                                            <Expander.Header>
+                                                <TextBlock x:Name="J2534ArchitectureAuditHeaderText"
+                                                           Text="Аудит разрядности драйверов (офлайн)"
+                                                           TextWrapping="Wrap" MaxWidth="240" />
+                                            </Expander.Header>
+                                            <ScrollViewer MaxHeight="260" VerticalScrollBarVisibility="Auto">
+                                                <TextBlock x:Name="J2534ArchitectureAuditText"
+                                                           Text="Нажмите Refresh для повторной проверки зарегистрированных J2534 DLL."
+                                                           TextWrapping="Wrap" IsTextSelectionEnabled="True"
+                                                           FontFamily="Consolas" FontSize="12" />
+                                            </ScrollViewer>
+                                        </Expander>
                                     </StackPanel>
-                                </StackPanel>
-                            </Border>
-                            <Border Style="{StaticResource AuroraCard}">
-                                <StackPanel Spacing="18">
-                                    <TextBlock Text="Сведения об адаптере" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Информация текущего подключения." Foreground="#9EB8CC" />
-                                    <TextBlock x:Name="AdapterMetadataText" Text="J2534 adapter details: disconnected." FontSize="12" Foreground="#C1D7E8" TextWrapping="Wrap" IsTextSelectionEnabled="True" ToolTipService.ToolTip="Unverified values returned by the driver. Local diagnostic details, not an ECU identity or authorization." />
-                                </StackPanel>
-                            </Border>
+                                </Border>
+                                <Border x:Name="ConnectionBusPane" Grid.Column="1"
+                                        Style="{StaticResource AuroraCard}" Margin="0">
+                                    <StackPanel Spacing="14">
+                                        <Grid x:Name="ConnectionBusHeadingGrid" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE713;"
+                                                      Foreground="#55CEED" FontSize="21" />
+                                            <TextBlock Grid.Column="1" VerticalAlignment="Center" x:Name="ConnectionBusHeading" TextWrapping="Wrap"
+                                                       Text="Параметры CAN" FontSize="19"
+                                                       FontWeight="SemiBold" />
+                                        </Grid>
+                                        <ComboBox x:Name="BaudRate" Header="CAN speed" SelectedIndex="0"
+                                                  HorizontalAlignment="Stretch"
+                                                  ToolTipService.ToolTip="Volvo XC90 P2 HS-CAN guidance: through model year 2004 250 kbit/s; from model year 2005 500 kbit/s. Other networks differ. Verify actual model year, bus and adapter before connecting; Dvinholm does not adjust the speed automatically.">
+                                            <ComboBoxItem Content="500 kbit/s" Tag="500000" />
+                                            <ComboBoxItem Content="250 kbit/s" Tag="250000" />
+                                            <ComboBoxItem Content="125 kbit/s" Tag="125000" />
+                                        </ComboBox>
+                                        <ComboBox x:Name="CanConnectionMode"
+                                                  Header="CAN channel ID format" SelectedIndex="0"
+                                                  Visibility="Collapsed"
+                                                  ToolTipService.ToolTip="Select before connecting. Reconnect to change the physical channel format.">
+                                            <ComboBoxItem Content="11-bit" />
+                                            <ComboBoxItem Content="29-bit" />
+                                        </ComboBox>
+                                        <TextBlock x:Name="ConnectionBusEvidenceNote"
+                                                   Text="Скорость и формат CAN должны соответствовать проверенному автомобилю."
+                                                   TextWrapping="Wrap" Foreground="#A9BDD3" FontSize="12" />
+                                    </StackPanel>
+                                </Border>
+                                <Border x:Name="ConnectionStatusPane" Grid.Column="2"
+                                        Style="{StaticResource AuroraCard}" Margin="0">
+                                    <StackPanel Spacing="14">
+                                        <Grid x:Name="ConnectionDriverHeadingGrid" ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="Auto" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <FontIcon FontFamily="Segoe MDL2 Assets" Glyph="&#xE753;"
+                                                      Foreground="#55CEED" FontSize="21" />
+                                            <TextBlock Grid.Column="1" VerticalAlignment="Center" x:Name="ConnectionDriverHeading" TextWrapping="Wrap"
+                                                       Text="Сведения об адаптере" FontSize="19"
+                                                       FontWeight="SemiBold" />
+                                        </Grid>
+                                        <TextBlock x:Name="ConnectionSessionState"
+                                                   Text="{Binding Text, ElementName=ShellConnectionText}"
+                                                   TextWrapping="Wrap" FontSize="17" Foreground="#728FA8" FontWeight="SemiBold" />
+                                        <TextBlock x:Name="ConnectionDriverIntro" TextWrapping="Wrap"
+                                                   Text="Информация текущего подключения."
+                                                   Foreground="#A9C7DE" FontSize="12" />
+                                        <TextBlock x:Name="AdapterMetadataText"
+                                                   Text="J2534 adapter details: disconnected."
+                                                   FontSize="12" Foreground="#C1D7E8" TextWrapping="Wrap"
+                                                   IsTextSelectionEnabled="True"
+                                                   ToolTipService.ToolTip="Unverified values returned by the driver. Local diagnostic details, not an ECU identity or authorization." />
+                                        <Grid ColumnSpacing="10">
+                                            <Grid.ColumnDefinitions>
+                                                <ColumnDefinition Width="*" />
+                                                <ColumnDefinition Width="*" />
+                                            </Grid.ColumnDefinitions>
+                                            <Button x:Name="ConnectionRefreshButton" Grid.Column="0"
+                                                    Content="Refresh" Click="RefreshJ2534Devices_Click"
+                                                    HorizontalAlignment="Stretch" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                            <Button x:Name="ConnectButton" Grid.Column="1"
+                                                    Content="Connect" Click="Connect_Click"
+                                                    HorizontalAlignment="Stretch"
+                                                    Background="#0865C7" BorderBrush="#348DEA" ContentTemplate="{StaticResource AuroraWrapCaption}" />
+                                        </Grid>
+                                    </StackPanel>
+                                </Border>
+                            </Grid>
                         </StackPanel>
                         <Border x:Name="DiagnosticResultsCard" Visibility="Collapsed" Style="{StaticResource AuroraCard}">
                             <StackPanel Spacing="18">
-                                <TextBlock Text="Результат операции" FontSize="20" FontWeight="SemiBold" />
-                                <TextBlock Text="Данные отображаются локально. Проверьте содержимое перед передачей." Foreground="#9EB8CC" />
+                                <TextBlock x:Name="DiagnosticResultHeading" Text="Результат операции" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                <TextBlock x:Name="DiagnosticResultIntro" Text="Данные отображаются локально. Проверьте содержимое перед передачей." Foreground="#9EB8CC" TextWrapping="Wrap" />
                                 <StackPanel x:Name="StatusPanel" Spacing="6">
                                     <Expander x:Name="DiagnosticResultExpander" Header="Diagnostic read result (VIN / DID / DTC, review before sharing)" IsExpanded="False">
                                         <ScrollViewer MaxHeight="170" VerticalScrollBarVisibility="Auto" HorizontalScrollBarVisibility="Disabled">
@@ -761,8 +1506,34 @@
                         </Border>
                     </StackPanel>
                 </ScrollViewer>
-                <Border x:Name="ShellStatusBar" Grid.Row="2" Background="#0A2032" BorderBrush="#1E3B53" BorderThickness="0,1,0,0" Padding="28,12">
-                    <TextBlock x:Name="ShellStatusText" Text="{Binding Text, ElementName=StatusText}" Foreground="#9EB8CC" FontSize="12" MaxLines="2" />
+                <!-- Continuous low-profile status strip from the approved Aurora shell.
+                     The indicator stays neutral unless a real session is connected. -->
+                <Border x:Name="ShellStatusBar" Grid.Row="2" Background="#071B2F"
+                        AutomationProperties.AutomationId="DvinholmShellStatusBar"
+                        AutomationProperties.AccessibilityView="Control"
+                        BorderBrush="#2C5778" BorderThickness="0,1,0,0" Padding="28,9">
+                    <Grid ColumnSpacing="12">
+                        <Grid.ColumnDefinitions>
+                            <ColumnDefinition Width="Auto" />
+                            <ColumnDefinition Width="*" />
+                            <ColumnDefinition Width="Auto" />
+                        </Grid.ColumnDefinitions>
+                        <TextBlock x:Name="StatusFooterDot" Text="●" FontSize="12"
+                                   Foreground="#728FA8" VerticalAlignment="Center" />
+                        <!-- TextBlock peers are exposed independently of the decorative
+                             Border, which some WinUI UIA providers omit entirely. -->
+                        <TextBlock x:Name="ShellStatusText" Grid.Column="1"
+                                   AutomationProperties.AutomationId="DvinholmFooterStatusText"
+                                   AutomationProperties.AccessibilityView="Control"
+                                   Text="{Binding Text, ElementName=StatusText}"
+                                   Foreground="#C0D5E7" FontSize="12" MaxLines="2" TextWrapping="Wrap"
+                                   VerticalAlignment="Center" />
+                        <TextBlock x:Name="StatusFooterVersion" Grid.Column="2"
+                                   AutomationProperties.AutomationId="DvinholmFooterVersionText"
+                                   AutomationProperties.AccessibilityView="Control"
+                                   Text="Dvinholm" Foreground="#80AFC9" FontSize="11"
+                                   VerticalAlignment="Center" />
+                    </Grid>
                 </Border>
             </Grid>
         </Grid>

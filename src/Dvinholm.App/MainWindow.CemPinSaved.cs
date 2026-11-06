@@ -56,6 +56,9 @@ public sealed partial class MainWindow
             else if (action == ContentDialogResult.Primary)
             {
                 loaded = store.Load(selected.Id);
+                // A previous PIN may still be backed by a live expiry timer.
+                // Dispose and zero it before replacing the confidential view.
+                ClearCemPinMaterial();
                 _cemPinResult = CemPinAttemptResult.Restored(loaded);
                 loaded = null;
                 _cemPinLoadedFromStore = true;

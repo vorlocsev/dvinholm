@@ -112,7 +112,10 @@ public sealed class J2534ConnectionPresentationTests
         Assert.Contains("J2534ConnectionPresentation.LocalDetails(", connect);
         Assert.Contains("SetStatus(J2534ConnectionPresentation.ConnectedActivity);", connect);
         Assert.True(connect.Split(
-            "AdapterMetadataText.Text = J2534ConnectionPresentation.DisconnectedDetails;").Length >= 3);
+            "J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);").Length >= 3);
+        Assert.Contains("_adapterMetadataConnected = false;", connect);
+        Assert.Contains("_adapterMetadataConnected = true;", connect);
+        Assert.Contains("_session.AdapterVersion, _session.AdapterCapabilities, _unifiedEnglish", connect);
         Assert.DoesNotContain("versionText", connect);
         Assert.DoesNotContain("capabilityText", connect);
         Assert.DoesNotContain("SetStatus(\"Connected · J2534 · CAN · \"", connect);

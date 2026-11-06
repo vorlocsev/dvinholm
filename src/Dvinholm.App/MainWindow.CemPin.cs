@@ -11,6 +11,92 @@ public sealed partial class MainWindow
     private bool _cemPinLoadedFromStore;
     private static CemPinStore OpenCemPinStore() => new(Path.Combine(DvinholmUserDataDirectory.Current, "cem-pin-vault"));
 #endif
+    private bool _cemPartPrerequisitesInspected;
+
+    private CemReadOnlyPrerequisiteAssessment InspectCemReadOnlyPrerequisites()
+    {
+        // No CAN/J2534 calls. This is just a momentary snapshot of the
+        // session state already owned by MainWindow; no PIN material is used.
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        var safeResearchContext = !_closing && _demoTimer is null &&
+            !DvinholmUserDataDirectory.IsAcceptanceLaunch;
+#else
+        // The experimental CEM P/N route is excluded from Stable builds.
+        const bool safeResearchContext = false;
+#endif
+        return CemReadOnlyPrerequisiteReport.Assess(new(
+            Connected: _connected && _session.IsConnected,
+            Baud500K: _session.ConnectedBaudRate == 500_000,
+            Extended29Bit: _session.ConnectedExtended == true,
+            HardwareCanFilters: _session.AdapterCapabilities?.HardwareCanFilters == true,
+            NoUserFilter: _activeHardwareFilterId is null,
+            MonitorStopped: _monitorTask is null,
+            DiagnosticGateIdle: _udsGate.CurrentCount != 0 && _discoveryCts is null,
+            SafeResearchContext: safeResearchContext));
+    }
+
+    private void CheckCemPrerequisites_Click(object sender, RoutedEventArgs e)
+    {
+        if (_closing) return;
+        _cemPartPrerequisitesInspected = true;
+        RefreshCemPrerequisitePresentation();
+        CemPartPrerequisiteExpander.IsExpanded = true;
+        // Not even a read-only CEM request is sent by this callback.
+    }
+
+    private void RefreshCemPrerequisitePresentation()
+    {
+        if (CemPartPrerequisiteButton is null) return;
+        CemPartPrerequisiteButton.Content = L(
+            "Проверить условия локально", "Inspect prerequisites locally");
+        // Single authoritative CEM tooltip for both locale changes and
+        // the explicit local-prerequisite action; no vehicle request is made.
+        ToolTipService.SetToolTip(CemPartPrerequisiteButton, L(
+            "Только локальная проверка состояния приложения, без CAN или J2534 запросов.",
+            "Inspect local application state only. No CAN or J2534 requests."));
+        CemPartPrerequisiteExpander.Header = L(
+            "Результат проверки (без запросов)", "Preflight result (no requests)");
+        CemPartPrerequisiteText.Text = _cemPartPrerequisitesInspected
+            ? CemReadOnlyPrerequisiteReport.Format(
+                InspectCemReadOnlyPrerequisites(), _unifiedEnglish)
+            : L("Нажмите «Проверить условия локально». Это не подтверждает доступ к CEM.",
+                "Select local prerequisite inspection. This does not establish CEM access.");
+    }
+
+    /// <summary>
+    /// The two visible Aurora CEM workspaces share one payload-free status.
+    /// Never use a profile label or DID snapshot as authenticated CEM identity.
+    /// On every refresh, re-evaluate the original session guard; no value is
+    /// persisted, sent to the vehicle or inserted into the activity log.
+    /// </summary>
+    private void RefreshCemIdentityEvidencePresentation()
+    {
+        if (CemIdentityEvidencePinText is null ||
+            CemIdentityEvidenceConfigText is null)
+            return;
+        CemPinIdentitySectionTitle.Text = L(
+            "01  ·  Идентификация CEM", "01  ·  CEM identification");
+        CemPinIdentitySectionIntro.Text = L(
+            "Идентификация CEM пока не подтверждена. Локальная проверка не обращается к автомобилю; экспериментальное чтение доступно только в Development.",
+            "CEM identity is not yet verified. Local inspection does not contact the vehicle; experimental reading is Development-only.");
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        uint? observed = _cemIdentity?.PartNumber;
+        var guardCurrent = _cemIdentityGuard?.IsCurrent == true;
+        var developmentContext = !_closing && _demoTimer is null &&
+            !DvinholmUserDataDirectory.IsAcceptanceLaunch;
+#else
+        uint? observed = null;
+        const bool guardCurrent = false;
+        const bool developmentContext = false;
+#endif
+        var evidence = CemIdentityEvidenceReport.Assess(
+            observed, guardCurrent, !_closing && _connected && _session.IsConnected,
+            developmentContext);
+        var text = CemIdentityEvidenceReport.Format(evidence, _unifiedEnglish);
+        CemIdentityEvidencePinText.Text = text;
+        CemIdentityEvidenceConfigText.Text = text;
+    }
+
     private void CemPinRangeChanged(object sender, TextChangedEventArgs e)
     {
 #if DVINHOLM_DEVELOPMENT_FEATURES
@@ -44,6 +130,7 @@ public sealed partial class MainWindow
         _cemIdentityGuard = null;
         _cemIdentity = null;
         Interlocked.Exchange(ref _cemIdentityContext, new object());
+        RefreshCemIdentityEvidencePresentation();
     }
 
     private void ClearCemPinMaterial()

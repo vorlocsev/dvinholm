@@ -3,9 +3,8 @@ using System.Xml.Linq;
 namespace Dvinholm.App.Tests;
 
 /// <summary>
-/// Eight structural contracts for Aurora's compact main-window shell.
-/// Actual small-window layout still needs an installed Windows GUI resize check.
-/// These tests make no adapter, PIN, network or vehicle requests.
+/// Eight offline structural gates for the approved six-page unified WinUI shell.
+/// No network, ECU, J2534 DLL loading, update execution or GUI pixel simulation.
 /// </summary>
 public sealed class AuroraCompactShellTests
 {
@@ -33,132 +32,134 @@ public sealed class AuroraCompactShellTests
                 e => (string)e.Attribute("Value")!, StringComparer.Ordinal);
 
     [Fact]
-    public void CompactAndWideStatesHaveExplicitNonOverlappingMinima()
+    public void WideAndCompactBreakpointsStayExplicit()
     {
         var doc = Shell();
         Assert.Equal("980", (string?)State(doc, "ShellWide").Descendants()
             .Single(e => e.Name.LocalName == "AdaptiveTrigger").Attribute("MinWindowWidth"));
         Assert.Equal("0", (string?)State(doc, "ShellCompact").Descendants()
             .Single(e => e.Name.LocalName == "AdaptiveTrigger").Attribute("MinWindowWidth"));
-        Assert.Empty(State(doc, "ShellWide").Descendants()
-            .Where(e => e.Name.LocalName == "Setter"));
+        Assert.Equal("64", Setters(doc, "ShellCompact")["ShellSidebarColumn.Width"]);
     }
 
     [Fact]
-    public void CompactSidebarShrinksAndRemovesDecorationsWithoutRemovingNavigation()
+    public void ExactlySixApprovedTopLevelSidebarDestinationsAreVisible()
     {
         var doc = Shell();
-        var setters = Setters(doc, "ShellCompact");
-        Assert.Equal("216", (string?)Named(doc, "ShellSidebarColumn").Attribute("Width"));
-        Assert.Equal("64", setters["ShellSidebarColumn.Width"]);
-        Assert.Equal("Collapsed", setters["SidebarBrand.Visibility"]);
-        Assert.Equal("Collapsed", setters["SidebarFooter.Visibility"]);
-        Assert.Equal("6,12", setters["SidebarNavPanel.Padding"]);
-        Assert.Equal("⌂", setters["SidebarHomeButton.Content"]);
-        Assert.Equal("Center", setters["SidebarHomeButton.HorizontalContentAlignment"]);
-        Assert.Equal("DashboardReturn_Click", (string?)Named(doc, "SidebarHomeButton").Attribute("Click"));
+        var sidebar = Named(doc, "SidebarNavPanel");
+        var buttons = sidebar.Elements().Where(e => e.Name.LocalName == "Button").ToArray();
+        Assert.Equal(6, buttons.Length);
+        Assert.Equal(new[] { "J2534Connection", null, "CemPinReadiness",
+                             "CemConfigurationCatalog", "DtcFaults", "EcuWorkspace" },
+            buttons.Select(b => (string?)b.Attribute("Tag")));
+        Assert.Equal("SidebarUpdatesButton", (string?)buttons[1].Attribute(X + "Name"));
+        Assert.Equal("UnifiedUpdatesNavigate_Click", (string?)buttons[1].Attribute("Click"));
+        Assert.DoesNotContain(doc.Descendants(), e => e.Name.LocalName == "Button" &&
+            (string?)e.Attribute(X + "Name") == "SidebarHomeButton");
     }
 
     [Fact]
-    public void AllEightTextLabelsCollapseOnlyInCompactState()
+    public void AllSixLabelsCollapseOnlyAtCompactWidth()
     {
         var doc = Shell();
         var setters = Setters(doc, "ShellCompact");
-        foreach (var label in new[]
-        {
-            "ShellNavCemPinLabel", "ShellNavConfigLabel", "ShellNavDtcLabel", "ShellNavEcuLabel",
-            "ShellNavDiagnosticsLabel", "ShellNavMonitorLabel",
-            "ShellNavProfilesLabel", "ShellNavConnectionLabel"
-        })
+        foreach (var label in new[] { "ShellNavConnectionLabel", "ShellNavUpdatesLabel",
+            "ShellNavCemPinLabel", "ShellNavConfigLabel", "ShellNavDtcLabel", "ShellNavEcuLabel" })
         {
             Assert.Equal("TextBlock", Named(doc, label).Name.LocalName);
             Assert.Equal("Collapsed", setters[label + ".Visibility"]);
             Assert.Null(Named(doc, label).Attribute("Visibility"));
         }
+        Assert.DoesNotContain(setters.Keys, key => key.Contains("HomeButton", StringComparison.Ordinal));
     }
 
     [Fact]
-    public void EveryCompactNavButtonKeepsItsTooltipAutomationNameAndClick()
+    public void TopLevelButtonsRetainTooltipsAutomationAndRealNavigation()
     {
         var doc = Shell();
-        var sidebar = Named(doc, "SidebarNavPanel");
-        var links = sidebar.Elements().Where(e => e.Attribute("Tag") != null).ToArray();
-        Assert.Equal(8, links.Length);
-        Assert.All(links, button =>
+        var buttons = Named(doc, "SidebarNavPanel").Elements()
+            .Where(e => e.Name.LocalName == "Button").ToArray();
+        foreach (var button in buttons)
         {
-            var expectedName = (string?)button.Attribute("AutomationProperties.Name");
-            Assert.False(string.IsNullOrWhiteSpace(expectedName));
-            Assert.Equal(expectedName, (string?)button.Attribute("ToolTipService.ToolTip"));
-            Assert.Equal("WorkspaceNavigate_Click", (string?)button.Attribute("Click"));
-        });
-        Assert.Equal("Главная", (string?)Named(doc, "SidebarHomeButton")
-            .Attribute("ToolTipService.ToolTip"));
+            Assert.Equal((string?)button.Attribute("AutomationProperties.Name"),
+                         (string?)button.Attribute("ToolTipService.ToolTip"));
+            Assert.False(string.IsNullOrEmpty((string?)button.Attribute("Click")));
+            if (button != buttons[1])
+                Assert.Equal("WorkspaceNavigate_Click", (string?)button.Attribute("Click"));
+        }
     }
 
     [Fact]
-    public void HeaderMovesConnectionAndCancelActionsBelowTitleAtCompactWidth()
+    public void UnifiedShellStartsWithWorkspaceAndHomeIsHidden()
     {
         var doc = Shell();
-        var setters = Setters(doc, "ShellCompact");
-        var header = Named(doc, "WorkspaceHeaderGrid");
-        Assert.Equal(2, header.Elements().Single(e => e.Name.LocalName == "Grid.RowDefinitions")
-            .Elements().Count());
-        Assert.Equal("1", setters["WorkspaceHeaderActions.(Grid.Row)"]);
-        Assert.Equal("0", setters["WorkspaceHeaderActions.(Grid.Column)"]);
-        Assert.Equal("Left", setters["WorkspaceHeaderActions.HorizontalAlignment"]);
-        Assert.Equal("23", setters["WorkspaceTitle.FontSize"]);
-        Assert.Equal("WorkspaceNavigate_Click", (string?)Named(doc, "WorkspaceHeaderActions")
-            .Descendants().Single(e => (string?)e.Attribute("Tag") == "J2534Connection")
-            .Attribute("Click"));
-        Assert.Contains(Named(doc, "WorkspaceHeaderActions"), Named(doc, "CancelUdsButton").Ancestors());
+        Assert.Equal("Visible", (string?)Named(doc, "AuroraWorkspaceHost").Attribute("Visibility"));
+        Assert.Equal("Collapsed", (string?)Named(doc, "AuroraLanding").Attribute("Visibility"));
+        Assert.Equal("Collapsed", (string?)Named(doc, "UnifiedUpdatesPage").Attribute("Visibility"));
+        Assert.Equal("Disabled", (string?)Named(doc, "WorkspaceScroll").Attribute("HorizontalScrollBarVisibility"));
     }
 
     [Fact]
-    public void ContentAndStatusGuttersShrinkWhileVerticalScrollingRemains()
+    public void UpdatesHasLocalChannelButNoUnverifiedInstallerControls()
     {
         var doc = Shell();
-        var setters = Setters(doc, "ShellCompact");
-        Assert.Equal("12,12,12,12", setters["WorkspaceHeaderGrid.Margin"]);
-        Assert.Equal("12,0,12,16", setters["WorkspacePageContainer.Padding"]);
-        Assert.Equal("12,10", setters["ShellStatusBar.Padding"]);
-        var scroll = Named(doc, "WorkspaceScroll");
-        Assert.Equal("Auto", (string?)scroll.Attribute("VerticalScrollBarVisibility"));
-        Assert.Equal("Disabled", (string?)scroll.Attribute("HorizontalScrollBarVisibility"));
-        Assert.Contains(Named(doc, "WorkspacePageContainer"), scroll.Descendants());
-        var sidebarScroll = Named(doc, "SidebarNavPanel").Ancestors()
-            .Single(e => e.Name.LocalName == "ScrollViewer");
-        Assert.Equal("Auto", (string?)sidebarScroll.Attribute("VerticalScrollBarVisibility"));
+        var page = Named(doc, "UnifiedUpdatesPage");
+        var picker = Named(doc, "UnifiedUpdateChannel");
+        Assert.Contains(page, picker.Ancestors());
+        Assert.Equal("UnifiedUpdateChannel_SelectionChanged", (string?)picker.Attribute("SelectionChanged"));
+        Assert.Equal(new[] { "stable", "development" },
+            picker.Elements().Select(e => (string?)e.Attribute("Tag")));
+        Assert.Contains("SHA-256", page.ToString(), StringComparison.Ordinal);
+        var buttons = page.Descendants().Where(e => e.Name.LocalName == "Button").ToArray();
+        Assert.Equal(4, buttons.Length);
+        Assert.Equal(new[] { "UnifiedCheckUpdateButton", "UnifiedStageUpdateButton",
+            "UnifiedCancelStageButton", "UnifiedPreflightButton" },
+            buttons.Select(b => (string?)b.Attribute(X + "Name")));
+        Assert.Equal(new[] { "UnifiedCheckUpdate_Click", "UnifiedStageUpdate_Click",
+            "UnifiedCancelStage_Click", "UnifiedPreflight_Click" },
+            buttons.Select(b => (string?)b.Attribute("Click")));
+        Assert.Equal("False", (string?)buttons[1].Attribute("IsEnabled"));
+        Assert.Equal("False", (string?)buttons[2].Attribute("IsEnabled"));
+        Assert.Equal("False", (string?)buttons[3].Attribute("IsEnabled"));
+        var progress = Named(doc, "UnifiedStageProgress");
+        Assert.Equal("Collapsed", (string?)progress.Attribute("Visibility"));
+        Assert.Equal("True", (string?)progress.Attribute("IsIndeterminate"));
+        Assert.DoesNotContain(buttons, b => (string?)b.Attribute("Content") is
+            "Установить" or "Install" or "Download / Install");
+        var lang = Named(doc, "UnifiedLanguageSelector");
+        Assert.Equal("UnifiedLanguageSelector_SelectionChanged",
+            (string?)lang.Attribute("SelectionChanged"));
+        Assert.Equal(new[] { "ru", "en" },
+            lang.Elements().Select(e => (string?)e.Attribute("Tag")));
     }
 
     [Fact]
-    public void EverySetterReferencesAnExistingNamedXamlElement()
+    public void EveryCompactSetterReferencesAnActualUniqueXamlName()
     {
         var doc = Shell();
         var names = doc.Descendants().Select(e => (string?)e.Attribute(X + "Name"))
             .Where(s => s != null).ToArray();
         Assert.Equal(names.Length, names.Distinct(StringComparer.Ordinal).Count());
-        var setters = Setters(doc, "ShellCompact");
-        foreach (var target in setters.Keys)
-        {
-            var element = target[..target.IndexOf('.')];
-            Assert.Contains(element, names);
-        }
+        foreach (var target in Setters(doc, "ShellCompact").Keys)
+            Assert.Contains(target[..target.IndexOf('.')], names);
+        Assert.Equal("12,0,12,16", Setters(doc, "ShellCompact")["WorkspacePageContainer.Padding"]);
     }
 
     [Fact]
-    public void ResizingCannotAddAlternativeVehicleOrPinOperationHandlers()
+    public void DiagnosticHandlersStayAvailableOnlyInTheirVerifiedWorkspaces()
     {
         var doc = Shell();
-        var setters = Setters(doc, "ShellCompact");
-        Assert.All(setters.Keys, target =>
-            Assert.DoesNotContain("Click", target, StringComparison.Ordinal));
-        foreach (var name in new[]
+        foreach (var (page, name) in new[] { ("ConnectionPage", "ConnectButton"),
+                ("CemPinPage", "CemPinReadButton"), ("DtcPage", "ReadDtcButton"),
+                ("CanMonitorPage", "StartButton"), ("EcuPage", "DiscoverButton") })
         {
-            "CemPartNumberReadButton", "CemPinReadButton", "ConnectButton",
-            "ReadVinButton", "ReadDidButton", "StartButton"
-        })
-            Assert.NotNull(Named(doc, name).Attribute("Click"));
-        Assert.Equal("Collapsed", (string?)Named(doc, "AuroraWorkspaceHost")
-            .Attribute("Visibility"));
+            var button = Named(doc, name);
+            Assert.Contains(Named(doc, page), button.Ancestors());
+            Assert.NotNull(button.Attribute("Click"));
+        }
+        foreach (var tag in new[] { "DiagnosticsWorkspace", "CanMonitor", "EcuProfiles" })
+            Assert.Contains(Named(doc, "EcuPage").Descendants(),
+                e => (string?)e.Attribute("Tag") == tag &&
+                     (string?)e.Attribute("Click") == "WorkspaceNavigate_Click");
     }
 }
