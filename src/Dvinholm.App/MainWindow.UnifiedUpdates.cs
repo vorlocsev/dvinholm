@@ -321,6 +321,8 @@ public sealed partial class MainWindow
             UnifiedUpdateChannel.Focus(FocusState.Programmatic);
         else
             SidebarUpdatesButton.Focus(FocusState.Programmatic);
-        WorkspaceScroll.ChangeView(null, 0, null);
+        // Share the guarded first-fold reset with all other Aurora routes.
+        // Navigation itself must not trigger a driver request or download.
+        ResetWorkspaceFirstFoldAfterNavigation();
     }
 }
