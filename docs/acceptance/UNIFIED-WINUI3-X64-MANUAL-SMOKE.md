@@ -100,11 +100,17 @@ Manual check: in **RU and EN**, navigate repeatedly from Connection to each of C
 
 ### Stage 547: RU/EN primary-screen safety-tooltip parity (manual still required)
 
-Review of the native six-page XAML found eight visible safety tooltips still hardcoded in just one language: CEM prerequisite check, passive ECU picker/list, DTC status filter/read/address shortcut, and CAN RX summary/trace review. These captions now update through the existing `ApplyAuroraPrimaryScreenLocalization()` path, following the actual RU/EN selector without changing the selected item, diagnostic context, connection, download state, authorization or button enablement. The wording continues to distinguish passive/unverified ECU evidence, read-only DTC behavior, local prerequisites and private offline trace inspection.
+Review of the native six-page XAML found eight visible safety tooltips still hardcoded in just one language: CEM prerequisite check, passive ECU picker/list, DTC status filter/read/address shortcut, and CAN RX summary/trace review. Seven captions update through `ApplyAuroraPrimaryScreenLocalization()`; the CEM prerequisite tooltip has a single owning presenter, `RefreshCemPrerequisitePresentation()`, also refreshed after RU/EN switching. They follow the actual RU/EN selector without changing the selected item, diagnostic context, connection, download state, authorization or button enablement. The wording continues to distinguish passive/unverified ECU evidence, read-only DTC behavior, local prerequisites and private offline trace inspection.
 
 New offline contract tests check every tooltip has RU/EN projection and protect the safety-critical meanings (no PIN attempt, verified TX/RX required for DTC read, no DTC erase, no scan implied by an address shortcut, no CAN payload export by the captions). The presence of these strings in source does **not** prove that WinUI renders the tooltips correctly at 100%, 125%, 150% or 200% DPI.
 
 Manual RU/EN acceptance: hover/focus each applicable control on Connection, CEM PIN, ECU and DTC, and in the ECU tools navigate to CAN summary/trace. Verify the language matches the selected shell language, long text wraps and no overlay hides a button, header or fixed footer. Do not connect a vehicle, start a PIN scan, clear faults or upload screenshots; record visual PASS/FAIL only after actual Windows inspection.
+
+### Stage 548: canonical CEM safety-tooltip ownership (source audit)
+
+The previous RU/EN tooltip improvement exposed one duplicated writer: `CemPartPrerequisiteButton` was assigned a localized tooltip in the primary-screen projector **and** in `RefreshCemPrerequisitePresentation()`. The latter also runs when the user inspects prerequisites and after a language change, so it could overwrite the former. The redundant writer is removed. The owning CEM presenter now uses the explicit same RU/EN message in all refresh paths: this is a **local application-state inspection only, with no CAN/J2534 requests**. The remaining seven newly localized primary safety tooltips stay in the screen projector. Source tests assert exactly one CEM tooltip writer, correctly ordered locale refresh, and the existing no-vehicle-operation safeguards.
+
+The correction avoids relying on whichever localized tooltip assignment happened to run last. It does not enable CEM identity reading, PIN search or write functionality, and it is **not** a claim of visual acceptance. Inspect the tooltip after both a direct RU/EN switch and an explicit local prerequisite check on the real Windows app. Record missing/wrong-language captions as **FAIL**, and do not infer a release from a successful CI build.
 
 ### Stage 109: exact executable provenance (new PR artifacts only)
 
