@@ -296,4 +296,49 @@ public sealed class AuroraPrivateReviewReportContracts
         Assert.DoesNotContain("ReadCemPin", script);
     }
 
+
+    [Fact]
+    public void ReviewSafelyReadsOptionalLegacyCaptureSessionProperty()
+    {
+        var script = Script();
+        Assert.Contains("$entry.PSObject.Properties['captureSessionId']", script);
+        Assert.Contains("if ($null -eq $sessionProperty) { '' }", script);
+        Assert.Contains("$hasLegacySession = $true", script);
+        Assert.Contains("legacy capture session NOT VERIFIED", script);
+        Assert.DoesNotContain("$entry.captureSessionId", script);
+    }
+
+    [Fact]
+    public void TopCapturesRejectInvalidTokensAndCrossRunMixtures()
+    {
+        var script = Script();
+        Assert.Contains("$sessionId -cnotmatch '^[0-9a-fA-F]{8}", script);
+        Assert.Contains("$observedSession -cne $sessionId", script);
+        Assert.Contains("Mixed capture-session IDs within $lang top pages.", script);
+        Assert.Contains("New and legacy capture-session evidence mixed", script);
+        Assert.Contains("$captureSessions[$lang] = $observedSession", script);
+    }
+
+    [Fact]
+    public void BottomPairMustMatchCaptureSessionOrBothBeLegacy()
+    {
+        var script = Script();
+        Assert.Contains("$bottomEntry.PSObject.Properties['captureSessionId']", script);
+        Assert.Contains("if ($null -eq $bottomSessionProperty)", script);
+        Assert.Contains("$bottomSessionId -cne $captureSessions[$lang]", script);
+        Assert.Contains("Bottom/top capture-session continuity mismatch:", script);
+        Assert.DoesNotContain("$bottomEntry.captureSessionId", script);
+    }
+
+    [Fact]
+    public void TokenRemainsOperatorOnlyEvidenceNotImageProvenanceOrVisualApproval()
+    {
+        var script = Script();
+        Assert.Contains("local capture-session token consistent across top pages (not authenticated).", script);
+        Assert.Contains("source metadata cannot establish run continuity.", script);
+        Assert.Contains(" / 8. Missing is NOT RUN; present is NOT visual PASS.", script);
+        Assert.Contains(" / 12. Missing is NOT RUN; present is NOT visual PASS.", script);
+        Assert.DoesNotContain("Start-BitsTransfer", script);
+    }
+
 }
