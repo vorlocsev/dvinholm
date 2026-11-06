@@ -122,16 +122,18 @@ foreach ($lang in @('ru','en')) {
         $captionSampleProp = $entry.PSObject.Properties['observedNativeCaptionSampleHex']
         $captionXProp = $entry.PSObject.Properties['nativeCaptionSampleXpx']
         $captionYProp = $entry.PSObject.Properties['nativeCaptionSampleYpx']
-        $captionSampleSet = @($captionSampleProp,$captionXProp,$captionYProp |
-            Where-Object { $null -ne $_ }).Count
+        $captionSampleSet = 0
+        if ($null -ne $captionSampleProp) { $captionSampleSet++ }
+        if ($null -ne $captionXProp) { $captionSampleSet++ }
+        if ($null -ne $captionYProp) { $captionSampleSet++ }
         if ($captionSampleSet -ne 0 -and $captionSampleSet -ne 3) {
             throw "Incomplete native caption sample metadata: $lang $key."
         }
         if ($captionSampleSet -eq 3) {
             $captionHex = [string]$captionSampleProp.Value
             if ($captionHex -cnotmatch '^#[0-9A-F]{6}$' -or
-                $captionXProp.Value -isnot [int] -or
-                $captionYProp.Value -isnot [int] -or
+                ($captionXProp.Value -isnot [int] -and $captionXProp.Value -isnot [long]) -or
+                ($captionYProp.Value -isnot [int] -and $captionYProp.Value -isnot [long]) -or
                 [int]$captionXProp.Value -lt 0 -or
                 [int]$captionXProp.Value -ge [int]$entry.actualWidthPx -or
                 [int]$captionYProp.Value -lt 0 -or
