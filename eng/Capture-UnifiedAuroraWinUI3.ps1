@@ -650,6 +650,9 @@ if (@(Get-ChildItem -LiteralPath $output -Force).Count -ne 0) {
 }
 $results = @()
 $bottomResults = @()
+# One unpredictable local correlation token for this capture invocation.
+# It is not signed identity evidence, authentication, or a release seal.
+$captureSessionId = [guid]::NewGuid().ToString('D')
 foreach ($page in $Pages) {
     Invoke-OnlyNavigation $page
     Set-CaptureWindowForeground
@@ -733,6 +736,7 @@ foreach ($page in $Pages) {
                     windowDpi = $dpi
                     scrollPosition = 'bottom'
                     verifiedOuterScrollPercentAtLeast98 = $true
+                    captureSessionId = $captureSessionId
                     sourceCommitOperatorDeclared = $CommitSha
                     screenshotUtc = [DateTime]::UtcNow.ToString('o')
                     evidence = 'real desktop bottom fold, verified outer UIA scroll; final controls require human visual review'
@@ -774,6 +778,7 @@ foreach ($page in $Pages) {
         actualWidthPx = $actualWidth
         actualHeightPx = $actualHeight
         windowDpi = $dpi
+        captureSessionId = $captureSessionId
         sourceCommitOperatorDeclared = $CommitSha
         screenshotUtc = [DateTime]::UtcNow.ToString('o')
         evidence = 'fixed real desktop viewport only; manual privacy and visual review still required'
