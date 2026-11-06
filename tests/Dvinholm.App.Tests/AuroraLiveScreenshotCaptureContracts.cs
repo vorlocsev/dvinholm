@@ -431,4 +431,59 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.DoesNotContain("Invoke-WebRequest", script);
     }
 
+
+    // Stage 543: genuine first-fold checks, not a visual acceptance claim.
+    [Fact]
+    public void OptionalTopFoldProbeReadsOnlyOuterWorkspaceScrollPattern()
+    {
+        var script = Capture();
+        var begin = script.IndexOf("function Assert-WorkspaceTopBeforePixels(", StringComparison.Ordinal);
+        var end = script.IndexOf("function Invoke-OnlyNavigation(", begin, StringComparison.Ordinal);
+        Assert.True(begin >= 0 && end > begin);
+        var probe = script[begin..end];
+        Assert.Contains("'DvinholmWorkspaceScroll'", probe);
+        Assert.Contains("[System.Windows.Automation.ScrollPattern]::Pattern", probe);
+        Assert.Contains("$scroll.Current.VerticallyScrollable", probe);
+        Assert.Contains("$scroll.Current.HorizontallyScrollable", probe);
+        Assert.Contains("$atTop -gt 2", probe);
+        Assert.Contains("$afterIdentity -gt 2", probe);
+        Assert.Contains("Confirm-WorkspaceState $page -RequireVisible", probe);
+        Assert.DoesNotContain("SetScrollPercent(", probe);
+        Assert.DoesNotContain("PassThru", probe);
+    }
+
+    [Fact]
+    public void TopFoldIsVerifiedAfterBottomRestorationButBeforeTopPngSave()
+    {
+        var script = Capture();
+        var loop = script.IndexOf("foreach ($page in $Pages)", StringComparison.Ordinal);
+        var bottom = script.IndexOf("Assert-WorkspaceScrollToEnd $page", loop, StringComparison.Ordinal);
+        var topCheck = script.IndexOf("$topFoldVerified = Assert-WorkspaceTopBeforePixels $page",
+            bottom, StringComparison.Ordinal);
+        var png = script.IndexOf("$bitmap.Save($dest", topCheck, StringComparison.Ordinal);
+        var manifest = script.IndexOf("verifiedOuterScrollPercentAtMost2 = $topFoldVerified",
+            png, StringComparison.Ordinal);
+        Assert.True(loop >= 0 && bottom > loop && topCheck > bottom &&
+            png > topCheck && manifest > png);
+        Assert.Contains("if ($VerifyWorkspaceScroll -and", script);
+        Assert.Contains("$topFoldVerified = $false", script);
+    }
+
+    [Fact]
+    public void TopFoldProbeNeverChangesUserScrollPositionOrUsesVehicleActions()
+    {
+        var script = Capture();
+        var begin = script.IndexOf("function Assert-WorkspaceTopBeforePixels(", StringComparison.Ordinal);
+        var end = script.IndexOf("function Invoke-OnlyNavigation(", begin, StringComparison.Ordinal);
+        Assert.True(begin >= 0 && end > begin);
+        var probe = script[begin..end];
+        Assert.DoesNotContain("SetScrollPercent", probe);
+        Assert.DoesNotContain("ChangeView(", probe);
+        Assert.DoesNotContain("ReadDtc_Click", probe);
+        Assert.DoesNotContain("ReadCemPin", probe);
+        Assert.DoesNotContain("SetFocus(", probe);
+        Assert.DoesNotContain("InvokePattern", probe);
+        Assert.Contains("return $true", probe);
+    }
+
 }
