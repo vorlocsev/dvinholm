@@ -110,11 +110,18 @@ public sealed class AuroraSectionNavigationTests
         var focusEnd = navigation.IndexOf(
             "case AuroraDestination.J2534Connection: J2534Devices.Focus(FocusState.Programmatic); break;",
             StringComparison.Ordinal);
-        var reset = navigation.IndexOf("WorkspaceScroll.ChangeView(null, 0, null);",
+        var reset = navigation.IndexOf("ResetWorkspaceFirstFoldAfterNavigation();",
             StringComparison.Ordinal);
         Assert.True(selection >= 0 && focusEnd > selection && reset > focusEnd,
             "Navigation must reset the first fold after all focus-induced scrolling.");
-        Assert.Equal(1, navigation.Split("WorkspaceScroll.ChangeView(null, 0, null);").Length - 1);
+        Assert.Equal(1, navigation.Split("ResetWorkspaceFirstFoldAfterNavigation();").Length - 1);
+        var helperStart = code.IndexOf("private void ResetWorkspaceFirstFoldAfterNavigation()",
+            StringComparison.Ordinal);
+        Assert.True(helperStart >= 0 && helperStart < start);
+        var helper = code[helperStart..start];
+        Assert.Contains("WorkspaceScroll.ChangeView(null, 0, null);", helper);
+        Assert.Contains("DispatcherQueuePriority.Low", helper);
+        Assert.Contains("generation != _workspaceFirstFoldGeneration", helper);
         foreach (var focus in new[] { "EcuSelector.Focus(", "UdsRequestId.Focus(",
             "IdFilter.Focus(", "ProfileSearch.Focus(", "J2534Devices.Focus(" })
             Assert.Contains(focus, navigation);
