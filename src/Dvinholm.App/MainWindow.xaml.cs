@@ -292,6 +292,27 @@ public sealed partial class MainWindow : Window
     }
 
     private AuroraDestination? _workspaceDestination;
+    private int _workspaceFirstFoldGeneration;
+
+    // Reset immediately after the navigation focus change, then once more
+    // after pending WinUI layout. The generation guard prevents an old queued
+    // callback from scrolling a newer destination.
+    private void ResetWorkspaceFirstFoldAfterNavigation()
+    {
+        var generation = ++_workspaceFirstFoldGeneration;
+        WorkspaceScroll.ChangeView(null, 0, null);
+        DispatcherQueue.TryEnqueue(DispatcherQueuePriority.Low, () =>
+        {
+            if (_closing || generation != _workspaceFirstFoldGeneration ||
+                AuroraWorkspaceHost.Visibility != Visibility.Visible)
+                return;
+
+            // Only correct a layout/focus-driven offset. There is no user
+            // input, vehicle request, refresh or secondary navigation here.
+            if (WorkspaceScroll.VerticalOffset > 0.5)
+                WorkspaceScroll.ChangeView(null, 0, null);
+        });
+    }
 
     // Navigation changes presentation only. It never connects or sends a request.
     private void DashboardNavigate(object? sender, AuroraDestination destination)
@@ -334,10 +355,9 @@ public sealed partial class MainWindow : Window
             case AuroraDestination.EcuProfiles: ProfileSearch.Focus(FocusState.Programmatic); break;
             case AuroraDestination.J2534Connection: J2534Devices.Focus(FocusState.Programmatic); break;
         }
-        // Reset the first fold *after* focus. In vertically stacked compact
-        // workspaces WinUI may bring a focused input into view and skip the
-        // page's introductory card if scrolling is reset before focus.
-        WorkspaceScroll.ChangeView(null, 0, null);
+        // Reset after focus and after WinUI's pending layout so the page
+        // begins at its introductory card, not a previously scrolled fold.
+        ResetWorkspaceFirstFoldAfterNavigation();
     }
 
     private void WorkspaceNavigate_Click(object sender, RoutedEventArgs e)
