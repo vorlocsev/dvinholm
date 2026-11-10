@@ -10,3 +10,6 @@ build-*/
 *.obj
 *.dll
 *.exe
+
+# Generated from the approved Aurora gull/gear/arrow vector at build time.
+src/Dvinholm.Wpf/Assets/Dvinholm-Aurora.ico

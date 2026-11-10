@@ -1,0 +1,33 @@
+<Project Sdk="Microsoft.NET.Sdk">
+  <PropertyGroup>
+    <OutputType>WinExe</OutputType>
+    <TargetFramework>net10.0-windows</TargetFramework>
+    <UseWPF>true</UseWPF>
+    <RootNamespace>Dvinholm.Wpf</RootNamespace>
+    <AssemblyName>Dvinholm.Wpf</AssemblyName>
+    <Nullable>enable</Nullable>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <PlatformTarget>x86</PlatformTarget>
+    <Platforms>x86</Platforms>
+    <RuntimeIdentifier>win-x86</RuntimeIdentifier>
+    <SelfContained>true</SelfContained>
+    <PublishTrimmed>false</PublishTrimmed>
+    <PublishAot>false</PublishAot>
+    <PublishSingleFile>true</PublishSingleFile>
+    <IncludeNativeLibrariesForSelfExtract>true</IncludeNativeLibrariesForSelfExtract>
+    <ApplicationIcon>Assets\Dvinholm-Aurora.ico</ApplicationIcon>
+    <Version>0.2.4</Version>
+  </PropertyGroup>
+  <ItemGroup>
+    <!-- Reuse proven, read-only core logic; no WinUI or Windows App SDK references. -->
+    <Compile Include="..\Dvinholm.App\J2534DeviceDiscovery.cs" Link="Shared\J2534DeviceDiscovery.cs"/>
+    <Compile Include="..\Dvinholm.App\UpdateSourcePreferenceStore.cs" Link="Shared\UpdateSourcePreferenceStore.cs"/>
+  </ItemGroup>
+  <ItemGroup>
+    <!-- Use the approved 12-tooth gull/gear/arrow icon #9 on both window and EXE. -->
+    <Resource Include="Assets\Dvinholm-Aurora.ico"/>
+  </ItemGroup>
+  <Target Name="GenerateApprovedAuroraIcon" BeforeTargets="PrepareForBuild">
+    <Exec Command="powershell.exe -NoProfile -NonInteractive -ExecutionPolicy Bypass -File &quot;$(MSBuildProjectDirectory)\..\..\eng\New-LauncherIcon.ps1&quot; -LogoPath &quot;$(MSBuildProjectDirectory)\..\..\assets\dvinholm-icon.png&quot; -IconPath &quot;$(MSBuildProjectDirectory)\Assets\Dvinholm-Aurora.ico&quot;"/>
+  </Target>
+</Project>

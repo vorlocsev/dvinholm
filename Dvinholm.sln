@@ -6,6 +6,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dvinholm.App", "src\Dvinhol
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dvinholm.App.Tests", "tests\Dvinholm.App.Tests\Dvinholm.App.Tests.csproj", "{A1C9E4F2-5D72-4C6A-9F01-7B3E8D2C6A44}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Dvinholm.Wpf", "src\Dvinholm.Wpf\Dvinholm.Wpf.csproj", "{41D364F5-18B2-4D79-ACD3-6F003A5882E4}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|x86 = Debug|x86
@@ -20,5 +22,9 @@ Global
 		{A1C9E4F2-5D72-4C6A-9F01-7B3E8D2C6A44}.Debug|x86.Build.0 = Debug|x86
 		{A1C9E4F2-5D72-4C6A-9F01-7B3E8D2C6A44}.Release|x86.ActiveCfg = Release|x86
 		{A1C9E4F2-5D72-4C6A-9F01-7B3E8D2C6A44}.Release|x86.Build.0 = Release|x86
+		{41D364F5-18B2-4D79-ACD3-6F003A5882E4}.Debug|x86.ActiveCfg = Debug|x86
+		{41D364F5-18B2-4D79-ACD3-6F003A5882E4}.Debug|x86.Build.0 = Debug|x86
+		{41D364F5-18B2-4D79-ACD3-6F003A5882E4}.Release|x86.ActiveCfg = Release|x86
+		{41D364F5-18B2-4D79-ACD3-6F003A5882E4}.Release|x86.Build.0 = Release|x86
 	EndGlobalSection
 EndGlobal

@@ -1,0 +1,327 @@
+<Window x:Class="Dvinholm.Wpf.MainWindow"
+    xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+    xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+    Title="Dvinholm Aurora" Width="1420" Height="850"
+    MinWidth="1000" MinHeight="680"
+    WindowStartupLocation="CenterScreen"
+    Background="#081326" FontFamily="Segoe UI">
+  <Window.Resources>
+    <SolidColorBrush x:Key="Ink" Color="#E7F1FF"/>
+    <SolidColorBrush x:Key="FaintInk" Color="#9BB5D4"/>
+    <Style TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{StaticResource Ink}"/>
+      <Setter Property="TextWrapping" Value="Wrap"/>
+    </Style>
+    <Style x:Key="Card" TargetType="Border">
+      <Setter Property="Background" Value="#172B49"/>
+      <Setter Property="BorderBrush" Value="#516B92"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="CornerRadius" Value="13"/>
+      <Setter Property="Padding" Value="20"/>
+      <Setter Property="Margin" Value="0,0,14,14"/>
+    </Style>
+    <Style x:Key="Muted" TargetType="TextBlock">
+      <Setter Property="Foreground" Value="{StaticResource FaintInk}"/>
+      <Setter Property="FontSize" Value="14"/>
+    </Style>
+    <Style x:Key="CardTitle" TargetType="TextBlock">
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Setter Property="FontSize" Value="21"/>
+      <Setter Property="Margin" Value="0,0,0,13"/>
+    </Style>
+    <Style x:Key="Action" TargetType="Button">
+      <Setter Property="Background" Value="#273D68"/>
+      <Setter Property="Foreground" Value="#ECF5FF"/>
+      <Setter Property="BorderBrush" Value="#6389C0"/>
+      <Setter Property="BorderThickness" Value="1"/>
+      <Setter Property="MinHeight" Value="42"/>
+      <Setter Property="Padding" Value="17,9"/>
+      <Setter Property="Margin" Value="0,10,8,0"/>
+      <Setter Property="FontWeight" Value="SemiBold"/>
+      <Style.Triggers>
+        <Trigger Property="IsEnabled" Value="False">
+          <Setter Property="Foreground" Value="#91A0B5"/>
+          <Setter Property="Background" Value="#1B273B"/>
+          <Setter Property="BorderBrush" Value="#3B4A60"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+    <Style x:Key="Primary" TargetType="Button" BasedOn="{StaticResource Action}">
+      <Setter Property="Background" Value="#523F99"/>
+      <Setter Property="BorderBrush" Value="#A66BEB"/>
+    </Style>
+    <Style x:Key="NavItem" TargetType="ListBoxItem">
+      <Setter Property="Foreground" Value="#DBE9FA"/>
+      <Setter Property="FontSize" Value="17"/>
+      <Setter Property="Padding" Value="16,12"/>
+      <Setter Property="Margin" Value="4,4"/>
+      <Setter Property="HorizontalContentAlignment" Value="Stretch"/>
+      <Style.Triggers>
+        <Trigger Property="IsSelected" Value="True">
+          <Setter Property="Background" Value="#514393"/>
+          <Setter Property="Foreground" Value="White"/>
+          <Setter Property="FontWeight" Value="SemiBold"/>
+        </Trigger>
+      </Style.Triggers>
+    </Style>
+  </Window.Resources>
+  <Grid>
+    <Grid.RowDefinitions>
+      <RowDefinition Height="55"/>
+      <RowDefinition Height="*"/>
+      <RowDefinition Height="42"/>
+    </Grid.RowDefinitions>
+    <Border Grid.Row="0" Background="#101E39" BorderBrush="#31577E" BorderThickness="0,0,0,1">
+      <Grid Margin="22,0">
+        <Grid.ColumnDefinitions>
+          <ColumnDefinition Width="230"/>
+          <ColumnDefinition Width="*"/>
+          <ColumnDefinition Width="200"/>
+        </Grid.ColumnDefinitions>
+        <StackPanel Orientation="Horizontal" VerticalAlignment="Center">
+          <Image Width="31" Height="31" Source="pack://application:,,,/Assets/Dvinholm-Aurora.ico" Stretch="Uniform" Margin="0,0,12,0"/>
+          <TextBlock Text="Dvinholm" FontSize="25" FontWeight="Bold"/>
+        </StackPanel>
+        <StackPanel Grid.Column="1" Orientation="Horizontal" VerticalAlignment="Center">
+          <Ellipse Width="11" Height="11" Fill="#8293AD" Margin="0,0,12,0"/>
+          <TextBlock x:Name="HeaderAdapter" Text="J2534: не подключён" FontSize="15"/>
+          <TextBlock Text="   |   " Foreground="#5A7A9F"/>
+          <TextBlock x:Name="HeaderVehicle" Text="Автомобиль: не определён" FontSize="15"/>
+          <TextBlock Text="   |   " Foreground="#5A7A9F"/>
+          <TextBlock x:Name="HeaderCem" Text="CEM: не прочитан" FontSize="15"/>
+        </StackPanel>
+        <ComboBox x:Name="LanguageSelector" Grid.Column="2" Width="95" Height="30"
+                  HorizontalAlignment="Right" VerticalAlignment="Center"
+                  SelectionChanged="LanguageSelector_SelectionChanged" SelectedIndex="0">
+          <ComboBoxItem Content="RU"/>
+          <ComboBoxItem Content="EN"/>
+        </ComboBox>
+      </Grid>
+    </Border>
+    <Grid Grid.Row="1">
+      <Grid.ColumnDefinitions>
+        <ColumnDefinition Width="255"/>
+        <ColumnDefinition Width="*"/>
+      </Grid.ColumnDefinitions>
+      <Border Grid.Column="0" Background="#101C35" BorderBrush="#324B72" BorderThickness="0,0,1,0">
+        <Grid ClipToBounds="True">
+          <Ellipse Width="430" Height="420" HorizontalAlignment="Left" VerticalAlignment="Bottom"
+                   Margin="-190,0,0,-175" Opacity="0.45">
+            <Ellipse.Fill>
+              <RadialGradientBrush>
+                <GradientStop Color="#0AC5D1" Offset="0"/>
+                <GradientStop Color="#3F27A7" Offset="0.51"/>
+                <GradientStop Color="#000A2036" Offset="1"/>
+              </RadialGradientBrush>
+            </Ellipse.Fill>
+          </Ellipse>
+          <ListBox x:Name="Navigation" Margin="9,22,9,100" Background="Transparent"
+                   BorderThickness="0" ItemContainerStyle="{StaticResource NavItem}"
+                   SelectionChanged="Navigation_SelectionChanged"/>
+          <TextBlock Text="AURORA" VerticalAlignment="Bottom" HorizontalAlignment="Center"
+                     Margin="0,0,0,24" FontSize="12" Foreground="#80A3C1"/>
+        </Grid>
+      </Border>
+      <Border Grid.Column="1" Background="#08162D">
+        <ScrollViewer HorizontalScrollBarVisibility="Disabled" VerticalScrollBarVisibility="Auto"
+                      Padding="24,16,10,10">
+          <StackPanel>
+            <TextBlock x:Name="PageTitle" FontSize="33" FontWeight="Bold" Margin="0,0,0,4"/>
+            <TextBlock x:Name="PageSubtitle" Style="{StaticResource Muted}" FontSize="16" Margin="0,0,0,24"/>
+            <!-- Every page contains real WPF controls; unsupported ECU operations remain disabled. -->
+            <Grid x:Name="ConnectionPage" Visibility="Visible">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <Border Style="{StaticResource Card}" Grid.Column="0">
+                <StackPanel>
+                  <TextBlock x:Name="AdapterTitle" Text="Выбор адаптера J2534" Style="{StaticResource CardTitle}"/>
+                  <TextBlock x:Name="AdapterIntro" Text="Проверяются реальные регистрации J2534 (32-bit); найденный драйвер ещё не означает подключение к автомобилю." Style="{StaticResource Muted}"/>
+                  <ComboBox x:Name="AdapterList" MinHeight="37" Margin="0,20,0,0"
+                            DisplayMemberPath="Label" SelectionChanged="AdapterList_SelectionChanged"/>
+                  <TextBlock x:Name="AdapterInventoryStatus" Text="Поиск адаптеров не выполнен" Margin="0,12,0,0" Foreground="#B4C8E2"/>
+                  <Button x:Name="RefreshAdaptersButton" Content="Обновить список" Style="{StaticResource Action}"
+                          Click="RefreshAdapters_Click"/>
+                  <Separator Margin="0,19,0,15" Background="#6382A8"/>
+                  <TextBlock x:Name="CanTitle" Text="Параметры подключения" Style="{StaticResource CardTitle}"/>
+                  <TextBlock x:Name="CanHint" Text="Настройки используются только после реализации проверенного транспортного подключения." Style="{StaticResource Muted}"/>
+                  <ComboBox x:Name="SpeedSelector" MinHeight="35" Margin="0,10,0,0" SelectedIndex="0">
+                    <ComboBoxItem Content="Auto (read-only)"/>
+                    <ComboBoxItem Content="250 kbit/s"/>
+                    <ComboBoxItem Content="500 kbit/s"/>
+                  </ComboBox>
+                  <Button x:Name="ConnectButton" Content="Подключиться" Style="{StaticResource Primary}"
+                          IsEnabled="False" ToolTip="J2534 transport will be integrated in a later verified stage"/>
+                </StackPanel>
+              </Border>
+              <Border Style="{StaticResource Card}" Grid.Column="1">
+                <StackPanel>
+                  <TextBlock x:Name="DriverTitle" Text="Драйвер и состояние" Style="{StaticResource CardTitle}"/>
+                  <TextBlock x:Name="DriverDetails" Text="Нет выбранного J2534-адаптера." Margin="0,0,0,18"/>
+                  <TextBlock x:Name="ConnectionStateTitle" Text="Автомобиль не подключён" FontSize="19" FontWeight="SemiBold" Foreground="#A9B9D2" Margin="0,8,0,10"/>
+                  <TextBlock x:Name="ConnectionStateNote" Text="Доступны обнаружение драйверов и подготовка параметров. Сетевой обмен с ECU на этом этапе заблокирован." Style="{StaticResource Muted}"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <Grid x:Name="UpdatesPage" Visibility="Collapsed">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="*"/>
+              </Grid.ColumnDefinitions>
+              <Border Style="{StaticResource Card}" Grid.Column="0">
+                <StackPanel>
+                  <TextBlock x:Name="InstalledTitle" Text="Текущая версия" Style="{StaticResource CardTitle}"/>
+                  <TextBlock x:Name="InstalledVersion" Text="0.2.4 (WPF preview)" FontSize="24" FontWeight="Bold"/>
+                  <TextBlock x:Name="VersionNote" Text="Демонстрационная сборка нового интерфейса. Удалённая версия не проверялась." Style="{StaticResource Muted}" Margin="0,6,0,22"/>
+                  <TextBlock x:Name="ChannelTitle" Text="Канал обновлений" Style="{StaticResource CardTitle}"/>
+                  <ComboBox x:Name="UpdateChannel" MinHeight="36" SelectedIndex="1"
+                            SelectionChanged="UpdateChannel_SelectionChanged">
+                    <ComboBoxItem Content="Stable"/>
+                    <ComboBoxItem Content="Development"/>
+                  </ComboBox>
+                  <TextBlock x:Name="ChannelNote" Text="Выбор сохраняется локально. Загрузка и установка до миграции проверенного обновлятора недоступны." Style="{StaticResource Muted}" Margin="0,14,0,0"/>
+                </StackPanel>
+              </Border>
+              <Border Style="{StaticResource Card}" Grid.Column="1">
+                <StackPanel>
+                  <TextBlock x:Name="SafetyTitle" Text="Проверка и безопасность" Style="{StaticResource CardTitle}"/>
+                  <TextBlock x:Name="SafetyNote" Text="Обновления не запрашивались. SHA-256, подлинность пакета, резервная копия и откат будут подключены к проверенному механизму." Style="{StaticResource Muted}"/>
+                  <Button x:Name="CheckUpdateButton" Content="Проверить обновления" Style="{StaticResource Action}"
+                          IsEnabled="False" Margin="0,25,0,0"/>
+                  <Button x:Name="InstallUpdateButton" Content="Установить" Style="{StaticResource Primary}"
+                          IsEnabled="False"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <Grid x:Name="PinPage" Visibility="Collapsed">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="0.9*"/>
+                <ColumnDefinition Width="1.1*"/>
+              </Grid.ColumnDefinitions>
+              <Border Style="{StaticResource Card}" Grid.Column="0">
+                <StackPanel>
+                  <TextBlock x:Name="PinIdentityTitle" Text="1. Идентификация CEM" Style="{StaticResource CardTitle}"/>
+                  <TextBlock x:Name="PinIdentity" Text="P/N: не прочитан&#10;HW: не прочитан&#10;SW: не прочитан" FontSize="16" LineHeight="34"/>
+                </StackPanel>
+              </Border>
+              <Border Style="{StaticResource Card}" Grid.Column="1">
+                <StackPanel>
+                  <TextBlock x:Name="PinProcessTitle" Text="2. Поиск PIN → 3. Результат" Style="{StaticResource CardTitle}"/>
+                  <TextBlock x:Name="PinProcessNote" Text="Пока не подтверждены протокол, ревизия CEM и безопасный сервисный доступ, поиск PIN недоступен. Никакой фиктивный прогресс не отображается." Style="{StaticResource Muted}"/>
+                  <Button x:Name="PinStartButton" Content="Начать поиск PIN" Style="{StaticResource Primary}" IsEnabled="False"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+
+            <Grid x:Name="ConfigPage" Visibility="Collapsed">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="170"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="280"/>
+              </Grid.ColumnDefinitions>
+              <Border Grid.Column="0" Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock x:Name="CategoriesTitle" Text="Категории" Style="{StaticResource CardTitle}"/>
+                  <TextBlock x:Name="CategoriesList" Text="Основные&#10;&#10;Комфорт&#10;&#10;Освещение&#10;&#10;Аудио&#10;&#10;Безопасность" FontSize="16"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="1" Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock x:Name="ParameterTitle" Text="Параметры CEM" Style="{StaticResource CardTitle}"/>
+                  <DataGrid x:Name="ConfigGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                            CanUserAddRows="False" Height="315" Background="#10213A" Foreground="#E7F1FF">
+                    <DataGrid.Columns>
+                      <DataGridTextColumn Header="Параметр" Binding="{Binding Name}" Width="*"/>
+                      <DataGridTextColumn Header="Исходное" Binding="{Binding Original}" Width="86"/>
+                      <DataGridTextColumn Header="Текущее" Binding="{Binding Current}" Width="86"/>
+                      <DataGridTextColumn Header="Новое" Binding="{Binding Proposed}" Width="80"/>
+                    </DataGrid.Columns>
+                  </DataGrid>
+                  <TextBlock x:Name="ConfigEmpty" Text="Нет прочитанных и подтверждённых параметров." Style="{StaticResource Muted}" Margin="0,12,0,0"/>
+                </StackPanel>
+              </Border>
+              <Border Grid.Column="2" Style="{StaticResource Card}">
+                <StackPanel>
+                  <TextBlock x:Name="ParameterDetailTitle" Text="Описание параметра" Style="{StaticResource CardTitle}"/>
+                  <TextBlock x:Name="ParameterDetail" Text="Выберите параметр после чтения конфигурации. Доступ к записи закрыт до проверки совместимости и создания резервной копии." Style="{StaticResource Muted}"/>
+                </StackPanel>
+              </Border>
+              <StackPanel Grid.ColumnSpan="3" Orientation="Horizontal" VerticalAlignment="Bottom" Margin="0,435,0,0">
+                <Button Content="Прочитать" Style="{StaticResource Action}" IsEnabled="False"/>
+                <Button Content="Резервная копия" Style="{StaticResource Action}" IsEnabled="False"/>
+                <Button Content="Сравнить" Style="{StaticResource Action}" IsEnabled="False"/>
+                <Button Content="Подготовить изменения" Style="{StaticResource Action}" IsEnabled="False"/>
+                <Button x:Name="CemWriteButton" Content="Записать в CEM" Style="{StaticResource Primary}" IsEnabled="False"/>
+              </StackPanel>
+            </Grid>
+
+            <Grid x:Name="DtcPage" Visibility="Collapsed">
+              <StackPanel>
+                <Border Style="{StaticResource Card}">
+                  <DockPanel>
+                    <TextBlock x:Name="DtcListTitle" Text="Ошибки блоков управления" Style="{StaticResource CardTitle}" DockPanel.Dock="Left"/>
+                    <Button x:Name="DtcClearButton" Content="Стереть ошибки" Style="{StaticResource Action}"
+                            DockPanel.Dock="Right" IsEnabled="False"/>
+                  </DockPanel>
+                </Border>
+                <Border Style="{StaticResource Card}">
+                  <StackPanel>
+                    <DataGrid x:Name="DtcGrid" AutoGenerateColumns="False" IsReadOnly="True"
+                              CanUserAddRows="False" Height="230" Background="#10213A" Foreground="#E7F1FF">
+                      <DataGrid.Columns>
+                        <DataGridTextColumn Header="Блок" Binding="{Binding Ecu}" Width="110"/>
+                        <DataGridTextColumn Header="Код" Binding="{Binding Code}" Width="150"/>
+                        <DataGridTextColumn Header="Описание" Binding="{Binding Description}" Width="*"/>
+                        <DataGridTextColumn Header="Статус" Binding="{Binding Status}" Width="160"/>
+                      </DataGrid.Columns>
+                    </DataGrid>
+                    <TextBlock x:Name="DtcEmpty" Text="DTC не считаны. Автомобиль не подключён." Style="{StaticResource Muted}" Margin="0,12,0,0"/>
+                  </StackPanel>
+                </Border>
+              </StackPanel>
+            </Grid>
+
+            <Grid x:Name="EcuPage" Visibility="Collapsed">
+              <Grid.ColumnDefinitions>
+                <ColumnDefinition Width="230"/>
+                <ColumnDefinition Width="*"/>
+                <ColumnDefinition Width="260"/>
+              </Grid.ColumnDefinitions>
+              <Border Style="{StaticResource Card}" Grid.Column="0">
+                <StackPanel>
+                  <TextBlock x:Name="EcuListTitle" Text="Список ECU" Style="{StaticResource CardTitle}"/>
+                  <ListBox x:Name="EcuList" Height="340" Background="#10213A"/>
+                  <TextBlock x:Name="EcuEmpty" Text="Нет обнаруженных ECU." Style="{StaticResource Muted}" Margin="0,12,0,0"/>
+                </StackPanel>
+              </Border>
+              <Border Style="{StaticResource Card}" Grid.Column="1">
+                <StackPanel HorizontalAlignment="Center" VerticalAlignment="Center">
+                  <TextBlock Text="◇" FontSize="78" Foreground="#60B6DE" HorizontalAlignment="Center"/>
+                  <TextBlock x:Name="EcuTopology" Text="Топология станет доступна после подтверждённого чтения ECU."
+                             Style="{StaticResource Muted}" TextAlignment="Center" MaxWidth="340"/>
+                </StackPanel>
+              </Border>
+              <Border Style="{StaticResource Card}" Grid.Column="2">
+                <StackPanel>
+                  <TextBlock x:Name="EcuDetailsTitle" Text="Модуль" Style="{StaticResource CardTitle}"/>
+                  <TextBlock x:Name="EcuDetails" Text="Модуль не выбран. Данные и команды доступны только после идентификации." Style="{StaticResource Muted}"/>
+                  <Button Content="Диагностика" Style="{StaticResource Action}" IsEnabled="False"/>
+                  <Button Content="Данные" Style="{StaticResource Action}" IsEnabled="False"/>
+                </StackPanel>
+              </Border>
+            </Grid>
+          </StackPanel>
+        </ScrollViewer>
+      </Border>
+    </Grid>
+    <Border Grid.Row="2" Background="#142640" BorderBrush="#355477" BorderThickness="0,1,0,0">
+      <DockPanel Margin="22,0" LastChildFill="False" VerticalAlignment="Center">
+        <TextBlock x:Name="FooterState" Text="●  Готово к работе (без подключения)" DockPanel.Dock="Left" Foreground="#A0D1E8"/>
+        <TextBlock x:Name="FooterVersion" Text="Dvinholm WPF preview · 0.2.4" DockPanel.Dock="Right" Foreground="#9DB5D1"/>
+      </DockPanel>
+    </Border>
+  </Grid>
+</Window>
