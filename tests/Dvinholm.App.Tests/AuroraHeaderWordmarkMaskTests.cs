@@ -87,6 +87,53 @@ public sealed class AuroraHeaderWordmarkMaskTests
         Assert.Equal((byte)0xD8, bytes[1]);
         Assert.Equal((byte)0xFF, bytes[^2]);
         Assert.Equal((byte)0xD9, bytes[^1]);
+
+        // The previous 1024-pixel banner had to be strongly enlarged on
+        // high-DPI monitors. Verify this asset has enough raster samples for
+        // the header's ~1040 DIP width near 200% Windows scaling. This does
+        // not claim new native photographic detail or a real GUI pixel PASS.
+        var (width, height) = ReadJpegFrameDimensions(bytes);
+        Assert.InRange(width, 2000, 4096);
+        Assert.InRange(height, 300, 700);
+        Assert.InRange((double)width / height, 5.2, 6.2);
+    }
+
+    private static (int Width, int Height) ReadJpegFrameDimensions(ReadOnlySpan<byte> jpeg)
+    {
+        // Read the JPEG SOF0/SOF2 frame header; no native image codec, UI
+        // window, network request or external image library is required.
+        if (jpeg.Length < 12 || jpeg[0] != 0xFF || jpeg[1] != 0xD8)
+            throw new InvalidDataException("Missing JPEG SOI.");
+        var offset = 2;
+        while (offset + 4 <= jpeg.Length)
+        {
+            if (jpeg[offset++] != 0xFF)
+                throw new InvalidDataException("Missing JPEG marker boundary.");
+            while (offset < jpeg.Length && jpeg[offset] == 0xFF)
+                offset++;
+            if (offset >= jpeg.Length)
+                break;
+            var marker = jpeg[offset++];
+            if (marker is 0xD8 or 0x01 or >= 0xD0 and <= 0xD7)
+                continue;
+            if (marker is 0xD9 or 0xDA)
+                break;
+            if (offset + 2 > jpeg.Length)
+                break;
+            var length = (jpeg[offset] << 8) | jpeg[offset + 1];
+            if (length < 2 || offset + length > jpeg.Length)
+                throw new InvalidDataException("Invalid JPEG segment length.");
+            if (marker is >= 0xC0 and <= 0xCF &&
+                marker is not (0xC4 or 0xC8 or 0xCC))
+            {
+                if (length < 7)
+                    throw new InvalidDataException("Short JPEG SOF segment.");
+                return ((jpeg[offset + 5] << 8) | jpeg[offset + 6],
+                        (jpeg[offset + 3] << 8) | jpeg[offset + 4]);
+            }
+            offset += length;
+        }
+        throw new InvalidDataException("JPEG frame header not found.");
     }
 
     [Fact]
