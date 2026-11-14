@@ -78,7 +78,7 @@ public sealed class AuroraCompactHeaderParityTests
         Assert.Equal("1", (string?)Named(xml, "WorkspaceHeaderActions").Attribute("Grid.Column"));
         Assert.Null(Named(xml, "WorkspaceHeaderActions").Attribute("Grid.Row"));
         Assert.Equal("2", (string?)Named(xml, "AuroraHeaderArtwork").Attribute("Grid.RowSpan"));
-        Assert.Contains("ms-appx:///Assets/Aurora-Northern-Coast.svg",
+        Assert.Contains("ms-appx:///Assets/Aurora-Northern-Coast.jpg",
             Named(xml, "AuroraHeaderArtwork").ToString());
     }
 
