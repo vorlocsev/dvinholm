@@ -499,19 +499,16 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <!-- Text-free bundled Aurora artwork: northern lights, White Sea coast and
-                         a purely decorative vehicle illustration. No VIN, diagnostic outcomes,
+                    <!-- Text-free bundled Aurora panorama: northern lights, White Sea coast and
+                         a purely decorative SUV. No VIN, diagnostic outcomes,
                          artificial connection flags or baked-in localization. The live page title,
                          J2534 status and language controls remain above the picture. -->
                     <Border x:Name="AuroraHeaderArtwork" Grid.RowSpan="2" Grid.ColumnSpan="2"
                             Margin="-12,-8,-12,-8" CornerRadius="12" BorderThickness="1"
                             BorderBrush="#326A8D" IsHitTestVisible="False">
                         <Grid>
-                            <Image Stretch="UniformToFill" Opacity="0.94" IsHitTestVisible="False">
-                                <Image.Source>
-                                    <SvgImageSource UriSource="ms-appx:///Assets/Aurora-Northern-Coast.svg" />
-                                </Image.Source>
-                            </Image>
+                            <Image Source="ms-appx:///Assets/Aurora-Northern-Coast.jpg"
+                                   Stretch="UniformToFill" Opacity="0.94" IsHitTestVisible="False" />
                             <!-- Preserve heading/status contrast while leaving the sea and aurora
                                  visible across the scenic right side of the banner. -->
                             <Rectangle>
