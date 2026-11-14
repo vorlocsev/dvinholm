@@ -89,6 +89,75 @@ public sealed class AuroraFirstFoldVisualParityTests
     }
 
     [Fact]
+    public void CardsUseLuminousAuroraGradientWithCyanVioletEdge()
+    {
+        var doc = Layout();
+        var brushes = doc.Descendants().Where(e =>
+            e.Name.LocalName == "LinearGradientBrush")
+            .ToDictionary(e => (string?)e.Attribute(X + "Key") ?? "",
+                e => e, StringComparer.Ordinal);
+        var fill = brushes["AuroraPanelGradient"];
+        var edge = brushes["AuroraCardEdgeGradient"];
+        Assert.Equal("0,0", (string?)fill.Attribute("StartPoint"));
+        Assert.Equal("1,1", (string?)fill.Attribute("EndPoint"));
+        Assert.Equal("0,0", (string?)edge.Attribute("StartPoint"));
+        Assert.Equal("1,1", (string?)edge.Attribute("EndPoint"));
+
+        var fillStops = fill.Elements().Where(e => e.Name.LocalName == "GradientStop")
+            .ToArray();
+        var edgeStops = edge.Elements().Where(e => e.Name.LocalName == "GradientStop")
+            .ToArray();
+        Assert.Equal(new[] { "0", "0.28", "0.68", "1" },
+            fillStops.Select(e => (string?)e.Attribute("Offset")).ToArray());
+        Assert.Equal(new[] { "0", "0.54", "1" },
+            edgeStops.Select(e => (string?)e.Attribute("Offset")).ToArray());
+        Assert.All(fillStops.Concat(edgeStops), e =>
+            Assert.Matches("^#[0-9A-Fa-f]{6}$",
+                (string?)e.Attribute("Color") ?? ""));
+        Assert.NotEqual((string?)fillStops[0].Attribute("Color"),
+            (string?)fillStops[^1].Attribute("Color"));
+
+        var card = doc.Descendants().Single(e =>
+            e.Name.LocalName == "Style" &&
+            (string?)e.Attribute(X + "Key") == "AuroraCard");
+        var values = card.Elements().Where(e => e.Name.LocalName == "Setter")
+            .ToDictionary(e => (string?)e.Attribute("Property") ?? "",
+                e => (string?)e.Attribute("Value") ?? "");
+        Assert.Equal("{StaticResource AuroraPanelGradient}", values["Background"]);
+        Assert.Equal("{StaticResource AuroraCardEdgeGradient}", values["BorderBrush"]);
+        Assert.Equal("1", values["BorderThickness"]);
+        Assert.Equal("12", values["CornerRadius"]);
+        Assert.Equal("16", values["Padding"]);
+    }
+
+    [Fact]
+    public void DecorativeCardGradientDoesNotFakeAnyLiveDiagnosticState()
+    {
+        var doc = Layout();
+        var resourceBrushes = doc.Descendants().Where(e =>
+            e.Name.LocalName == "LinearGradientBrush" &&
+            (string?)e.Attribute(X + "Key") is
+                "AuroraPanelGradient" or "AuroraCardEdgeGradient").ToArray();
+        Assert.Equal(2, resourceBrushes.Length);
+        Assert.All(resourceBrushes, brush =>
+        {
+            Assert.All(brush.Descendants(), e =>
+                Assert.Equal("GradientStop", e.Name.LocalName));
+            Assert.Null(brush.Attribute("Click"));
+            Assert.Null(brush.Attribute("Tapped"));
+            Assert.Null(brush.Attribute("IsEnabled"));
+        });
+        Assert.Contains(Named(doc, "ConnectionAdapterPane"),
+            Named(doc, "ConnectionPage").Descendants());
+        Assert.Contains(Named(doc, "DtcResultsPane"),
+            Named(doc, "DtcPage").Descendants());
+        Assert.Contains(Named(doc, "EcuWorkbenchGrid"),
+            Named(doc, "EcuPage").Descendants());
+        Assert.Equal(6, Named(doc, "SidebarNavPanel").Elements()
+            .Count(e => e.Name.LocalName == "Button"));
+    }
+
+    [Fact]
     public void SidebarNorthernLightsAreSubtlePaintOnlyAndBehindNavigation()
     {
         var doc = Layout();
