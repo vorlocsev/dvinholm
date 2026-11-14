@@ -50,7 +50,7 @@ public sealed class AuroraFirstFoldVisualParityTests
         var banner = Named(doc, "AuroraHeaderArtwork");
         Assert.Contains(header, banner.Ancestors());
         Assert.Equal("False", (string?)banner.Attribute("IsHitTestVisible"));
-        Assert.Contains("ms-appx:///Assets/Dvinholm-Banner.png", banner.ToString());
+        Assert.Contains("ms-appx:///Assets/Aurora-Northern-Coast.svg", banner.ToString());
         Assert.Equal("2", (string?)banner.Attribute("Grid.RowSpan"));
     }
 
