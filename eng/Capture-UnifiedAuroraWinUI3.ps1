@@ -450,7 +450,7 @@ function Assert-WorkspaceScrollToEnd(
     [int]$captureWidth = 0,
     [int]$captureHeight = 0
 ) {
-    if ($page -notin @('CemPin','CemConfiguration','Dtc','Ecu')) { return }
+    if ($page -notin @('CemPin','CemConfiguration','Dtc','Ecu')) { return $false }
 
     # Target the outer page scroller by its unique app-supplied UIA ID.
     # Do not interact with nested diagnostic lists, buttons or vehicle controls.
@@ -468,9 +468,16 @@ function Assert-WorkspaceScrollToEnd(
         throw "Page scroll pattern unavailable for $page; manual scroll review remains NOT RUN."
     }
     $scroll = [System.Windows.Automation.ScrollPattern]$rawPattern
-    if (-not $scroll.Current.VerticallyScrollable -or
-        $scroll.Current.HorizontallyScrollable) {
-        throw "Unexpected scroll directions for $page; manual scroll review required."
+    if ($scroll.Current.HorizontallyScrollable) {
+        throw "Unexpected horizontal workspace scrolling for $page; manual review required."
+    }
+    if (-not $scroll.Current.VerticallyScrollable) {
+        # An empty DTC table (and other shorter screens) may now fit
+        # entirely within 800 DIP. Do not fabricate a bottom fold or
+        # fail an otherwise valid top screenshot for lack of overflow.
+        Confirm-WorkspaceState $page -RequireVisible
+        Write-Warning "Outer workspace has no vertical overflow for ${page}; bottom fold NOT RUN (not a visual PASS)."
+        return $false
     }
     $originalPercent = [double]$scroll.Current.VerticalScrollPercent
     if ([double]::IsNaN($originalPercent) -or
@@ -594,6 +601,7 @@ function Assert-WorkspaceScrollToEnd(
         $scroll.SetScrollPercent($noScroll, $originalPercent)
         Start-Sleep -Milliseconds 250
     }
+    return $true
 }
 
 
@@ -618,9 +626,13 @@ function Assert-WorkspaceTopBeforePixels([string]$page) {
         throw "Top-fold outer workspace ScrollPattern unavailable: $page."
     }
     $scroll = [System.Windows.Automation.ScrollPattern]$rawPattern
-    if (-not $scroll.Current.VerticallyScrollable -or
-        $scroll.Current.HorizontallyScrollable) {
-        throw "Top-fold scroll directions cannot be verified: $page."
+    if ($scroll.Current.HorizontallyScrollable) {
+        throw "Unexpected horizontal workspace scrolling before top screenshot: $page."
+    }
+    if (-not $scroll.Current.VerticallyScrollable) {
+        Confirm-WorkspaceState $page -RequireVisible
+        Write-Warning "No outer vertical overflow for ${page}; top scroll percentage NOT VERIFIED (capture remains manual)."
+        return $false
     }
     $atTop = [double]$scroll.Current.VerticalScrollPercent
     if ([double]::IsNaN($atTop) -or [double]::IsInfinity($atTop) -or
@@ -783,8 +795,9 @@ foreach ($page in $Pages) {
                 $page -in @('CemPin','CemConfiguration','Dtc','Ecu')) {
                 $bottomFilename = "Aurora-$page-$Language-$fixedWidthDip-dip-bottom.png"
                 $bottomDest = Join-Path $output $bottomFilename
-                Assert-WorkspaceScrollToEnd $page $bottomDest $rect.Left $rect.Top $actualWidth $actualHeight
-                $bottomResults += [ordered]@{
+                $bottomVerified = Assert-WorkspaceScrollToEnd $page $bottomDest $rect.Left $rect.Top $actualWidth $actualHeight
+                if ($bottomVerified) {
+                    $bottomResults += [ordered]@{
                     file = $bottomFilename
                     page = $page
                     operatorSelectedLanguage = $Language
@@ -802,10 +815,11 @@ foreach ($page in $Pages) {
                     sourceCommitOperatorDeclared = $CommitSha
                     screenshotUtc = [DateTime]::UtcNow.ToString('o')
                     evidence = 'real desktop bottom fold, verified outer UIA scroll; final controls require human visual review'
+                    }
                 }
             }
             else {
-                Assert-WorkspaceScrollToEnd $page
+                [void](Assert-WorkspaceScrollToEnd $page)
             }
             Confirm-WorkspaceState $page -RequireVisible
         }
