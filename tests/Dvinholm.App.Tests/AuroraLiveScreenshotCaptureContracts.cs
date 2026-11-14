@@ -669,4 +669,67 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("real desktop viewport only; manual privacy and visual review", script);
     }
 
+
+    [Fact]
+    public void ShortNonScrollableWorkspaceNeverInventsBottomScreenshot()
+    {
+        var script = Capture();
+        var begin = script.IndexOf("function Assert-WorkspaceScrollToEnd(",
+            StringComparison.Ordinal);
+        var end = script.IndexOf("function Assert-WorkspaceTopBeforePixels(",
+            begin, StringComparison.Ordinal);
+        Assert.True(begin >= 0 && end > begin);
+        var section = script[begin..end];
+        var horizontal = section.IndexOf("if ($scroll.Current.HorizontallyScrollable)",
+            StringComparison.Ordinal);
+        var noVertical = section.IndexOf("if (-not $scroll.Current.VerticallyScrollable)",
+            horizontal, StringComparison.Ordinal);
+        var refused = section.IndexOf("bottom fold NOT RUN (not a visual PASS)",
+            noVertical, StringComparison.Ordinal);
+        var skip = section.IndexOf("return $false", refused, StringComparison.Ordinal);
+        var actual = section.IndexOf("$scroll.SetScrollPercent($noScroll, [double]100)",
+            skip, StringComparison.Ordinal);
+        Assert.True(horizontal >= 0 && noVertical > horizontal && refused > noVertical &&
+            skip > refused && actual > skip);
+        Assert.Contains("return $true", section);
+    }
+
+    [Fact]
+    public void OnlyVerifiedScrollablePagesWriteBottomManifestRecords()
+    {
+        var source = Capture();
+        var start = source.IndexOf("foreach ($page in $Pages)", StringComparison.Ordinal);
+        var end = source.IndexOf("$report = Join-Path", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var loop = source[start..end];
+        var outcome = loop.IndexOf("$bottomVerified = Assert-WorkspaceScrollToEnd $page",
+            StringComparison.Ordinal);
+        var guard = loop.IndexOf("if ($bottomVerified)", outcome, StringComparison.Ordinal);
+        var record = loop.IndexOf("$bottomResults += [ordered]@{", guard, StringComparison.Ordinal);
+        var screenshot = loop.IndexOf("verifiedOuterScrollPercentAtLeast98 = $true",
+            record, StringComparison.Ordinal);
+        Assert.True(outcome >= 0 && guard > outcome && record > guard &&
+            screenshot > record);
+        Assert.Contains("[void](Assert-WorkspaceScrollToEnd $page)", loop);
+    }
+
+    [Fact]
+    public void FullyVisiblePageCanBeCapturedWithoutForgedTopScrollProof()
+    {
+        var script = Capture();
+        var start = script.IndexOf("function Assert-WorkspaceTopBeforePixels(",
+            StringComparison.Ordinal);
+        var end = script.IndexOf("function Invoke-OnlyNavigation(", start,
+            StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var probe = script[start..end];
+        Assert.Contains("if ($scroll.Current.HorizontallyScrollable)", probe);
+        Assert.Contains("if (-not $scroll.Current.VerticallyScrollable)", probe);
+        Assert.Contains("Confirm-WorkspaceState $page -RequireVisible", probe);
+        Assert.Contains("top scroll percentage NOT VERIFIED", probe);
+        Assert.Contains("return $false", probe);
+        Assert.Contains("return $true", probe);
+        Assert.DoesNotContain("SetScrollPercent(", probe);
+    }
+
 }
