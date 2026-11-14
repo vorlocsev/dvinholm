@@ -51,6 +51,12 @@ public sealed class AuroraHeaderWordmarkMaskTests
         Assert.Contains(art.Descendants(), e => e.Name.LocalName == "ImageBrush" &&
             (string?)e.Attribute("ImageSource") ==
             "ms-appx:///Assets/Dvinholm-Banner.png");
+        // Fresh 2026-11-14 real RU screenshots still displayed an oversized
+        // printed DVINHOLM ghost despite the full-width navy mask.
+        // Keep the original scenic asset, but do not let its printed
+        // lettering compete with the genuinely localized workspace title.
+        var scenery = art.Descendants().Single(e => e.Name.LocalName == "ImageBrush");
+        Assert.Equal("0.26", (string?)scenery.Attribute("Opacity"));
         Assert.Equal("2", (string?)art.Attribute("Grid.RowSpan"));
         Assert.Equal("2", (string?)art.Attribute("Grid.ColumnSpan"));
     }
