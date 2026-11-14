@@ -575,6 +575,33 @@ function Assert-WorkspaceScrollToEnd(
             if ([DvinholmWinUiCaptureNative]::GetAncestor($bottomForeground, 2) -ne $handle) {
                 throw "Dvinholm lost foreground before bottom screenshot of $page."
             }
+            # Live 2026-11-14 bottom captures showed lingering control tooltips
+            # over the fixed Aurora header even with an earlier cursor park.
+            # After the UIA scroll, move to a DIFFERENT safe non-client caption
+            # point to break any stale hover, then let WinUI close its popup.
+            # No keyboard, clicks, app state changes or fake image cleanup.
+            $bottomClient = Get-ClientScreenBounds
+            $quietX = $captureLeft + [int][Math]::Floor($captureWidth * 0.43)
+            $quietY = $captureTop + 12
+            if ($null -eq $bottomClient -or
+                $quietY -ge $bottomClient.Top -or
+                $quietX -lt $captureLeft -or
+                $quietX -ge ($captureLeft + $captureWidth) -or
+                -not [DvinholmWinUiCaptureNative]::SetCursorPos($quietX, $quietY)) {
+                throw "Cannot park pointer outside client before bottom screenshot of $page."
+            }
+            Start-Sleep -Milliseconds 3200
+            $bottomCursor = New-Object DvinholmWinUiCaptureNative+POINT
+            if (-not [DvinholmWinUiCaptureNative]::GetCursorPos([ref]$bottomCursor) -or
+                $bottomCursor.X -ne $quietX -or $bottomCursor.Y -ne $quietY) {
+                throw "Cursor moved during bottom tooltip-clear interval; no bottom pixels saved."
+            }
+            $afterQuietPercent = [double]$scroll.Current.VerticalScrollPercent
+            if ([double]::IsNaN($afterQuietPercent) -or
+                [double]::IsInfinity($afterQuietPercent) -or
+                $afterQuietPercent -lt 98 -or $afterQuietPercent -gt 100) {
+                throw "Outer workspace moved during bottom tooltip-clear interval for $page."
+            }
             $bottomBitmap = [System.Drawing.Bitmap]::new($captureWidth, $captureHeight)
             try {
                 $bottomGraphics = [System.Drawing.Graphics]::FromImage($bottomBitmap)
