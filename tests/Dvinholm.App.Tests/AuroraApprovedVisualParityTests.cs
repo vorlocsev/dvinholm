@@ -50,7 +50,7 @@ public sealed class AuroraApprovedVisualParityTests
         Assert.Equal("False", (string?)art.Attribute("IsHitTestVisible"));
         Assert.Equal("2", (string?)art.Attribute("Grid.RowSpan"));
         Assert.Equal("2", (string?)art.Attribute("Grid.ColumnSpan"));
-        Assert.Contains("ms-appx:///Assets/Aurora-Northern-Coast.svg", art.ToString());
+        Assert.Contains("ms-appx:///Assets/Aurora-Northern-Coast.jpg", art.ToString());
         Assert.True(art.Descendants().Count(e => e.Name.LocalName == "GradientStop") >= 4);
         Assert.Contains(Named(doc, "WorkspaceTitle"),
             Named(doc, "WorkspaceHeaderGrid").Descendants());
@@ -73,7 +73,7 @@ public sealed class AuroraApprovedVisualParityTests
         var project = Source("src/Dvinholm.App/Dvinholm.App.csproj");
         Assert.Contains("assets\\launcher-northern-emblem.svg", project,
             StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Aurora-Northern-Coast.svg", project);
+        Assert.Contains("Aurora-Northern-Coast.jpg", project);
     }
 
     [Fact]
