@@ -50,7 +50,7 @@ public sealed class AuroraPrimaryViewportClarityTests
         Assert.Null(global.Attribute("Visibility"));
         Assert.Equal("DvinholmWorkspaceTitle",
             (string?)global.Attribute("AutomationProperties.AutomationId"));
-        Assert.Contains("ms-appx:///Assets/Aurora-Northern-Coast.svg",
+        Assert.Contains("ms-appx:///Assets/Aurora-Northern-Coast.jpg",
             Named(doc, "AuroraHeaderArtwork").ToString());
     }
 
