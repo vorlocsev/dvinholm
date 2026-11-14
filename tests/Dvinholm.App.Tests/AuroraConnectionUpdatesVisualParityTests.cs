@@ -288,7 +288,7 @@ public sealed class AuroraConnectionUpdatesVisualParityTests
                 Assert.DoesNotContain("IsEnabled", target, StringComparison.OrdinalIgnoreCase);
             }
         }
-        Assert.Contains("Dvinholm-Banner.png",
+        Assert.Contains("Aurora-Northern-Coast.svg",
             Named(doc, "AuroraHeaderArtwork").ToString());
     }
 
