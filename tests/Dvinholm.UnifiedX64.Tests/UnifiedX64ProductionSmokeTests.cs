@@ -221,6 +221,47 @@ public sealed class UnifiedX64ProductionSmokeTests
                 Assert.DoesNotContain(forbidden, types);
             Assert.Contains("CemReadOnlyPrerequisiteReport", types);
             Assert.Contains("CemIdentityEvidenceReport", types);
+
+            // Inspect the DLL INSIDE the published user ZIP, not the app
+            // project recompiled as a dependency of this test runner.
+            // No WinUI window, untrusted plugin or application code executes.
+            var infoAttributes = metadata.GetAssemblyDefinition().GetCustomAttributes()
+                .Select(handle => metadata.GetCustomAttribute(handle))
+                .Where(attribute => attribute.Constructor.Kind == HandleKind.MemberReference)
+                .Select(attribute => (Attribute: attribute,
+                    Constructor: metadata.GetMemberReference(
+                        (MemberReferenceHandle)attribute.Constructor)))
+                .Where(item => item.Constructor.Parent.Kind == HandleKind.TypeReference &&
+                    metadata.GetString(metadata.GetTypeReference(
+                        (TypeReferenceHandle)item.Constructor.Parent).Name) ==
+                    "AssemblyInformationalVersionAttribute")
+                .ToArray();
+            Assert.Single(infoAttributes);
+            var infoReader = metadata.GetBlobReader(infoAttributes[0].Attribute.Value);
+            Assert.Equal((ushort)1, infoReader.ReadUInt16());
+            var actualVersion = infoReader.ReadSerializedString();
+            Assert.NotNull(actualVersion);
+            var project = XDocument.Load(Path.Combine(RepoRoot(), "src",
+                "Dvinholm.App", "Dvinholm.App.csproj"));
+            var baseVersion = project.Descendants("Version").Single().Value;
+            Assert.Matches("^" + System.Text.RegularExpressions.Regex.Escape(baseVersion) +
+                @"\+[a-f0-9]{40}\.ci[1-9][0-9]*$", actualVersion);
+
+            // PR pilots display the TRUE head SHA, not GitHub's generated
+            // merge/checkout SHA. Stable production builds use a separate CI
+            // and are not subject to this PR-only Development assertion.
+            var runNumber = Environment.GetEnvironmentVariable("GITHUB_RUN_NUMBER");
+            if (!string.IsNullOrWhiteSpace(runNumber))
+            {
+                var eventName = Environment.GetEnvironmentVariable("GITHUB_EVENT_NAME");
+                var sourceSha = eventName == "pull_request"
+                    ? Environment.GetEnvironmentVariable("AURORA_PR_HEAD_SHA")
+                    : Environment.GetEnvironmentVariable("GITHUB_SHA");
+                Assert.NotNull(sourceSha);
+                Assert.Matches("^[a-fA-F0-9]{40}$", sourceSha);
+                Assert.Equal($"{baseVersion}+{sourceSha.ToLowerInvariant()}.ci{runNumber}",
+                    actualVersion);
+            }
         }
     }
 }
