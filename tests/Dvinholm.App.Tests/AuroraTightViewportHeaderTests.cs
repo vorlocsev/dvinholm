@@ -94,7 +94,7 @@ public sealed class AuroraTightViewportHeaderTests
         Assert.Null(title.Attribute("Visibility"));
         Assert.Contains(Named(doc, "WorkspaceHeaderGrid"), title.Ancestors());
         Assert.Equal("23", Setters(doc, "ShellCompact")["WorkspaceTitle.FontSize"]);
-        Assert.Contains("Dvinholm-Banner.png", Named(doc, "AuroraHeaderArtwork").ToString());
+        Assert.Contains("Aurora-Northern-Coast.svg", Named(doc, "AuroraHeaderArtwork").ToString());
     }
 
     [Fact]
