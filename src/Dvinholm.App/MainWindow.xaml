@@ -1376,7 +1376,7 @@
                                     <ColumnDefinition x:Name="ConnectionStatusColumn" Width="1.05*" />
                                 </Grid.ColumnDefinitions>
                                 <Border x:Name="ConnectionAdapterPane" Grid.Column="0"
-                                        Style="{StaticResource AuroraCard}" Margin="0">
+                                        Style="{StaticResource AuroraCard}" Margin="0" VerticalAlignment="Top">
                                     <StackPanel Spacing="14">
                                         <Grid x:Name="ConnectionAdapterHeadingGrid" ColumnSpacing="10">
                                             <Grid.ColumnDefinitions>
@@ -1414,7 +1414,7 @@
                                     </StackPanel>
                                 </Border>
                                 <Border x:Name="ConnectionBusPane" Grid.Column="1"
-                                        Style="{StaticResource AuroraCard}" Margin="0">
+                                        Style="{StaticResource AuroraCard}" Margin="0" VerticalAlignment="Top">
                                     <StackPanel Spacing="14">
                                         <Grid x:Name="ConnectionBusHeadingGrid" ColumnSpacing="10">
                                             <Grid.ColumnDefinitions>
@@ -1447,7 +1447,7 @@
                                     </StackPanel>
                                 </Border>
                                 <Border x:Name="ConnectionStatusPane" Grid.Column="2"
-                                        Style="{StaticResource AuroraCard}" Margin="0">
+                                        Style="{StaticResource AuroraCard}" Margin="0" VerticalAlignment="Top">
                                     <StackPanel Spacing="14">
                                         <Grid x:Name="ConnectionDriverHeadingGrid" ColumnSpacing="10">
                                             <Grid.ColumnDefinitions>
