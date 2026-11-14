@@ -93,8 +93,9 @@ public sealed class AuroraFirstFoldVisualParityTests
     {
         var doc = Layout();
         var brushes = doc.Descendants().Where(e =>
-            e.Name.LocalName == "LinearGradientBrush")
-            .ToDictionary(e => (string?)e.Attribute(X + "Key") ?? "",
+            e.Name.LocalName == "LinearGradientBrush" &&
+            e.Attribute(X + "Key") is not null)
+            .ToDictionary(e => (string)e.Attribute(X + "Key")!,
                 e => e, StringComparer.Ordinal);
         var fill = brushes["AuroraPanelGradient"];
         var edge = brushes["AuroraCardEdgeGradient"];
