@@ -129,6 +129,46 @@ public sealed class AuroraConnectionUpdatesVisualParityTests
             (string?)e.Attribute(X + "Name") is "LauncherPage" or "SettingsPage");
     }
 
+    [Theory]
+    [InlineData("UpdatesVersionPane")]
+    [InlineData("UpdatesChannelPane")]
+    [InlineData("UpdatesActionPane")]
+    public void UpdatesCardsFitTheirActualContentRatherThanStretchingEmptyRowSpace(string paneName)
+    {
+        // The archived real RU/EN 1280x800 DIP captures show blank lower
+        // halves inside Version and Channel: Grid default Stretch made all
+        // three Auto-row Borders as tall as the four-button Action pane.
+        // Align each Border to its own desired height, without relocating
+        // the approved three cards or changing their content/handlers.
+        var document = Layout();
+        var pane = Named(document, paneName);
+        Assert.Equal("Top", (string?)pane.Attribute("VerticalAlignment"));
+        Assert.Null(pane.Attribute("Height"));
+        Assert.Null(pane.Attribute("MinHeight"));
+        Assert.Null(pane.Attribute("MaxHeight"));
+        Assert.Equal("0", (string?)pane.Attribute("Margin"));
+        Assert.Equal("{StaticResource AuroraCard}", (string?)pane.Attribute("Style"));
+    }
+
+    [Fact]
+    public void UpdatesNaturalHeightsKeepThreeTwoAndSingleColumnFallbacks()
+    {
+        var document = Layout();
+        var grid = Named(document, "UpdatesThreeCardGrid");
+        Assert.All(grid.Elements().Where(e => e.Name.LocalName == "RowDefinitions")
+            .SelectMany(e => e.Elements()), row =>
+                Assert.Equal("Auto", (string?)row.Attribute("Height")));
+        Assert.Empty(Setters(document, "UpdatesThreeColumns"));
+        var middle = Setters(document, "UpdatesTwoColumns");
+        var compact = Setters(document, "UpdatesVerticalPanels");
+        Assert.Equal("1", middle["UpdatesActionPane.(Grid.Row)"]);
+        Assert.Equal("2", middle["UpdatesActionPane.(Grid.ColumnSpan)"]);
+        Assert.Equal("1", compact["UpdatesChannelPane.(Grid.Row)"]);
+        Assert.Equal("2", compact["UpdatesActionPane.(Grid.Row)"]);
+        Assert.Equal("Disabled", (string?)Named(document, "WorkspaceScroll")
+            .Attribute("HorizontalScrollMode"));
+    }
+
     [Fact]
     public void UpdatesReflowsVerticallyAtCompactWidthsWithoutHorizontalScroll()
     {
