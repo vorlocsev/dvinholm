@@ -500,14 +500,15 @@
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
                     <!-- Actual Dvinholm scenic banner, already included in the application package.
-                         A stronger navy mask keeps the printed banner wordmark behind the live page heading. Northern-light ribbons remain decorative, never CAN state. -->
+                         The bundled banner contains oversized printed branding. Keep the scenery subdued below the navy overlay so the live localized title stays primary. Northern-light ribbons remain decorative, never CAN state. -->
                     <Border x:Name="AuroraHeaderArtwork" Grid.RowSpan="2" Grid.ColumnSpan="2"
                             Margin="-12,-8,-12,-8" CornerRadius="12" BorderThickness="1"
                             BorderBrush="#326A8D" IsHitTestVisible="False">
                         <Grid>
                             <Grid.Background>
                                 <ImageBrush ImageSource="ms-appx:///Assets/Dvinholm-Banner.png"
-                                            Stretch="UniformToFill" AlignmentX="Center" AlignmentY="Center" />
+                                            Stretch="UniformToFill" AlignmentX="Center" AlignmentY="Center"
+                                            Opacity="0.26" />
                             </Grid.Background>
                             <Rectangle>
                                 <Rectangle.Fill>
