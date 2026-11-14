@@ -499,38 +499,31 @@
                         <ColumnDefinition Width="*" />
                         <ColumnDefinition Width="Auto" />
                     </Grid.ColumnDefinitions>
-                    <!-- Actual Dvinholm scenic banner, already included in the application package.
-                         The bundled banner contains oversized printed branding. Keep the scenery subdued below the navy overlay so the live localized title stays primary. Northern-light ribbons remain decorative, never CAN state. -->
+                    <!-- Text-free bundled Aurora artwork: northern lights, White Sea coast and
+                         a purely decorative vehicle illustration. No VIN, diagnostic outcomes,
+                         artificial connection flags or baked-in localization. The live page title,
+                         J2534 status and language controls remain above the picture. -->
                     <Border x:Name="AuroraHeaderArtwork" Grid.RowSpan="2" Grid.ColumnSpan="2"
                             Margin="-12,-8,-12,-8" CornerRadius="12" BorderThickness="1"
                             BorderBrush="#326A8D" IsHitTestVisible="False">
                         <Grid>
-                            <Grid.Background>
-                                <ImageBrush ImageSource="ms-appx:///Assets/Dvinholm-Banner.png"
-                                            Stretch="UniformToFill" AlignmentX="Center" AlignmentY="Center"
-                                            Opacity="0.26" />
-                            </Grid.Background>
+                            <Image Stretch="UniformToFill" Opacity="0.94" IsHitTestVisible="False">
+                                <Image.Source>
+                                    <SvgImageSource UriSource="ms-appx:///Assets/Aurora-Northern-Coast.svg" />
+                                </Image.Source>
+                            </Image>
+                            <!-- Preserve heading/status contrast while leaving the sea and aurora
+                                 visible across the scenic right side of the banner. -->
                             <Rectangle>
                                 <Rectangle.Fill>
                                     <LinearGradientBrush StartPoint="0,0" EndPoint="1,0">
-                                        <GradientStop Color="#FA07182C" Offset="0" />
-                                        <GradientStop Color="#F209203A" Offset="0.42" />
-                                        <GradientStop Color="#E60B2138" Offset="0.74" />
-                                        <GradientStop Color="#C90B1930" Offset="1" />
+                                        <GradientStop Color="#F5081B32" Offset="0" />
+                                        <GradientStop Color="#DC0A2038" Offset="0.42" />
+                                        <GradientStop Color="#87091C31" Offset="0.74" />
+                                        <GradientStop Color="#98091C31" Offset="1" />
                                     </LinearGradientBrush>
                                 </Rectangle.Fill>
                             </Rectangle>
-                            <Viewbox HorizontalAlignment="Stretch" VerticalAlignment="Stretch" Stretch="Fill"
-                                     Opacity="0.48">
-                                <Canvas Width="920" Height="145">
-                                    <Path Data="M200,21 C345,1 445,63 587,17 C682,-10 772,34 902,11"
-                                          Stroke="#19E5BD" StrokeThickness="22" Opacity="0.50" Fill="Transparent" />
-                                    <Path Data="M304,4 C429,41 557,0 683,29 C776,50 854,10 929,32"
-                                          Stroke="#63DEED" StrokeThickness="13" Opacity="0.38" Fill="Transparent" />
-                                    <Path Data="M490,0 C601,28 687,-1 783,15 C866,31 887,4 945,8"
-                                          Stroke="#A58AFF" StrokeThickness="14" Opacity="0.35" Fill="Transparent" />
-                                </Canvas>
-                            </Viewbox>
                         </Grid>
                     </Border>
                     <StackPanel x:Name="WorkspaceHeaderCopy" AutomationProperties.AutomationId="DvinholmWorkspaceHeaderCopy" AutomationProperties.AccessibilityView="Control" Spacing="7" Margin="16,13,0,12" VerticalAlignment="Center">
