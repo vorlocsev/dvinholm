@@ -147,7 +147,7 @@ public sealed class AuroraWideHeaderActionLayoutTests
         var header = Named(doc, "WorkspaceHeaderGrid");
         Assert.Contains(Named(doc, "AuroraHeaderArtwork"), header.Descendants());
         Assert.Equal("2", (string?)Named(doc, "AuroraHeaderArtwork").Attribute("Grid.RowSpan"));
-        Assert.Contains("Dvinholm-Banner.png", header.ToString());
+        Assert.Contains("Aurora-Northern-Coast.svg", header.ToString());
         Assert.Equal("DvinholmWorkspaceTitle",
             (string?)Named(doc, "WorkspaceTitle")
                 .Attribute("AutomationProperties.AutomationId"));
