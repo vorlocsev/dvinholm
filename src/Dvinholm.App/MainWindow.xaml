@@ -346,10 +346,21 @@
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
         <Grid.Resources>
+            <!-- Aurora: illuminated upper-left surface fades into blue-violet
+                 shadow. A shared brush keeps all six workspaces coherent
+                 without inventing any connection, VIN or diagnostic status. -->
             <LinearGradientBrush x:Key="AuroraPanelGradient" StartPoint="0,0" EndPoint="1,1">
-                <GradientStop Color="#122F4E" Offset="0" />
-                <GradientStop Color="#0E263F" Offset="0.45" />
-                <GradientStop Color="#0B1E33" Offset="1" />
+                <GradientStop Color="#194265" Offset="0" />
+                <GradientStop Color="#153752" Offset="0.28" />
+                <GradientStop Color="#112B47" Offset="0.68" />
+                <GradientStop Color="#171F3D" Offset="1" />
+            </LinearGradientBrush>
+            <!-- Cooler cyan upper border and restrained purple lower edge:
+                 decorative only, used by the existing real action cards. -->
+            <LinearGradientBrush x:Key="AuroraCardEdgeGradient" StartPoint="0,0" EndPoint="1,1">
+                <GradientStop Color="#508EAF" Offset="0" />
+                <GradientStop Color="#326280" Offset="0.54" />
+                <GradientStop Color="#645083" Offset="1" />
             </LinearGradientBrush>
             <Style x:Key="AuroraButton" TargetType="Button">
                 <Setter Property="CornerRadius" Value="8" />
@@ -374,7 +385,7 @@
             </Style>
             <Style x:Key="AuroraCard" TargetType="Border">
                 <Setter Property="Background" Value="{StaticResource AuroraPanelGradient}" />
-                <Setter Property="BorderBrush" Value="#23445F" />
+                <Setter Property="BorderBrush" Value="{StaticResource AuroraCardEdgeGradient}" />
                 <Setter Property="BorderThickness" Value="1" />
                 <Setter Property="CornerRadius" Value="12" />
                 <Setter Property="Padding" Value="16" />
