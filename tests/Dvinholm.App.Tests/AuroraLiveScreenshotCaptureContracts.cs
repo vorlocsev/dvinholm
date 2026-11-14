@@ -732,4 +732,40 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.DoesNotContain("SetScrollPercent(", probe);
     }
 
+
+    [Fact]
+    public void LowerFoldReparksPointerAndLetsStaleHoverTooltipDismissBeforePixels()
+    {
+        var section = BottomScrollProbe();
+        var checkedBottom = section.IndexOf("$captureScrollPercent -lt 98",
+            StringComparison.Ordinal);
+        var repoint = section.IndexOf("SetCursorPos($quietX, $quietY)",
+            checkedBottom, StringComparison.Ordinal);
+        var dwell = section.IndexOf("Start-Sleep -Milliseconds 3200",
+            repoint, StringComparison.Ordinal);
+        var verify = section.IndexOf("$bottomCursor.X -ne $quietX",
+            dwell, StringComparison.Ordinal);
+        var scrollStillBottom = section.IndexOf("$afterQuietPercent -lt 98",
+            verify, StringComparison.Ordinal);
+        var screenshot = section.IndexOf("$bottomGraphics.CopyFromScreen(",
+            scrollStillBottom, StringComparison.Ordinal);
+        Assert.True(checkedBottom >= 0 && repoint > checkedBottom &&
+            dwell > repoint && verify > dwell && scrollStillBottom > verify &&
+            screenshot > scrollStillBottom);
+        Assert.Contains("$quietY -ge $bottomClient.Top", section);
+        Assert.Contains("Cursor moved during bottom tooltip-clear interval", section);
+    }
+
+    [Fact]
+    public void HoverCleanupNeverSendsKeysClicksOrPerformsDiagnosticOperations()
+    {
+        var bottom = BottomScrollProbe();
+        Assert.DoesNotContain("SendKeys", bottom);
+        Assert.DoesNotContain("SendInput", bottom);
+        Assert.DoesNotContain("MouseEvent", bottom);
+        Assert.DoesNotContain("InvokePattern", bottom);
+        Assert.DoesNotContain("ReadCemPin", bottom);
+        Assert.DoesNotContain("PassThruOpen", bottom);
+    }
+
 }
