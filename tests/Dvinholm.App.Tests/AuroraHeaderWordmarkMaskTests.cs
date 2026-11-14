@@ -4,8 +4,8 @@ using System.Xml.Linq;
 namespace Dvinholm.App.Tests;
 
 /// <summary>
-/// Stage 562: a text-free, offline Aurora coast banner replaces the printed
-/// DVINHOLM wordmark. Structural guards are NOT real Windows visual proof.
+/// Stage 562: the original printed wordmark banner is replaced by an offline
+/// cinematic JPEG. Structural checks are not actual Windows GUI pixel proof.
 /// </summary>
 public sealed class AuroraHeaderWordmarkMaskTests
 {
@@ -25,14 +25,14 @@ public sealed class AuroraHeaderWordmarkMaskTests
 
     private static XElement Artwork(XDocument doc) => Named(doc, "AuroraHeaderArtwork");
 
-    private static string Source(string relative)
+    private static string FindFile(string relative)
     {
         for (DirectoryInfo? dir = new(AppContext.BaseDirectory); dir is not null;
              dir = dir.Parent)
         {
             var candidate = Path.Combine(dir.FullName,
                 relative.Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(candidate)) return File.ReadAllText(candidate);
+            if (File.Exists(candidate)) return candidate;
         }
         throw new FileNotFoundException(relative);
     }
@@ -56,58 +56,57 @@ public sealed class AuroraHeaderWordmarkMaskTests
     }
 
     [Fact]
-    public void HeaderUsesNewTextFreeSvgInsteadOfOldPrintedBranding()
+    public void HeaderUsesOfflineCoastPhotoInsteadOfPrintedWordmark()
     {
         var art = Artwork(Layout());
         Assert.Equal("False", (string?)art.Attribute("IsHitTestVisible"));
         Assert.Equal("2", (string?)art.Attribute("Grid.RowSpan"));
         Assert.Equal("2", (string?)art.Attribute("Grid.ColumnSpan"));
-        var svg = art.Descendants().Single(e => e.Name.LocalName == "SvgImageSource");
-        Assert.Equal("ms-appx:///Assets/Aurora-Northern-Coast.svg",
-            (string?)svg.Attribute("UriSource"));
+        var image = art.Descendants().Single(e => e.Name.LocalName == "Image");
+        Assert.Equal("ms-appx:///Assets/Aurora-Northern-Coast.jpg",
+            (string?)image.Attribute("Source"));
+        Assert.Equal("UniformToFill", (string?)image.Attribute("Stretch"));
+        Assert.Equal("False", (string?)image.Attribute("IsHitTestVisible"));
         Assert.DoesNotContain("Dvinholm-Banner.png", art.ToString(),
             StringComparison.OrdinalIgnoreCase);
-        var photo = svg.Parent?.Parent;
-        Assert.NotNull(photo);
-        Assert.Equal("Image", photo.Name.LocalName);
-        Assert.Equal("UniformToFill", (string?)photo.Attribute("Stretch"));
-        Assert.Equal("False", (string?)photo.Attribute("IsHitTestVisible"));
-    }
-
-    [Fact]
-    public void NewIllustrationIsPackagedInOfflineSelfContainedBuild()
-    {
-        var project = Source("src/Dvinholm.App/Dvinholm.App.csproj");
-        Assert.Contains("assets\\aurora-northern-coast.svg", project,
+        Assert.DoesNotContain("SvgImageSource", art.ToString(),
             StringComparison.OrdinalIgnoreCase);
-        Assert.Contains("Link=\"Assets\\Aurora-Northern-Coast.svg\"", project);
-        Assert.Contains("CopyToPublishDirectory=\"PreserveNewest\"", project);
-        var svg = Source("assets/aurora-northern-coast.svg");
-        var doc = XDocument.Parse(svg);
-        Assert.Equal("svg", doc.Root?.Name.LocalName);
-        Assert.Equal("0 0 1600 260", (string?)doc.Root?.Attribute("viewBox"));
     }
 
     [Fact]
-    public void BannerAssetContainsOnlyStaticSceneryNoTextOrFakeVehicleData()
+    public void NewPhotoHasRealJpegBytesAndIsPackagedForOfflineX64()
     {
-        var source = Source("assets/aurora-northern-coast.svg");
-        var asset = XDocument.Parse(source);
-        Assert.Empty(asset.Descendants().Where(e => new[]
-        {
-            "text", "tspan", "script", "foreignObject", "image", "animate"
-        }.Contains(e.Name.LocalName, StringComparer.OrdinalIgnoreCase)));
-        foreach (var forbidden in new[] { "VIN:", "CAN-ID", "ECU:", "Connected",
-            "Dvinholm", "Search PIN", "100%" })
-            Assert.DoesNotContain(forbidden, source, StringComparison.OrdinalIgnoreCase);
-        Assert.True(asset.Descendants().Count(e => e.Name.LocalName == "path") >= 10);
-        Assert.True(asset.Descendants().Count(e => e.Name.LocalName == "linearGradient") >= 4);
-        Assert.DoesNotContain("http://", source.Replace(
-            "http://www.w3.org/2000/svg", ""), StringComparison.OrdinalIgnoreCase);
+        var project = File.ReadAllText(FindFile("src/Dvinholm.App/Dvinholm.App.csproj"));
+        Assert.Contains("assets\\aurora-northern-coast.jpg", project,
+            StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Link=\"Assets\\Aurora-Northern-Coast.jpg\"", project);
+        Assert.Contains("CopyToPublishDirectory=\"PreserveNewest\"", project);
+        var bytes = File.ReadAllBytes(FindFile("assets/aurora-northern-coast.jpg"));
+        Assert.True(bytes.Length > 10_000, "The real JPEG source must be bundled.");
+        Assert.Equal((byte)0xFF, bytes[0]);
+        Assert.Equal((byte)0xD8, bytes[1]);
+        Assert.Equal((byte)0xFF, bytes[^2]);
+        Assert.Equal((byte)0xD9, bytes[^1]);
     }
 
     [Fact]
-    public void TintKeepsTrueLocalizedHeadingLegibleWithBrightAuroraOnRight()
+    public void ArtworkHasNoProgrammaticFakeStatusOrRemoteImageDependencies()
+    {
+        var art = Artwork(Layout());
+        Assert.DoesNotContain(art.Descendants(),
+            e => e.Name.LocalName is "TextBlock" or "Button" or "ComboBox");
+        var image = art.Descendants().Single(e => e.Name.LocalName == "Image");
+        var source = (string?)image.Attribute("Source");
+        Assert.NotNull(source);
+        Assert.StartsWith("ms-appx:///Assets/", source);
+        Assert.DoesNotContain("http://", source, StringComparison.OrdinalIgnoreCase);
+        Assert.DoesNotContain("https://", source, StringComparison.OrdinalIgnoreCase);
+        Assert.Null(image.Attribute("Tapped"));
+        Assert.Null(image.Attribute("Click"));
+    }
+
+    [Fact]
+    public void TintProtectsLiveLocalizedHeadingWhileRevealingAuroraSky()
     {
         var stops = Stops(Layout());
         Assert.Equal(new[] { 0.0, 0.42, 0.74, 1.0 },
@@ -115,13 +114,13 @@ public sealed class AuroraHeaderWordmarkMaskTests
         Assert.Equal(4, stops.Length);
         Assert.True(stops[0].Alpha >= 0xF0, "White localized title needs dark left.");
         Assert.True(stops[1].Alpha >= 0xD0, "Description needs a dark central mask.");
-        Assert.True(stops[2].Alpha < 0xB0, "Aurora must remain visible toward the right.");
+        Assert.True(stops[2].Alpha < 0xB0, "Aurora must remain visible to the right.");
         Assert.True(stops[3].Alpha >= stops[2].Alpha,
-            "Connection status and language controls need a dark right edge.");
+            "Status and language controls need a darker right edge.");
     }
 
     [Fact]
-    public void ArtworkCannotInterceptNavigationOrDisplayLiveStatus()
+    public void PhotoCannotInterceptNavigationOrReplaceTrueConnectionState()
     {
         var doc = Layout();
         var art = Artwork(doc);
@@ -136,8 +135,6 @@ public sealed class AuroraHeaderWordmarkMaskTests
         Assert.DoesNotContain(locale, art.Descendants());
         Assert.DoesNotContain(status, art.Descendants());
         Assert.Equal("False", (string?)art.Attribute("IsHitTestVisible"));
-        Assert.Null(art.Attribute("Click"));
-        Assert.Null(art.Attribute("Tapped"));
         Assert.Null(art.Attribute("PointerPressed"));
         Assert.Equal("WorkspaceNavigate_Click", (string?)status.Attribute("Click"));
         Assert.Equal("DvinholmWorkspaceTitle",
