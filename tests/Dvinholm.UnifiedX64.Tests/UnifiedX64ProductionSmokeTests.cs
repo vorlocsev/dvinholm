@@ -178,7 +178,7 @@ public sealed class UnifiedX64ProductionSmokeTests
         // A passing source-level XAML test would not catch a missing asset.
         foreach (var asset in new[]
         {
-            "Assets/Aurora-Northern-Coast.svg",
+            "Assets/Aurora-Northern-Coast.jpg",
             "Assets/Launcher-Northern-Emblem.svg"
         })
             Assert.Contains(zip.Entries, entry =>
