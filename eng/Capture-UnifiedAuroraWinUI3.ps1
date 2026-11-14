@@ -177,6 +177,20 @@ if (-not [string]::IsNullOrWhiteSpace($CommitSha)) {
     if ($evidence.sourceHeadCommitSha -cne $CommitSha.ToLowerInvariant()) {
         throw 'Requested PR source commit does not match this PR artifact provenance. Use the full SHA supplied with that exact artifact.'
     }
+    # An exact EXE hash alone cannot show whether the Windows caption
+    # actually displays this Development run. Verify the native title
+    # independently, before capturing any page. No focus, click, or app
+    # state modification is needed.
+    $pilotText = [string]$evidence.pilotRunNumber
+    if ($pilotText -notmatch '^[1-9][0-9]*$' -or
+        $evidence.expectedWindowTitle -cne "Dvinholm CI #$pilotText") {
+        throw 'Pilot CI provenance is missing or internally inconsistent; build-labelled screenshots refused.'
+    }
+    $window.Refresh()
+    $observedWindowTitle = $window.MainWindowTitle
+    if ($observedWindowTitle -cne $evidence.expectedWindowTitle) {
+        throw "Native Dvinholm window title mismatch: expected '$($evidence.expectedWindowTitle)', observed '$observedWindowTitle'. Close stale builds and launch the matching x64 pilot."
+    }
     $runningExe = $window.Path
     if ([string]::IsNullOrWhiteSpace($runningExe) -or
         -not (Test-Path -LiteralPath $runningExe -PathType Leaf)) {
@@ -188,7 +202,7 @@ if (-not [string]::IsNullOrWhiteSpace($CommitSha)) {
     }
     Write-Host ('Verified running x64 Dvinholm.exe against PR artifact: source ' +
         $CommitSha.Substring(0,7) + ', checkout ' + $evidence.checkoutCommitSha.Substring(0,7) +
-        ', matching executable SHA-256. No upload.')
+        ', CI #' + $pilotText + ', native title verified, matching executable SHA-256. No upload.')
 }
 
 # The app itself must be Per-Monitor V2 aware. Otherwise Windows virtualizes
