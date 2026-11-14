@@ -67,6 +67,53 @@ public sealed class AuroraConnectionUpdatesVisualParityTests
             Named(doc, "ConnectionStatusPane").Descendants());
     }
 
+    [Theory]
+    [InlineData("ConnectionAdapterPane")]
+    [InlineData("ConnectionBusPane")]
+    [InlineData("ConnectionStatusPane")]
+    public void ConnectionCardsFitTheirContentWithoutEmptyStretchedLowerHalves(string paneName)
+    {
+        // Actual 2026-11-14 EN 1280x800 DIP Connection screenshot:
+        // the CAN and status cards stretch to the taller J2534 adapter
+        // card even though their contents end much higher. Keep live
+        // labels/controls, and let each Border measure its own height.
+        var document = Layout();
+        var pane = Named(document, paneName);
+        Assert.Equal("Top", (string?)pane.Attribute("VerticalAlignment"));
+        Assert.Null(pane.Attribute("Height"));
+        Assert.Null(pane.Attribute("MinHeight"));
+        Assert.Null(pane.Attribute("MaxHeight"));
+        Assert.Equal("0", (string?)pane.Attribute("Margin"));
+        Assert.Equal("{StaticResource AuroraCard}", (string?)pane.Attribute("Style"));
+        Assert.Contains(Named(document, "ConnectionThreeCardGrid"), pane.Ancestors());
+    }
+
+    [Fact]
+    public void ConnectionNaturalHeightsKeepDynamicAdapterAuditAndAllBreakpoints()
+    {
+        var document = Layout();
+        var grid = Named(document, "ConnectionThreeCardGrid");
+        var rows = grid.Elements().Single(e => e.Name.LocalName == "Grid.RowDefinitions")
+            .Elements().ToArray();
+        Assert.Equal(3, rows.Length);
+        Assert.All(rows, row => Assert.Equal("Auto", (string?)row.Attribute("Height")));
+        Assert.Equal("False",
+            (string?)Named(document, "J2534ArchitectureAuditExpander").Attribute("IsExpanded"));
+        Assert.Contains(Named(document, "J2534ArchitectureAuditExpander"),
+            Named(document, "ConnectionAdapterPane").Descendants());
+
+        var wide = Setters(document, "ConnectionThreeColumns");
+        var middle = Setters(document, "ConnectionTwoColumns");
+        var compact = Setters(document, "ConnectionVerticalPanels");
+        Assert.Empty(wide);
+        Assert.Equal("1", middle["ConnectionStatusPane.(Grid.Row)"]);
+        Assert.Equal("2", middle["ConnectionStatusPane.(Grid.ColumnSpan)"]);
+        Assert.Equal("1", compact["ConnectionBusPane.(Grid.Row)"]);
+        Assert.Equal("2", compact["ConnectionStatusPane.(Grid.Row)"]);
+        Assert.Equal("Disabled",
+            (string?)Named(document, "WorkspaceScroll").Attribute("HorizontalScrollMode"));
+    }
+
     [Fact]
     public void ConnectionStacksAllThreeAtCompactWidths()
     {
