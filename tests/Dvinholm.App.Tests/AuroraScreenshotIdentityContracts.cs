@@ -358,4 +358,60 @@ public sealed class AuroraScreenshotIdentityContracts
         Assert.Contains("Capture geometry diagnostics (no screenshot was saved)", confirm);
     }
 
+
+    [Fact]
+    public void ExactHeadCaptureAlsoChecksRealNativeDevelopmentTitle()
+    {
+        var capture = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
+        var provenance = capture.IndexOf("$evidence.sourceHeadCommitSha -cne $CommitSha.ToLowerInvariant()",
+            StringComparison.Ordinal);
+        var run = capture.IndexOf("$pilotText = [string]$evidence.pilotRunNumber",
+            provenance, StringComparison.Ordinal);
+        var expected = capture.IndexOf(
+            "$evidence.expectedWindowTitle -cne \"Dvinholm CI #$pilotText\"",
+            run, StringComparison.Ordinal);
+        var actual = capture.IndexOf("$observedWindowTitle = $window.MainWindowTitle",
+            expected, StringComparison.Ordinal);
+        var check = capture.IndexOf(
+            "$observedWindowTitle -cne $evidence.expectedWindowTitle",
+            actual, StringComparison.Ordinal);
+        var sha = capture.IndexOf("$runningSha256 -cne $evidence.executableSha256",
+            check, StringComparison.Ordinal);
+        var pixels = capture.IndexOf("$bitmap.Save($dest",
+            sha, StringComparison.Ordinal);
+        Assert.True(provenance >= 0 && run > provenance && expected > run &&
+            actual > expected && check > actual && sha > check && pixels > sha);
+        Assert.Contains("Native Dvinholm window title mismatch:", capture);
+        Assert.DoesNotContain("SetWindowText(", capture);
+    }
+
+    [Fact]
+    public void PilotProvenanceManifestCarriesTheVerifiedRunAndWindowCaption()
+    {
+        var workflow = Source(".github/workflows/winui3-unified-x64.yml");
+        var begin = workflow.IndexOf(
+            "- name: Write and verify Aurora GUI executable provenance",
+            StringComparison.Ordinal);
+        var end = workflow.IndexOf(
+            "- name: Publish isolated Windows x64 process-exit probe",
+            begin, StringComparison.Ordinal);
+        Assert.True(begin >= 0 && end > begin);
+        var provenance = workflow[begin..end];
+        Assert.Contains("$env:GITHUB_RUN_NUMBER -notmatch '^[1-9][0-9]*$'",
+            provenance);
+        Assert.Contains("pilotRunNumber = $pilotRun", provenance);
+        Assert.Contains("expectedWindowTitle = \"Dvinholm CI #$pilotRun\"",
+            provenance);
+        Assert.Contains("[int]$decoded.pilotRunNumber -ne $pilotRun",
+            provenance);
+        Assert.Contains("$decoded.expectedWindowTitle -cne $evidence.expectedWindowTitle",
+            provenance);
+        Assert.Contains("sourceHeadCommitSha = $env:AURORA_PR_HEAD_SHA.ToLowerInvariant()",
+            provenance);
+        Assert.Contains("executableSha256 = $exeSha", provenance);
+        Assert.Contains("packageSha256 = $zipSha", provenance);
+        Assert.Contains("schema = 'dvinholm.aurora.x64.provenance.v1'",
+            provenance);
+    }
+
 }
