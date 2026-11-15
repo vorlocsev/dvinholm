@@ -400,4 +400,32 @@ public sealed class AuroraVisualEnglishLocalizationTests
         Assert.Contains("CancelUdsButton.Content = cancelLabel;", body);
         Assert.Contains("RefreshCancellationButtonLanguage();", body);
     }
+
+    [Theory]
+    [InlineData("UdsRequestId", "Введите проверенный TX ID", "Enter source-verified TX ID")]
+    [InlineData("UdsResponseId", "Введите проверенный RX ID", "Enter independently verified RX ID")]
+    [InlineData("UdsDid", "Например F190", "e.g. F190")]
+    public void DiagnosticInputPlaceholdersFollowRuEnWithoutChangingEnteredValues(
+        string name, string ru, string en)
+    {
+        var doc = Layout();
+        var input = Named(doc, name);
+        Assert.Equal("TextBox", input.Name.LocalName);
+
+        var primary = Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+        var start = primary.IndexOf("UdsRequestId.Header = L(", StringComparison.Ordinal);
+        var end = primary.IndexOf("CanIdFormat.Header = L(", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var projection = primary[start..end];
+
+        Assert.Contains(name + ".PlaceholderText = L(", projection);
+        Assert.Contains(ru, projection);
+        Assert.Contains(en, projection);
+        Assert.DoesNotContain("UdsRequestId.Text =", projection);
+        Assert.DoesNotContain("UdsResponseId.Text =", projection);
+        Assert.DoesNotContain("UdsDid.Text =", projection);
+        Assert.DoesNotContain("PassThru", projection);
+        Assert.DoesNotContain("SendAsync(", projection);
+        Assert.DoesNotContain("ReadDid_Click(", projection);
+    }
 }
