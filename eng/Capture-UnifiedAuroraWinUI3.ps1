@@ -464,7 +464,7 @@ function Assert-WorkspaceScrollToEnd(
     [int]$captureWidth = 0,
     [int]$captureHeight = 0
 ) {
-    if ($page -notin @('CemPin','CemConfiguration','Ecu','Diagnostics')) { return $false }
+    if ($page -notin @('CemPin','CemConfiguration','Ecu','Diagnostics','Dtc')) { return $false }
 
     # Target the outer page scroller by its unique app-supplied UIA ID.
     # Do not interact with nested diagnostic lists, buttons or vehicle controls.
@@ -650,7 +650,7 @@ function Assert-WorkspaceTopBeforePixels([string]$page) {
     # The app resets the first fold after navigation, but that request alone
     # is not evidence that WinUI has actually completed the scroll.
     # Read only the OUTER workspace UIA peer, never nested diagnostic lists.
-    if ($page -notin @('CemPin','CemConfiguration','Ecu','Diagnostics')) {
+    if ($page -notin @('CemPin','CemConfiguration','Ecu','Diagnostics','Dtc')) {
         return $false
     }
     $condition = [System.Windows.Automation.PropertyCondition]::new(
@@ -836,7 +836,7 @@ foreach ($page in $Pages) {
         Confirm-WorkspaceState $page -RequireVisible
         if ($VerifyWorkspaceScroll) {
             if ($CaptureBottomViews -and
-                $page -in @('CemPin','CemConfiguration','Ecu','Diagnostics')) {
+                $page -in @('CemPin','CemConfiguration','Ecu','Diagnostics','Dtc')) {
                 $bottomFilename = "Aurora-$page-$Language-$fixedWidthDip-dip-bottom.png"
                 $bottomDest = Join-Path $output $bottomFilename
                 $bottomVerified = Assert-WorkspaceScrollToEnd $page $bottomDest $rect.Left $rect.Top $actualWidth $actualHeight
@@ -872,7 +872,7 @@ foreach ($page in $Pages) {
     # scrolling here; if the app did not reset to top, refuse the labelled PNG.
     $topFoldVerified = $false
     if ($VerifyWorkspaceScroll -and
-        $page -in @('CemPin','CemConfiguration','Ecu','Diagnostics')) {
+        $page -in @('CemPin','CemConfiguration','Ecu','Diagnostics','Dtc')) {
         $topFoldVerified = Assert-WorkspaceTopBeforePixels $page
     }
     $filename = "Aurora-$page-$Language-$fixedWidthDip-dip.png"
