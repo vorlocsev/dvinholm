@@ -228,6 +228,7 @@ jobs:
             'FullyQualifiedName~CemConfigurationBlockDecoderTests'
             'FullyQualifiedName~CemConfigurationIndexedReviewTests'
             'FullyQualifiedName~CemConfigurationMappingResearchTests'
+            'FullyQualifiedName~SvdbContainerLayoutInspectorTests'
             'FullyQualifiedName~CemPartNumberReaderTests'
             'FullyQualifiedName~CemReadOnlyPrerequisiteReportTests'
             'FullyQualifiedName~CemIdentityEvidenceReportTests'

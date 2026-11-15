@@ -105,3 +105,36 @@ its P2 XC90 advertising metadata, not to a physical index offset.
 research-only joins, revision mismatch, invalid/duplicate records,
 catalog-wide validation, bounded input, forged snapshots, and no-I/O
 capability boundaries. This research gate is not proof of OEM accuracy.
+
+
+## Stage: opaque SVDB header-only structural preflight
+
+Source: the user-supplied Dvinholm_SVDB_Catalog_Inspection.md; no
+original proprietary SVDB bytes are embedded, copied, or committed.
+
+Two user-supplied objects have separate 64-byte SVCAT001 headers,
+the observed DWORD 0x00010000 at bytes 8..11, and a value at bytes
+12..19 that fits an unencrypted data-length interpretation when
+combined with 65536-byte chunks and an additional 16 bytes per chunk.
+
+- catalog.svdb: declared 66,777,157 bytes; 1,019 chunks;
+  physical 66,793,525 bytes.
+- catalog.001.svdb: declared 13,809,152 bytes; 211 chunks;
+  physical 13,812,592 bytes.
+
+SvdbContainerLayoutInspector accepts exactly a 64-byte *supplied*
+header and the full file length, checks the known magic/version,
+recomputes the size with overflow handling, and returns failure
+reasons for malformed inputs. It does not read or dump the encrypted
+body, access secret keys, or treat 16-byte per-block overhead as a
+cryptographically verified tag. These offsets are observed from
+two specimens, not a public OEM standard.
+
+Even a successful structural match cannot authenticate the
+container, prove its payload is SQLite, or populate the CEM P2/P3
+index-to-meaning dictionary. Previously reviewed VIDA diagnostic
+SQLite caches remain separate evidence with different provenance.
+
+Nine synthetic header-only xUnit tests check both observed sizes,
+magic/version, block boundaries, zero, truncation, oversized inputs,
+and unchanged no-IO capability flags. No physical J2534 run occurred.
