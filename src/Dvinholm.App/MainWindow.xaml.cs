@@ -31,6 +31,9 @@ public sealed partial class MainWindow : Window
     private bool _demoDataPresent;
     private Button _demoMonitorButton = null!;
     private TextBlock _demoStatusText = null!;
+    private Button _developmentAddTestProfilesButton = null!;
+    private Button _developmentPreviewUdsButton = null!;
+    private Button _developmentExportSyntheticButton = null!;
     private object _cemIdentityContext = new();
     private CemPartNumberObservation? _cemIdentity;
     private CemPinSessionGuard? _cemIdentityGuard;
@@ -742,9 +745,9 @@ public sealed partial class MainWindow : Window
         RefreshCemDevelopmentLabels();
         // Initialize once. Locale changes must never overwrite an obtained PIN.
         CemPinResultText.Text = CemText("Нет результата PIN.", "No PIN result.");
-        var addTestProfiles = new Button { Content = "Add test profiles" };
-        addTestProfiles.Click += AddTestProfiles_Click;
-        DevelopmentProfileTools.Children.Add(addTestProfiles);
+        _developmentAddTestProfilesButton = new Button { Content = "Add test profiles" };
+        _developmentAddTestProfilesButton.Click += AddTestProfiles_Click;
+        DevelopmentProfileTools.Children.Add(_developmentAddTestProfilesButton);
         DevelopmentProfileTools.Visibility = Visibility.Visible;
 
         _demoMonitorButton = new Button { Content = "Start demo" };
@@ -768,14 +771,48 @@ public sealed partial class MainWindow : Window
             Orientation = Orientation.Horizontal,
             Spacing = 8
         };
-        var previewUds = new Button { Content = "Preview UDS example (offline)" };
-        previewUds.Click += PreviewUdsSample_Click;
-        offlinePanel.Children.Add(previewUds);
-        var exportSynthetic = new Button { Content = "Export synthetic UDS TXT" };
-        exportSynthetic.Click += ExportOfflineUdsTxt_Click;
-        offlinePanel.Children.Add(exportSynthetic);
+        _developmentPreviewUdsButton = new Button { Content = "Preview UDS example (offline)" };
+        _developmentPreviewUdsButton.Click += PreviewUdsSample_Click;
+        offlinePanel.Children.Add(_developmentPreviewUdsButton);
+        _developmentExportSyntheticButton = new Button { Content = "Export synthetic UDS TXT" };
+        _developmentExportSyntheticButton.Click += ExportOfflineUdsTxt_Click;
+        offlinePanel.Children.Add(_developmentExportSyntheticButton);
         DevelopmentDiagnosticTools.Children.Add(offlinePanel);
         DevelopmentDiagnosticTools.Visibility = Visibility.Visible;
+        RefreshDevelopmentToolsLanguage();
+    }
+
+    /// <summary>
+    /// Only relabel private Development fixtures. Never start/stop a monitor,
+    /// mutate synthetic CAN data, rewrite status history, or access an adapter
+    /// while the user switches RU/EN.
+    /// </summary>
+    private void RefreshDevelopmentToolsLanguage()
+    {
+        if (_developmentAddTestProfilesButton is null ||
+            _developmentPreviewUdsButton is null ||
+            _developmentExportSyntheticButton is null ||
+            _demoMonitorButton is null || _demoStatusText is null)
+            return;
+
+        _developmentAddTestProfilesButton.Content =
+            L("Добавить тестовые профили", "Add test profiles");
+        _developmentPreviewUdsButton.Content =
+            L("Пример UDS (офлайн)", "Preview UDS example (offline)");
+        _developmentExportSyntheticButton.Content =
+            L("Экспорт синтетического UDS TXT", "Export synthetic UDS TXT");
+
+        _demoMonitorButton.Content = _demoTimer is not null
+            ? L("Остановить демо", "Stop demo")
+            : L("Запустить демо", "Start demo");
+        _demoStatusText.Text = _demoTimer is not null
+            ? L("ДЕМО АКТИВНО — только синтетические CAN-кадры; без адаптера или автомобиля.",
+                "DEMO ACTIVE — synthetic CAN frames only; no adapter or vehicle.")
+            : _demoDataPresent
+                ? L("ДЕМО-ДАННЫЕ — синтетические кадры сохранены для фильтра и CSV.",
+                    "DEMO DATA — synthetic frames retained for filtering/CSV.")
+                : L("ДЕМО — синтетические данные; нет подключения J2534.",
+                    "DEMO — synthetic data, no J2534 connection");
     }
 
     private void AddTestProfiles_Click(object sender, RoutedEventArgs e)
@@ -3868,9 +3905,7 @@ public sealed partial class MainWindow : Window
         IdFilter.Text = string.Empty;
         _demoDataPresent = true;
         _demoTick = 0;
-        _demoStatusText.Text = "DEMO ACTIVE — synthetic CAN frames only; no adapter or vehicle.";
         _demoStatusText.Visibility = Visibility.Visible;
-        _demoMonitorButton.Content = "Stop demo";
         ConnectButton.IsEnabled = false;
         DroppedFrameText.Text = "0 dropped";
 
@@ -3879,6 +3914,7 @@ public sealed partial class MainWindow : Window
         timer.IsRepeating = true;
         timer.Tick += DemoTimer_Tick;
         _demoTimer = timer;
+        RefreshDevelopmentToolsLanguage();
         timer.Start();
         EmitDemoFrames(); // Make the first batch visible immediately.
         SetStatus("DEMO ONLY: synthetic CAN frames. J2534 and diagnostics are not connected.");
@@ -3905,9 +3941,7 @@ public sealed partial class MainWindow : Window
 
         timer.Stop();
         timer.Tick -= DemoTimer_Tick;
-        _demoMonitorButton.Content = "Start demo";
-        if (_demoDataPresent)
-            _demoStatusText.Text = "DEMO DATA — synthetic frames retained for filtering/CSV.";
+        RefreshDevelopmentToolsLanguage();
         if (!_closing && !_connected && _connectTask is not { IsCompleted: false })
             ConnectButton.IsEnabled = true;
     }
