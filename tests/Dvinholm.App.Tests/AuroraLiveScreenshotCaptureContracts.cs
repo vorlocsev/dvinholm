@@ -42,7 +42,10 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         var integrityGate = capture.IndexOf("if (-not [string]::IsNullOrWhiteSpace($CommitSha))",
             StringComparison.Ordinal);
         var firstNavigation = capture.IndexOf("Invoke-OnlyNavigation $page", StringComparison.Ordinal);
-        var firstImageSave = capture.IndexOf("$bitmap.Save($dest", StringComparison.Ordinal);
+        // Helper definitions precede the loop but cannot produce screenshots
+        // until after exact-head verification and approved navigation.
+        var firstImageSave = capture.IndexOf("$bitmap.Save($dest", firstNavigation,
+            StringComparison.Ordinal);
         Assert.True(integrityGate >= 0 && firstNavigation > integrityGate &&
             firstImageSave > firstNavigation);
         Assert.Contains("Write and verify Aurora GUI executable provenance", workflow);
@@ -409,8 +412,22 @@ public sealed class AuroraLiveScreenshotCaptureContracts
     {
         var script = Capture();
         Assert.Contains("$captureSessionId = [guid]::NewGuid().ToString('D')", script);
-        Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(
+        // The optional nine-model review shares the same local correlation
+        // token; primary top and bottom records still have exactly two uses.
+        Assert.Equal(3, System.Text.RegularExpressions.Regex.Matches(
             script, @"captureSessionId = \$captureSessionId").Count);
+        var modelFunction = script.IndexOf("function Capture-OnlyVehicleModels(",
+            StringComparison.Ordinal);
+        var primaryLoopStart = script.IndexOf("foreach ($page in $Pages)",
+            StringComparison.Ordinal);
+        Assert.True(modelFunction >= 0 && primaryLoopStart > modelFunction);
+        Assert.Equal(1, System.Text.RegularExpressions.Regex.Matches(
+            script[modelFunction..primaryLoopStart], @"captureSessionId = \$captureSessionId").Count);
+        var primaryLoopEnd = script.IndexOf("$report = Join-Path $output",
+            primaryLoopStart, StringComparison.Ordinal);
+        Assert.True(primaryLoopEnd > primaryLoopStart);
+        Assert.Equal(2, System.Text.RegularExpressions.Regex.Matches(
+            script[primaryLoopStart..primaryLoopEnd], @"captureSessionId = \$captureSessionId").Count);
         var tokenCreation = script.IndexOf("$captureSessionId = [guid]::NewGuid().ToString('D')",
             StringComparison.Ordinal);
         var pageLoop = script.IndexOf("foreach ($page in $Pages)", StringComparison.Ordinal);
