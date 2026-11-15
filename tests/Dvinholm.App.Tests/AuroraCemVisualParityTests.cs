@@ -55,6 +55,31 @@ public sealed class AuroraCemVisualParityTests
         Assert.Equal("Collapsed",
             (string?)Named(doc, "CemPinSearchCard").Attribute("Visibility"));
         Assert.DoesNotContain("68%", stepper.ToString());
+
+        // Development may explicitly reveal this panel. Long bilingual text
+        // must wrap rather than clip, and a locale switch must change labels
+        // without clearing a PIN result or changing the search attempt range.
+        Assert.Equal("Wrap", (string?)Named(doc, "CemPinSearchHeading")
+            .Attribute("TextWrapping"));
+        Assert.Equal("Wrap", (string?)Named(doc, "CemPinSearchIntro")
+            .Attribute("TextWrapping"));
+        var locale = Source("src/Dvinholm.App/MainWindow.CemPin.cs");
+        var start = locale.IndexOf("private void RefreshCemDevelopmentLabels()", StringComparison.Ordinal);
+        var end = locale.IndexOf("private CemReadOnlyPrerequisiteAssessment", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var labelsOnly = locale[start..end];
+        foreach (var name in new[] { "CemPinSearchHeading.Text", "CemPinSearchIntro.Text",
+            "CemPinRangeStart.Header", "CemPinRangeCount.Header",
+            "CemPinReadButton.Content", "CemPinRevealButton.Content",
+            "CemPinSavedButton.Content", "CemPartNumberReadButton.Content" })
+            Assert.Contains(name, labelsOnly);
+        Assert.Contains("Experimental PIN search", labelsOnly);
+        Assert.Contains("Результат эксперимента не подтверждает PIN", labelsOnly);
+        Assert.DoesNotContain("CemPinResultText.Text", labelsOnly);
+        Assert.DoesNotContain("PassThru", labelsOnly);
+        Assert.DoesNotContain("SendAsync", labelsOnly);
+        Assert.Contains("RefreshCemDevelopmentLabels();",
+            Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs"));
     }
 
     [Fact]
