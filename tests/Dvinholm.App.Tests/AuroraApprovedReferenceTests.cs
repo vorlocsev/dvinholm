@@ -95,7 +95,7 @@ public sealed class AuroraApprovedReferenceTests
     }
 
     [Fact]
-    public void VehicleReferenceUsesNineSelectedModelsAndOneClippedOfflineAtlas()
+    public void VehicleReferenceUsesNineJpgModelsAndOneClippedViewport()
     {
         var doc = Layout();
         var page = Named(doc, "EcuPage");
@@ -107,8 +107,10 @@ public sealed class AuroraApprovedReferenceTests
         var tags = model.Elements().Select(e => (string?)e.Attribute("Tag")).ToArray();
         Assert.Equal(9, tags.Length);
         Assert.Equal(AuroraVehicleArtworkCatalog.Models.Select(m => m.Id), tags);
-        Assert.Equal("ms-appx:///Assets/Vehicles/Volvo-Model-Atlas.svg",
+        Assert.Equal(AuroraVehicleArtworkCatalog.Asset,
             (string?)atlas.Attribute("Source"));
+        Assert.Equal("640", (string?)atlas.Attribute("Width"));
+        Assert.Equal("255", (string?)atlas.Attribute("Height"));
         Assert.Contains(Named(doc, "EcuVehicleArtboard"), atlas.Ancestors());
         Assert.NotNull(Named(doc, "EcuVehicleArtboard").Element(
             Named(doc, "EcuVehicleArtboard").GetDefaultNamespace() + "Grid.Clip"));

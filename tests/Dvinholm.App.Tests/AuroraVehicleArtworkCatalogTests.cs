@@ -73,7 +73,7 @@ public sealed class AuroraVehicleArtworkCatalogTests
         var uris = AuroraVehicleArtworkCatalog.Models.Select(AuroraVehicleArtworkCatalog.ImageUri).ToArray();
         Assert.Equal(9, uris.Distinct(StringComparer.Ordinal).Count());
         Assert.All(uris, uri => Assert.StartsWith("ms-appx:///Assets/Vehicles/", uri));
-        Assert.Equal(uris[0], AuroraVehicleArtworkCatalog.Asset);
+        Assert.Equal(AuroraVehicleArtworkCatalog.Asset, uris[0]);
     }
 
     [Fact]

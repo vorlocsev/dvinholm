@@ -117,17 +117,20 @@ public sealed class AuroraVisualEnglishLocalizationTests
         var artboard = Named(doc, "EcuVehicleArtboard");
         var image = Named(doc, "EcuVehicleArtworkAtlas");
         Assert.Contains(artboard, image.Ancestors());
-        Assert.Equal("1920", (string?)image.Attribute("Width"));
-        Assert.Equal("765", (string?)image.Attribute("Height"));
-        Assert.Equal("ms-appx:///Assets/Vehicles/Volvo-Model-Atlas.svg",
+        Assert.Equal("640", (string?)image.Attribute("Width"));
+        Assert.Equal("255", (string?)image.Attribute("Height"));
+        Assert.Equal(AuroraVehicleArtworkCatalog.Asset,
             (string?)image.Attribute("Source"));
+        Assert.Equal("Uniform", (string?)image.Attribute("Stretch"));
         Assert.Contains("RectangleGeometry", artboard.ToString());
-        var svg = Source("assets/vehicles/volvo-model-atlas.svg");
-        Assert.Equal(9, svg.Split("stylized reference", StringSplitOptions.None).Length - 1);
-        Assert.Contains("xc90-spa", svg);
+        var models = AuroraVehicleArtworkCatalog.Models;
+        Assert.Equal(9, models.Count);
+        Assert.Contains(models, model => model.Id == "xc90-spa");
+        Assert.All(models, model => Assert.EndsWith(".jpg", AuroraVehicleArtworkCatalog.ImageUri(model)));
         Assert.DoesNotContain("ECM =", image.ToString());
         var project = Source("src/Dvinholm.App/Dvinholm.App.csproj");
-        Assert.Contains("volvo-model-atlas.svg", project);
+        Assert.Contains(@"assets\vehicles\*.jpg", project);
+        Assert.DoesNotContain("volvo-model-atlas.svg", project);
         Assert.Contains("CopyToPublishDirectory=\"PreserveNewest\"", project);
     }
 

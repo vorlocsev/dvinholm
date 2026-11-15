@@ -86,7 +86,7 @@ public sealed class AuroraEcuDtcVisualParityTests
         Assert.Equal("СПРАВОЧНЫЙ РЕНДЕР",
             (string?)Named(doc, "EcuVehicleSchematicLabel").Attribute("Text"));
         Assert.Contains("RectangleGeometry", artboard.ToString());
-        Assert.Equal("ms-appx:///Assets/Vehicles/Volvo-Model-Atlas.svg",
+        Assert.Equal(AuroraVehicleArtworkCatalog.Asset,
             (string?)Named(doc, "EcuVehicleArtworkAtlas").Attribute("Source"));
         Assert.Contains("не указывает физические позиции",
             Named(doc, "EcuDiagramDisclaimer").ToString());
