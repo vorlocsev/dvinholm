@@ -74,6 +74,6 @@ internal static class J2534RegistrationIdentity
             ? "Registration name hint: " + label +
               ". The registration name alone cannot verify a driver or physical adapter."
             : "Подсказка по записи реестра: " + label +
-              ". Только название; драйвер и физический адаптер не проверены.";
+              ". Одно название не подтверждает драйвер или физический адаптер.";
     }
 }
