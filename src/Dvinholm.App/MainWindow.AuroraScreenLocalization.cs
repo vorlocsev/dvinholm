@@ -60,14 +60,14 @@ public sealed partial class MainWindow
         EcuListObservedHeader.Text = L("Наблюдаемый RX", "Observed RX");
         EcuListInferredHeader.Text = L("Предполагаемый TX · не подтверждён",
             "Inferred TX · unverified");
-        EcuVehicleHeading.Text = L("Карта автомобиля", "Vehicle outline");
-        EcuVehicleOrientation.Text = L("ПЕРЕД → ЗАД", "FRONT → REAR");
-        EcuVehicleSchematicLabel.Text = L("УСЛОВНАЯ СХЕМА", "SCHEMATIC ONLY");
+        EcuVehicleHeading.Text = L("Карта автомобиля", "Vehicle model");
+        EcuVehicleOrientation.Text = L("ВЫБРАНО ВРУЧНУЮ", "MANUALLY SELECTED");
+        EcuVehicleSchematicLabel.Text = L("СПРАВОЧНЫЙ РЕНДЕР", "REFERENCE RENDER");
         EcuObservationHeading.Text = L("Наблюдаемые RX · не позиции ECU",
             "Observed RX · not ECU locations");
         EcuDiagramDisclaimer.Text = L(
-            "Схема не указывает физические позиции ECU; местоположение и статус блоков не подтверждаются изображением.",
-            "The outline does not mark physical ECU locations or confirm module identity or status.");
+            "Справочный рендер не указывает физические позиции ECU; выбор модели не подтверждает идентичность автомобиля или блоков.",
+            "Reference artwork does not identify physical ECU locations, vehicle identity or module compatibility.");
         EcuSelectedHeading.Text = L("Выбранный ответ", "Selected response");
         EcuSelectionDisclaimer.Text = L(
             "Нет подтверждённого сопоставления наблюдаемых CAN ID с позициями на автомобиле.",
@@ -75,14 +75,10 @@ public sealed partial class MainWindow
         EcuOpenDiagnosticsButton.Content = L("Диагностика ECU", "ECU diagnostics");
         EcuOpenProfilesButton.Content = L("Перейти к профилям ECU →",
             "Open ECU profiles →");
-        EcuDiagramCaption.Text = EcuVehicleModel.SelectedIndex == 1
-            ? L("XC70 P3 · условный боковой силуэт, выбран вручную",
-                "XC70 P3 · schematic side profile, manually selected")
-            : L("XC90 P2 · условный боковой силуэт, выбран вручную",
-                "XC90 P2 · schematic side profile, manually selected");
+        RefreshAuroraVehicleArtwork();
         RefreshAuroraEcuObservationLocalization();
         AutomationProperties.SetName(EcuVehicleModel,
-            L("Схема автомобиля", "Vehicle outline selection"));
+            L("Модель автомобиля", "Vehicle model selection"));
         ToolTipService.SetToolTip(EcuOpenDiagnosticsButton, L(
             "Переход к диагностике не отправляет запросы к автомобилю.",
             "Navigating to diagnostics does not transmit vehicle requests."));
