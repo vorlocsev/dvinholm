@@ -65,8 +65,8 @@ public sealed partial class MainWindow
             "CEM PIN", "CEM PIN");
         SetPrimaryNavigationLabel("CemConfigurationCatalog", ShellNavConfigLabel,
             "Конфигурация CEM", "CEM configuration");
-        SetPrimaryNavigationLabel("DtcFaults", ShellNavDtcLabel,
-            "Ошибки (DTC)", "Faults (DTC)");
+        SetPrimaryNavigationLabel("DiagnosticsWorkspace", ShellNavDiagnosticsLabel,
+            "Диагностика", "Diagnostics");
         SetPrimaryNavigationLabel("EcuWorkspace", ShellNavEcuLabel,
             "Блоки (ECU)", "Modules (ECU)");
         ShellNavUpdatesLabel.Text = _unifiedEnglish ? "Updates" : "Обновление";
