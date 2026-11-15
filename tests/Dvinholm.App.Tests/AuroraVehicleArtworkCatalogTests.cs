@@ -197,6 +197,26 @@ public sealed class AuroraVehicleArtworkCatalogTests
     }
 
     [Fact]
+    public void S80P3UsesTheReframedSilverStudioImageBaseline()
+    {
+        var model = AuroraVehicleArtworkCatalog.Resolve("s80-p3");
+        Assert.Equal("Volvo S80 II · P3", model.Label);
+        Assert.Equal("ms-appx:///Assets/Vehicles/s80-p3.jpg",
+            AuroraVehicleArtworkCatalog.ImageUri(model));
+
+        // Image-change gate: a different source image must be deliberately
+        // reviewed and this baseline updated. This is NOT OEM visual approval.
+        using var manifest = JsonDocument.Parse(Source("assets/vehicles/manifest.json"));
+        var entry = manifest.RootElement.EnumerateArray()
+            .Single(element => element.GetProperty("modelId").GetString() == model.Id);
+        Assert.Equal(99677, entry.GetProperty("bytes").GetInt32());
+        Assert.Equal("50edd340437d40dfc7f925db9c8542c713470bc1471374fe1a9a9b6d9fc96956",
+            entry.GetProperty("sha256").GetString());
+        Assert.Equal("AI-generated reference render; not verified OEM geometry",
+            entry.GetProperty("source").GetString());
+    }
+
+    [Fact]
     public void JpgViewportPreservesEcuEvidenceOutside()
     {
         var doc = Layout();
