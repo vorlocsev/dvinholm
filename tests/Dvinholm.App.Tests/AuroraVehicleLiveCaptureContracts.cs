@@ -196,4 +196,30 @@ public sealed class AuroraVehicleLiveCaptureContracts
         Assert.DoesNotContain("InvokePattern", capture);
     }
 
+    [Fact]
+    public void LocalJpgHumanReviewReportRequiresRealRuEnManifestEvidence()
+    {
+        var script = Source("eng/Review-VolvoVehicleScreenshots.ps1");
+        Assert.Contains("#requires -Version 5.1", script);
+        Assert.Contains("$IConfirmPrivateOfflineReview", script);
+        Assert.Contains("$env:GITHUB_ACTIONS -eq 'true'", script);
+        Assert.Contains("outside the repository", script);
+        Assert.Contains("Aurora-{0}-vehicle-models-manifest.json", script);
+        Assert.Contains("$rows.Count -ne 9", script);
+        Assert.Contains("$entry.jpgDecodedByWinUiImageOpened", script);
+        Assert.Contains("$entry.artworkViewportSha256", script);
+        Assert.Contains("$pixelHashes.ContainsKey($pixelHash)", script);
+        Assert.Contains("$entry.selectedModelNameVerifiedByUia", script);
+        Assert.Contains("$entry.verifiedReferenceCaption", script);
+        Assert.Contains("$entry.sourceCommitOperatorDeclared", script);
+        Assert.Contains("System.Drawing.Image]::FromFile($png)", script);
+        Assert.Contains("RU and EN actual screenshot dimensions differ", script);
+        Assert.Contains("Aurora-local-vehicle-review.html", script);
+        Assert.Contains("NOT APPROVED until human inspection", script);
+        Assert.DoesNotContain("Invoke-WebRequest", script);
+        Assert.DoesNotContain("Start-Process", script);
+        Assert.DoesNotContain("Connect_Click", script);
+        Assert.DoesNotContain("visual PASS", script);
+    }
+
 }

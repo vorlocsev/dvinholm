@@ -12,6 +12,7 @@ on:
       - 'eng/Sign-UnifiedX64Release.ps1'
       - 'eng/Capture-UnifiedAuroraWinUI3.ps1'
       - 'eng/Review-UnifiedAuroraScreenshots.ps1'
+      - 'eng/Review-VolvoVehicleScreenshots.ps1'
       - 'eng/Package-UnifiedWinUIX64Pilot.ps1'
       - '.github/workflows/winui3-unified-x64.yml'
       - 'docs/design/DVINHOLM-UNIFIED-WINUI3-X64-APPROVED.md'
@@ -132,6 +133,20 @@ jobs:
         shell: pwsh
         run: |
           ./eng/Package-UnifiedWinUIX64Pilot.ps1 -PublishDirectory artifacts/winui3-unified-x64 -ZipPath artifacts/Dvinholm-Windows-x64.zip
+
+      # Parse only: screenshot review is PRIVATE and cannot run in CI.
+      - name: Parse private Volvo vehicle screenshot review script
+        shell: pwsh
+        run: |
+          $tokens = $null
+          $errors = $null
+          [System.Management.Automation.Language.Parser]::ParseFile(
+            (Resolve-Path 'eng/Review-VolvoVehicleScreenshots.ps1').Path,
+            [ref]$tokens, [ref]$errors) | Out-Null
+          if ($errors.Count -ne 0) {
+            $errors | ForEach-Object { Write-Error $_.Message }
+            throw 'Private Volvo JPG screenshot review script has invalid PS 5.1 syntax.'
+          }
 
       # Verify original local JPG assets in the actual x64 ZIP.
       # SHA-256 pins reviewed bytes, not OEM/model geometry.
