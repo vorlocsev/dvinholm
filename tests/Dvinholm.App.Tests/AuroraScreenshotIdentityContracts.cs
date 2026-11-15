@@ -227,16 +227,20 @@ public sealed class AuroraScreenshotIdentityContracts
     public void ScreenshotCaptureParksAndRestoresCursorAroundVisiblePixelCapture()
     {
         var capture = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
-        var save = capture.IndexOf("$bitmap.Save($dest", StringComparison.Ordinal);
-        var preserve = capture.IndexOf("GetCursorPos([ref]$savedCursor)", StringComparison.Ordinal);
+        // Ignore the optional model helper's own bitmap save: the primary
+        // capture loop has a separate cursor-restore contract.
+        var primaryLoop = capture.IndexOf("foreach ($page in $Pages)", StringComparison.Ordinal);
+        var save = capture.IndexOf("$bitmap.Save($dest", primaryLoop, StringComparison.Ordinal);
+        var preserve = capture.IndexOf("GetCursorPos([ref]$savedCursor)", primaryLoop, StringComparison.Ordinal);
         var bounds = capture.IndexOf("$clientBounds = Get-ClientScreenBounds", preserve, StringComparison.Ordinal);
         var park = capture.IndexOf("SetCursorPos($neutralX, $neutralY)", bounds, StringComparison.Ordinal);
         var parked = capture.IndexOf("GetCursorPos([ref]$parkedCursor)", park, StringComparison.Ordinal);
         var settle = capture.IndexOf("Start-Sleep -Milliseconds 1100", parked, StringComparison.Ordinal);
         var verify = capture.IndexOf("Confirm-WorkspaceState $page -RequireVisible", settle, StringComparison.Ordinal);
         var restore = capture.IndexOf("SetCursorPos($savedCursor.X, $savedCursor.Y)", StringComparison.Ordinal);
-        Assert.True(preserve >= 0 && bounds > preserve && park > bounds &&
-            parked > park && settle > parked && verify > settle &&
+        Assert.True(primaryLoop >= 0 && preserve > primaryLoop &&
+            bounds > preserve && park > bounds && parked > park &&
+            settle > parked && verify > settle &&
             save > verify && restore > save);
         Assert.Contains("blank, non-client title-bar area", capture);
         Assert.Contains("the app's client region", capture);
