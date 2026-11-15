@@ -757,9 +757,9 @@
                                     </Border>
                                     <Grid x:Name="CemReferenceGrid" ColumnSpacing="10" RowSpacing="10">
                                             <Grid.ColumnDefinitions>
-                                                <ColumnDefinition x:Name="CemReferenceCategoryColumn" Width="180" />
+                                                <ColumnDefinition x:Name="CemReferenceCategoryColumn" Width="220" />
                                                 <ColumnDefinition x:Name="CemReferenceValuesColumn" Width="*" />
-                                                <ColumnDefinition x:Name="CemReferenceDetailColumn" Width="250" />
+                                                <ColumnDefinition x:Name="CemReferenceDetailColumn" Width="240" />
                                             </Grid.ColumnDefinitions>
                                             <Grid.RowDefinitions>
                                                 <RowDefinition Height="Auto" />
@@ -769,7 +769,13 @@
                                             <Border x:Name="CemReferenceCategoryPane" Grid.Column="0" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
                                                 <StackPanel Spacing="12">
                                                     <TextBlock x:Name="CemConfigCategoriesTitle" Text="Категории" FontSize="17" FontWeight="SemiBold" TextWrapping="Wrap" />
-                                                    <ComboBox x:Name="CemConfigCategory" Header="Группа" HorizontalAlignment="Stretch" SelectionChanged="CemConfigCategory_SelectionChanged" />
+                                                    <ComboBox x:Name="CemConfigCategory" Header="Группа" HorizontalAlignment="Stretch" SelectionChanged="CemConfigCategory_SelectionChanged">
+                                                        <ComboBox.ItemTemplate>
+                                                            <DataTemplate>
+                                                                <TextBlock Text="{Binding Label}" TextWrapping="Wrap" />
+                                                            </DataTemplate>
+                                                        </ComboBox.ItemTemplate>
+                                                    </ComboBox>
                                                     <ComboBox x:Name="CemConfigEvidenceTier" Header="Источник" HorizontalAlignment="Stretch" SelectedIndex="0" SelectionChanged="CemConfigEvidenceTier_SelectionChanged">
                                                         <ComboBoxItem Tag="All" Content="Все источники" />
                                                         <ComboBoxItem Tag="Vendor" Content="Сторонние публикации" />
