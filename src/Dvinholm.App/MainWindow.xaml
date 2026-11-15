@@ -1004,6 +1004,15 @@
                                                          <Grid.Clip>
                                                              <RectangleGeometry Rect="0,0,640,255" />
                                                          </Grid.Clip>
+                                                         <!-- If the local SVG cannot load, the text remains visible underneath. -->
+                                                         <Border x:Name="EcuVehicleArtworkFallback" Width="640" Height="255"
+                                                                 Background="#102B43" BorderBrush="#346582" BorderThickness="1">
+                                                             <TextBlock x:Name="EcuVehicleArtworkFallbackNotice"
+                                                                        Text="Изображение модели временно недоступно"
+                                                                        Foreground="#B6D4E5" TextWrapping="Wrap"
+                                                                        HorizontalAlignment="Center" VerticalAlignment="Center"
+                                                                        FontSize="15" />
+                                                         </Border>
                                                          <Image x:Name="EcuVehicleArtworkAtlas"
                                                                 Source="ms-appx:///Assets/Vehicles/Volvo-Model-Atlas.svg"
                                                                 Width="1920" Height="765"
