@@ -2251,6 +2251,9 @@ public sealed partial class MainWindow : Window
         {
             // Settings are a convenience, not a prerequisite for connecting.
         }
+        // Manual edits invalidate a previously selected registration hint.
+        // No registry rescan or native driver call is required.
+        RefreshJ2534RegistrationHint();
     }
 
     private void RefreshJ2534Devices_Click(object sender, RoutedEventArgs e) =>
@@ -2299,6 +2302,8 @@ public sealed partial class MainWindow : Window
         J2534Devices.SelectedIndex = selectedIndex;
         if (selectedIndex < 0 && devices.Count == 1)
             J2534Devices.SelectedIndex = 0;
+        // Clearing the selector must not leave a stale DiCE/Mongoose hint.
+        RefreshJ2534RegistrationHint();
 
         if (updateStatus)
         {
@@ -2316,6 +2321,14 @@ public sealed partial class MainWindow : Window
         }
     }
 
+    private void RefreshJ2534RegistrationHint()
+    {
+        if (ConnectionRegistrationHintText is null || J2534Devices is null || DllPath is null)
+            return;
+        ConnectionRegistrationHintText.Text = J2534RegistrationIdentity.Caption(
+            J2534Devices.SelectedItem as J2534Device, DllPath.Text, _unifiedEnglish);
+    }
+
     private void RefreshLocalAdapterMetadataLanguage()
     {
         // Display sensitive vendor-reported values exclusively inside the
@@ -2325,12 +2338,14 @@ public sealed partial class MainWindow : Window
             ? J2534ConnectionPresentation.LocalDetails(
                 _session.AdapterVersion, _session.AdapterCapabilities, _unifiedEnglish)
             : J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);
+        RefreshJ2534RegistrationHint();
     }
 
     private void J2534Device_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
         if (J2534Devices.SelectedItem is J2534Device device)
             DllPath.Text = device.DllPath;
+        RefreshJ2534RegistrationHint();
     }
 
 
