@@ -111,24 +111,24 @@ public sealed class AuroraVisualEnglishLocalizationTests
     }
 
     [Fact]
-    public void TwoDistinctSideProfileIllustrationsHaveHeadlightsAndWindowDetails()
+    public void AllNineVehicleRendersArePackagedOfflineAndClippedToOneSelectedModel()
     {
         var doc = Layout();
-        var stage = Named(doc, "EcuVehicleArtboard");
-        Assert.Contains(stage, Named(doc, "EcuP2SideProfile").Ancestors());
-        Assert.Contains(stage, Named(doc, "EcuP3SideProfile").Ancestors());
-        var p2 = Named(doc, "EcuP2SideProfile");
-        var p3 = Named(doc, "EcuP3SideProfile");
-        Assert.Equal("Collapsed", (string?)p3.Attribute("Visibility"));
-        Assert.True(p2.Elements().Count(e => e.Name.LocalName == "Path") >= 6);
-        Assert.True(p3.Elements().Count(e => e.Name.LocalName == "Path") >= 5);
-        Assert.True(p2.Elements().Count(e => e.Name.LocalName == "Ellipse") >= 4);
-        Assert.True(p3.Elements().Count(e => e.Name.LocalName == "Ellipse") >= 4);
-        Assert.NotEqual(
-            (string?)p2.Elements().First(e => e.Name.LocalName == "Path").Attribute("Data"),
-            (string?)p3.Elements().First(e => e.Name.LocalName == "Path").Attribute("Data"));
-        Assert.DoesNotContain("ECM", p2.ToString());
-        Assert.DoesNotContain("CEM", p3.ToString());
+        var artboard = Named(doc, "EcuVehicleArtboard");
+        var image = Named(doc, "EcuVehicleArtworkAtlas");
+        Assert.Contains(artboard, image.Ancestors());
+        Assert.Equal("1920", (string?)image.Attribute("Width"));
+        Assert.Equal("765", (string?)image.Attribute("Height"));
+        Assert.Equal("ms-appx:///Assets/Vehicles/Volvo-Model-Atlas.svg",
+            (string?)image.Attribute("Source"));
+        Assert.Contains("RectangleGeometry", artboard.ToString());
+        var svg = Source("assets/vehicles/volvo-model-atlas.svg");
+        Assert.Equal(9, svg.Split("stylized reference", StringSplitOptions.None).Length - 1);
+        Assert.Contains("xc90-spa", svg);
+        Assert.DoesNotContain("ECM =", image.ToString());
+        var project = Source("src/Dvinholm.App/Dvinholm.App.csproj");
+        Assert.Contains("volvo-model-atlas.svg", project);
+        Assert.Contains("CopyToPublishDirectory=\"PreserveNewest\"", project);
     }
 
     [Fact]
