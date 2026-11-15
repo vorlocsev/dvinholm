@@ -123,6 +123,11 @@ public sealed class AuroraVehicleArtworkCatalogTests
         Assert.DoesNotContain(artboard, Named(doc, "EcuObservationRail").Ancestors());
         Assert.Contains("не указывает физические позиции ECU",
             Named(doc, "EcuDiagramDisclaimer").ToString());
+        var fallback = Named(doc, "EcuVehicleArtworkFallbackNotice");
+        Assert.Contains(artboard, fallback.Ancestors());
+        Assert.Contains("Изображение модели временно недоступно", fallback.ToString());
+        Assert.Contains("EcuVehicleArtworkFallbackNotice.Text = L(",
+            Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs"));
     }
 
     [Fact]
