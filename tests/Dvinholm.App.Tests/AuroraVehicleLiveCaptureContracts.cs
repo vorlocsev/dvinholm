@@ -124,7 +124,7 @@ public sealed class AuroraVehicleLiveCaptureContracts
         Assert.Contains("if ($vehicleResults.Count -ne $vehicleModels.Count)", script);
         Assert.Contains("Aurora-$Language-vehicle-models-manifest.json", script);
         Assert.Contains("Aurora-Ecu-Model-$($model.id)-$Language-$fixedWidthDip-dip.png", script);
-        Assert.Contains("actual desktop pixels and verified UIA selection/caption only", script);
+        Assert.Contains("actual desktop pixels with verified UIA model, caption and WinUI image decode", script);
         Assert.Contains("human review", script);
         Assert.DoesNotContain("vehicle model visually verified by CI", script);
     }
@@ -144,5 +144,29 @@ public sealed class AuroraVehicleLiveCaptureContracts
             Assert.DoesNotContain(forbidden, section);
         Assert.Contains("selectedModelNameVerifiedByUia", section);
         Assert.Contains("sourceCommitOperatorDeclared", section);
+    }
+
+    [Fact]
+    public void ModelScreenshotsRequireActualWinUiImageDecodeBeforeSavingPixels()
+    {
+        var script = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
+        var guard = script.IndexOf("function Assert-OnlyVehicleAtlasLoaded", StringComparison.Ordinal);
+        var select = script.IndexOf("function Select-OnlyVehicleArtwork(", guard, StringComparison.Ordinal);
+        var capture = script.IndexOf("function Capture-OnlyVehicleModels(", select, StringComparison.Ordinal);
+        var bitmap = script.IndexOf("$bitmap = [System.Drawing.Bitmap]::new($width, $height)",
+            capture, StringComparison.Ordinal);
+        var pixelSave = script.IndexOf("$bitmap.Save($destination", bitmap, StringComparison.Ordinal);
+        Assert.True(guard >= 0 && select > guard && capture > select &&
+            bitmap > capture && pixelSave > bitmap);
+        var verify = script[guard..select];
+        Assert.Contains("DvinholmVehicleArtworkCaption", verify);
+        Assert.Contains("$caption.Current.HelpText -cne 'DvinholmVehicleAtlasLoaded'", verify);
+        Assert.Contains("throw 'Vehicle atlas SVG was not confirmed decoded by WinUI", verify);
+        Assert.Contains("[void](Assert-OnlyVehicleAtlasLoaded)", script[select..capture]);
+        var beforePixels = script[capture..bitmap];
+        Assert.Contains("[void](Assert-OnlyVehicleAtlasLoaded)", beforePixels);
+        Assert.Contains("atlasDecodedByWinUiImageOpened = $true", script);
+        Assert.DoesNotContain("SendInput", verify);
+        Assert.DoesNotContain("InvokePattern", verify);
     }
 }
