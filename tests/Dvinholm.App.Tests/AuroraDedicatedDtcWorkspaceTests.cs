@@ -141,4 +141,21 @@ public sealed class AuroraDedicatedDtcWorkspaceTests
         Assert.Contains("ReadDtcButton.IsEnabled = ready && TryGetSelectedDtcStatusMask(out _);", source);
         Assert.Contains("client.ReadDtcResultByStatusMask(statusMask, token)", source);
     }
+
+    [Fact]
+    public void NestedFaultWorkspaceRetainsDiagnosticsSidebarSelectionOnly()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        var begin = source.IndexOf("private void SelectWorkspaceNavigation(", StringComparison.Ordinal);
+        var end = source.IndexOf("private void ShowDashboardWorkspace(", begin, StringComparison.Ordinal);
+        Assert.True(begin >= 0 && end > begin);
+        var selector = source[begin..end];
+        Assert.Contains("destination == AuroraDestination.DtcFaults", selector);
+        Assert.Contains("target == AuroraDestination.DiagnosticsWorkspace", selector);
+        Assert.Contains("target == destination", selector);
+        Assert.Contains("!_unifiedUpdatesActive", selector);
+        Assert.DoesNotContain("ReadDtc_Click(", selector);
+        Assert.DoesNotContain("PassThru", selector);
+        Assert.DoesNotContain("SendAsync(", selector);
+    }
 }
