@@ -58,7 +58,7 @@ public sealed class AuroraIntermediateEcuTwoPaneLayoutTests
         Assert.Equal("0", (string?)Named(doc, "EcuWorkbenchListPane").Attribute("Grid.Column"));
         Assert.Equal("1", (string?)Named(doc, "EcuWorkbenchVehiclePane").Attribute("Grid.Column"));
         Assert.Null(Named(doc, "EcuWorkbenchVehiclePane").Attribute("Grid.Row"));
-        Assert.Contains(Named(doc, "EcuP2SideProfile"),
+        Assert.Contains(Named(doc, "EcuVehicleArtworkAtlas"),
             Named(doc, "EcuWorkbenchVehiclePane").Descendants());
         Assert.Contains(Named(doc, "EcusView"),
             Named(doc, "EcuWorkbenchListPane").Descendants());
