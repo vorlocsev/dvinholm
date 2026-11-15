@@ -376,8 +376,13 @@ public sealed partial class MainWindow : Window
     {
         foreach (var button in SidebarNavPanel.Children.OfType<Button>())
         {
+            // Faults is a child of the approved Diagnostics primary workspace.
+            // Keep the parent selected while showing the dedicated DTC page.
             var selected = AuroraWorkspaceNavigation.TryParse(button.Tag as string, out var target)
-                && target == destination && !_unifiedUpdatesActive;
+                && !_unifiedUpdatesActive &&
+                (target == destination ||
+                 (destination == AuroraDestination.DtcFaults &&
+                  target == AuroraDestination.DiagnosticsWorkspace));
             ApplyAuroraNavigationSurface(button, selected);
             Microsoft.UI.Xaml.Automation.AutomationProperties.SetItemStatus(button, selected
                 ? L("Выбран", "Selected") : "");
