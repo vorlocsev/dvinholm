@@ -78,10 +78,10 @@ public sealed class AuroraEcuFirstFoldCaptionWrappingTests
         var selector = Named(doc, "EcuVehicleModel");
         Assert.Contains(Named(doc, "EcuWorkbenchVehiclePane"), title.Ancestors());
         Assert.Equal("1", (string?)selector.Attribute("Grid.Column"));
-        Assert.Equal("150", (string?)selector.Attribute("Width"));
+        Assert.Equal("188", (string?)selector.Attribute("Width"));
         Assert.Equal("EcuVehicleModel_SelectionChanged",
             (string?)selector.Attribute("SelectionChanged"));
-        Assert.Equal(2, selector.Elements().Count(e => e.Name.LocalName == "ComboBoxItem"));
+        Assert.Equal(9, selector.Elements().Count(e => e.Name.LocalName == "ComboBoxItem"));
     }
 
     [Fact]
