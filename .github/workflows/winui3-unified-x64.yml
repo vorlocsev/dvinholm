@@ -172,6 +172,7 @@ jobs:
             'FullyQualifiedName~AuroraCemConfigReferenceFilterTests'
             'FullyQualifiedName~J2534PeInspectorTests'
             'FullyQualifiedName~J2534AdapterAuditReportTests'
+            'FullyQualifiedName~J2534RegistrationIdentityTests'
             'FullyQualifiedName~AuroraApprovedReferenceTests'
             'FullyQualifiedName~CemSafeReleaseWorkspaceTests'
             'FullyQualifiedName~AuroraCemCatalogLocalizationTests'
