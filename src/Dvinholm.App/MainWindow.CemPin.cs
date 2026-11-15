@@ -316,6 +316,7 @@ public sealed partial class MainWindow
             guard?.Dispose();
             _udsCts = null;
             CancelUdsButton.Content = cancelLabel;
+            RefreshCancellationButtonLanguage();
             CancelUdsButton.IsEnabled = false;
             DiscoverButton.IsEnabled = _connected && _session.IsConnected && !_closing;
             ConnectButton.IsEnabled = !_closing;
