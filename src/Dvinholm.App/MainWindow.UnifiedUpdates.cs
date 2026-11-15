@@ -106,6 +106,9 @@ public sealed partial class MainWindow
         ApplyAuroraCemConfigLocalization();
         ApplyAuroraPrimaryScreenLocalization();
         RefreshCemDevelopmentLabels();
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        RefreshDevelopmentToolsLanguage();
+#endif
         RefreshCanMonitorCounterLanguage();
         RefreshUdsReadinessHint();
         // Relabel already observed passive RX items without clearing their
