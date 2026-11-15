@@ -125,7 +125,7 @@ public sealed class AuroraHomeLayoutTests
     {
         var main = Source("src/Dvinholm.App/MainWindow.xaml.cs");
         Assert.Contains("DashboardReturn_Click", main);
-        Assert.Contains("DashboardNavigate(sender, AuroraDestination.J2534Connection)", main);
+        Assert.Contains("DashboardNavigate(sender, AuroraDestination.CemPinReadiness)", main);
         Assert.DoesNotContain(Main.Descendants(), x => x.Name.LocalName == "Button" &&
             (string?)x.Attribute(XamlName + "Name") == "SidebarHomeButton");
     }
