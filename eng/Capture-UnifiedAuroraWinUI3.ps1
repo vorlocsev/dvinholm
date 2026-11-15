@@ -842,11 +842,30 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
             if ([DvinholmWinUiCaptureNative]::GetAncestor($fg, 2) -ne $handle) {
                 throw "Dvinholm lost foreground before model screenshot $($model.id)."
             }
-            $widthNow = [DvinholmWinUiCaptureNative]::GetDpiForWindow($handle)
-            if ($widthNow -ne $dpi) {
+            $dpiNow = [DvinholmWinUiCaptureNative]::GetDpiForWindow($handle)
+            if ($dpiNow -ne $dpi) {
                 throw "DPI changed during model screenshot $($model.id)."
             }
-            Start-Sleep -Milliseconds 1200
+            $outerNow = New-Object DvinholmWinUiCaptureNative+RECT
+            $clientNow = New-Object DvinholmWinUiCaptureNative+RECT
+            if (-not [DvinholmWinUiCaptureNative]::GetWindowRect($handle, [ref]$outerNow) -or
+                -not [DvinholmWinUiCaptureNative]::GetClientRect($handle, [ref]$clientNow) -or
+                $outerNow.Left -ne $left -or $outerNow.Top -ne $top -or
+                ($outerNow.Right - $outerNow.Left) -ne $width -or
+                ($outerNow.Bottom - $outerNow.Top) -ne $height -or
+                [Math]::Abs(($clientNow.Right - $clientNow.Left) - $fixedWidthDip * $dpi / 96.0) -gt 4 -or
+                [Math]::Abs(($clientNow.Bottom - $clientNow.Top) - $fixedHeightDip * $dpi / 96.0) -gt 4) {
+                throw "Fixed Aurora viewport moved or resized during model capture $($model.id)."
+            }
+            $pointer = New-Object DvinholmWinUiCaptureNative+POINT
+            $clientBounds = Get-ClientScreenBounds
+            if ($null -eq $clientBounds -or
+                -not [DvinholmWinUiCaptureNative]::GetCursorPos([ref]$pointer) -or
+                ($pointer.X -ge $clientBounds.Left -and $pointer.X -lt $clientBounds.Right -and
+                 $pointer.Y -ge $clientBounds.Top -and $pointer.Y -lt $clientBounds.Bottom)) {
+                throw "Pointer is inside the client area during model capture $($model.id); tooltip risk."
+            }
+            Start-Sleep -Milliseconds 3200
             Confirm-WorkspaceState 'Ecu' -RequireVisible
             if ((Get-SelectedVehicleModelName) -cne $model.name) {
                 throw "Vehicle model changed before screenshot $($model.id)."
