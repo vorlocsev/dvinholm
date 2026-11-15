@@ -124,14 +124,15 @@ public sealed class AuroraEcuThreePaneWorkspaceTests
     }
 
     [Fact]
-    public void BothSideProfilesAndPassiveObservationRailRemainInCentralPane()
+    public void NineModelArtworkAndPassiveObservationRailRemainInCentralPane()
     {
         var doc = Layout();
         var car = Named(doc, "EcuWorkbenchVehiclePane");
-        foreach (var name in new[] { "EcuP2SideProfile", "EcuP3SideProfile",
-            "EcuVehicleModel", "EcuObservationRail", "EcuObservationRailSummary" })
+        foreach (var name in new[] { "EcuVehicleArtworkAtlas", "EcuVehicleModel",
+            "EcuObservationRail", "EcuObservationRailSummary" })
             Assert.Contains(car, Named(doc, name).Ancestors());
-        Assert.Equal("Collapsed", (string?)Named(doc, "EcuP3SideProfile").Attribute("Visibility"));
+        Assert.Equal(9, Named(doc, "EcuVehicleModel").Elements().Count());
+        Assert.Contains("RectangleGeometry", Named(doc, "EcuVehicleArtboard").ToString());
         Assert.Contains("не позиции ECU", car.ToString());
         Assert.Contains("не указывает физические позиции ECU", car.ToString());
     }
