@@ -428,4 +428,43 @@ public sealed class AuroraVisualEnglishLocalizationTests
         Assert.DoesNotContain("SendAsync(", projection);
         Assert.DoesNotContain("ReadDid_Click(", projection);
     }
+
+    [Fact]
+    public void CemDialogsUseSelectedApplicationLanguageNotWindowsCulture()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        Assert.Contains("private string CemText(string russian, string english) => L(russian, english);", source);
+        Assert.DoesNotContain("CurrentUICulture.TwoLetterISOLanguageName", source);
+        Assert.DoesNotContain("private static string CemText(", source);
+
+        var pin = Source("src/Dvinholm.App/MainWindow.CemPin.cs");
+        var saved = Source("src/Dvinholm.App/MainWindow.CemPinSaved.cs");
+        Assert.Contains("Title = CemText(", pin);
+        Assert.Contains("Title = CemText(", saved);
+        Assert.Contains("CemPinResultText.Text = CemText(", pin);
+        Assert.Contains("CemPinResultText.Text = CemText(", saved);
+    }
+
+    [Fact]
+    public void CemPinSearchCancelRestoresLatestRuEnLanguageAfterCompletion()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.CemPin.cs");
+        var begin = source.IndexOf("private async void ReadCemPin_Click(", StringComparison.Ordinal);
+        Assert.True(begin >= 0);
+        var body = source[begin..];
+        Assert.Contains("CancelUdsButton.Content = cancelLabel;", body);
+        Assert.Contains("RefreshCancellationButtonLanguage();", body);
+        Assert.True(body.IndexOf("CancelUdsButton.Content = cancelLabel;", StringComparison.Ordinal) <
+            body.IndexOf("RefreshCancellationButtonLanguage();", StringComparison.Ordinal));
+
+        var switcher = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
+        Assert.Contains("RefreshCancellationButtonLanguage();", switcher);
+        var from = switcher.IndexOf("private void RefreshCancellationButtonLanguage()", StringComparison.Ordinal);
+        var to = switcher.IndexOf("private void SetPrimaryNavigationLabel(", from, StringComparison.Ordinal);
+        Assert.True(from >= 0 && to > from);
+        var localeOnly = switcher[from..to];
+        Assert.DoesNotContain("cts.Cancel(", localeOnly);
+        Assert.DoesNotContain("SendAsync(", localeOnly);
+        Assert.DoesNotContain("PassThru", localeOnly);
+    }
 }
