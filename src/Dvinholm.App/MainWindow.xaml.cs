@@ -3097,8 +3097,9 @@ public sealed partial class MainWindow : Window
     }
 
 #if DVINHOLM_DEVELOPMENT_FEATURES
-    private static string CemText(string russian, string english) =>
-        System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName == "ru" ? russian : english;
+    // Respect the application's RU/EN selector, not the host Windows UI culture.
+    // All callers are instance UI operations, including consent and PIN dialogs.
+    private string CemText(string russian, string english) => L(russian, english);
 
     private bool CanUseCemPartRoute(bool requireIdle) =>
         _connected && _session.IsConnected && !_closing && _demoTimer is null && _monitorTask is null &&
