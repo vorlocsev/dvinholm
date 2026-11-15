@@ -77,3 +77,31 @@ documented revision-specific option definitions remain blocked.
 length and index boundaries, unknown raw values, invalid shape, integrity
 hash changes, identical/different comparisons, cross-generation rejection,
 immutability, research catalog isolation and no-I/O contracts.
+
+## Stage: offline revision-scoped mapping research intake (NOT production)
+
+The SectorV archive analysis/CEM_CONFIGURATION.md establishes that the
+P3 definition catalog requires 252 entries ordered by ordinal ID. It
+does NOT supply that complete catalog, the hardware-part dictionary or
+version-scoped option meanings. The P2 body likewise has 140 raw values
+without a reusable verified parameter dictionary in this research package.
+
+CemConfigurationMappingResearch therefore accepts ONLY user-proposed
+metadata: P2/P3 format, 1-based ordinal, claimed hardware part number,
+claimed software revision, research text and source citation.
+The complete bounded (maximum 64) candidate set is validated first.
+Duplicate/conflicting exact scopes, invalid indices and malformed input
+fail closed. A unique exact match returns only the existing raw value
+and status UnverifiedResearchMatch, never a verified option name.
+A source citation or self-described revision cannot authenticate a CEM.
+
+The production mapping catalog remains empty. No D2/J2534 connection,
+new request path, PIN access, write, configuration backup, firmware
+identity validation or model auto-detection is introduced. Existing
+VolvoP2CemParameterEvidenceCatalog remains separately scoped to
+its P2 XC90 advertising metadata, not to a physical index offset.
+
+10 synthetic xUnit tests cover both formats, missing sources, exact
+research-only joins, revision mismatch, invalid/duplicate records,
+catalog-wide validation, bounded input, forged snapshots, and no-I/O
+capability boundaries. This research gate is not proof of OEM accuracy.

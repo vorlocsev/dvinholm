@@ -227,6 +227,7 @@ jobs:
             'FullyQualifiedName~CemPartNumberFrameDecoderTests'
             'FullyQualifiedName~CemConfigurationBlockDecoderTests'
             'FullyQualifiedName~CemConfigurationIndexedReviewTests'
+            'FullyQualifiedName~CemConfigurationMappingResearchTests'
             'FullyQualifiedName~CemPartNumberReaderTests'
             'FullyQualifiedName~CemReadOnlyPrerequisiteReportTests'
             'FullyQualifiedName~CemIdentityEvidenceReportTests'
