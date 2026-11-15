@@ -236,4 +236,34 @@ public sealed class AuroraCemVisualParityTests
         Assert.DoesNotContain("ReadCemPin_Click(", projection);
         Assert.DoesNotContain("SendAsync(", projection);
     }
+
+    [Fact]
+    public void LongRussianCemCategoryLabelsWrapWithoutChangingTheCatalogFilter()
+    {
+        var doc = Layout();
+        var grid = Named(doc, "CemReferenceGrid");
+        var definitions = grid.Elements().Single(e => e.Name.LocalName == "Grid.ColumnDefinitions");
+        var columns = definitions.Elements().ToArray();
+        Assert.Equal("220", (string?)columns[0].Attribute("Width"));
+        Assert.Equal("*", (string?)columns[1].Attribute("Width"));
+        Assert.Equal("240", (string?)columns[2].Attribute("Width"));
+
+        var combo = Named(doc, "CemConfigCategory");
+        Assert.Equal("CemConfigCategory_SelectionChanged",
+            (string?)combo.Attribute("SelectionChanged"));
+        Assert.Equal("Stretch", (string?)combo.Attribute("HorizontalAlignment"));
+        var template = combo.Descendants().Single(e => e.Name.LocalName == "DataTemplate");
+        var caption = template.Descendants().Single(e => e.Name.LocalName == "TextBlock");
+        Assert.Equal("{Binding Label}", (string?)caption.Attribute("Text"));
+        Assert.Equal("Wrap", (string?)caption.Attribute("TextWrapping"));
+
+        // Localized items change only their label; the stable canonical
+        // category still drives filtering and the selected research ID.
+        var source = Source("src/Dvinholm.App/MainWindow.AuroraReference.cs");
+        Assert.Contains("selectedCategory = (CemConfigCategory.SelectedItem as", source);
+        Assert.Contains("?.CanonicalCategory;", source);
+        Assert.Contains("CemConfigCategory.ItemsSource = categories;", source);
+        Assert.Contains("CemConfigCategory.SelectedIndex = index < 0 ? 0 : index;", source);
+        Assert.Contains("AuroraCemConfigReferenceFilter.FindLocalized(query, category, tier)", source);
+    }
 }
