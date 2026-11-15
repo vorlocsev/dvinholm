@@ -245,7 +245,7 @@ public sealed class AuroraVisualEnglishLocalizationTests
         Assert.Contains("ShowAuroraEcuObservationRail(", source);
         Assert.Contains("HighlightAuroraEcuObservation(index);", source);
         Assert.Contains("Index only; ECU identity", source);
-        Assert.Contains("schematic side profile, manually selected", reference);
+        Assert.Contains("reference render, selected manually", reference);
         Assert.DoesNotContain("SendAsync(", primary);
         Assert.DoesNotContain("PassThruWriteMsgs", primary);
         Assert.DoesNotContain("ClearDiagnosticInformation", primary);
