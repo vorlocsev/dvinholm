@@ -694,8 +694,8 @@
                             </Border>
                             <Border Style="{StaticResource AuroraCard}" x:Name="CemPinSearchCard" Visibility="Collapsed">
                                 <StackPanel Spacing="18">
-                                    <TextBlock Text="02  ·  Поиск и сохранённые PIN" FontSize="20" FontWeight="SemiBold" />
-                                    <TextBlock Text="Задайте диапазон попыток. Найденные PIN сохраняются с защитой текущего пользователя Windows." Foreground="#9EB8CC" />
+                                    <TextBlock x:Name="CemPinSearchHeading" Text="02  ·  Экспериментальный поиск PIN" FontSize="20" FontWeight="SemiBold" TextWrapping="Wrap" />
+                                    <TextBlock x:Name="CemPinSearchIntro" Text="Только Development. Результат эксперимента не подтверждает PIN физического CEM." Foreground="#9EB8CC" TextWrapping="Wrap" />
                                     <StackPanel x:Name="CemPinLivePanel" Spacing="6" Visibility="Collapsed" RequestedTheme="Dark">
                                         <Grid ColumnSpacing="12" RowSpacing="16">
                                             <Grid.ColumnDefinitions>
