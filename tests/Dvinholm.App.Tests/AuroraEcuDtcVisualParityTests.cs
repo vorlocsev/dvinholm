@@ -69,8 +69,10 @@ public sealed class AuroraEcuDtcVisualParityTests
         Assert.Contains(Named(doc, "EcusView"), Named(doc, "EcuWorkbenchListPane").Descendants());
         Assert.Contains(Named(doc, "EcuVehicleArtboard"), Named(doc, "EcuWorkbenchVehiclePane").Descendants());
         Assert.Contains(Named(doc, "EcuSelectionInfo"), Named(doc, "EcuWorkbenchDetailPane").Descendants());
-        Assert.NotNull(Named(doc, "EcuP2SideProfile"));
-        Assert.NotNull(Named(doc, "EcuP3SideProfile"));
+        Assert.Contains(Named(doc, "EcuVehicleArtworkAtlas"),
+            Named(doc, "EcuWorkbenchVehiclePane").Descendants());
+        Assert.Contains(Named(doc, "EcuVehicleArtworkFallbackNotice"),
+            Named(doc, "EcuVehicleArtboard").Descendants());
     }
 
     [Fact]
@@ -81,9 +83,11 @@ public sealed class AuroraEcuDtcVisualParityTests
         var stamp = Named(doc, "EcuVehicleSchematicStamp");
         Assert.Contains(stamp, artboard.Descendants());
         Assert.Equal("False", (string?)stamp.Attribute("IsHitTestVisible"));
-        Assert.Equal("УСЛОВНАЯ СХЕМА",
+        Assert.Equal("СПРАВОЧНЫЙ РЕНДЕР",
             (string?)Named(doc, "EcuVehicleSchematicLabel").Attribute("Text"));
-        Assert.True(artboard.Elements().Count(e => e.Name.LocalName == "Path") >= 3);
+        Assert.Contains("RectangleGeometry", artboard.ToString());
+        Assert.Equal("ms-appx:///Assets/Vehicles/Volvo-Model-Atlas.svg",
+            (string?)Named(doc, "EcuVehicleArtworkAtlas").Attribute("Source"));
         Assert.Contains("не указывает физические позиции",
             Named(doc, "EcuDiagramDisclaimer").ToString());
         Assert.Null(stamp.Attribute("Click"));
