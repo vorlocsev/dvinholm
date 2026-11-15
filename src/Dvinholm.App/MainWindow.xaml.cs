@@ -3142,7 +3142,7 @@ public sealed partial class MainWindow : Window
             HardwareFilterButton.IsEnabled = false;
             StartButton.IsEnabled = false;
             CancelUdsButton.IsEnabled = true;
-            CancelUdsButton.Content = CemText("Отмена CEM", "Cancel CEM");
+            CancelUdsButton.Content = L("Отмена CEM", "Cancel CEM");
             var consent = new CheckBox
             {
                 Content = new TextBlock
@@ -3232,6 +3232,7 @@ public sealed partial class MainWindow : Window
         {
             _udsCts = null;
             CancelUdsButton.Content = cancelLabel;
+            RefreshCancellationButtonLanguage();
             CancelUdsButton.IsEnabled = false;
             DiscoverButton.IsEnabled = _connected && _session.IsConnected && !_closing;
             ConnectButton.IsEnabled = !_closing;
