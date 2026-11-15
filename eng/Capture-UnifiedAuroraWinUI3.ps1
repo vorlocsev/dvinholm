@@ -23,8 +23,8 @@ param(
     [Parameter(Mandatory=$true)]
     [switch]$IConfirmOfflineNoSecrets,
 
-    [ValidateSet('Connection','Updates','CemPin','CemConfiguration','Dtc','Ecu')]
-    [string[]]$Pages = @('Connection','Updates','CemPin','CemConfiguration','Dtc','Ecu'),
+    [ValidateSet('Connection','Updates','CemPin','CemConfiguration','Diagnostics','Dtc','Ecu')]
+    [string[]]$Pages = @('CemPin','CemConfiguration','Ecu','Diagnostics','Updates','Connection'),
 
     [ValidatePattern('^$|^[0-9a-fA-F]{40}$')]
     [string]$CommitSha = '',
@@ -223,11 +223,11 @@ if ($null -eq $root) {
 $labels = @{
     ru = @{
         Connection='Подключение'; Updates='Обновление'; CemPin='CEM PIN';
-        CemConfiguration='Конфигурация CEM'; Dtc='Ошибки (DTC)'; Ecu='Блоки (ECU)'
+        CemConfiguration='Конфигурация CEM'; Diagnostics='Диагностика'; Dtc='Ошибки (DTC)'; Ecu='Блоки (ECU)'
     }
     en = @{
         Connection='Connection'; Updates='Updates'; CemPin='CEM PIN';
-        CemConfiguration='CEM configuration'; Dtc='Faults (DTC)'; Ecu='Modules (ECU)'
+        CemConfiguration='CEM configuration'; Diagnostics='Diagnostics'; Dtc='Faults (DTC)'; Ecu='Modules (ECU)'
     }
 }
 
@@ -237,11 +237,11 @@ $labels = @{
 $expectedTitles = @{
     ru = @{
         Connection='Подключение'; Updates='Обновление'; CemPin='CEM PIN';
-        CemConfiguration='Конфигурация CEM'; Dtc='Ошибки (DTC)'; Ecu='Блоки ECU'
+        CemConfiguration='Конфигурация CEM'; Diagnostics='Диагностика'; Dtc='Ошибки (DTC)'; Ecu='Блоки ECU'
     }
     en = @{
         Connection='Connection'; Updates='Updates'; CemPin='CEM PIN';
-        CemConfiguration='CEM configuration'; Dtc='Faults (DTC)'; Ecu='Modules (ECU)'
+        CemConfiguration='CEM configuration'; Diagnostics='Diagnostics'; Dtc='Faults (DTC)'; Ecu='Modules (ECU)'
     }
 }
 $localeNames = @{ ru='Русский'; en='English' }
@@ -464,7 +464,7 @@ function Assert-WorkspaceScrollToEnd(
     [int]$captureWidth = 0,
     [int]$captureHeight = 0
 ) {
-    if ($page -notin @('CemPin','CemConfiguration','Dtc','Ecu')) { return $false }
+    if ($page -notin @('CemPin','CemConfiguration','Ecu','Diagnostics')) { return $false }
 
     # Target the outer page scroller by its unique app-supplied UIA ID.
     # Do not interact with nested diagnostic lists, buttons or vehicle controls.
@@ -650,7 +650,7 @@ function Assert-WorkspaceTopBeforePixels([string]$page) {
     # The app resets the first fold after navigation, but that request alone
     # is not evidence that WinUI has actually completed the scroll.
     # Read only the OUTER workspace UIA peer, never nested diagnostic lists.
-    if ($page -notin @('CemPin','CemConfiguration','Dtc','Ecu')) {
+    if ($page -notin @('CemPin','CemConfiguration','Ecu','Diagnostics')) {
         return $false
     }
     $condition = [System.Windows.Automation.PropertyCondition]::new(
@@ -692,6 +692,9 @@ function Assert-WorkspaceTopBeforePixels([string]$page) {
 }
 
 function Invoke-OnlyNavigation([string]$page) {
+    # Optional DTC capture first opens the approved Diagnostics workspace,
+    # then follows its explicit navigation-only fault-code shortcut.
+    if ($page -eq 'Dtc') { Invoke-OnlyNavigation 'Diagnostics' }
     $name = $labels[$Language][$page]
     $condition = [System.Windows.Automation.PropertyCondition]::new(
         [System.Windows.Automation.AutomationElement]::NameProperty, $name)
@@ -833,7 +836,7 @@ foreach ($page in $Pages) {
         Confirm-WorkspaceState $page -RequireVisible
         if ($VerifyWorkspaceScroll) {
             if ($CaptureBottomViews -and
-                $page -in @('CemPin','CemConfiguration','Dtc','Ecu')) {
+                $page -in @('CemPin','CemConfiguration','Ecu','Diagnostics')) {
                 $bottomFilename = "Aurora-$page-$Language-$fixedWidthDip-dip-bottom.png"
                 $bottomDest = Join-Path $output $bottomFilename
                 $bottomVerified = Assert-WorkspaceScrollToEnd $page $bottomDest $rect.Left $rect.Top $actualWidth $actualHeight
@@ -869,7 +872,7 @@ foreach ($page in $Pages) {
     # scrolling here; if the app did not reset to top, refuse the labelled PNG.
     $topFoldVerified = $false
     if ($VerifyWorkspaceScroll -and
-        $page -in @('CemPin','CemConfiguration','Dtc','Ecu')) {
+        $page -in @('CemPin','CemConfiguration','Ecu','Diagnostics')) {
         $topFoldVerified = Assert-WorkspaceTopBeforePixels $page
     }
     $filename = "Aurora-$page-$Language-$fixedWidthDip-dip.png"
