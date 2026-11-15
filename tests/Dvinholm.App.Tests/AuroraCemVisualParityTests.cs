@@ -266,4 +266,29 @@ public sealed class AuroraCemVisualParityTests
         Assert.Contains("CemConfigCategory.SelectedIndex = index < 0 ? 0 : index;", source);
         Assert.Contains("AuroraCemConfigReferenceFilter.FindLocalized(query, category, tier)", source);
     }
+
+    [Fact]
+    public void CemEvidenceReferenceIsScrollableAndNeverEllipsized()
+    {
+        var doc = Layout();
+        var evidence = Named(doc, "CemConfigDetailEvidence");
+        Assert.Equal("TextBlock", evidence.Name.LocalName);
+        Assert.Null(evidence.Attribute("MaxLines"));
+        Assert.Null(evidence.Attribute("TextTrimming"));
+        Assert.Equal("Wrap", (string?)evidence.Attribute("TextWrapping"));
+        Assert.Equal("True", (string?)evidence.Attribute("IsTextSelectionEnabled"));
+
+        var scroll = Named(doc, "CemConfigEvidenceScroll");
+        Assert.Equal("ScrollViewer", scroll.Name.LocalName);
+        Assert.Equal("Auto", (string?)scroll.Attribute("VerticalScrollBarVisibility"));
+        Assert.Equal("Disabled", (string?)scroll.Attribute("HorizontalScrollBarVisibility"));
+        Assert.Equal("112", (string?)scroll.Attribute("MaxHeight"));
+        Assert.Contains(scroll, evidence.Ancestors());
+
+        var projection = Source("src/Dvinholm.App/MainWindow.AuroraReference.cs");
+        Assert.Contains("CemConfigDetailEvidence.Text = L(", projection);
+        Assert.Contains("row.EvidenceReference;", projection);
+        Assert.Contains("CemConfigDetailEvidence.Text = string.Empty;", projection);
+        Assert.DoesNotContain("row.EvidenceReference[..", projection);
+    }
 }
