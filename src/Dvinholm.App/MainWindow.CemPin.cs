@@ -35,6 +35,18 @@ public sealed partial class MainWindow
         CemPinReadButton.Content = L("Найти PIN · эксперимент", "Read CEM PIN (experimental)");
         CemPinRevealButton.Content = L("Показать на 15 секунд", "Reveal for 15 seconds");
         CemPinSavedButton.Content = L("Сохранённые PIN", "Saved PINs");
+        ToolTipService.SetToolTip(CemPartNumberReadButton, L(
+            "Экспериментальное чтение номера CEM только в Development. Требуется проверенный канал 500 кбит/с с 29-битными ID; монитор и пользовательские фильтры должны быть отключены. Идентичность блока не подтверждена.",
+            "Experimental Development-only CEM part-number read. Requires a verified 500 kbit/s, 29-bit channel with monitor and user filters stopped. ECU identity remains unverified."));
+        ToolTipService.SetToolTip(CemPinReadButton, L(
+            "Экспериментальный поиск PIN. Физическая совместимость и корректность результата не подтверждены.",
+            "Experimental PIN research. Physical compatibility and result validity are unverified."));
+        ToolTipService.SetToolTip(CemPinRevealButton, L(
+            "Показывает локальный результат на ограниченное время. Не отправляет данные автомобилю.",
+            "Temporarily reveals a local result. Does not transmit to the vehicle."));
+        ToolTipService.SetToolTip(CemPinSavedButton, L(
+            "Локально сохранённые PIN. Не подтверждают идентичность подключённого CEM.",
+            "Locally stored PINs. They do not verify connected CEM identity."));
 #endif
     }
 
