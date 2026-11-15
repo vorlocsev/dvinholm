@@ -34,7 +34,11 @@ param(
 
     # Four extra BOTTOM screenshots in a separate evidence manifest.
     # Requires the strict UIA scroll probe and explicit privacy confirmation.
-    [switch]$CaptureBottomViews
+    [switch]$CaptureBottomViews,
+
+    # Optional nine-model visual review via SelectionItemPattern only.
+    # This never opens J2534, sends vehicle requests or selects an ECU.
+    [switch]$CaptureVehicleModels
 )
 
 Set-StrictMode -Version Latest
@@ -49,6 +53,9 @@ if (-not $IConfirmOfflineNoSecrets) {
 }
 if ($CaptureBottomViews -and -not $VerifyWorkspaceScroll) {
     throw '-CaptureBottomViews requires -VerifyWorkspaceScroll; bottom images must be UIA-verified.'
+}
+if ($CaptureVehicleModels -and 'Ecu' -notin $Pages) {
+    throw '-CaptureVehicleModels requires Ecu in -Pages; the vehicle model selector is only on that workspace.'
 }
 if ($env:CI -eq 'true' -or $env:GITHUB_ACTIONS -eq 'true' -or
     -not [Environment]::UserInteractive) {
@@ -714,6 +721,178 @@ function Invoke-OnlyNavigation([string]$page) {
     Confirm-WorkspaceState $page
 }
 
+
+# A manual visual-artwork check. Use only ComboBox UIA selection patterns;
+# do not click buttons, type, alter request addresses, or infer ECU identity.
+$vehicleModels = @(
+    @{ id='xc90-p2'; name='XC90 I · P2'; caption='Volvo XC90 I · P2' },
+    @{ id='xc70-p2'; name='XC70 II · P2'; caption='Volvo XC70 II · P2' },
+    @{ id='v70-p2'; name='V70 II · P2'; caption='Volvo V70 II · P2' },
+    @{ id='s60-p2'; name='S60 I · P2'; caption='Volvo S60 I · P2' },
+    @{ id='s80-p2'; name='S80 I · P2'; caption='Volvo S80 I · P2' },
+    @{ id='xc90-spa'; name='XC90 II · SPA'; caption='Volvo XC90 II · SPA' },
+    @{ id='xc70-p3'; name='XC70 III · P3'; caption='Volvo XC70 III · P3' },
+    @{ id='v70-p3'; name='V70 III · P3'; caption='Volvo V70 III · P3' },
+    @{ id='s80-p3'; name='S80 II · P3'; caption='Volvo S80 II · P3' }
+)
+
+function Get-VehicleModelSelector {
+    $condition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+        'DvinholmVehicleModelSelector')
+    $element = $root.FindFirst(
+        [System.Windows.Automation.TreeScope]::Descendants, $condition)
+    if ($null -eq $element -or
+        $element.Current.ControlType -ne [System.Windows.Automation.ControlType]::ComboBox) {
+        throw 'Vehicle artwork selector UIA anchor missing; no model screenshot saved.'
+    }
+    return $element
+}
+
+function Get-SelectedVehicleModelName {
+    $selector = Get-VehicleModelSelector
+    $selection = $selector.GetCurrentPattern(
+        [System.Windows.Automation.SelectionPattern]::Pattern)
+    if ($null -eq $selection) {
+        throw 'Vehicle selector has no UIA SelectionPattern; no model screenshot saved.'
+    }
+    $selected = @($selection.Current.GetSelection())
+    if ($selected.Count -ne 1) {
+        throw 'Cannot verify one and only one selected vehicle model.'
+    }
+    return [string]$selected[0].Current.Name
+}
+
+function Select-OnlyVehicleArtwork($model) {
+    Confirm-WorkspaceState 'Ecu' -RequireVisible
+    $selector = Get-VehicleModelSelector
+    if ((Get-SelectedVehicleModelName) -cne $model.name) {
+        $expand = $selector.GetCurrentPattern(
+            [System.Windows.Automation.ExpandCollapsePattern]::Pattern)
+        if ($null -eq $expand) {
+            throw 'Vehicle selector has no UIA ExpandCollapsePattern.'
+        }
+        try {
+            $expand.Expand()
+            Start-Sleep -Milliseconds 300
+            $condition = [System.Windows.Automation.AndCondition]::new(
+                [System.Windows.Automation.PropertyCondition]::new(
+                    [System.Windows.Automation.AutomationElement]::NameProperty,
+                    $model.name),
+                [System.Windows.Automation.PropertyCondition]::new(
+                    [System.Windows.Automation.AutomationElement]::ControlTypeProperty,
+                    [System.Windows.Automation.ControlType]::ListItem))
+            $option = $root.FindFirst(
+                [System.Windows.Automation.TreeScope]::Descendants, $condition)
+            if ($null -eq $option) {
+                throw "The model '$($model.name)' is not available in the expanded selector."
+            }
+            $select = $option.GetCurrentPattern(
+                [System.Windows.Automation.SelectionItemPattern]::Pattern)
+            if ($null -eq $select) {
+                throw "Model '$($model.name)' lacks UIA SelectionItemPattern."
+            }
+            $select.Select()
+        }
+        finally {
+            if ($expand.Current.ExpandCollapseState -eq
+                [System.Windows.Automation.ExpandCollapseState]::Expanded) {
+                $expand.Collapse()
+            }
+        }
+    }
+    Start-Sleep -Milliseconds 700
+    Confirm-WorkspaceState 'Ecu' -RequireVisible
+    if ((Get-SelectedVehicleModelName) -cne $model.name) {
+        throw "Vehicle model selection could not be verified: $($model.id)."
+    }
+    $captionCondition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+        'DvinholmVehicleArtworkCaption')
+    $caption = $root.FindFirst(
+        [System.Windows.Automation.TreeScope]::Descendants, $captionCondition)
+    if ($null -eq $caption -or
+        $caption.Current.ControlType -ne [System.Windows.Automation.ControlType]::Text) {
+        throw "Vehicle caption UIA anchor missing for $($model.id)."
+    }
+    $suffix = if ($Language -eq 'ru') {
+        ' · справочный рендер, выбран вручную'
+    } else {
+        ' · reference render, selected manually'
+    }
+    $expected = $model.caption + $suffix
+    if ($caption.Current.Name -cne $expected) {
+        throw "Model caption mismatch for $($model.id): '$($caption.Current.Name)'."
+    }
+    return $expected
+}
+
+function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$height, [int]$dpi) {
+    $originalName = Get-SelectedVehicleModelName
+    $original = @($vehicleModels | Where-Object { $_.name -ceq $originalName })
+    if ($original.Count -ne 1) {
+        throw "Initial selected model '$originalName' is not one of nine approved options."
+    }
+    try {
+        foreach ($model in $vehicleModels) {
+            $verifiedCaption = Select-OnlyVehicleArtwork $model
+            # Use the same previously checked HWND viewport and parked
+            # non-client pointer as the primary six-screen capture.
+            $fg = [DvinholmWinUiCaptureNative]::GetForegroundWindow()
+            if ([DvinholmWinUiCaptureNative]::GetAncestor($fg, 2) -ne $handle) {
+                throw "Dvinholm lost foreground before model screenshot $($model.id)."
+            }
+            $widthNow = [DvinholmWinUiCaptureNative]::GetDpiForWindow($handle)
+            if ($widthNow -ne $dpi) {
+                throw "DPI changed during model screenshot $($model.id)."
+            }
+            Start-Sleep -Milliseconds 1200
+            Confirm-WorkspaceState 'Ecu' -RequireVisible
+            if ((Get-SelectedVehicleModelName) -cne $model.name) {
+                throw "Vehicle model changed before screenshot $($model.id)."
+            }
+            $filename = "Aurora-Ecu-Model-$($model.id)-$Language-$fixedWidthDip-dip.png"
+            $destination = Join-Path $output $filename
+            if (Test-Path -LiteralPath $destination) {
+                throw "Model screenshot destination already exists: $filename."
+            }
+            $bitmap = [System.Drawing.Bitmap]::new($width, $height)
+            try {
+                $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
+                try {
+                    $graphics.CopyFromScreen($left, $top, 0, 0,
+                        $bitmap.Size, [System.Drawing.CopyPixelOperation]::SourceCopy)
+                }
+                finally { $graphics.Dispose() }
+                $bitmap.Save($destination, [System.Drawing.Imaging.ImageFormat]::Png)
+            }
+            finally { $bitmap.Dispose() }
+            $vehicleResults += [ordered]@{
+                file = $filename
+                page = 'Ecu'
+                manuallySelectedModelId = $model.id
+                selectedModelNameVerifiedByUia = $model.name
+                verifiedReferenceCaption = $verifiedCaption
+                operatorSelectedLanguage = $Language
+                captureSessionId = $captureSessionId
+                sourceCommitOperatorDeclared = $CommitSha
+                requestedWidthDip = $fixedWidthDip
+                requestedHeightDip = $fixedHeightDip
+                actualWidthPx = $width
+                actualHeightPx = $height
+                windowDpi = $dpi
+                screenshotUtc = [DateTime]::UtcNow.ToString('o')
+                evidence = 'actual desktop pixels and verified UIA selection/caption only; rendering and model fidelity require human review'
+            }
+            Write-Host "Captured manual vehicle reference model: $filename"
+        }
+    }
+    finally {
+        # Restore the exact original manual selector choice even on failure.
+        [void](Select-OnlyVehicleArtwork $original[0])
+    }
+}
+
 # Preflight the fixed viewport 1280x800 DIP. The application owns its size;
 # this helper never resizes or moves the user's Dvinholm window.
 $previewDpi = [DvinholmWinUiCaptureNative]::GetDpiForWindow($handle)
@@ -754,6 +933,7 @@ if (@(Get-ChildItem -LiteralPath $output -Force).Count -ne 0) {
 }
 $results = @()
 $bottomResults = @()
+$vehicleResults = @()
 # One unpredictable local correlation token for this capture invocation.
 # It is not signed identity evidence, authentication, or a release seal.
 $captureSessionId = [guid]::NewGuid().ToString('D')
@@ -922,6 +1102,9 @@ foreach ($page in $Pages) {
         evidence = 'fixed real desktop viewport only; manual privacy and visual review still required'
     }
     Write-Host "Captured $filename (client $actualClientWidth x $actualClientHeight; outer $actualWidth x $actualHeight px; $dpi DPI)"
+    if ($CaptureVehicleModels -and $page -eq 'Ecu') {
+        Capture-OnlyVehicleModels $rect.Left $rect.Top $actualWidth $actualHeight $dpi
+    }
     }
     finally {
         [void][DvinholmWinUiCaptureNative]::SetCursorPos($savedCursor.X, $savedCursor.Y)
@@ -941,5 +1124,17 @@ if ($CaptureBottomViews) {
     ConvertTo-Json -InputObject @($bottomResults) -Depth 5 |
         Set-Content -LiteralPath $bottomManifest -Encoding UTF8
     Write-Host "Bottom-review evidence: $($bottomResults.Count) images and separate bottom manifest. Manual visual acceptance remains required."
+}
+if ($CaptureVehicleModels) {
+    if ($vehicleResults.Count -ne $vehicleModels.Count) {
+        throw 'Not all nine model screenshots were captured; refusing complete model manifest.'
+    }
+    $modelManifest = Join-Path $output "Aurora-$Language-vehicle-models-manifest.json"
+    if (Test-Path -LiteralPath $modelManifest) {
+        throw 'Vehicle model manifest already exists; use a new empty output folder.'
+    }
+    ConvertTo-Json -InputObject @($vehicleResults) -Depth 5 |
+        Set-Content -LiteralPath $modelManifest -Encoding UTF8
+    Write-Host 'Nine model images saved locally; real photo fidelity, colors, cropping and UI alignment are NOT visually signed off.'
 }
 Write-Host 'Capture complete; no file was uploaded. Review/redact every screenshot before sharing.'
