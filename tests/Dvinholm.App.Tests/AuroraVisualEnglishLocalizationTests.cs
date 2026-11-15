@@ -495,4 +495,34 @@ public sealed class AuroraVisualEnglishLocalizationTests
         Assert.DoesNotContain("PassThru", captions);
         Assert.DoesNotContain("_session", captions);
     }
+
+    [Fact]
+    public void BaudRateGuidanceIsBilingualAndDoesNotModifySelectedChannelSpeed()
+    {
+        var doc = Layout();
+        var combo = Named(doc, "BaudRate");
+        Assert.Equal("ComboBox", combo.Name.LocalName);
+        Assert.Equal("0", (string?)combo.Attribute("SelectedIndex"));
+        Assert.Equal(new[] { "500000", "250000", "125000" },
+            combo.Elements().Select(e => (string?)e.Attribute("Tag")));
+
+        var source = Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+        var start = source.IndexOf("BaudRate.Header = L(", StringComparison.Ordinal);
+        var end = source.IndexOf("CanConnectionMode.Header = L(", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var projection = source[start..end];
+        Assert.Contains("ToolTipService.SetToolTip(BaudRate, L(", projection);
+        Assert.Contains("2004 модельный год", projection);
+        Assert.Contains("2005 модельного года", projection);
+        Assert.Contains("250 кбит/с", projection);
+        Assert.Contains("500 кбит/с", projection);
+        Assert.Contains("Dvinholm не устанавливает скорость автоматически", projection);
+        Assert.Contains("Dvinholm does not adjust the speed automatically", projection);
+        Assert.DoesNotContain("BaudRate.SelectedIndex =", projection);
+        Assert.DoesNotContain("BaudRate.SelectedItem =", projection);
+        Assert.DoesNotContain("BaudRate.SelectionChanged", projection);
+        Assert.DoesNotContain("Connect_Click(", projection);
+        Assert.DoesNotContain("PassThru", projection);
+        Assert.DoesNotContain("_session", projection);
+    }
 }
