@@ -93,12 +93,12 @@ public sealed class AuroraLiveScreenshotCaptureContracts
     public void AllSixRoutesUseOnlyUserApprovedNavigationButtons()
     {
         var script = Capture();
-        foreach (var route in new[] { "Connection", "Updates", "CemPin",
-            "CemConfiguration", "Dtc", "Ecu" })
+        foreach (var route in new[] { "CemPin", "CemConfiguration", "Ecu",
+            "Diagnostics", "Updates", "Connection" })
             Assert.Contains(route, script);
         foreach (var name in new[] { "Подключение", "Обновление", "CEM PIN",
-            "Конфигурация CEM", "Ошибки (DTC)", "Блоки (ECU)",
-            "Faults (DTC)", "Modules (ECU)" })
+            "Конфигурация CEM", "Диагностика", "Блоки (ECU)",
+            "Diagnostics", "Modules (ECU)" })
             Assert.Contains(name, script);
         Assert.Contains("[System.Windows.Automation.InvokePattern]::Pattern", script);
         Assert.Contains("Invoke-OnlyNavigation $page", script);
@@ -161,7 +161,7 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("[switch]$CaptureBottomViews", script);
         Assert.Contains("if ($CaptureBottomViews -and -not $VerifyWorkspaceScroll)", script);
         Assert.Contains("-CaptureBottomViews requires -VerifyWorkspaceScroll", script);
-        Assert.Contains("$page -in @('CemPin','CemConfiguration','Dtc','Ecu')", script);
+        Assert.Contains("$page -in @('CemPin','CemConfiguration','Ecu','Diagnostics')", script);
         Assert.Contains("Aurora-$page-$Language-$fixedWidthDip-dip-bottom.png", script);
         Assert.Contains("Aurora-$page-$Language-$fixedWidthDip-dip.png", script);
         Assert.Contains("$bottomResults = @()", script);
@@ -298,7 +298,7 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("if ($VerifyWorkspaceScroll)", script);
         Assert.Contains("function Assert-WorkspaceScrollToEnd(", script);
         Assert.Contains("[string]$page,", script);
-        Assert.Contains("if ($page -notin @('CemPin','CemConfiguration','Dtc','Ecu'))", script);
+        Assert.Contains("if ($page -notin @('CemPin','CemConfiguration','Ecu','Diagnostics'))", script);
         Assert.Contains("TryGetCurrentPattern(", script);
         Assert.Contains("[System.Windows.Automation.ScrollPattern]::Pattern", script);
         Assert.Contains("DvinholmShellStatusBar", script);
