@@ -196,4 +196,44 @@ public sealed class AuroraCemVisualParityTests
             Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs"));
         Assert.DoesNotContain("PassThru", locale);
     }
+
+    [Theory]
+    [InlineData("CemPartNumberReadButton")]
+    [InlineData("CemPartPrerequisiteButton")]
+    [InlineData("CemPinReadButton")]
+    [InlineData("CemPinRevealButton")]
+    [InlineData("CemPinSavedButton")]
+    [InlineData("P2PinReviewButton")]
+    public void LongCemPinActionCaptionsWrapAtTightAuroraWidths(string controlName)
+    {
+        var doc = Layout();
+        var button = Named(doc, controlName);
+        Assert.Equal("Button", button.Name.LocalName);
+        Assert.Equal("{StaticResource AuroraWrapCaption}",
+            (string?)button.Attribute("ContentTemplate"));
+        var template = doc.Descendants().Single(e =>
+            e.Name.LocalName == "DataTemplate" &&
+            (string?)e.Attribute(X + "Key") == "AuroraWrapCaption");
+        Assert.Equal("Wrap", (string?)template.Descendants()
+            .Single(e => e.Name.LocalName == "TextBlock").Attribute("TextWrapping"));
+    }
+
+    [Fact]
+    public void CemExperimentalTooltipsAreBilingualAndDoNotChangeVehicleState()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.CemPin.cs");
+        var begin = source.IndexOf("private void RefreshCemDevelopmentLabels()", StringComparison.Ordinal);
+        var end = source.IndexOf("private CemReadOnlyPrerequisiteAssessment", begin, StringComparison.Ordinal);
+        Assert.True(begin >= 0 && end > begin);
+        var projection = source[begin..end];
+        foreach (var name in new[] { "CemPartNumberReadButton",
+            "CemPinReadButton", "CemPinRevealButton", "CemPinSavedButton" })
+            Assert.Contains("ToolTipService.SetToolTip(" + name, projection);
+        Assert.Contains("Физическая совместимость", projection);
+        Assert.Contains("Physical compatibility", projection);
+        Assert.DoesNotContain("CemPinResultText.Text", projection);
+        Assert.DoesNotContain("PassThru", projection);
+        Assert.DoesNotContain("ReadCemPin_Click(", projection);
+        Assert.DoesNotContain("SendAsync(", projection);
+    }
 }
