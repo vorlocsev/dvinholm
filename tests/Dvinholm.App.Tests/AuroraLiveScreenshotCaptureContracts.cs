@@ -773,8 +773,10 @@ public sealed class AuroraLiveScreenshotCaptureContracts
     public void OptionalDtcScreenshotsKeepBottomScrollEvidenceWithoutAddingSeventhSidebarRoute()
     {
         var script = Capture();
-        var xaml = Layout();
-        var sidebar = Named(xaml, "SidebarNavPanel");
+        var xaml = XDocument.Parse(Source("src/Dvinholm.App/MainWindow.xaml"));
+        XNamespace x = "http://schemas.microsoft.com/winfx/2006/xaml";
+        var sidebar = xaml.Descendants().Single(e =>
+            (string?)e.Attribute(x + "Name") == "SidebarNavPanel");
         Assert.Equal(6, sidebar.Elements().Count(e => e.Name.LocalName == "Button"));
         Assert.DoesNotContain(sidebar.Elements(),
             e => (string?)e.Attribute("Tag") == "DtcFaults");
