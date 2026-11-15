@@ -114,7 +114,7 @@ public sealed class AuroraNativeTitleBarContracts
         var title = TitleBar();
         Assert.Contains("AppWindow.SetIcon(iconPath);", main);
         Assert.Contains("Title = LatestBuildUpdater.CurrentWindowTitle;", main);
-        Assert.Contains("DashboardNavigate(null, AuroraDestination.J2534Connection);", main);
+        Assert.Contains("DashboardNavigate(null, AuroraDestination.CemPinReadiness);", main);
         foreach (var forbidden in new[]
         {
             "PassThruOpen(", "PassThruConnect(", "ReadDtc_Click(",
