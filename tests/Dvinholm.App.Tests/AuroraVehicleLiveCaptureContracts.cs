@@ -169,4 +169,31 @@ public sealed class AuroraVehicleLiveCaptureContracts
         Assert.DoesNotContain("SendInput", verify);
         Assert.DoesNotContain("InvokePattern", verify);
     }
+
+    [Fact]
+    public void RealModelScreenshotsMustHaveNineDistinctArtboardPixelHashes()
+    {
+        var xaml = XDocument.Parse(Source("src/Dvinholm.App/MainWindow.xaml"));
+        var artboard = xaml.Descendants().Single(e =>
+            (string?)e.Attribute(X + "Name") == "EcuVehicleArtboard");
+        Assert.Equal("DvinholmVehicleArtworkViewport",
+            (string?)artboard.Attribute("AutomationProperties.AutomationId"));
+        var script = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
+        Assert.Contains("function Get-OnlyVehicleArtworkPixelHash(", script);
+        Assert.Contains("$viewport.Current.BoundingRectangle", script);
+        Assert.Contains("$bitmap.Clone(", script);
+        Assert.Contains("SHA256]::Create()", script);
+        Assert.Contains("$captureViewportHashes = @{}", script);
+        Assert.Contains("$captureViewportHashes.ContainsKey($artHash)", script);
+        Assert.Contains("artworkViewportSha256 = $artHash", script);
+        Assert.Contains("atlas model switch not proven", script);
+        var start = script.IndexOf("function Capture-OnlyVehicleModels(", StringComparison.Ordinal);
+        var end = script.IndexOf("# Preflight the fixed viewport", start, StringComparison.Ordinal);
+        var capture = script[start..end];
+        Assert.True(capture.IndexOf("Get-OnlyVehicleArtworkPixelHash", StringComparison.Ordinal)
+            < capture.IndexOf("$bitmap.Save($destination", StringComparison.Ordinal));
+        Assert.DoesNotContain("SendKeys", capture);
+        Assert.DoesNotContain("InvokePattern", capture);
+    }
+
 }

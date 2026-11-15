@@ -999,7 +999,7 @@
                                                 </Grid>
                                                 <Border CornerRadius="12" BorderThickness="1" BorderBrush="#2B5878" Background="#091D31" Padding="7">
                                                     <Viewbox Stretch="Uniform" MaxHeight="235" HorizontalAlignment="Stretch">
-                                                     <Grid x:Name="EcuVehicleArtboard" Width="640" Height="255">
+                                                     <Grid x:Name="EcuVehicleArtboard" Width="640" Height="255" AutomationProperties.AutomationId="DvinholmVehicleArtworkViewport">
                                                          <!-- Single offline atlas: one model cell shown at a time; no inferred ECU positions. -->
                                                          <Grid.Clip>
                                                              <RectangleGeometry Rect="0,0,640,255" />

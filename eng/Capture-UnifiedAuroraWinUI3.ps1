@@ -777,6 +777,50 @@ function Assert-OnlyVehicleAtlasLoaded {
     }
 }
 
+
+# Validate pixels inside the actual rendered vehicle artboard, not the model
+# label or selector. Distinct captions alone cannot prove that the atlas moved.
+function Get-OnlyVehicleArtworkPixelHash([System.Drawing.Bitmap]$bitmap, [int]$windowLeft, [int]$windowTop) {
+    $condition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+        'DvinholmVehicleArtworkViewport')
+    $viewport = $root.FindFirst(
+        [System.Windows.Automation.TreeScope]::Descendants, $condition)
+    if ($null -eq $viewport -or $viewport.Current.IsOffscreen) {
+        throw 'Actual vehicle artwork viewport is absent or offscreen; refusing pixel verification.'
+    }
+    $bounds = $viewport.Current.BoundingRectangle
+    if ([double]::IsNaN($bounds.Left) -or [double]::IsNaN($bounds.Top) -or
+        [double]::IsInfinity($bounds.Left) -or [double]::IsInfinity($bounds.Top)) {
+        throw 'Vehicle artwork viewport has invalid UIA coordinates.'
+    }
+    # UIA coordinates and CopyFromScreen coordinates are both physical pixels.
+    # Exclude the border to avoid comparing window decorations.
+    $x = [int][Math]::Ceiling($bounds.Left - $windowLeft + 4)
+    $y = [int][Math]::Ceiling($bounds.Top - $windowTop + 4)
+    $w = [int][Math]::Floor($bounds.Width - 8)
+    $h = [int][Math]::Floor($bounds.Height - 8)
+    if ($w -lt 100 -or $h -lt 60 -or
+        $x -lt 0 -or $y -lt 0 -or
+        $x + $w -gt $bitmap.Width -or $y + $h -gt $bitmap.Height) {
+        throw 'Vehicle artwork viewport is clipped or outside the captured window.'
+    }
+    $crop = $bitmap.Clone(
+        [System.Drawing.Rectangle]::new($x, $y, $w, $h), $bitmap.PixelFormat)
+    $stream = [System.IO.MemoryStream]::new()
+    $hash = [System.Security.Cryptography.SHA256]::Create()
+    try {
+        $crop.Save($stream, [System.Drawing.Imaging.ImageFormat]::Png)
+        return [BitConverter]::ToString(
+            $hash.ComputeHash($stream.ToArray())).Replace('-', '').ToLowerInvariant()
+    }
+    finally {
+        $hash.Dispose()
+        $stream.Dispose()
+        $crop.Dispose()
+    }
+}
+
 function Select-OnlyVehicleArtwork($model) {
     Confirm-WorkspaceState 'Ecu' -RequireVisible
     $selector = Get-VehicleModelSelector
@@ -843,6 +887,7 @@ function Select-OnlyVehicleArtwork($model) {
 }
 
 function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$height, [int]$dpi) {
+    $captureViewportHashes = @{}
     $originalName = Get-SelectedVehicleModelName
     $original = @($vehicleModels | Where-Object { $_.name -ceq $originalName })
     if ($original.Count -ne 1) {
@@ -906,7 +951,12 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
                         $bitmap.Size, [System.Drawing.CopyPixelOperation]::SourceCopy)
                 }
                 finally { $graphics.Dispose() }
+                $artHash = Get-OnlyVehicleArtworkPixelHash $bitmap $left $top
+                if ($captureViewportHashes.ContainsKey($artHash)) {
+                    throw "Vehicle artwork pixels for $($model.id) are identical to $($captureViewportHashes[$artHash]); atlas model switch not proven."
+                }
                 $bitmap.Save($destination, [System.Drawing.Imaging.ImageFormat]::Png)
+                $captureViewportHashes[$artHash] = $model.id
             }
             finally { $bitmap.Dispose() }
             $script:vehicleResults += [ordered]@{
@@ -916,6 +966,7 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
                 selectedModelNameVerifiedByUia = $model.name
                 verifiedReferenceCaption = $verifiedCaption
                 atlasDecodedByWinUiImageOpened = $true
+                artworkViewportSha256 = $artHash
                 operatorSelectedLanguage = $Language
                 captureSessionId = $captureSessionId
                 sourceCommitOperatorDeclared = $CommitSha
