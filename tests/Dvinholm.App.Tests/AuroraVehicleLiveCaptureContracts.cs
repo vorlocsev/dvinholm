@@ -124,7 +124,7 @@ public sealed class AuroraVehicleLiveCaptureContracts
         Assert.Contains("if ($vehicleResults.Count -ne $vehicleModels.Count)", script);
         Assert.Contains("Aurora-$Language-vehicle-models-manifest.json", script);
         Assert.Contains("Aurora-Ecu-Model-$($model.id)-$Language-$fixedWidthDip-dip.png", script);
-        Assert.Contains("real desktop pixels and verified UIA selection/caption only", script);
+        Assert.Contains("actual desktop pixels and verified UIA selection/caption only", script);
         Assert.Contains("human review", script);
         Assert.DoesNotContain("vehicle model visually verified by CI", script);
     }
