@@ -264,6 +264,36 @@ public sealed partial class MainWindow
     private void EcuVehicleModel_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
         RefreshAuroraVehicleArtwork();
 
+    // ImageOpened / ImageFailed are emitted by the real WinUI decoder,
+    // not by model selection. UIA screenshot capture must fail closed when the
+    // SVG source is unavailable even though its manual model caption is valid.
+    private bool _auroraVehicleArtworkLoaded;
+
+    private void EcuVehicleArtworkAtlas_ImageOpened(object sender, RoutedEventArgs e)
+    {
+        _auroraVehicleArtworkLoaded = true;
+        if (sender is Image image) image.Opacity = 1;
+        RefreshAuroraVehicleArtworkLoadState();
+    }
+
+    private void EcuVehicleArtworkAtlas_ImageFailed(object sender, ExceptionRoutedEventArgs e)
+    {
+        _auroraVehicleArtworkLoaded = false;
+        // Preserve a live Image visual so Windows can retry on resource reload
+        // (for example after a display scale change); expose the fallback below.
+        if (sender is Image image) image.Opacity = 0;
+        RefreshAuroraVehicleArtworkLoadState();
+    }
+
+    private void RefreshAuroraVehicleArtworkLoadState()
+    {
+        if (EcuDiagramCaption is null) return;
+        AutomationProperties.SetHelpText(EcuDiagramCaption,
+            _auroraVehicleArtworkLoaded
+                ? "DvinholmVehicleAtlasLoaded"
+                : "DvinholmVehicleAtlasUnavailable");
+    }
+
     private void RefreshAuroraVehicleArtwork()
     {
         if (EcuVehicleArtworkAtlas is null || EcuVehicleModel is null || EcuDiagramCaption is null)
@@ -281,6 +311,7 @@ public sealed partial class MainWindow
         AutomationProperties.SetName(EcuVehicleArtworkAtlas, L(
             "Справочное изображение " + model.Label,
             "Reference illustration of " + model.Label));
+        RefreshAuroraVehicleArtworkLoadState();
         // The displayed bodywork is NEVER a decoded VIN, ECU location,
         // service permission, request address or connected vehicle identity.
     }
