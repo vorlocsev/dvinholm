@@ -149,4 +149,32 @@ public sealed class AuroraVehicleArtworkCatalogTests
         Assert.DoesNotContain("EcuVehicleModel.SelectedIndex =", localization);
         Assert.Contains("reference render, selected manually", select);
     }
+
+    [Fact]
+    public void SourceLoadEventsRevealFallbackAndExposeActualDecodeStatusToUia()
+    {
+        var xaml = Layout();
+        var art = Named(xaml, "EcuVehicleArtworkAtlas");
+        var caption = Named(xaml, "EcuDiagramCaption");
+        Assert.Equal("EcuVehicleArtworkAtlas_ImageOpened",
+            (string?)art.Attribute("ImageOpened"));
+        Assert.Equal("EcuVehicleArtworkAtlas_ImageFailed",
+            (string?)art.Attribute("ImageFailed"));
+        Assert.Equal("DvinholmVehicleAtlasPending",
+            (string?)caption.Attribute("AutomationProperties.HelpText"));
+
+        var source = Source("src/Dvinholm.App/MainWindow.AuroraReference.cs");
+        Assert.Contains("private void EcuVehicleArtworkAtlas_ImageOpened(", source);
+        Assert.Contains("private void EcuVehicleArtworkAtlas_ImageFailed(", source);
+        Assert.Contains("_auroraVehicleArtworkLoaded = true;", source);
+        Assert.Contains("_auroraVehicleArtworkLoaded = false;", source);
+        Assert.Contains("image.Opacity = 0;", source);
+        Assert.Contains("image.Opacity = 1;", source);
+        Assert.Contains("AutomationProperties.SetHelpText(EcuDiagramCaption,", source);
+        Assert.Contains("DvinholmVehicleAtlasLoaded", source);
+        Assert.Contains("DvinholmVehicleAtlasUnavailable", source);
+        Assert.Contains("RefreshAuroraVehicleArtworkLoadState();", source);
+        Assert.DoesNotContain("ReadDtc_Click(", source);
+        Assert.DoesNotContain("PassThru", source);
+    }
 }
