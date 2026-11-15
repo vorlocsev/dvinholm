@@ -187,6 +187,13 @@ public sealed partial class MainWindow
         J2534Devices.Header = L("Установленные адаптеры", "Registered adapters");
         J2534Devices.PlaceholderText = L("Выберите адаптер", "Select adapter");
         BaudRate.Header = L("Скорость CAN", "CAN speed");
+        // This is the physical J2534 channel format, distinct from the
+        // read-only diagnostics CAN-ID format selector. Only its presentation
+        // changes here; keep the selected 11/29-bit channel choice untouched.
+        CanConnectionMode.Header = L("Формат CAN-канала", "CAN channel ID format");
+        ToolTipService.SetToolTip(CanConnectionMode, L(
+            "Выберите 11- или 29-битный формат до подключения. Для смены формата требуется переподключение.",
+            "Choose 11-bit or 29-bit addressing before connecting. Reconnect to change the physical channel format."));
         DllPath.Header = Environment.Is64BitProcess
             ? L("J2534 DLL · 64 бита", "J2534 DLL · 64-bit")
             : L("J2534 DLL · 32 бита", "J2534 DLL · 32-bit");
