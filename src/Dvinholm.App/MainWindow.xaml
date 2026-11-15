@@ -680,9 +680,10 @@
                                 <StackPanel Spacing="18">
                                     <TextBlock x:Name="CemPinIdentitySectionTitle" Text="01  ·  Идентификация CEM" FontSize="20" FontWeight="SemiBold" />
                                     <TextBlock x:Name="CemPinIdentitySectionIntro" Text="Идентификация CEM пока не подтверждена. Локальная проверка не обращается к автомобилю; экспериментальное чтение доступно только в Development." Foreground="#9EB8CC" TextWrapping="Wrap" />
-                                    <Button x:Name="CemPartNumberReadButton" Content="Read CEM P/N (experimental HS-CAN)" HorizontalAlignment="Left" ToolTipService.ToolTip="Connect a 500 kbit/s, 29-bit channel; stop the monitor and remove user hardware filters first. Source-defined experimental read, not verified CEM or PIN support." Visibility="Collapsed" IsEnabled="False" Click="ReadCemPartNumber_Click" Background="#0865C7" BorderBrush="#348DEA" />
+                                    <Button x:Name="CemPartNumberReadButton" Content="Read CEM P/N (experimental HS-CAN)" HorizontalAlignment="Left" MaxWidth="440" MinHeight="48" ContentTemplate="{StaticResource AuroraWrapCaption}" ToolTipService.ToolTip="Connect a 500 kbit/s, 29-bit channel; stop the monitor and remove user hardware filters first. Source-defined experimental read, not verified CEM or PIN support." Visibility="Collapsed" IsEnabled="False" Click="ReadCemPartNumber_Click" Background="#0865C7" BorderBrush="#348DEA" />
                                     <Button x:Name="CemPartPrerequisiteButton" Content="Проверить условия локально"
-                                            HorizontalAlignment="Left" Click="CheckCemPrerequisites_Click"
+                                            HorizontalAlignment="Left" MaxWidth="360" MinHeight="44"
+                                            ContentTemplate="{StaticResource AuroraWrapCaption}" Click="CheckCemPrerequisites_Click"
                                             ToolTipService.ToolTip="Только чтение состояния приложения. Без CAN/J2534 запросов." />
                                     <Expander x:Name="CemPartPrerequisiteExpander"
                                               Header="Результат проверки (без запросов)" IsExpanded="False">
@@ -708,15 +709,15 @@
                                             </Grid.RowDefinitions>
                                             <TextBox x:Name="CemPinRangeStart" Header="Search starting position" Text="0" MaxLength="12" TextChanged="CemPinRangeChanged" Grid.Row="0" Grid.Column="0" HorizontalAlignment="Stretch" />
                                             <TextBox x:Name="CemPinRangeCount" Header="Attempt limit (1–10000)" Text="1000" MaxLength="5" TextChanged="CemPinRangeChanged" Grid.Row="0" Grid.Column="1" HorizontalAlignment="Stretch" />
-                                            <Button x:Name="CemPinReadButton" Content="Read CEM PIN (experimental)" IsEnabled="False" Click="ReadCemPin_Click" VerticalAlignment="Bottom" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch" Background="#0865C7" BorderBrush="#348DEA" />
-                                            <Button x:Name="CemPinRevealButton" Content="Reveal for 15 seconds" IsEnabled="False" Click="RevealCemPin_Click" VerticalAlignment="Bottom" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" />
+                                            <Button x:Name="CemPinReadButton" Content="Read CEM PIN (experimental)" ContentTemplate="{StaticResource AuroraWrapCaption}" MinHeight="48" IsEnabled="False" Click="ReadCemPin_Click" VerticalAlignment="Bottom" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch" Background="#0865C7" BorderBrush="#348DEA" />
+                                            <Button x:Name="CemPinRevealButton" Content="Reveal for 15 seconds" ContentTemplate="{StaticResource AuroraWrapCaption}" MinHeight="48" IsEnabled="False" Click="RevealCemPin_Click" VerticalAlignment="Bottom" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" />
                                         </Grid>
                                         <Grid ColumnSpacing="12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
                                                 <ColumnDefinition Width="*" />
                                             </Grid.ColumnDefinitions>
-                                            <Button x:Name="CemPinSavedButton" Content="Saved PINs" Visibility="Collapsed" HorizontalAlignment="Left" Click="SavedCemPins_Click" />
+                                            <Button x:Name="CemPinSavedButton" Content="Saved PINs" ContentTemplate="{StaticResource AuroraWrapCaption}" Visibility="Collapsed" HorizontalAlignment="Left" Click="SavedCemPins_Click" />
                                             <TextBlock x:Name="CemPinResultText" Grid.Column="1" Text="No PIN result." FontFamily="Consolas" TextWrapping="Wrap" IsTextSelectionEnabled="False" VerticalAlignment="Center" />
                                         </Grid>
                                     </StackPanel>
@@ -739,7 +740,7 @@
                                             <RowDefinition Height="Auto" />
                                             <RowDefinition Height="Auto" />
                                         </Grid.RowDefinitions>
-                                        <Button x:Name="P2PinReviewButton" Grid.Row="4" Content="P2 CEM PIN readiness (offline review)" HorizontalAlignment="Stretch" ToolTipService.ToolTip="Cancellable offline evidence checklist only. No PIN extraction, credential entry or vehicle operation." Click="P2PinReview_Click" />
+                                        <Button x:Name="P2PinReviewButton" Grid.Row="4" Content="P2 CEM PIN readiness (offline review)" HorizontalAlignment="Stretch" MinHeight="48" ContentTemplate="{StaticResource AuroraWrapCaption}" ToolTipService.ToolTip="Cancellable offline evidence checklist only. No PIN extraction, credential entry or vehicle operation." Click="P2PinReview_Click" />
                                     </Grid>
                                 </StackPanel>
                             </Border>
