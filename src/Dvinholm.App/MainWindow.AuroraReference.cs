@@ -269,6 +269,7 @@ public sealed partial class MainWindow
     // not by model selection. UIA screenshot capture must fail closed when the
     // selected JPG is unavailable even though its manual model caption is valid.
     private bool _auroraVehicleArtworkLoaded;
+    private string? _auroraSelectedVehicleArtworkId;
 
     private void EcuVehicleArtworkAtlas_ImageOpened(object sender, RoutedEventArgs e)
     {
@@ -301,12 +302,19 @@ public sealed partial class MainWindow
             return;
         var id = (EcuVehicleModel.SelectedItem as ComboBoxItem)?.Tag as string;
         var model = AuroraVehicleArtworkCatalog.Resolve(id);
-        // Manual JPG change only. Never infer VIN, CAN routing or ECU identity.
-        _auroraVehicleArtworkLoaded = false;
-        EcuVehicleArtworkAtlas.Opacity = 0;
-        var nextUri = AuroraVehicleArtworkCatalog.ImageUri(model);
-        EcuVehicleArtworkAtlas.Source = new BitmapImage(
-            new Uri(nextUri, UriKind.Absolute));
+        // Changing RU/EN reprojects the caption but must not re-decode the
+        // same local JPG or briefly replace a verified image with its fallback.
+        // A real model change still invalidates decode evidence before loading.
+        if (!string.Equals(_auroraSelectedVehicleArtworkId, model.Id,
+                StringComparison.Ordinal))
+        {
+            _auroraSelectedVehicleArtworkId = model.Id;
+            _auroraVehicleArtworkLoaded = false;
+            EcuVehicleArtworkAtlas.Opacity = 0;
+            var nextUri = AuroraVehicleArtworkCatalog.ImageUri(model);
+            EcuVehicleArtworkAtlas.Source = new BitmapImage(
+                new Uri(nextUri, UriKind.Absolute));
+        }
         EcuDiagramCaption.Text = L(
             model.Label + " · справочный рендер, выбран вручную",
             model.Label + " · reference render, selected manually");

@@ -242,6 +242,32 @@ public sealed class AuroraVehicleArtworkCatalogTests
         Assert.Contains("reference render, selected manually", select);
     }
 
+
+    [Fact]
+    public void SwitchingRuEnWithTheSameManualModelDoesNotReloadJpg()
+    {
+        var reference = Source("src/Dvinholm.App/MainWindow.AuroraReference.cs");
+        var localization = Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+        var start = reference.IndexOf("private void RefreshAuroraVehicleArtwork()", StringComparison.Ordinal);
+        Assert.True(start >= 0);
+        var method = reference[start..];
+        Assert.Contains("private string? _auroraSelectedVehicleArtworkId;", reference);
+        Assert.Contains("string.Equals(_auroraSelectedVehicleArtworkId, model.Id,", method);
+        Assert.Contains("_auroraSelectedVehicleArtworkId = model.Id;", method);
+        Assert.Contains("StringComparison.Ordinal", method);
+        Assert.Contains("EcuVehicleArtworkAtlas.Source = new BitmapImage(", method);
+
+        // The decode gate is reset only within the model-change guard,
+        // never by merely replacing Russian/English caption text.
+        var guard = method.IndexOf("if (!string.Equals(_auroraSelectedVehicleArtworkId", StringComparison.Ordinal);
+        var reset = method.IndexOf("_auroraVehicleArtworkLoaded = false;", StringComparison.Ordinal);
+        var setSource = method.IndexOf("EcuVehicleArtworkAtlas.Source = new BitmapImage(", StringComparison.Ordinal);
+        var caption = method.IndexOf("EcuDiagramCaption.Text = L(", StringComparison.Ordinal);
+        Assert.True(guard >= 0 && guard < reset && reset < setSource && setSource < caption);
+        Assert.Contains("RefreshAuroraVehicleArtwork();", localization);
+        Assert.DoesNotContain("EcuVehicleArtworkAtlas.Source =", localization);
+        Assert.DoesNotContain("_auroraSelectedVehicleArtworkId =", localization);
+    }
     [Fact]
     public void SourceLoadEventsRevealFallbackAndExposeActualDecodeStatusToUia()
     {
