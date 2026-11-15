@@ -40,7 +40,9 @@ public sealed class AuroraVisualEnglishLocalizationTests
         {
             var candidate = Path.Combine(dir.FullName,
                 relative.Replace('/', Path.DirectorySeparatorChar));
-            if (File.Exists(candidate)) return File.ReadAllText(candidate);
+            // Windows runners use CRLF; compare source semantics, not checkout EOLs.
+            if (File.Exists(candidate))
+                return File.ReadAllText(candidate).Replace("\r\n", "\n").Replace('\r', '\n');
         }
         throw new FileNotFoundException(relative);
     }
