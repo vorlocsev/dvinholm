@@ -867,7 +867,7 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
                 $bitmap.Save($destination, [System.Drawing.Imaging.ImageFormat]::Png)
             }
             finally { $bitmap.Dispose() }
-            $vehicleResults += [ordered]@{
+            $script:vehicleResults += [ordered]@{
                 file = $filename
                 page = 'Ecu'
                 manuallySelectedModelId = $model.id
