@@ -161,11 +161,11 @@ public sealed class AuroraVehicleLiveCaptureContracts
         var verify = script[guard..select];
         Assert.Contains("DvinholmVehicleArtworkCaption", verify);
         Assert.Contains("$caption.Current.HelpText -cne 'DvinholmVehicleAtlasLoaded'", verify);
-        Assert.Contains("throw 'Vehicle atlas SVG was not confirmed decoded by WinUI", verify);
+        Assert.Contains("throw 'Vehicle JPG was not confirmed decoded by WinUI", verify);
         Assert.Contains("[void](Assert-OnlyVehicleAtlasLoaded)", script[select..capture]);
         var beforePixels = script[capture..bitmap];
         Assert.Contains("[void](Assert-OnlyVehicleAtlasLoaded)", beforePixels);
-        Assert.Contains("atlasDecodedByWinUiImageOpened = $true", script);
+        Assert.Contains("jpgDecodedByWinUiImageOpened = $true", script);
         Assert.DoesNotContain("SendInput", verify);
         Assert.DoesNotContain("InvokePattern", verify);
     }
@@ -186,7 +186,7 @@ public sealed class AuroraVehicleLiveCaptureContracts
         Assert.Contains("$captureViewportHashes = @{}", script);
         Assert.Contains("$captureViewportHashes.ContainsKey($artHash)", script);
         Assert.Contains("artworkViewportSha256 = $artHash", script);
-        Assert.Contains("atlas model switch not proven", script);
+        Assert.Contains("JPG model switch not proven", script);
         var start = script.IndexOf("function Capture-OnlyVehicleModels(", StringComparison.Ordinal);
         var end = script.IndexOf("# Preflight the fixed viewport", start, StringComparison.Ordinal);
         var capture = script[start..end];

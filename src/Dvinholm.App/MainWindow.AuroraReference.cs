@@ -2,6 +2,7 @@ using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
 using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
 using Microsoft.UI.Xaml.Automation;
 
 namespace Dvinholm.App;
@@ -266,7 +267,7 @@ public sealed partial class MainWindow
 
     // ImageOpened / ImageFailed are emitted by the real WinUI decoder,
     // not by model selection. UIA screenshot capture must fail closed when the
-    // SVG source is unavailable even though its manual model caption is valid.
+    // selected JPG is unavailable even though its manual model caption is valid.
     private bool _auroraVehicleArtworkLoaded;
 
     private void EcuVehicleArtworkAtlas_ImageOpened(object sender, RoutedEventArgs e)
@@ -300,11 +301,12 @@ public sealed partial class MainWindow
             return;
         var id = (EcuVehicleModel.SelectedItem as ComboBoxItem)?.Tag as string;
         var model = AuroraVehicleArtworkCatalog.Resolve(id);
-        if (EcuVehicleArtworkAtlas.RenderTransform is TranslateTransform offset)
-        {
-            offset.X = -model.AtlasColumn * AuroraVehicleArtworkCatalog.CellWidth;
-            offset.Y = -model.AtlasRow * AuroraVehicleArtworkCatalog.CellHeight;
-        }
+        // Manual JPG change only. Never infer VIN, CAN routing or ECU identity.
+        _auroraVehicleArtworkLoaded = false;
+        EcuVehicleArtworkAtlas.Opacity = 0;
+        var nextUri = AuroraVehicleArtworkCatalog.ImageUri(model);
+        EcuVehicleArtworkAtlas.Source = new BitmapImage(
+            new Uri(nextUri, UriKind.Absolute));
         EcuDiagramCaption.Text = L(
             model.Label + " · справочный рендер, выбран вручную",
             model.Label + " · reference render, selected manually");

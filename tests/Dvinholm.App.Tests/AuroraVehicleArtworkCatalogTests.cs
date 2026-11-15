@@ -23,6 +23,18 @@ public sealed class AuroraVehicleArtworkCatalogTests
         throw new FileNotFoundException(relative);
     }
 
+    private static string FindSourcePath(string relative)
+    {
+        for (DirectoryInfo? dir = new(AppContext.BaseDirectory);
+             dir is not null; dir = dir.Parent)
+        {
+            var file = Path.Combine(dir.FullName,
+                relative.Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(file)) return file;
+        }
+        throw new FileNotFoundException(relative);
+    }
+
     private static XDocument Layout()
     {
         using var stream = typeof(AuroraVehicleArtworkCatalogTests).Assembly
@@ -56,17 +68,12 @@ public sealed class AuroraVehicleArtworkCatalogTests
     }
 
     [Fact]
-    public void AtlasCellsCoverTheThreeByThreeGridWithoutOverlap()
+    public void ModelImageUrisAreDistinctAndOffline()
     {
-        var models = AuroraVehicleArtworkCatalog.Models;
-        Assert.All(models, m =>
-        {
-            Assert.InRange(m.AtlasColumn, 0, 2);
-            Assert.InRange(m.AtlasRow, 0, 2);
-        });
-        Assert.Equal(9, models.Select(m => (m.AtlasColumn, m.AtlasRow)).Distinct().Count());
-        Assert.Equal(640, AuroraVehicleArtworkCatalog.CellWidth);
-        Assert.Equal(255, AuroraVehicleArtworkCatalog.CellHeight);
+        var uris = AuroraVehicleArtworkCatalog.Models.Select(AuroraVehicleArtworkCatalog.ImageUri).ToArray();
+        Assert.Equal(9, uris.Distinct(StringComparer.Ordinal).Count());
+        Assert.All(uris, uri => Assert.StartsWith("ms-appx:///Assets/Vehicles/", uri));
+        Assert.Equal(uris[0], AuroraVehicleArtworkCatalog.Asset);
     }
 
     [Fact]
@@ -94,21 +101,29 @@ public sealed class AuroraVehicleArtworkCatalogTests
     }
 
     [Fact]
-    public void PackagedSvgContainsNineIndividualStudioReferenceIllustrations()
+    public void NineGeneratedJpgsAreRealUniqueFilesAndPackaged()
     {
-        var svg = XDocument.Parse(Source("assets/vehicles/volvo-model-atlas.svg"));
-        Assert.Equal("svg", svg.Root?.Name.LocalName);
-        Assert.Equal("0 0 2880 1140", (string?)svg.Root?.Attribute("viewBox"));
-        var modelTiles = svg.Descendants().Where(e => e.Name.LocalName == "g" &&
-            (string?)e.Attribute("transform") is { } pos &&
-            pos.StartsWith("translate(", StringComparison.Ordinal)).ToArray();
-        Assert.Equal(9, modelTiles.Length);
+        var digests = new HashSet<string>(StringComparer.Ordinal);
         foreach (var model in AuroraVehicleArtworkCatalog.Models)
-            Assert.Contains(model.Id, svg.ToString());
+        {
+            var bytes = File.ReadAllBytes(FindSourcePath("assets/vehicles/" + model.Id + ".jpg"));
+            Assert.InRange(bytes.Length, 20_000, 2_000_000);
+            Assert.Equal((byte)0xff, bytes[0]);
+            Assert.Equal((byte)0xd8, bytes[1]);
+            Assert.Equal((byte)0xff, bytes[2]);
+            Assert.Equal((byte)0xff, bytes[^2]);
+            Assert.Equal((byte)0xd9, bytes[^1]);
+            Assert.True(digests.Add(Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(bytes))));
+        }
+        var project = Source("src/Dvinholm.App/Dvinholm.App.csproj");
+        Assert.Contains(@"assets\vehicles\*.jpg", project);
+        Assert.Contains(@"Assets\Vehicles\%(Filename)%(Extension)", project);
+        Assert.DoesNotContain("volvo-model-atlas.svg", project);
     }
 
     [Fact]
-    public void ImageViewportClipsOnlyOneAtlasTileAndPreservesEcuEvidenceOutside()
+    public void JpgViewportPreservesEcuEvidenceOutside()
     {
         var doc = Layout();
         var artboard = Named(doc, "EcuVehicleArtboard");
@@ -116,9 +131,11 @@ public sealed class AuroraVehicleArtworkCatalogTests
         Assert.Contains(artboard, image.Ancestors());
         Assert.Equal("640", (string?)artboard.Attribute("Width"));
         Assert.Equal("255", (string?)artboard.Attribute("Height"));
-        Assert.Equal("1920", (string?)image.Attribute("Width"));
-        Assert.Equal("765", (string?)image.Attribute("Height"));
+        Assert.Equal("640", (string?)image.Attribute("Width"));
+        Assert.Equal("255", (string?)image.Attribute("Height"));
         Assert.Equal(AuroraVehicleArtworkCatalog.Asset, (string?)image.Attribute("Source"));
+        Assert.Equal("Uniform", (string?)image.Attribute("Stretch"));
+        Assert.DoesNotContain("TranslateTransform", image.ToString());
         Assert.Contains("RectangleGeometry", artboard.ToString());
         Assert.DoesNotContain(artboard, Named(doc, "EcuObservationRail").Ancestors());
         Assert.Contains("не указывает физические позиции ECU",
@@ -140,8 +157,9 @@ public sealed class AuroraVehicleArtworkCatalogTests
         var handler = select[begin..];
         Assert.Contains("RefreshAuroraVehicleArtwork()", handler);
         Assert.Contains("AuroraVehicleArtworkCatalog.Resolve(id)", handler);
-        Assert.Contains("offset.X = -model.AtlasColumn", handler);
-        Assert.Contains("offset.Y = -model.AtlasRow", handler);
+        Assert.Contains("AuroraVehicleArtworkCatalog.ImageUri(model)", handler);
+        Assert.Contains("new BitmapImage(", handler);
+        Assert.Contains("_auroraVehicleArtworkLoaded = false;", handler);
         foreach (var forbidden in new[] { "_session", "Connect_Click(", "ReadDtc_Click(",
             "UdsRequestId.Text =", "EcusView.SelectedItem =", "PassThru", "SendAsync(" })
             Assert.DoesNotContain(forbidden, handler);

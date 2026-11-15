@@ -1000,11 +1000,11 @@
                                                 <Border CornerRadius="12" BorderThickness="1" BorderBrush="#2B5878" Background="#091D31" Padding="7">
                                                     <Viewbox Stretch="Uniform" MaxHeight="235" HorizontalAlignment="Stretch">
                                                      <Grid x:Name="EcuVehicleArtboard" Width="640" Height="255" AutomationProperties.AutomationId="DvinholmVehicleArtworkViewport">
-                                                         <!-- Single offline atlas: one model cell shown at a time; no inferred ECU positions. -->
+                                                         <!-- Offline JPG for the manually selected model; no inferred ECU positions. -->
                                                          <Grid.Clip>
                                                              <RectangleGeometry Rect="0,0,640,255" />
                                                          </Grid.Clip>
-                                                         <!-- If the local SVG cannot load, the text remains visible underneath. -->
+                                                         <!-- If the local JPG cannot load, the text remains visible underneath. -->
                                                          <Border x:Name="EcuVehicleArtworkFallback" Width="640" Height="255"
                                                                  Background="#102B43" BorderBrush="#346582" BorderThickness="1">
                                                              <TextBlock x:Name="EcuVehicleArtworkFallbackNotice"
@@ -1014,16 +1014,12 @@
                                                                         FontSize="15" />
                                                          </Border>
                                                          <Image x:Name="EcuVehicleArtworkAtlas"
-                                                                Source="ms-appx:///Assets/Vehicles/Volvo-Model-Atlas.svg"
-                                                                Width="1920" Height="765"
+                                                                Source="ms-appx:///Assets/Vehicles/xc90-p2.jpg"
+                                                                Width="640" Height="255"
                                                                 HorizontalAlignment="Left" VerticalAlignment="Top"
-                                                                Stretch="Fill" AutomationProperties.Name="Справочное изображение Volvo XC90 I"
+                                                                Stretch="Uniform" AutomationProperties.Name="Справочное изображение Volvo XC90 I"
                                                                 ImageOpened="EcuVehicleArtworkAtlas_ImageOpened"
-                                                                ImageFailed="EcuVehicleArtworkAtlas_ImageFailed">
-                                                             <Image.RenderTransform>
-                                                                 <TranslateTransform X="0" Y="0" />
-                                                             </Image.RenderTransform>
-                                                         </Image>
+                                                                ImageFailed="EcuVehicleArtworkAtlas_ImageFailed" />
                                                          <Border x:Name="EcuVehicleSchematicStamp" HorizontalAlignment="Right" VerticalAlignment="Top"
                                                                  Margin="0,8,10,0" Padding="10,5" CornerRadius="8" IsHitTestVisible="False"
                                                                  Background="#C40C2842" BorderBrush="#346582" BorderThickness="1">

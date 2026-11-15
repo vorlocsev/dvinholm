@@ -763,7 +763,7 @@ function Get-SelectedVehicleModelName {
     return [string]$selected[0].Current.Name
 }
 
-# A matching model name is not evidence that WinUI decoded the SVG.
+# A matching model name is not evidence that WinUI decoded the selected JPG.
 # ImageOpened publishes this status through the caption's UIA HelpText.
 function Assert-OnlyVehicleAtlasLoaded {
     $condition = [System.Windows.Automation.PropertyCondition]::new(
@@ -773,13 +773,13 @@ function Assert-OnlyVehicleAtlasLoaded {
         [System.Windows.Automation.TreeScope]::Descendants, $condition)
     if ($null -eq $caption -or
         $caption.Current.HelpText -cne 'DvinholmVehicleAtlasLoaded') {
-        throw 'Vehicle atlas SVG was not confirmed decoded by WinUI; refusing model screenshot.'
+        throw 'Vehicle JPG was not confirmed decoded by WinUI; refusing model screenshot.'
     }
 }
 
 
 # Validate pixels inside the actual rendered vehicle artboard, not the model
-# label or selector. Distinct captions alone cannot prove that the atlas moved.
+# label or selector. Distinct captions alone cannot prove that the JPG changed.
 function Get-OnlyVehicleArtworkPixelHash([System.Drawing.Bitmap]$bitmap, [int]$windowLeft, [int]$windowTop) {
     $condition = [System.Windows.Automation.PropertyCondition]::new(
         [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
@@ -953,7 +953,7 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
                 finally { $graphics.Dispose() }
                 $artHash = Get-OnlyVehicleArtworkPixelHash $bitmap $left $top
                 if ($captureViewportHashes.ContainsKey($artHash)) {
-                    throw "Vehicle artwork pixels for $($model.id) are identical to $($captureViewportHashes[$artHash]); atlas model switch not proven."
+                    throw "Vehicle artwork pixels for $($model.id) are identical to $($captureViewportHashes[$artHash]); JPG model switch not proven."
                 }
                 $bitmap.Save($destination, [System.Drawing.Imaging.ImageFormat]::Png)
                 $captureViewportHashes[$artHash] = $model.id
@@ -965,7 +965,7 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
                 manuallySelectedModelId = $model.id
                 selectedModelNameVerifiedByUia = $model.name
                 verifiedReferenceCaption = $verifiedCaption
-                atlasDecodedByWinUiImageOpened = $true
+                jpgDecodedByWinUiImageOpened = $true
                 artworkViewportSha256 = $artHash
                 operatorSelectedLanguage = $Language
                 captureSessionId = $captureSessionId
