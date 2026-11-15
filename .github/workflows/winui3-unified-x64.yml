@@ -132,6 +132,470 @@ jobs:
         run: |
           ./eng/Package-UnifiedWinUIX64Pilot.ps1 -PublishDirectory artifacts/winui3-unified-x64 -ZipPath artifacts/Dvinholm-Windows-x64.zip
 
+      # Verify the exact original nine locally approved JPGs inside the
+      # *actual* x64 ZIP, not merely files in a source checkout. This is an
+      # integrity check, not visual/model-geometry authentication.
+      - name: Verify nine packaged Volvo JPGs against source manifest
+        shell: pwsh
+        run: |
+          Add-Type -AssemblyName System.IO.Compression
+          $models = @(Get-Content -LiteralPath 'assets/vehicles/manifest.json' -Raw | ConvertFrom-Json)
+          if ($models.Count -ne 9 -or @($models.modelId | Select-Object -Unique).Count -ne 9) {
+            throw 'Expected nine unique reviewed Volvo JPG entries.'
+          }
+          $zip = [IO.Compression.ZipFile]::OpenRead(
+            (Resolve-Path -LiteralPath 'artifacts/Dvinholm-Windows-x64.zip').Path)
+          try {
+            $assets = @($zip.Entries | Where-Object {
+              $_.FullName -cmatch '^Assets/Vehicles/[^/]+\\.jpg      # assembly before building any Development-only virtual-J2534 fixtures.
+      # This test project is deliberately separate from legacy x86 Stable CI.
+      - name: Verify actual x64 Release ZIP and forbidden developer types (8 checks)
+        shell: pwsh
+        env:
+          AURORA_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          dotnet test tests/Dvinholm.UnifiedX64.Tests/Dvinholm.UnifiedX64.Tests.csproj --configuration Release --runtime win-x64 -p:Platform=x64 -p:PlatformTarget=x64 -p:RuntimeIdentifier=win-x64 -p:DvinholmDevelopmentFeatures=false --results-directory artifacts/x64-release-tests --logger 'trx;LogFileName=x64-release-smoke.trx'
+          if ($LASTEXITCODE -ne 0) { throw 'Actual x64 Release profile safety tests failed.' }
+          $trx = 'artifacts/x64-release-tests/x64-release-smoke.trx'
+          if (-not (Test-Path -LiteralPath $trx -PathType Leaf)) {
+            throw 'Actual x64 Release smoke result file was not generated.'
+          }
+          [xml]$report = Get-Content -LiteralPath $trx -Raw
+          $counters = $report.SelectSingleNode("//*[local-name()='Counters']")
+          if ($null -eq $counters) { throw 'Actual x64 Release smoke counters are missing.' }
+          $total = [int]$counters.GetAttribute('total')
+          $passed = [int]$counters.GetAttribute('passed')
+          $failed = [int]$counters.GetAttribute('failed')
+          if ($total -ne 8 -or $passed -ne 8 -or $failed -ne 0) {
+            throw "x64 Release smoke gate must pass all eight checks ($total total, $passed passed, $failed failed)."
+          }
+          "Native x64 Release ZIP + metadata: $passed/8 safe offline checks; no physical J2534 test was run." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+      # Exercise the real native x64 managed test host, not only a x64 PE
+      # publish. Run thirteen relevant suites with virtual adapters /
+      # synthetic data only. No vendor DLL, vehicle, PIN operation or updater.
+      # The development switch is for test fixtures, never for the user ZIP.
+      - name: Run CEM and J2534 x64 offline test suites
+        shell: pwsh
+        run: |
+          $filter = @(
+            'FullyQualifiedName~CemPartNumberFrameDecoderTests'
+            'FullyQualifiedName~CemPartNumberReaderTests'
+            'FullyQualifiedName~CemReadOnlyPrerequisiteReportTests'
+            'FullyQualifiedName~CemIdentityEvidenceReportTests'
+            'FullyQualifiedName~AuroraCemConfigReferenceFilterTests'
+            'FullyQualifiedName~J2534PeInspectorTests'
+            'FullyQualifiedName~J2534AdapterAuditReportTests'
+            'FullyQualifiedName~J2534RegistrationIdentityTests'
+            'FullyQualifiedName~AuroraApprovedReferenceTests'
+            'FullyQualifiedName~CemSafeReleaseWorkspaceTests'
+            'FullyQualifiedName~AuroraCemCatalogLocalizationTests'
+            'FullyQualifiedName~AuroraVisualEnglishLocalizationTests'
+            'FullyQualifiedName~AuroraApprovedVisualParityTests'
+            'FullyQualifiedName~AuroraConnectionUpdatesVisualParityTests'
+            'FullyQualifiedName~AuroraCemVisualParityTests'
+            'FullyQualifiedName~AuroraEcuDtcVisualParityTests'
+            'FullyQualifiedName~AuroraDtcTableProjectionTests'
+            'FullyQualifiedName~AuroraDtcEvidenceDetailLocalizationTests'
+            'FullyQualifiedName~UdsDtcStatusFormatterTests'
+            'FullyQualifiedName~AuroraLiveScreenshotCaptureContracts'
+            'FullyQualifiedName~AuroraWindowsPowerShell51EncodingTests'
+            'FullyQualifiedName~AuroraCompactHeaderParityTests'
+            'FullyQualifiedName~AuroraScreenshotIdentityContracts'
+            'FullyQualifiedName~AuroraFirstFoldVisualParityTests'
+            'FullyQualifiedName~AuroraHonestConnectionVisualTests'
+            'FullyQualifiedName~AuroraCompactNavigationAlignmentTests'
+            'FullyQualifiedName~AuroraCompactTableReadabilityTests'
+            'FullyQualifiedName~AuroraPrivateReviewReportContracts'
+            'FullyQualifiedName~AuroraReviewEvidenceConsistencyTests'
+            'FullyQualifiedName~AuroraPrimaryViewportClarityTests'
+            'FullyQualifiedName~AuroraMonitorResultCaptionLayoutTests'
+            'FullyQualifiedName~AuroraCompactEcuProfileLayoutTests'
+            'FullyQualifiedName~EcuProfileActionLayoutTests'
+            'FullyQualifiedName~CanMonitorCounterLocalizationTests'
+            'FullyQualifiedName~CanHardwareFilterCaptionTests'
+            'FullyQualifiedName~UdsReadinessCaptionLocalizationTests'
+            'FullyQualifiedName~AuroraTightViewportHeaderTests'
+            'FullyQualifiedName~AuroraWideHeaderActionLayoutTests'
+            'FullyQualifiedName~AuroraUpdatesFirstFoldFocusTests'
+            'FullyQualifiedName~AuroraPinStepperCaptionLayoutTests'
+            'FullyQualifiedName~AuroraIntermediateTriptychLayoutTests'
+            'FullyQualifiedName~AuroraTwoUpCardTextWrappingTests'
+            'FullyQualifiedName~AuroraBoundedConnectionHeadingTests'
+            'FullyQualifiedName~AuroraBoundedEcuInventoryRowsTests'
+            'FullyQualifiedName~AuroraEcuFirstFoldCaptionWrappingTests'
+            'FullyQualifiedName~AuroraIntermediateEcuTwoPaneLayoutTests'
+            'FullyQualifiedName~AuroraIntermediateEcuScanToolbarTests'
+            'FullyQualifiedName~AuroraEcuInventoryLocalizationTests'
+            'FullyQualifiedName~AuroraPassiveDiscoveryBilingualTests'
+            # Exact tests that protect the passive-scan locale projection and
+            # manual TX-address gate; full CI also runs these independently.
+            'FullyQualifiedName~UdsPassiveDiscoveryActivityTests'
+            'FullyQualifiedName~UdsPassiveEcuListPresentationTests'
+            'FullyQualifiedName~AuroraEcuThreePaneWorkspaceTests'
+            'FullyQualifiedName~AuroraJ2534MetadataBilingualTests'
+            'FullyQualifiedName~AuroraVehicleArtworkCatalogTests'
+            'FullyQualifiedName~AuroraVehicleLiveCaptureContracts'
+          ) -join '|'
+          dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release --runtime win-x64 -p:Platform=x64 -p:PlatformTarget=x64 -p:RuntimeIdentifier=win-x64 -p:DvinholmDevelopmentFeatures=true --filter $filter --results-directory artifacts/x64-offline-tests --logger 'trx;LogFileName=x64-cem-j2534.trx'
+          if ($LASTEXITCODE -ne 0) { throw 'Windows x64 CEM/J2534 offline tests failed.' }
+          $trx = 'artifacts/x64-offline-tests/x64-cem-j2534.trx'
+          if (-not (Test-Path -LiteralPath $trx -PathType Leaf)) {
+            throw 'Windows x64 test result file was not generated.'
+          }
+          [xml]$report = Get-Content -LiteralPath $trx -Raw
+          $counters = $report.SelectSingleNode("//*[local-name()='Counters']")
+          if ($null -eq $counters) { throw 'Windows x64 test counters are missing.' }
+          $total = [int]$counters.GetAttribute('total')
+          $failed = [int]$counters.GetAttribute('failed')
+          if ($total -lt 48 -or $failed -ne 0) {
+            throw "Windows x64 coverage below expected floor or failed tests ($total total, $failed failed)."
+          }
+          "Windows x64 synthetic CEM/J2534 suites: $total tests, $failed failed; physical adapter testing NOT performed." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+      # Prepare an exact-name candidate pair for later offline verification.
+      # This is PR-only; generating a checksum is NOT a release signature.
+      - name: Write and verify x64 checksum manifest
+        shell: pwsh
+        run: |
+          $zip = 'artifacts/Dvinholm-Windows-x64.zip'
+          if (-not (Test-Path -LiteralPath $zip -PathType Leaf)) { throw 'x64 ZIP missing.' }
+          $digest = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $record = "$digest  Dvinholm-Windows-x64.zip"
+          [IO.File]::WriteAllText('artifacts/SHA256SUMS.txt', "$record`n", [Text.Encoding]::ASCII)
+          $verified = (Get-Content -LiteralPath 'artifacts/SHA256SUMS.txt' -Raw).TrimEnd()
+          if ($verified -cne $record) { throw 'x64 checksum record changed.' }
+          Write-Host ('Verified x64 package hash: ' + $digest)
+
+      # Keep the PR source SHA, actual checkout/merge SHA and packaged
+      # executable bytes together. The human desktop capture helper checks
+      # this manifest against the *running* EXE, preventing stale-GUI reviews.
+      # This is a reproducible provenance record, NOT a release signature.
+      - name: Write and verify Aurora GUI executable provenance
+        shell: pwsh
+        env:
+          AURORA_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          $exe = 'artifacts/winui3-unified-x64/Dvinholm.exe'
+          $zip = 'artifacts/Dvinholm-Windows-x64.zip'
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
+            throw 'Published x64 executable absent; no provenance manifest.'
+          }
+          if ($env:AURORA_PR_HEAD_SHA -notmatch '^[a-fA-F0-9]{40}$' -or
+              $env:GITHUB_SHA -notmatch '^[a-fA-F0-9]{40}$') {
+            throw 'GitHub PR head or checkout SHA is missing.'
+          }
+          $exeSha = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          $zipSha = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          Add-Type -AssemblyName System.IO.Compression
+          $archive = [IO.Compression.ZipFile]::OpenRead((Resolve-Path -LiteralPath $zip).Path)
+          try {
+            $entry = $archive.GetEntry('Dvinholm.exe')
+            if ($null -eq $entry) { throw 'Packaged Dvinholm.exe not found.' }
+            $stream = $entry.Open()
+            $sha = [Security.Cryptography.SHA256]::Create()
+            try { $packedHash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-','').ToLowerInvariant() }
+            finally { $stream.Dispose(); $sha.Dispose() }
+            if ($packedHash -cne $exeSha) {
+              throw 'Packaged EXE differs from verified published binary.'
+            }
+          }
+          finally { $archive.Dispose() }
+          if ($env:GITHUB_RUN_NUMBER -notmatch '^[1-9][0-9]*$') {
+            throw 'Missing pilot CI run number for desktop provenance.'
+          }
+          $pilotRun = [int]$env:GITHUB_RUN_NUMBER
+          $evidence = [ordered]@{
+            schema = 'dvinholm.aurora.x64.provenance.v1'
+            pilotRunNumber = $pilotRun
+            expectedWindowTitle = "Dvinholm CI #$pilotRun"
+            sourceHeadCommitSha = $env:AURORA_PR_HEAD_SHA.ToLowerInvariant()
+            checkoutCommitSha = $env:GITHUB_SHA.ToLowerInvariant()
+            executableRelativePath = 'Dvinholm.exe'
+            executableSha256 = $exeSha
+            packageSha256 = $zipSha
+          }
+          $target = 'artifacts/Aurora-x64-build-evidence.json'
+          [IO.File]::WriteAllText((Join-Path (Get-Location) $target), ($evidence | ConvertTo-Json -Depth 4) + "`n",
+            [Text.UTF8Encoding]::new($false))
+          $decoded = Get-Content -LiteralPath $target -Raw | ConvertFrom-Json
+          if ($decoded.sourceHeadCommitSha -cne $evidence.sourceHeadCommitSha -or
+              $decoded.checkoutCommitSha -cne $evidence.checkoutCommitSha -or
+              $decoded.executableSha256 -cne $exeSha -or
+              [int]$decoded.pilotRunNumber -ne $pilotRun -or
+              $decoded.expectedWindowTitle -cne $evidence.expectedWindowTitle) {
+            throw 'Aurora x64 provenance JSON round-trip mismatch.'
+          }
+          Write-Host 'Verified Aurora x64 PR head, checkout SHA and packaged EXE SHA-256 (no private data).'
+
+      # Built and tested separately, never copied into the user-facing
+      # Dvinholm-Windows-x64.zip or a published release.
+      - name: Publish isolated Windows x64 process-exit probe (not shipped)
+        shell: pwsh
+        run: |
+          dotnet publish src/Dvinholm.UpdateHandoffProbe/Dvinholm.UpdateHandoffProbe.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false --output artifacts/fixture-handoff-probe
+          if ($LASTEXITCODE -ne 0) { throw 'Fixture handoff probe build failed.' }
+          if (-not (Test-Path 'artifacts/fixture-handoff-probe/Dvinholm.UpdateHandoffProbe.exe')) { throw 'Fixture helper EXE missing.' }
+
+      - name: Verify x64 post-exit helper only in marked temporary fixtures (8 checks)
+        shell: pwsh
+        run: |
+          ./eng/Test-UnifiedUpdateHandoffProbe.ps1 -ProbeExe 'artifacts/fixture-handoff-probe/Dvinholm.UpdateHandoffProbe.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'Fixture helper checks failed.' }
+
+      - name: Upload unified x64 review artifact (no release)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-WinUI3-Windows-x64-PR
+          path: |
+            artifacts/Dvinholm-Windows-x64.zip
+            artifacts/SHA256SUMS.txt
+            artifacts/Aurora-x64-build-evidence.json
+            eng/Capture-UnifiedAuroraWinUI3.ps1
+            eng/Review-UnifiedAuroraScreenshots.ps1
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+
+            })
+            if ($assets.Count -ne 9) { throw "Unexpected x64 Volvo JPG count: $($assets.Count)" }
+            foreach ($model in $models) {
+              if ($model.file -cne "$($model.modelId).jpg" -or
+                  [int]$model.width -ne 1280 -or [int]$model.height -ne 510 -or
+                  $model.sha256 -cnotmatch '^[0-9a-f]{64}      # assembly before building any Development-only virtual-J2534 fixtures.
+      # This test project is deliberately separate from legacy x86 Stable CI.
+      - name: Verify actual x64 Release ZIP and forbidden developer types (8 checks)
+        shell: pwsh
+        env:
+          AURORA_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          dotnet test tests/Dvinholm.UnifiedX64.Tests/Dvinholm.UnifiedX64.Tests.csproj --configuration Release --runtime win-x64 -p:Platform=x64 -p:PlatformTarget=x64 -p:RuntimeIdentifier=win-x64 -p:DvinholmDevelopmentFeatures=false --results-directory artifacts/x64-release-tests --logger 'trx;LogFileName=x64-release-smoke.trx'
+          if ($LASTEXITCODE -ne 0) { throw 'Actual x64 Release profile safety tests failed.' }
+          $trx = 'artifacts/x64-release-tests/x64-release-smoke.trx'
+          if (-not (Test-Path -LiteralPath $trx -PathType Leaf)) {
+            throw 'Actual x64 Release smoke result file was not generated.'
+          }
+          [xml]$report = Get-Content -LiteralPath $trx -Raw
+          $counters = $report.SelectSingleNode("//*[local-name()='Counters']")
+          if ($null -eq $counters) { throw 'Actual x64 Release smoke counters are missing.' }
+          $total = [int]$counters.GetAttribute('total')
+          $passed = [int]$counters.GetAttribute('passed')
+          $failed = [int]$counters.GetAttribute('failed')
+          if ($total -ne 8 -or $passed -ne 8 -or $failed -ne 0) {
+            throw "x64 Release smoke gate must pass all eight checks ($total total, $passed passed, $failed failed)."
+          }
+          "Native x64 Release ZIP + metadata: $passed/8 safe offline checks; no physical J2534 test was run." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+      # Exercise the real native x64 managed test host, not only a x64 PE
+      # publish. Run thirteen relevant suites with virtual adapters /
+      # synthetic data only. No vendor DLL, vehicle, PIN operation or updater.
+      # The development switch is for test fixtures, never for the user ZIP.
+      - name: Run CEM and J2534 x64 offline test suites
+        shell: pwsh
+        run: |
+          $filter = @(
+            'FullyQualifiedName~CemPartNumberFrameDecoderTests'
+            'FullyQualifiedName~CemPartNumberReaderTests'
+            'FullyQualifiedName~CemReadOnlyPrerequisiteReportTests'
+            'FullyQualifiedName~CemIdentityEvidenceReportTests'
+            'FullyQualifiedName~AuroraCemConfigReferenceFilterTests'
+            'FullyQualifiedName~J2534PeInspectorTests'
+            'FullyQualifiedName~J2534AdapterAuditReportTests'
+            'FullyQualifiedName~J2534RegistrationIdentityTests'
+            'FullyQualifiedName~AuroraApprovedReferenceTests'
+            'FullyQualifiedName~CemSafeReleaseWorkspaceTests'
+            'FullyQualifiedName~AuroraCemCatalogLocalizationTests'
+            'FullyQualifiedName~AuroraVisualEnglishLocalizationTests'
+            'FullyQualifiedName~AuroraApprovedVisualParityTests'
+            'FullyQualifiedName~AuroraConnectionUpdatesVisualParityTests'
+            'FullyQualifiedName~AuroraCemVisualParityTests'
+            'FullyQualifiedName~AuroraEcuDtcVisualParityTests'
+            'FullyQualifiedName~AuroraDtcTableProjectionTests'
+            'FullyQualifiedName~AuroraDtcEvidenceDetailLocalizationTests'
+            'FullyQualifiedName~UdsDtcStatusFormatterTests'
+            'FullyQualifiedName~AuroraLiveScreenshotCaptureContracts'
+            'FullyQualifiedName~AuroraWindowsPowerShell51EncodingTests'
+            'FullyQualifiedName~AuroraCompactHeaderParityTests'
+            'FullyQualifiedName~AuroraScreenshotIdentityContracts'
+            'FullyQualifiedName~AuroraFirstFoldVisualParityTests'
+            'FullyQualifiedName~AuroraHonestConnectionVisualTests'
+            'FullyQualifiedName~AuroraCompactNavigationAlignmentTests'
+            'FullyQualifiedName~AuroraCompactTableReadabilityTests'
+            'FullyQualifiedName~AuroraPrivateReviewReportContracts'
+            'FullyQualifiedName~AuroraReviewEvidenceConsistencyTests'
+            'FullyQualifiedName~AuroraPrimaryViewportClarityTests'
+            'FullyQualifiedName~AuroraMonitorResultCaptionLayoutTests'
+            'FullyQualifiedName~AuroraCompactEcuProfileLayoutTests'
+            'FullyQualifiedName~EcuProfileActionLayoutTests'
+            'FullyQualifiedName~CanMonitorCounterLocalizationTests'
+            'FullyQualifiedName~CanHardwareFilterCaptionTests'
+            'FullyQualifiedName~UdsReadinessCaptionLocalizationTests'
+            'FullyQualifiedName~AuroraTightViewportHeaderTests'
+            'FullyQualifiedName~AuroraWideHeaderActionLayoutTests'
+            'FullyQualifiedName~AuroraUpdatesFirstFoldFocusTests'
+            'FullyQualifiedName~AuroraPinStepperCaptionLayoutTests'
+            'FullyQualifiedName~AuroraIntermediateTriptychLayoutTests'
+            'FullyQualifiedName~AuroraTwoUpCardTextWrappingTests'
+            'FullyQualifiedName~AuroraBoundedConnectionHeadingTests'
+            'FullyQualifiedName~AuroraBoundedEcuInventoryRowsTests'
+            'FullyQualifiedName~AuroraEcuFirstFoldCaptionWrappingTests'
+            'FullyQualifiedName~AuroraIntermediateEcuTwoPaneLayoutTests'
+            'FullyQualifiedName~AuroraIntermediateEcuScanToolbarTests'
+            'FullyQualifiedName~AuroraEcuInventoryLocalizationTests'
+            'FullyQualifiedName~AuroraPassiveDiscoveryBilingualTests'
+            # Exact tests that protect the passive-scan locale projection and
+            # manual TX-address gate; full CI also runs these independently.
+            'FullyQualifiedName~UdsPassiveDiscoveryActivityTests'
+            'FullyQualifiedName~UdsPassiveEcuListPresentationTests'
+            'FullyQualifiedName~AuroraEcuThreePaneWorkspaceTests'
+            'FullyQualifiedName~AuroraJ2534MetadataBilingualTests'
+            'FullyQualifiedName~AuroraVehicleArtworkCatalogTests'
+            'FullyQualifiedName~AuroraVehicleLiveCaptureContracts'
+          ) -join '|'
+          dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release --runtime win-x64 -p:Platform=x64 -p:PlatformTarget=x64 -p:RuntimeIdentifier=win-x64 -p:DvinholmDevelopmentFeatures=true --filter $filter --results-directory artifacts/x64-offline-tests --logger 'trx;LogFileName=x64-cem-j2534.trx'
+          if ($LASTEXITCODE -ne 0) { throw 'Windows x64 CEM/J2534 offline tests failed.' }
+          $trx = 'artifacts/x64-offline-tests/x64-cem-j2534.trx'
+          if (-not (Test-Path -LiteralPath $trx -PathType Leaf)) {
+            throw 'Windows x64 test result file was not generated.'
+          }
+          [xml]$report = Get-Content -LiteralPath $trx -Raw
+          $counters = $report.SelectSingleNode("//*[local-name()='Counters']")
+          if ($null -eq $counters) { throw 'Windows x64 test counters are missing.' }
+          $total = [int]$counters.GetAttribute('total')
+          $failed = [int]$counters.GetAttribute('failed')
+          if ($total -lt 48 -or $failed -ne 0) {
+            throw "Windows x64 coverage below expected floor or failed tests ($total total, $failed failed)."
+          }
+          "Windows x64 synthetic CEM/J2534 suites: $total tests, $failed failed; physical adapter testing NOT performed." | Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
+      # Prepare an exact-name candidate pair for later offline verification.
+      # This is PR-only; generating a checksum is NOT a release signature.
+      - name: Write and verify x64 checksum manifest
+        shell: pwsh
+        run: |
+          $zip = 'artifacts/Dvinholm-Windows-x64.zip'
+          if (-not (Test-Path -LiteralPath $zip -PathType Leaf)) { throw 'x64 ZIP missing.' }
+          $digest = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          $record = "$digest  Dvinholm-Windows-x64.zip"
+          [IO.File]::WriteAllText('artifacts/SHA256SUMS.txt', "$record`n", [Text.Encoding]::ASCII)
+          $verified = (Get-Content -LiteralPath 'artifacts/SHA256SUMS.txt' -Raw).TrimEnd()
+          if ($verified -cne $record) { throw 'x64 checksum record changed.' }
+          Write-Host ('Verified x64 package hash: ' + $digest)
+
+      # Keep the PR source SHA, actual checkout/merge SHA and packaged
+      # executable bytes together. The human desktop capture helper checks
+      # this manifest against the *running* EXE, preventing stale-GUI reviews.
+      # This is a reproducible provenance record, NOT a release signature.
+      - name: Write and verify Aurora GUI executable provenance
+        shell: pwsh
+        env:
+          AURORA_PR_HEAD_SHA: ${{ github.event.pull_request.head.sha }}
+        run: |
+          $exe = 'artifacts/winui3-unified-x64/Dvinholm.exe'
+          $zip = 'artifacts/Dvinholm-Windows-x64.zip'
+          if (-not (Test-Path -LiteralPath $exe -PathType Leaf)) {
+            throw 'Published x64 executable absent; no provenance manifest.'
+          }
+          if ($env:AURORA_PR_HEAD_SHA -notmatch '^[a-fA-F0-9]{40}$' -or
+              $env:GITHUB_SHA -notmatch '^[a-fA-F0-9]{40}$') {
+            throw 'GitHub PR head or checkout SHA is missing.'
+          }
+          $exeSha = (Get-FileHash -LiteralPath $exe -Algorithm SHA256).Hash.ToLowerInvariant()
+          $zipSha = (Get-FileHash -LiteralPath $zip -Algorithm SHA256).Hash.ToLowerInvariant()
+          Add-Type -AssemblyName System.IO.Compression
+          $archive = [IO.Compression.ZipFile]::OpenRead((Resolve-Path -LiteralPath $zip).Path)
+          try {
+            $entry = $archive.GetEntry('Dvinholm.exe')
+            if ($null -eq $entry) { throw 'Packaged Dvinholm.exe not found.' }
+            $stream = $entry.Open()
+            $sha = [Security.Cryptography.SHA256]::Create()
+            try { $packedHash = [BitConverter]::ToString($sha.ComputeHash($stream)).Replace('-','').ToLowerInvariant() }
+            finally { $stream.Dispose(); $sha.Dispose() }
+            if ($packedHash -cne $exeSha) {
+              throw 'Packaged EXE differs from verified published binary.'
+            }
+          }
+          finally { $archive.Dispose() }
+          if ($env:GITHUB_RUN_NUMBER -notmatch '^[1-9][0-9]*$') {
+            throw 'Missing pilot CI run number for desktop provenance.'
+          }
+          $pilotRun = [int]$env:GITHUB_RUN_NUMBER
+          $evidence = [ordered]@{
+            schema = 'dvinholm.aurora.x64.provenance.v1'
+            pilotRunNumber = $pilotRun
+            expectedWindowTitle = "Dvinholm CI #$pilotRun"
+            sourceHeadCommitSha = $env:AURORA_PR_HEAD_SHA.ToLowerInvariant()
+            checkoutCommitSha = $env:GITHUB_SHA.ToLowerInvariant()
+            executableRelativePath = 'Dvinholm.exe'
+            executableSha256 = $exeSha
+            packageSha256 = $zipSha
+          }
+          $target = 'artifacts/Aurora-x64-build-evidence.json'
+          [IO.File]::WriteAllText((Join-Path (Get-Location) $target), ($evidence | ConvertTo-Json -Depth 4) + "`n",
+            [Text.UTF8Encoding]::new($false))
+          $decoded = Get-Content -LiteralPath $target -Raw | ConvertFrom-Json
+          if ($decoded.sourceHeadCommitSha -cne $evidence.sourceHeadCommitSha -or
+              $decoded.checkoutCommitSha -cne $evidence.checkoutCommitSha -or
+              $decoded.executableSha256 -cne $exeSha -or
+              [int]$decoded.pilotRunNumber -ne $pilotRun -or
+              $decoded.expectedWindowTitle -cne $evidence.expectedWindowTitle) {
+            throw 'Aurora x64 provenance JSON round-trip mismatch.'
+          }
+          Write-Host 'Verified Aurora x64 PR head, checkout SHA and packaged EXE SHA-256 (no private data).'
+
+      # Built and tested separately, never copied into the user-facing
+      # Dvinholm-Windows-x64.zip or a published release.
+      - name: Publish isolated Windows x64 process-exit probe (not shipped)
+        shell: pwsh
+        run: |
+          dotnet publish src/Dvinholm.UpdateHandoffProbe/Dvinholm.UpdateHandoffProbe.csproj --configuration Release --runtime win-x64 --self-contained true -p:PublishSingleFile=true -p:PublishTrimmed=false --output artifacts/fixture-handoff-probe
+          if ($LASTEXITCODE -ne 0) { throw 'Fixture handoff probe build failed.' }
+          if (-not (Test-Path 'artifacts/fixture-handoff-probe/Dvinholm.UpdateHandoffProbe.exe')) { throw 'Fixture helper EXE missing.' }
+
+      - name: Verify x64 post-exit helper only in marked temporary fixtures (8 checks)
+        shell: pwsh
+        run: |
+          ./eng/Test-UnifiedUpdateHandoffProbe.ps1 -ProbeExe 'artifacts/fixture-handoff-probe/Dvinholm.UpdateHandoffProbe.exe'
+          if ($LASTEXITCODE -ne 0) { throw 'Fixture helper checks failed.' }
+
+      - name: Upload unified x64 review artifact (no release)
+        if: github.event_name == 'pull_request'
+        uses: actions/upload-artifact@v7
+        with:
+          name: Dvinholm-WinUI3-Windows-x64-PR
+          path: |
+            artifacts/Dvinholm-Windows-x64.zip
+            artifacts/SHA256SUMS.txt
+            artifacts/Aurora-x64-build-evidence.json
+            eng/Capture-UnifiedAuroraWinUI3.ps1
+            eng/Review-UnifiedAuroraScreenshots.ps1
+          if-no-files-found: error
+          compression-level: 0
+          retention-days: 7
+) {
+                throw "Invalid reviewed JPG metadata for $($model.modelId)"
+              }
+              $expectedName = "Assets/Vehicles/$($model.file)"
+              $item = $zip.GetEntry($expectedName)
+              if ($null -eq $item -or $item.Length -ne [long]$model.bytes) {
+                throw "Missing or size-mismatched JPG in x64 ZIP: $expectedName"
+              }
+              $input = $item.Open()
+              $hash = [Security.Cryptography.SHA256]::Create()
+              try {
+                $actual = [BitConverter]::ToString($hash.ComputeHash($input)).Replace('-', '').ToLowerInvariant()
+              }
+              finally { $input.Dispose(); $hash.Dispose() }
+              if ($actual -cne $model.sha256) {
+                throw "Source-to-package JPG SHA-256 mismatch: $expectedName"
+              }
+            }
+          }
+          finally { $zip.Dispose() }
+          "Nine reviewed offline JPG resources: 9/9 packaged hashes match; model appearance requires real Windows review." |
+            Out-File $env:GITHUB_STEP_SUMMARY -Append -Encoding utf8
+
       # Verify the actual production-mode x64 ZIP and managed Release
       # assembly before building any Development-only virtual-J2534 fixtures.
       # This test project is deliberately separate from legacy x86 Stable CI.
@@ -220,6 +684,8 @@ jobs:
             'FullyQualifiedName~UdsPassiveEcuListPresentationTests'
             'FullyQualifiedName~AuroraEcuThreePaneWorkspaceTests'
             'FullyQualifiedName~AuroraJ2534MetadataBilingualTests'
+            'FullyQualifiedName~AuroraVehicleArtworkCatalogTests'
+            'FullyQualifiedName~AuroraVehicleLiveCaptureContracts'
           ) -join '|'
           dotnet test tests/Dvinholm.App.Tests/Dvinholm.App.Tests.csproj --configuration Release --runtime win-x64 -p:Platform=x64 -p:PlatformTarget=x64 -p:RuntimeIdentifier=win-x64 -p:DvinholmDevelopmentFeatures=true --filter $filter --results-directory artifacts/x64-offline-tests --logger 'trx;LogFileName=x64-cem-j2534.trx'
           if ($LASTEXITCODE -ne 0) { throw 'Windows x64 CEM/J2534 offline tests failed.' }

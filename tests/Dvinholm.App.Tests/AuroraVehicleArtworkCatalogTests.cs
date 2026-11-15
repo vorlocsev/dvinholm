@@ -1,4 +1,5 @@
 using System.Xml.Linq;
+using System.Text.Json;
 
 namespace Dvinholm.App.Tests;
 
@@ -120,6 +121,79 @@ public sealed class AuroraVehicleArtworkCatalogTests
         Assert.Contains(@"assets\vehicles\*.jpg", project);
         Assert.Contains(@"Assets\Vehicles\%(Filename)%(Extension)", project);
         Assert.DoesNotContain("volvo-model-atlas.svg", project);
+    }
+
+
+    private static (int Width, int Height) ReadJpegFrameDimensions(ReadOnlySpan<byte> data)
+    {
+        if (data.Length < 12 || data[0] != 0xFF || data[1] != 0xD8)
+            throw new InvalidDataException("Not a JPEG image.");
+        var position = 2;
+        while (position + 4 <= data.Length)
+        {
+            if (data[position++] != 0xFF)
+                throw new InvalidDataException("Invalid JPEG marker boundary.");
+            while (position < data.Length && data[position] == 0xFF) position++;
+            if (position >= data.Length) break;
+            var marker = data[position++];
+            if (marker is 0xDA or 0xD9) break;
+            if (marker == 0x01 || marker is >= 0xD0 and <= 0xD7)
+                continue;
+            if (position + 2 > data.Length)
+                throw new InvalidDataException("Truncated JPEG segment.");
+            var length = (data[position] << 8) | data[position + 1];
+            if (length < 2 || position + length > data.Length)
+                throw new InvalidDataException("Invalid JPEG segment length.");
+            // SOF markers carry actual pixel dimensions (not JFIF display density).
+            if (marker is >= 0xC0 and <= 0xCF &&
+                marker is not (0xC4 or 0xC8 or 0xCC))
+            {
+                if (length < 7)
+                    throw new InvalidDataException("Truncated JPEG frame header.");
+                var height = (data[position + 3] << 8) | data[position + 4];
+                var width = (data[position + 5] << 8) | data[position + 6];
+                if (width == 0 || height == 0)
+                    throw new InvalidDataException("Empty JPEG frame.");
+                return (width, height);
+            }
+            position += length;
+        }
+        throw new InvalidDataException("JPEG start-of-frame marker missing.");
+    }
+
+    [Fact]
+    public void ReviewedJpgManifestPinsNineModelIdsPixelsAndContentDigests()
+    {
+        using var manifest = JsonDocument.Parse(Source("assets/vehicles/manifest.json"));
+        var entries = manifest.RootElement.EnumerateArray().ToArray();
+        var models = AuroraVehicleArtworkCatalog.Models;
+        Assert.Equal(models.Count, entries.Length);
+        Assert.Equal(models.Select(model => model.Id),
+            entries.Select(entry => entry.GetProperty("modelId").GetString()));
+
+        var folder = Path.GetDirectoryName(FindSourcePath("assets/vehicles/xc90-p2.jpg"))!;
+        Assert.Equal(9, Directory.EnumerateFiles(folder, "*.jpg").Count());
+        var hashes = new HashSet<string>(StringComparer.Ordinal);
+        foreach (var (model, entry) in models.Zip(entries))
+        {
+            Assert.Equal(model.Label, entry.GetProperty("label").GetString());
+            Assert.Equal(model.Id + ".jpg", entry.GetProperty("file").GetString());
+            Assert.Equal("AI-generated reference render; not verified OEM geometry",
+                entry.GetProperty("source").GetString());
+
+            var bytes = File.ReadAllBytes(FindSourcePath("assets/vehicles/" + model.Id + ".jpg"));
+            Assert.Equal(entry.GetProperty("bytes").GetInt32(), bytes.Length);
+            var (width, height) = ReadJpegFrameDimensions(bytes);
+            Assert.Equal(1280, width);
+            Assert.Equal(510, height);
+            Assert.Equal(entry.GetProperty("width").GetInt32(), width);
+            Assert.Equal(entry.GetProperty("height").GetInt32(), height);
+
+            var digest = Convert.ToHexString(
+                System.Security.Cryptography.SHA256.HashData(bytes)).ToLowerInvariant();
+            Assert.Equal(entry.GetProperty("sha256").GetString(), digest);
+            Assert.True(hashes.Add(digest), "Two vehicle images are byte-for-byte identical.");
+        }
     }
 
     [Fact]
