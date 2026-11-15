@@ -72,7 +72,7 @@ internal static class J2534RegistrationIdentity
         };
         return english
             ? "Registration name hint: " + label +
-              ". Registry label only; no driver or physical adapter verified."
+              ". The registration name alone cannot verify a driver or physical adapter."
             : "Подсказка по записи реестра: " + label +
               ". Только название; драйвер и физический адаптер не проверены.";
     }
