@@ -1468,7 +1468,7 @@
                                                    Text="Информация текущего подключения."
                                                    Foreground="#A9C7DE" FontSize="12" />
                                         <TextBlock x:Name="ConnectionRegistrationHintText"
-                                                   Text="Registration name hint: no matching registration / manual DLL path. Registry label only; no driver or physical adapter verified."
+                                                   Text="Registration name hint: no matching registration / manual DLL path. The registration name alone cannot verify a driver or physical adapter."
                                                    TextWrapping="Wrap" FontSize="12"
                                                    Foreground="#8FB2CB"
                                                    AutomationProperties.LiveSetting="Polite" />
