@@ -13,8 +13,8 @@ public sealed class AuroraCompactNavigationAlignmentTests
 
     private static readonly string[] NavIds =
     {
-        "SidebarConnectionButton", "SidebarUpdatesButton", "SidebarCemPinButton",
-        "SidebarCemConfigButton", "SidebarDtcButton", "SidebarEcuButton"
+        "SidebarCemPinButton", "SidebarCemConfigButton", "SidebarEcuButton",
+        "SidebarDiagnosticsButton", "SidebarUpdatesButton", "SidebarConnectionButton"
     };
 
     private static XDocument Layout()
@@ -56,12 +56,12 @@ public sealed class AuroraCompactNavigationAlignmentTests
         var buttons = Named(doc, "SidebarNavPanel").Elements()
             .Where(e => e.Name.LocalName == "Button").ToArray();
         Assert.Equal(NavIds, buttons.Select(e => (string?)e.Attribute(X + "Name")));
-        Assert.Equal("J2534Connection", (string?)buttons[0].Attribute("Tag"));
-        Assert.Equal("CemPinReadiness", (string?)buttons[2].Attribute("Tag"));
-        Assert.Equal("CemConfigurationCatalog", (string?)buttons[3].Attribute("Tag"));
-        Assert.Equal("DtcFaults", (string?)buttons[4].Attribute("Tag"));
-        Assert.Equal("EcuWorkspace", (string?)buttons[5].Attribute("Tag"));
-        Assert.Null(buttons[1].Attribute("Tag"));
+        Assert.Equal("CemPinReadiness", (string?)buttons[0].Attribute("Tag"));
+        Assert.Equal("CemConfigurationCatalog", (string?)buttons[1].Attribute("Tag"));
+        Assert.Equal("EcuWorkspace", (string?)buttons[2].Attribute("Tag"));
+        Assert.Equal("DiagnosticsWorkspace", (string?)buttons[3].Attribute("Tag"));
+        Assert.Null(buttons[4].Attribute("Tag"));
+        Assert.Equal("J2534Connection", (string?)buttons[5].Attribute("Tag"));
     }
 
     [Fact]
@@ -100,8 +100,8 @@ public sealed class AuroraCompactNavigationAlignmentTests
         var doc = Layout();
         var compact = CompactSetters(doc);
         var textIds = new[] {
-            "ShellNavConnectionLabel", "ShellNavUpdatesLabel", "ShellNavCemPinLabel",
-            "ShellNavConfigLabel", "ShellNavDtcLabel", "ShellNavEcuLabel"
+            "ShellNavCemPinLabel", "ShellNavConfigLabel", "ShellNavEcuLabel",
+            "ShellNavDiagnosticsLabel", "ShellNavUpdatesLabel", "ShellNavConnectionLabel"
         };
         for (var i = 0; i < NavIds.Length; i++)
         {
@@ -136,7 +136,7 @@ public sealed class AuroraCompactNavigationAlignmentTests
         for (var i = 0; i < NavIds.Length; i++)
         {
             var button = Named(doc, NavIds[i]);
-            Assert.Equal(i == 1 ? "UnifiedUpdatesNavigate_Click" :
+            Assert.Equal(i == 4 ? "UnifiedUpdatesNavigate_Click" :
                 "WorkspaceNavigate_Click", (string?)button.Attribute("Click"));
             Assert.NotNull(button.Attribute("AutomationProperties.Name"));
             Assert.NotNull(button.Attribute("ToolTipService.ToolTip"));
