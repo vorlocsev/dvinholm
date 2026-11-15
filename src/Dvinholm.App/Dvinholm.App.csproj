@@ -59,6 +59,8 @@
   </ItemGroup>
   <ItemGroup>
     <None Update="Assets\Dvinholm.ico" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Retain the MIT notice for adapted independent read-only formats. -->
+    <None Update="Assets\ReadOnlyFormats-MIT.txt" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\assets\dvinholm-banner.webp" Link="Assets\Dvinholm-Banner.webp" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <Content Include="..\..\assets\dvinholm-banner.png" Link="Assets\Dvinholm-Banner.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- Text-free Aurora coastal photograph: shipped offline in self-contained x64. -->

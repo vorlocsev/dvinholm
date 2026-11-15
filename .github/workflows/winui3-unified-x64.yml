@@ -225,6 +225,7 @@ jobs:
         run: |
           $filter = @(
             'FullyQualifiedName~CemPartNumberFrameDecoderTests'
+            'FullyQualifiedName~CemConfigurationBlockDecoderTests'
             'FullyQualifiedName~CemPartNumberReaderTests'
             'FullyQualifiedName~CemReadOnlyPrerequisiteReportTests'
             'FullyQualifiedName~CemIdentityEvidenceReportTests'
