@@ -117,16 +117,24 @@ public sealed class AuroraScreenshotIdentityContracts
     }
 
     [Fact]
-    public void ScreenshotMapsAllSixRussianWorkspaceTitlesNotSidebarAliases()
+    public void ScreenshotMapsApprovedSixRussianWorkspacesAndOptionalNestedDtc()
     {
-        var source = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
+        var capture = Source("eng/Capture-UnifiedAuroraWinUI3.ps1");
         var app = Source("src/Dvinholm.App/AuroraWorkspaceNavigation.cs");
-        Assert.Contains("Connection='Подключение'; Updates='Обновление'; CemPin='CEM PIN'", source);
-        Assert.Contains("CemConfiguration='Конфигурация CEM'; Dtc='Ошибки (DTC)'; Ecu='Блоки ECU'", source);
+        // Match the approved first-fold order, not the old DTC sidebar.
+        Assert.Contains(
+            "$Pages = @('CemPin','CemConfiguration','Ecu','Diagnostics','Updates','Connection')",
+            capture);
+        Assert.Contains("Connection='Подключение'; Updates='Обновление'; CemPin='CEM PIN'", capture);
+        Assert.Contains(
+            "CemConfiguration='Конфигурация CEM'; Diagnostics='Диагностика'; Dtc='Ошибки (DTC)'; Ecu='Блоки ECU'",
+            capture);
         foreach (var title in new[] { "Подключение", "CEM PIN", "Конфигурация CEM",
-            "Ошибки (DTC)", "Блоки ECU" })
+            "Диагностика", "Ошибки (DTC)", "Блоки ECU" })
             Assert.Contains($"\"{title}\"", app);
-        Assert.Contains("UpdateUnifiedWorkspaceHeader()", Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs"));
+        Assert.Contains("if ($page -eq 'Dtc') { Invoke-OnlyNavigation 'Diagnostics' }", capture);
+        Assert.Contains("UpdateUnifiedWorkspaceHeader()",
+            Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs"));
     }
 
     [Fact]
