@@ -226,6 +226,7 @@ jobs:
           $filter = @(
             'FullyQualifiedName~CemPartNumberFrameDecoderTests'
             'FullyQualifiedName~CemConfigurationBlockDecoderTests'
+            'FullyQualifiedName~CemConfigurationIndexedReviewTests'
             'FullyQualifiedName~CemPartNumberReaderTests'
             'FullyQualifiedName~CemReadOnlyPrerequisiteReportTests'
             'FullyQualifiedName~CemIdentityEvidenceReportTests'

@@ -46,3 +46,34 @@ report claims and do not confirm OEM traces or physical hardware.
 
 New xUnit tests are registered in the native x64 offline pilot. Windows
 CI and desktop/physical hardware acceptance remain separate gates.
+
+## Stage: 1-based offline index review and safe comparison
+
+The archive's CEM_CONFIGURATION.md describes P2 1-140 and P3 1-252
+indexed configuration values. The P3 decoder is described as matching
+exactly ordered 1..252 definitions in an embedded P3 catalog, but the
+research document explicitly does not provide the complete hardware
+part-number dictionary, firmware applicability or raw option meanings.
+
+Dvinholm's existing VolvoP2CemConfigOptionManifest contains 14
+display-only research candidate names (eight vendor advertisements and six
+manufacturer menu labels), not verified P2 byte-index definitions. Its
+production physical-support and parameter mapping catalogs remain empty.
+Ordinal position in those lists MUST NOT be joined to the P2/P3 values.
+
+CemConfigurationIndexedReview converts a validated body to an immutable
+index/value list (one-based ordinal and raw byte, with hex presentation)
+and SHA-256 of the supplied body. This hash is an integrity fingerprint,
+not ECU authentication. The optional Compare routine accepts only the same
+P2 or P3 format and reports changed raw ordinal values; it never resolves
+names, reads a file or talks to CAN/J2534.
+
+This stage deliberately does not introduce a part-number/firmware dictionary,
+auto-variant detection, a service request, an interpreted configuration
+editor or any write capability. Physical verification and independently
+documented revision-specific option definitions remain blocked.
+
+13 offline xUnit checks are registered for the native x64 pilot: P2/P3
+length and index boundaries, unknown raw values, invalid shape, integrity
+hash changes, identical/different comparisons, cross-generation rejection,
+immutability, research catalog isolation and no-I/O contracts.
