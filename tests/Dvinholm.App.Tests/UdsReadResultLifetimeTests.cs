@@ -125,7 +125,7 @@ public sealed class UdsReadResultLifetimeTests
         var select = Between(code, "private void ApplyEcuSelection(", "private void SetUdsEnabled(");
         var connect = Between(code, "private async void Connect_Click(", "private void Start_Click(");
         Assert.Contains("ClearDiagnosticReadResult();", navigation);
-        Assert.Contains("DashboardNavigate(sender, AuroraDestination.J2534Connection)", legacyReturn);
+        Assert.Contains("DashboardNavigate(sender, AuroraDestination.CemPinReadiness)", legacyReturn);
         Assert.Contains("ClearDiagnosticReadResult();", scan);
         Assert.Contains("ClearDiagnosticReadResult();", select);
         Assert.True(connect.Split("ClearDiagnosticReadResult();", StringSplitOptions.None).Length >= 3);
