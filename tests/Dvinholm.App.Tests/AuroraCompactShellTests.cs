@@ -49,11 +49,11 @@ public sealed class AuroraCompactShellTests
         var sidebar = Named(doc, "SidebarNavPanel");
         var buttons = sidebar.Elements().Where(e => e.Name.LocalName == "Button").ToArray();
         Assert.Equal(6, buttons.Length);
-        Assert.Equal(new[] { "J2534Connection", null, "CemPinReadiness",
-                             "CemConfigurationCatalog", "DtcFaults", "EcuWorkspace" },
+        Assert.Equal(new[] { "CemPinReadiness", "CemConfigurationCatalog",
+                             "EcuWorkspace", "DiagnosticsWorkspace", null, "J2534Connection" },
             buttons.Select(b => (string?)b.Attribute("Tag")));
-        Assert.Equal("SidebarUpdatesButton", (string?)buttons[1].Attribute(X + "Name"));
-        Assert.Equal("UnifiedUpdatesNavigate_Click", (string?)buttons[1].Attribute("Click"));
+        Assert.Equal("SidebarUpdatesButton", (string?)buttons[4].Attribute(X + "Name"));
+        Assert.Equal("UnifiedUpdatesNavigate_Click", (string?)buttons[4].Attribute("Click"));
         Assert.DoesNotContain(doc.Descendants(), e => e.Name.LocalName == "Button" &&
             (string?)e.Attribute(X + "Name") == "SidebarHomeButton");
     }
@@ -64,7 +64,7 @@ public sealed class AuroraCompactShellTests
         var doc = Shell();
         var setters = Setters(doc, "ShellCompact");
         foreach (var label in new[] { "ShellNavConnectionLabel", "ShellNavUpdatesLabel",
-            "ShellNavCemPinLabel", "ShellNavConfigLabel", "ShellNavDtcLabel", "ShellNavEcuLabel" })
+            "ShellNavCemPinLabel", "ShellNavConfigLabel", "ShellNavDiagnosticsLabel", "ShellNavEcuLabel" })
         {
             Assert.Equal("TextBlock", Named(doc, label).Name.LocalName);
             Assert.Equal("Collapsed", setters[label + ".Visibility"]);
@@ -84,7 +84,7 @@ public sealed class AuroraCompactShellTests
             Assert.Equal((string?)button.Attribute("AutomationProperties.Name"),
                          (string?)button.Attribute("ToolTipService.ToolTip"));
             Assert.False(string.IsNullOrEmpty((string?)button.Attribute("Click")));
-            if (button != buttons[1])
+            if (button != buttons[4])
                 Assert.Equal("WorkspaceNavigate_Click", (string?)button.Attribute("Click"));
         }
     }
