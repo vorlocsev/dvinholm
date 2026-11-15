@@ -161,7 +161,7 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("[switch]$CaptureBottomViews", script);
         Assert.Contains("if ($CaptureBottomViews -and -not $VerifyWorkspaceScroll)", script);
         Assert.Contains("-CaptureBottomViews requires -VerifyWorkspaceScroll", script);
-        Assert.Contains("$page -in @('CemPin','CemConfiguration','Ecu','Diagnostics')", script);
+        Assert.Contains("$page -in @('CemPin','CemConfiguration','Ecu','Diagnostics','Dtc')", script);
         Assert.Contains("Aurora-$page-$Language-$fixedWidthDip-dip-bottom.png", script);
         Assert.Contains("Aurora-$page-$Language-$fixedWidthDip-dip.png", script);
         Assert.Contains("$bottomResults = @()", script);
@@ -298,7 +298,7 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.Contains("if ($VerifyWorkspaceScroll)", script);
         Assert.Contains("function Assert-WorkspaceScrollToEnd(", script);
         Assert.Contains("[string]$page,", script);
-        Assert.Contains("if ($page -notin @('CemPin','CemConfiguration','Ecu','Diagnostics'))", script);
+        Assert.Contains("if ($page -notin @('CemPin','CemConfiguration','Ecu','Diagnostics','Dtc'))", script);
         Assert.Contains("TryGetCurrentPattern(", script);
         Assert.Contains("[System.Windows.Automation.ScrollPattern]::Pattern", script);
         Assert.Contains("DvinholmShellStatusBar", script);
@@ -768,4 +768,23 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         Assert.DoesNotContain("PassThruOpen", bottom);
     }
 
+
+    [Fact]
+    public void OptionalDtcScreenshotsKeepBottomScrollEvidenceWithoutAddingSeventhSidebarRoute()
+    {
+        var script = Capture();
+        var xaml = Layout();
+        var sidebar = Named(xaml, "SidebarNavPanel");
+        Assert.Equal(6, sidebar.Elements().Count(e => e.Name.LocalName == "Button"));
+        Assert.DoesNotContain(sidebar.Elements(),
+            e => (string?)e.Attribute("Tag") == "DtcFaults");
+        Assert.Contains("[ValidateSet('Connection','Updates','CemPin','CemConfiguration','Diagnostics','Dtc','Ecu')]", script);
+        Assert.Contains("$Pages = @('CemPin','CemConfiguration','Ecu','Diagnostics','Updates','Connection')", script);
+        Assert.Contains("if ($page -eq 'Dtc') { Invoke-OnlyNavigation 'Diagnostics' }", script);
+        Assert.Contains("if ($page -notin @('CemPin','CemConfiguration','Ecu','Diagnostics','Dtc'))", script);
+        Assert.Contains("$page -in @('CemPin','CemConfiguration','Ecu','Diagnostics','Dtc')", script);
+        Assert.Contains("if ($bottomVerified)", script);
+        Assert.Contains("verifiedOuterScrollPercentAtLeast98 = $true", script);
+        Assert.Contains("bottom fold NOT RUN (not a visual PASS)", script);
+    }
 }
