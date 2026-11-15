@@ -188,6 +188,13 @@ public sealed partial class MainWindow
         UdsRequestId.Header = L("Адрес запроса · TX", "Request CAN ID · TX");
         UdsResponseId.Header = L("Адрес ответа · RX", "Response CAN ID · RX");
         UdsDid.Header = L("Параметр DID · hex", "DID (hex)");
+        // Placeholder copy is guidance only. Switching RU/EN must not edit
+        // typed CAN IDs, the selected DID, the active channel or read context.
+        UdsRequestId.PlaceholderText = L("Введите проверенный TX ID",
+            "Enter source-verified TX ID");
+        UdsResponseId.PlaceholderText = L("Введите проверенный RX ID",
+            "Enter independently verified RX ID");
+        UdsDid.PlaceholderText = L("Например F190", "e.g. F190");
         CanIdFormat.Header = L("Формат CAN ID", "CAN ID format");
 
         // These controls already expose truthful J2534/UDS guidance in XAML,
