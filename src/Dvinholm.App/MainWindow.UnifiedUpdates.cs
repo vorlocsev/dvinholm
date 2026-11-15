@@ -121,6 +121,10 @@ public sealed partial class MainWindow
         RefreshCemPrerequisitePresentation();
         RefreshCemIdentityEvidencePresentation();
         RefreshJ2534ArchitectureAuditPresentation();
+        // The visible bilingual header is updated by the presenter; mirror it
+        // for assistive technology instead of retaining the Russian XAML default.
+        AutomationProperties.SetName(J2534ArchitectureAuditExpander,
+            J2534ArchitectureAuditHeaderText.Text);
         // Update only the private Connection card. Do not publish vendor API,
         // firmware or DLL metadata to the shared activity/history surface.
         RefreshLocalAdapterMetadataLanguage();
