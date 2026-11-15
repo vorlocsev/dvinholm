@@ -1,6 +1,8 @@
 using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Automation;
 
 namespace Dvinholm.App;
 
@@ -256,21 +258,30 @@ public sealed partial class MainWindow
     }
 
     /// <summary>
-    /// Model artwork selector is display-only. Distinct side profiles reflect
-    /// a user's manual choice, not decoded vehicle identity or module position.
+    /// Display-only manual selection of one of nine offline reference renders.
+    /// This never changes connected vehicle, chosen ECU, CAN IDs or UDS state.
     /// </summary>
-    private void EcuVehicleModel_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    private void EcuVehicleModel_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
+        RefreshAuroraVehicleArtwork();
+
+    private void RefreshAuroraVehicleArtwork()
     {
-        if (EcuP2SideProfile is null || EcuP3SideProfile is null || EcuDiagramCaption is null)
+        if (EcuVehicleArtworkAtlas is null || EcuVehicleModel is null || EcuDiagramCaption is null)
             return;
-        var p3 = EcuVehicleModel.SelectedIndex == 1;
-        EcuP2SideProfile.Visibility = p3 ? Visibility.Collapsed : Visibility.Visible;
-        EcuP3SideProfile.Visibility = p3 ? Visibility.Visible : Visibility.Collapsed;
-        EcuDiagramCaption.Text = p3
-            ? L("XC70 P3 · условный боковой силуэт, выбран вручную",
-                "XC70 P3 · schematic side profile, manually selected")
-            : L("XC90 P2 · условный боковой силуэт, выбран вручную",
-                "XC90 P2 · schematic side profile, manually selected");
-        // The selection cannot relabel passive RX IDs as specific ECUs.
+        var id = (EcuVehicleModel.SelectedItem as ComboBoxItem)?.Tag as string;
+        var model = AuroraVehicleArtworkCatalog.Resolve(id);
+        if (EcuVehicleArtworkAtlas.RenderTransform is TranslateTransform offset)
+        {
+            offset.X = -model.AtlasColumn * AuroraVehicleArtworkCatalog.CellWidth;
+            offset.Y = -model.AtlasRow * AuroraVehicleArtworkCatalog.CellHeight;
+        }
+        EcuDiagramCaption.Text = L(
+            model.Label + " · справочный рендер, выбран вручную",
+            model.Label + " · reference render, selected manually");
+        AutomationProperties.SetName(EcuVehicleArtworkAtlas, L(
+            "Справочное изображение " + model.Label,
+            "Reference illustration of " + model.Label));
+        // The displayed bodywork is NEVER a decoded VIN, ECU location,
+        // service permission, request address or connected vehicle identity.
     }
 }
