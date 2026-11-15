@@ -112,10 +112,16 @@ foreach ($lang in @('ru','en')) {
             throw "$lang $id lacks verified manual selection, JPG decode, or fixed viewport."
         }
         $pixelHash = [string]$entry.artworkViewportSha256
+        $pngHash = [string]$entry.screenshotSha256
         if ($pixelHash -cnotmatch '^[0-9a-f]{64}$' -or
+            $pngHash -cnotmatch '^[0-9a-f]{64}$' -or
             $pixelHashes.ContainsKey($pixelHash)) {
             throw "$lang $id has absent, malformed or repeated real artwork pixels."
         }
+        if ($null -eq $entry.artworkViewportRectPx) {
+            throw "Missing actual artwork viewport pixel coordinates: $lang $id."
+        }
+        $region = $entry.artworkViewportRectPx
         $pixelHashes[$pixelHash] = $id
         $commit = [string]$entry.sourceCommitOperatorDeclared
         if ($commit -cnotmatch '^[0-9a-fA-F]{40}$') {
@@ -141,7 +147,12 @@ foreach ($lang in @('ru','en')) {
         if (-not (Test-Path -LiteralPath $png -PathType Leaf)) {
             throw "Screenshot missing: $lang $filename."
         }
-        $img = [System.Drawing.Image]::FromFile($png)
+        # Recompute SHA-256 from the saved PNG, never trust the manifest alone.
+        $actualPngHash = (Get-FileHash -LiteralPath $png -Algorithm SHA256).Hash.ToLowerInvariant()
+        if ($actualPngHash -cne $pngHash) {
+            throw "Screenshot PNG was modified after live capture: $lang $id."
+        }
+        $img = [System.Drawing.Bitmap]::new($png)
         try {
             if ([int]$entry.actualWidthPx -ne $img.Width -or
                 [int]$entry.actualHeightPx -ne $img.Height -or
@@ -153,6 +164,34 @@ foreach ($lang in @('ru','en')) {
                 throw 'RU and EN actual screenshot dimensions differ.'
             }
             $globalSize = $size
+            # Recompute the exact same normalized 32-bit crop saved by the
+            # interactive capture helper; reject moved or edited artwork.
+            $x = [int]$region.x
+            $y = [int]$region.y
+            $w = [int]$region.width
+            $h = [int]$region.height
+            if ($x -lt 0 -or $y -lt 0 -or $w -lt 100 -or $h -lt 60 -or
+                $x + $w -gt $img.Width -or $y + $h -gt $img.Height) {
+                throw "Invalid real artwork crop bounds for $lang $id."
+            }
+            $crop = $img.Clone(
+                [System.Drawing.Rectangle]::new($x, $y, $w, $h),
+                [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
+            $stream = [System.IO.MemoryStream]::new()
+            $hash = [System.Security.Cryptography.SHA256]::Create()
+            try {
+                $crop.Save($stream, [System.Drawing.Imaging.ImageFormat]::Png)
+                $actualCropHash = [BitConverter]::ToString(
+                    $hash.ComputeHash($stream.ToArray())).Replace('-', '').ToLowerInvariant()
+                if ($actualCropHash -cne $pixelHash) {
+                    throw "Actual screenshot artwork pixels differ from capture: $lang $id."
+                }
+            }
+            finally {
+                $hash.Dispose()
+                $stream.Dispose()
+                $crop.Dispose()
+            }
         }
         finally { $img.Dispose() }
         $found[$id] = $entry

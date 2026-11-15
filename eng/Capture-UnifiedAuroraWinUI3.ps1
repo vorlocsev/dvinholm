@@ -805,14 +805,18 @@ function Get-OnlyVehicleArtworkPixelHash([System.Drawing.Bitmap]$bitmap, [int]$w
         $x + $w -gt $bitmap.Width -or $y + $h -gt $bitmap.Height) {
         throw 'Vehicle artwork viewport is clipped or outside the captured window.'
     }
+    # Normalize pixel format so saved PNG and subsequently reopened screenshot
+    # produce the same crop hash, independent of the decoder's native format.
     $crop = $bitmap.Clone(
-        [System.Drawing.Rectangle]::new($x, $y, $w, $h), $bitmap.PixelFormat)
+        [System.Drawing.Rectangle]::new($x, $y, $w, $h),
+        [System.Drawing.Imaging.PixelFormat]::Format32bppArgb)
     $stream = [System.IO.MemoryStream]::new()
     $hash = [System.Security.Cryptography.SHA256]::Create()
     try {
         $crop.Save($stream, [System.Drawing.Imaging.ImageFormat]::Png)
-        return [BitConverter]::ToString(
+        $digest = [BitConverter]::ToString(
             $hash.ComputeHash($stream.ToArray())).Replace('-', '').ToLowerInvariant()
+        return [pscustomobject]@{ Sha256 = $digest; X = $x; Y = $y; Width = $w; Height = $h }
     }
     finally {
         $hash.Dispose()
@@ -951,7 +955,8 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
                         $bitmap.Size, [System.Drawing.CopyPixelOperation]::SourceCopy)
                 }
                 finally { $graphics.Dispose() }
-                $artHash = Get-OnlyVehicleArtworkPixelHash $bitmap $left $top
+                $artRegion = Get-OnlyVehicleArtworkPixelHash $bitmap $left $top
+                $artHash = [string]$artRegion.Sha256
                 if ($captureViewportHashes.ContainsKey($artHash)) {
                     throw "Vehicle artwork pixels for $($model.id) are identical to $($captureViewportHashes[$artHash]); JPG model switch not proven."
                 }
@@ -959,6 +964,10 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
                 $captureViewportHashes[$artHash] = $model.id
             }
             finally { $bitmap.Dispose() }
+            # Preserve independent SHA-256 of the exact saved screenshot bytes.
+            # The offline reviewer must re-hash these bytes before trusting
+            # any selection, crop metadata or visual review.
+            $pngSha256 = (Get-FileHash -LiteralPath $destination -Algorithm SHA256).Hash.ToLowerInvariant()
             $script:vehicleResults += [ordered]@{
                 file = $filename
                 page = 'Ecu'
@@ -967,6 +976,11 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
                 verifiedReferenceCaption = $verifiedCaption
                 jpgDecodedByWinUiImageOpened = $true
                 artworkViewportSha256 = $artHash
+                artworkViewportRectPx = [ordered]@{
+                    x = $artRegion.X; y = $artRegion.Y
+                    width = $artRegion.Width; height = $artRegion.Height
+                }
+                screenshotSha256 = $pngSha256
                 operatorSelectedLanguage = $Language
                 captureSessionId = $captureSessionId
                 sourceCommitOperatorDeclared = $CommitSha

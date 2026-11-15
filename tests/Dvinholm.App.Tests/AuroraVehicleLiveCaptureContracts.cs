@@ -186,6 +186,10 @@ public sealed class AuroraVehicleLiveCaptureContracts
         Assert.Contains("$captureViewportHashes = @{}", script);
         Assert.Contains("$captureViewportHashes.ContainsKey($artHash)", script);
         Assert.Contains("artworkViewportSha256 = $artHash", script);
+        Assert.Contains("artworkViewportRectPx = [ordered]@{", script);
+        Assert.Contains("screenshotSha256 = $pngSha256", script);
+        Assert.Contains("Get-FileHash -LiteralPath $destination -Algorithm SHA256", script);
+        Assert.Contains("Format32bppArgb", script);
         Assert.Contains("JPG model switch not proven", script);
         var start = script.IndexOf("function Capture-OnlyVehicleModels(", StringComparison.Ordinal);
         var end = script.IndexOf("# Preflight the fixed viewport", start, StringComparison.Ordinal);
@@ -212,7 +216,14 @@ public sealed class AuroraVehicleLiveCaptureContracts
         Assert.Contains("$entry.selectedModelNameVerifiedByUia", script);
         Assert.Contains("$entry.verifiedReferenceCaption", script);
         Assert.Contains("$entry.sourceCommitOperatorDeclared", script);
-        Assert.Contains("System.Drawing.Image]::FromFile($png)", script);
+        Assert.Contains("System.Drawing.Bitmap]::new($png)", script);
+        Assert.Contains("Get-FileHash -LiteralPath $png -Algorithm SHA256", script);
+        Assert.Contains("$actualPngHash -cne $pngHash", script);
+        Assert.Contains("$entry.artworkViewportRectPx", script);
+        Assert.Contains("$img.Clone(", script);
+        Assert.Contains("Format32bppArgb", script);
+        Assert.Contains("$actualCropHash -cne $pixelHash", script);
+        Assert.Contains("Actual screenshot artwork pixels differ from capture", script);
         Assert.Contains("RU and EN actual screenshot dimensions differ", script);
         Assert.Contains("Aurora-local-vehicle-review.html", script);
         Assert.Contains("NOT APPROVED until human inspection", script);
