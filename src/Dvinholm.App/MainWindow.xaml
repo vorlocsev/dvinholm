@@ -1017,7 +1017,9 @@
                                                                 Source="ms-appx:///Assets/Vehicles/Volvo-Model-Atlas.svg"
                                                                 Width="1920" Height="765"
                                                                 HorizontalAlignment="Left" VerticalAlignment="Top"
-                                                                Stretch="Fill" AutomationProperties.Name="Справочное изображение Volvo XC90 I">
+                                                                Stretch="Fill" AutomationProperties.Name="Справочное изображение Volvo XC90 I"
+                                                                ImageOpened="EcuVehicleArtworkAtlas_ImageOpened"
+                                                                ImageFailed="EcuVehicleArtworkAtlas_ImageFailed">
                                                              <Image.RenderTransform>
                                                                  <TranslateTransform X="0" Y="0" />
                                                              </Image.RenderTransform>
@@ -1039,7 +1041,8 @@
                                                     <StackPanel x:Name="EcuObservationRail" Orientation="Horizontal" Spacing="2" />
                                                 </ScrollViewer>
                                                 <TextBlock x:Name="EcuObservationRailSummary" Text="Нет завершённого пассивного наблюдения. На изображении нет отметок физических ECU." Foreground="#E9C48D" FontSize="12" TextWrapping="Wrap" />
-                                                <TextBlock x:Name="EcuDiagramCaption" AutomationProperties.AutomationId="DvinholmVehicleArtworkCaption" Text="Volvo XC90 I · P2 · справочный рендер, выбран вручную" Foreground="#B5D8ED" TextWrapping="Wrap" />
+                                                <TextBlock x:Name="EcuDiagramCaption" AutomationProperties.AutomationId="DvinholmVehicleArtworkCaption"
+                                                            AutomationProperties.HelpText="DvinholmVehicleAtlasPending" Text="Volvo XC90 I · P2 · справочный рендер, выбран вручную" Foreground="#B5D8ED" TextWrapping="Wrap" />
                                                 <TextBlock x:Name="EcuDiagramDisclaimer" Text="Справочный рендер не указывает физические позиции ECU; выбор модели не подтверждает идентичность автомобиля или блоков." FontSize="12" Foreground="#A2B9D1" TextWrapping="Wrap" />
                                             </StackPanel>
                                         </Border>
