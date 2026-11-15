@@ -356,15 +356,48 @@ public sealed class AuroraVisualEnglishLocalizationTests
         Assert.Equal("Expander", expander.Name.LocalName);
         Assert.Contains(caption, expander.Descendants());
 
-        var locale = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
-        var from = locale.IndexOf("RefreshJ2534ArchitectureAuditPresentation();", StringComparison.Ordinal);
-        var to = locale.IndexOf("RefreshLocalAdapterMetadataLanguage();", from, StringComparison.Ordinal);
+        var presenter = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        var from = presenter.IndexOf("private void RefreshJ2534ArchitectureAuditPresentation()", StringComparison.Ordinal);
+        var to = presenter.IndexOf("private void RefreshJ2534Devices(", from, StringComparison.Ordinal);
         Assert.True(from >= 0 && to > from);
-        var projection = locale[from..to];
-        Assert.Contains("AutomationProperties.SetName(J2534ArchitectureAuditExpander,", projection);
-        Assert.Contains("J2534ArchitectureAuditHeaderText.Text);", projection);
+        var projection = presenter[from..to];
+        Assert.Contains("J2534ArchitectureAuditHeaderText.Text = L(", projection);
+        Assert.Contains("J2534ArchitectureAuditExpander, J2534ArchitectureAuditHeaderText.Text);", projection);
         Assert.DoesNotContain("PassThru", projection);
         Assert.DoesNotContain("SendAsync(", projection);
         Assert.DoesNotContain("Discover_Click(", projection);
+    }
+
+    [Fact]
+    public void CancelButtonTracksChosenRuEnLanguageWithoutChangingUdsSession()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
+        Assert.Contains("RefreshCancellationButtonLanguage();", source);
+        var start = source.IndexOf("private void RefreshCancellationButtonLanguage()", StringComparison.Ordinal);
+        var end = source.IndexOf("private void SetPrimaryNavigationLabel(", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var method = source[start..end];
+        Assert.Contains("_udsCts is not null", method);
+        Assert.Contains("Отмена CEM", method);
+        Assert.Contains("Cancel CEM", method);
+        Assert.Contains("Отменить операцию", method);
+        Assert.Contains("Cancel operation", method);
+        Assert.DoesNotContain("_udsCts =", method);
+        Assert.DoesNotContain("Cancel(", method);
+        Assert.DoesNotContain("SendAsync(", method);
+        Assert.DoesNotContain("PassThru", method);
+    }
+
+    [Fact]
+    public void CemCancellationLabelRestoresCurrentLocaleAfterOperation()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        var start = source.IndexOf("private async void ReadCemPartNumber_Click(", StringComparison.Ordinal);
+        var end = source.IndexOf("private async void ReadDid_Click(", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var body = source[start..end];
+        Assert.Contains("CancelUdsButton.Content = L(\"Отмена CEM\", \"Cancel CEM\");", body);
+        Assert.Contains("CancelUdsButton.Content = cancelLabel;", body);
+        Assert.Contains("RefreshCancellationButtonLanguage();", body);
     }
 }
