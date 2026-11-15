@@ -35,6 +35,13 @@ public sealed partial class MainWindow
         // RefreshCemPrerequisitePresentation, which runs after this projection
         // and after the user's local-inspection click. Do not duplicate it.
 
+        DiagnosticsFaultsNavigateButton.Content = L("Ошибки (DTC)", "Faults (DTC)");
+        AutomationProperties.SetName(DiagnosticsFaultsNavigateButton,
+            DiagnosticsFaultsNavigateButton.Content as string ?? string.Empty);
+        ToolTipService.SetToolTip(DiagnosticsFaultsNavigateButton, L(
+            "Открывает отдельный экран ошибок выбранного ECU. Не считывает и не стирает ошибки.",
+            "Opens the selected ECU fault-code workspace. Does not read or clear DTCs."));
+
         EcuToolsTitle.Text = L("Дополнительные инструменты ECU", "ECU tools");
         EcuToolsIntro.Text = L(
             "Проверенные функции не удалены: откройте профиль, монитор CAN или чтение данных из рабочей области ECU.",
