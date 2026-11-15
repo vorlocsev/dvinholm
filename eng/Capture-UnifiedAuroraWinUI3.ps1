@@ -763,6 +763,20 @@ function Get-SelectedVehicleModelName {
     return [string]$selected[0].Current.Name
 }
 
+# A matching model name is not evidence that WinUI decoded the SVG.
+# ImageOpened publishes this status through the caption's UIA HelpText.
+function Assert-OnlyVehicleAtlasLoaded {
+    $condition = [System.Windows.Automation.PropertyCondition]::new(
+        [System.Windows.Automation.AutomationElement]::AutomationIdProperty,
+        'DvinholmVehicleArtworkCaption')
+    $caption = $root.FindFirst(
+        [System.Windows.Automation.TreeScope]::Descendants, $condition)
+    if ($null -eq $caption -or
+        $caption.Current.HelpText -cne 'DvinholmVehicleAtlasLoaded') {
+        throw 'Vehicle atlas SVG was not confirmed decoded by WinUI; refusing model screenshot.'
+    }
+}
+
 function Select-OnlyVehicleArtwork($model) {
     Confirm-WorkspaceState 'Ecu' -RequireVisible
     $selector = Get-VehicleModelSelector
@@ -824,6 +838,7 @@ function Select-OnlyVehicleArtwork($model) {
     if ($caption.Current.Name -cne $expected) {
         throw "Model caption mismatch for $($model.id): '$($caption.Current.Name)'."
     }
+    [void](Assert-OnlyVehicleAtlasLoaded)
     return $expected
 }
 
@@ -880,6 +895,9 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
             if (Test-Path -LiteralPath $destination) {
                 throw "Model screenshot destination already exists: $filename."
             }
+            # Do not treat a fallback notice as a successful model capture.
+            # Recheck after the tooltip-clear interval and immediately before pixels.
+            [void](Assert-OnlyVehicleAtlasLoaded)
             $bitmap = [System.Drawing.Bitmap]::new($width, $height)
             try {
                 $graphics = [System.Drawing.Graphics]::FromImage($bitmap)
@@ -897,6 +915,7 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
                 manuallySelectedModelId = $model.id
                 selectedModelNameVerifiedByUia = $model.name
                 verifiedReferenceCaption = $verifiedCaption
+                atlasDecodedByWinUiImageOpened = $true
                 operatorSelectedLanguage = $Language
                 captureSessionId = $captureSessionId
                 sourceCommitOperatorDeclared = $CommitSha
@@ -906,7 +925,7 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
                 actualHeightPx = $height
                 windowDpi = $dpi
                 screenshotUtc = [DateTime]::UtcNow.ToString('o')
-                evidence = 'actual desktop pixels and verified UIA selection/caption only; rendering and model fidelity require human review'
+                evidence = 'actual desktop pixels with verified UIA model, caption and WinUI image decode; pixel fidelity requires human review'
             }
             Write-Host "Captured manual vehicle reference model: $filename"
         }
