@@ -187,6 +187,12 @@ public sealed partial class MainWindow
         J2534Devices.Header = L("Установленные адаптеры", "Registered adapters");
         J2534Devices.PlaceholderText = L("Выберите адаптер", "Select adapter");
         BaudRate.Header = L("Скорость CAN", "CAN speed");
+        // Preserve the original model-year guidance and the warning that
+        // it is not an automatically verified vehicle/bus configuration.
+        // A locale switch must never modify the selected baud-rate tag.
+        ToolTipService.SetToolTip(BaudRate, L(
+            "Ориентир для Volvo XC90 P2 HS-CAN: по 2004 модельный год включительно — 250 кбит/с; с 2005 модельного года — 500 кбит/с. Другие сети могут отличаться. Перед подключением проверьте модельный год, шину и адаптер. Dvinholm не устанавливает скорость автоматически.",
+            "Volvo XC90 P2 HS-CAN guidance: through model year 2004 250 kbit/s; from model year 2005 500 kbit/s. Other networks differ. Verify actual model year, bus and adapter before connecting; Dvinholm does not adjust the speed automatically."));
         // This is the physical J2534 channel format, distinct from the
         // read-only diagnostics CAN-ID format selector. Only its presentation
         // changes here; keep the selected 11/29-bit channel choice untouched.
