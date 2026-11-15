@@ -40,8 +40,8 @@ public sealed class AuroraSectionNavigationTests
         var sidebar = Named(doc, "SidebarNavPanel");
         var tags = sidebar.Elements().Where(e => e.Attribute("Tag") is not null).Select(e => (string)e.Attribute("Tag")!).ToArray();
         Assert.Equal(5, tags.Length);
-        Assert.Equal(new[] { "J2534Connection", "CemPinReadiness",
-            "CemConfigurationCatalog", "DtcFaults", "EcuWorkspace" }, tags);
+        Assert.Equal(new[] { "CemPinReadiness", "CemConfigurationCatalog",
+            "EcuWorkspace", "DiagnosticsWorkspace", "J2534Connection" }, tags);
         Assert.All(tags, tag => Assert.True(AuroraWorkspaceNavigation.TryParse(tag, out _)));
         Assert.DoesNotContain(Named(doc, "AuroraWorkspaceHost"), sidebar.Ancestors());
         Assert.All(sidebar.Elements().Where(e => e.Attribute("Tag") is not null),
