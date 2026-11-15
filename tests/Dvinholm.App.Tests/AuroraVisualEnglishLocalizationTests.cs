@@ -346,4 +346,25 @@ public sealed class AuroraVisualEnglishLocalizationTests
         Assert.True(start >= 0 && end > start);
         return source[start..end];
     }
+
+    [Fact]
+    public void J2534ArchitectureAuditAccessibilityNameFollowsVisibleLocale()
+    {
+        var doc = Layout();
+        var expander = Named(doc, "J2534ArchitectureAuditExpander");
+        var caption = Named(doc, "J2534ArchitectureAuditHeaderText");
+        Assert.Equal("Expander", expander.Name.LocalName);
+        Assert.Contains(caption, expander.Descendants());
+
+        var locale = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
+        var from = locale.IndexOf("RefreshJ2534ArchitectureAuditPresentation();", StringComparison.Ordinal);
+        var to = locale.IndexOf("RefreshLocalAdapterMetadataLanguage();", from, StringComparison.Ordinal);
+        Assert.True(from >= 0 && to > from);
+        var projection = locale[from..to];
+        Assert.Contains("AutomationProperties.SetName(J2534ArchitectureAuditExpander,", projection);
+        Assert.Contains("J2534ArchitectureAuditHeaderText.Text);", projection);
+        Assert.DoesNotContain("PassThru", projection);
+        Assert.DoesNotContain("SendAsync(", projection);
+        Assert.DoesNotContain("Discover_Click(", projection);
+    }
 }
