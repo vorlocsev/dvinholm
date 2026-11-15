@@ -467,4 +467,32 @@ public sealed class AuroraVisualEnglishLocalizationTests
         Assert.DoesNotContain("SendAsync(", localeOnly);
         Assert.DoesNotContain("PassThru", localeOnly);
     }
+
+    [Fact]
+    public void PhysicalCanChannelFormatCaptionsFollowSelectedLanguageWithoutReconnecting()
+    {
+        var doc = Layout();
+        var combo = Named(doc, "CanConnectionMode");
+        Assert.Equal("ComboBox", combo.Name.LocalName);
+        Assert.Equal("0", (string?)combo.Attribute("SelectedIndex"));
+        Assert.Equal(new[] { "11-bit", "29-bit" },
+            combo.Elements().Select(x => (string?)x.Attribute("Content")));
+
+        var source = Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+        var begin = source.IndexOf("CanConnectionMode.Header = L(", StringComparison.Ordinal);
+        var end = source.IndexOf("DllPath.Header = Environment.Is64BitProcess", begin,
+            StringComparison.Ordinal);
+        Assert.True(begin >= 0 && end > begin);
+        var captions = source[begin..end];
+        Assert.Contains("Формат CAN-канала", captions);
+        Assert.Contains("CAN channel ID format", captions);
+        Assert.Contains("ToolTipService.SetToolTip(CanConnectionMode, L(", captions);
+        Assert.Contains("переподключение", captions);
+        Assert.Contains("Reconnect to change the physical channel format.", captions);
+        Assert.DoesNotContain("CanConnectionMode.SelectedIndex =", captions);
+        Assert.DoesNotContain("CanConnectionMode.SelectedItem =", captions);
+        Assert.DoesNotContain("Connect_Click(", captions);
+        Assert.DoesNotContain("PassThru", captions);
+        Assert.DoesNotContain("_session", captions);
+    }
 }
