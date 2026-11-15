@@ -180,7 +180,7 @@ public sealed partial class MainWindow : Window
         J2534Devices.ItemsSource = _j2534Devices;
         RefreshJ2534Devices(updateStatus: false);
         RefreshDashboardSummary();
-        DashboardNavigate(null, AuroraDestination.J2534Connection);
+        DashboardNavigate(null, AuroraDestination.CemPinReadiness);
         // The standalone launcher owns updates and all Lite runtime management.
         if (DvinholmUserDataDirectory.IsAcceptanceLaunch)
             ConnectButton.IsEnabled = false;
@@ -401,7 +401,7 @@ public sealed partial class MainWindow : Window
     private void DashboardReturn_Click(object sender, RoutedEventArgs e)
     {
         // Legacy home callbacks now go to the first approved destination.
-        DashboardNavigate(sender, AuroraDestination.J2534Connection);
+        DashboardNavigate(sender, AuroraDestination.CemPinReadiness);
     }
 
     private void RefreshDashboardSummary()
