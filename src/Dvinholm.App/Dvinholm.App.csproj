@@ -63,6 +63,8 @@
     <Content Include="..\..\assets\dvinholm-banner.png" Link="Assets\Dvinholm-Banner.png" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- Text-free Aurora coastal photograph: shipped offline in self-contained x64. -->
     <Content Include="..\..\assets\aurora-northern-coast.jpg" Link="Assets\Aurora-Northern-Coast.jpg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
+    <!-- Offline nine-model vehicle studio atlas, reference artwork only. -->
+    <Content Include="..\..\assets\vehicles\volvo-model-atlas.svg" Link="Assets\Vehicles\Volvo-Model-Atlas.svg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
     <!-- Reuse the user-approved No. 9 gear / gull emblem, never a generated placeholder. -->
     <Content Include="..\..\assets\launcher-northern-emblem.svg" Link="Assets\Launcher-Northern-Emblem.svg" CopyToOutputDirectory="PreserveNewest" CopyToPublishDirectory="PreserveNewest" />
   </ItemGroup>
