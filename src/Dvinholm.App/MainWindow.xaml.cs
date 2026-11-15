@@ -734,19 +734,14 @@ public sealed partial class MainWindow : Window
     private void InitializeDevelopmentControls()
     {
         CanConnectionMode.Visibility = Visibility.Visible;
-        CanConnectionMode.Header = CemText("ID канала", "Channel IDs");
         CemPartNumberReadButton.Visibility = Visibility.Visible;
-        CemPartNumberReadButton.Content = CemText("Прочитать номер CEM (экспериментальный HS-CAN)", "Read CEM P/N (experimental HS-CAN)");
         CemPinLivePanel.Visibility = Visibility.Visible;
         CemPinIdentityCard.Visibility = Visibility.Visible;
         CemPinSearchCard.Visibility = Visibility.Visible;
-        CemPinRangeStart.Header = CemText("Начальная позиция перебора", "Search starting position");
-        CemPinRangeCount.Header = CemText("Лимит попыток (1–10000)", "Attempt limit (1–10000)");
-        CemPinReadButton.Content = CemText("Найти PIN · эксперимент", "Read CEM PIN (experimental)");
-        CemPinRevealButton.Content = CemText("Показать на 15 секунд", "Reveal for 15 seconds");
-        CemPinResultText.Text = CemText("Нет результата PIN.", "No PIN result.");
         CemPinSavedButton.Visibility = Visibility.Visible;
-        CemPinSavedButton.Content = CemText("Сохранённые PIN", "Saved PINs");
+        RefreshCemDevelopmentLabels();
+        // Initialize once. Locale changes must never overwrite an obtained PIN.
+        CemPinResultText.Text = CemText("Нет результата PIN.", "No PIN result.");
         var addTestProfiles = new Button { Content = "Add test profiles" };
         addTestProfiles.Click += AddTestProfiles_Click;
         DevelopmentProfileTools.Children.Add(addTestProfiles);
