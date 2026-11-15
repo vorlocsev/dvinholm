@@ -866,6 +866,11 @@ function Capture-OnlyVehicleModels([int]$left, [int]$top, [int]$width, [int]$hei
                 throw "Pointer is inside the client area during model capture $($model.id); tooltip risk."
             }
             Start-Sleep -Milliseconds 3200
+            $settledPointer = New-Object DvinholmWinUiCaptureNative+POINT
+            if (-not [DvinholmWinUiCaptureNative]::GetCursorPos([ref]$settledPointer) -or
+                $settledPointer.X -ne $pointer.X -or $settledPointer.Y -ne $pointer.Y) {
+                throw "Pointer moved during tooltip-clear interval for model $($model.id)."
+            }
             Confirm-WorkspaceState 'Ecu' -RequireVisible
             if ((Get-SelectedVehicleModelName) -cne $model.name) {
                 throw "Vehicle model changed before screenshot $($model.id)."
