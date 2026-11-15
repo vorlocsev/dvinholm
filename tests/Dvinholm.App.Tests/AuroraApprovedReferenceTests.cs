@@ -95,18 +95,25 @@ public sealed class AuroraApprovedReferenceTests
     }
 
     [Fact]
-    public void VehicleIllustrationIsStrictlySideOnAndHasTwoModelVariants()
+    public void VehicleReferenceUsesNineSelectedModelsAndOneClippedOfflineAtlas()
     {
         var doc = Layout();
-        Assert.Contains(Named(doc, "EcuP2SideProfile"), Named(doc, "EcuPage").Descendants());
-        Assert.Contains(Named(doc, "EcuP3SideProfile"), Named(doc, "EcuPage").Descendants());
-        Assert.Equal("Collapsed", (string?)Named(doc, "EcuP3SideProfile").Attribute("Visibility"));
+        var page = Named(doc, "EcuPage");
+        var model = Named(doc, "EcuVehicleModel");
+        var atlas = Named(doc, "EcuVehicleArtworkAtlas");
+        Assert.Contains(page, atlas.Ancestors());
         Assert.Equal("EcuVehicleModel_SelectionChanged",
-            (string?)Named(doc, "EcuVehicleModel").Attribute("SelectionChanged"));
-        Assert.Equal(2, Named(doc, "EcuVehicleModel").Elements()
-            .Count(e => e.Name.LocalName == "ComboBoxItem"));
-        Assert.All(new[] { "EcuP2SideProfile", "EcuP3SideProfile" }, name =>
-            Assert.Contains(Named(doc, name).Descendants(), e => e.Name.LocalName == "Ellipse"));
+            (string?)model.Attribute("SelectionChanged"));
+        var tags = model.Elements().Select(e => (string?)e.Attribute("Tag")).ToArray();
+        Assert.Equal(9, tags.Length);
+        Assert.Equal(AuroraVehicleArtworkCatalog.Models.Select(m => m.Id), tags);
+        Assert.Equal("ms-appx:///Assets/Vehicles/Volvo-Model-Atlas.svg",
+            (string?)atlas.Attribute("Source"));
+        Assert.Contains(Named(doc, "EcuVehicleArtboard"), atlas.Ancestors());
+        Assert.NotNull(Named(doc, "EcuVehicleArtboard").Element(
+            Named(doc, "EcuVehicleArtboard").GetDefaultNamespace() + "Grid.Clip"));
+        Assert.Equal("xc90-spa", tags[5]);
+        Assert.DoesNotContain("XC90 · P3", model.ToString());
     }
 
     [Fact]
