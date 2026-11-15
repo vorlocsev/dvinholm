@@ -3,6 +3,7 @@ name: Unified WinUI 3 self-contained Windows x64 pilot
 on:
   pull_request:
     paths:
+      - 'assets/vehicles/**'
       - 'src/Dvinholm.App/**'
       - 'tests/Dvinholm.App.Tests/**'
       - 'tests/Dvinholm.UnifiedX64.Tests/**'
