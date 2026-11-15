@@ -13,6 +13,31 @@ public sealed partial class MainWindow
 #endif
     private bool _cemPartPrerequisitesInspected;
 
+    /// <summary>
+    /// Relabel the Development-only PIN research panel without resetting a
+    /// result, revealing credentials, changing an attempt range or sending
+    /// J2534 traffic. This is called for each RU/EN switch.
+    /// </summary>
+    private void RefreshCemDevelopmentLabels()
+    {
+        CemPinSearchHeading.Text = L("02  ·  Экспериментальный поиск PIN",
+            "02  ·  Experimental PIN search");
+        CemPinSearchIntro.Text = L(
+            "Только Development. Результат эксперимента не подтверждает PIN физического CEM.",
+            "Development only. An experimental result does not verify a physical CEM PIN.");
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        CanConnectionMode.Header = L("ID канала", "Channel IDs");
+        CemPartNumberReadButton.Content = L(
+            "Прочитать номер CEM (экспериментальный HS-CAN)",
+            "Read CEM P/N (experimental HS-CAN)");
+        CemPinRangeStart.Header = L("Начальная позиция перебора", "Search starting position");
+        CemPinRangeCount.Header = L("Лимит попыток (1–10000)", "Attempt limit (1–10000)");
+        CemPinReadButton.Content = L("Найти PIN · эксперимент", "Read CEM PIN (experimental)");
+        CemPinRevealButton.Content = L("Показать на 15 секунд", "Reveal for 15 seconds");
+        CemPinSavedButton.Content = L("Сохранённые PIN", "Saved PINs");
+#endif
+    }
+
     private CemReadOnlyPrerequisiteAssessment InspectCemReadOnlyPrerequisites()
     {
         // No CAN/J2534 calls. This is just a momentary snapshot of the
