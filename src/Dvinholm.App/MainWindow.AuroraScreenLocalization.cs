@@ -63,6 +63,8 @@ public sealed partial class MainWindow
         EcuVehicleHeading.Text = L("Карта автомобиля", "Vehicle model");
         EcuVehicleOrientation.Text = L("ВЫБРАНО ВРУЧНУЮ", "MANUALLY SELECTED");
         EcuVehicleSchematicLabel.Text = L("СПРАВОЧНЫЙ РЕНДЕР", "REFERENCE RENDER");
+        EcuVehicleArtworkFallbackNotice.Text = L("Изображение модели временно недоступно",
+            "Vehicle model artwork is temporarily unavailable");
         EcuObservationHeading.Text = L("Наблюдаемые RX · не позиции ECU",
             "Observed RX · not ECU locations");
         EcuDiagramDisclaimer.Text = L(
