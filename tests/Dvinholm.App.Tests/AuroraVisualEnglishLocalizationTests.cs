@@ -248,4 +248,100 @@ public sealed class AuroraVisualEnglishLocalizationTests
         Assert.DoesNotContain("PassThruWriteMsgs", primary);
         Assert.DoesNotContain("ClearDiagnosticInformation", primary);
     }
+    [Fact]
+    public void DeveloperFixtureControlsAreDevelopmentOnly()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        var start = source.IndexOf("#if DVINHOLM_DEVELOPMENT_FEATURES\n    private void InitializeDevelopmentControls()", StringComparison.Ordinal);
+        var end = source.IndexOf("private void AddTestProfiles_Click", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        Assert.Contains("RefreshDevelopmentToolsLanguage();", source[start..end]);
+    }
+
+    [Fact]
+    public void LanguageSwitchRefreshesDevelopmentPresentationOnlyWithinBuildFlag()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
+        Assert.Contains("#if DVINHOLM_DEVELOPMENT_FEATURES\n        RefreshDevelopmentToolsLanguage();\n#endif", source);
+    }
+
+    [Theory]
+    [InlineData("_developmentAddTestProfilesButton.Content", "Добавить тестовые профили", "Add test profiles")]
+    [InlineData("_developmentPreviewUdsButton.Content", "Пример UDS (офлайн)", "Preview UDS example (offline)")]
+    [InlineData("_developmentExportSyntheticButton.Content", "Экспорт синтетического UDS TXT", "Export synthetic UDS TXT")]
+    public void DynamicDeveloperActionsHaveBilingualCaptions(string target, string russian, string english)
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        var method = DevelopmentProjection(source);
+        Assert.Contains(target, method);
+        Assert.Contains(russian, method);
+        Assert.Contains(english, method);
+    }
+
+    [Fact]
+    public void DemoButtonCaptionUsesActualTimerState()
+    {
+        var method = DevelopmentProjection(Source("src/Dvinholm.App/MainWindow.xaml.cs"));
+        Assert.Contains("_demoMonitorButton.Content = _demoTimer is not null", method);
+        Assert.Contains("Остановить демо", method);
+        Assert.Contains("Запустить демо", method);
+        Assert.Contains("Stop demo", method);
+        Assert.Contains("Start demo", method);
+    }
+
+    [Fact]
+    public void DemoEvidenceIsVisiblySyntheticInBothLanguages()
+    {
+        var method = DevelopmentProjection(Source("src/Dvinholm.App/MainWindow.xaml.cs"));
+        Assert.Contains("ДЕМО АКТИВНО", method);
+        Assert.Contains("DEMO ACTIVE", method);
+        Assert.Contains("без адаптера или автомобиля", method);
+        Assert.Contains("no adapter or vehicle", method);
+        Assert.Contains("_demoDataPresent", method);
+        Assert.Contains("синтетические кадры сохранены", method);
+    }
+
+    [Fact]
+    public void LocaleProjectionNeverStartsStopsOrTransmitsFrames()
+    {
+        var method = DevelopmentProjection(Source("src/Dvinholm.App/MainWindow.xaml.cs"));
+        foreach (var forbidden in new[] { "Start(", "Stop(", "EmitDemoFrames(",
+            "SetStatus(", "PassThru", "SendAsync(", "Connect_Click(", "DemoMonitor_Click(" })
+            Assert.DoesNotContain(forbidden, method);
+    }
+
+    [Fact]
+    public void DemoLifecycleReusesBilingualProjectionForStartAndStop()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        var start = source.IndexOf("private void DemoMonitor_Click(", StringComparison.Ordinal);
+        var end = source.IndexOf("#endif", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var lifecycle = source[start..end];
+        Assert.Contains("_demoTimer = timer;\n        RefreshDevelopmentToolsLanguage();", lifecycle);
+        Assert.Contains("_demoTimer = null;", lifecycle);
+        Assert.Contains("timer.Stop();", lifecycle);
+        Assert.True(lifecycle.Split("RefreshDevelopmentToolsLanguage();").Length >= 3);
+    }
+
+    [Fact]
+    public void DeveloperToolCallbacksAndVisibilityGuardsStayUnchanged()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        Assert.Contains("_developmentAddTestProfilesButton.Click += AddTestProfiles_Click;", source);
+        Assert.Contains("_developmentPreviewUdsButton.Click += PreviewUdsSample_Click;", source);
+        Assert.Contains("_developmentExportSyntheticButton.Click += ExportOfflineUdsTxt_Click;", source);
+        Assert.Contains("_demoMonitorButton.Click += DemoMonitor_Click;", source);
+        Assert.Contains("DevelopmentProfileTools.Visibility = Visibility.Visible;", source);
+        Assert.Contains("DevelopmentDiagnosticTools.Visibility = Visibility.Visible;", source);
+        Assert.Contains("DeveloperMonitorHost.Visibility = Visibility.Visible;", source);
+    }
+
+    private static string DevelopmentProjection(string source)
+    {
+        var start = source.IndexOf("private void RefreshDevelopmentToolsLanguage()", StringComparison.Ordinal);
+        var end = source.IndexOf("private void AddTestProfiles_Click", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        return source[start..end];
+    }
 }
