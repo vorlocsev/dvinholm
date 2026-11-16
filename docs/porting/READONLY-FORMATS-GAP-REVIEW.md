@@ -516,3 +516,43 @@ asserted scopes, immutable snapshots, RU/EN report privacy and
 absence of any diagnostic or write/export calls. The implementation
 does not touch WinUI, Stable, Virtual Car, physical J2534 or OEM data.
 The user has deferred visual interface acceptance.
+
+
+## Stage: bounded P2/P3 research-catalog coverage by claimed scope
+
+CemConfigurationResearchCoverage.Assess operates solely on an explicitly
+provided strict, research-only JSON catalog and a user-asserted hardware
+part/software revision. The entire catalog is validated before analysis.
+It enumerates all 140 P2 B9FC or 252 P3 F106 *raw one-based ordinals*,
+not just positions changed between snapshots.
+
+Every ordinal enters exactly one of four buckets: exact user-asserted
+part/revision scope (always UNVERIFIED), same part but other claimed
+software revisions, only other claimed hardware parts, or no research
+entry for this format/index. Counts sum to 140 or 252. The percentage
+shown is the **portion of raw indices with an exact user claim**, not
+verified OEM coverage or functional support. Multiple research records
+for the same index do not inflate these counts.
+
+Separately, "potential cross-source text differences" flags ordinals
+within the selected hardware part that have both distinct source
+references AND distinct claimed meaning strings across the available
+software revisions. Different revisions may legitimately describe
+different functions. These are *text differences needing investigation*,
+not proven semantic conflicts, OEM defects or evidence of an ECU
+configuration change. The strict importer already rejects competing
+records for the exact same format/index/part/revision scope, and those
+rejected duplicates MUST NOT appear as detected conflicts.
+
+The immutable result and RU/EN redacted report retain only ordinal
+numbers, counts, percentages and research-only labels. Original source
+text, URLs, part/revision strings, VIN, paths, hashes, raw bytes and
+CEM configuration contents are not disclosed in the report. No network,
+file output, diagnostic adapter, live ECU read, PIN or write operation
+is introduced. WinUI visual acceptance remains deferred. Stable and
+Virtual Car remain separate and untouched.
+
+13 synthetic test methods cover both generations, all four exclusive
+categories, precedence with multiple claims, cross-revision text-only
+flags, negative flag cases, strict rejection of malformed/duplicate
+scopes, immutable outputs, RU/EN privacy and no hardware/write APIs.
