@@ -1,5 +1,6 @@
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Automation;
 using WinRT.Interop;
 using Windows.Storage.Pickers;
 
@@ -123,6 +124,13 @@ public sealed partial class MainWindow
                 IsTextSelectionEnabled = true,
                 Text = L("Выберите исследовательскую запись.", "Select a research claim.")
             };
+            // Stable accessibility anchors disclose no private user data.
+            AutomationProperties.SetAutomationId(filter, "DvinholmCemResearchGenerationFilter");
+            AutomationProperties.SetAutomationId(list, "DvinholmCemResearchClaimsList");
+            AutomationProperties.SetName(list, L("Исследовательские записи CEM (не подтверждены)",
+                "CEM research claims (unverified)"));
+            AutomationProperties.SetAutomationId(warning, "DvinholmCemResearchSafetyWarning");
+            AutomationProperties.SetAutomationId(detail, "DvinholmCemResearchClaimDetails");
 
             void Refresh()
             {
@@ -212,6 +220,10 @@ public sealed partial class MainWindow
                 CloseButtonText = L("Закрыть", "Close"),
                 DefaultButton = ContentDialogButton.Close
             };
+            AutomationProperties.SetAutomationId(dialog, "DvinholmCemResearchDialog");
+            AutomationProperties.SetName(dialog, L(
+                "Локальный каталог CEM P2/P3 (офлайн)",
+                "Local CEM P2/P3 research (offline)"));
             var choice = await dialog.ShowAsync();
             if (_closing || choice != ContentDialogResult.Primary)
                 return;

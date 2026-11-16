@@ -231,6 +231,22 @@ public sealed class CemConfigurationResearchCatalogProjectionTests
         Assert.DoesNotContain("UdsClient", code);
     }
 
+    [Fact]
+    public void ViewerExposesStableNonSensitiveWinUiAutomationIds()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.CemResearchCatalog.cs");
+        foreach (var id in new[] {
+            "DvinholmCemResearchDialog",
+            "DvinholmCemResearchGenerationFilter",
+            "DvinholmCemResearchClaimsList",
+            "DvinholmCemResearchSafetyWarning",
+            "DvinholmCemResearchClaimDetails"
+        })
+            Assert.Contains(id, source);
+        Assert.Contains("AutomationProperties.SetName(dialog, L(", source);
+        Assert.DoesNotContain("SetAutomationId(dialog, selected.Path", source);
+    }
+
     private static string Source(string relative)
     {
         for (DirectoryInfo? dir = new(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)
