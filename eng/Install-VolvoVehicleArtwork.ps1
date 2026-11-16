@@ -76,15 +76,16 @@ try {
     $hash = ([BitConverter]::ToString($sha.ComputeHash($bytes))).Replace('-', '').ToLowerInvariant()
 }
 finally { $sha.Dispose() }
-[pscustomobject]@{
+$preview = [pscustomobject]@{
     modelId = $ModelId
     expectedPixels = '1280x510'
     incomingBytes = $bytes.Length
     incomingSha256 = $hash
     previousSha256 = $entry.sha256
-    applied = [bool]$Apply
+    applyRequested = [bool]$Apply
+    applied = $false
 }
-if (-not $Apply) { return }
+if (-not $Apply) { Write-Output $preview; return }
 
 $entry.bytes = $bytes.Length
 $entry.width = 1280
@@ -120,6 +121,8 @@ try {
     finally { $verify.Dispose() }
     if ($actualHash -cne $hash) { throw 'Post-replacement JPG digest mismatch.' }
     $completed = $true
+    $preview.applied = $true
+    Write-Output $preview
 }
 catch {
     if ($manifestReplaced -and [IO.File]::Exists($manifestBackup)) {
