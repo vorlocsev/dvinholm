@@ -36,6 +36,12 @@ internal static class CemConfigurationOfflineResearchPipeline
         string? claimedSoftwareRevision,
         CancellationToken cancellationToken = default)
     {
+        // Fail before reading either body when the asserted scope is invalid.
+        // Without it, full-format coverage would be misleading.
+        if (!CemConfigurationMappingResearch.ValidPartNumber(claimedHardwarePartNumber) ||
+            !CemConfigurationMappingResearch.ValidSoftwareRevision(claimedSoftwareRevision))
+            throw new InvalidDataException("A valid asserted CEM part/revision is required.");
+
         var (catalog, comparison) = await InspectInputsAsync(
             firstBodyPath, secondBodyPath, researchJsonPath, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
