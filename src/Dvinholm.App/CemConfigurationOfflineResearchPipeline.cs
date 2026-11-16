@@ -126,6 +126,38 @@ internal static class CemConfigurationOfflineResearchPipeline
             claimedHardwarePartNumber!, claimedSoftwareRevision!, checkpoint);
     }
 
+    /// <summary>
+    /// Bound the same three user-supplied evidence declarations to a strict
+    /// offline provenance review, then inspect only user-asserted links and
+    /// an optional in-memory history of local rechecks. Neither can grant
+    /// any OEM, security or vehicle-access privilege.
+    /// </summary>
+    internal static async Task<CemOfflineEvidenceLedgerAssessment> ReviewEvidenceLedgerAsync(
+        string firstBodyPath,
+        string secondBodyPath,
+        string researchJsonPath,
+        string? claimedHardwarePartNumber,
+        string? claimedSoftwareRevision,
+        IReadOnlyList<CemOfflineProvenanceDeclaration> declarations,
+        IReadOnlyList<CemOfflineEvidenceLink> links,
+        IReadOnlyList<CemOfflineEvidenceRecheck> rechecks,
+        CancellationToken cancellationToken = default)
+    {
+        CemOfflineProvenanceAudit.ValidateDeclarations(declarations);
+        ArgumentNullException.ThrowIfNull(links);
+        ArgumentNullException.ThrowIfNull(rechecks);
+        if (links.Count > CemOfflineEvidenceLedger.MaximumLinks ||
+            rechecks.Count > CemOfflineEvidenceLedger.MaximumRechecks)
+            throw new InvalidDataException("CEM evidence ledger exceeds its bounds.");
+
+        var provenance = await ReviewProvenanceAsync(
+            firstBodyPath, secondBodyPath, researchJsonPath,
+            claimedHardwarePartNumber, claimedSoftwareRevision,
+            declarations, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        return CemOfflineEvidenceLedger.Assess(declarations, provenance, links, rechecks);
+    }
+
     private static async Task<(CemConfigurationResearchCatalogDocument Catalog,
         CemConfigurationOfflineComparisonResult Comparison)> InspectInputsAsync(
         string firstBodyPath,
