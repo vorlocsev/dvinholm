@@ -138,3 +138,27 @@ SQLite caches remain separate evidence with different provenance.
 Nine synthetic header-only xUnit tests check both observed sizes,
 magic/version, block boundaries, zero, truncation, oversized inputs,
 and unchanged no-IO capability flags. No physical J2534 run occurred.
+
+
+## Stage: read a selected local SVDB header only
+
+SvdbLocalFileInspection.InspectFileAsync accepts a user-supplied path ending
+in .svdb (case insensitive). It uses a read-only FileStream with shared
+readers and asynchronous cancellation, validates a 512-MiB upper file
+size, and reads at most 64 header bytes. It passes those bytes and the
+full on-disk file length to the existing SvdbContainerLayoutInspector.
+
+The scanner deliberately never allocates a buffer for the encrypted body,
+hashes or extracts that body, copies source catalogs into the repository,
+installs a provider, opens SQLite, or derives a CEM configuration mapping.
+A short/truncated input returns a structured failure. The source path,
+non-header bytes and user-specific data are not included in the result.
+No UI integration or automatic file discovery is introduced: a caller
+must explicitly select the local path.
+
+10 synthetic offline xUnit tests cover valid tiny/multiple-block files,
+unchanged input bytes, short and empty input, invalid magic, physical
+size mismatch, extension gating, uppercase extension, cancellation,
+size bounds and a source-level no-I/O capability contract. These tests
+do NOT open the user's original SVDB files or prove cryptographic
+authenticity. Physical J2534 and VIDA verification remain separate.
