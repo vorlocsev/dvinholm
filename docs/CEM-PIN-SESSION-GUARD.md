@@ -12,7 +12,9 @@ reconnection never revives the previous lease. Read errors permanently
 invalidate it **and fault the shared J2534 transport** with a non-blocking
 atomic flag. A fresh guard remains invalid until the explicit adapter
 Disconnect/Connect lifecycle completes; merely clearing a synthetic read
-error must not re-arm CEM requests. Disposing the lease unsubscribes its
+error must not re-arm CEM requests. The read-error handler verifies that the
+current transport is the same CAN bus captured by the lease: a stale guard
+left subscribed across reconnect must not poison a newer, unrelated session. Disposing the lease unsubscribes its
 read-error handler and invalidates it. The caller owns the lease and must dispose it after completion.
 
 The current-context callback must be thread-safe and return a new opaque token

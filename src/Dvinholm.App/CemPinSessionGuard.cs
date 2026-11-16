@@ -9,6 +9,7 @@ internal sealed class CemPinSessionGuard : IDisposable
 {
     private readonly Func<bool> _isCurrent;
     private J2534Session? _session;
+    private CanBus? _capturedBus;
     private int _invalidated;
 
     // Synthetic test seam; production captures the existing J2534 session.
@@ -30,24 +31,38 @@ internal sealed class CemPinSessionGuard : IDisposable
             session.IsConnected && ReferenceEquals(session.Bus, bus) &&
             ReferenceEquals(currentEcuContext(), ecuContext));
         guard._session = session;
+        guard._capturedBus = bus;
         session.ReadError += guard.OnReadError;
         return guard;
     }
 
     private void OnReadError(Exception _)
     {
-        // A receive fault invalidates both this CEM lease and its transport.
-        // Do not let a fresh CEM guard re-arm operations against a faulted
-        // adapter without an explicit disconnect/reconnect lifecycle.
-        // This is atomic and safe to invoke from the CAN receive worker.
+        // An old lease can remain subscribed across reconnect until disposed.
+        // Only the CAN bus captured by this lease may fault its transport;
+        // a delayed event from a NEW bus cannot be attributed to the old one.
+        // This callback must not block the native receive worker.
+        var session = _session;
+        var capturedBus = _capturedBus;
         Interlocked.Exchange(ref _invalidated, 1);
-        _session?.InvalidateTransport();
+        if (session is null || capturedBus is null || !session.IsConnected)
+            return;
+        try
+        {
+            if (ReferenceEquals(session.Bus, capturedBus))
+                session.InvalidateTransport();
+        }
+        catch (InvalidOperationException)
+        {
+            // An intervening disconnect already invalidated this lease.
+        }
     }
 
     public void Dispose()
     {
         Interlocked.Exchange(ref _invalidated, 1);
         var session = Interlocked.Exchange(ref _session, null);
+        Interlocked.Exchange(ref _capturedBus, null);
         if (session is not null) session.ReadError -= OnReadError;
     }
 

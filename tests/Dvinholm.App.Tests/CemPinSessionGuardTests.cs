@@ -102,6 +102,48 @@ public sealed class CemPinSessionGuardTests
     }
 
     [Fact]
+    public async Task StaleGuardCannotFaultAnUnrelatedReconnectedCanBus()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
+        using var session = new J2534Session(adapter);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        object firstContext = new();
+        using var firstGuard = CemPinSessionGuard.Capture(
+            session, firstContext, () => firstContext, ownerConsent: true);
+        Assert.True(firstGuard.IsCurrent);
+
+        session.Disconnect();
+        Assert.False(firstGuard.IsCurrent);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        Assert.True(session.IsConnected);
+        // Deliberately leave the stale guard subscribed. An RX error in this
+        // unrelated new connection is not evidence about the old bus lease.
+        var reported = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        void Observe(Exception _) => reported.TrySetResult();
+        session.ReadError += Observe;
+        try
+        {
+            adapter.FailReads = true;
+            await reported.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            adapter.FailReads = false;
+            Assert.False(firstGuard.IsCurrent);
+            Assert.True(session.IsConnected);
+            Assert.Equal(0, adapter.TransmittedFrames);
+        }
+        finally
+        {
+            adapter.FailReads = false;
+            session.ReadError -= Observe;
+        }
+
+        object secondContext = new();
+        using var secondGuard = CemPinSessionGuard.Capture(
+            session, secondContext, () => secondContext, ownerConsent: true);
+        Assert.True(secondGuard.IsCurrent);
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
+    [Fact]
     public async Task ChangedEcuContextDiscardsEvenAnImmediateSyntheticCompletion()
     {
         using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
