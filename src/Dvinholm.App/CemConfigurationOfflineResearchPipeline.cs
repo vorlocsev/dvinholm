@@ -88,6 +88,62 @@ internal static class CemConfigurationOfflineResearchPipeline
         IReadOnlyList<CemOfflineProvenanceDeclaration> declarations,
         CancellationToken cancellationToken = default)
     {
+        var result = await ReviewProvenanceAndCoverageAsync(
+            firstBodyPath, secondBodyPath, researchJsonPath,
+            claimedHardwarePartNumber, claimedSoftwareRevision,
+            declarations, cancellationToken);
+        return result.Provenance;
+    }
+
+    /// <summary>
+    /// One strict inspection pass for a final redacted summary: validates
+    /// JSON and both bodies, confirms their unchanged SHA-256, then joins
+    /// research coverage and claimed-time evidence WITHOUT rereading the
+    /// originals as separate independent analyses.
+    /// </summary>
+    internal static async Task<CemOfflineEvidenceFinalSummary> ReviewFinalSummaryAsync(
+        string firstBodyPath,
+        string secondBodyPath,
+        string researchJsonPath,
+        string? claimedHardwarePartNumber,
+        string? claimedSoftwareRevision,
+        IReadOnlyList<CemOfflineProvenanceDeclaration> declarations,
+        IReadOnlyList<CemOfflineEvidenceLink> links,
+        IReadOnlyList<CemOfflineEvidenceRecheck> rechecks,
+        DateTimeOffset claimedReviewUtc,
+        TimeSpan maximumClaimedAge,
+        CancellationToken cancellationToken = default)
+    {
+        CemOfflineEvidenceFreshness.ValidateReviewClockAndWindow(
+            claimedReviewUtc, maximumClaimedAge);
+        CemOfflineProvenanceAudit.ValidateDeclarations(declarations);
+        ArgumentNullException.ThrowIfNull(links);
+        ArgumentNullException.ThrowIfNull(rechecks);
+        if (links.Count > CemOfflineEvidenceLedger.MaximumLinks ||
+            rechecks.Count > CemOfflineEvidenceLedger.MaximumRechecks)
+            throw new InvalidDataException("CEM final summary history exceeds its bounds.");
+
+        var inspected = await ReviewProvenanceAndCoverageAsync(
+            firstBodyPath, secondBodyPath, researchJsonPath,
+            claimedHardwarePartNumber, claimedSoftwareRevision,
+            declarations, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        var freshness = CemOfflineEvidenceFreshness.Assess(
+            declarations, inspected.Provenance, links, rechecks,
+            claimedReviewUtc, maximumClaimedAge);
+        return new(inspected.Coverage, freshness, inspected.Provenance);
+    }
+
+    private static async Task<(CemOfflineProvenanceAssessment Provenance,
+        CemConfigurationResearchChangeCoverage Coverage)> ReviewProvenanceAndCoverageAsync(
+        string firstBodyPath,
+        string secondBodyPath,
+        string researchJsonPath,
+        string? claimedHardwarePartNumber,
+        string? claimedSoftwareRevision,
+        IReadOnlyList<CemOfflineProvenanceDeclaration> declarations,
+        CancellationToken cancellationToken = default)
+    {
         // All claimed metadata is checked before touching any local file.
         CemOfflineProvenanceAudit.ValidateDeclarations(declarations);
         if (!CemConfigurationMappingResearch.ValidPartNumber(claimedHardwarePartNumber) ||
@@ -121,9 +177,10 @@ internal static class CemConfigurationOfflineResearchPipeline
         var combined = CemConfigurationResearchChangeCoverage.Combine(changed, coverage);
         var checkpoint = CemConfigurationOfflineEvidenceChecklist.Assess(combined);
 
-        return CemOfflineProvenanceAudit.Assess(
+        var provenance = CemOfflineProvenanceAudit.Assess(
             declarations, previousAfter, currentAfter, catalogAfter,
             claimedHardwarePartNumber!, claimedSoftwareRevision!, checkpoint);
+        return (provenance, combined);
     }
 
     /// <summary>

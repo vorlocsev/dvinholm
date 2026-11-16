@@ -773,3 +773,36 @@ the SHA-256 is computed from local bytes. Physical CEM identity,
 source independence, protected diagnostic services, PIN and writes
 remain disabled. UI visual acceptance remains deferred; no changes
 to Stable, Virtual Car or release publication.
+
+
+## Stage: consolidated CEM report and atomic no-overwrite .txt publication
+
+The backend-only CemOfflineEvidenceFinalSummary combines a single
+validated three-file P2/P3 research/coverage assessment and the
+existing user-claimed UTC provenance/link/recheck freshness status.
+The new ReviewFinalSummaryAsync uses ONE strict inspection pass
+through the shared ReviewProvenanceAndCoverageAsync helper: the same
+selected JSON and two bodies yield both the counts and the evidence
+checkpoint. Prior public read-only pipeline methods are unchanged.
+
+The final redacted RU/EN text includes counts and changed ordinal
+coverage, claimed-source differences and rechecks, explicit "OPEN
+7/7" physical/OEM gates and disabled read/PIN/write capabilities.
+It never authenticates an ECU or attaches OEM option semantics.
+
+CemOfflineEvidenceRedactedExport has an additional overload for this
+consolidated assessment. It encodes at most 32 KiB of strict UTF-8
+without BOM and writes first to a randomly named *exclusive new*
+temporary file in the user-selected destination directory. Only
+after flushing and cancellation validation does a no-overwrite
+same-directory File.Move publish the final .txt name. Failures
+and cancellations clean the temporary file; existing target files
+are never overwritten or modified. No automatic export, hidden
+default directory, source capture or vehicle I/O is introduced.
+
+This publication step cannot guarantee durability against sudden
+power loss or malicious filesystem reparse-point redirection. It
+is designed to avoid partially written final-named reports and
+race-prone output overwrite, while remaining read-only with respect
+to P2/P3 configuration sources. Visual approval remains deferred;
+Stable and Virtual Car are untouched.

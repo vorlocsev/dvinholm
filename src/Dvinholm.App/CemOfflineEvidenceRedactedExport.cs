@@ -3,9 +3,10 @@ using System.Text;
 namespace Dvinholm.App;
 
 /// <summary>
-/// Explicitly export ONLY an already-redacted, bounded research summary.
-/// The caller must supply a new absolute .txt path. No overwrites, no
-/// automatic export, no binary configuration or provenance identifiers.
+/// Export ONLY explicitly composed redacted research reports. Write to a
+/// private, new temporary file in the selected directory, then publish
+/// via a no-overwrite rename. Never leave a partial FINAL report at the
+/// user-selected path; never overwrite an existing report or ECU dump.
 /// </summary>
 internal static class CemOfflineEvidenceRedactedExport
 {
@@ -16,18 +17,49 @@ internal static class CemOfflineEvidenceRedactedExport
         CemOfflineEvidenceFreshnessAssessment assessment, bool english)
     {
         ArgumentNullException.ThrowIfNull(assessment);
-        var report = assessment.CreateRedactedReport(english);
+        return EncodeRedactedText(assessment.CreateRedactedReport(english));
+    }
+
+    internal static byte[] PrepareUtf8(
+        CemOfflineEvidenceFinalSummary summary, bool english)
+    {
+        ArgumentNullException.ThrowIfNull(summary);
+        return EncodeRedactedText(summary.CreateRedactedReport(english));
+    }
+
+    private static byte[] EncodeRedactedText(string report)
+    {
         var bytes = StrictUtf8.GetBytes(report);
         if (bytes.Length == 0 || bytes.Length > MaximumReportBytes)
             throw new InvalidDataException("CEM redacted report exceeds 32 KiB.");
         return bytes;
     }
 
-    internal static async Task SaveNewTextFileAsync(
+    internal static Task SaveNewTextFileAsync(
         string selectedOutputPath,
         CemOfflineEvidenceFreshnessAssessment assessment,
         bool english,
         CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(assessment);
+        return SavePayloadAsync(selectedOutputPath,
+            PrepareUtf8(assessment, english), cancellationToken);
+    }
+
+    internal static Task SaveNewTextFileAsync(
+        string selectedOutputPath,
+        CemOfflineEvidenceFinalSummary summary,
+        bool english,
+        CancellationToken cancellationToken = default)
+    {
+        ArgumentNullException.ThrowIfNull(summary);
+        return SavePayloadAsync(selectedOutputPath,
+            PrepareUtf8(summary, english), cancellationToken);
+    }
+
+    private static async Task SavePayloadAsync(
+        string selectedOutputPath, byte[] payload,
+        CancellationToken cancellationToken)
     {
         ArgumentException.ThrowIfNullOrWhiteSpace(selectedOutputPath);
         cancellationToken.ThrowIfCancellationRequested();
@@ -35,30 +67,38 @@ internal static class CemOfflineEvidenceRedactedExport
             !string.Equals(Path.GetExtension(selectedOutputPath),
                 ".txt", StringComparison.OrdinalIgnoreCase))
             throw new InvalidDataException(
-                "Explicitly select a new absolute .txt file for a redacted report.");
+                "Explicitly select a new absolute .txt path for a redacted report.");
 
-        var payload = PrepareUtf8(assessment, english);
-        cancellationToken.ThrowIfCancellationRequested();
-        var completed = false;
-        var created = false;
+        var directory = Path.GetDirectoryName(selectedOutputPath);
+        if (string.IsNullOrWhiteSpace(directory))
+            throw new InvalidDataException("Missing report output directory.");
+
+        // A separate random name in the same directory supports a
+        // same-volume rename and prevents any partial final .txt file.
+        var temporary = Path.Combine(directory, ".dvinholm-" +
+            Guid.NewGuid().ToString("N") + ".tmp");
+        var temporaryCreated = false;
         try
         {
-            await using (var output = new FileStream(selectedOutputPath,
+            cancellationToken.ThrowIfCancellationRequested();
+            await using (var output = new FileStream(temporary,
                 FileMode.CreateNew, FileAccess.Write, FileShare.None,
                 4096, FileOptions.Asynchronous | FileOptions.WriteThrough))
             {
-                created = true;
+                temporaryCreated = true;
                 await output.WriteAsync(payload, cancellationToken);
                 await output.FlushAsync(cancellationToken);
-                completed = true;
             }
+            cancellationToken.ThrowIfCancellationRequested();
+            // Atomic publish on one volume. false prohibits overwriting
+            // an existing destination even if it appears during the write.
+            File.Move(temporary, selectedOutputPath, overwrite: false);
+            temporaryCreated = false;
         }
         finally
         {
-            // Only a file created by THIS call is eligible for cleanup.
-            // Existing files are never opened or overwritten.
-            if (created && !completed && File.Exists(selectedOutputPath))
-                File.Delete(selectedOutputPath);
+            if (temporaryCreated && File.Exists(temporary))
+                File.Delete(temporary);
         }
     }
 }
