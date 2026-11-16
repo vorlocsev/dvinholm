@@ -74,6 +74,58 @@ internal static class CemConfigurationOfflineResearchPipeline
         return CemConfigurationOfflineEvidenceChecklist.Assess(research);
     }
 
+    /// <summary>
+    /// Separates three USER-DECLARED capture claims from real selected
+    /// file bytes. Exact local digest agreement does not authenticate
+    /// the physical CEM, acquisition time or source.
+    /// </summary>
+    internal static async Task<CemOfflineProvenanceAssessment> ReviewProvenanceAsync(
+        string firstBodyPath,
+        string secondBodyPath,
+        string researchJsonPath,
+        string? claimedHardwarePartNumber,
+        string? claimedSoftwareRevision,
+        IReadOnlyList<CemOfflineProvenanceDeclaration> declarations,
+        CancellationToken cancellationToken = default)
+    {
+        // All claimed metadata is checked before touching any local file.
+        CemOfflineProvenanceAudit.ValidateDeclarations(declarations);
+        if (!CemConfigurationMappingResearch.ValidPartNumber(claimedHardwarePartNumber) ||
+            !CemConfigurationMappingResearch.ValidSoftwareRevision(claimedSoftwareRevision))
+            throw new InvalidDataException("Missing asserted CEM research part/revision.");
+
+        // Verify catalog's byte identity on both sides of the strict parser;
+        // body identities come from the existing exact-body decoder hashes.
+        var catalogBefore = await CemOfflineProvenanceAudit.ReadLocalSha256Async(
+            researchJsonPath, CemOfflineProvenanceRole.ResearchCatalog, cancellationToken);
+        var (catalog, comparison) = await InspectInputsAsync(
+            firstBodyPath, secondBodyPath, researchJsonPath, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var catalogAfter = await CemOfflineProvenanceAudit.ReadLocalSha256Async(
+            researchJsonPath, CemOfflineProvenanceRole.ResearchCatalog, cancellationToken);
+        var previousAfter = await CemOfflineProvenanceAudit.ReadLocalSha256Async(
+            firstBodyPath, CemOfflineProvenanceRole.PreviousBody, cancellationToken);
+        var currentAfter = await CemOfflineProvenanceAudit.ReadLocalSha256Async(
+            secondBodyPath, CemOfflineProvenanceRole.CurrentBody, cancellationToken);
+        if (!string.Equals(catalogBefore, catalogAfter, StringComparison.Ordinal) ||
+            !string.Equals(comparison.FirstBodySha256, previousAfter, StringComparison.Ordinal) ||
+            !string.Equals(comparison.SecondBodySha256, currentAfter, StringComparison.Ordinal))
+            throw new InvalidDataException(
+                "Selected local file content changed between independent inspections.");
+
+        var coverage = CemConfigurationResearchCoverage.Assess(
+            catalog, comparison.Format, claimedHardwarePartNumber, claimedSoftwareRevision);
+        var changed = CemConfigurationRevisionResearchTriage.Assess(
+            comparison, catalog, claimedHardwarePartNumber, claimedSoftwareRevision);
+        var combined = CemConfigurationResearchChangeCoverage.Combine(changed, coverage);
+        var checkpoint = CemConfigurationOfflineEvidenceChecklist.Assess(combined);
+
+        return CemOfflineProvenanceAudit.Assess(
+            declarations, previousAfter, currentAfter, catalogAfter,
+            claimedHardwarePartNumber!, claimedSoftwareRevision!, checkpoint);
+    }
+
     private static async Task<(CemConfigurationResearchCatalogDocument Catalog,
         CemConfigurationOfflineComparisonResult Comparison)> InspectInputsAsync(
         string firstBodyPath,

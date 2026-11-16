@@ -642,3 +642,47 @@ physical J2534 claim.
 bodies, identity guard revocation, apparently satisfied session
 prerequisites, invalid/forged external evidence assessments, redacted
 RU/EN output, exact three-file operation and no live/write APIs.
+
+
+## Stage: local three-source provenance claims and bounded SHA-256 audit
+
+The CEM offline research pipeline now has a separate
+ReviewProvenanceAsync method for an explicitly user-selected previous
+P2/P3 .bin, current same-generation .bin and research .json, plus
+exactly three role-tagged user-authored provenance declarations.
+
+Each declaration carries an UNVERIFIED source label, user-claimed
+module-association tag, asserted hardware/SW strings, UTC observation
+time and uppercase declared SHA-256 fingerprint. Duplicate/missing
+roles, malformed digests/labels, invalid revision strings and
+non-UTC/out-of-range years fail before any local file inspection.
+The submitted original/updated ordering is a user assertion only.
+
+The local workflow fingerprints the bounded JSON before and after
+strict catalog import (max 32 KiB), and rereads the two 142/254-byte
+bodies after the previously validated offline comparison. Any
+change in byte content between these independent reads makes the
+audit fail closed. SHA-256 matches between declared and actual
+local content are reported independently for all three sources;
+a declared mismatch is visible, not silently accepted as a verified
+provenance statement.
+
+The RU/EN report includes ONLY three local hash-match statuses,
+counts, boolean agreement of user-claimed module labels and HW/SW
+strings, plausibility of claimed observation chronology, and the
+existing seven OPEN physical/OEM evidence gates. It deliberately
+withholds actual SHA hashes, source labels, timestamps, paths, raw
+bytes, original claims, asserted revisions, VIN and any vehicle
+configuration content.
+
+An exact SHA-256 can check local BYTE CONSISTENCY with an entered
+reference. It cannot authenticate capture time, source, legitimate
+ownership, OEM semantics, physical CEM identity, or that different
+sources describe the same vehicle/module. No OEM gates are closed,
+no PIN/capability is enabled, and no J2534/UDS requests, writes,
+backup exports or WinUI changes are introduced.
+
+11 synthetic tests cover digest matches/mismatches, duplicate roles,
+unsafe metadata, UTC timestamps, module and revision disagreement,
+reversed chronology, RU/EN redaction, three-file end-to-end checking,
+early rejection and absence of diagnostic/write calls.
