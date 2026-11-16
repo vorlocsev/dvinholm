@@ -17,28 +17,58 @@ internal static class CemConfigurationOfflineResearchPipeline
         string? claimedSoftwareRevision,
         CancellationToken cancellationToken = default)
     {
+        var (catalog, comparison) = await InspectInputsAsync(
+            firstBodyPath, secondBodyPath, researchJsonPath, cancellationToken);
+        return CemConfigurationRevisionResearchTriage.Assess(
+            comparison, catalog, claimedHardwarePartNumber, claimedSoftwareRevision);
+    }
+
+    /// <summary>
+    /// Use one inspected catalog and one compared body pair for BOTH views;
+    /// separately sourced/inconsistent research assessments must not be joined.
+    /// A valid asserted part/revision is required for whole-format coverage.
+    /// </summary>
+    internal static async Task<CemConfigurationResearchChangeCoverage> ReviewCoverageAndChangesAsync(
+        string firstBodyPath,
+        string secondBodyPath,
+        string researchJsonPath,
+        string? claimedHardwarePartNumber,
+        string? claimedSoftwareRevision,
+        CancellationToken cancellationToken = default)
+    {
+        var (catalog, comparison) = await InspectInputsAsync(
+            firstBodyPath, secondBodyPath, researchJsonPath, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+
+        var coverage = CemConfigurationResearchCoverage.Assess(
+            catalog, comparison.Format, claimedHardwarePartNumber, claimedSoftwareRevision);
+        var changed = CemConfigurationRevisionResearchTriage.Assess(
+            comparison, catalog, claimedHardwarePartNumber, claimedSoftwareRevision);
+        return CemConfigurationResearchChangeCoverage.Combine(changed, coverage);
+    }
+
+    private static async Task<(CemConfigurationResearchCatalogDocument Catalog,
+        CemConfigurationOfflineComparisonResult Comparison)> InspectInputsAsync(
+        string firstBodyPath,
+        string secondBodyPath,
+        string researchJsonPath,
+        CancellationToken cancellationToken)
+    {
         ArgumentException.ThrowIfNullOrWhiteSpace(firstBodyPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(secondBodyPath);
         ArgumentException.ThrowIfNullOrWhiteSpace(researchJsonPath);
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Reject an unsafe or unrecognized JSON catalog *before* looking
-        // at either binary input. No inferred catalog, VIN lookup, automatic
-        // hardware discovery or interpretation of a byte is permitted.
+        // Validate the 32 KiB research JSON before touching binary inputs.
         var catalog = await CemConfigurationResearchCatalogImport.InspectFileAsync(
             researchJsonPath, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
 
-        // Each file is bounded to precisely 142 (P2) or 254 (P3)
-        // bytes and decoded with count/checksum enforcement. The
-        // comparison itself prohibits cross-generation matching.
+        // Each raw body is separately verified: 142-byte P2 or 254-byte
+        // P3 with valid count/checksum and no mixed-generation alignment.
         var comparison = await CemConfigurationOfflineComparison.CompareFilesAsync(
             firstBodyPath, secondBodyPath, cancellationToken);
         cancellationToken.ThrowIfCancellationRequested();
-
-        // Explicitly claimed part/revision strings are untrusted metadata:
-        // even an exact match means only "unverified research claim".
-        return CemConfigurationRevisionResearchTriage.Assess(
-            comparison, catalog, claimedHardwarePartNumber, claimedSoftwareRevision);
+        return (catalog, comparison);
     }
 }

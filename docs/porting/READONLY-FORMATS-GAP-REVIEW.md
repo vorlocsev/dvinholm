@@ -556,3 +556,45 @@ Virtual Car remain separate and untouched.
 categories, precedence with multiple claims, cross-revision text-only
 flags, negative flag cases, strict rejection of malformed/duplicate
 scopes, immutable outputs, RU/EN privacy and no hardware/write APIs.
+
+
+## Stage: whole-format catalog coverage vs actually changed P2/P3 positions
+
+CemConfigurationResearchChangeCoverage combines the two existing
+strict, unverified research assessments for the SAME format and
+claimed hardware part/software revision. Its source checks each
+changed ordinal against the full 140/252-index coverage and rejects
+a mismatch of generation, ordered ordinals, totals, status or claimed
+scope rather than reporting misleading counts.
+
+For privacy and coherent provenance, the new
+CemConfigurationOfflineResearchPipeline.ReviewCoverageAndChangesAsync
+inspects the user-selected JSON catalog ONCE, compares TWO explicitly
+selected validated local .bin bodies ONCE and derives both assessments
+from these same inputs. JSON validation is completed before reading
+either binary body. The prior ReviewFilesAsync API remains unchanged
+and uses the same shared file-inspection sequence.
+
+The new redacted RU/EN result contrasts:
+- exact unverified claim coverage over the entire 140/252 raw indices;
+- exact unverified user claims among ONLY changed raw indices;
+- changed positions whose claims are for another asserted software
+  revision or hardware part, and positions without any research claims;
+- unchanged exact-claimed or no-claim positions (by subtraction);
+- changed ordinals lacking an exact asserted scope;
+- only those possible cross-revision source-text flags that fall on
+  actually changed positions.
+
+Percentages explicitly distinguish full-format coverage from coverage
+among changes and handle zero changes without dividing by zero. This
+is NOT verified OEM mapping, physical CEM identity, PIN access, read,
+write or restorable backup. The report contains no source text, part
+number, claimed software version, VIN, paths, hashes or raw body bytes.
+The workflow does not introduce new UI actions; visual acceptance
+remains deferred.
+
+13 synthetic tests cover P2/P3 boundary indices, zero/full changes,
+full-vs-changed missing-claim counts, scope inconsistency, source-text
+intersection, malformed changes, safe RU/EN redaction, and the whole
+three-file pipeline (including unsafe catalog rejection). Stable,
+Virtual Car, physical J2534 and release publishing are unaffected.
