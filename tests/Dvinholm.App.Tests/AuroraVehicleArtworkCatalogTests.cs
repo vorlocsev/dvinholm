@@ -197,6 +197,26 @@ public sealed class AuroraVehicleArtworkCatalogTests
     }
 
     [Fact]
+    public void Xc70P2UsesTheReframedSilverStudioImageBaseline()
+    {
+        var model = AuroraVehicleArtworkCatalog.Resolve("xc70-p2");
+        Assert.Equal("Volvo XC70 II · P2", model.Label);
+        Assert.Equal("P2", model.Platform);
+        Assert.Equal("ms-appx:///Assets/Vehicles/xc70-p2.jpg",
+            AuroraVehicleArtworkCatalog.ImageUri(model));
+
+        // This SHA-256 is an intentional asset-change gate, not OEM accuracy.
+        using var manifest = JsonDocument.Parse(Source("assets/vehicles/manifest.json"));
+        var entry = manifest.RootElement.EnumerateArray()
+            .Single(element => element.GetProperty("modelId").GetString() == model.Id);
+        Assert.Equal(88700, entry.GetProperty("bytes").GetInt32());
+        Assert.Equal("c679d86ebcaf0b328ee80c5b31752bb2aa74f2b2933294cd415d230239a969a6",
+            entry.GetProperty("sha256").GetString());
+        Assert.Equal("AI-generated reference render; not verified OEM geometry",
+            entry.GetProperty("source").GetString());
+    }
+
+    [Fact]
     public void S80P2UsesTheReframedDarkBlueStudioImageBaseline()
     {
         var model = AuroraVehicleArtworkCatalog.Resolve("s80-p2");
