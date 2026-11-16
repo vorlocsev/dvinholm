@@ -354,3 +354,26 @@ This is a styling-only adjustment. No diagnostic or configuration
 capability changes. Manual recapture is required after the change to
 confirm whether the actual WinUI ContentDialog template honors the
 surface brushes and whether 96/192 DPI, RU/EN remain legible.
+
+
+## Interactive screenshot regression: selected details clipped (#733, RU, 96 DPI)
+
+A user-supplied exact-head pilot #733 screenshot with the first
+synthetic P2 record selected showed its "Claimed meaning" text
+cut off at the bottom of the visible region. The 142-DIP nested
+details scroller and the parent modal scroll made the source reference
+inconvenient to inspect. This is a real visual-review failure despite
+green synthetic/CI tests. The received screenshot is NOT copied into Git.
+
+The viewer now has an 820-DIP modal and a side-by-side research
+area with equally sized columns. A 290-DIP list remains visible at
+left, and a 290-DIP separately scrollable, selectable details region
+at right, with explicit localized section labels. The outer
+430-DIP scroll wrapper and old 142-DIP details viewport are removed.
+The modal remains within the approved fixed 1280x800 DIP client.
+
+A source-level regression test guards the two-column layout, fixed
+width/height values and absence of the legacy nested viewport.
+This is NOT yet confirmed by a new live screenshot. Recapture RU
+details, then verify English and both generation filters. GUI capture
+and OEM/physical CEM acceptance are separate.

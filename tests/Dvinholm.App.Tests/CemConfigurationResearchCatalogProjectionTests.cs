@@ -111,7 +111,11 @@ public sealed class CemConfigurationResearchCatalogProjectionTests
         var ui = Source("src/Dvinholm.App/MainWindow.CemResearchCatalog.cs");
         Assert.Contains("ItemTemplate = (DataTemplate)RootLayout.Resources[", ui);
         Assert.Contains("CemResearchCatalogRowTemplate", ui);
-        Assert.Contains("MaxHeight = 142", ui);
+        Assert.Contains("Height = 290", ui);
+        Assert.Contains("Grid.SetColumn(listPanel, 0)", ui);
+        Assert.Contains("Grid.SetColumn(detailPanel, 1)", ui);
+        Assert.Contains("Content = content", ui);
+        Assert.DoesNotContain("MaxHeight = 142", ui);
         Assert.Contains("catalog, selectedFormat, offlineBody, _unifiedEnglish", ui);
         Assert.DoesNotContain("DisplayMemberPath =", ui);
     }
@@ -308,6 +312,25 @@ public sealed class CemConfigurationResearchCatalogProjectionTests
                 return path;
         }
         throw new FileNotFoundException(relative);
+    }
+
+    [Fact]
+    public void DetailsScreenshotRegressionRequiresWideSideBySideLayout()
+    {
+        var code = Source("src/Dvinholm.App/MainWindow.CemResearchCatalog.cs");
+        Assert.Contains("Width = 820", code);
+        Assert.Contains("MinWidth = 780", code);
+        Assert.Contains("GridLength(1, GridUnitType.Star)", code);
+        Assert.Contains("Text = L(\"Подробности (не проверены)\"", code);
+        Assert.Contains("Height = 290", code);
+        Assert.Contains("Grid.SetColumn(listPanel, 0)", code);
+        Assert.Contains("Grid.SetColumn(detailPanel, 1)", code);
+        Assert.Contains("Content = content,", code);
+        Assert.DoesNotContain(
+            "Content = new ScrollViewer { MaxHeight = 430", code);
+        Assert.DoesNotContain("MaxHeight = 142", code);
+        Assert.DoesNotContain("WriteConfiguration(", code);
+        Assert.DoesNotContain("PassThru", code);
     }
 
     [Fact]

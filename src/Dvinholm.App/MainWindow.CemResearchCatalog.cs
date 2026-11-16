@@ -110,7 +110,7 @@ public sealed partial class MainWindow
             };
             var list = new ListView
             {
-                Height = 176,
+                Height = 290,
                 SelectionMode = ListViewSelectionMode.Single,
                 // A wrapping DataTemplate keeps 100-character source claims
                 // readable at the approved 1280x800 DIP client viewport.
@@ -191,16 +191,48 @@ public sealed partial class MainWindow
             content.Children.Add(warning);
             content.Children.Add(filter);
             content.Children.Add(summary);
-            content.Children.Add(list);
-            // Keep a selected claim visible within the fixed-height modal.
-            // Longer references remain fully scrollable and selectable.
-            content.Children.Add(new ScrollViewer
+
+            // The 96-DPI interactive review exposed a usability defect:
+            // a 176-DIP list followed by a 142-DIP details viewport left
+            // the claimed meaning/source mostly below the fold, while the
+            // outer modal and details each presented vertical scrollbars.
+            // One horizontal research workspace gives both areas their own
+            // dedicated 290-DIP viewport without an outer modal scroller.
+            var researchArea = new Grid { ColumnSpacing = 14 };
+            researchArea.ColumnDefinitions.Add(
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+            researchArea.ColumnDefinitions.Add(
+                new ColumnDefinition { Width = new GridLength(1, GridUnitType.Star) });
+
+            var listPanel = new StackPanel { Spacing = 6 };
+            listPanel.Children.Add(new TextBlock
             {
-                MaxHeight = 142,
+                Text = L("Исследовательские записи", "Research claims"),
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+            });
+            listPanel.Children.Add(list);
+            Grid.SetColumn(listPanel, 0);
+            researchArea.Children.Add(listPanel);
+
+            var detailPanel = new StackPanel { Spacing = 6 };
+            detailPanel.Children.Add(new TextBlock
+            {
+                Text = L("Подробности (не проверены)",
+                    "Details (unverified)"),
+                FontSize = 13,
+                FontWeight = Microsoft.UI.Text.FontWeights.SemiBold
+            });
+            detailPanel.Children.Add(new ScrollViewer
+            {
+                Height = 290,
                 VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
                 HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
                 Content = detail
             });
+            Grid.SetColumn(detailPanel, 1);
+            researchArea.Children.Add(detailPanel);
+            content.Children.Add(researchArea);
             filter.SelectedIndex = selectedFormat switch
             {
                 CemConfigurationIndexedFormat.P2B9Fc => 1,
@@ -214,7 +246,12 @@ public sealed partial class MainWindow
                 XamlRoot = RootLayout.XamlRoot,
                 Title = L("Локальный каталог CEM P2/P3 (офлайн)",
                     "Local CEM P2/P3 research (offline)"),
-                Content = new ScrollViewer { MaxHeight = 430, Content = content },
+                // The independent two-column area is intentionally wider
+                // than the legacy stacked modal but still fits 1280 DIP.
+                Width = 820,
+                MinWidth = 780,
+                MaxWidth = 900,
+                Content = content,
                 // Use the same approved Aurora gradients as the six pages.
                 // Research stays visually distinct without implying an ECU connection.
                 Background = (Microsoft.UI.Xaml.Media.Brush)RootLayout.Resources[
