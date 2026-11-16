@@ -162,3 +162,54 @@ size mismatch, extension gating, uppercase extension, cancellation,
 size bounds and a source-level no-I/O capability contract. These tests
 do NOT open the user's original SVDB files or prove cryptographic
 authenticity. Physical J2534 and VIDA verification remain separate.
+
+
+## Stage: strict offline import of research-only JSON claims
+
+New parser CemConfigurationResearchCatalogImport accepts only explicitly
+selected local UTF-8 .json files up to 32 KiB. The JSON root has exactly
+six fields: format, schemaVersion, isUnverifiedResearch,
+isRestorableBackup, mayAccessEcu, claims. Required header values are
+"dvinholm-cem-index-mapping-research", 1, true, false and false.
+
+Each claim has exactly six fields: dataFormat ("P2B9Fc" or "P3F106"),
+index1Based (1..140 or 1..252), hardwarePartNumber (6..20 numeric
+characters), softwareRevision (2..64 allowed ASCII characters),
+claimedMeaning (3..100 characters with controls/angle brackets rejected),
+and evidenceReference (12..256 characters with controls rejected).
+The existing CemConfigurationMappingResearch.Validate routine checks
+every claim, including duplicate/conflicting exact scopes. JSON duplicate
+properties, unknown fields (including VIN/PIN/service credentials),
+incorrect types, trailing content, unexpected flags, empty catalogs and
+more than 64 claims are all rejected. UTF-8 BOM and malformed UTF-8 are
+not accepted. Neither the JSON file nor private source text is committed.
+
+The result contains a read-only detached set of unverified claims and
+fixed false capability flags. Consumers may explicitly pass it to the
+existing research assessor for unverified exact-string metadata matches.
+The redacted review reports only counts for P2/P3; it omits part
+numbers, firmware strings, meanings, references and local paths.
+No implicit merge into the empty production mapping catalog, driver
+installation, SVDB decryption, ECU request, PIN access or write exists.
+
+Example of a *synthetic* local research file (not an OEM mapping):
+```json
+{
+  "format": "dvinholm-cem-index-mapping-research",
+  "schemaVersion": 1,
+  "isUnverifiedResearch": true,
+  "isRestorableBackup": false,
+  "mayAccessEcu": false,
+  "claims": [{
+    "dataFormat": "P2B9Fc",
+    "index1Based": 1,
+    "hardwarePartNumber": "30682981",
+    "softwareRevision": "SW-A",
+    "claimedMeaning": "Synthetic unverified option",
+    "evidenceReference": "Private reference from a synthetic test"
+  }]
+}
+```
+
+13 synthetic test cases are registered in the x64 offline pilot.
+Passing them does not prove an OEM mapping or authorize live access.

@@ -121,7 +121,8 @@ internal static class CemConfigurationMappingResearch
             1, Array.AsReadOnly(Array.Empty<CemConfigurationMappingResearchProblem>()));
     }
 
-    private static IReadOnlyList<CemConfigurationMappingResearchProblem> Validate(
+    // Shared by strict local JSON import; no validation rule is duplicated.
+    internal static IReadOnlyList<CemConfigurationMappingResearchProblem> Validate(
         IReadOnlyList<CemConfigurationMappingResearchClaim?> claims)
     {
         var problems = new HashSet<CemConfigurationMappingResearchProblem>();
