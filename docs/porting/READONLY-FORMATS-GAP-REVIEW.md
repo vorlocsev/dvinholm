@@ -213,3 +213,35 @@ Example of a *synthetic* local research file (not an OEM mapping):
 
 13 synthetic test cases are registered in the x64 offline pilot.
 Passing them does not prove an OEM mapping or authorize live access.
+
+
+## Stage: WinUI 3 CEM research catalog viewer (offline only)
+
+The approved Aurora CEM configuration page now has a compact
+"Local P2/P3 JSON (offline)" action below the research filters. This is
+a separate UI workflow: it does NOT replace the existing vendor/OEM
+reference list, enable the existing Read/Compare/Write buttons, alter
+a vehicle profile or introduce a seventh workspace.
+
+A user explicitly selects one validated research JSON. A modal viewer
+shows 1..64 unverified claims, their source text on selection, and an
+All/P2/P3 filter (the current UI language controls labels and warnings).
+It may separately request one user-selected .bin file. Only an exact
+142-byte P2 B9FC or 254-byte P3 F106 body with a valid count and
+checksum is parsed. Positive UDS service headers and framing must
+already have been removed. A P2 body is NEVER joined to P3 claims
+or vice versa; only one-based ordinal raw bytes are juxtaposed.
+There is no inference that a claimed part number matches a car.
+
+Both file pickers operate outside a live ContentDialog. The modal list
+does not persist JSON, binaries or the user's sources. No diagnostic
+request, CEM PIN, write, recovery or OEM catalog promotion is added.
+A chosen file's raw value is explicitly labeled local and unverified.
+All user-supplied names/references are displayed as plain text,
+without executing them, and are not written to logs or repository.
+
+10 synthetic unit/contract tests cover the view filter, generation
+isolation, raw byte values, invalid/forged metadata, immutable lists,
+the exact binary body file gate and WinUI XAML integration. Windows
+rendered UX, DPI/viewport and RU/EN screenshots still need manual
+Aurora capture to establish actual visual acceptance.

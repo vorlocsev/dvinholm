@@ -111,6 +111,11 @@ public sealed partial class MainWindow
             "Чтение, изменение и запись CEM пока заблокированы. Никаких реальных значений, адресов или прав на запись этот каталог не подтверждает.",
             "CEM reading, editing and writing remain blocked. No real values, addresses or write permissions are verified.");
         P2ConfigCatalogButton.Content = L("Источники (offline)", "Sources (offline)");
+        CemConfigResearchJsonButton.Content = L(
+            "Локальный JSON P2/P3 (офлайн)", "Local P2/P3 JSON (offline)");
+        ToolTipService.SetToolTip(CemConfigResearchJsonButton, L(
+            "Только выбранные исследовательские записи и локальные сырые байты. Без ECU и записи.",
+            "Selected research claims and local raw bytes only. No ECU access or writing."));
         CemConfigReadButton.Content = L("Прочитать", "Read CEM");
         CemConfigBackupButton.Content = L("Резервная копия", "Backup");
         CemConfigCompareButton.Content = L("Сравнить", "Compare");

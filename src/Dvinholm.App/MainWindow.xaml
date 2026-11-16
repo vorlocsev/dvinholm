@@ -783,6 +783,12 @@
                                                     </ComboBox>
                                                     <TextBox x:Name="CemConfigSearch" Header="Найти параметр" PlaceholderText="Код или название" MaxLength="80" TextChanged="CemConfigSearch_TextChanged" />
                                                     <TextBlock x:Name="CemConfigFilterSafetyNote" Text="Данные получены из локального каталога источников. Совместимость не подтверждена." Foreground="#A5C0D4" FontSize="12" TextWrapping="Wrap" />
+                                                    <Button x:Name="CemConfigResearchJsonButton"
+                                                            Style="{StaticResource AuroraActionCaptionButton}"
+                                                            Content="Локальный JSON P2/P3 (офлайн)"
+                                                            HorizontalAlignment="Stretch"
+                                                            Click="CemConfigResearchJson_Click"
+                                                            ToolTipService.ToolTip="Просмотр только выбранного JSON, без чтения или записи CEM." />
                                                 </StackPanel>
                                             </Border>
                                             <Border x:Name="CemReferenceValuesPane" Grid.Column="1" Background="#112B47" BorderBrush="#315572" BorderThickness="1" CornerRadius="9" Padding="10">
