@@ -23,7 +23,7 @@ public sealed class CemPinBenchAcceptancePreparationTests
         if (!OperatingSystem.IsWindows()) return;
         using var f = new Fixture();
         var result = f.Run(true);
-        Assert.Equal(0, result.Code);
+        Assert.True(result.Code == 0, $"Offline bench preparation exited {result.Code}: {result.Text}");
         using var doc = JsonDocument.Parse(File.ReadAllText(f.Report));
         var root = doc.RootElement;
         Assert.Equal("dvinholm.cem-pin.bench-preparation.v1",
@@ -96,7 +96,8 @@ public sealed class CemPinBenchAcceptancePreparationTests
     {
         if (!OperatingSystem.IsWindows()) return;
         using var f = new Fixture();
-        Assert.Equal(0, f.Run(true).Code);
+        var outcome = f.Run(true);
+        Assert.True(outcome.Code == 0, $"Offline bench preparation exited {outcome.Code}: {outcome.Text}");
         var json = File.ReadAllText(f.Report);
         Assert.DoesNotContain(f.Checkout, json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(f.Output, json, StringComparison.OrdinalIgnoreCase);
