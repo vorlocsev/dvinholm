@@ -8,7 +8,7 @@ public sealed class AuroraVehicleArtworkPreferenceStoreTests
 {
     private sealed class Fixture : IDisposable
     {
-        internal readonly string Folder = Path.Combine(Path.GetTempPath(),
+        internal readonly string Folder = System.IO.Path.Combine(System.IO.Path.GetTempPath(),
             "DvinholmArtworkPreferences", Guid.NewGuid().ToString("N"));
         internal string Path => System.IO.Path.Combine(Folder,
             AuroraVehicleArtworkPreferenceStore.FileName);
