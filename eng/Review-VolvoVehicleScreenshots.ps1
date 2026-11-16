@@ -94,7 +94,29 @@ foreach ($id in $expectedIds) {
             $sha.ComputeHash($jpgBytes))).Replace('-', '').ToLowerInvariant()
     }
     finally { $sha.Dispose() }
-    if ([string]$model.sha256 -cnotmatch '^[0-9a-f]{64}
+    if ([string]$model.sha256 -cnotmatch '^[0-9a-f]{64}$' -or
+        $actualSha -cne [string]$model.sha256) {
+        throw "Source JPG SHA-256 mismatch with source manifest: $id."
+    }
+    $stream = [IO.MemoryStream]::new($jpgBytes, $false)
+    $image = $null
+    try {
+        $image = [Drawing.Image]::FromStream($stream, $false, $true)
+        if ($image.RawFormat.Guid -ne [Drawing.Imaging.ImageFormat]::Jpeg.Guid -or
+            $image.Width -ne 1280 -or $image.Height -ne 510) {
+            throw "Source JPG is not a 1280 x 510 JPEG: $id."
+        }
+    }
+    finally {
+        if ($null -ne $image) { $image.Dispose() }
+        $stream.Dispose()
+    }
+    $sourceImages[$id] = [pscustomobject]@{
+        sha256 = $actualSha
+        dataUri = 'data:image/jpeg;base64,' + [Convert]::ToBase64String($jpgBytes)
+    }
+}
+$byLanguage = @{}
 $sourceCommit = ''
 $globalDpi = $null
 $globalSize = ''
