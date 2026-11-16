@@ -267,8 +267,42 @@ public sealed partial class MainWindow
     /// Display-only manual selection of one of nine offline reference renders.
     /// This never changes connected vehicle, chosen ECU, CAN IDs or UDS state.
     /// </summary>
-    private void EcuVehicleModel_SelectionChanged(object sender, SelectionChangedEventArgs e) =>
+    private AuroraVehicleArtworkPreferenceStore? _vehicleArtworkPreference;
+    private bool _vehicleArtworkPreferenceReady;
+
+    private void InitializeAuroraVehicleArtworkPreference()
+    {
+        _vehicleArtworkPreference = new AuroraVehicleArtworkPreferenceStore(
+            Path.Combine(DvinholmUserDataDirectory.Current,
+                AuroraVehicleArtworkPreferenceStore.FileName));
+        var savedId = _vehicleArtworkPreference.Load();
+        if (savedId is not null)
+        {
+            var savedOption = EcuVehicleModel.Items.OfType<ComboBoxItem>()
+                .FirstOrDefault(item => string.Equals(item.Tag as string,
+                    savedId, StringComparison.Ordinal));
+            if (savedOption is not null)
+                EcuVehicleModel.SelectedItem = savedOption;
+        }
+        _vehicleArtworkPreferenceReady = true;
+    }
+
+    private void EcuVehicleModel_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
         RefreshAuroraVehicleArtwork();
+        // Keep manual artwork preference independent of the connected adapter,
+        // VIN, CAN, diagnostic results and RU/EN presentation.
+        if (!_vehicleArtworkPreferenceReady || _vehicleArtworkPreference is null)
+            return;
+        if ((EcuVehicleModel.SelectedItem as ComboBoxItem)?.Tag is not string id)
+            return;
+        try
+        {
+            _vehicleArtworkPreference.Save(id);
+        }
+        catch (IOException) { /* Display selection still works if settings are read-only. */ }
+        catch (UnauthorizedAccessException) { /* Never fail a diagnostic UI for artwork. */ }
+    }
 
     // ImageOpened / ImageFailed are emitted by the real WinUI decoder,
     // not by model selection. UIA screenshot capture must fail closed when the

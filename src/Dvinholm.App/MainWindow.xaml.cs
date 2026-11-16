@@ -143,6 +143,9 @@ public sealed partial class MainWindow : Window
         // Keep this before fixed-client sizing and before the first show.
         ConfigureAuroraNativeTitleBar();
         ConfigureFixedAuroraWindow();
+        // Restore display-only manual vehicle selection after XAML is fully
+        // initialized. The XAML default must never overwrite the saved choice.
+        InitializeAuroraVehicleArtworkPreference();
         AuroraLanding.UseSharedNavigation();
         InitializeAuroraLabels();
         InitializeAuroraDtcTable();
