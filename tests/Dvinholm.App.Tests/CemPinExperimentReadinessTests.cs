@@ -31,16 +31,16 @@ public sealed class CemPinExperimentReadinessTests
     }
 
     [Theory]
-    [InlineData(0, CemPinExperimentBlocker.Disconnected)]
-    [InlineData(1, CemPinExperimentBlocker.WrongSpeed)]
-    [InlineData(2, CemPinExperimentBlocker.WrongCanIdFormat)]
-    [InlineData(3, CemPinExperimentBlocker.MissingHardwareFilterSupport)]
-    [InlineData(4, CemPinExperimentBlocker.UserFilterActive)]
-    [InlineData(5, CemPinExperimentBlocker.MonitorRunning)]
-    [InlineData(6, CemPinExperimentBlocker.DiagnosticBusy)]
-    [InlineData(7, CemPinExperimentBlocker.ResearchModeUnavailable)]
+    [InlineData(0, 0)]
+    [InlineData(1, 1)]
+    [InlineData(2, 2)]
+    [InlineData(3, 3)]
+    [InlineData(4, 4)]
+    [InlineData(5, 5)]
+    [InlineData(6, 6)]
+    [InlineData(7, 7)]
     public void EachOfEightSessionConditionsBlocksLocalPreflight(
-        int missing, CemPinExperimentBlocker expected)
+        int missing, int expected)
     {
         bool Flag(int index) => index != missing;
         var prereqs = CemReadOnlyPrerequisiteReport.Assess(new(
@@ -48,7 +48,7 @@ public sealed class CemPinExperimentReadinessTests
             Flag(4), Flag(5), Flag(6), Flag(7)));
         var result = Assess(prereqs);
         Assert.False(result.AllLocalConditionsMet);
-        Assert.Equal(expected, Assert.Single(result.Blockers));
+        Assert.Equal((CemPinExperimentBlocker)expected, Assert.Single(result.Blockers));
     }
 
     [Fact]
