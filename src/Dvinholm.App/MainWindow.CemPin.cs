@@ -332,9 +332,9 @@ public sealed partial class MainWindow
                 StartCemPinExpiry();
                 RefreshCemPinProgress();
                 SetStatus(saved
-                    ? CemText("PIN CEM сохранён в зашифрованном хранилище Windows.", "CEM PIN saved with Windows user encryption.")
-                    : CemText("PIN CEM получен, но сохранить не удалось. Доступен только временный показ.",
-                        "CEM PIN obtained, but saving failed. Only temporary reveal is available."));
+                    ? CemText("Непроверенный кандидат PIN CEM сохранён в зашифрованном хранилище Windows.", "Unverified CEM PIN candidate saved with Windows user encryption.")
+                    : CemText("Кандидат PIN CEM принят адаптером, но сохранить не удалось. Результат не подтверждён; доступен только временный показ.",
+                        "Adapter accepted a CEM PIN candidate, but saving failed. Result is unverified; temporary reveal only."));
             }
             else if (!_session.IsConnected)
                 SetStatus(CemText("Ошибка очистки транспорта. Переподключите адаптер.", "Transport cleanup failed. Reconnect the adapter."));

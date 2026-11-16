@@ -122,3 +122,32 @@ outstanding. A future physical record must identify actual HW/SW and vehicle,
 establish authorized context, validate accepted and rejected replies, confirm
 repeatability and check cancellation/disconnect/recovery without configuration
 changes. Keep PIN/VIN/raw secret traffic out of that record.
+
+## Development CEM PIN three-step display (2026-11-16)
+
+The CEM PIN stepper now projects a **read-only** state snapshot instead of
+permanently claiming that every Development action is unavailable. It shows:
+
+- whether the experimental CEM part number was observed in the current session
+  (not physically authenticated);
+- missing J2534/session prerequisites, P/N, source profile or valid bounded
+  range, or a currently running Development experiment;
+- a hidden, temporarily revealed, or Windows-vault-restored **unverified
+  candidate**; no candidate bytes appear in the stepper.
+
+The snapshot is recomputed on RU/EN localization, navigation, session/read
+availability changes, PIN range edits, result reveal, result expiry, and saved
+candidate load. It has no PIN byte field, cannot transmit frames, cannot
+select a profile, and grants no configuration or key programming permissions.
+Stable always displays a blocked PIN operation. Stage text cannot by itself
+establish a verified PIN: adapter acceptance is not physical CEM attestation.
+
+The status after the provider's double acceptance now explicitly says that an
+**unverified candidate** was stored (or that candidate storage failed), not
+that a verified CEM PIN was recovered. The underlying encrypted storage,
+bounded search protocol and cancellation mechanism are unchanged.
+
+Synthetic unit tests cover ten stage cases; the automated Windows x64 CI
+checks compilation. A physical test on the exact CEM HW/SW revision, plus
+interactive RU/EN screenshot review, is still **NOT RUN**. Do not treat a
+source-listed P/N or an available button as vehicle compatibility.
