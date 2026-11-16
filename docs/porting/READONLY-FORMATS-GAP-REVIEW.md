@@ -449,3 +449,38 @@ or request any physical J2534 operation. Visual acceptance is deferred.
 both generations, claims priority, empty diff, invalid catalog,
 forged comparison, ordinal boundaries, RU/EN redaction and no-I/O
 capability assertions.
+
+
+## Stage: executable three-file offline CEM research review pipeline
+
+CemConfigurationOfflineResearchPipeline.ReviewFilesAsync combines the
+existing strict file-level components into one ordered, cancellation-
+aware and bounded application backend operation:
+
+1. Explicitly supplied local JSON: parse as strict unverified
+   research metadata (32 KiB maximum, schema v1, at most 64 claims).
+   Any missing, malformed, conflicting or unsafe claim data fails
+   before binary comparison is started.
+2. Two separately supplied local .bin bodies: independently decode
+   exactly P2 B9FC 142-byte or P3 F106 254-byte formats, enforcing
+   count/checksum and rejecting mixed P2/P3 generations.
+3. Compare raw one-based ordinals using the existing index diff,
+   then triage changed positions against only user-asserted part
+   numbers, software revisions and source claims.
+4. Return the existing immutable, redacted-by-default
+   CemConfigurationRevisionResearchAssessment. Its RU/EN report
+   excludes paths, raw before/after bytes, private source content,
+   hashes, part numbers and revision strings; no report file is
+   persisted automatically.
+
+The flow has no implicit file discovery, OEM identity, VIN, CAN
+frames, diagnostic requests, PIN operation, live read, write or
+restore method. Even an "exact" metadata match stays explicitly
+unverified. This is backend only: WinUI visual acceptance remains
+deferred and the screen layout is untouched.
+
+13 synthetic xUnit checks cover complete P2/P3 workflows, changed
+first/last indices, mismatched part/software/generation,
+equal files, invalid JSON/duplicate source scopes, corrupt
+checksum, mixed generation, cancellation, no content leakage
+in RU/EN and original file immutability. No physical J2534 test.
