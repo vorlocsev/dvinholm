@@ -11,6 +11,7 @@ on:
       - 'eng/Test-UnifiedUpdateHandoffProbe.ps1'
       - 'eng/Sign-UnifiedX64Release.ps1'
       - 'eng/Capture-UnifiedAuroraWinUI3.ps1'
+      - 'eng/Capture-CemResearchViewerWinUI3.ps1'
       - 'eng/Review-UnifiedAuroraScreenshots.ps1'
       - 'eng/Review-VolvoVehicleScreenshots.ps1'
       - 'eng/Package-UnifiedWinUIX64Pilot.ps1'
@@ -63,7 +64,8 @@ jobs:
           }
           foreach ($relative in @(
             'eng/Capture-UnifiedAuroraWinUI3.ps1',
-            'eng/Review-UnifiedAuroraScreenshots.ps1'
+            'eng/Review-UnifiedAuroraScreenshots.ps1',
+            'eng/Capture-CemResearchViewerWinUI3.ps1'
           )) {
             $path = (Resolve-Path -LiteralPath $relative).Path
             $bytes = [IO.File]::ReadAllBytes($path)
@@ -406,6 +408,7 @@ jobs:
             artifacts/Aurora-x64-build-evidence.json
             eng/Capture-UnifiedAuroraWinUI3.ps1
             eng/Review-UnifiedAuroraScreenshots.ps1
+            eng/Capture-CemResearchViewerWinUI3.ps1
           if-no-files-found: error
           compression-level: 0
           retention-days: 7

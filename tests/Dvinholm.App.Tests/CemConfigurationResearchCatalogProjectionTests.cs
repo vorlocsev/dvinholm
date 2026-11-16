@@ -247,6 +247,22 @@ public sealed class CemConfigurationResearchCatalogProjectionTests
         Assert.DoesNotContain("SetAutomationId(dialog, selected.Path", source);
     }
 
+    [Fact]
+    public void ExactHeadCemScreenshotHelperIsOperatorOnly()
+    {
+        var script = Source("eng/Capture-CemResearchViewerWinUI3.ps1");
+        Assert.Contains("IConfirmSyntheticNoSecrets", script);
+        Assert.Contains("Aurora-x64-build-evidence.json", script);
+        Assert.Contains("DvinholmCemResearchDialog", script);
+        Assert.Contains("GetDpiForWindow", script);
+        Assert.Contains("Get-FileHash", script);
+        Assert.Contains("CopyFromScreen", script);
+        Assert.Contains("Get-Anchored", script.Replace("Get-CemAnchor", "Get-Anchored"));
+        Assert.DoesNotContain("PassThru", script);
+        Assert.DoesNotContain("FileOpenPicker", script);
+        Assert.DoesNotContain("Invoke-RestMethod", script);
+    }
+
     private static string Source(string relative)
     {
         for (DirectoryInfo? dir = new(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)

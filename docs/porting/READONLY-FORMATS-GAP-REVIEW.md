@@ -266,3 +266,42 @@ Five new theory/contract cases protect the locale and wrapping behavior.
 
 Actual visible GUI acceptance at user DPI, scrolling, keyboard focus,
 and source-text readability still requires interactive Windows capture.
+
+
+## Private exact-head CEM research viewer screenshot script
+
+The viewer now publishes stable, non-sensitive UI Automation IDs for
+the modal, P2/P3 filter, research list, safety warning, and selected
+details. The additional Windows PowerShell 5.1 helper
+eng/Capture-CemResearchViewerWinUI3.ps1 is SYNTAX-CHECKED ONLY in CI.
+It must never execute there or upload/commit screenshot data.
+
+For private visual acceptance, manually launch the exact-head WinUI 3
+pilot from a full artifact containing Aurora-x64-build-evidence.json,
+manually select RU or EN, open the CEM research modal using synthetic
+local JSON, and inspect either its list or a selected synthetic claim.
+Run the helper on the actual logged-in Windows desktop. It requires
+an explicit no-secret confirmation, validates running EXE SHA256 and
+native window title against artifact provenance, checks 1280x800 DIP
+client dimensions, Per-Monitor V2 and requested DPI (192 by default,
+corresponding to 200% Windows scaling), live modal UIA anchors and
+foreground visibility. Output must go in a new empty folder outside
+the repository. One PNG and a private SHA256 manifest are produced.
+
+A 1280x800 DIP client at 200% scaling needs at least 2560x1600
+physical pixels PLUS native caption. The helper refuses a clipped
+window rather than mislabelling an image as accepted.
+
+Example operator commands (use separate folders per view and locale):
+
+~~~powershell
+$sha = '<EXACT_HEAD_40_HEX>'
+.\eng\Capture-CemResearchViewerWinUI3.ps1 -Language ru -View list -ExpectedDpi 192 -CommitSha $sha -OutputDirectory 'C:\Dvinholm-CemReview\ru-list' -IConfirmSyntheticNoSecrets
+.\eng\Capture-CemResearchViewerWinUI3.ps1 -Language ru -View details -ExpectedDpi 192 -CommitSha $sha -OutputDirectory 'C:\Dvinholm-CemReview\ru-details' -IConfirmSyntheticNoSecrets
+~~~
+
+Repeat using -Language en after manually switching the app language.
+The script does not open pickers, choose files, click controls, connect
+to an adapter, or validate a real CEM configuration. Actual visible GUI
+screenshots and human examination of long links, scrolling and 200%
+DPI are still required; a passing CI is NOT visual acceptance.
