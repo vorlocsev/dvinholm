@@ -263,6 +263,53 @@ public sealed class CemConfigurationResearchCatalogProjectionTests
         Assert.DoesNotContain("Invoke-RestMethod", script);
     }
 
+    [Fact]
+    public async Task RealDesktopReviewFixturesAreSyntheticAndReadOnly()
+    {
+        var name = "eng/fixtures/CemResearch-Visual-Synthetic";
+        var jsonPath = FixturePath(name + ".json");
+        var catalog = await CemConfigurationResearchCatalogImport.InspectFileAsync(jsonPath);
+        Assert.Equal(3, catalog.Claims.Count);
+        Assert.All(catalog.Claims, row =>
+        {
+            Assert.Equal("00000000", row.HardwarePartNumber);
+            Assert.Equal("SYNTHETIC-1", row.SoftwareRevision);
+            Assert.StartsWith("SYNTHETIC ONLY:", row.ClaimedMeaning);
+            Assert.StartsWith("https://example.invalid/", row.EvidenceReference);
+        });
+        Assert.False(catalog.HasVerifiedParameterMapping);
+        Assert.False(catalog.MayReadOrWriteVehicle);
+
+        var first = await CemConfigurationOfflineBlockInspection.InspectFileAsync(
+            FixturePath(name + "-P2.bin"));
+        var second = await CemConfigurationOfflineBlockInspection.InspectFileAsync(
+            FixturePath(name + "-P3.bin"));
+        Assert.Equal(140, first.Values.Count);
+        Assert.Equal(252, second.Values.Count);
+        Assert.Equal("23", first.Values[0].ValueHex);
+        Assert.Equal("AB", first.Values[^1].ValueHex);
+        Assert.Equal("33", second.Values[0].ValueHex);
+        Assert.Equal("CC", second.Values[^1].ValueHex);
+        Assert.False(first.HasVerifiedCemIdentity);
+        Assert.False(second.IsRestorableBackup);
+        Assert.Throws<FormatException>(() =>
+            CemConfigurationOfflineBlockInspection.InspectFileAsync(
+                FixturePath(name + "-Corrupt-P2.bin")).GetAwaiter().GetResult());
+    }
+
+    private static string FixturePath(string relative)
+    {
+        for (DirectoryInfo? dir = new(AppContext.BaseDirectory);
+             dir is not null; dir = dir.Parent)
+        {
+            var path = Path.Combine(dir.FullName,
+                relative.Replace('/', Path.DirectorySeparatorChar));
+            if (File.Exists(path))
+                return path;
+        }
+        throw new FileNotFoundException(relative);
+    }
+
     private static string Source(string relative)
     {
         for (DirectoryInfo? dir = new(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)

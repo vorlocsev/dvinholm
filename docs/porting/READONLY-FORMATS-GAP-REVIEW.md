@@ -305,3 +305,32 @@ The script does not open pickers, choose files, click controls, connect
 to an adapter, or validate a real CEM configuration. Actual visible GUI
 screenshots and human examination of long links, scrolling and 200%
 DPI are still required; a passing CI is NOT visual acceptance.
+
+
+## Shipped synthetic review fixtures
+
+The x64 pilot review artifact now includes four deliberately fake inputs:
+- eng/fixtures/CemResearch-Visual-Synthetic.json
+- eng/fixtures/CemResearch-Visual-Synthetic-P2.bin (142 bytes)
+- eng/fixtures/CemResearch-Visual-Synthetic-P3.bin (254 bytes)
+- eng/fixtures/CemResearch-Visual-Synthetic-Corrupt-P2.bin (wrong checksum)
+
+The JSON has three P2/P3 research claims with claimed hardware
+part 00000000, software revision SYNTHETIC-1, source references only
+under the reserved example.invalid domain, and multilingual/long
+test descriptions. It is NOT a Volvo option mapping. The binary
+bodies contain zero-filled synthetic values except for two chosen
+endpoints and a valid additive checksum. No VIN, PIN, real DID or
+proprietary catalog bytes are included. All four files are tested
+by the offline x64 suite; the intentionally corrupt one must fail.
+
+Manual UI procedure for each language: open the synthetic JSON
+in the CEM research viewer, capture the list, select a long claim
+and capture the details, optionally pick the synthetic P2 or P3
+body and confirm generation isolation. The corrupt P2 body must
+show a checksum error without closing the application.
+
+The operator screenshot helper MUST still run on a real Windows
+desktop with the exact-head artifact, not in CI. Synthetic
+fixtures enable repeatable review; they do not constitute actual
+captured screenshots or human visual acceptance.

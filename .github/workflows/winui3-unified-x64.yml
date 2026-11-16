@@ -12,6 +12,7 @@ on:
       - 'eng/Sign-UnifiedX64Release.ps1'
       - 'eng/Capture-UnifiedAuroraWinUI3.ps1'
       - 'eng/Capture-CemResearchViewerWinUI3.ps1'
+      - 'eng/fixtures/**'
       - 'eng/Review-UnifiedAuroraScreenshots.ps1'
       - 'eng/Review-VolvoVehicleScreenshots.ps1'
       - 'eng/Package-UnifiedWinUIX64Pilot.ps1'
@@ -409,6 +410,10 @@ jobs:
             eng/Capture-UnifiedAuroraWinUI3.ps1
             eng/Review-UnifiedAuroraScreenshots.ps1
             eng/Capture-CemResearchViewerWinUI3.ps1
+            eng/fixtures/CemResearch-Visual-Synthetic.json
+            eng/fixtures/CemResearch-Visual-Synthetic-P2.bin
+            eng/fixtures/CemResearch-Visual-Synthetic-P3.bin
+            eng/fixtures/CemResearch-Visual-Synthetic-Corrupt-P2.bin
           if-no-files-found: error
           compression-level: 0
           retention-days: 7
