@@ -171,11 +171,12 @@ internal static class CemConfigurationMappingResearch
         _ => 0
     };
 
-    private static bool ValidPartNumber(string? value) =>
+    // Shared with offline revision triage; remains research-only.
+    internal static bool ValidPartNumber(string? value) =>
         value is { Length: >= 6 and <= 20 } &&
         value.All(c => c is >= '0' and <= '9');
 
-    private static bool ValidSoftwareRevision(string? value) =>
+    internal static bool ValidSoftwareRevision(string? value) =>
         value is { Length: >= 2 and <= 64 } &&
         value.All(c => c is >= '0' and <= '9' or >= 'A' and <= 'Z' or
             >= 'a' and <= 'z' or '_' or '-' or '.');

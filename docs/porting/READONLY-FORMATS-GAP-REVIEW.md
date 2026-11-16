@@ -409,3 +409,43 @@ immutable result and strict no-I/O/no-PIN contracts.
 This is intentionally a backend-only stage. The user deferred WinUI
 visual acceptance: no new GUI button, window-layout change, visual
 capture requirement or hardware J2534 acceptance is introduced.
+
+
+## Stage: offline changed-ordinal versus claimed CEM revision triage
+
+CemConfigurationRevisionResearchTriage.Assess takes the already validated
+in-memory result of two locally compared P2/P3 bodies, a strict
+research-only JSON catalog and an *unverified user-asserted* hardware
+part number/software revision. The part/revision fields are validated
+using the same metadata constraints as the original research intake
+and never imply a VIN or a physical CEM identity.
+
+For each changed one-based ordinal, only a matching P2/P3 format
+is considered. The disposition is:
+- ExactUnverifiedUserClaim: same ordinal, claimed part and claimed
+  software revision (still NOT an authenticated option or ECU).
+- OnlyOtherSoftwareRevisionClaim: same part/ordinal but different
+  claimed software revision.
+- OnlyOtherHardwarePartClaim: another claimed hardware part for
+  that ordinal, with no record for the asserted part.
+- NoClaimForChangedOrdinal: no record for the format/ordinal.
+- AssertedScopeMissingOrInvalid: missing or malformed user claims.
+
+The entire catalog must validate first, not just the changed rows.
+A comparison is also structurally checked for exact 140/252 count,
+uppercase SHA fingerprints, strictly ascending one-based ordinals
+and consistency between changed-count and equal/different hashes.
+These checks are anti-confusion metadata controls, NOT cryptographic
+authentication or proof of the two files' real-world origin.
+
+The immutable output keeps only changed ordinals and categories, not
+part numbers, software versions, option descriptions, raw bytes or
+source links. The RU/EN report explicitly redacts such values and
+states that live access, PIN and configuration writes are forbidden.
+It does not add a GUI action, persist data, modify Stable/Virtual Car
+or request any physical J2534 operation. Visual acceptance is deferred.
+
+13 synthetic automated test methods cover exact/missing/other scope,
+both generations, claims priority, empty diff, invalid catalog,
+forged comparison, ordinal boundaries, RU/EN redaction and no-I/O
+capability assertions.

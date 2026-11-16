@@ -231,6 +231,7 @@ jobs:
             'FullyQualifiedName~CemConfigurationBlockDecoderTests'
             'FullyQualifiedName~CemConfigurationIndexedReviewTests'
             'FullyQualifiedName~CemConfigurationOfflineComparisonTests'
+            'FullyQualifiedName~CemConfigurationRevisionResearchTriageTests'
             'FullyQualifiedName~CemConfigurationMappingResearchTests'
             'FullyQualifiedName~CemConfigurationResearchCatalogImportTests'
             'FullyQualifiedName~CemConfigurationResearchCatalogProjectionTests'
