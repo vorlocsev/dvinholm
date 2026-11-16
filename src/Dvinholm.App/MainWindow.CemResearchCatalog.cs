@@ -226,6 +226,15 @@ public sealed partial class MainWindow
                     "Локальный .bin отклонён: требуется ровно 142 или 254 байта с корректной суммой.",
                     "Local .bin rejected: requires exactly 142 or 254 bytes with valid checksum.");
             }
+            catch (FormatException)
+            {
+                // The raw P2/P3 body decoder rejects invalid count/checksum.
+                // Invalid user files are expected; they must not crash WinUI.
+                offlineBody = null;
+                bodyFeedback = L(
+                    "Повреждённый .bin: неверное количество или контрольная сумма.",
+                    "Corrupted .bin: invalid value count or checksum.");
+            }
             catch (IOException)
             {
                 offlineBody = null;

@@ -181,6 +181,8 @@ public sealed class CemConfigurationResearchCatalogProjectionTests
         Assert.Contains("CemConfigurationResearchCatalogImport.InspectFileAsync", code);
         Assert.Contains("CemConfigurationOfflineBlockInspection.InspectFileAsync", code);
         Assert.Contains("CemConfigurationResearchCatalogProjection.Filter", code);
+        Assert.Contains("catch (FormatException)", code);
+        Assert.Contains("Corrupted .bin: invalid value count or checksum.", code);
         Assert.DoesNotContain("PassThru", code);
         Assert.DoesNotContain("SendAsync(", code);
         Assert.DoesNotContain("WriteConfiguration(", code);
