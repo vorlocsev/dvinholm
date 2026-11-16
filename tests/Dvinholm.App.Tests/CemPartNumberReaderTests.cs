@@ -81,6 +81,40 @@ public sealed class CemPartNumberReaderTests
     }
 
     [Fact]
+    public void ReconnectNeverRevivesOldPartNumberReadLeaseAndRequiresFreshContext()
+    {
+        using var fixture = new Fixture();
+        var initial = fixture.Read();
+        Assert.Equal(30_682_981u, initial.PartNumber);
+        Assert.False(initial.PhysicalRevisionVerified);
+        Assert.False(initial.PinRetrievalSupported);
+        Assert.Equal(1, fixture.Adapter.TransmittedFrames);
+        Assert.Equal(0, fixture.Adapter.ActiveFilterCount);
+
+        fixture.Session.Disconnect();
+        Assert.False(fixture.Guard.IsCurrent);
+        Assert.True(fixture.Session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        Assert.False(fixture.Guard.IsCurrent);
+
+        // A stale guard cannot transmit or borrow fresh replies from a new bus.
+        Assert.Throws<InvalidOperationException>(() => fixture.Read());
+        Assert.Equal(1, fixture.Adapter.TransmittedFrames);
+        Assert.Equal(0, fixture.Adapter.ActiveFilterCount);
+
+        object freshContext = new();
+        using var freshGuard = CemPinSessionGuard.Capture(fixture.Session,
+            freshContext, () => freshContext, ownerConsent: true);
+        Assert.True(freshGuard.IsCurrent);
+        var observed = CemPartNumberReader.Read(fixture.Session, freshGuard,
+            routeApproved: true);
+        Assert.Equal(30_682_981u, observed.PartNumber);
+        Assert.False(observed.PhysicalRevisionVerified);
+        Assert.False(observed.PinRetrievalSupported);
+        Assert.Equal(2, fixture.Adapter.TransmittedFrames);
+        Assert.Equal(0, fixture.Adapter.ActiveFilterCount);
+    }
+
+    [Fact]
     public void MalformedFramesCannotSupplyOrMixPartNumberPairs()
     {
         using var fixture = new Fixture(_ => new[]
