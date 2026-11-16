@@ -115,6 +115,85 @@ public sealed class CemPartNumberReaderTests
     }
 
     [Fact]
+    public async Task SyntheticReadErrorRequiresDisconnectAndFreshLeaseBeforeRecovery()
+    {
+        const string privateAdapterText = "SYNTHETIC-PRIVATE-ADAPTER-VIN-SECRET";
+        var sent = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        var requests = 0;
+        using var fixture = new Fixture(frame =>
+        {
+            if (Interlocked.Increment(ref requests) == 1)
+            {
+                sent.TrySetResult();
+                return Array.Empty<CanFrame>();
+            }
+            return Reply(frame);
+        });
+        var pending = Task.Factory.StartNew(() => fixture.Read(),
+            CancellationToken.None, TaskCreationOptions.LongRunning, TaskScheduler.Default);
+        await sent.Task.WaitAsync(TimeSpan.FromSeconds(5));
+        fixture.Adapter.FailReads = true;
+
+        var fault = await Assert.ThrowsAsync<InvalidOperationException>(
+            () => pending.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.DoesNotContain(privateAdapterText, fault.ToString());
+        Assert.False(fixture.Guard.IsCurrent);
+        Assert.Equal(1, fixture.Adapter.TransmittedFrames);
+        Assert.Equal(0, fixture.Adapter.ActiveFilterCount);
+
+        // Clearing the driver failure alone does not revive the old lease.
+        fixture.Adapter.FailReads = false;
+        Assert.Throws<InvalidOperationException>(() => fixture.Read());
+        Assert.Equal(1, fixture.Adapter.TransmittedFrames);
+        fixture.Session.Disconnect();
+        Assert.True(fixture.Session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        Assert.False(fixture.Guard.IsCurrent);
+        Assert.Throws<InvalidOperationException>(() => fixture.Read());
+        Assert.Equal(1, fixture.Adapter.TransmittedFrames);
+
+        object newContext = new();
+        using var fresh = CemPinSessionGuard.Capture(fixture.Session, newContext,
+            () => newContext, ownerConsent: true);
+        var observed = CemPartNumberReader.Read(fixture.Session, fresh, routeApproved: true);
+        Assert.Equal(30_682_981u, observed.PartNumber);
+        Assert.False(observed.PhysicalRevisionVerified);
+        Assert.False(observed.PinRetrievalSupported);
+        Assert.Equal(2, fixture.Adapter.TransmittedFrames);
+        Assert.Equal(0, fixture.Adapter.ActiveFilterCount);
+    }
+
+    [Fact]
+    public void FilterCleanupFailureForcesDisconnectBeforeNewReadOnlyLease()
+    {
+        using var fixture = new Fixture();
+        fixture.Adapter.RejectStopFilter = true;
+        Assert.Throws<CemPartNumberCleanupException>(() => fixture.Read());
+        Assert.False(fixture.Session.IsConnected);
+        Assert.False(fixture.Guard.IsCurrent);
+        Assert.Throws<InvalidOperationException>(() => fixture.Read());
+        Assert.Equal(1, fixture.Adapter.TransmittedFrames);
+        Assert.Equal(1, fixture.Adapter.ActiveFilterCount);
+
+        fixture.Adapter.RejectStopFilter = false;
+        fixture.Session.Disconnect();
+        Assert.Equal(0, fixture.Adapter.ActiveFilterCount);
+        Assert.True(fixture.Session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        Assert.False(fixture.Guard.IsCurrent);
+        Assert.Throws<InvalidOperationException>(() => fixture.Read());
+        Assert.Equal(1, fixture.Adapter.TransmittedFrames);
+
+        object newContext = new();
+        using var fresh = CemPinSessionGuard.Capture(fixture.Session, newContext,
+            () => newContext, ownerConsent: true);
+        var observed = CemPartNumberReader.Read(fixture.Session, fresh, routeApproved: true);
+        Assert.Equal(30_682_981u, observed.PartNumber);
+        Assert.False(observed.PhysicalRevisionVerified);
+        Assert.False(observed.PinRetrievalSupported);
+        Assert.Equal(2, fixture.Adapter.TransmittedFrames);
+        Assert.Equal(0, fixture.Adapter.ActiveFilterCount);
+    }
+
+    [Fact]
     public void MalformedFramesCannotSupplyOrMixPartNumberPairs()
     {
         using var fixture = new Fixture(_ => new[]
