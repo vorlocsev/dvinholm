@@ -118,6 +118,12 @@ public sealed class CemPinBenchAcceptancePreparationTests
         Assert.Contains("pinAcquisitionVerified = $false", script);
         Assert.Contains("mayIssueCemRequest = $false", script);
         Assert.Contains("status = 'NotTested'", script);
+        Assert.Contains("[Security.Cryptography.SHA256]::Create()", script);
+        Assert.Contains("[IO.File]::OpenRead($zip.FullName)", script);
+        Assert.Contains("$sha256.ComputeHash($stream)", script);
+        Assert.Contains("$stream.Dispose()", script);
+        Assert.Contains("$sha256.Dispose()", script);
+        Assert.DoesNotContain("Get-FileHash", script, StringComparison.OrdinalIgnoreCase);
         foreach (var forbidden in new[]
         {
             "PassThruOpen", "PassThruConnect", "Start-Process",

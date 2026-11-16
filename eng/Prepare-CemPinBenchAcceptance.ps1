@@ -57,7 +57,18 @@ try {
   }
 }
 finally { $archive.Dispose() }
-$zipSha = (Get-FileHash -LiteralPath $zip.FullName -Algorithm SHA256).Hash.ToLowerInvariant()
+# Use streaming .NET SHA-256 instead of PowerShell module auto-loading.
+# The Windows x86 test host may lack the usual hash command under -NoProfile,
+# despite having full .NET cryptographic primitives available.
+$sha256 = [Security.Cryptography.SHA256]::Create()
+$stream = [IO.File]::OpenRead($zip.FullName)
+try {
+  $zipSha = ([BitConverter]::ToString($sha256.ComputeHash($stream))).Replace('-', '').ToLowerInvariant()
+}
+finally {
+  $stream.Dispose()
+  $sha256.Dispose()
+}
 if ($zipSha -cnotmatch '^[a-f0-9]{64}$') { throw 'ZIP SHA-256 unavailable.' }
 $ids = @(
   'ExactHeadBuildAndDriver',
