@@ -36,20 +36,37 @@ public sealed class CemPinBenchAcceptanceVerifierTests
     }
 
     [Fact]
-    public void MutatingLocalZipInvalidatesReportHash()
+    public void ChangedZipLengthAndSameLengthDigestMutationBothInvalidateReport()
     {
         if (!OperatingSystem.IsWindows()) return;
         using var f = new Fixture();
-        // Valid ZIP after modification, but SHA-256 differs.
+        var original = File.ReadAllBytes(f.ZipFile);
+
+        // Adding another legitimate ZIP entry must fail the length check.
         using (var zip = ZipFile.Open(f.ZipFile, ZipArchiveMode.Update))
         {
             var entry = zip.CreateEntry("modified-after-preparation.txt");
             using var writer = new StreamWriter(entry.Open());
             writer.Write("changed bytes");
         }
-        var result = f.Check();
-        Assert.NotEqual(0, result.Code);
-        Assert.Contains("SHA-256", result.Text);
+        var resized = f.Check();
+        Assert.NotEqual(0, resized.Code);
+        Assert.Contains("ZIP length changed", resized.Text);
+
+        // A different archive with exactly the original size must fail SHA.
+        // Byte 10 in the ordinary ZIP local-file header is part of its DOS
+        // modification time, not the signature, file length or payload CRC.
+        // Changing it keeps the ZIP parseable and the entry count untouched.
+        File.WriteAllBytes(f.ZipFile, original);
+        Assert.True(original.Length > 12);
+        var tampered = (byte[])original.Clone();
+        tampered[10] ^= 0x01;
+        File.WriteAllBytes(f.ZipFile, tampered);
+        Assert.Equal(original.Length, new FileInfo(f.ZipFile).Length);
+        Assert.NotEqual(f.PriorHash, Hash(f.ZipFile));
+        var digestMismatch = f.Check();
+        Assert.NotEqual(0, digestMismatch.Code);
+        Assert.Contains("SHA-256", digestMismatch.Text);
     }
 
     [Fact]
