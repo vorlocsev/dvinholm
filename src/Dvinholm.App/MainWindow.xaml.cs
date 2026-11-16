@@ -189,10 +189,17 @@ public sealed partial class MainWindow : Window
             ConnectButton.IsEnabled = false;
         _session.ReadError += _ => DispatcherQueue.TryEnqueue(() =>
         {
+            // A receive failure invalidates displayed diagnostic evidence and
+            // any pending result generation. A faulted CEM lease also marks the
+            // shared transport unavailable until explicit reconnect.
+            ClearDiagnosticReadResult();
 #if DVINHOLM_DEVELOPMENT_FEATURES
             ClearCemIdentity();
             ClearCemPinMaterial();
 #endif
+            // Immediately re-evaluate controls against the actual transport,
+            // not the stale UI-only _connected flag.
+            SetUdsEnabled(_connected && _session.IsConnected && !_closing);
             // The worker may report a late error after disconnect/close.
             // Neither vendor exception data nor stale errors belong on Aurora.
             if (!_closing && _connected)
