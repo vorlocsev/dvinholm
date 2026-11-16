@@ -24,7 +24,13 @@ public sealed class AuroraVehicleArtworkInstallerContracts
         var script = Script();
         Assert.Contains("#requires -Version 5.1", script);
         Assert.Contains("[switch]$Apply", script);
-        Assert.Contains("if (-not $Apply) { return }", script);
+        Assert.Contains("if (-not $Apply) { Write-Output $preview; return }", script);
+        Assert.Contains("applyRequested = [bool]$Apply", script);
+        Assert.Contains("applied = $false", script);
+        Assert.Contains("$preview.applied = $true", script);
+        Assert.True(script.IndexOf("if (-not $Apply) { Write-Output $preview; return }",
+            StringComparison.Ordinal) < script.IndexOf("[IO.File]::Replace($stagedJpg",
+            StringComparison.Ordinal));
     }
 
     [Fact]
