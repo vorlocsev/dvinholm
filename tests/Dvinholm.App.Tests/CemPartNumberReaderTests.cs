@@ -138,11 +138,21 @@ public sealed class CemPartNumberReaderTests
             () => pending.WaitAsync(TimeSpan.FromSeconds(5)));
         Assert.DoesNotContain(privateAdapterText, fault.ToString());
         Assert.False(fixture.Guard.IsCurrent);
+        Assert.False(fixture.Session.IsConnected);
         Assert.Equal(1, fixture.Adapter.TransmittedFrames);
         Assert.Equal(0, fixture.Adapter.ActiveFilterCount);
 
         // Clearing the driver failure alone does not revive the old lease.
         fixture.Adapter.FailReads = false;
+        object prematureContext = new();
+        using (var premature = CemPinSessionGuard.Capture(fixture.Session,
+            prematureContext, () => prematureContext, ownerConsent: true))
+        {
+            Assert.False(premature.IsCurrent);
+            Assert.Throws<InvalidOperationException>(() =>
+                CemPartNumberReader.Read(fixture.Session, premature, routeApproved: true));
+        }
+        Assert.False(fixture.Session.IsConnected);
         Assert.Throws<InvalidOperationException>(() => fixture.Read());
         Assert.Equal(1, fixture.Adapter.TransmittedFrames);
         fixture.Session.Disconnect();

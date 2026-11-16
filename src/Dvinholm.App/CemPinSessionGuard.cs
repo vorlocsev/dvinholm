@@ -34,7 +34,15 @@ internal sealed class CemPinSessionGuard : IDisposable
         return guard;
     }
 
-    private void OnReadError(Exception _) => Interlocked.Exchange(ref _invalidated, 1);
+    private void OnReadError(Exception _)
+    {
+        // A receive fault invalidates both this CEM lease and its transport.
+        // Do not let a fresh CEM guard re-arm operations against a faulted
+        // adapter without an explicit disconnect/reconnect lifecycle.
+        // This is atomic and safe to invoke from the CAN receive worker.
+        Interlocked.Exchange(ref _invalidated, 1);
+        _session?.InvalidateTransport();
+    }
 
     public void Dispose()
     {

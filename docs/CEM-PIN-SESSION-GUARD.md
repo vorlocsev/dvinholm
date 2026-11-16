@@ -9,8 +9,11 @@ PR #680; it does not introduce a second transport or an executable PIN method.
 its current `CanBus` and an opaque ECU-context object. Explicit owner consent
 is mandatory. A disconnected capture never becomes valid after connection;
 reconnection never revives the previous lease. Read errors permanently
-invalidate it. Disposing the lease unsubscribes its read-error handler and
-invalidates it. The caller owns the lease and must dispose it after completion.
+invalidate it **and fault the shared J2534 transport** with a non-blocking
+atomic flag. A fresh guard remains invalid until the explicit adapter
+Disconnect/Connect lifecycle completes; merely clearing a synthetic read
+error must not re-arm CEM requests. Disposing the lease unsubscribes its
+read-error handler and invalidates it. The caller owns the lease and must dispose it after completion.
 
 The current-context callback must be thread-safe and return a new opaque token
 whenever ECU selection, transport addressing, evidence or consent changes.

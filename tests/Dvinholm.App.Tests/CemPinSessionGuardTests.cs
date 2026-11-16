@@ -64,6 +64,44 @@ public sealed class CemPinSessionGuardTests
     }
 
     [Fact]
+    public async Task ReceiveFailureFaultsCemTransportUntilExplicitReconnect()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
+        using var session = new J2534Session(adapter);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        object oldContext = new();
+        using var oldGuard = CemPinSessionGuard.Capture(session,
+            oldContext, () => oldContext, ownerConsent: true);
+        Assert.True(oldGuard.IsCurrent);
+
+        adapter.FailReads = true;
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (session.IsConnected && DateTime.UtcNow < deadline)
+            await Task.Delay(10);
+        Assert.False(session.IsConnected);
+        Assert.False(oldGuard.IsCurrent);
+
+        // Even if a buggy adapter stops reporting errors, neither the old
+        // guard nor a newly captured guard may use this faulted transport.
+        adapter.FailReads = false;
+        object prematureContext = new();
+        using var premature = CemPinSessionGuard.Capture(session,
+            prematureContext, () => prematureContext, ownerConsent: true);
+        Assert.False(premature.IsCurrent);
+        Assert.Equal(0, adapter.TransmittedFrames);
+
+        session.Disconnect();
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        Assert.False(oldGuard.IsCurrent);
+        Assert.False(premature.IsCurrent);
+        object recoveredContext = new();
+        using var recovered = CemPinSessionGuard.Capture(session,
+            recoveredContext, () => recoveredContext, ownerConsent: true);
+        Assert.True(recovered.IsCurrent);
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
+    [Fact]
     public async Task ChangedEcuContextDiscardsEvenAnImmediateSyntheticCompletion()
     {
         using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
