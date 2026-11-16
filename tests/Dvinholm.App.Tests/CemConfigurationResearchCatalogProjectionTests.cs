@@ -61,7 +61,7 @@ public sealed class CemConfigurationResearchCatalogProjectionTests
         Assert.Equal("34", all[0].LocalRawHex);
         Assert.Equal("56", all[1].LocalRawHex);
         Assert.Null(all[2].LocalRawHex);
-        Assert.Contains("unverified", all[0].Display);
+        Assert.Contains("локально, не подтверждено", all[0].Display);
     }
 
     [Fact]
