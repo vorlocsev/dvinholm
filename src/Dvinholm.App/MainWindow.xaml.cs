@@ -3124,6 +3124,7 @@ public sealed partial class MainWindow : Window
             CemPinReadButton.IsEnabled = CanUseCemPartRoute(requireIdle: true) &&
                 _cemIdentityGuard?.IsCurrent == true && _cemIdentity is { } identity &&
                 ExperimentalCemPinCanProvider.HasSourceProfile(identity.PartNumber) && TryGetCemPinRange(out _, out _);
+        RefreshCemPinProgress();
     }
 #endif
 

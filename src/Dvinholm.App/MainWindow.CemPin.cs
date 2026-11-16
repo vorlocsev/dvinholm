@@ -12,6 +12,44 @@ public sealed partial class MainWindow
     private static CemPinStore OpenCemPinStore() => new(Path.Combine(DvinholmUserDataDirectory.Current, "cem-pin-vault"));
 #endif
     private bool _cemPartPrerequisitesInspected;
+#if DVINHOLM_DEVELOPMENT_FEATURES
+    private bool _cemPinAttemptActive;
+#endif
+
+    // Display-only three-step state. Neither this method nor its presenter
+    // sends requests, reveals bytes, reads the vault or changes the session.
+    private void RefreshCemPinProgress()
+    {
+        if (CemPinStepIdentity is null || CemPinStepResearch is null ||
+            CemPinStepResult is null)
+            return;
+        var snapshot = new CemPinProgressSnapshot(
+            Development: false, SessionConnected: false, SessionReady: false,
+            PartNumberObserved: false, SourceProfileKnown: false, RangeValid: false,
+            AttemptRunning: false, CandidateAvailable: false, FromSaved: false,
+            Revealed: false);
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        var observed = _cemIdentityGuard?.IsCurrent == true && _cemIdentity is { };
+        snapshot = new CemPinProgressSnapshot(
+            Development: !_closing && _demoTimer is null &&
+                !DvinholmUserDataDirectory.IsAcceptanceLaunch,
+            SessionConnected: _connected && _session.IsConnected,
+            SessionReady: CanUseCemPartRoute(requireIdle: true),
+            PartNumberObserved: observed,
+            SourceProfileKnown: observed && ExperimentalCemPinCanProvider.HasSourceProfile(
+                _cemIdentity!.PartNumber),
+            RangeValid: TryGetCemPinRange(out _, out _),
+            AttemptRunning: _cemPinAttemptActive,
+            CandidateAvailable: _cemPinResult?.HasPin == true &&
+                (_cemPinLoadedFromStore || _cemPinResultGuard?.IsCurrent == true),
+            FromSaved: _cemPinLoadedFromStore,
+            Revealed: _cemPinShownAt != 0);
+#endif
+        var copy = CemPinProgressPresenter.Format(snapshot, _unifiedEnglish);
+        CemPinStepIdentity.Text = copy.Identity;
+        CemPinStepResearch.Text = copy.Search;
+        CemPinStepResult.Text = copy.Result;
+    }
 
     /// <summary>
     /// Relabel the Development-only PIN research panel without resetting a
@@ -132,6 +170,7 @@ public sealed partial class MainWindow
         var text = CemIdentityEvidenceReport.Format(evidence, _unifiedEnglish);
         CemIdentityEvidencePinText.Text = text;
         CemIdentityEvidenceConfigText.Text = text;
+        RefreshCemPinProgress();
     }
 
     private void CemPinRangeChanged(object sender, TextChangedEventArgs e)
@@ -155,6 +194,7 @@ public sealed partial class MainWindow
         {
             _cemPinShownAt = Stopwatch.GetTimestamp();
             CemPinRevealButton.IsEnabled = false;
+            RefreshCemPinProgress();
         }
         else ClearCemPinMaterial();
 #endif
@@ -183,6 +223,7 @@ public sealed partial class MainWindow
         if (CemPinResultText is not null)
             CemPinResultText.Text = CemText("Нет результата PIN.", "No PIN result.");
         if (CemPinRevealButton is not null) CemPinRevealButton.IsEnabled = false;
+        RefreshCemPinProgress();
     }
 
     private bool TryGetCemPinRange(out ulong first, out ulong count)
@@ -258,6 +299,8 @@ public sealed partial class MainWindow
             var context = new object();
             guard = CemPinSessionGuard.Capture(_session, context,
                 () => !Volatile.Read(ref _closing) && _udsResultLifetime.CanDisplay(generation) ? context : null, true);
+            _cemPinAttemptActive = true;
+            RefreshCemPinProgress();
             var provider = new ExperimentalCemPinCanProvider(_session, guard, identity.PartNumber,
                 first, count, true, CemPinResultOrigin.AdapterUnattested);
             SetStatus(CemText("Проверка сервисного контекста и ограниченный поиск PIN CEM…",
@@ -287,6 +330,7 @@ public sealed partial class MainWindow
                     "Candidate accepted twice by the adapter. PIN hidden. Physical provenance is unverified.");
                 CemPinRevealButton.IsEnabled = true;
                 StartCemPinExpiry();
+                RefreshCemPinProgress();
                 SetStatus(saved
                     ? CemText("PIN CEM сохранён в зашифрованном хранилище Windows.", "CEM PIN saved with Windows user encryption.")
                     : CemText("PIN CEM получен, но сохранить не удалось. Доступен только временный показ.",
@@ -314,6 +358,7 @@ public sealed partial class MainWindow
         {
             result?.Dispose();
             guard?.Dispose();
+            _cemPinAttemptActive = false;
             _udsCts = null;
             CancelUdsButton.Content = cancelLabel;
             RefreshCancellationButtonLanguage();
@@ -324,6 +369,7 @@ public sealed partial class MainWindow
             StartButton.IsEnabled = monitorEnabled && _session.IsConnected && !_closing;
             _udsGate.Release();
             SetUdsEnabled(_connected && _session.IsConnected && !_closing);
+            RefreshCemPinProgress();
         }
 #else
         await Task.CompletedTask;

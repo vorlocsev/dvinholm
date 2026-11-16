@@ -66,6 +66,7 @@ public sealed partial class MainWindow
                     "Saved PIN hidden. The current vehicle has not been checked.");
                 CemPinRevealButton.IsEnabled = true;
                 StartCemPinExpiry();
+                RefreshCemPinProgress();
                 SetStatus(CemText("Сохранённый PIN загружен скрытым; запросов к CEM не отправлено.",
                     "Saved PIN loaded hidden; no CEM requests sent."));
             }

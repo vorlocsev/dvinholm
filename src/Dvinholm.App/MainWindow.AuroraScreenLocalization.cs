@@ -18,6 +18,7 @@ public sealed partial class MainWindow
         CemPinStepIdentity.Text = L("Идентификация", "Identification");
         CemPinStepResearch.Text = L("Поиск PIN недоступен", "PIN search unavailable");
         CemPinStepResult.Text = L("Нет результата", "No result");
+        RefreshCemPinProgress();
         SidebarFooterLocale.Text = L("AURORA · ЕДИНОЕ ПРИЛОЖЕНИЕ",
             "AURORA · UNIFIED APPLICATION");
 
