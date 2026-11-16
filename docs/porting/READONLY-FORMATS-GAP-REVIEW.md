@@ -686,3 +686,53 @@ backup exports or WinUI changes are introduced.
 unsafe metadata, UTC timestamps, module and revision disagreement,
 reversed chronology, RU/EN redaction, three-file end-to-end checking,
 early rejection and absence of diagnostic/write calls.
+
+
+## Stage: bounded offline CEM evidence links and repeat-inspection journal
+
+CemOfflineEvidenceLedger is an **in-memory, unverified research ledger**
+built from the existing strict three-source provenance declarations and
+the three-file offline provenance audit result. It does not import
+a service database, send a diagnostic request or identify a vehicle.
+Only three bounded role types (previous P2/P3 body, current body,
+research JSON) are supported. An optional set of up to 12 explicitly
+user-declared links can assert same module label, same claimed HW/SW
+strings or distinct source labels. Each link is evaluated only as
+user-text agreement, text conflict, identical source-label warning or
+distinct but still unattested source labels. Reversed duplicate links,
+self-links and unknown roles/types fail closed.
+
+The ledger also holds up to 64 repeat-check observations in memory.
+Each row names a source role, **caller-claimed UTC** and a locally
+computed or separately user-provided SHA-256. Historical entries must
+be monotonically ordered per source role with no duplicate timestamp.
+The journal counts matches against that source's originally declared
+digest, differences between successive recheck digests and rechecks
+with claimed timestamps earlier than the original claimed observation.
+None of these statuses attest time, independent source ownership,
+firmware revision or actual same-ECU provenance.
+
+CemOfflineEvidenceLedger.CaptureLocalRecheckAsync uses the same
+strict 142/254-byte P2/P3 decoder or 32-KiB JSON catalog importer,
+plus a second bounded SHA-256 read to detect changed bytes between
+validation and fingerprint. It returns only an in-memory event,
+never a persisted log or raw data. ReviewEvidenceLedgerAsync plugs
+the complete existing three-file provenance inspection into this
+ledger without changing the earlier APIs.
+
+The RU/EN redacted report provides link findings and a role-specific,
+ordered recheck journal but omits original source labels, claimed
+part numbers/revisions, timestamps, source references, file paths,
+raw hashes, VIN and configuration values. **All seven independent
+physical/OEM evidence gates remain OPEN**, even with all three
+local fingerprints matching and all declared source labels differing.
+The ledger is not a backup, VIN/PIN proof, authoritative OEM map or
+vehicle read/write capability.
+
+18 synthetic xUnit test methods check unchanged/contradictory user
+claims, identical vs different source labels, duplicate/self/unknown
+links, multiple rechecks and digest drift, claimed-time chronology,
+bounds, RU/EN redaction, locally revalidated P2 and JSON files,
+end-to-end three-file pipeline and absence of diagnostic/write APIs.
+No UI change or physical J2534 acceptance is included; visual
+acceptance is still deferred.

@@ -283,8 +283,30 @@ internal static class CemOfflineEvidenceLedger
     {
         if (!ValidUtc(claimedCheckedUtc))
             throw new InvalidDataException("Use a claimed UTC time for CEM recheck.");
-        var digest = await CemOfflineProvenanceAudit.ReadLocalSha256Async(
-            selectedPath, role, cancellationToken);
+        // Re-run strict file validation, not merely filename/length checks.
+        // Compare the validated byte digest against a second local read
+        // so a concurrent file replacement cannot pass a recheck.
+        string digest;
+        if (role == CemOfflineProvenanceRole.ResearchCatalog)
+        {
+            var before = await CemOfflineProvenanceAudit.ReadLocalSha256Async(
+                selectedPath, role, cancellationToken);
+            _ = await CemConfigurationResearchCatalogImport.InspectFileAsync(
+                selectedPath, cancellationToken);
+            digest = await CemOfflineProvenanceAudit.ReadLocalSha256Async(
+                selectedPath, role, cancellationToken);
+            if (!string.Equals(before, digest, StringComparison.Ordinal))
+                throw new InvalidDataException("Research JSON changed during local recheck.");
+        }
+        else
+        {
+            var decoded = await CemConfigurationOfflineBlockInspection.InspectFileAsync(
+                selectedPath, cancellationToken);
+            digest = await CemOfflineProvenanceAudit.ReadLocalSha256Async(
+                selectedPath, role, cancellationToken);
+            if (!string.Equals(decoded.BodySha256, digest, StringComparison.Ordinal))
+                throw new InvalidDataException("Configuration body changed during local recheck.");
+        }
         return new(role, claimedCheckedUtc, digest);
     }
 
