@@ -102,11 +102,34 @@ public sealed class CemPinBenchAcceptancePreparationTests
         Assert.DoesNotContain(f.Checkout, json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(f.Output, json, StringComparison.OrdinalIgnoreCase);
         Assert.DoesNotContain(f.ZipPath, json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("VIN", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("serialNumber", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("candidateBytes", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("txId", json, StringComparison.OrdinalIgnoreCase);
-        Assert.DoesNotContain("rxId", json, StringComparison.OrdinalIgnoreCase);
+        // Check structured field names, not substrings of application branding:
+        // "Dvinholm" legitimately contains "vin" case-insensitively.
+        using var parsed = JsonDocument.Parse(json);
+        static IEnumerable<string> PropertyNames(JsonElement node)
+        {
+            if (node.ValueKind == JsonValueKind.Object)
+            {
+                foreach (var property in node.EnumerateObject())
+                {
+                    yield return property.Name;
+                    foreach (var nested in PropertyNames(property.Value))
+                        yield return nested;
+                }
+            }
+            else if (node.ValueKind == JsonValueKind.Array)
+            {
+                foreach (var item in node.EnumerateArray())
+                    foreach (var nested in PropertyNames(item))
+                        yield return nested;
+            }
+        }
+        var keys = PropertyNames(parsed.RootElement).ToArray();
+        foreach (var privateKey in new[] {
+            "vin", "serialNumber", "candidateBytes", "txId", "rxId",
+            "pin", "pinBytes", "password", "secret", "adapterPath", "driverPath"
+        })
+            Assert.DoesNotContain(keys,
+                name => string.Equals(name, privateKey, StringComparison.OrdinalIgnoreCase));
     }
 
     [Fact]
