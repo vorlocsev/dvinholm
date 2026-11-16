@@ -236,6 +236,18 @@ public sealed partial class MainWindow
         RefreshCemIdentityEvidencePresentation();
     }
 
+    /// <summary>
+    /// Discard an already-revealed PIN as soon as the WinUI window loses focus.
+    /// No transport access: clearing wipes the owned secret and the TextBlock.
+    /// A hidden, unopened vault record is not touched by focus changes.
+    /// </summary>
+    private void OnCemPinWindowActivationChanged(bool windowDeactivated)
+    {
+        if (!windowDeactivated || _cemPinShownAt == 0)
+            return;
+        ClearCemPinMaterial();
+    }
+
     private void ClearCemPinMaterial()
     {
         _cemPinViewTimer?.Stop();

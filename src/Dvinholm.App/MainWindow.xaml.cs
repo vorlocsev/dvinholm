@@ -198,6 +198,13 @@ public sealed partial class MainWindow : Window
             if (!_closing && _connected)
                 SetStatus(J2534ConnectionPresentation.ReadErrorActivity);
         });
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        // A temporary PIN reveal must not remain in a backgrounded window,
+        // including Alt+Tab, workstation locking and window deactivation.
+        // Hidden records remain hidden and no CAN/driver operation is started.
+        Activated += (_, args) => OnCemPinWindowActivationChanged(
+            args.WindowActivationState == WindowActivationState.Deactivated);
+#endif
         Closed += (_, _) =>
         {
             _closing = true;

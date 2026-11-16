@@ -32,7 +32,11 @@ Protocol facts are independently encoded; source implementation is not copied.
 
 The PIN view is separate from generic diagnostic text, activity, logs,
 reports, ordinary settings and clipboard. Expiry, cancellation, context/input changes,
-connection loss and shutdown clear it. Rendering necessarily creates a
+connection loss, leaving the CEM PIN workspace and shutdown clear it.
+If a candidate is already revealed, WinUI window deactivation immediately
+clears the text and disposes the in-memory secret, without waiting for the
+15-second UI timer. Hidden vault records remain encrypted and unopened by
+that event. Foreground switching cannot establish a verified PIN. Rendering necessarily creates a
 managed UI string; clearing the view cannot promise immediate erasure of
 all CLR/UI copies. Owned candidate buffers are explicitly zeroed. Origins
 are Synthetic for tests and AdapterUnattested for native sessions. Native
