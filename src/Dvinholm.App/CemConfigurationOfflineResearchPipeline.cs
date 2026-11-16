@@ -158,6 +158,45 @@ internal static class CemConfigurationOfflineResearchPipeline
         return CemOfflineEvidenceLedger.Assess(declarations, provenance, links, rechecks);
     }
 
+    /// <summary>
+    /// Deterministic local-only age and consistency review of the three
+    /// selected source declarations and bounded in-memory recheck journal.
+    /// Claimed UTC is not independently authenticated.
+    /// </summary>
+    internal static async Task<CemOfflineEvidenceFreshnessAssessment> ReviewFreshnessAsync(
+        string firstBodyPath,
+        string secondBodyPath,
+        string researchJsonPath,
+        string? claimedHardwarePartNumber,
+        string? claimedSoftwareRevision,
+        IReadOnlyList<CemOfflineProvenanceDeclaration> declarations,
+        IReadOnlyList<CemOfflineEvidenceLink> links,
+        IReadOnlyList<CemOfflineEvidenceRecheck> rechecks,
+        DateTimeOffset claimedReviewUtc,
+        TimeSpan maximumClaimedAge,
+        CancellationToken cancellationToken = default)
+    {
+        // Refuse malformed time policy and oversized inputs before opening
+        // even the first local file.
+        CemOfflineEvidenceFreshness.ValidateReviewClockAndWindow(
+            claimedReviewUtc, maximumClaimedAge);
+        CemOfflineProvenanceAudit.ValidateDeclarations(declarations);
+        ArgumentNullException.ThrowIfNull(links);
+        ArgumentNullException.ThrowIfNull(rechecks);
+        if (links.Count > CemOfflineEvidenceLedger.MaximumLinks ||
+            rechecks.Count > CemOfflineEvidenceLedger.MaximumRechecks)
+            throw new InvalidDataException("CEM evidence history exceeds its limits.");
+
+        var provenance = await ReviewProvenanceAsync(
+            firstBodyPath, secondBodyPath, researchJsonPath,
+            claimedHardwarePartNumber, claimedSoftwareRevision,
+            declarations, cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        return CemOfflineEvidenceFreshness.Assess(
+            declarations, provenance, links, rechecks,
+            claimedReviewUtc, maximumClaimedAge);
+    }
+
     private static async Task<(CemConfigurationResearchCatalogDocument Catalog,
         CemConfigurationOfflineComparisonResult Comparison)> InspectInputsAsync(
         string firstBodyPath,

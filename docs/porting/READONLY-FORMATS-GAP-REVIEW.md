@@ -736,3 +736,40 @@ bounds, RU/EN redaction, locally revalidated P2 and JSON files,
 end-to-end three-file pipeline and absence of diagnostic/write APIs.
 No UI change or physical J2534 acceptance is included; visual
 acceptance is still deferred.
+
+
+## Stage: caller-claimed recheck freshness and explicit redacted text export
+
+CemOfflineEvidenceFreshness is a deterministic, backend-only cross-check
+of the existing in-memory evidence ledger, three local SHA-256 status
+results, each role's most recent declared recheck and an EXPLICIT
+caller-claimed UTC audit date. Its configured acceptable age is
+bounded to 1 hour..30 days. This is a **user policy**, not an
+authenticated time source or trusted capture timestamp.
+
+Every source role is classified into one of seven exclusive states:
+initially mismatching local/declared fingerprint, not rechecked,
+claimed recheck before original claimed observation, claimed recheck
+in the claimed audit date's future, latest recheck digest mismatch,
+latest recheck older than the selected policy, or locally consistent
+but explicitly UNVERIFIED. Prior digest drift, text-link conflicts,
+shared claimed source names and chronology warnings remain visible.
+No missing history or locally matching hash automatically closes
+any physical/OEM evidence gate; all seven remain OPEN.
+
+The full three-file ReviewFreshnessAsync pipeline reuses strict JSON
+and body decoding before assessing the supplied in-memory links and
+journal. A separate CemOfflineEvidenceRedactedExport offers
+PrepareUtf8 and SaveNewTextFileAsync for an explicitly selected,
+fully qualified NEW .txt output path. The export is strictly
+UTF-8 without BOM, at most 32 KiB, and uses FileMode.CreateNew
+(no overwrite); pre-cancellation performs no write. It exports
+ONLY the existing redacted RU/EN report: no raw CEM bytes, SHA
+values, original source IDs, VIN, HW/SW claims, file paths or
+timestamps. An attempted export never writes to any vehicle.
+
+All freshness statuses depend on UNTRUSTED declared times, even if
+the SHA-256 is computed from local bytes. Physical CEM identity,
+source independence, protected diagnostic services, PIN and writes
+remain disabled. UI visual acceptance remains deferred; no changes
+to Stable, Virtual Car or release publication.
