@@ -136,17 +136,43 @@ for ($i = 0; $i -lt $ids.Count; $i++) {
     }
     Assert-FalseBoolean $gate.evidenceVerified
 }
+function Assert-CemBenchArchiveLayout($archive) {
+    if ($null -eq $archive) { throw 'ZIP central directory unavailable.' }
+    $entries = @($archive.Entries)
+    if ($entries.Count -lt 1 -or $entries.Count -gt 20000) {
+        throw 'ZIP entry count is outside the bounded review limit.'
+    }
+    $seen = [Collections.Generic.HashSet[string]]::new([StringComparer]::OrdinalIgnoreCase)
+    $exeCount = 0
+    foreach ($entry in $entries) {
+        $name = [string]$entry.FullName
+        # Reject Windows extraction ambiguities; no extraction is performed.
+        if ([string]::IsNullOrWhiteSpace($name) -or
+            $name.StartsWith('/') -or $name.StartsWith('\') -or
+            $name.Contains('\') -or $name.Contains(':') -or
+            $name.Contains('//') -or
+            $name -match '(^|/)\.{1,2}(/|$)' -or
+            $name -match '[\x00-\x1f\x7f]' -or
+            -not $seen.Add($name.TrimEnd([char]'/'))) {
+            throw 'ZIP has an unsafe, ambiguous or duplicate entry path.'
+        }
+        # A Unix link in a ZIP is not a regular local application file.
+        if ((($entry.ExternalAttributes -shr 16) -band 0xF000) -eq 0xA000) {
+            throw 'ZIP symbolic link entries are not accepted.'
+        }
+        if ($name -ceq 'Dvinholm.exe') {
+            if ($entry.Length -le 0) { throw 'Root Dvinholm.exe is empty.' }
+            $exeCount++
+        }
+    }
+    if ($exeCount -ne 1) {
+        throw 'ZIP must contain exactly one canonical nonempty root Dvinholm.exe.'
+    }
+}
 # Recheck local ZIP independently; no extraction, installation or execution.
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 $archive = [IO.Compression.ZipFile]::OpenRead($archiveFile.FullName)
-try {
-    $executables = @($archive.Entries | Where-Object {
-        $_.FullName -ieq 'Dvinholm.exe' -and $_.Length -gt 0
-    })
-    if ($executables.Count -ne 1) {
-        throw 'ZIP no longer has exactly one nonempty root Dvinholm.exe.'
-    }
-}
+try { Assert-CemBenchArchiveLayout $archive }
 finally { $archive.Dispose() }
 if ((Compute-Sha256 $archiveFile.FullName) -cne $report.buildZipSha256) {
     throw 'ZIP SHA-256 differs from the prepared private report.'
