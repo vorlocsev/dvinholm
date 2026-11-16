@@ -310,6 +310,21 @@ public sealed class CemConfigurationResearchCatalogProjectionTests
         throw new FileNotFoundException(relative);
     }
 
+    [Fact]
+    public void ResearchModalUsesApprovedAuroraSurfaceAndNeutralClose()
+    {
+        var code = Source("src/Dvinholm.App/MainWindow.CemResearchCatalog.cs");
+        var xaml = Source("src/Dvinholm.App/MainWindow.xaml");
+        Assert.Contains("AuroraPanelGradient", code);
+        Assert.Contains("AuroraCardEdgeGradient", code);
+        Assert.Contains("BorderThickness = new Thickness(1)", code);
+        Assert.Contains("CornerRadius = new CornerRadius(12)", code);
+        Assert.Contains("DefaultButton = ContentDialogButton.None", code);
+        Assert.Contains("x:Key=\"AuroraPanelGradient\"", xaml);
+        Assert.Contains("x:Key=\"AuroraCardEdgeGradient\"", xaml);
+        Assert.DoesNotContain("ContentDialogButton.Close", code);
+    }
+
     private static string Source(string relative)
     {
         for (DirectoryInfo? dir = new(AppContext.BaseDirectory); dir is not null; dir = dir.Parent)

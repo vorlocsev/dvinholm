@@ -215,10 +215,20 @@ public sealed partial class MainWindow
                 Title = L("Локальный каталог CEM P2/P3 (офлайн)",
                     "Local CEM P2/P3 research (offline)"),
                 Content = new ScrollViewer { MaxHeight = 430, Content = content },
+                // Use the same approved Aurora gradients as the six pages.
+                // Research stays visually distinct without implying an ECU connection.
+                Background = (Microsoft.UI.Xaml.Media.Brush)RootLayout.Resources[
+                    "AuroraPanelGradient"],
+                BorderBrush = (Microsoft.UI.Xaml.Media.Brush)RootLayout.Resources[
+                    "AuroraCardEdgeGradient"],
+                BorderThickness = new Thickness(1),
+                CornerRadius = new CornerRadius(12),
                 PrimaryButtonText = L("Сопоставить с .bin (офлайн)...",
                     "Compare with local .bin..."),
                 CloseButtonText = L("Закрыть", "Close"),
-                DefaultButton = ContentDialogButton.Close
+                // The prior Close default highlighted a destructive-looking
+                // bright action. Both actions remain neutral and non-diagnostic.
+                DefaultButton = ContentDialogButton.None
             };
             AutomationProperties.SetAutomationId(dialog, "DvinholmCemResearchDialog");
             AutomationProperties.SetName(dialog, L(

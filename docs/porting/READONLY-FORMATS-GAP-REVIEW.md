@@ -334,3 +334,23 @@ The operator screenshot helper MUST still run on a real Windows
 desktop with the exact-head artifact, not in CI. Synthetic
 fixtures enable repeatable review; they do not constitute actual
 captured screenshots or human visual acceptance.
+
+## Screenshot feedback: Aurora styling for CEM Research modal
+
+A user-provided real Windows capture from exact-head x64 pilot #732
+shows a readable RU list at 96 DPI, 1280x800 DIP: three synthetic
+claims, wrapped text, visible warning/filter and footer. This screenshot
+does not establish visual acceptance at 192 DPI, details selection or
+English, and was not copied to the repository.
+
+Review identified a visual mismatch: the research modal used the
+default charcoal ContentDialog background and a strong accent on the
+Close button. The dialog now reuses AuroraPanelGradient and
+AuroraCardEdgeGradient from the existing approved six-page shell,
+with a 1-DIP border and 12-DIP corner radius. The default button is
+None to avoid highlighting Close as the primary action.
+
+This is a styling-only adjustment. No diagnostic or configuration
+capability changes. Manual recapture is required after the change to
+confirm whether the actual WinUI ContentDialog template honors the
+surface brushes and whether 96/192 DPI, RU/EN remain legible.
