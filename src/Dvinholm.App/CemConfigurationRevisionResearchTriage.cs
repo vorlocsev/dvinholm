@@ -33,6 +33,7 @@ internal sealed class CemConfigurationRevisionResearchAssessment
     internal int TotalValueCount { get; }
     internal IReadOnlyList<CemConfigurationRevisionResearchRow> ChangedOrdinals { get; }
     internal int ChangedCount => ChangedOrdinals.Count;
+    internal CemConfigurationRevisionResearchStatistics Statistics { get; }
 
     internal bool HasAuthenticatedPhysicalCem => false;
     internal bool HasVerifiedSoftwareRevision => false;
@@ -49,7 +50,11 @@ internal sealed class CemConfigurationRevisionResearchAssessment
     {
         Format = format;
         TotalValueCount = totalValueCount;
+        ArgumentNullException.ThrowIfNull(changedOrdinals);
         ChangedOrdinals = Array.AsReadOnly(changedOrdinals.ToArray());
+        Statistics = CemConfigurationRevisionResearchStatistics.Count(ChangedOrdinals);
+        if (Statistics.ChangedOrdinalCount != ChangedCount)
+            throw new InvalidDataException("Incomplete CEM ordinal research statistics.");
     }
 
     internal string CreateRedactedReport(bool english)
@@ -69,7 +74,31 @@ internal sealed class CemConfigurationRevisionResearchAssessment
                 prefix,
                 (english ? "Format: " : "Формат: ") + format,
                 (english ? "Changed raw ordinals: " : "Изменено сырых индексов: ") +
-                ChangedCount.ToString(CultureInfo.InvariantCulture)
+                ChangedCount.ToString(CultureInfo.InvariantCulture),
+                english ? "Exact user-claim scopes (UNVERIFIED): " +
+                    Statistics.ExactUnverifiedClaimCount.ToString(CultureInfo.InvariantCulture)
+                    : "Точные совпадения заявлений (НЕ ПОДТВЕРЖДЕНО): " +
+                    Statistics.ExactUnverifiedClaimCount.ToString(CultureInfo.InvariantCulture),
+                english ? "Other claimed software revisions: " +
+                    Statistics.OtherSoftwareRevisionClaimCount.ToString(CultureInfo.InvariantCulture)
+                    : "Другие заявленные версии ПО: " +
+                    Statistics.OtherSoftwareRevisionClaimCount.ToString(CultureInfo.InvariantCulture),
+                english ? "Other claimed hardware parts: " +
+                    Statistics.OtherHardwarePartClaimCount.ToString(CultureInfo.InvariantCulture)
+                    : "Другие заявленные аппаратные номера: " +
+                    Statistics.OtherHardwarePartClaimCount.ToString(CultureInfo.InvariantCulture),
+                english ? "Incompatible claimed scopes (total): " +
+                    Statistics.IncompatibleClaimScopeCount.ToString(CultureInfo.InvariantCulture)
+                    : "Несовместимые заявленные ревизии (всего): " +
+                    Statistics.IncompatibleClaimScopeCount.ToString(CultureInfo.InvariantCulture),
+                english ? "Changed ordinals without research claims: " +
+                    Statistics.MissingResearchClaimCount.ToString(CultureInfo.InvariantCulture)
+                    : "Индексы без исследовательских записей: " +
+                    Statistics.MissingResearchClaimCount.ToString(CultureInfo.InvariantCulture),
+                english ? "Missing/invalid claimed part or revision: " +
+                    Statistics.InvalidClaimedScopeCount.ToString(CultureInfo.InvariantCulture)
+                    : "Отсутствующие/некорректные данные о ревизии: " +
+                    Statistics.InvalidClaimedScopeCount.ToString(CultureInfo.InvariantCulture)
             }.Concat(rows).Append(english
                 ? "Only user-supplied research claim scopes are compared. No hardware or firmware authentication."
                 : "Сопоставлены только заявления пользователя. Аппаратный блок и прошивка не проверены.")

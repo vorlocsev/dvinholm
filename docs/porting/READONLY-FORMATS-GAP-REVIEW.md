@@ -484,3 +484,35 @@ first/last indices, mismatched part/software/generation,
 equal files, invalid JSON/duplicate source scopes, corrupt
 checksum, mixed generation, cancellation, no content leakage
 in RU/EN and original file immutability. No physical J2534 test.
+
+
+## Stage: redacted claim-disposition statistics per changed P2/P3 ordinal
+
+The offline revision triage result now also exposes
+CemConfigurationRevisionResearchStatistics with five mutually
+exclusive counts taken from the *changed raw one-based ordinal* rows:
+exact user-claimed scope (always UNVERIFIED), other claimed software
+revision, other claimed hardware part, no research claim at that ordinal,
+and a missing/invalid asserted part or software revision.
+
+"Incompatible claimed scopes" is the sum of the two revision/part
+mismatch counts. It is NOT a Volvo/OEM compatibility finding.
+The five category counts must sum to the number of changed ordinals.
+Several research JSON claims for the same ordinal contribute at most
+one row, according to the existing exact > other software > other
+hardware > missing precedence. With an invalid asserted part/revision,
+all changed ordinals are labelled invalid scope, not "missing in catalog".
+An empty diff produces all-zero counts, not a false hardware match.
+
+RU and EN CreateRedactedReport now include these numerical aggregates
+before the ordinal-by-ordinal dispositions, preserving the existing
+warnings and redaction of VINs, local paths, hashes, raw byte values,
+part numbers, firmware strings, claims and evidence references.
+Unknown enum statuses throw before a report can be issued.
+
+10 synthetic tests cover each category, empty diff, duplicate-claim
+deduplication, status priority, 140 changed P2 positions, invalid
+asserted scopes, immutable snapshots, RU/EN report privacy and
+absence of any diagnostic or write/export calls. The implementation
+does not touch WinUI, Stable, Virtual Car, physical J2534 or OEM data.
+The user has deferred visual interface acceptance.
