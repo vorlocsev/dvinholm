@@ -346,6 +346,14 @@
             </VisualStateGroup>
         </VisualStateManager.VisualStateGroups>
         <Grid.Resources>
+            <!-- The offline JSON list must wrap complete, untrusted research
+                 descriptions rather than clipping them to one line. -->
+            <DataTemplate x:Key="CemResearchCatalogRowTemplate">
+                <StackPanel Padding="4,7" Spacing="3">
+                    <TextBlock Text="{Binding Display}" TextWrapping="Wrap"
+                               IsTextSelectionEnabled="False" FontSize="13" />
+                </StackPanel>
+            </DataTemplate>
             <!-- Aurora: illuminated upper-left surface fades into blue-violet
                  shadow. A shared brush keeps all six workspaces coherent
                  without inventing any connection, VIN or diagnostic status. -->

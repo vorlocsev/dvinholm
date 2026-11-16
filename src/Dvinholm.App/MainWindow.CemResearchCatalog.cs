@@ -109,9 +109,13 @@ public sealed partial class MainWindow
             };
             var list = new ListView
             {
-                Height = 220,
+                Height = 176,
                 SelectionMode = ListViewSelectionMode.Single,
-                DisplayMemberPath = nameof(CemConfigurationResearchViewRow.Display)
+                // A wrapping DataTemplate keeps 100-character source claims
+                // readable at the approved 1280x800 DIP client viewport.
+                ItemTemplate = (DataTemplate)RootLayout.Resources[
+                    "CemResearchCatalogRowTemplate"],
+                HorizontalContentAlignment = HorizontalAlignment.Stretch
             };
             var detail = new TextBlock
             {
@@ -123,7 +127,7 @@ public sealed partial class MainWindow
             void Refresh()
             {
                 var rows = CemConfigurationResearchCatalogProjection.Filter(
-                    catalog, selectedFormat, offlineBody);
+                    catalog, selectedFormat, offlineBody, _unifiedEnglish);
                 list.ItemsSource = rows;
                 summary.Text = L(
                     $"Записей: {rows.Count} из {catalog.Claims.Count}. " +
@@ -180,7 +184,15 @@ public sealed partial class MainWindow
             content.Children.Add(filter);
             content.Children.Add(summary);
             content.Children.Add(list);
-            content.Children.Add(detail);
+            // Keep a selected claim visible within the fixed-height modal.
+            // Longer references remain fully scrollable and selectable.
+            content.Children.Add(new ScrollViewer
+            {
+                MaxHeight = 142,
+                VerticalScrollBarVisibility = ScrollBarVisibility.Auto,
+                HorizontalScrollBarVisibility = ScrollBarVisibility.Disabled,
+                Content = detail
+            });
             filter.SelectedIndex = selectedFormat switch
             {
                 CemConfigurationIndexedFormat.P2B9Fc => 1,

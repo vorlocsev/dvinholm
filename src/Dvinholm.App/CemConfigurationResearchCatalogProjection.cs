@@ -11,13 +11,17 @@ internal sealed record CemConfigurationResearchViewRow(
     string SoftwareRevision,
     string ClaimedMeaning,
     string EvidenceReference,
-    string? LocalRawHex)
+    string? LocalRawHex,
+    bool English)
 {
     public string Display =>
         (Format == CemConfigurationIndexedFormat.P2B9Fc ? "P2" : "P3")
         + "  #" + Index1Based.ToString("D3")
         + " · " + ClaimedMeaning
-        + (LocalRawHex is null ? string.Empty : "  ·  0x" + LocalRawHex + " (local, unverified)");
+        + (LocalRawHex is null
+            ? (English ? " · unverified research" : " · исследование, не подтверждено")
+            : " · 0x" + LocalRawHex +
+              (English ? " (local, unverified)" : " (локально, не подтверждено)"));
 
     internal bool HasVerifiedMeaning => false;
     internal bool MatchesAuthenticatedCem => false;
@@ -35,7 +39,8 @@ internal static class CemConfigurationResearchCatalogProjection
     internal static IReadOnlyList<CemConfigurationResearchViewRow> Filter(
         CemConfigurationResearchCatalogDocument document,
         CemConfigurationIndexedFormat? selectedFormat,
-        CemConfigurationIndexedSnapshot? localBody = null)
+        CemConfigurationIndexedSnapshot? localBody = null,
+        bool english = false)
     {
         ArgumentNullException.ThrowIfNull(document);
         if (document.Format != CemConfigurationResearchCatalogImport.Format ||
@@ -76,7 +81,7 @@ internal static class CemConfigurationResearchCatalogProjection
                 claim.SoftwareRevision, claim.ClaimedMeaning, claim.EvidenceReference,
                 localBody?.Format == claim.Format
                     ? localBody.Values[claim.Index1Based - 1].ValueHex
-                    : null))
+                    : null, english))
             .ToArray());
     }
 }

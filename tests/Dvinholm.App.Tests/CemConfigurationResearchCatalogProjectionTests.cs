@@ -74,6 +74,48 @@ public sealed class CemConfigurationResearchCatalogProjectionTests
         Assert.Equal("56", rows[2].LocalRawHex);
     }
 
+    [Theory]
+    [InlineData(false, "исследование, не подтверждено")]
+    [InlineData(true, "unverified research")]
+    public void ClaimsWithoutRawBytesHaveLocalizedUnverifiedStatus(
+        bool english, string phrase)
+    {
+        var rows = CemConfigurationResearchCatalogProjection.Filter(
+            Document(), null, english: english);
+        Assert.Equal(3, rows.Count);
+        Assert.All(rows, row => Assert.Contains(phrase, row.Display));
+        Assert.All(rows, row => Assert.Null(row.LocalRawHex));
+    }
+
+    [Theory]
+    [InlineData(false, "локально, не подтверждено")]
+    [InlineData(true, "local, unverified")]
+    public void OnlyMatchingLocalBodyHasLocalizedRawByteSuffix(
+        bool english, string phrase)
+    {
+        var body = CemConfigurationIndexedReview.InspectP2B9Fc(Body(140));
+        var rows = CemConfigurationResearchCatalogProjection.Filter(
+            Document(), null, body, english);
+        Assert.Equal("34", rows[0].LocalRawHex);
+        Assert.Contains(phrase, rows[0].Display);
+        Assert.Null(rows[2].LocalRawHex);
+        Assert.DoesNotContain(phrase, rows[2].Display);
+    }
+
+    [Fact]
+    public void WrappingRowTemplateAndScrollableDetailsAreWiredInWinUi()
+    {
+        var xaml = Source("src/Dvinholm.App/MainWindow.xaml");
+        Assert.Contains("x:Key=\"CemResearchCatalogRowTemplate\"", xaml);
+        Assert.Contains("Text=\"{Binding Display}\" TextWrapping=\"Wrap\"", xaml);
+        var ui = Source("src/Dvinholm.App/MainWindow.CemResearchCatalog.cs");
+        Assert.Contains("ItemTemplate = (DataTemplate)RootLayout.Resources[", ui);
+        Assert.Contains("CemResearchCatalogRowTemplate", ui);
+        Assert.Contains("MaxHeight = 142", ui);
+        Assert.Contains("catalog, selectedFormat, offlineBody, _unifiedEnglish", ui);
+        Assert.DoesNotContain("DisplayMemberPath =", ui);
+    }
+
     [Fact]
     public void FilterNeverMutatesOrPromotesProductionCatalog()
     {

@@ -245,3 +245,24 @@ isolation, raw byte values, invalid/forged metadata, immutable lists,
 the exact binary body file gate and WinUI XAML integration. Windows
 rendered UX, DPI/viewport and RU/EN screenshots still need manual
 Aurora capture to establish actual visual acceptance.
+
+
+## Stage: RU/EN and long-claim visibility hardening
+
+The research-only modal now uses a wrapping DataTemplate rather than a
+single-line DisplayMemberPath. Full user-supplied meanings are visible in
+the scrollable research list, and selected hardware/software/evidence
+details remain selectable in a separate bounded detail scroll region.
+The list is 176 DIP tall and the detail region 142 DIP maximum to reduce
+clipping within the existing 430-DIP modal at the approved 1280x800
+client size. These dimensions are implementation constraints, not
+evidence of a successful physical screenshot capture.
+
+Each row's unverified disclaimer is localized in RU or EN, both when
+no binary body is selected and when a matching offline raw byte is
+present. The original unverified claim text is displayed unchanged;
+neither localization nor matching the P2/P3 ordinal authenticates it.
+Five new theory/contract cases protect the locale and wrapping behavior.
+
+Actual visible GUI acceptance at user DPI, scrolling, keyboard focus,
+and source-text readability still requires interactive Windows capture.
