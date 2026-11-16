@@ -53,6 +53,27 @@ internal static class CemConfigurationOfflineResearchPipeline
         return CemConfigurationResearchChangeCoverage.Combine(changed, coverage);
     }
 
+    /// <summary>
+    /// One complete, validated LOCAL research pass plus an explicit list
+    /// of independent physical/OEM evidence still missing. Session status
+    /// is intentionally not inferred from any local file.
+    /// </summary>
+    internal static async Task<CemConfigurationOfflineEvidenceChecklistAssessment> ReviewEvidenceChecklistAsync(
+        string firstBodyPath,
+        string secondBodyPath,
+        string researchJsonPath,
+        string? claimedHardwarePartNumber,
+        string? claimedSoftwareRevision,
+        CancellationToken cancellationToken = default)
+    {
+        var research = await ReviewCoverageAndChangesAsync(
+            firstBodyPath, secondBodyPath, researchJsonPath,
+            claimedHardwarePartNumber, claimedSoftwareRevision,
+            cancellationToken);
+        cancellationToken.ThrowIfCancellationRequested();
+        return CemConfigurationOfflineEvidenceChecklist.Assess(research);
+    }
+
     private static async Task<(CemConfigurationResearchCatalogDocument Catalog,
         CemConfigurationOfflineComparisonResult Comparison)> InspectInputsAsync(
         string firstBodyPath,

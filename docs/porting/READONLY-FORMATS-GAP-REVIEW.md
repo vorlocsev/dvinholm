@@ -598,3 +598,47 @@ full-vs-changed missing-claim counts, scope inconsistency, source-text
 intersection, malformed changes, safe RU/EN redaction, and the whole
 three-file pipeline (including unsafe catalog rejection). Stable,
 Virtual Car, physical J2534 and release publishing are unaffected.
+
+
+## Stage: independent CEM diagnostic evidence checkpoint (offline only)
+
+The combined P2/P3 comparison/catalog-coverage result now has a
+companion CemConfigurationOfflineEvidenceChecklist. It intentionally
+keeps seven independent proof gates OPEN in ALL cases, including
+valid 142/254-byte bodies, exact claimed-revision matches, an observed
+experimental part-number response, or a locally satisfied 8-item
+session prerequisite snapshot.
+
+The seven required independent gates are:
+- original provenance of both local binary bodies and research records;
+- verified same-physical-module association among those sources;
+- authenticated physical hardware, application and diagnostic SW;
+- verified OEM raw-index semantics for the exact generation/revision;
+- documented revision-scoped transport, read-only services and errors;
+- authorized bench/adapter/timing acceptance;
+- verified service permission, rollback and recovery procedure.
+
+ReviewEvidenceChecklistAsync reuses the strict three-file pipeline
+(first research JSON validation, then both P2/P3 checksummed bodies,
+then one shared revision-scope coverage/change analysis). It returns
+a redacted RU/EN evidence checkpoint, not ECU credentials, an
+authenticated module signature, configuration backup or a command plan.
+Optional existing CemIdentityEvidenceAssessment and
+CemReadOnlyPrerequisiteAssessment are accepted only through the pure
+offline Assessor and are explicitly marked UNCORRELATED. Their known
+statuses are validated using the existing fail-closed formatters;
+even a "connected" or "observed" status cannot link a local .bin to
+an ECU, authenticate firmware or close any of the seven gates.
+
+The report contains only raw format, positions/counts, safe boolean
+context and generic missing-evidence labels. It omits part numbers,
+revisions, PIN, VIN, file paths, hashes, source text, payloads, CAN IDs,
+transport parameters and ECU diagnostic responses. No network request,
+adapter connection, vehicle read, file write, PIN path or backup
+capability is introduced. There is no WinUI visual acceptance or
+physical J2534 claim.
+
+11 synthetic xUnit checks cover both generations, changed/unchanged
+bodies, identity guard revocation, apparently satisfied session
+prerequisites, invalid/forged external evidence assessments, redacted
+RU/EN output, exact three-file operation and no live/write APIs.

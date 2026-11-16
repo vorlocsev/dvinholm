@@ -235,6 +235,7 @@ jobs:
             'FullyQualifiedName~CemConfigurationRevisionResearchStatisticsTests'
             'FullyQualifiedName~CemConfigurationResearchCoverageTests'
             'FullyQualifiedName~CemConfigurationResearchChangeCoverageTests'
+            'FullyQualifiedName~CemConfigurationOfflineEvidenceChecklistTests'
             'FullyQualifiedName~CemConfigurationOfflineResearchPipelineTests'
             'FullyQualifiedName~CemConfigurationMappingResearchTests'
             'FullyQualifiedName~CemConfigurationResearchCatalogImportTests'
