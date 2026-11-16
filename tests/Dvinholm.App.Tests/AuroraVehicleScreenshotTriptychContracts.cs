@@ -84,7 +84,7 @@ public sealed class AuroraVehicleScreenshotTriptychContracts
         var script = Source("eng/Review-VolvoVehicleScreenshots.ps1");
         Assert.Contains("visual review NOT RUN", script);
         Assert.Contains("$rows.Count -ne 9", script);
-        Assert.Contains("Visual accuracy", script, StringComparison.OrdinalIgnoreCase);
+        Assert.Contains("Image geometry", script, StringComparison.OrdinalIgnoreCase);
         Assert.Contains("NOT APPROVED", script);
         Assert.Contains("IConfirmPrivateOfflineReview", script);
         Assert.Contains("Private screenshot review is disabled in CI", script);
