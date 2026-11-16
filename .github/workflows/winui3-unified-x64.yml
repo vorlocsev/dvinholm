@@ -230,6 +230,7 @@ jobs:
             'FullyQualifiedName~CemPartNumberFrameDecoderTests'
             'FullyQualifiedName~CemConfigurationBlockDecoderTests'
             'FullyQualifiedName~CemConfigurationIndexedReviewTests'
+            'FullyQualifiedName~CemConfigurationOfflineComparisonTests'
             'FullyQualifiedName~CemConfigurationMappingResearchTests'
             'FullyQualifiedName~CemConfigurationResearchCatalogImportTests'
             'FullyQualifiedName~CemConfigurationResearchCatalogProjectionTests'

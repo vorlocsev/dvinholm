@@ -377,3 +377,35 @@ width/height values and absence of the legacy nested viewport.
 This is NOT yet confirmed by a new live screenshot. Recapture RU
 details, then verify English and both generation filters. GUI capture
 and OEM/physical CEM acceptance are separate.
+
+
+## Stage: two-file P2/P3 raw ordinal comparison (backend only)
+
+CemConfigurationOfflineComparison.CompareFilesAsync accepts two explicitly
+selected local .bin paths, validated using the existing 142-byte P2 B9FC
+or 254-byte P3 F106 file inspector. Each body must pass its count,
+length and additive checksum. Mixed P2/P3 generations are rejected.
+No diagnostic frames, ECU profiles, VINs, part numbers or research
+catalog descriptions are used to align the data.
+
+The detached result includes the generation, total ordinal count,
+number of changed ordinals, ordered one-based changed indices, and
+in-memory SHA-256 fingerprints of the two already-validated bodies.
+These are equality/integrity hints only, NOT signatures, provenance,
+CEM firmware identification, option mappings or recovery data.
+
+CreateRedactedReport(english) returns an RU or EN summary containing
+only generation, counts, changed one-based ordinals and explicit
+"not verified / not a restorable backup" warnings. It omits local
+paths, hashes, raw before/after values, claimed option meanings and
+source references; no file is written. The method cannot initiate
+any physical connection or persist private configuration bytes.
+
+11 synthetic tests cover unchanged P2, first/last P2 differences,
+index 252 P3, mixed-format failure, invalid checksum, malformed
+files/extensions, cancellation, input immutability, RU/EN redaction,
+immutable result and strict no-I/O/no-PIN contracts.
+
+This is intentionally a backend-only stage. The user deferred WinUI
+visual acceptance: no new GUI button, window-layout change, visual
+capture requirement or hardware J2534 acceptance is introduced.
