@@ -27,6 +27,18 @@ CommitSha — введённый оператором SHA, а не незави�
 7. DisconnectAndFilterCleanupOnBench — отключение и очистка фильтров на стенде.
 8. NoSecretsInLogsAndUiRecovery — секреты не попали в логи, восстановление GUI.
 
+После создания отчёта можно независимо проверить его текущий локальный ZIP
+(только чтение; Windows PowerShell 5.1):
+
+    & '.\eng\Verify-CemPinBenchAcceptance.ps1' -ReportJson 'C:\Dvinholm-CemBench-Review-01\cem-pin-bench-acceptance.json' -BuildZip 'C:\Review\Dvinholm-Windows-x64.zip' -IConfirmOfflineNoSecrets
+
+Валидатор требует точный состав JSON, восемь уникальных упорядоченных
+пунктов NotTested, отсутствие добавленных полей и ложных флагов подтверждения,
+валидные UTC и SHA, проверяет длину и SHA-256 ZIP, наличие корневого
+Dvinholm.exe. Он ничего не изменяет и выводит только NOT_TESTED.
+Совпадение локального SHA не проверяет принадлежность ZIP конкретному
+коммиту и не удостоверяет работу с реальным CEM.
+
 Все пункты изначально NotTested. Хеш ZIP, сборка и синтетические тесты никогда
 не меняют их автоматически на Passed. Самостоятельно отмеченные пользователем
 результаты не становятся криптографической или физической аттестацией CEM.
