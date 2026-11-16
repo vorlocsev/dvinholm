@@ -49,6 +49,31 @@ public sealed partial class MainWindow
         CemPinStepIdentity.Text = copy.Identity;
         CemPinStepResearch.Text = copy.Search;
         CemPinStepResult.Text = copy.Result;
+        RefreshCemPinExperimentReadiness();
+    }
+
+    // The inspector reads existing session flags and the in-memory guarded
+    // P/N observation. It neither opens a driver nor enumerates PIN bytes.
+    private void RefreshCemPinExperimentReadiness()
+    {
+        if (CemPinExperimentReadinessText is null) return;
+        var prereqs = InspectCemReadOnlyPrerequisites();
+#if DVINHOLM_DEVELOPMENT_FEATURES
+        var observed = _cemIdentityGuard?.IsCurrent == true && _cemIdentity is { };
+        var knownSourceProfile = observed &&
+            ExperimentalCemPinCanProvider.HasSourceProfile(_cemIdentity!.PartNumber);
+        var validRange = TryGetCemPinRange(out _, out _);
+        var busy = _cemPinAttemptActive;
+#else
+        const bool observed = false;
+        const bool knownSourceProfile = false;
+        const bool validRange = false;
+        const bool busy = false;
+#endif
+        var assessment = CemPinExperimentReadiness.Assess(
+            prereqs, observed, knownSourceProfile, validRange, busy);
+        CemPinExperimentReadinessText.Text =
+            CemPinExperimentReadiness.Format(assessment, _unifiedEnglish);
     }
 
     /// <summary>
@@ -86,6 +111,7 @@ public sealed partial class MainWindow
             "Локально сохранённые PIN. Не подтверждают идентичность подключённого CEM.",
             "Locally stored PINs. They do not verify connected CEM identity."));
 #endif
+        RefreshCemPinExperimentReadiness();
     }
 
     private CemReadOnlyPrerequisiteAssessment InspectCemReadOnlyPrerequisites()

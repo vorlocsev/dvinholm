@@ -720,6 +720,13 @@
                                             <Button x:Name="CemPinReadButton" Content="Read CEM PIN (experimental)" ContentTemplate="{StaticResource AuroraWrapCaption}" MinHeight="48" IsEnabled="False" Click="ReadCemPin_Click" VerticalAlignment="Bottom" Grid.Row="1" Grid.Column="0" HorizontalAlignment="Stretch" Background="#0865C7" BorderBrush="#348DEA" />
                                             <Button x:Name="CemPinRevealButton" Content="Reveal for 15 seconds" ContentTemplate="{StaticResource AuroraWrapCaption}" MinHeight="48" IsEnabled="False" Click="RevealCemPin_Click" VerticalAlignment="Bottom" Grid.Row="1" Grid.Column="1" HorizontalAlignment="Stretch" />
                                         </Grid>
+                                        <!-- Read-only consolidated CEM PIN preflight: no
+                                             credentials, transport command or inferred ECU identity. -->
+                                        <TextBlock x:Name="CemPinExperimentReadinessText"
+                                                   Text="Локальные условия CEM PIN ещё не проверены. Физическая совместимость не подтверждена."
+                                                   TextWrapping="Wrap" IsTextSelectionEnabled="False"
+                                                   Foreground="#9EB8CC" FontSize="12"
+                                                   AutomationProperties.AutomationId="CemPinExperimentReadiness" />
                                         <Grid ColumnSpacing="12">
                                             <Grid.ColumnDefinitions>
                                                 <ColumnDefinition Width="Auto" />
