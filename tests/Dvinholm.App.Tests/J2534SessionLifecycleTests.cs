@@ -433,6 +433,51 @@ public sealed class J2534SessionLifecycleTests
     }
 
     [Fact]
+    public async Task DisconnectMustFailClosedBeforeWaitingForNativeReadWorker()
+    {
+        using var readEntered = new ManualResetEventSlim();
+        using var releaseRead = new ManualResetEventSlim();
+        var adapter = new FakeSessionAdapter
+        {
+            FailFirstRead = true,
+            ReadEntered = readEntered,
+            AllowReadToFinish = releaseRead
+        };
+        using var session = new J2534Session(adapter);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _));
+        Task? disconnect = null;
+        try
+        {
+            Assert.True(readEntered.Wait(TimeSpan.FromSeconds(3)),
+                "The synthetic native receive worker never entered Read.");
+            var connectedEpoch = session.ConnectionEpoch;
+            Assert.True(session.IsConnected);
+
+            // Disconnect advances the generation before CanBus.Dispose()
+            // can join the worker. Even during this interval the old bus must
+            // not be reported as usable. No native adapter or ECU is contacted.
+            disconnect = Task.Run(session.Disconnect);
+            Assert.True(SpinWait.SpinUntil(
+                () => session.ConnectionEpoch > connectedEpoch,
+                TimeSpan.FromSeconds(3)), "Disconnect did not retire its bus epoch.");
+            Assert.False(session.IsConnected);
+            Assert.False(disconnect.IsCompleted);
+            Assert.Equal(1, adapter.UnloadCount);
+            Assert.Equal(0, adapter.WriteCount);
+        }
+        finally
+        {
+            releaseRead.Set();
+        }
+
+        if (disconnect is not null)
+            await disconnect.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(session.IsConnected);
+        Assert.Null(session.ConnectedBaudRate);
+        Assert.Null(session.ConnectedExtended);
+    }
+
+    [Fact]
     public async Task ConcurrentDisconnectWaitsForConnectBeforeUnloadingAdapter()
     {
         using var openEntered = new ManualResetEventSlim();

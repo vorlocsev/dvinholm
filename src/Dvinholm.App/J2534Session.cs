@@ -247,6 +247,12 @@ internal sealed class J2534Session : IDisposable
 
     private void DisconnectLocked()
     {
+        // Stop new work before changing the generation or waiting for the
+        // native RX worker. Otherwise a faulted old epoch could appear healthy
+        // again as soon as the connection epoch advances, while _bus still
+        // refers to the old worker being disposed. The flag is cleared only by
+        // ClearAdapterMetadata after detach/unload has completed.
+        Interlocked.Exchange(ref _transportFaulted, 1);
         // Invalidate queued UI observations before disposing the CAN worker
         // or unloading the vendor library. Never wait on the UI dispatcher.
         Interlocked.Increment(ref _connectionEpoch);

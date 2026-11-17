@@ -144,3 +144,12 @@ invalidates its own operation on any read-error notification. Added isolated
 tests cover failure without a lease and nonfatal decode notification; existing
 callback isolation and deferred teardown fixtures assert immediate fail-closed
 status. No physical adapter was exercised.
+
+A CI-discovered regression showed a short teardown window: after incrementing
+the connection epoch, the old read-fault stamp no longer matched while the old
+CAN bus had not yet been disposed. The session now marks the transport
+invalid before incrementing the epoch or waiting for the native read worker.
+The flag is cleared only after bus detach and adapter cleanup. A deterministic
+offline test holds an in-flight fake Read while Disconnect retires the epoch
+and asserts the old bus is never reported connected during teardown. No CEM
+request is sent; no physical J2534 hardware is used.
