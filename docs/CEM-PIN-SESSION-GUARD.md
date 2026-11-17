@@ -337,3 +337,13 @@ cannot run. This applies both to live adapter-unattested candidates and
 separately restored (locally encrypted) records. Tests use synthetic
 callback exceptions and inspect owned buffer erasure and single-invocation
 semantics; no real ECU or user PIN is involved.
+
+Regression assertion integrity: CemPinSecret.TryReveal intentionally returns
+false rather than propagating private callback errors. Existing negative tests
+used Assert.Fail inside the callback and thus could no longer reliably
+distinguish an unexpected callback from correctly denied access. All eight
+identified negative callback checks in CemPinSecretTests, CemPinStoreTests and
+CemPinVaultHardeningTests now set an explicit invocation marker, assert that
+TryReveal returns false, and independently assert that the callback was never
+invoked. This is a test-only guard against false-positive confidential
+material disclosure checks.

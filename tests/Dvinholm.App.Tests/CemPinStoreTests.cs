@@ -657,7 +657,9 @@ public sealed class CemPinStoreTests
         using var restored = CemPinAttemptResult.Restored(secret);
         restored.Dispose();
         Assert.False(secret.IsAvailable);
-        Assert.False(restored.TryReveal(_ => Assert.Fail("Disposed stored material was revealed.")));
+        var unexpectedReveal = false;
+        Assert.False(restored.TryReveal(_ => unexpectedReveal = true));
+        Assert.False(unexpectedReveal, "Disposed stored material must not reach the callback.");
         Assert.DoesNotContain("123456789012", saved.ToString());
     }
 }

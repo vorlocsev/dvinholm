@@ -95,7 +95,9 @@ public sealed class CemPinSecretTests
         result.Dispose();
         Assert.All(bytes, value => Assert.Equal((byte)0, value));
         Assert.False(result.HasPin);
-        Assert.False(result.TryReveal(_ => Assert.Fail("Disposed material was revealed.")));
+        var unexpectedReveal = false;
+        Assert.False(result.TryReveal(_ => unexpectedReveal = true));
+        Assert.False(unexpectedReveal, "Callback must never run: Disposed material was revealed.");
         Assert.False(secret.IsAvailable);
     }
 
@@ -110,7 +112,9 @@ public sealed class CemPinSecretTests
         current = false;
         Assert.Null(result.Origin);
         Assert.False(result.HasPin);
-        Assert.False(result.TryReveal(_ => Assert.Fail("Revoked PIN was revealed.")));
+        var unexpectedReveal = false;
+        Assert.False(result.TryReveal(_ => unexpectedReveal = true));
+        Assert.False(unexpectedReveal, "Callback must never run: Revoked PIN was revealed.");
         Assert.All(bytes, value => Assert.Equal((byte)0, value));
         Assert.False(secret.IsAvailable);
     }
@@ -124,7 +128,9 @@ public sealed class CemPinSecretTests
         using var result = CemPinAttemptResult.Accepted(secret,
             () => throw new InvalidOperationException(privateData));
 
-        Assert.False(result.TryReveal(_ => Assert.Fail("Invalid PIN lease was revealed.")));
+        var unexpectedReveal = false;
+        Assert.False(result.TryReveal(_ => unexpectedReveal = true));
+        Assert.False(unexpectedReveal, "Callback must never run: Invalid PIN lease was revealed.");
         Assert.False(result.HasPin);
         Assert.All(bytes, value => Assert.Equal((byte)0, value));
         Assert.DoesNotContain(privateData, result.ToString());
@@ -138,7 +144,9 @@ public sealed class CemPinSecretTests
             lifetime: TimeSpan.FromMilliseconds(25));
         Assert.True(SpinWait.SpinUntil(() => bytes.All(b => b == 0), TimeSpan.FromSeconds(5)));
         Assert.False(secret.IsAvailable);
-        Assert.False(secret.TryReveal(_ => Assert.Fail("Expired material was revealed.")));
+        var unexpectedReveal = false;
+        Assert.False(secret.TryReveal(_ => unexpectedReveal = true));
+        Assert.False(unexpectedReveal, "Callback must never run: Expired material was revealed.");
     }
 
     [Fact]
@@ -148,7 +156,9 @@ public sealed class CemPinSecretTests
         var bytes = Fixture();
         using var secret = new CemPinSecret(bytes, CemPinResultOrigin.Synthetic, clock: clock);
         clock.Ticks = TimeSpan.FromSeconds(31).Ticks;
-        Assert.False(secret.TryReveal(_ => Assert.Fail("Expired material was revealed.")));
+        var unexpectedReveal = false;
+        Assert.False(secret.TryReveal(_ => unexpectedReveal = true));
+        Assert.False(unexpectedReveal, "Callback must never run: Expired material was revealed.");
         Assert.All(bytes, value => Assert.Equal((byte)0, value));
     }
 
@@ -179,6 +189,8 @@ public sealed class CemPinSecretTests
                 VolvoP2ServiceCredentialScope.Unspecified, false, null, null), sessionGuard: new(() => true));
         Assert.Equal(CemPinAttemptStatus.Unsupported, result.Status);
         Assert.False(result.HasPin);
-        Assert.False(result.TryReveal(_ => Assert.Fail("Metadata-only result acquired a payload.")));
+        var unexpectedReveal = false;
+        Assert.False(result.TryReveal(_ => unexpectedReveal = true));
+        Assert.False(unexpectedReveal, "Callback must never run: Metadata-only result acquired a payload.");
     }
 }

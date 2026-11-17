@@ -242,7 +242,8 @@ public sealed class CemPinVaultHardeningTests
             Assert.False(previous.IsAvailable);
             using var newResult = CemPinAttemptResult.Restored(next);
             Assert.True(newResult.HasPin);
-            Assert.False(oldResult.TryReveal(_ =>
-                Assert.Fail("Old PIN should not be revealable after replacement.")));
+            var unexpectedReveal = false;
+            Assert.False(oldResult.TryReveal(_ => unexpectedReveal = true));
+            Assert.False(unexpectedReveal, "Replaced PIN must not reach the callback.");
         });
 }
