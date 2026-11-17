@@ -325,3 +325,15 @@ does not change the current-user DPAPI blob, GUID entropy, file naming or
 on-disk format. Windows-only synthetic tests verify plaintext erasure on
 successful encryption and an oversized protected-output failure, including
 a valid same-GUID decrypt round trip. No vehicle or hardware tests.
+
+The confidential CemPinSecret.TryReveal callback is now fail-closed.
+Previously, an exception thrown by a WinUI text presenter or any other
+reveal callback escaped through the result, leaving the owned six-byte PIN
+available until its timer expired. The callback invocation is now guarded
+inside the existing secret ownership lock: on exception the owned buffer
+is immediately zeroed, the expiry timer is disposed, and TryReveal returns
+false without exposing callback exception details. A subsequent reveal
+cannot run. This applies both to live adapter-unattested candidates and
+separately restored (locally encrypted) records. Tests use synthetic
+callback exceptions and inspect owned buffer erasure and single-invocation
+semantics; no real ECU or user PIN is involved.

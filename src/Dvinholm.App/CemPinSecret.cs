@@ -60,8 +60,20 @@ internal sealed class CemPinSecret : IDisposable
         {
             ExpireIfNeeded();
             if (_bytes is null) return false;
-            reveal(_bytes);
-            return true;
+            try
+            {
+                reveal(_bytes);
+                return true;
+            }
+            catch (Exception)
+            {
+                // A UI renderer or any other callback must not keep a PIN
+                // usable after an interrupted reveal, nor leak a callback's
+                // potentially private exception message to the caller.
+                // Clear while still holding the ownership gate.
+                Clear();
+                return false;
+            }
         }
     }
 

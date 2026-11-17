@@ -42,6 +42,50 @@ public sealed class CemPinSecretTests
     }
 
     [Fact]
+    public void FailedRevealCallbackWipesSecretAndSanitizesPrivateException()
+    {
+        var owned = Fixture();
+        using var secret = new CemPinSecret(owned, CemPinResultOrigin.AdapterUnattested);
+        using var result = CemPinAttemptResult.Accepted(secret);
+        var callbacks = 0;
+        const string privateMarker = "SYNTHETIC-PRIVATE-VIN-CREDENTIAL";
+
+        var accepted = result.TryReveal(_ =>
+        {
+            callbacks++;
+            throw new IOException(privateMarker);
+        });
+
+        Assert.False(accepted);
+        Assert.Equal(1, callbacks);
+        Assert.All(owned, b => Assert.Equal((byte)0, b));
+        Assert.False(result.HasPin);
+        Assert.False(secret.IsAvailable);
+        Assert.False(result.TryReveal(_ => callbacks++));
+        Assert.Equal(1, callbacks);
+        Assert.DoesNotContain(privateMarker, result.ToString());
+    }
+
+    [Fact]
+    public void FailedRevealCallbackAlsoRevokesRestoredPin()
+    {
+        var owned = Fixture();
+        using var secret = new CemPinSecret(owned, CemPinResultOrigin.AdapterUnattested);
+        using var restored = CemPinAttemptResult.Restored(secret);
+        var callbacks = 0;
+        Assert.False(restored.TryReveal(_ =>
+        {
+            callbacks++;
+            throw new InvalidOperationException("SYNTHETIC-UI-CALLBACK-FAULT");
+        }));
+        Assert.Equal(1, callbacks);
+        Assert.All(owned, b => Assert.Equal((byte)0, b));
+        Assert.False(restored.HasPin);
+        Assert.False(restored.TryReveal(_ => callbacks++));
+        Assert.Equal(1, callbacks);
+    }
+
+    [Fact]
     public void DisposalErasesOwnedBytesAndPreventsFurtherReveal()
     {
         var bytes = Fixture();
