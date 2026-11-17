@@ -309,6 +309,91 @@ public sealed class CemPinStoreTests
     }
 
     [Fact]
+    public async Task ConcurrentStoreInstancesCannotCommitBeyondVisibleCapacity()
+    {
+        using var folder = new Folder();
+        Directory.CreateDirectory(folder.Path);
+        for (var i = 0; i < CemPinStore.MaxVisibleRecords - 1; i++)
+            File.WriteAllBytes(folder.File(Guid.NewGuid()), new byte[] { 1 });
+
+        using var firstStaging = new ManualResetEventSlim();
+        using var releaseFirst = new ManualResetEventSlim();
+        using var secondStarted = new ManualResetEventSlim();
+        using var firstCandidate = Result();
+        using var secondCandidate = Result();
+        var firstStore = new CemPinStore(folder.Path, (path, bytes) =>
+        {
+            firstStaging.Set();
+            if (!releaseFirst.Wait(TimeSpan.FromSeconds(10)))
+                throw new IOException("Synthetic stage timeout");
+            File.WriteAllBytes(path, bytes);
+        });
+        var secondStore = new CemPinStore(folder.Path);
+        var first = Task.Run(() => firstStore.Save(firstCandidate, 30682981));
+        Task<Exception?>? second = null;
+        try
+        {
+            Assert.True(firstStaging.Wait(TimeSpan.FromSeconds(5)));
+            second = Task.Run(() =>
+            {
+                secondStarted.Set();
+                return Record.Exception(() => secondStore.Save(secondCandidate, 30682981));
+            });
+            Assert.True(secondStarted.Wait(TimeSpan.FromSeconds(5)));
+            await Task.Delay(100);
+            Assert.False(second.IsCompleted);
+        }
+        finally
+        {
+            releaseFirst.Set();
+        }
+
+        var accepted = await first.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(accepted.Id, Assert.Single(folder.Store.List().Entries).Id);
+        var secondFailure = await second!.WaitAsync(TimeSpan.FromSeconds(10));
+        var error = Assert.IsType<InvalidOperationException>(secondFailure);
+        Assert.Equal("The encrypted PIN record could not be saved.", error.Message);
+        Assert.Equal(CemPinStore.MaxVisibleRecords,
+            Directory.GetFiles(folder.Path, "*.dpapi").Length);
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.tmp"));
+        Assert.True(secondCandidate.HasPin);
+    }
+
+    [Fact]
+    public async Task DifferentVaultDirectoriesDoNotShareWriteGate()
+    {
+        using var firstFolder = new Folder();
+        using var otherFolder = new Folder();
+        using var firstStaging = new ManualResetEventSlim();
+        using var releaseFirst = new ManualResetEventSlim();
+        using var firstCandidate = Result();
+        using var otherCandidate = Result();
+        var stalledStore = new CemPinStore(firstFolder.Path, (path, bytes) =>
+        {
+            firstStaging.Set();
+            if (!releaseFirst.Wait(TimeSpan.FromSeconds(10)))
+                throw new IOException("Synthetic stage timeout");
+            File.WriteAllBytes(path, bytes);
+        });
+
+        var stalledSave = Task.Run(() => stalledStore.Save(firstCandidate, 30682981));
+        try
+        {
+            Assert.True(firstStaging.Wait(TimeSpan.FromSeconds(5)));
+            var independentSave = Task.Run(() =>
+                otherFolder.Store.Save(otherCandidate, 30682981));
+            var saved = await independentSave.WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.Equal(saved.Id, Assert.Single(otherFolder.Store.List().Entries).Id);
+            Assert.False(stalledSave.IsCompleted);
+        }
+        finally
+        {
+            releaseFirst.Set();
+        }
+        await stalledSave.WaitAsync(TimeSpan.FromSeconds(10));
+    }
+
+    [Fact]
     public void TamperingTruncationAndRecordRenameCannotRevealMaterial()
     {
         using var folder = new Folder();

@@ -223,3 +223,19 @@ external writer could still race the final check; this is not a global
 cross-process transaction. Offline Windows DPAPI regression tests cover a full
 vault, preserving existing records and restoring capacity, and a vault filled
 during staging. No real CEM or native J2534 device is contacted.
+
+Sequential capacity checks alone did not serialize concurrent Dvinholm
+instances: with 127 records two writers could each observe spare capacity
+and commit a 129th record. Save now holds a path-derived Windows Local named
+mutex across its complete lifecycle, from capacity validation through
+staging, final publication, failure rollback and temporary cleanup.
+The name is SHA-256 of the canonical case-folded vault directory; no PIN,
+VIN or other material is in the mutex name, and no lock file is created.
+A bounded 15-second wait fails closed on contention; an abandoned mutex is
+acquired for recovery, with normal vault validation still required. Mutex
+scope is the current Windows logon session: unrelated sessions and
+non-cooperating external filesystem writers can still race, so this is a
+serialization guarantee for cooperating same-session Dvinholm instances,
+not a global filesystem transaction. Offline tests verify that two stores
+cannot exceed the visible 128-record cap and different vault directories
+do not unnecessarily block one another. No physical J2534/CEM access.

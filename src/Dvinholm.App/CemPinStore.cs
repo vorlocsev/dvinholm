@@ -32,6 +32,38 @@ internal sealed class CemPinStore
 
     internal CemPinSavedEntry Save(CemPinAttemptResult result, uint partNumber)
     {
+        // The capacity check and the final rename must share a cross-process
+        // gate. Two independent instances otherwise can both see 127 records
+        // and commit a 129th record invisible to the bounded inventory.
+        // A named kernel mutex adds no file to the encrypted vault.
+        Mutex? mutex = null;
+        var ownsMutex = false;
+        try
+        {
+            var normalized = Path.TrimEndingDirectorySeparator(_directory).ToUpperInvariant();
+            var digest = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(normalized));
+            mutex = new Mutex(false, @"Local\Dvinholm.CemPinVault." + Convert.ToHexString(digest));
+            try { ownsMutex = mutex.WaitOne(TimeSpan.FromSeconds(15)); }
+            catch (AbandonedMutexException) { ownsMutex = true; }
+
+            // A blocked/failed acquisition denies the write; never bypass
+            // the capacity check under contention.
+            if (!ownsMutex) throw new IOException();
+            return SaveWithWriteGate(result, partNumber);
+        }
+        catch (Exception)
+        {
+            throw new InvalidOperationException("The encrypted PIN record could not be saved.");
+        }
+        finally
+        {
+            if (ownsMutex) mutex!.ReleaseMutex();
+            mutex?.Dispose();
+        }
+    }
+
+    private CemPinSavedEntry SaveWithWriteGate(CemPinAttemptResult result, uint partNumber)
+    {
         byte[]? plain = null;
         byte[]? encrypted = null;
         string? temporary = null;
@@ -79,8 +111,8 @@ internal sealed class CemPinStore
             }
             finally { CryptographicOperations.ZeroMemory(staged); }
             if (!result.HasPin) throw new InvalidOperationException();
-            // Another writer may have published a record during staging.
-            // Recheck after staging before exposing a new final filename.
+            // Recheck external additions after staging. Cooperating Dvinholm
+            // writers are serialized until rollback/cleanup finishes.
             EnsureRecordCapacity();
             var destination = FilePath(entry.Id);
             if (File.Exists(destination))
