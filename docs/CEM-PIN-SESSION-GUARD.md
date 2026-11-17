@@ -153,3 +153,14 @@ The flag is cleared only after bus detach and adapter cleanup. A deterministic
 offline test holds an in-flight fake Read while Disconnect retires the epoch
 and asserts the old bus is never reported connected during teardown. No CEM
 request is sent; no physical J2534 hardware is used.
+
+The following offline lifecycle hardening closes a pre-dispatch window in
+CemPinAttemptCoordinator. The first CEM lease check precedes the deadline and
+cancellation-monitor setup; a reconnect, consent/context change or cancellation
+can occur during that preparation. A second lease check and caller-cancellation
+check now run immediately before invoking a PIN provider. The diagnostic gate
+still remains held until any already-started provider terminates; each provider
+must revalidate before every native request. Three synthetic regression tests
+verify stale context, cancellation during final validation and a private
+callback exception. Each denies provider invocation and PIN publication, with
+no J2534 access or ECU transmissions.

@@ -176,6 +176,15 @@ internal sealed class CemPinAttemptCoordinator
             CemPinAttemptStatus completion;
             try
             {
+                // The first guard check happened before constructing the deadline,
+                // linked token and monitor. The ECU/consent context can change in
+                // that gap, including a connection replacement. Recheck directly
+                // before calling a provider; it must never be invoked if that
+                // context has already become stale. This is not an atomic native
+                // I/O lock: the provider must keep checking its own lease.
+                if (!sessionGuard.IsCurrent)
+                    return CemPinAttemptResult.From(CemPinAttemptStatus.SessionInvalidated);
+                cancellationToken.ThrowIfCancellationRequested();
                 // Await provider termination even after cancellation. Never release
                 // the gate while an uncooperative provider may still be using ECU.
                 var receipt = await _provider.TryRunAsync(operation.Token).ConfigureAwait(false);
