@@ -51,9 +51,9 @@ public sealed class AuroraBoundedEcuInventoryRowsTests
         var template = ItemTemplate(Layout());
         var grids = template.Descendants().Where(e => e.Name.LocalName == "Grid").ToArray();
         Assert.Equal(3, grids.Length);
-        Assert.Empty(template.Descendants().Where(e =>
+        Assert.DoesNotContain(template.Descendants(), e =>
             e.Name.LocalName == "StackPanel" &&
-            (string?)e.Attribute("Orientation") == "Horizontal"));
+            (string?)e.Attribute("Orientation") == "Horizontal");
         Assert.All(grids, grid =>
         {
             Assert.Null(grid.Attribute("MinWidth"));

@@ -57,8 +57,8 @@ public sealed class AuroraBilingualSafetyTooltipContracts
         Assert.Contains("L(", projection);
         Assert.Contains("\",", projection);
         Assert.Contains("));", projection);
-        Assert.Single(Layout().Descendants().Where(e =>
-            (string?)e.Attribute(X + "Name") == id));
+        Assert.Single(Layout().Descendants(), e =>
+            (string?)e.Attribute(X + "Name") == id);
     }
 
     [Fact]

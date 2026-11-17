@@ -421,8 +421,9 @@ public sealed class AuroraLiveScreenshotCaptureContracts
         var primaryLoopStart = script.IndexOf("foreach ($page in $Pages)",
             StringComparison.Ordinal);
         Assert.True(modelFunction >= 0 && primaryLoopStart > modelFunction);
-        Assert.Equal(1, System.Text.RegularExpressions.Regex.Matches(
-            script[modelFunction..primaryLoopStart], @"captureSessionId = \$captureSessionId").Count);
+        Assert.Single(System.Text.RegularExpressions.Regex.Matches(
+            script[modelFunction..primaryLoopStart], @"captureSessionId = \$captureSessionId")
+            .Cast<System.Text.RegularExpressions.Match>());
         var primaryLoopEnd = script.IndexOf("$report = Join-Path $output",
             primaryLoopStart, StringComparison.Ordinal);
         Assert.True(primaryLoopEnd > primaryLoopStart);

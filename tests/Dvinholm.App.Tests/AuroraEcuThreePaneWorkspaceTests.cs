@@ -63,8 +63,8 @@ public sealed class AuroraEcuThreePaneWorkspaceTests
         Assert.Equal("240", (string?)Named(doc, "EcuWorkbenchDetailColumn").Attribute("Width"));
         Assert.Equal("1280", (string?)State(doc, "EcuThreeColumns").Descendants()
             .Single(e => e.Name.LocalName == "AdaptiveTrigger").Attribute("MinWindowWidth"));
-        Assert.Empty(State(doc, "EcuThreeColumns").Descendants()
-            .Where(e => e.Name.LocalName == "Setter"));
+        Assert.DoesNotContain(State(doc, "EcuThreeColumns").Descendants(),
+            e => e.Name.LocalName == "Setter");
     }
 
     [Fact]

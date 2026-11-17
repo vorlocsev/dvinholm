@@ -90,8 +90,8 @@ public sealed class AuroraCompactNavigationAlignmentTests
         Assert.Equal("Left", setters["HorizontalContentAlignment"]);
         Assert.Equal("12,9", setters["Padding"]);
         Assert.Equal("Stretch", setters["HorizontalAlignment"]);
-        Assert.Empty(Named(doc, "ShellWide").Descendants()
-            .Where(e => e.Name.LocalName == "Setter"));
+        Assert.DoesNotContain(Named(doc, "ShellWide").Descendants(),
+            e => e.Name.LocalName == "Setter");
     }
 
     [Fact]
@@ -153,9 +153,9 @@ public sealed class AuroraCompactNavigationAlignmentTests
     {
         var doc = Layout();
         var subtree = Named(doc, "SidebarNavPanel");
-        Assert.Empty(subtree.Descendants().Where(e =>
+        Assert.DoesNotContain(subtree.Descendants(), e =>
             (string?)e.Attribute("Click") is "Connect_Click" or
-                "ReadDtc_Click" or "ReadCemPin_Click"));
+                "ReadDtc_Click" or "ReadCemPin_Click");
         Assert.DoesNotContain(doc.Descendants(), e =>
             (string?)e.Attribute(X + "Name") is "SettingsPage" or "LauncherPage");
         var all = doc.Descendants().Select(e => (string?)e.Attribute(X + "Name"))

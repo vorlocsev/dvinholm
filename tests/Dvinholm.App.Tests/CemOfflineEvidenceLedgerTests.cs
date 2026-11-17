@@ -386,7 +386,7 @@ public sealed class CemOfflineEvidenceLedgerTests
                     CemOfflineEvidenceLinkClaim.SameClaimedModule)],
                 [recheck]);
             Assert.Equal(3, result.InitiallyMatchingLocalDigests);
-            Assert.Equal(1, result.RecheckJournal.Count);
+            Assert.Single(result.RecheckJournal);
             Assert.Equal(0, result.RepeatLocalHashMismatchCount);
             Assert.False(result.HasVerifiedSamePhysicalCem);
             Assert.Equal(7, result.OpenPhysicalEvidenceGates.Count);

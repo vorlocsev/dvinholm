@@ -120,9 +120,9 @@ public sealed class AuroraApprovedVisualParityTests
         foreach (var name in new[] { "CemPinStepIdentity", "CemPinStepResearch",
             "CemPinStepResult" })
             Assert.Contains(Named(doc, name), stepper.Descendants());
-        Assert.Empty(stepper.Descendants().Where(e =>
+        Assert.DoesNotContain(stepper.Descendants(), e =>
             e.Name.LocalName == "Button" ||
-            e.Attribute("Click") is not null));
+            e.Attribute("Click") is not null);
         Assert.Equal("Collapsed", (string?)Named(doc, "CemPinSearchCard")
             .Attribute("Visibility"));
         Assert.Equal("False", (string?)Named(doc, "CemPinReadButton")
@@ -174,8 +174,8 @@ public sealed class AuroraApprovedVisualParityTests
         var doc = Layout();
         Assert.Equal(6, Named(doc, "SidebarNavPanel").Elements()
             .Count(e => e.Name.LocalName == "Button"));
-        Assert.Empty(doc.Descendants().Where(e =>
-            (string?)e.Attribute(X + "Name") is "SettingsPage" or "LauncherPage"));
+        Assert.DoesNotContain(doc.Descendants(), e =>
+            (string?)e.Attribute(X + "Name") is "SettingsPage" or "LauncherPage");
         var source = Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
         var entry = Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
         Assert.Contains("SidebarBrandSubtitle.Text = L(", source);

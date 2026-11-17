@@ -171,10 +171,11 @@ public sealed class AuroraCemVisualParityTests
         var grid = Named(doc, "CemConfigActionsGrid");
         var actions = grid.Elements().Where(e => e.Name.LocalName == "Button").ToArray();
         Assert.Equal(6, actions.Length);
-        Assert.Single(actions.Where(e => e.Attribute("Click") is not null));
+        Assert.Single(actions, e => e.Attribute("Click") is not null);
         Assert.Equal("P2ConfigCatalog_Click",
             (string?)Named(doc, "P2ConfigCatalogButton").Attribute("Click"));
-        Assert.Empty(actions.Where(e => (string?)e.Attribute("Content") is "Install" or "Erase"));
+        Assert.DoesNotContain(actions, e =>
+            (string?)e.Attribute("Content") is "Install" or "Erase");
     }
 
     [Fact]

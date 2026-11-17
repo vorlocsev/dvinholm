@@ -71,7 +71,7 @@ public sealed class UnifiedX64ExtractionSandboxTests
             Assert.Equal(1024 + 2 + 1 + 2, receipt.Bytes);
             Assert.Equal(Exe(), File.ReadAllBytes(
                 Path.Combine(receipt.Directory, "Dvinholm.exe")));
-            Assert.Equal(1, Directory.EnumerateDirectories(root, "expanded-*").Count());
+            Assert.Single(Directory.EnumerateDirectories(root, "expanded-*"));
             Assert.Empty(Directory.EnumerateDirectories(root, ".extract-*"));
         });
     }

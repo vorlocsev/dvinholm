@@ -178,7 +178,7 @@ public sealed class AuroraFirstFoldVisualParityTests
         Assert.True(children.IndexOf(background) < children.IndexOf(ribbon));
         Assert.True(children.IndexOf(ribbon) < children.FindIndex(e =>
             e.Name.LocalName == "ScrollViewer"));
-        Assert.Empty(ribbon.Descendants().Where(e => e.Attribute("Click") is not null));
+        Assert.DoesNotContain(ribbon.Descendants(), e => e.Attribute("Click") is not null);
     }
 
     [Fact]

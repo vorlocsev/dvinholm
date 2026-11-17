@@ -76,8 +76,8 @@ public sealed class AuroraTightViewportHeaderTests
     public void Above720DipOriginalDescriptionAndScopeReturnFromDefaults()
     {
         var doc = Layout();
-        Assert.Empty(Named(doc, "HeaderFullContext").Descendants()
-            .Where(e => e.Name.LocalName == "Setter"));
+        Assert.DoesNotContain(Named(doc, "HeaderFullContext").Descendants(),
+            e => e.Name.LocalName == "Setter");
         Assert.Null(Named(doc, "WorkspaceScopeLabel").Attribute("Visibility"));
         Assert.Null(Named(doc, "WorkspaceDescription").Attribute("Visibility"));
         Assert.Equal("7", (string?)Named(doc, "WorkspaceHeaderCopy").Attribute("Spacing"));

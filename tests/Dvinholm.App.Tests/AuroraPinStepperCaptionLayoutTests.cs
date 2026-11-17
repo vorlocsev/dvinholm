@@ -63,7 +63,7 @@ public sealed class AuroraPinStepperCaptionLayoutTests
         {
             Assert.Equal("Stretch", (string?)stage.Attribute("HorizontalAlignment"));
             Assert.Equal("8", (string?)stage.Attribute("Spacing"));
-            Assert.Single(stage.Elements().Where(e => e.Name.LocalName == "TextBlock"));
+            Assert.Single(stage.Elements(), e => e.Name.LocalName == "TextBlock");
         });
     }
 
@@ -116,7 +116,7 @@ public sealed class AuroraPinStepperCaptionLayoutTests
         Assert.Equal("2", (string?)track.Attribute("Height"));
         Assert.True(Array.IndexOf(children, track) <
             Array.FindIndex(children, e => e.Name.LocalName == "StackPanel"));
-        Assert.Empty(grid.Descendants().Where(e => e.Attribute("Click") is not null));
+        Assert.DoesNotContain(grid.Descendants(), e => e.Attribute("Click") is not null);
     }
 
     [Fact]

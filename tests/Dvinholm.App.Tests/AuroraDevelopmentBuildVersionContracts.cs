@@ -79,8 +79,8 @@ public sealed class AuroraDevelopmentBuildVersionContracts
         Assert.Contains("SelectSingleNode('/Project/PropertyGroup/Version')", step);
         Assert.Contains("-p:InformationalVersion=$buildVersion", step);
         Assert.Contains("-p:IncludeSourceRevisionInInformationalVersion=false", step);
-        Assert.Equal(1, Regex.Matches(yaml,
-            "- name: Publish WinUI 3 x64 self-contained application").Count);
+        Assert.Single(Regex.Matches(yaml,
+            "- name: Publish WinUI 3 x64 self-contained application").Cast<System.Text.RegularExpressions.Match>());
     }
 
     [Fact]
@@ -100,7 +100,7 @@ public sealed class AuroraDevelopmentBuildVersionContracts
         // a merge SHA. The smoke test explicitly opens the shipped ZIP.
         Assert.Contains("using var zip = ZipFile.OpenRead(zipPath);", smoke);
         Assert.Contains("using (var stream = dll.Open())", smoke);
-        Assert.Equal(1, Regex.Matches(yaml,
-            "- name: Verify actual x64 Release ZIP and forbidden developer types").Count);
+        Assert.Single(Regex.Matches(yaml,
+            "- name: Verify actual x64 Release ZIP and forbidden developer types").Cast<System.Text.RegularExpressions.Match>());
     }
 }
