@@ -10,10 +10,38 @@ internal sealed class J2534Session : IDisposable
     private CanBus? _bus;
     private bool _disposed;
     private int _transportFaulted;
+    // Receive faults belong to one CAN generation. A late callback from an
+    // older bus must never disable an already reconnected adapter.
+    // Kept monotonic so old callbacks cannot clear a newer fault.
+    private long _readFaultedEpoch = -1;
+    // Incremented before every connection teardown, including replacement
+    // Connect calls and failed replacement attempts. Read-only UI callbacks
+    // use this token to reject delayed errors from a previous CAN session.
+    private long _connectionEpoch;
+    internal long ConnectionEpoch => Interlocked.Read(ref _connectionEpoch);
+    private Action<Exception>? _busReadErrorForwarder;
 
     internal event Action<Exception>? ReadError;
+    // Reports the origin bus epoch even when the callback arrives after reconnect.
+    internal event Action<long>? ReadErrorEpoch;
 
-    internal bool IsConnected => _bus is not null && Volatile.Read(ref _transportFaulted) == 0;
+    internal bool IsConnected
+    {
+        get
+        {
+            // A deferred Disconnect faults transport and then advances
+            // ConnectionEpoch. Reading the fault flag before the epoch can
+            // mix old/new generations and briefly report true: old fault=0,
+            // old read-fault epoch != new connection epoch.
+            // Capture the epoch first and reject a generation transition.
+            var epoch = ConnectionEpoch;
+            return Volatile.Read(ref _bus) is not null &&
+                Volatile.Read(ref _transportFaulted) == 0 &&
+                Interlocked.Read(ref _readFaultedEpoch) != epoch &&
+                ConnectionEpoch == epoch &&
+                Volatile.Read(ref _transportFaulted) == 0;
+        }
+    }
     internal uint? ConnectedBaudRate { get; private set; }
     internal bool? ConnectedExtended { get; private set; }
 
@@ -24,9 +52,42 @@ internal sealed class J2534Session : IDisposable
     internal CanBus Bus => IsConnected && _bus is { } bus
         ? bus : throw new InvalidOperationException("J2534 CAN session is not connected.");
 
+    /// <summary>
+    /// Capture the active bus and its error epoch as one lifecycle snapshot.
+    /// A CEM lease must not pair a bus from an unfinished Connect/Disconnect
+    /// with an epoch from a replacement connection. No adapter I/O occurs.
+    /// </summary>
+    internal (CanBus Bus, long Epoch)? CaptureConnectedBusSnapshot()
+    {
+        lock (_lifecycleGate)
+        {
+            if (_disposed || !IsConnected ||
+                _bus is not { IsDisposed: false } bus)
+                return null;
+            return (bus, ConnectionEpoch);
+        }
+    }
+
     // Preserve native resources for orderly disconnect, but reject further
     // diagnostic work when receive-filter state could not be restored.
     internal void InvalidateTransport() => Interlocked.Exchange(ref _transportFaulted, 1);
+
+    // Called from the native receive worker. Do not take _lifecycleGate here:
+    // Disconnect/Connect may already hold that lock while joining this worker.
+    // Retain only the greatest faulty generation; an old error cannot poison
+    // a newer connection or erase a newer error reported out of order.
+    internal void InvalidateTransportForReadError(long originatingEpoch)
+    {
+        long observed;
+        do
+        {
+            observed = Interlocked.Read(ref _readFaultedEpoch);
+            if (originatingEpoch <= observed)
+                return;
+        }
+        while (Interlocked.CompareExchange(
+            ref _readFaultedEpoch, originatingEpoch, observed) != observed);
+    }
 
     internal bool Connect(string dllPath, uint baudRate, out string error, bool extended = false)
     {
@@ -91,7 +152,9 @@ internal sealed class J2534Session : IDisposable
             }
 
             _bus = new CanBus(_j2534);
-            _bus.ReadError += HandleReadError;
+            var busEpoch = ConnectionEpoch;
+            _busReadErrorForwarder = error => HandleReadError(error, busEpoch);
+            _bus.ReadError += _busReadErrorForwarder;
             _bus.Start();
             ConnectedBaudRate = baudRate;
             ConnectedExtended = extended;
@@ -105,7 +168,9 @@ internal sealed class J2534Session : IDisposable
             var cleanupErrors = new List<string>();
             if (_bus is not null)
             {
-                _bus.ReadError -= HandleReadError;
+                if (_busReadErrorForwarder is not null)
+                    _bus.ReadError -= _busReadErrorForwarder;
+                _busReadErrorForwarder = null;
                 try { _bus.Dispose(); }
                 catch (Exception)
                 {
@@ -196,9 +261,20 @@ internal sealed class J2534Session : IDisposable
 
     private void DisconnectLocked()
     {
+        // Stop new work before changing the generation or waiting for the
+        // native RX worker. Otherwise a faulted old epoch could appear healthy
+        // again as soon as the connection epoch advances, while _bus still
+        // refers to the old worker being disposed. The flag is cleared only by
+        // ClearAdapterMetadata after detach/unload has completed.
+        Interlocked.Exchange(ref _transportFaulted, 1);
+        // Invalidate queued UI observations before disposing the CAN worker
+        // or unloading the vendor library. Never wait on the UI dispatcher.
+        Interlocked.Increment(ref _connectionEpoch);
         if (_bus is not null)
         {
-            _bus.ReadError -= HandleReadError;
+            if (_busReadErrorForwarder is not null)
+                _bus.ReadError -= _busReadErrorForwarder;
+            _busReadErrorForwarder = null;
             _bus.Dispose();
             _bus = null;
         }
@@ -224,23 +300,32 @@ internal sealed class J2534Session : IDisposable
         }
     }
 
-    private void HandleReadError(Exception error)
+    private void HandleReadError(Exception error, long originatingEpoch)
     {
-        var handlers = ReadError;
-        if (handlers is null)
-            return;
+        // Native Read failures invalidate the shared transport even without
+        // a subscribed CEM lease. Stamp before UI callbacks without taking
+        // the native lifecycle lock (which may join the receive worker).
+        // Decode/filter notices do not globally poison the J2534 session.
+        if (error is CanRxDispatcher.AdapterReadFailureException)
+            InvalidateTransportForReadError(originatingEpoch);
 
-        foreach (Action<Exception> handler in handlers.GetInvocationList())
+        // Keep the original diagnostic event for non-CEM listeners.
+        var handlers = ReadError;
+        if (handlers is not null)
         {
-            try
+            foreach (Action<Exception> handler in handlers.GetInvocationList())
             {
-                handler(error);
+                try { handler(error); }
+                catch { /* A subscriber must not terminate native RX. */ }
             }
-            catch
-            {
-                // A UI/logging callback must not prevent other subscribers
-                // from receiving the adapter diagnostic.
-            }
+        }
+
+        var epochHandlers = ReadErrorEpoch;
+        if (epochHandlers is null) return;
+        foreach (Action<long> handler in epochHandlers.GetInvocationList())
+        {
+            try { handler(originatingEpoch); }
+            catch { /* UI/lease callbacks must not terminate native RX. */ }
         }
     }
 

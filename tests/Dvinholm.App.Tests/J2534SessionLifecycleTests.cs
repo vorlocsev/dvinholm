@@ -137,6 +137,88 @@ public sealed class J2534SessionLifecycleTests
         Assert.Null(session.AdapterCapabilities);
     }
 
+
+    [Fact]
+    public void ConnectionEpochInvalidatesQueuedErrorsOnDisconnectAndReconnect()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
+        using var session = new J2534Session(adapter);
+        var before = session.ConnectionEpoch;
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        var first = session.ConnectionEpoch;
+        Assert.True(first > before);
+        Assert.True(session.IsConnected);
+
+        session.Disconnect();
+        var disconnected = session.ConnectionEpoch;
+        Assert.True(disconnected > first);
+        Assert.False(session.IsConnected);
+
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        var reconnected = session.ConnectionEpoch;
+        Assert.True(reconnected > disconnected);
+        Assert.True(session.IsConnected);
+
+        // Failed replacement Connect must also retire the old callback token.
+        Assert.False(session.Connect("", 500_000, out _));
+        Assert.True(session.ConnectionEpoch > reconnected);
+        Assert.False(session.IsConnected);
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
+    [Theory]
+    [InlineData(FailurePoint.None, false, true)]
+    [InlineData(FailurePoint.Open, false, false)]
+    [InlineData(FailurePoint.None, true, false)]
+    public async Task CemLeaseCaptureWaitsForAtomicConnectLifecycleSnapshot(
+        FailurePoint failure, bool extended, bool expectedConnected)
+    {
+        using var openEntered = new ManualResetEventSlim();
+        using var allowOpenToFinish = new ManualResetEventSlim();
+        var adapter = new FakeSessionAdapter
+        {
+            Failure = failure,
+            OpenEntered = openEntered,
+            AllowOpenToFinish = allowOpenToFinish
+        };
+        using var session = new J2534Session(adapter);
+        var connectTask = Task.Run(() =>
+            session.Connect("synthetic.dll", 500_000, out _, extended: extended));
+
+        // Connect has already detached its previous bus and owns the lifecycle
+        // gate while the fake DLL Open call remains in progress.
+        Task<CemPinSessionGuard>? captureTask = null;
+        try
+        {
+            Assert.True(openEntered.Wait(TimeSpan.FromSeconds(5)));
+            var enteredCapture = new TaskCompletionSource(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            object context = new();
+            captureTask = Task.Run(() =>
+            {
+                enteredCapture.TrySetResult();
+                return CemPinSessionGuard.Capture(session, context,
+                    () => context, ownerConsent: true);
+            });
+            await enteredCapture.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await Task.Delay(50);
+            Assert.False(captureTask.IsCompleted);
+        }
+        finally
+        {
+            allowOpenToFinish.Set();
+        }
+
+        var connected = await connectTask.WaitAsync(TimeSpan.FromSeconds(5));
+        using var guard = await captureTask!.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(expectedConnected, connected);
+        Assert.Equal(expectedConnected, guard.IsCurrent);
+        Assert.Equal(expectedConnected, session.IsConnected);
+        Assert.Equal(expectedConnected ? 1 : 0, adapter.ConnectCount);
+        // Lease capture must not send any CEM/ECU request.
+        Assert.Equal(0, adapter.WriteCount);
+    }
+
     [Fact]
     public void ReconnectReplacesPreviousBusAndKeepsSessionUsable()
     {
@@ -231,8 +313,14 @@ public sealed class J2534SessionLifecycleTests
 
             // Disconnect is deferred off the native read worker and must not
             // unload the adapter while the callback still owns that worker.
+            // Logical transport faults immediately, while native unload
+            // remains deferred until the callback exits.
             Assert.Equal(1, adapter.UnloadCount);
-            Assert.True(session.IsConnected);
+            // The deferred worker may advance ConnectionEpoch at any
+            // instant. Mixed-generation reads must never look connected
+            // after the read failure was reported.
+            for (var i = 0; i < 256; i++)
+                Assert.False(session.IsConnected);
         }
         finally
         {
@@ -268,8 +356,10 @@ public sealed class J2534SessionLifecycleTests
 
             // Dispose must be deferred while the native Read callback owns the
             // worker; unloading the driver here could tear down an active call.
+            // Logical transport faults immediately, while native unload
+            // remains deferred until the callback exits.
             Assert.Equal(1, adapter.UnloadCount);
-            Assert.True(session.IsConnected);
+            Assert.False(session.IsConnected);
         }
         finally
         {
@@ -344,6 +434,51 @@ public sealed class J2534SessionLifecycleTests
         Assert.True(session.IsConnected);
         Assert.Same(reconnectedBus, session.Bus);
         Assert.Equal(2, adapter.ConnectCount);
+    }
+
+    [Fact]
+    public async Task DisconnectMustFailClosedBeforeWaitingForNativeReadWorker()
+    {
+        using var readEntered = new ManualResetEventSlim();
+        using var releaseRead = new ManualResetEventSlim();
+        var adapter = new FakeSessionAdapter
+        {
+            FailFirstRead = true,
+            ReadEntered = readEntered,
+            AllowReadToFinish = releaseRead
+        };
+        using var session = new J2534Session(adapter);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _));
+        Task? disconnect = null;
+        try
+        {
+            Assert.True(readEntered.Wait(TimeSpan.FromSeconds(3)),
+                "The synthetic native receive worker never entered Read.");
+            var connectedEpoch = session.ConnectionEpoch;
+            Assert.True(session.IsConnected);
+
+            // Disconnect advances the generation before CanBus.Dispose()
+            // can join the worker. Even during this interval the old bus must
+            // not be reported as usable. No native adapter or ECU is contacted.
+            disconnect = Task.Run(session.Disconnect);
+            Assert.True(SpinWait.SpinUntil(
+                () => session.ConnectionEpoch > connectedEpoch,
+                TimeSpan.FromSeconds(3)), "Disconnect did not retire its bus epoch.");
+            Assert.False(session.IsConnected);
+            Assert.False(disconnect.IsCompleted);
+            Assert.Equal(1, adapter.UnloadCount);
+            Assert.Equal(0, adapter.WriteCount);
+        }
+        finally
+        {
+            releaseRead.Set();
+        }
+
+        if (disconnect is not null)
+            await disconnect.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.False(session.IsConnected);
+        Assert.Null(session.ConnectedBaudRate);
+        Assert.Null(session.ConnectedExtended);
     }
 
     [Fact]
@@ -435,6 +570,8 @@ public sealed class J2534SessionLifecycleTests
         internal int ConnectCount { get; private set; }
         internal int UnloadCount => Volatile.Read(ref _unloadCount);
         internal int ReadCount => Volatile.Read(ref _readCount);
+        private int _writeCount;
+        internal int WriteCount => Volatile.Read(ref _writeCount);
         public Dvinholm.App.J2534Native.AdapterCapabilities Capabilities { get; } =
             new(false, false, false);
 
@@ -484,6 +621,7 @@ public sealed class J2534SessionLifecycleTests
         }
         public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
+            Interlocked.Increment(ref _writeCount);
             error = string.Empty;
             return true;
         }

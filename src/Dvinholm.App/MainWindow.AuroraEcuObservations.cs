@@ -53,8 +53,9 @@ public sealed partial class MainWindow
         if (EcuObservationRail is not null)
             EcuObservationRail.Children.Clear();
         if (EcuObservationRailSummary is not null)
-            EcuObservationRailSummary.Text =
-                "Нет завершённого пассивного наблюдения. На изображении нет отметок физических ECU.";
+            EcuObservationRailSummary.Text = L(
+                "Нет завершённого пассивного наблюдения. На изображении нет отметок физических ECU.",
+                "No completed passive scan. The outline has no physical ECU markers.");
     }
 
     private void ShowAuroraEcuObservationRail(
@@ -84,12 +85,36 @@ public sealed partial class MainWindow
         }
 
         EcuObservationRailSummary.Text = !complete
-            ? $"Неполный поиск: {candidates.Count} наблюдений, выбор заблокирован. " +
-              "Позиции ECU на машине не установлены."
+            ? L(
+                $"Неполный поиск: {candidates.Count} наблюдений, выбор заблокирован. Позиции ECU на машине не установлены.",
+                $"Incomplete scan: {candidates.Count} observations, selection disabled. Physical ECU locations are unknown.")
             : candidates.Count == 0
-                ? "Ответов не обнаружено. Это не означает, что в машине нет ECU."
-                : $"Пассивных ответов: {candidates.Count}, плиток: {tiles.Count}. " +
-                  "Номера показывают порядок ответов, а НЕ расположение блоков.";
+                ? L("Ответов не обнаружено. Это не означает, что в машине нет ECU.",
+                    "No responses observed. This does not mean there are no ECUs.")
+                : L(
+                    $"Пассивных ответов: {candidates.Count}, плиток: {tiles.Count}. Номера показывают порядок ответов, а НЕ расположение блоков.",
+                    $"Passive responses: {candidates.Count}, tiles: {tiles.Count}. Tile numbers are observation order, NOT physical ECU locations.");
+    }
+
+    /// <summary>
+    /// Redraw only existing passive RX buttons when the shell locale changes.
+    /// Never starts discovery, changes ECU selection or transmits CAN.
+    /// </summary>
+    private void RefreshAuroraEcuObservationLocalization()
+    {
+        if (_ecus.Count == 0 && !_ecuScanComplete)
+        {
+            if (EcuObservationRailSummary is not null)
+                EcuObservationRailSummary.Text = L(
+                    "Нет завершённого пассивного наблюдения. На изображении нет отметок физических ECU.",
+                    "No completed passive scan. The outline has no physical ECU markers.");
+            return;
+        }
+
+        var index = EcusView.SelectedIndex;
+        ShowAuroraEcuObservationRail(
+            _ecus.Select(row => row.Candidate).ToArray(), _ecuScanComplete);
+        HighlightAuroraEcuObservation(index);
     }
 
     private void EcuObservationTile_Click(object sender, RoutedEventArgs e)

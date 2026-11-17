@@ -63,8 +63,8 @@ public sealed class AuroraEcuThreePaneWorkspaceTests
         Assert.Equal("240", (string?)Named(doc, "EcuWorkbenchDetailColumn").Attribute("Width"));
         Assert.Equal("1280", (string?)State(doc, "EcuThreeColumns").Descendants()
             .Single(e => e.Name.LocalName == "AdaptiveTrigger").Attribute("MinWindowWidth"));
-        Assert.Empty(State(doc, "EcuThreeColumns").Descendants()
-            .Where(e => e.Name.LocalName == "Setter"));
+        Assert.DoesNotContain(State(doc, "EcuThreeColumns").Descendants(),
+            e => e.Name.LocalName == "Setter");
     }
 
     [Fact]
@@ -124,14 +124,15 @@ public sealed class AuroraEcuThreePaneWorkspaceTests
     }
 
     [Fact]
-    public void BothSideProfilesAndPassiveObservationRailRemainInCentralPane()
+    public void NineModelArtworkAndPassiveObservationRailRemainInCentralPane()
     {
         var doc = Layout();
         var car = Named(doc, "EcuWorkbenchVehiclePane");
-        foreach (var name in new[] { "EcuP2SideProfile", "EcuP3SideProfile",
-            "EcuVehicleModel", "EcuObservationRail", "EcuObservationRailSummary" })
+        foreach (var name in new[] { "EcuVehicleArtworkAtlas", "EcuVehicleModel",
+            "EcuObservationRail", "EcuObservationRailSummary" })
             Assert.Contains(car, Named(doc, name).Ancestors());
-        Assert.Equal("Collapsed", (string?)Named(doc, "EcuP3SideProfile").Attribute("Visibility"));
+        Assert.Equal(9, Named(doc, "EcuVehicleModel").Elements().Count());
+        Assert.Contains("RectangleGeometry", Named(doc, "EcuVehicleArtboard").ToString());
         Assert.Contains("не позиции ECU", car.ToString());
         Assert.Contains("не указывает физические позиции ECU", car.ToString());
     }
@@ -166,7 +167,16 @@ public sealed class AuroraEcuThreePaneWorkspaceTests
         var source = Source("src/Dvinholm.App/MainWindow.xaml.cs");
         Assert.Contains("!ReferenceEquals(_ecus[index], row)", source);
         Assert.Contains("UdsRequestId.Text = string.Empty;", source);
-        Assert.Contains("UdsPassiveEcuListPresentation.SelectionDetails(row.Candidate)", source);
+        // The actual selection detail is projected in the selected locale
+        // while the inferred TX address stays blank until user verification.
+        var start = source.IndexOf("private void ApplyEcuSelection(", StringComparison.Ordinal);
+        var end = source.IndexOf("private void SetUdsEnabled(", start, StringComparison.Ordinal);
+        Assert.True(start >= 0 && end > start);
+        var selection = source[start..end];
+        Assert.Contains("UdsPassiveEcuListPresentation.SelectionDetails(", selection);
+        Assert.Contains("row.Candidate, _unifiedEnglish)", selection);
+        Assert.Contains("UdsRequestId.Text = string.Empty;", selection);
+        Assert.DoesNotContain("PassThruWriteMsgs(", selection);
         Assert.Contains("ShowAuroraEcuObservationRail(found, complete)", source);
     }
 }

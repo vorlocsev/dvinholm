@@ -8,6 +8,9 @@ namespace Dvinholm.App;
 internal static class J2534ConnectionPresentation
 {
     internal const string DisconnectedDetails = "J2534 adapter details: disconnected.";
+
+    internal static string DisconnectedDetailsForLanguage(bool english) =>
+        english ? DisconnectedDetails : "Сведения об адаптере J2534: нет подключения.";
     internal const string ConnectedActivity =
         "Connected to J2534 CAN. Driver-reported details are in the local adapter workspace.";
     internal const string ReadErrorActivity =
@@ -15,8 +18,25 @@ internal static class J2534ConnectionPresentation
 
     internal static string LocalDetails(
         J2534Native.AdapterVersionInfo? version,
-        J2534Native.AdapterCapabilities? capabilities)
+        J2534Native.AdapterCapabilities? capabilities,
+        bool english = true)
     {
+        if (!english)
+        {
+            // Sanitize vendor-supplied values exactly as in the English report.
+            var versionRu = version is null
+                ? "версия не предоставлена"
+                : "API " + Clean(version.Api, english: false) +
+                  " · DLL " + Clean(version.Dll, english: false) +
+                  " · FW " + Clean(version.Firmware, english: false);
+            var capabilitiesRu = capabilities is null
+                ? "возможности не предоставлены"
+                : "Аппаратные фильтры " + (capabilities.HardwareCanFilters ? "доступны" : "недоступны") +
+                  " · запрос версии " + (capabilities.VersionQuery ? "доступен" : "недоступен");
+            return "Данные драйвера (не проверены; только локально): " +
+                   versionRu + " · " + capabilitiesRu;
+        }
+
         var versionText = version is null
             ? "version not reported"
             : "API " + Clean(version.Api) +
@@ -32,16 +52,16 @@ internal static class J2534ConnectionPresentation
                versionText + " · " + capabilityText;
     }
 
-    private static string Clean(string? value)
+    private static string Clean(string? value, bool english = true)
     {
         if (string.IsNullOrWhiteSpace(value))
-            return "not supplied";
+            return english ? "not supplied" : "не предоставлено";
 
         // Display only: redaction is not authorization to copy this metadata to
         // public activity or persist it in a report.
         var sanitized = J2534Native.SanitizeDriverDiagnostic(value);
         return string.IsNullOrWhiteSpace(sanitized)
-            ? "not supplied"
+            ? (english ? "not supplied" : "не предоставлено")
             : sanitized.Length > 80 ? sanitized[..80] + "…" : sanitized;
     }
 }

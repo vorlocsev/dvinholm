@@ -96,12 +96,20 @@ public sealed class J2534ConnectionPresentationTests
     public void RealUiRoutesReadAndConnectionActivityThroughTrustedTextAndResetsMetadata()
     {
         var source = MainWindowSource();
-        var readEventStart = source.IndexOf("_session.ReadError +=", StringComparison.Ordinal);
-        var readEventEnd = source.IndexOf("Closed += ", readEventStart, StringComparison.Ordinal);
-        Assert.True(readEventStart >= 0 && readEventEnd > readEventStart);
+        var readEventStart = source.IndexOf("_session.ReadErrorEpoch += errorEpoch =>", StringComparison.Ordinal);
+        Assert.True(readEventStart >= 0, "WinUI must use the originating CAN-bus error epoch.");
+        var readEventEnd = source.IndexOf("        };", readEventStart, StringComparison.Ordinal);
+        Assert.True(readEventEnd > readEventStart);
         var readEvent = source[readEventStart..readEventEnd];
-        Assert.Contains("if (!_closing && _connected)", readEvent);
-        Assert.Contains("SetStatus(J2534ConnectionPresentation.ReadErrorActivity);", readEvent);
+        var guard = readEvent.IndexOf(
+            "if (_closing || _session.ConnectionEpoch != errorEpoch)", StringComparison.Ordinal);
+        var clear = readEvent.IndexOf("ClearDiagnosticReadResult();", StringComparison.Ordinal);
+        var activity = readEvent.IndexOf(
+            "SetStatus(J2534ConnectionPresentation.ReadErrorActivity);", StringComparison.Ordinal);
+        Assert.Contains("DispatcherQueue.TryEnqueue(", readEvent);
+        Assert.True(guard > 0 && clear > guard && activity > clear,
+            "A delayed error cannot clear new-connection results or publish stale Aurora activity.");
+        Assert.Contains("if (_connected)", readEvent);
         Assert.DoesNotContain("ex.Message", readEvent);
         Assert.DoesNotContain("SanitizeDriverDiagnostic", readEvent);
 
@@ -112,7 +120,10 @@ public sealed class J2534ConnectionPresentationTests
         Assert.Contains("J2534ConnectionPresentation.LocalDetails(", connect);
         Assert.Contains("SetStatus(J2534ConnectionPresentation.ConnectedActivity);", connect);
         Assert.True(connect.Split(
-            "AdapterMetadataText.Text = J2534ConnectionPresentation.DisconnectedDetails;").Length >= 3);
+            "J2534ConnectionPresentation.DisconnectedDetailsForLanguage(_unifiedEnglish);").Length >= 3);
+        Assert.Contains("_adapterMetadataConnected = false;", connect);
+        Assert.Contains("_adapterMetadataConnected = true;", connect);
+        Assert.Contains("_session.AdapterVersion, _session.AdapterCapabilities, _unifiedEnglish", connect);
         Assert.DoesNotContain("versionText", connect);
         Assert.DoesNotContain("capabilityText", connect);
         Assert.DoesNotContain("SetStatus(\"Connected · J2534 · CAN · \"", connect);

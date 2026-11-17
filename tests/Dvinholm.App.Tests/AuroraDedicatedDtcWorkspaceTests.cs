@@ -45,16 +45,27 @@ public sealed class AuroraDedicatedDtcWorkspaceTests
     }
 
     [Fact]
-    public void SidebarHasDedicatedDtcRouteAndCompactIconLabel()
+    public void DedicatedFaultPageIsReachableFromApprovedDiagnosticsWorkspace()
     {
         var doc = Layout();
         var sidebar = Named(doc, "SidebarNavPanel");
-        var button = Assert.Single(sidebar.Elements(), e => (string?)e.Attribute("Tag") == "DtcFaults");
-        Assert.Equal("WorkspaceNavigate_Click", (string?)button.Attribute("Click"));
-        Assert.Equal("Ошибки / DTC", (string?)button.Attribute("AutomationProperties.Name"));
-        Assert.Equal("Ошибки / DTC", (string?)button.Attribute("ToolTipService.ToolTip"));
-        Assert.Contains(Named(doc, "ShellNavDtcLabel"), button.Descendants());
-        Assert.Contains("ShellNavDtcLabel.Visibility", doc.ToString());
+        Assert.DoesNotContain(sidebar.Elements(),
+            e => (string?)e.Attribute("Tag") == "DtcFaults");
+        var diagnosticNav = Assert.Single(sidebar.Elements(),
+            e => (string?)e.Attribute("Tag") == "DiagnosticsWorkspace");
+        Assert.Contains(Named(doc, "ShellNavDiagnosticsLabel"), diagnosticNav.Descendants());
+
+        var link = Named(doc, "DiagnosticsFaultsNavigateButton");
+        Assert.Contains(Named(doc, "DiagnosticsPage"), link.Ancestors());
+        Assert.Equal("DtcFaults", (string?)link.Attribute("Tag"));
+        Assert.Equal("WorkspaceNavigate_Click", (string?)link.Attribute("Click"));
+        Assert.Equal("Ошибки (DTC)", (string?)link.Attribute("AutomationProperties.Name"));
+        Assert.Equal("Ошибки (DTC)", (string?)link.Attribute("Content"));
+        Assert.DoesNotContain("ReadDtc_Click", link.ToString());
+
+        var locale = Source("src/Dvinholm.App/MainWindow.AuroraScreenLocalization.cs");
+        Assert.Contains("DiagnosticsFaultsNavigateButton.Content = L(", locale);
+        Assert.Contains("AutomationProperties.SetName(DiagnosticsFaultsNavigateButton,", locale);
     }
 
     [Fact]
@@ -129,5 +140,22 @@ public sealed class AuroraDedicatedDtcWorkspaceTests
         Assert.DoesNotContain("_session.Bus", navigation);
         Assert.Contains("ReadDtcButton.IsEnabled = ready && TryGetSelectedDtcStatusMask(out _);", source);
         Assert.Contains("client.ReadDtcResultByStatusMask(statusMask, token)", source);
+    }
+
+    [Fact]
+    public void NestedFaultWorkspaceRetainsDiagnosticsSidebarSelectionOnly()
+    {
+        var source = Source("src/Dvinholm.App/MainWindow.xaml.cs");
+        var begin = source.IndexOf("private void SelectWorkspaceNavigation(", StringComparison.Ordinal);
+        var end = source.IndexOf("private void ShowDashboardWorkspace(", begin, StringComparison.Ordinal);
+        Assert.True(begin >= 0 && end > begin);
+        var selector = source[begin..end];
+        Assert.Contains("destination == AuroraDestination.DtcFaults", selector);
+        Assert.Contains("target == AuroraDestination.DiagnosticsWorkspace", selector);
+        Assert.Contains("target == destination", selector);
+        Assert.Contains("!_unifiedUpdatesActive", selector);
+        Assert.DoesNotContain("ReadDtc_Click(", selector);
+        Assert.DoesNotContain("PassThru", selector);
+        Assert.DoesNotContain("SendAsync(", selector);
     }
 }

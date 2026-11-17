@@ -22,6 +22,18 @@ internal static class CemPinWindowsProtection
     [DllImport("kernel32.dll")]
     private static extern IntPtr LocalFree(IntPtr memory);
 
+    /// <summary>
+    /// Protect the sole writable plaintext payload, then erase that buffer
+    /// immediately. No caller may retain a usable copy after this returns.
+    /// The erasure runs even if native DPAPI reports an error.
+    /// </summary>
+    internal static byte[] ProtectAndWipe(byte[] plaintext, Guid recordId)
+    {
+        ArgumentNullException.ThrowIfNull(plaintext);
+        try { return Transform(plaintext, recordId, protect: true); }
+        finally { CryptographicOperations.ZeroMemory(plaintext); }
+    }
+
     internal static unsafe byte[] Transform(byte[] input, Guid recordId, bool protect)
     {
         var entropy = new byte[48];
@@ -41,8 +53,18 @@ internal static class CemPinWindowsProtection
                 if (!ok || output.Data == IntPtr.Zero || output.Length is <= 0 or > 8192)
                     throw new CryptographicException("PIN record protection is unavailable.");
                 var result = new byte[output.Length];
-                Marshal.Copy(output.Data, result, 0, result.Length);
-                return result;
+                try
+                {
+                    Marshal.Copy(output.Data, result, 0, result.Length);
+                    return result;
+                }
+                catch
+                {
+                    // A partial native-to-managed copy must never abandon
+                    // sensitive bytes in an unreferenced managed array.
+                    CryptographicOperations.ZeroMemory(result);
+                    throw;
+                }
             }
         }
         finally
@@ -50,7 +72,11 @@ internal static class CemPinWindowsProtection
             CryptographicOperations.ZeroMemory(entropy);
             if (output.Data != IntPtr.Zero)
             {
-                if (output.Length is > 0 and <= 8192)
+                // DPAPI owns this allocation and reports its actual length.
+                // Even a result rejected as oversized may contain decrypted
+                // PIN material. Never skip wiping simply because validation
+                // rejected the length; then free the native DPAPI allocation.
+                if (output.Length > 0)
                     CryptographicOperations.ZeroMemory(new Span<byte>((void*)output.Data, output.Length));
                 LocalFree(output.Data);
             }

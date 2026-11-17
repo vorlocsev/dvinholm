@@ -13,7 +13,7 @@ public sealed partial class MainWindow
         if (System.Globalization.CultureInfo.CurrentUICulture.TwoLetterISOLanguageName != "ru") return;
         foreach (var (control, label) in new (Control, string)[]
         {
-            (DllPath, "J2534 DLL · 32 бита"), (J2534Devices, "Установленные адаптеры"),
+            (DllPath, Environment.Is64BitProcess ? "J2534 DLL · 64 бита" : "J2534 DLL · 32 бита"), (J2534Devices, "Установленные адаптеры"),
             (BaudRate, "Скорость CAN"), (UdsRequestId, "Адрес запроса · TX"),
             (UdsResponseId, "Адрес ответа · RX"), (CanIdFormat, "Формат CAN ID"),
             (UdsDid, "Параметр DID · hex"), (DtcStatusMaskSelector, "Статус неисправности"),

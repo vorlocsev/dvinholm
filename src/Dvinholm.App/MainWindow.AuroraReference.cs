@@ -1,6 +1,9 @@
 using System.Collections.ObjectModel;
 using Microsoft.UI.Xaml;
 using Microsoft.UI.Xaml.Controls;
+using Microsoft.UI.Xaml.Media;
+using Microsoft.UI.Xaml.Media.Imaging;
+using Microsoft.UI.Xaml.Automation;
 
 namespace Dvinholm.App;
 
@@ -8,16 +11,18 @@ namespace Dvinholm.App;
 /// Display projection of source-attributed P2 configuration research. Unknown
 /// hardware mapping and unread vehicle values never become writable defaults.
 /// </summary>
-internal sealed record AuroraCemConfigRow(VolvoP2CemConfigOptionDefinition Option)
+internal sealed record AuroraCemConfigRow(VolvoP2CemConfigOptionDefinition Option, bool English)
 {
     public string Code => Option.CanonicalId;
-    public string Name => Option.DisplayName;
-    public string Current => "Не прочитано";
+    public string Name => AuroraCemCatalogLocalization.OptionLabel(Option, English);
+    public string Initial => English ? "No backup" : "Нет копии";
+    public string Current => English ? "Not read" : "Не прочитано";
     public string Proposed => "—";
     public string Source => Option.Provenance switch
     {
-        VolvoP2CemOptionProvenance.VolvoPublishedCemServiceMenu => "Volvo · меню",
-        _ => "Сторонний источник"
+        VolvoP2CemOptionProvenance.VolvoPublishedCemServiceMenu =>
+            English ? "Volvo service menu" : "Volvo · меню",
+        _ => English ? "Third-party advertisement" : "Сторонний источник"
     };
 }
 
@@ -37,13 +42,7 @@ public sealed partial class MainWindow
 
         _cemConfigReferenceReady = false;
         CemConfigResults.ItemsSource = _cemConfigRows;
-        var categories = new[] { "Все категории" }
-            .Concat(VolvoP2CemConfigOptionManifest.Entries
-                .Select(row => row.Category)
-                .Distinct(StringComparer.Ordinal)
-                .OrderBy(x => x, StringComparer.CurrentCulture))
-            .ToArray();
-        CemConfigCategory.ItemsSource = categories;
+        CemConfigCategory.ItemsSource = AuroraCemCatalogLocalization.Categories(_unifiedEnglish);
         CemConfigCategory.SelectedIndex = 0;
         _cemConfigReferenceReady = true;
         RefreshAuroraConfigReference();
@@ -54,32 +53,169 @@ public sealed partial class MainWindow
         if (_cemConfigReferenceReady) RefreshAuroraConfigReference();
     }
 
+    private void CemConfigEvidenceTier_SelectionChanged(object sender, SelectionChangedEventArgs e)
+    {
+        if (_cemConfigReferenceReady) RefreshAuroraConfigReference();
+    }
+
     private void CemConfigSearch_TextChanged(object sender, TextChangedEventArgs e)
     {
         if (_cemConfigReferenceReady) RefreshAuroraConfigReference();
     }
 
+    private void ApplyAuroraCemConfigLocalization()
+    {
+        CemConfigCategory.Header = L("Группа", "Category");
+        CemConfigEvidenceTier.Header = L("Источник", "Evidence source");
+        CemConfigSearch.Header = L("Найти параметр", "Search research labels");
+        CemConfigSearch.PlaceholderText = L("Код или название", "Code or name");
+
+        // Category keys remain immutable regardless of displayed language.
+        // Suppress SelectionChanged while repopulating, then restore the
+        // canonical selection and previous research-row ID.
+        var selectedCategory = (CemConfigCategory.SelectedItem as
+            AuroraCemCategoryChoice)?.CanonicalCategory;
+        var wasReady = _cemConfigReferenceReady;
+        _cemConfigReferenceReady = false;
+        try
+        {
+            var categories = AuroraCemCatalogLocalization.Categories(_unifiedEnglish);
+            CemConfigCategory.ItemsSource = categories;
+            var index = categories.ToList().FindIndex(choice =>
+                string.Equals(choice.CanonicalCategory, selectedCategory,
+                    StringComparison.Ordinal));
+            CemConfigCategory.SelectedIndex = index < 0 ? 0 : index;
+        }
+        finally
+        {
+            _cemConfigReferenceReady = wasReady;
+        }
+
+        CemConfigPageTitle.Text = L("Конфигурация CEM", "CEM configuration");
+        CemConfigPageIntro.Text = L(
+            "Каталог Volvo P2 · офлайн. Выбор пункта показывает источник, но не читает или меняет автомобиль.",
+            "Offline Volvo P2 catalog. Selecting a label shows its source, not a vehicle read or configuration edit.");
+        CemConfigCategoriesTitle.Text = L("Категории", "Categories");
+        CemConfigFilterSafetyNote.Text = L(
+            "Данные получены из локального каталога источников. Совместимость не подтверждена.",
+            "Only local research source labels are shown. Vehicle compatibility is unverified.");
+        CemConfigResultsTitle.Text = L("Параметры и значения", "Research labels and values");
+        CemConfigListParameterHeader.Text = L("Параметр (ID / название)",
+            "Research label (ID / name)");
+        CemConfigListInitialHeader.Text = L("Исходное", "Original");
+        CemConfigListCurrentHeader.Text = L("Текущее", "Current");
+        CemConfigListProposedHeader.Text = L("Новое", "New");
+        CemConfigActionsHeading.Text = L("Действия с конфигурацией", "Configuration actions");
+        CemConfigDetailHeading.Text = L("Описание", "Details");
+        CemConfigReadOnlyNotice.Text = L(
+            "Чтение, изменение и запись CEM пока заблокированы. Никаких реальных значений, адресов или прав на запись этот каталог не подтверждает.",
+            "CEM reading, editing and writing remain blocked. No real values, addresses or write permissions are verified.");
+        P2ConfigCatalogButton.Content = L("Источники (offline)", "Sources (offline)");
+        CemConfigResearchJsonButton.Content = L(
+            "Локальный JSON P2/P3 (офлайн)", "Local P2/P3 JSON (offline)");
+        ToolTipService.SetToolTip(CemConfigResearchJsonButton, L(
+            "Только выбранные исследовательские записи и локальные сырые байты. Без ECU и записи.",
+            "Selected research claims and local raw bytes only. No ECU access or writing."));
+        CemConfigReadButton.Content = L("Прочитать", "Read CEM");
+        CemConfigBackupButton.Content = L("Резервная копия", "Backup");
+        CemConfigCompareButton.Content = L("Сравнить", "Compare");
+        CemConfigPrepareButton.Content = L("Подготовить изменения", "Prepare changes");
+        CemConfigWriteButton.Content = L("Записать в CEM", "Write to CEM");
+        ToolTipService.SetToolTip(CemConfigReadButton, L(
+            "Чтение недоступно: нет проверенной операции чтения CEM.",
+            "Reading disabled: no verified CEM read operation."));
+        ToolTipService.SetToolTip(CemConfigWriteButton, L(
+            "Запись недоступна без проверки протокола, совместимости и восстановления.",
+            "Writing disabled pending protocol, compatibility and recovery validation."));
+        ToolTipService.SetToolTip(P2ConfigCatalogButton, L(
+            "Только локальные источники. Без CAN, PIN и записи CEM.",
+            "Offline sources only. No CAN, PIN or CEM write."));
+        ToolTipService.SetToolTip(CemConfigBackupButton, L(
+            "Чтение и резервирование реальной конфигурации CEM не подтверждены.",
+            "Actual CEM configuration reading and backup are unverified."));
+        ToolTipService.SetToolTip(CemConfigCompareButton, L(
+            "Нет проверенного снимка для сравнения.",
+            "No verified configuration snapshot available for comparison."));
+        ToolTipService.SetToolTip(CemConfigPrepareButton, L(
+            "Непроверенные параметры нельзя записывать в блок.",
+            "Unverified parameters cannot be written to the ECU."));
+
+        // WinUI ComboBox may keep a cached SelectionBoxItem from the old
+        // language even when the selected ComboBoxItem.Content changes.
+        // Re-select the same canonical tier while suppressing filter events:
+        // language switching must not change the catalog or research ID.
+        var selectedEvidenceTier = CemConfigEvidenceTier.SelectedItem;
+        var evidenceReady = _cemConfigReferenceReady;
+        _cemConfigReferenceReady = false;
+        try
+        {
+            foreach (var item in CemConfigEvidenceTier.Items.OfType<ComboBoxItem>())
+                item.Content = (item.Tag as string) switch
+                {
+                    "Vendor" => L("Сторонние публикации", "Third-party publications"),
+                    "Volvo" => L("Меню Volvo", "Volvo service menus"),
+                    _ => L("Все источники", "All sources")
+                };
+            if (selectedEvidenceTier is ComboBoxItem)
+            {
+                CemConfigEvidenceTier.SelectedItem = null;
+                CemConfigEvidenceTier.SelectedItem = selectedEvidenceTier;
+            }
+        }
+        finally
+        {
+            _cemConfigReferenceReady = evidenceReady;
+        }
+
+        if (_cemConfigReferenceReady)
+            RefreshAuroraConfigReference();
+        else
+            ClearAuroraConfigDetail();
+    }
+
     private void RefreshAuroraConfigReference()
     {
         if (!_cemConfigReferenceReady) return;
-        var category = CemConfigCategory.SelectedItem as string;
-        var query = CemConfigSearch.Text?.Trim();
-        // Search input is local, bounded, and never sent to a vehicle or log.
-        if (query?.Length > 80) query = query[..80];
-        var matches = VolvoP2CemConfigOptionManifest.Entries
-            .Where(row => category is null || category == "Все категории" ||
-                string.Equals(row.Category, category, StringComparison.Ordinal))
-            .Where(row => string.IsNullOrWhiteSpace(query) ||
-                row.CanonicalId.Contains(query, StringComparison.OrdinalIgnoreCase) ||
-                row.DisplayName.Contains(query, StringComparison.CurrentCultureIgnoreCase))
-            .Take(128)
-            .Select(row => new AuroraCemConfigRow(row))
-            .ToArray();
+
+        var category = (CemConfigCategory.SelectedItem as
+            AuroraCemCategoryChoice)?.CanonicalCategory;
+        var query = CemConfigSearch.Text;
+        var tier = ((CemConfigEvidenceTier.SelectedItem as ComboBoxItem)?.Tag as string) switch
+        {
+            "Vendor" => VolvoP2CemCatalogEvidenceTier.VendorAdvertisement,
+            "Volvo" => VolvoP2CemCatalogEvidenceTier.VolvoPublishedServiceMenu,
+            _ => VolvoP2CemCatalogEvidenceTier.All
+        };
+        var previousSelection = (CemConfigResults.SelectedItem as AuroraCemConfigRow)?.Code;
+        IReadOnlyList<VolvoP2CemConfigOptionDefinition> matches;
+        try
+        {
+            matches = _unifiedEnglish
+                ? AuroraCemConfigReferenceFilter.Find(query, category, tier)
+                : AuroraCemConfigReferenceFilter.FindLocalized(query, category, tier);
+        }
+        catch (InvalidDataException)
+        {
+            // Reject invalid local search without leaking the input or using
+            // stale results from a previously valid filter.
+            matches = Array.Empty<VolvoP2CemConfigOptionDefinition>();
+        }
+
         _cemConfigRows.Clear();
-        foreach (var row in matches) _cemConfigRows.Add(row);
-        CemConfigCount.Text = $"{matches.Length} справочных пунктов · значения автомобиля не прочитаны";
-        CemConfigResults.SelectedIndex = -1;
-        ClearAuroraConfigDetail();
+        foreach (var row in matches)
+            _cemConfigRows.Add(new AuroraCemConfigRow(row, _unifiedEnglish));
+        CemConfigCount.Text = L(
+            $"{matches.Count} справочных пунктов · значения автомобиля не прочитаны",
+            $"{matches.Count} research labels · no vehicle values read");
+
+        var index = previousSelection is null ? -1 :
+            _cemConfigRows.ToList().FindIndex(row => string.Equals(
+                row.Code, previousSelection, StringComparison.Ordinal));
+        CemConfigResults.SelectedIndex = index;
+        if (index < 0)
+            ClearAuroraConfigDetail();
+        else
+            PresentAuroraConfigDetail(_cemConfigRows[index]);
     }
 
     private void CemConfigResults_SelectionChanged(object sender, SelectionChangedEventArgs e)
@@ -90,42 +226,142 @@ public sealed partial class MainWindow
             ClearAuroraConfigDetail();
             return;
         }
+        PresentAuroraConfigDetail(selected);
+    }
+
+    private void PresentAuroraConfigDetail(AuroraCemConfigRow selected)
+    {
         var row = selected.Option;
-        CemConfigDetailTitle.Text = row.DisplayName;
-        CemConfigDetailCode.Text = "Идентификатор исследования: " + row.CanonicalId;
-        CemConfigDetailSource.Text = "Источник: " + selected.Source;
-        CemConfigDetailEvidence.Text = "Ссылка на свидетельство: " + row.EvidenceReference;
-        CemConfigDetailValues.Text = "Текущее значение: неизвестно · допустимые значения: не подтверждены.";
+        CemConfigDetailTitle.Text = AuroraCemCatalogLocalization.OptionLabel(
+            row, _unifiedEnglish);
+        CemConfigDetailCode.Text = L("Идентификатор исследования: ", "Research ID: ") + row.CanonicalId;
+        CemConfigDetailSource.Text = L("Источник: ", "Source: ") + selected.Source;
+        CemConfigDetailEvidence.Text = L("Ссылка на свидетельство: ", "Evidence reference: ") +
+            row.EvidenceReference;
+        CemConfigDetailValues.Text = L(
+            "Текущее значение: неизвестно · допустимые значения: не подтверждены.",
+            "Current value: unknown · permitted values: unverified.");
         CemConfigDetailSafety.Text = row.AdditionalSafetyOrEquipmentReviewRequired
-            ? "Нужно отдельно проверить оборудование, безопасность и совместимость."
-            : "Физическое соответствие CEM и карта значений пока не подтверждены.";
+            ? L("Нужно отдельно проверить оборудование, безопасность и совместимость.",
+                "Hardware, safety and compatibility require independent review.")
+            : L("Физическое соответствие CEM и карта значений пока не подтверждены.",
+                "Physical CEM identity and value mapping remain unverified.");
     }
 
     private void ClearAuroraConfigDetail()
     {
         if (CemConfigDetailTitle is null) return;
-        CemConfigDetailTitle.Text = "Выберите параметр";
-        CemConfigDetailCode.Text = "Код и источник появятся после выбора.";
+        CemConfigDetailTitle.Text = L("Выберите параметр", "Select a research label");
+        CemConfigDetailCode.Text = L("Код и источник появятся после выбора.",
+            "Research code and source appear after selection.");
         CemConfigDetailSource.Text = string.Empty;
         CemConfigDetailEvidence.Text = string.Empty;
-        CemConfigDetailValues.Text = "Значения автомобиля не считывались.";
-        CemConfigDetailSafety.Text = "Изменение и запись недоступны до проверки протокола и резервного восстановления.";
+        CemConfigDetailValues.Text = L("Значения автомобиля не считывались.",
+            "No vehicle values have been read.");
+        CemConfigDetailSafety.Text = L(
+            "Изменение и запись недоступны до проверки протокола и резервного восстановления.",
+            "Editing and writing are disabled pending protocol and recovery validation.");
     }
 
     /// <summary>
-    /// Model artwork selector is display-only. Distinct side profiles reflect
-    /// a user's manual choice, not decoded vehicle identity or module position.
+    /// Display-only manual selection of one of nine offline reference renders.
+    /// This never changes connected vehicle, chosen ECU, CAN IDs or UDS state.
     /// </summary>
+    private AuroraVehicleArtworkPreferenceStore? _vehicleArtworkPreference;
+    private bool _vehicleArtworkPreferenceReady;
+
+    private void InitializeAuroraVehicleArtworkPreference()
+    {
+        _vehicleArtworkPreference = new AuroraVehicleArtworkPreferenceStore(
+            Path.Combine(DvinholmUserDataDirectory.Current,
+                AuroraVehicleArtworkPreferenceStore.FileName));
+        var savedId = _vehicleArtworkPreference.Load();
+        if (savedId is not null)
+        {
+            var savedOption = EcuVehicleModel.Items.OfType<ComboBoxItem>()
+                .FirstOrDefault(item => string.Equals(item.Tag as string,
+                    savedId, StringComparison.Ordinal));
+            if (savedOption is not null)
+                EcuVehicleModel.SelectedItem = savedOption;
+        }
+        _vehicleArtworkPreferenceReady = true;
+    }
+
     private void EcuVehicleModel_SelectionChanged(object sender, SelectionChangedEventArgs e)
     {
-        if (EcuP2SideProfile is null || EcuP3SideProfile is null || EcuDiagramCaption is null)
+        RefreshAuroraVehicleArtwork();
+        // Keep manual artwork preference independent of the connected adapter,
+        // VIN, CAN, diagnostic results and RU/EN presentation.
+        if (!_vehicleArtworkPreferenceReady || _vehicleArtworkPreference is null)
             return;
-        var p3 = EcuVehicleModel.SelectedIndex == 1;
-        EcuP2SideProfile.Visibility = p3 ? Visibility.Collapsed : Visibility.Visible;
-        EcuP3SideProfile.Visibility = p3 ? Visibility.Visible : Visibility.Collapsed;
-        EcuDiagramCaption.Text = p3
-            ? "XC70 P3 · условный боковой силуэт, выбран вручную"
-            : "XC90 P2 · условный боковой силуэт, выбран вручную";
-        // The selection cannot relabel passive RX IDs as specific ECUs.
+        if ((EcuVehicleModel.SelectedItem as ComboBoxItem)?.Tag is not string id)
+            return;
+        try
+        {
+            _vehicleArtworkPreference.Save(id);
+        }
+        catch (IOException) { /* Display selection still works if settings are read-only. */ }
+        catch (UnauthorizedAccessException) { /* Never fail a diagnostic UI for artwork. */ }
+    }
+
+    // ImageOpened / ImageFailed are emitted by the real WinUI decoder,
+    // not by model selection. UIA screenshot capture must fail closed when the
+    // selected JPG is unavailable even though its manual model caption is valid.
+    private bool _auroraVehicleArtworkLoaded;
+    private string? _auroraSelectedVehicleArtworkId;
+
+    private void EcuVehicleArtworkAtlas_ImageOpened(object sender, RoutedEventArgs e)
+    {
+        _auroraVehicleArtworkLoaded = true;
+        if (sender is Image image) image.Opacity = 1;
+        RefreshAuroraVehicleArtworkLoadState();
+    }
+
+    private void EcuVehicleArtworkAtlas_ImageFailed(object sender, ExceptionRoutedEventArgs e)
+    {
+        _auroraVehicleArtworkLoaded = false;
+        // Preserve a live Image visual so Windows can retry on resource reload
+        // (for example after a display scale change); expose the fallback below.
+        if (sender is Image image) image.Opacity = 0;
+        RefreshAuroraVehicleArtworkLoadState();
+    }
+
+    private void RefreshAuroraVehicleArtworkLoadState()
+    {
+        if (EcuDiagramCaption is null) return;
+        AutomationProperties.SetHelpText(EcuDiagramCaption,
+            _auroraVehicleArtworkLoaded
+                ? "DvinholmVehicleAtlasLoaded"
+                : "DvinholmVehicleAtlasUnavailable");
+    }
+
+    private void RefreshAuroraVehicleArtwork()
+    {
+        if (EcuVehicleArtworkAtlas is null || EcuVehicleModel is null || EcuDiagramCaption is null)
+            return;
+        var id = (EcuVehicleModel.SelectedItem as ComboBoxItem)?.Tag as string;
+        var model = AuroraVehicleArtworkCatalog.Resolve(id);
+        // Changing RU/EN reprojects the caption but must not re-decode the
+        // same local JPG or briefly replace a verified image with its fallback.
+        // A real model change still invalidates decode evidence before loading.
+        if (!string.Equals(_auroraSelectedVehicleArtworkId, model.Id,
+                StringComparison.Ordinal))
+        {
+            _auroraSelectedVehicleArtworkId = model.Id;
+            _auroraVehicleArtworkLoaded = false;
+            EcuVehicleArtworkAtlas.Opacity = 0;
+            var nextUri = AuroraVehicleArtworkCatalog.ImageUri(model);
+            EcuVehicleArtworkAtlas.Source = new BitmapImage(
+                new Uri(nextUri, UriKind.Absolute));
+        }
+        EcuDiagramCaption.Text = L(
+            model.Label + " · справочный рендер, выбран вручную",
+            model.Label + " · reference render, selected manually");
+        AutomationProperties.SetName(EcuVehicleArtworkAtlas, L(
+            "Справочное изображение " + model.Label,
+            "Reference illustration of " + model.Label));
+        RefreshAuroraVehicleArtworkLoadState();
+        // The displayed bodywork is NEVER a decoded VIN, ECU location,
+        // service permission, request address or connected vehicle identity.
     }
 }

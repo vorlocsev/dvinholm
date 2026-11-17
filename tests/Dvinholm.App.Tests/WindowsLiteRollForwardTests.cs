@@ -113,8 +113,28 @@ public sealed class WindowsLiteRollForwardTests
                 ?? throw new InvalidOperationException("Lite roll-forward probe failed to start.");
             var stdout = process.StandardOutput.ReadToEndAsync();
             var stderr = process.StandardError.ReadToEndAsync();
-            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(60));
-            await process.WaitForExitAsync(timeout.Token);
+            // A busy Windows CI host can delay 32-bit PowerShell startup.
+            // Preserve a bounded timeout, and kill the entire synthetic child
+            // tree on timeout so xUnit never leaks a stuck probe.
+            using var timeout = new CancellationTokenSource(TimeSpan.FromSeconds(120));
+            try
+            {
+                await process.WaitForExitAsync(timeout.Token);
+            }
+            catch (OperationCanceledException) when (timeout.IsCancellationRequested)
+            {
+                try
+                {
+                    if (!process.HasExited)
+                        process.Kill(entireProcessTree: true);
+                    await process.WaitForExitAsync(
+                        new CancellationTokenSource(TimeSpan.FromSeconds(10)).Token);
+                }
+                catch (InvalidOperationException) { }
+                catch (OperationCanceledException) { }
+                throw new TimeoutException(
+                    "Lite prerequisite fixture process exceeded 120 seconds: " + scenario);
+            }
             var output = await stdout + await stderr;
             if (shouldPass)
             {

@@ -158,6 +158,69 @@ public sealed class CemPinAttemptCoordinatorTests
     }
 
     [Fact]
+    public async Task GuardInvalidatedBetweenPreflightAndDispatchNeverCallsProvider()
+    {
+        var provider = new FakeProvider(_ =>
+            Task.FromResult(CemPinProviderReceipt.FinishedWithoutPin));
+        var service = Synthetic(provider);
+        var checks = 0;
+        using var guard = new CemPinSessionGuard(() =>
+            Interlocked.Increment(ref checks) == 1);
+
+        using var result = await service.TryRunAsync(Context(), sessionGuard: guard);
+        Assert.Equal(CemPinAttemptStatus.SessionInvalidated, result.Status);
+        Assert.False(result.HasPin);
+        Assert.False(result.MayWriteEcu);
+        Assert.Equal(0, provider.Calls);
+        Assert.False(service.IsRunning);
+    }
+
+    [Fact]
+    public async Task CancellationDuringFinalGuardCheckPreventsProviderDispatch()
+    {
+        var provider = new FakeProvider(_ =>
+            Task.FromResult(CemPinProviderReceipt.FinishedWithoutPin));
+        var service = Synthetic(provider);
+        using var cancellation = new CancellationTokenSource();
+        var checks = 0;
+        using var guard = new CemPinSessionGuard(() =>
+        {
+            if (Interlocked.Increment(ref checks) == 2)
+                cancellation.Cancel();
+            return true;
+        });
+
+        using var result = await service.TryRunAsync(
+            Context(), cancellation.Token, guard);
+        Assert.Equal(CemPinAttemptStatus.Cancelled, result.Status);
+        Assert.False(result.HasPin);
+        Assert.Equal(0, provider.Calls);
+        Assert.False(service.IsRunning);
+    }
+
+    [Fact]
+    public async Task PrivateContextExceptionAtDispatchFailsClosedWithoutProviderCall()
+    {
+        const string privateData = "SYNTHETIC-PRIVATE-ECU-IDENTIFIER";
+        var provider = new FakeProvider(_ =>
+            Task.FromResult(CemPinProviderReceipt.FinishedWithoutPin));
+        var service = Synthetic(provider);
+        var checks = 0;
+        using var guard = new CemPinSessionGuard(() =>
+        {
+            if (Interlocked.Increment(ref checks) == 2)
+                throw new InvalidOperationException(privateData);
+            return true;
+        });
+
+        using var result = await service.TryRunAsync(Context(), sessionGuard: guard);
+        Assert.Equal(CemPinAttemptStatus.SessionInvalidated, result.Status);
+        Assert.DoesNotContain(privateData, result.ToString());
+        Assert.Equal(0, provider.Calls);
+        Assert.False(service.IsRunning);
+    }
+
+    [Fact]
     public async Task ProviderReceiptIsMetadataOnlyAndCannotClaimOrExposePin()
     {
         foreach (var receipt in Enum.GetValues<CemPinProviderReceipt>())

@@ -9,6 +9,8 @@ internal sealed class CemPinSessionGuard : IDisposable
 {
     private readonly Func<bool> _isCurrent;
     private J2534Session? _session;
+    private CanBus? _capturedBus;
+    private long _capturedEpoch;
     private int _invalidated;
 
     // Synthetic test seam; production captures the existing J2534 session.
@@ -22,25 +24,41 @@ internal sealed class CemPinSessionGuard : IDisposable
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(ecuContext);
         ArgumentNullException.ThrowIfNull(currentEcuContext);
-        // Capture once. Reconnecting must never revive an old lease.
-        CanBus? bus;
-        try { bus = session.IsConnected ? session.Bus : null; }
-        catch (InvalidOperationException) { bus = null; }
+        // Capture one coherent bus/epoch under the J2534 lifecycle gate.
+        // A concurrent reconnect cannot produce a mismatched lease.
+        var snapshot = session.CaptureConnectedBusSnapshot();
+        var bus = snapshot?.Bus;
+        var epoch = snapshot?.Epoch ?? -1L;
         var guard = new CemPinSessionGuard(() => ownerConsent && bus is { IsDisposed: false } &&
-            session.IsConnected && ReferenceEquals(session.Bus, bus) &&
+            session.IsConnected && session.ConnectionEpoch == epoch &&
+            ReferenceEquals(session.Bus, bus) &&
             ReferenceEquals(currentEcuContext(), ecuContext));
         guard._session = session;
-        session.ReadError += guard.OnReadError;
+        guard._capturedBus = bus;
+        guard._capturedEpoch = epoch;
+        session.ReadErrorEpoch += guard.OnReadError;
         return guard;
     }
 
-    private void OnReadError(Exception _) => Interlocked.Exchange(ref _invalidated, 1);
+    private void OnReadError(long originatingEpoch)
+    {
+        // A late callback from a previous or later CAN bus must not poison
+        // this lease or a different J2534 connection.
+        if (originatingEpoch != _capturedEpoch) return;
+        Interlocked.Exchange(ref _invalidated, 1);
+        // No check-then-fault on session.Bus: reconnect could complete between
+        // the check and a global fault flag. Stamping the originating epoch is
+        // lock-free, safe on the native RX worker, and cannot poison a new bus.
+        if (_session is { } session && _capturedBus is not null)
+            session.InvalidateTransportForReadError(originatingEpoch);
+    }
 
     public void Dispose()
     {
         Interlocked.Exchange(ref _invalidated, 1);
         var session = Interlocked.Exchange(ref _session, null);
-        if (session is not null) session.ReadError -= OnReadError;
+        Interlocked.Exchange(ref _capturedBus, null);
+        if (session is not null) session.ReadErrorEpoch -= OnReadError;
     }
 
     internal bool IsCurrent

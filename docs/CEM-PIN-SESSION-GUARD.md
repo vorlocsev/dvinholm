@@ -9,8 +9,13 @@ PR #680; it does not introduce a second transport or an executable PIN method.
 its current `CanBus` and an opaque ECU-context object. Explicit owner consent
 is mandatory. A disconnected capture never becomes valid after connection;
 reconnection never revives the previous lease. Read errors permanently
-invalidate it. Disposing the lease unsubscribes its read-error handler and
-invalidates it. The caller owns the lease and must dispose it after completion.
+invalidate it **and fault the shared J2534 transport** with a non-blocking
+atomic flag. A fresh guard remains invalid until the explicit adapter
+Disconnect/Connect lifecycle completes; merely clearing a synthetic read
+error must not re-arm CEM requests. The read-error handler verifies that the
+current transport is the same CAN bus captured by the lease: a stale guard
+left subscribed across reconnect must not poison a newer, unrelated session. Disposing the lease unsubscribes its
+read-error handler and invalidates it. The caller owns the lease and must dispose it after completion.
 
 The current-context callback must be thread-safe and return a new opaque token
 whenever ECU selection, transport addressing, evidence or consent changes.
@@ -99,3 +104,368 @@ Future physical acceptance, only after the documented route is approved:
 8. Verify CAN Monitor/UDS and GUI recovery, then record exact build SHA and verdict.
 
 Until these checks pass, claim only partial implementation, not CEM PIN support.
+
+Queued WinUI receive-error callbacks also capture `J2534Session.ConnectionEpoch`.
+Every disconnect/replacement connection (including failed replacement) advances
+that epoch before native teardown. If a queued error belongs to an old epoch,
+its UI callback does not clear a newly connected session's diagnostic result.
+These guards are synthetic and static checks, not interactive WinUI acceptance.
+
+For read errors, J2534Session now stamps events with the generation captured
+when each CAN receive bus is created. Both the WinUI callback and CEM lease
+use this original bus generation, so a delayed old receive callback cannot
+be confused with an error from a newly connected bus.
+
+A CEM lease now acquires its CAN bus and originating read-error epoch in one
+`J2534Session.CaptureConnectedBusSnapshot()` operation under the connection
+lifecycle lock. Capture waits for an in-progress synthetic Connect (including
+a failed Open) rather than combining an older bus with a newer epoch. This
+snapshot does not start an ECU request or verify any physical CEM.
+
+A subsequent receive-fault race hardening increment makes native RX invalidation
+**epoch-scoped and lock-free**: a CEM guard stamps the originating CAN epoch,
+not a global fault flag after a non-atomic bus comparison. If reconnect finishes
+before a delayed old callback runs, that stamp cannot disable the new bus.
+Fault stamps only advance monotonically, so a still-later old callback cannot
+undo a newer bus's fault. An affected epoch remains blocked until explicit
+Disconnect/Connect; capture refuses a faulted bus. Three extra offline tests
+cover delayed old faults, out-of-order faults and reconnect recovery, with
+zero synthetic transmitted CAN frames. No physical CEM operation is initiated.
+
+The next offline increment distinguishes native adapter Read failures from
+non-native receive diagnostics. A native read returning an error or throwing
+now stamps its originating J2534 generation as faulted before any callback,
+even when no CEM lease is subscribed. A late old-bus fault still cannot poison
+a replacement connection. The session rejects fresh diagnostic snapshots until
+an explicit disconnect/reconnect. Malformed CAN messages and failures of an
+individual subscription filter remain nonfatal for the shared J2534 session
+when no CEM lease is active. An active CEM PIN guard still conservatively
+invalidates its own operation on any read-error notification. Added isolated
+tests cover failure without a lease and nonfatal decode notification; existing
+callback isolation and deferred teardown fixtures assert immediate fail-closed
+status. No physical adapter was exercised.
+
+A CI-discovered regression showed a short teardown window: after incrementing
+the connection epoch, the old read-fault stamp no longer matched while the old
+CAN bus had not yet been disposed. The session now marks the transport
+invalid before incrementing the epoch or waiting for the native read worker.
+The flag is cleared only after bus detach and adapter cleanup. A deterministic
+offline test holds an in-flight fake Read while Disconnect retires the epoch
+and asserts the old bus is never reported connected during teardown. No CEM
+request is sent; no physical J2534 hardware is used.
+
+The following offline lifecycle hardening closes a pre-dispatch window in
+CemPinAttemptCoordinator. The first CEM lease check precedes the deadline and
+cancellation-monitor setup; a reconnect, consent/context change or cancellation
+can occur during that preparation. A second lease check and caller-cancellation
+check now run immediately before invoking a PIN provider. The diagnostic gate
+still remains held until any already-started provider terminates; each provider
+must revalidate before every native request. Three synthetic regression tests
+verify stale context, cancellation during final validation and a private
+callback exception. Each denies provider invocation and PIN publication, with
+no J2534 access or ECU transmissions.
+
+The candidate itself now carries a revocable post-completion lease. The
+coordinator binds an accepted in-memory candidate to the caller's
+CancellationToken, its operation cancellation state and the original CEM
+session/ECU/consent guard. HasPin, Origin and TryReveal recheck the lease;
+failed checks dispose and cryptographically zero the owned six-byte buffer.
+A late caller cancellation or ECU/context change therefore cannot leave an
+old result available for subsequent reads after the single-flight coordinator
+releases its gate. Saved vault records remain a distinct, explicitly
+unverified offline workflow, not a live authorized CEM lease. This does not
+retroactively undo a reveal or completed encrypted save that occurred before
+revocation. Synthetic unit tests cover byte erasure/private callback errors;
+virtual-adapter tests cover candidate revocation after completion without
+physical ECU traffic.
+
+The encrypted PIN vault now revalidates the revocable candidate at several
+publication boundaries: before DPAPI encryption, after staging the temporary
+encrypted file, before its final atomic rename, and after that rename. A
+candidate revoked during staging therefore leaves no new .dpapi record or
+temporary file. If revocation is detected immediately after the final rename,
+Save attempts to remove only the new UUID-named record; existing records are
+never overwritten or removed. Failures remain sanitized. This is a
+best-effort check at filesystem boundaries, not a guarantee against a
+revocation that occurs after Save has successfully returned or a filesystem
+that refuses rollback deletion. No physical CEM or adapter tests are involved.
+
+After a crash or process termination, Save's finally block cannot remove
+its encrypted staging file. A subsequent authorized Save now performs a
+bounded, best-effort cleanup of stages older than 24 hours, limited to 256
+top-level .tmp entries and the exact <32-char GUID>.<32-char GUID>.tmp
+naming scheme. Fresh stages, unrelated files, reparse points and all final
+.dpapi records are preserved. File locks, permissions and enumeration errors
+do not prevent the new Save. The cleanup never decrypts or logs abandoned
+stage contents. Offline DPAPI tests cover a stale stage, a fresh stage,
+unrelated .tmp, and a failed write after maintenance. A crash during Save
+can still leave an encrypted temporary file until a later Save.
+
+Vault failure-containment checks now cover file locks, obsolete malformed
+staging names, and interrupted staging that throws UnauthorizedAccessException.
+A locked old temporary file must be preserved without stopping a valid Save;
+an unrelated/malformed temporary filename is never deleted; an access-denied
+writer must not leave a partial stage or damage an existing encrypted record.
+The best-effort stale-stage cleanup now also ignores SecurityException from
+enumeration or per-file metadata access. ReadBounded explicitly zeroes its
+partially read buffer before propagating any short-read or I/O exception.
+These are synthetic Windows filesystem/DPAPI tests only.
+
+Capacity of the encrypted PIN inventory is enforced at Save as well as at
+List. Existing inventory scans intentionally stop after 128 .dpapi entries;
+previously Save could still commit a 129th protected record that would become
+unreachable through the bounded UI listing. Save now refuses a new record if
+128 or more final .dpapi files already exist, regardless of whether those
+files can be decrypted. The limit is checked once before staging and again
+after staging, before publication, to catch sequential external additions.
+Neither invalid nor old records are deleted automatically. A concurrent
+external writer could still race the final check; this is not a global
+cross-process transaction. Offline Windows DPAPI regression tests cover a full
+vault, preserving existing records and restoring capacity, and a vault filled
+during staging. No real CEM or native J2534 device is contacted.
+
+Sequential capacity checks alone did not serialize concurrent Dvinholm
+instances: with 127 records two writers could each observe spare capacity
+and commit a 129th record. Save now holds a path-derived Windows Local named
+mutex across its complete lifecycle, from capacity validation through
+staging, final publication, failure rollback and temporary cleanup.
+The name is SHA-256 of the canonical case-folded vault directory; no PIN,
+VIN or other material is in the mutex name, and no lock file is created.
+A bounded 15-second wait fails closed on contention; an abandoned mutex is
+acquired for recovery, with normal vault validation still required. Mutex
+scope is the current Windows logon session: unrelated sessions and
+non-cooperating external filesystem writers can still race, so this is a
+serialization guarantee for cooperating same-session Dvinholm instances,
+not a global filesystem transaction. Offline tests verify that two stores
+cannot exceed the visible 128-record cap and different vault directories
+do not unnecessarily block one another. No physical J2534/CEM access.
+
+The WinUI PIN experiment previously called CemPinStore.Save on the UI
+dispatcher after provider completion. The new cooperating-instance mutex
+may wait up to 15 seconds; blocking the dispatcher would delay Cancel,
+window close and context edits. The UI now awaits the synchronous vault
+save via Task.Run while continuing to hold its diagnostic _udsGate and own
+the candidate/guard. After the worker completes it rechecks the window
+generation, caller cancellation, CEM lease and candidate availability
+before promoting the candidate into the revealable UI result. The finally
+path still releases the diagnostic gate only after storage I/O has ended.
+A static WinUI contract test verifies offload/revalidation/cleanup order.
+The encrypted store's own revocation checks remain authoritative. No
+physical ECU validation was conducted.
+
+A narrow WinUI publication gap remained after moving PIN vault I/O to a
+worker: Save could commit a new encrypted .dpapi entry, then the user could
+cancel or change the ECU context before the UI resumed. The operation now
+retains the exact CemPinSavedEntry ID returned by Save. If the window closed,
+diagnostic result generation changed, cancellation occurred, the CEM lease
+became stale or the candidate expired before publication, the UI attempts
+to roll back exactly that new record on a worker thread, while still holding
+the diagnostic gate. It never deletes unrelated or pre-existing entries.
+Rollback errors are sanitized and cannot restore an invalid result; a file
+held by an external process might nevertheless survive a failed delete.
+A static WinUI ordering check and a synthetic Windows DPAPI test verify
+the rollback path and protection of an existing record. No live CEM is used.
+
+The vault's path-scoped named mutex is now shared by Delete as well as Save.
+Deleting a record from another cooperating Dvinholm instance waits for the
+in-flight save's completion, and only then validates the target's path and
+removes the selected UUID record. The mutex acquisition is centralized so
+both operations have the same bounded 15-second fail-closed behavior, including
+abandoned-mutex recovery. The saved-PIN WinUI dialog now performs DPAPI Load
+and mutex-serialized Delete with Task.Run, without blocking the dispatcher;
+after each awaited action it rechecks window closing and diagnostic generation.
+A stale loaded secret is disposed by the existing finally block, never promoted
+to the revealable UI state. Synthetic tests verify cross-instance save/delete
+serialization and WinUI off-dispatcher ordering; no real CEM is contacted.
+
+The PIN vault's cross-process writer lock now responds to cancellation or
+revocation while contended. Save accepts an optional CancellationToken, and
+the mutex waits in <=50 ms slices within the existing absolute 15-second
+deadline, checking both the caller token and the candidate's live CEM lease.
+The WinUI CEM PIN handler passes its cancellation token into the worker
+rather than merely checking it after the save completes. Save also checks
+the token after encryption, maintenance, staging, validation and final
+publication; a cancellation detected after the rename still attempts to
+remove only that new record. Delete retains the same gate and timeout
+without an unrelated CEM cancellation dependency. Synthetic DPAPI tests
+cover cancellation during a contended wait and staging without publishing
+a second record. A blocked OS file operation cannot be forcefully aborted
+by these checks, and the final UI publication race continues to use the
+separate returned-record rollback. No physical CEM was contacted.
+
+Deletion now distinguishes a genuinely absent record from an existing object
+that cannot safely be deleted. File.Exists is insufficient for that decision:
+it can return false on access errors or for a directory occupying a .dpapi
+record path. Delete instead requests file attributes, treats only
+FileNotFoundException and DirectoryNotFoundException as idempotent absence,
+rejects directories and reparse points, and surfaces other failures as the
+same sanitized user-facing error. Corrupt but ordinary encrypted files remain
+explicitly deletable without modifying other vault records. Offline Windows
+regression tests cover a disguised record directory, corrupt record removal,
+and idempotence. No physical CEM or real adapter tests were performed.
+
+DPAPI sensitive memory cleanup has been hardened in CemPinWindowsProtection.
+On a failed Marshal.Copy, the destination managed buffer is now explicitly
+zeroed before the exception propagates. In the native finally block, every
+positive-length DPAPI output is wiped before LocalFree, including outputs
+rejected as larger than the 8192-byte record limit; the earlier condition
+skipped wiping rejected oversized outputs. The successful data layout,
+current-user protection, GUID-bound entropy and size limits are unchanged.
+Windows-only synthetic tests cover oversized DPAPI output rejection and
+record GUID entropy mismatch, with explicit disposal of test buffers.
+No physical CEM or external adapter was involved.
+
+CemPinWindowsProtection.ProtectAndWipe now encapsulates protection of the
+writable plaintext payload and guaranteed immediate zeroing of that same
+managed buffer, whether encryption succeeds or DPAPI rejects the result.
+CemPinStore.Save uses this helper, reducing plaintext residency across the
+encrypted staging-file write, vault capacity scans, and publication.
+Save's existing finally erasure remains as an additional defense. This
+does not change the current-user DPAPI blob, GUID entropy, file naming or
+on-disk format. Windows-only synthetic tests verify plaintext erasure on
+successful encryption and an oversized protected-output failure, including
+a valid same-GUID decrypt round trip. No vehicle or hardware tests.
+
+The confidential CemPinSecret.TryReveal callback is now fail-closed.
+Previously, an exception thrown by a WinUI text presenter or any other
+reveal callback escaped through the result, leaving the owned six-byte PIN
+available until its timer expired. The callback invocation is now guarded
+inside the existing secret ownership lock: on exception the owned buffer
+is immediately zeroed, the expiry timer is disposed, and TryReveal returns
+false without exposing callback exception details. A subsequent reveal
+cannot run. This applies both to live adapter-unattested candidates and
+separately restored (locally encrypted) records. Tests use synthetic
+callback exceptions and inspect owned buffer erasure and single-invocation
+semantics; no real ECU or user PIN is involved.
+
+Regression assertion integrity: CemPinSecret.TryReveal intentionally returns
+false rather than propagating private callback errors. Existing negative tests
+used Assert.Fail inside the callback and thus could no longer reliably
+distinguish an unexpected callback from correctly denied access. All eight
+identified negative callback checks in CemPinSecretTests, CemPinStoreTests and
+CemPinVaultHardeningTests now set an explicit invocation marker, assert that
+TryReveal returns false, and independently assert that the callback was never
+invoked. This is a test-only guard against false-positive confidential
+material disclosure checks.
+
+A further reveal-lifecycle race is now covered by CemPinSecret.TryReveal.
+A reveal callback can synchronously reenter Dispose (C# Monitor locks are
+reentrant), or can run until the monotonic expiry deadline is reached.
+Previously TryReveal returned true unconditionally after a nonthrowing
+callback even if secret ownership had already been cleared. It now repeats
+the monotonic expiry check after callback completion and reports success
+only while the owned buffer remains available. Synthetic tests cover
+reentrant disposal and an expiry clock advanced inside the callback;
+both ensure zeroed source bytes, false success and no subsequent callback.
+No live CEM or physical J2534 adapter is involved.
+
+Recursive reveal is now denied. CemPinSecret holds a Monitor lock while
+executing its disclosure callback; a callback on the same thread could
+previously reenter either CemPinSecret.TryReveal or
+CemPinAttemptResult.TryReveal and receive the same sensitive buffer again.
+An ownership-locked _revealing gate now refuses nested disclosure without
+calling the nested callback. The gate is reset in finally, including after
+callback exceptions or revocation; valid subsequent explicit reveals remain
+possible until expiry. Synthetic tests cover direct and result-mediated
+recursive calls and expiry during the outer callback. No real CEM traffic.
+
+Reveal callbacks no longer run while holding CemPinSecret's ownership lock.
+A stalled WinUI presenter previously prevented the 30-second expiry timer
+or another thread's Dispose from entering Clear, prolonging retention of the
+owned six-byte PIN. TryReveal now creates an ephemeral six-byte presentation
+copy under the lock, sets the recursive-reveal gate, then invokes the callback
+outside the lock. Clear synchronously zeroes both the owned buffer and any
+in-flight presentation copy on expiry/disposal. The callback's finally block
+zeroes the copy again and releases the recursive-reveal gate, including when
+the callback throws; post-callback expiry and ownership checks still reject a
+revoked PIN. Synthetic concurrent tests demonstrate that explicit Dispose
+and monotonic expiry can erase both buffers while a callback is paused and
+that a resumed callback cannot report success. An in-flight callback may see
+already-zeroed bytes after concurrent revocation; this intentionally fails
+closed. The callback cannot be forcibly interrupted by the secret owner.
+No physical CEM or J2534 hardware was exercised.
+
+The final timer disposal step is now also fail-closed: Clear first zeroes the
+owned PIN and any in-flight presentation buffer, then detaches the ITimer
+reference before attempting Dispose. A custom TimeProvider may return a
+timer whose Dispose throws; such an exception must not escape through UI or
+prevent future idempotent revocation. The timer error is sanitized. Two
+synthetic tests cover explicit secret disposal and monotonic expiry with a
+fault-injecting ITimer that throws during Dispose. Production System timers
+remain unchanged, and no CEM/driver access was performed.
+
+Saved-record deletion now requires a second explicit confirmation in the
+Development UI. The original vault dialog's secondary action merely opens
+an RU/EN deletion confirmation with Cancel as the default; no PIN material,
+VIN or ECU identity is displayed or queried. Only a confirmed primary
+action can reach the existing Task.Run-backed, cross-process-serialized
+Delete. The window and diagnostic generation are rechecked after the
+confirmation dialog before any file I/O. Static WinUI wiring tests verify
+the confirmation ordering, the default cancellation button, no secret
+reveal within the confirmation, and the retained off-dispatcher deletion.
+No physical CEM or J2534 hardware tests were performed.
+
+Saved-PIN inventory now exposes only the random GUID identifiers of unreadable
+DPAPI records whose filenames match Dvinholm's canonical record format.
+The original UnavailableCount remains comprehensive for malformed names and
+the bounded overflow marker. At most 128 candidate GUIDs are emitted; no
+PIN bytes, VIN, part number, filesystem paths or decrypted data are returned
+for unreadable records. Development's saved-record selector displays these
+as "Unavailable record N", with Load hidden disabled. The selected GUID can
+only be deleted after a second explicit confirmation. The warning explains
+that decryption failure does not prove corruption (the record might belong
+to another Windows user) and deletion is permanent. A bad filename or any
+record past the bounded scan is never offered for deletion. Both file deletion
+and valid-record loading remain off the WinUI dispatcher and require a current
+diagnostic generation after awaiting a dialog. Synthetic tests cover mixed
+readable/undecryptable/malformed records, chosen-ID-only deletion, inventory
+bounds and Development UI wiring. No real CEM hardware was accessed.
+
+A stale unavailable-record selection can no longer delete a record that
+becomes readable before the user confirms deletion. Development's UI now
+uses a separate DeleteUnavailable method for entries represented by an
+unreadable UUID, preserving ordinary Delete for user-selected readable
+records. Under the existing path-scoped writer mutex, DeleteUnavailable
+rechecks the canonical record path, rejects directories and reparse points,
+then attempts bounded DPAPI decoding and payload validation. If the record
+now parses correctly, deletion is refused with the usual sanitized error.
+Only a record that remains unreadable after this check can be removed,
+subject to the prior explicit confirmation. All decrypted temporary bytes
+are zeroed. Offline tests cover a repaired file between List and deletion,
+a still-corrupt file, idempotent absence and preservation of unrelated
+encrypted records. A hostile non-cooperating process can still race the OS
+between validation and File.Delete; this guard serializes cooperating
+Dvinholm writers, not arbitrary external processes. No physical CEM read.
+
+Encrypted PIN record names in the bounded inventory are now accepted for
+selection only when the entire filename exactly matches Dvinholm's lowercase
+canonical GUID-N plus ".dpapi" convention (ordinal comparison). Windows may
+enable per-directory case-sensitive filenames; simply parsing a GUID from an
+uppercase or otherwise noncanonical name and reconstructing a lowercase path
+could target a different file during a later Load/Delete. Such aliases are
+still counted in UnavailableCount, but are not loadable, not returned as
+actionable unavailable IDs, and cannot be selected for deletion in the UI.
+A synthetic Windows DPAPI test covers a noncanonical uppercase GUID alongside
+a valid protected record and checks no file is changed. The format of
+existing Dvinholm-created lowercase names remains unchanged.
+
+Unavailable-record deletion is now also bound to the exact encrypted file
+snapshot selected in Development's inventory. For a canonical GUID filename
+whose payload fails DPAPI/format validation, List() computes a SHA-256
+fingerprint of a bounded ciphertext buffer and retains it internally.
+Unreadable records that cannot be read and fingerprinted (including files
+over 8192 bytes, locked paths and reparse points) remain counted but cannot
+be selected for deletion. The confirmation UI never shows the fingerprint.
+
+DeleteUnavailable now requires that inventory fingerprint, acquires the
+same per-vault writer mutex, re-reads the bounded encrypted bytes, rejects
+any fingerprint mismatch and repeats decryption/format validation against
+that exact snapshot. A now-readable record remains protected. Only expected
+cryptographic or payload validation failures permit deleting unchanged,
+explicitly confirmed, unreadable ciphertext. All transient ciphertext,
+digest and plaintext buffers are zeroed. Tests cover unchanged deletion,
+repaired-file refusal, a different *still unreadable* replacement, refreshed
+inventory and oversized files. The path-based File.Delete still has a narrow
+non-cooperating external file-replacement race after validation; this step
+specifically prevents stale inventory-based accidental removal, not a full
+atomic handle-bound delete guarantee. No physical CEM was tested.

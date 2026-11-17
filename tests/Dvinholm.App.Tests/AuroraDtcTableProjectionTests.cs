@@ -44,8 +44,8 @@ public sealed class AuroraDtcTableProjectionTests
         Assert.Equal("0x010203", rows[0].Code);
         Assert.Equal("0x000001", rows[1].Code);
         Assert.All(rows, row => Assert.Equal(AuroraDtcTableProjection.MissingDescription, row.Description));
-        Assert.Contains("confirmed DTC", rows[0].Status);
-        Assert.Contains("test failed", rows[1].Status);
+        Assert.Contains("подтверждённый DTC", rows[0].Status);
+        Assert.Contains("тест не пройден", rows[1].Status);
     }
 
     [Fact]
@@ -54,10 +54,10 @@ public sealed class AuroraDtcTableProjectionTests
         var read = new UdsDtcReadResult(0x08, new[] { new UdsDtcRecord(0x123456, 0x09) });
         var row = Assert.Single(AuroraDtcTableProjection.Project(read));
         Assert.Contains("0x09", row.Status);
-        Assert.Contains("confirmed DTC", row.Status);
+        Assert.Contains("подтверждённый DTC", row.Status);
         Assert.Contains("неподдерживаемые биты 0x01", row.Status);
-        Assert.DoesNotContain("test failed", row.Status);
-        Assert.Contains("ECU-supported mask: 0x08", row.Details);
+        Assert.DoesNotContain("тест не пройден", row.Status);
+        Assert.Contains("Маска поддерживаемых ECU битов: 0x08", row.Details);
     }
 
     [Fact]
@@ -136,5 +136,49 @@ public sealed class AuroraDtcTableProjectionTests
         Assert.DoesNotContain("0x14", presenter);
         Assert.DoesNotContain("ClearDiagnosticInformation", presenter);
         Assert.DoesNotContain("ServiceId", presenter);
+    }
+
+    // Stage 79: the eight ISO 14229 status flags must display in the chosen
+    // language without changing raw ECU bytes, mask, code or evidence count.
+    // Source-only/pure projection: no vehicle, J2534 or real screenshot.
+    [Theory]
+    [InlineData(0x01, "тест не пройден", "test failed")]
+    [InlineData(0x02, "тест не пройден в текущем цикле", "failed this operation cycle")]
+    [InlineData(0x04, "ожидающий DTC", "pending DTC")]
+    [InlineData(0x08, "подтверждённый DTC", "confirmed DTC")]
+    [InlineData(0x10, "тест не завершён с последней очистки", "test not completed since last clear")]
+    [InlineData(0x20, "тест не пройден с последней очистки", "failed since last clear")]
+    [InlineData(0x40, "тест не завершён в текущем цикле", "test not completed this operation cycle")]
+    [InlineData(0x80, "запрошен индикатор неисправности", "warning indicator requested")]
+    public void RussianDtcStatusBitsUseLocalizedObservedEvidence(
+        byte status, string expectedRu, string expectedEn)
+    {
+        var read = new UdsDtcReadResult(0xFF, new[] {
+            new UdsDtcRecord(0x012345, status)
+        });
+        var ru = Assert.Single(AuroraDtcTableProjection.Project(read, english: false));
+        var en = Assert.Single(AuroraDtcTableProjection.Project(read, english: true));
+
+        Assert.Equal("0x012345", ru.Code);
+        Assert.Equal(ru.Code, en.Code);
+        Assert.Equal(AuroraDtcTableProjection.MissingDescription, ru.Description);
+        Assert.Equal(AuroraDtcTableProjection.MissingDescriptionEnglish, en.Description);
+        Assert.Contains($"0x{status:X2}:", ru.Status);
+        Assert.Contains($"0x{status:X2}:", en.Status);
+        Assert.Contains(expectedRu, ru.Status);
+        Assert.Contains(expectedEn, en.Status);
+        Assert.Contains(expectedRu, ru.Details);
+        Assert.Contains(expectedEn, en.Details);
+        Assert.Contains("Маска поддерживаемых ECU битов: 0xFF", ru.Details);
+        Assert.Contains("ECU-supported mask: 0xFF", en.Details);
+
+        // Presentation only. Exact flags remain ECU-provided, while DTC
+        // erasure and unknown OEM fault diagnoses are still unavailable.
+        var doc = Layout();
+        Assert.Equal("False", (string?)Named(doc, "DtcClearButton").Attribute("IsEnabled"));
+        Assert.Null(Named(doc, "DtcClearButton").Attribute("Click"));
+        var source = Source("src/Dvinholm.App/MainWindow.AuroraDtc.cs");
+        Assert.Contains("UdsDtcStatusFormatter.Format(supported, english)", source);
+        Assert.DoesNotContain("PassThruWriteMsgs(", source);
     }
 }

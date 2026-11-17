@@ -64,6 +64,124 @@ public sealed class CemPinSessionGuardTests
     }
 
     [Fact]
+    public async Task ReceiveFailureFaultsCemTransportUntilExplicitReconnect()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
+        using var session = new J2534Session(adapter);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        object oldContext = new();
+        using var oldGuard = CemPinSessionGuard.Capture(session,
+            oldContext, () => oldContext, ownerConsent: true);
+        Assert.True(oldGuard.IsCurrent);
+
+        adapter.FailReads = true;
+        var deadline = DateTime.UtcNow + TimeSpan.FromSeconds(5);
+        while (session.IsConnected && DateTime.UtcNow < deadline)
+            await Task.Delay(10);
+        Assert.False(session.IsConnected);
+        Assert.False(oldGuard.IsCurrent);
+
+        // Even if a buggy adapter stops reporting errors, neither the old
+        // guard nor a newly captured guard may use this faulted transport.
+        adapter.FailReads = false;
+        object prematureContext = new();
+        using var premature = CemPinSessionGuard.Capture(session,
+            prematureContext, () => prematureContext, ownerConsent: true);
+        Assert.False(premature.IsCurrent);
+        Assert.Equal(0, adapter.TransmittedFrames);
+
+        session.Disconnect();
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        Assert.False(oldGuard.IsCurrent);
+        Assert.False(premature.IsCurrent);
+        object recoveredContext = new();
+        using var recovered = CemPinSessionGuard.Capture(session,
+            recoveredContext, () => recoveredContext, ownerConsent: true);
+        Assert.True(recovered.IsCurrent);
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
+    [Fact]
+    public async Task StaleGuardCannotFaultAnUnrelatedReconnectedCanBus()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
+        using var session = new J2534Session(adapter);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        object firstContext = new();
+        using var firstGuard = CemPinSessionGuard.Capture(
+            session, firstContext, () => firstContext, ownerConsent: true);
+        Assert.True(firstGuard.IsCurrent);
+
+        session.Disconnect();
+        Assert.False(firstGuard.IsCurrent);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        Assert.True(session.IsConnected);
+        // Deliberately leave the stale guard subscribed. An RX error in this
+        // unrelated new connection is not evidence about the old bus lease.
+        var reported = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
+        void Observe(Exception _) => reported.TrySetResult();
+        session.ReadError += Observe;
+        try
+        {
+            adapter.FailReads = true;
+            await reported.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            adapter.FailReads = false;
+            Assert.False(firstGuard.IsCurrent);
+            // A native fault on the NEW bus closes that transport even though
+            // the only CEM guard belongs to the prior connection epoch.
+            Assert.False(session.IsConnected);
+            Assert.Equal(0, adapter.TransmittedFrames);
+        }
+        finally
+        {
+            adapter.FailReads = false;
+            session.ReadError -= Observe;
+        }
+
+        session.Disconnect();
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        object secondContext = new();
+        using var secondGuard = CemPinSessionGuard.Capture(
+            session, secondContext, () => secondContext, ownerConsent: true);
+        Assert.True(secondGuard.IsCurrent);
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
+    [Fact]
+    public async Task FreshGuardIgnoresStaleEpochAndOldLeaseIgnoresNewEpoch()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
+        using var session = new J2534Session(adapter);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        object first = new();
+        using var oldGuard = CemPinSessionGuard.Capture(session, first, () => first, true);
+        var oldEpoch = session.ConnectionEpoch;
+        session.Disconnect();
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        var freshEpoch = session.ConnectionEpoch;
+        Assert.NotEqual(oldEpoch, freshEpoch);
+        object second = new();
+        using var newGuard = CemPinSessionGuard.Capture(session, second, () => second, true);
+
+        // Synthetic delayed notifications, no native or vehicle communication.
+        var epochEvent = typeof(J2534Session).GetField("ReadErrorEpoch",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(epochEvent);
+        var callbacks = (Action<long>?)epochEvent.GetValue(session);
+        Assert.NotNull(callbacks);
+        callbacks(oldEpoch);
+        Assert.True(session.IsConnected);
+        Assert.True(newGuard.IsCurrent);
+        Assert.False(oldGuard.IsCurrent);
+        Assert.Equal(0, adapter.TransmittedFrames);
+
+        // A current-epoch error must fault the actual connected lease.
+        callbacks(freshEpoch);
+        Assert.False(session.IsConnected);
+        Assert.False(newGuard.IsCurrent);
+    }
+
+    [Fact]
     public async Task ChangedEcuContextDiscardsEvenAnImmediateSyntheticCompletion()
     {
         using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
@@ -205,5 +323,82 @@ public sealed class CemPinSessionGuardTests
                 service.TryRunAsync(Context(), sessionGuard: new(() => true), timeout: timeout));
         Assert.Equal(0, provider.Calls);
         Assert.False(service.IsRunning);
+    }
+
+    [Fact]
+    public void DelayedOldReadFaultCannotPoisonReconnectedSessionAfterLeaseCheck()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
+        using var session = new J2534Session(adapter);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        var oldEpoch = session.ConnectionEpoch;
+        object oldContext = new();
+        using var oldGuard = CemPinSessionGuard.Capture(session, oldContext,
+            () => oldContext, ownerConsent: true);
+        Assert.True(oldGuard.IsCurrent);
+
+        session.Disconnect();
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        object newContext = new();
+        using var newGuard = CemPinSessionGuard.Capture(session, newContext,
+            () => newContext, ownerConsent: true);
+        Assert.True(newGuard.IsCurrent);
+
+        // Models a receive callback paused immediately before faulting a bus.
+        // Calling the epoch-bound transition after reconnect must be harmless.
+        session.InvalidateTransportForReadError(oldEpoch);
+        Assert.True(session.IsConnected);
+        Assert.True(newGuard.IsCurrent);
+        Assert.False(oldGuard.IsCurrent);
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
+    [Fact]
+    public void OlderDelayedReadFaultCannotEraseNewerTransportFault()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
+        using var session = new J2534Session(adapter);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        var oldEpoch = session.ConnectionEpoch;
+        session.Disconnect();
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        var currentEpoch = session.ConnectionEpoch;
+        Assert.True(currentEpoch > oldEpoch);
+
+        session.InvalidateTransportForReadError(currentEpoch);
+        Assert.False(session.IsConnected);
+        session.InvalidateTransportForReadError(oldEpoch);
+        Assert.False(session.IsConnected);
+        object context = new();
+        using var denied = CemPinSessionGuard.Capture(session, context,
+            () => context, ownerConsent: true);
+        Assert.False(denied.IsCurrent);
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
+    [Fact]
+    public void EpochScopedReceiveFaultRequiresExplicitReconnectForFreshLease()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
+        using var session = new J2534Session(adapter);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        var faultedEpoch = session.ConnectionEpoch;
+        session.InvalidateTransportForReadError(faultedEpoch);
+
+        object context = new();
+        using var denied = CemPinSessionGuard.Capture(session, context,
+            () => context, ownerConsent: true);
+        Assert.False(session.IsConnected);
+        Assert.False(denied.IsCurrent);
+        Assert.Null(session.CaptureConnectedBusSnapshot());
+
+        session.Disconnect();
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        using var fresh = CemPinSessionGuard.Capture(session, context,
+            () => context, ownerConsent: true);
+        Assert.True(session.IsConnected);
+        Assert.True(fresh.IsCurrent);
+        Assert.False(denied.IsCurrent);
+        Assert.Equal(0, adapter.TransmittedFrames);
     }
 }

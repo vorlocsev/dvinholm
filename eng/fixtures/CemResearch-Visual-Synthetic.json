@@ -1,0 +1,33 @@
+{
+  "format": "dvinholm-cem-index-mapping-research",
+  "schemaVersion": 1,
+  "isUnverifiedResearch": true,
+  "isRestorableBackup": false,
+  "mayAccessEcu": false,
+  "claims": [
+    {
+      "dataFormat": "P2B9Fc",
+      "index1Based": 1,
+      "hardwarePartNumber": "00000000",
+      "softwareRevision": "SYNTHETIC-1",
+      "claimedMeaning": "SYNTHETIC ONLY: длинное тестовое описание для проверки переноса строк в интерфейсе CEM P2.",
+      "evidenceReference": "https://example.invalid/dvinholm/synthetic-p2-reference-with-deliberately-long-unbroken-words-for-wrapping-test-aaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa"
+    },
+    {
+      "dataFormat": "P2B9Fc",
+      "index1Based": 140,
+      "hardwarePartNumber": "00000000",
+      "softwareRevision": "SYNTHETIC-1",
+      "claimedMeaning": "SYNTHETIC ONLY: second P2 ordinal, not a Volvo option or authenticated vehicle configuration.",
+      "evidenceReference": "https://example.invalid/dvinholm/p2-last-ordinal-fake-reference"
+    },
+    {
+      "dataFormat": "P3F106",
+      "index1Based": 252,
+      "hardwarePartNumber": "00000000",
+      "softwareRevision": "SYNTHETIC-1",
+      "claimedMeaning": "SYNTHETIC ONLY: длинное описание последнего индекса P3. Никакой связи с реальным ECU.",
+      "evidenceReference": "https://example.invalid/dvinholm/synthetic-p3-reference-with-deliberately-long-unbroken-words-for-wrapping-test-bbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbbb"
+    }
+  ]
+}

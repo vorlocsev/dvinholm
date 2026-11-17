@@ -98,8 +98,9 @@ internal static class CemPartNumberReader
             if (!bus.Send(RequestId, Request, true, remaining, token, out _))
                 throw new InvalidOperationException("CEM part-number request transmission failed.");
 
-            uint? prefix = null;
-            uint prefixId = 0;
+            // The pure decoder is private to this read and cannot inherit a
+            // prefix from any prior attempt, cancelled session or CAN scan.
+            var decoder = new CemPartNumberFrameDecoder();
             while (elapsed.Elapsed < timeout)
             {
                 CheckSession();
@@ -109,28 +110,13 @@ internal static class CemPartNumberReader
                 if (remaining <= TimeSpan.Zero) break;
                 if (!rx.TryRead(TimeSpan.FromMilliseconds(Math.Min(50, remaining.TotalMilliseconds)), token, out var frame))
                     continue;
-                var bytes = frame.Data;
-                if ((bytes[0] & 0x80) != 0)
-                {
-                    // A new first frame replaces an incomplete observation.
-                    prefix = null;
-                    if (TryBcd(bytes[5], out var a) && TryBcd(bytes[6], out var b) && TryBcd(bytes[7], out var c))
-                    {
-                        prefix = a * 10_000 + b * 100 + c;
-                        prefixId = frame.ArbitrationId;
-                    }
-                }
-                else if (prefix is uint first && prefixId == frame.ArbitrationId && (bytes[0] & 0x40) == 0)
-                {
-                    prefix = null;
-                    if (!TryBcd(bytes[1], out var last)) continue;
-                    var partNumber = first * 100 + last;
-                    if (partNumber is < 1_000_000 or > 99_999_999) continue;
-                    CheckSession();
-                    if (rx.DroppedFrameCount != 0)
-                        throw new InvalidOperationException("CEM reply queue overflowed.");
-                    return new CemPartNumberObservation(partNumber);
-                }
+
+                if (decoder.Observe(frame) is not uint partNumber)
+                    continue;
+                CheckSession();
+                if (rx.DroppedFrameCount != 0)
+                    throw new InvalidOperationException("CEM reply queue overflowed.");
+                return new CemPartNumberObservation(partNumber);
             }
             CheckSession();
             throw new TimeoutException();
@@ -148,11 +134,4 @@ internal static class CemPartNumberReader
         }
     }
 
-    private static bool TryBcd(byte value, out uint decoded)
-    {
-        decoded = 0;
-        if ((value & 15) > 9 || (value >> 4) > 9) return false;
-        decoded = (uint)((value >> 4) * 10 + (value & 15));
-        return true;
-    }
 }

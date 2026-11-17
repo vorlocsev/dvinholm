@@ -1,0 +1,92 @@
+[
+  {
+    "modelId": "xc90-p2",
+    "label": "Volvo XC90 I · P2",
+    "file": "xc90-p2.jpg",
+    "width": 1280,
+    "height": 510,
+    "bytes": 88883,
+    "sha256": "936d9bd34b8e2203259f36097f2c1aa01a224bf8e7cbc653c4fc85e5b9396e47",
+    "source": "AI-generated reference render; not verified OEM geometry"
+  },
+  {
+    "modelId": "xc70-p2",
+    "label": "Volvo XC70 II · P2",
+    "file": "xc70-p2.jpg",
+    "width": 1280,
+    "height": 510,
+    "bytes": 88700,
+    "sha256": "c679d86ebcaf0b328ee80c5b31752bb2aa74f2b2933294cd415d230239a969a6",
+    "source": "AI-generated reference render; not verified OEM geometry"
+  },
+  {
+    "modelId": "v70-p2",
+    "label": "Volvo V70 II · P2",
+    "file": "v70-p2.jpg",
+    "width": 1280,
+    "height": 510,
+    "bytes": 108340,
+    "sha256": "42bf1c5a479e58c14af3d06d0032dc46029cfab657a740c57c1a166d0c95650c",
+    "source": "AI-generated reference render; not verified OEM geometry"
+  },
+  {
+    "modelId": "s60-p2",
+    "label": "Volvo S60 I · P2",
+    "file": "s60-p2.jpg",
+    "width": 1280,
+    "height": 510,
+    "bytes": 82517,
+    "sha256": "441c17cb9b808edfdade84119fe4cdf299d4b201bbe5789cbf5ce09da867d442",
+    "source": "AI-generated reference render; not verified OEM geometry"
+  },
+  {
+    "modelId": "s80-p2",
+    "label": "Volvo S80 I · P2",
+    "file": "s80-p2.jpg",
+    "width": 1280,
+    "height": 510,
+    "bytes": 92122,
+    "sha256": "7f3e107e0003ca5148b69934d4b01a46c10e4c2f4126e17d98e934c16059bc54",
+    "source": "AI-generated reference render; not verified OEM geometry"
+  },
+  {
+    "modelId": "xc90-spa",
+    "label": "Volvo XC90 II · SPA",
+    "file": "xc90-spa.jpg",
+    "width": 1280,
+    "height": 510,
+    "bytes": 90908,
+    "sha256": "435d4a9f840857c7759e33a297782fda77a3e47b0de98dd0aa8f17d3b20a4cad",
+    "source": "AI-generated reference render; not verified OEM geometry"
+  },
+  {
+    "modelId": "xc70-p3",
+    "label": "Volvo XC70 III · P3",
+    "file": "xc70-p3.jpg",
+    "width": 1280,
+    "height": 510,
+    "bytes": 93074,
+    "sha256": "1f9e7cc7a626d1482e72ba63ee9a7d4192b9e1774573a2b0e1ea96a0c22026e8",
+    "source": "AI-generated reference render; not verified OEM geometry"
+  },
+  {
+    "modelId": "v70-p3",
+    "label": "Volvo V70 III · P3",
+    "file": "v70-p3.jpg",
+    "width": 1280,
+    "height": 510,
+    "bytes": 93879,
+    "sha256": "6f9c82da119b8b9aafa78f444ee8659e7be568ebf1cccef0e13d9538e1ff59e2",
+    "source": "AI-generated reference render; not verified OEM geometry"
+  },
+  {
+    "modelId": "s80-p3",
+    "label": "Volvo S80 II · P3",
+    "file": "s80-p3.jpg",
+    "width": 1280,
+    "height": 510,
+    "bytes": 99677,
+    "sha256": "50edd340437d40dfc7f925db9c8542c713470bc1471374fe1a9a9b6d9fc96956",
+    "source": "AI-generated reference render; not verified OEM geometry"
+  }
+]

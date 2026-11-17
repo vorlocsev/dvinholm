@@ -99,7 +99,11 @@ public sealed class UdsPassiveDiscoveryActivityTests
         Assert.DoesNotContain("FormatSafeException(", region);
         Assert.DoesNotContain("catch (Exception ex)", region);
         Assert.Contains("ShowDiscoveredEcus(ex.Candidates, complete: false)", region);
-        Assert.Contains("UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false)", region);
+        // Both language variants must preserve the same incomplete-scan
+        // safety status, without falling back to a stale English-only label.
+        Assert.Contains("UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false, english: false)", region);
+        Assert.Contains("UdsPassiveEcuListPresentation.ScanSummary(ex.Candidates.Count, false, english: true)", region);
+        Assert.Contains("SetPassiveDiscoveryStatus(cancelledRu, cancelledEn);", region);
         Assert.Contains("ex.DroppedFrameCount", region);
         Assert.Contains("_udsGate.Release()", region);
 

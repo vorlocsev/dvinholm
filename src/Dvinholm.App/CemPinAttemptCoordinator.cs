@@ -21,14 +21,45 @@ internal enum CemPinAttemptStatus
 internal sealed record CemPinAttemptResult(CemPinAttemptStatus Status, string PublicMessage) : IDisposable
 {
     private CemPinSecret? _pin;
-    internal bool HasPin => _pin?.IsAvailable == true;
-    internal CemPinResultOrigin? Origin => _pin?.Origin;
+    private Func<bool>? _currentLease;
+
+    // A candidate can be accepted and then outlive the caller's current CAN,
+    // consent or cancellation context. Revoke the sensitive payload itself
+    // instead of relying solely on a UI timer or an external result guard.
+    // Stored/vault results are intentionally separate and have no live lease.
+    private bool LeaseCurrent()
+    {
+        if (_currentLease is null) return true;
+        try
+        {
+            if (_currentLease()) return true;
+        }
+        catch (Exception) { /* Never disclose private lease callback details. */ }
+
+        Dispose();
+        return false;
+    }
+
+    internal bool HasPin => LeaseCurrent() && Volatile.Read(ref _pin)?.IsAvailable == true;
+    internal CemPinResultOrigin? Origin =>
+        LeaseCurrent() ? Volatile.Read(ref _pin)?.Origin : null;
     internal bool PhysicalAcceptanceVerified => false;
     internal bool MayWriteEcu => false;
-    internal bool TryReveal(CemPinReveal reveal) => _pin?.TryReveal(reveal) == true;
-    internal static CemPinAttemptResult Accepted(CemPinSecret pin) =>
+    internal bool TryReveal(CemPinReveal reveal)
+    {
+        if (!LeaseCurrent()) return false;
+        var pin = Volatile.Read(ref _pin);
+        if (pin?.TryReveal(reveal) != true) return false;
+        // A lease may have been revoked from another thread during the
+        // reveal callback. Report success only if it remained valid.
+        return LeaseCurrent();
+    }
+
+    internal static CemPinAttemptResult Accepted(
+        CemPinSecret pin, Func<bool>? currentLease = null) =>
         new(CemPinAttemptStatus.CandidateAccepted,
-            "A candidate was accepted twice by the current adapter session; physical provenance remains unverified.") { _pin = pin };
+            "A candidate was accepted twice by the current adapter session; physical provenance remains unverified.")
+        { _pin = pin, _currentLease = currentLease };
     internal static CemPinAttemptResult Restored(CemPinSecret pin) =>
         new(CemPinAttemptStatus.CandidateAccepted,
             "Saved PIN record; the current vehicle and service context have not been checked.") { _pin = pin };
@@ -176,6 +207,15 @@ internal sealed class CemPinAttemptCoordinator
             CemPinAttemptStatus completion;
             try
             {
+                // The first guard check happened before constructing the deadline,
+                // linked token and monitor. The ECU/consent context can change in
+                // that gap, including a connection replacement. Recheck directly
+                // before calling a provider; it must never be invoked if that
+                // context has already become stale. This is not an atomic native
+                // I/O lock: the provider must keep checking its own lease.
+                if (!sessionGuard.IsCurrent)
+                    return CemPinAttemptResult.From(CemPinAttemptStatus.SessionInvalidated);
+                cancellationToken.ThrowIfCancellationRequested();
                 // Await provider termination even after cancellation. Never release
                 // the gate while an uncooperative provider may still be using ECU.
                 var receipt = await _provider.TryRunAsync(operation.Token).ConfigureAwait(false);
@@ -209,7 +249,18 @@ internal sealed class CemPinAttemptCoordinator
                 _provider is ICemPinCandidateSource source && source.TakeCandidate() is { } pin)
             {
                 stopped = StopReason();
-                if (stopped is null && pin.IsAvailable) return CemPinAttemptResult.Accepted(pin);
+                if (stopped is null && pin.IsAvailable)
+                {
+                    // Keep the returned secret revocable after this method
+                    // releases the single-flight gate. A late disconnect,
+                    // context change or caller cancellation must erase it
+                    // on the next result access, not allow an old reveal.
+                    var operationToken = operation.Token;
+                    return CemPinAttemptResult.Accepted(pin, () =>
+                        !cancellationToken.IsCancellationRequested &&
+                        !operationToken.IsCancellationRequested &&
+                        sessionGuard.IsCurrent);
+                }
                 pin.Dispose();
             }
             return CemPinAttemptResult.From(stopped ??

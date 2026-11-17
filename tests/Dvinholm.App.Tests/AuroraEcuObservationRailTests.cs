@@ -100,8 +100,8 @@ public sealed class AuroraEcuObservationRailTests
         var doc = Layout();
         var rail = Named(doc, "EcuObservationRail");
         Assert.Contains(Named(doc, "EcuPage"), rail.Ancestors());
-        Assert.DoesNotContain(Named(doc, "EcuP2SideProfile"), rail.Ancestors());
-        Assert.DoesNotContain(Named(doc, "EcuP3SideProfile"), rail.Ancestors());
+        Assert.DoesNotContain(Named(doc, "EcuVehicleArtboard"), rail.Ancestors());
+        Assert.DoesNotContain(Named(doc, "EcuVehicleArtworkAtlas"), rail.Ancestors());
         Assert.Equal("Horizontal", (string?)rail.Attribute("Orientation"));
         Assert.Equal("Auto", (string?)rail.Parent?.Attribute("HorizontalScrollBarVisibility"));
         Assert.Contains("не позиции ECU", Named(doc, "EcuPage").ToString());
