@@ -384,3 +384,12 @@ that a resumed callback cannot report success. An in-flight callback may see
 already-zeroed bytes after concurrent revocation; this intentionally fails
 closed. The callback cannot be forcibly interrupted by the secret owner.
 No physical CEM or J2534 hardware was exercised.
+
+The final timer disposal step is now also fail-closed: Clear first zeroes the
+owned PIN and any in-flight presentation buffer, then detaches the ITimer
+reference before attempting Dispose. A custom TimeProvider may return a
+timer whose Dispose throws; such an exception must not escape through UI or
+prevent future idempotent revocation. The timer error is sanitized. Two
+synthetic tests cover explicit secret disposal and monotonic expiry with a
+fault-injecting ITimer that throws during Dispose. Production System timers
+remain unchanged, and no CEM/driver access was performed.

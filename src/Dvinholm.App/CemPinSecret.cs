@@ -116,8 +116,13 @@ internal sealed class CemPinSecret : IDisposable
         // The reveal callback is not holding _gate. Expiry and revocation
         // can zero its temporary bytes immediately even if it is stalled.
         if (_activeReveal is not null) CryptographicOperations.ZeroMemory(_activeReveal);
-        _timer?.Dispose();
+        // Dispose of a timer owned by a custom TimeProvider only after
+        // revoking all confidential buffers. A faulty timer's Dispose must
+        // not throw private implementation details through a PIN operation.
+        var timer = _timer;
         _timer = null;
+        try { timer?.Dispose(); }
+        catch (Exception) { /* Already revoked; never leak timer errors. */ }
     }
 
     public void Dispose() { lock (_gate) Clear(); }

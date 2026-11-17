@@ -10,10 +10,20 @@ public sealed class CemPinSecretTests
     {
         internal long Ticks;
         internal bool RejectTimer;
+        internal bool RejectDispose;
         public override long GetTimestamp() => Ticks;
         public override long TimestampFrequency => TimeSpan.TicksPerSecond;
         public override ITimer CreateTimer(TimerCallback callback, object? state, TimeSpan dueTime, TimeSpan period) =>
-            RejectTimer ? throw new InvalidOperationException("SYNTHETIC-PRIVATE-TIMER") : base.CreateTimer(callback, state, dueTime, period);
+            RejectTimer ? throw new InvalidOperationException("SYNTHETIC-PRIVATE-TIMER") :
+                RejectDispose ? new FaultyDisposeTimer() : base.CreateTimer(callback, state, dueTime, period);
+    }
+
+    private sealed class FaultyDisposeTimer : ITimer
+    {
+        public bool Change(TimeSpan dueTime, TimeSpan period) => true;
+        public void Dispose() => throw new InvalidOperationException("SYNTHETIC-PRIVATE-DISPOSE");
+        public ValueTask DisposeAsync() => ValueTask.FromException(
+            new InvalidOperationException("SYNTHETIC-PRIVATE-DISPOSE"));
     }
 
     [Fact]
@@ -340,6 +350,41 @@ public sealed class CemPinSecretTests
         Assert.Throws<ArgumentException>(() => new CemPinSecret(new byte[] { 0xFA, 0, 0, 0, 0, 0 }, CemPinResultOrigin.Synthetic));
         Assert.Throws<ArgumentOutOfRangeException>(() => new CemPinSecret(Fixture(), (CemPinResultOrigin)99));
         Assert.Throws<ArgumentOutOfRangeException>(() => new CemPinSecret(Fixture(), CemPinResultOrigin.Synthetic, TimeSpan.FromSeconds(31)));
+    }
+
+    [Fact]
+    public void FaultyTimerDisposalCannotPreventSecretRevocationOrLeakError()
+    {
+        var clock = new Clock { RejectDispose = true };
+        var owned = Fixture();
+        using var secret = new CemPinSecret(owned, CemPinResultOrigin.AdapterUnattested, clock: clock);
+        using var result = CemPinAttemptResult.Accepted(secret);
+        Assert.True(result.HasPin);
+        result.Dispose();
+        result.Dispose();
+        Assert.All(owned, b => Assert.Equal((byte)0, b));
+        Assert.False(result.HasPin);
+        Assert.False(secret.IsAvailable);
+        Assert.DoesNotContain("SYNTHETIC-PRIVATE-DISPOSE", result.ToString());
+        var called = false;
+        Assert.False(result.TryReveal(_ => called = true));
+        Assert.False(called);
+    }
+
+    [Fact]
+    public void FaultyTimerDisposalCannotBreakMonotonicExpiry()
+    {
+        var clock = new Clock { RejectDispose = true };
+        var owned = Fixture();
+        using var secret = new CemPinSecret(owned, CemPinResultOrigin.Synthetic, clock: clock);
+        using var result = CemPinAttemptResult.Accepted(secret);
+        clock.Ticks = TimeSpan.FromSeconds(31).Ticks;
+        Assert.False(result.HasPin);
+        Assert.False(secret.IsAvailable);
+        Assert.All(owned, b => Assert.Equal((byte)0, b));
+        var called = false;
+        Assert.False(result.TryReveal(_ => called = true));
+        Assert.False(called);
     }
 
     [Fact]
