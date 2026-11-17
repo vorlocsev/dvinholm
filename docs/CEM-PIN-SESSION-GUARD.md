@@ -448,3 +448,24 @@ actionable unavailable IDs, and cannot be selected for deletion in the UI.
 A synthetic Windows DPAPI test covers a noncanonical uppercase GUID alongside
 a valid protected record and checks no file is changed. The format of
 existing Dvinholm-created lowercase names remains unchanged.
+
+Unavailable-record deletion is now also bound to the exact encrypted file
+snapshot selected in Development's inventory. For a canonical GUID filename
+whose payload fails DPAPI/format validation, List() computes a SHA-256
+fingerprint of a bounded ciphertext buffer and retains it internally.
+Unreadable records that cannot be read and fingerprinted (including files
+over 8192 bytes, locked paths and reparse points) remain counted but cannot
+be selected for deletion. The confirmation UI never shows the fingerprint.
+
+DeleteUnavailable now requires that inventory fingerprint, acquires the
+same per-vault writer mutex, re-reads the bounded encrypted bytes, rejects
+any fingerprint mismatch and repeats decryption/format validation against
+that exact snapshot. A now-readable record remains protected. Only expected
+cryptographic or payload validation failures permit deleting unchanged,
+explicitly confirmed, unreadable ciphertext. All transient ciphertext,
+digest and plaintext buffers are zeroed. Tests cover unchanged deletion,
+repaired-file refusal, a different *still unreadable* replacement, refreshed
+inventory and oversized files. The path-based File.Delete still has a narrow
+non-cooperating external file-replacement race after validation; this step
+specifically prevents stale inventory-based accidental removal, not a full
+atomic handle-bound delete guarantee. No physical CEM was tested.

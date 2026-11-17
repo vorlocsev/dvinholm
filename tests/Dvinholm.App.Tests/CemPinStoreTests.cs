@@ -607,9 +607,10 @@ public sealed class CemPinStoreTests
         Assert.True(File.Exists(folder.File(unavailableId))); // Inventory never deletes.
         Assert.Equal(original, File.ReadAllBytes(folder.File(retained.Id)));
 
-        // Only the explicitly chosen GUID can be removed; a malformed name
-        // never becomes an actionable record ID.
-        folder.Store.Delete(inventory.UnavailableRecordIds[0]);
+        // Only the explicitly chosen GUID and inventory fingerprint can be
+        // removed; a malformed name never becomes an actionable record ID.
+        Assert.True(inventory.UnavailableSnapshots.TryGetValue(unavailableId, out var fingerprint));
+        folder.Store.DeleteUnavailable(inventory.UnavailableRecordIds[0], fingerprint!);
         var after = folder.Store.List();
         Assert.Empty(after.UnavailableRecordIds);
         Assert.Equal(1, after.UnavailableCount);
@@ -634,7 +635,7 @@ public sealed class CemPinStoreTests
         // opened but before the user confirms its removal.
         File.WriteAllBytes(folder.File(retained.Id), original);
         var error = Assert.Throws<InvalidOperationException>(() =>
-            folder.Store.DeleteUnavailable(retained.Id));
+            folder.Store.DeleteUnavailable(retained.Id, inventory.UnavailableSnapshots[retained.Id]));
         Assert.Equal("The saved PIN record could not be deleted.", error.Message);
         Assert.Equal(original, File.ReadAllBytes(folder.File(retained.Id)));
         Assert.Equal(retained.Id, Assert.Single(folder.Store.List().Entries).Id);
@@ -652,11 +653,55 @@ public sealed class CemPinStoreTests
         var inventory = folder.Store.List();
         Assert.Equal(corruptId, Assert.Single(inventory.UnavailableRecordIds));
 
-        folder.Store.DeleteUnavailable(corruptId);
-        folder.Store.DeleteUnavailable(corruptId); // Missing is idempotent.
+        var fingerprint = inventory.UnavailableSnapshots[corruptId];
+        folder.Store.DeleteUnavailable(corruptId, fingerprint);
+        folder.Store.DeleteUnavailable(corruptId, fingerprint); // Missing is idempotent.
         Assert.False(File.Exists(folder.File(corruptId)));
         Assert.Equal(original, File.ReadAllBytes(folder.File(retained.Id)));
         Assert.Equal(retained.Id, Assert.Single(folder.Store.List().Entries).Id);
+    }
+
+    [Fact]
+    public void ChangedButStillUnreadableRecordCannotBeDeletedUsingOldInventory()
+    {
+        using var folder = new Folder();
+        using var candidate = Result();
+        var retained = folder.Store.Save(candidate, 30682981);
+        var original = File.ReadAllBytes(folder.File(retained.Id));
+        var corruptId = Guid.NewGuid();
+        File.WriteAllBytes(folder.File(corruptId), new byte[] { 1, 2, 3 });
+        var inventory = folder.Store.List();
+        var previousFingerprint = inventory.UnavailableSnapshots[corruptId];
+
+        // Same UUID but different unreadable ciphertext between list and
+        // confirmation must refuse deletion of the new file.
+        var replacement = new byte[] { 1, 2, 4 };
+        File.WriteAllBytes(folder.File(corruptId), replacement);
+        Assert.Throws<InvalidOperationException>(() =>
+            folder.Store.DeleteUnavailable(corruptId, previousFingerprint));
+        Assert.Equal(replacement, File.ReadAllBytes(folder.File(corruptId)));
+        Assert.Equal(original, File.ReadAllBytes(folder.File(retained.Id)));
+
+        // A refreshed inventory is explicit new evidence for deletion.
+        var refreshed = folder.Store.List();
+        Assert.NotEqual(previousFingerprint, refreshed.UnavailableSnapshots[corruptId]);
+        folder.Store.DeleteUnavailable(corruptId, refreshed.UnavailableSnapshots[corruptId]);
+        Assert.False(File.Exists(folder.File(corruptId)));
+        Assert.Equal(original, File.ReadAllBytes(folder.File(retained.Id)));
+    }
+
+    [Fact]
+    public void OversizedUnreadableRecordIsCountedButNotOfferedForDeletion()
+    {
+        using var folder = new Folder();
+        Directory.CreateDirectory(folder.Path);
+        var oversizedId = Guid.NewGuid();
+        File.WriteAllBytes(folder.File(oversizedId), new byte[8193]);
+        var inventory = folder.Store.List();
+        Assert.Equal(1, inventory.UnavailableCount);
+        Assert.Empty(inventory.UnavailableRecordIds);
+        Assert.Empty(inventory.UnavailableSnapshots);
+        Assert.True(File.Exists(folder.File(oversizedId)));
     }
 
     [Fact]

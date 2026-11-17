@@ -109,7 +109,13 @@ public sealed partial class MainWindow
                 // Delete waits for the cross-process vault writer gate.
                 // Keep WinUI responsive during its bounded wait and I/O.
                 if (selectedTag is Guid)
-                    await Task.Run(() => store.DeleteUnavailable(selectedId));
+                {
+                    // Bind deletion to exactly the unreadable ciphertext
+                    // selected before the confirmation dialog was opened.
+                    if (!inventory.UnavailableSnapshots.TryGetValue(selectedId, out var fingerprint))
+                        return;
+                    await Task.Run(() => store.DeleteUnavailable(selectedId, fingerprint));
+                }
                 else
                     await Task.Run(() => store.Delete(selectedId));
                 if (_closing || !_udsResultLifetime.CanDisplay(generation)) return;

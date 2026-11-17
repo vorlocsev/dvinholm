@@ -13,6 +13,10 @@ internal sealed record CemPinStoreInventory(IReadOnlyList<CemPinSavedEntry> Entr
     // IDs only: failed decryption must never expose PIN, part number or path.
     // A bad filename or an entry past the bounded scan cannot be selected.
     internal IReadOnlyList<Guid> UnavailableRecordIds { get; init; } = Array.Empty<Guid>();
+    // SHA-256 of the exact bounded ciphertext seen during inventory.
+    // Never reveal the fingerprint in UI; it is an opaque stale-selection guard.
+    internal IReadOnlyDictionary<Guid, string> UnavailableSnapshots { get; init; } =
+        new Dictionary<Guid, string>();
 }
 
 /// <summary>Per-find encrypted records. No VIN, plaintext PIN, or vehicle-match inference.</summary>
@@ -201,6 +205,7 @@ internal sealed class CemPinStore
             if (!Directory.Exists(_directory)) return new(Array.Empty<CemPinSavedEntry>(), 0);
             var entries = new List<CemPinSavedEntry>();
             var unavailableIds = new List<Guid>();
+            var snapshots = new Dictionary<Guid, string>();
             var unavailable = 0;
             var inspected = 0;
             foreach (var path in Directory.EnumerateFiles(_directory, "*.dpapi"))
@@ -232,15 +237,31 @@ internal sealed class CemPinStore
                 catch (Exception)
                 {
                     unavailable++;
-                    // Can be selected for deliberate deletion; no payload,
-                    // part number or filesystem path is returned.
-                    unavailableIds.Add(id);
+                    // A record is actionable only when its bounded ciphertext
+                    // could be read and fingerprinted. Oversized, locked,
+                    // linked and inaccessible paths remain counted, not
+                    // selected for deletion based on stale evidence.
+                    byte[]? encrypted = null;
+                    try
+                    {
+                        encrypted = ReadBounded(path);
+                        byte[] fingerprint = SHA256.HashData(encrypted);
+                        try { snapshots.Add(id, Convert.ToHexString(fingerprint)); }
+                        finally { CryptographicOperations.ZeroMemory(fingerprint); }
+                        unavailableIds.Add(id);
+                    }
+                    catch (Exception) { /* Unverifiable record is not actionable. */ }
+                    finally
+                    {
+                        if (encrypted is not null) CryptographicOperations.ZeroMemory(encrypted);
+                    }
                 }
                 finally { if (plain is not null) CryptographicOperations.ZeroMemory(plain); }
             }
             return new(entries.OrderByDescending(e => e.SavedAt).ToArray(), unavailable)
             {
-                UnavailableRecordIds = unavailableIds.ToArray()
+                UnavailableRecordIds = unavailableIds.ToArray(),
+                UnavailableSnapshots = snapshots
             };
         }
         catch (Exception) { throw new InvalidOperationException("Saved PIN records are unavailable."); }
@@ -259,14 +280,16 @@ internal sealed class CemPinStore
         finally { if (plain is not null) CryptographicOperations.ZeroMemory(plain); }
     }
 
-    internal void Delete(Guid id) => DeleteCore(id, requireStillUnavailable: false);
+    internal void Delete(Guid id) => DeleteCore(id, requireStillUnavailable: false, null);
 
-    // Called only after a separate, explicit UI confirmation for an entry
-    // which could not be decrypted at inventory time. A record becoming
-    // readable must never be destroyed based on that stale observation.
-    internal void DeleteUnavailable(Guid id) => DeleteCore(id, requireStillUnavailable: true);
+    // The fingerprint is captured at inventory time and kept out of UI text.
+    // Confirmation for an unreadable record is bound to the exact ciphertext
+    // seen then. A replaced but still-invalid file cannot be deleted based
+    // on stale selection, even if its canonical GUID path is unchanged.
+    internal void DeleteUnavailable(Guid id, string fingerprint) =>
+        DeleteCore(id, requireStillUnavailable: true, fingerprint);
 
-    private void DeleteCore(Guid id, bool requireStillUnavailable)
+    private void DeleteCore(Guid id, bool requireStillUnavailable, string? expectedFingerprint)
     {
         try
         {
@@ -294,29 +317,41 @@ internal sealed class CemPinStore
 
                 if (requireStillUnavailable)
                 {
-                    // A second instance could repair/replace the encrypted
-                    // record after List() but before the confirmation. Check
-                    // the current payload while holding the vault write gate.
+                    // Re-read the bounded ciphertext under the path-scoped
+                    // write mutex. Never delete an unhashable/oversized file
+                    // or a file changed after the user's selection.
+                    byte[]? encrypted = null;
                     byte[]? plain = null;
-                    var nowReadable = false;
                     try
                     {
-                        plain = ReadPayload(id);
-                        ParseEntry(id, plain);
-                        nowReadable = true;
-                    }
-                    catch (Exception)
-                    {
-                        // Invalid ciphertext or an inaccessible record may be
-                        // removed only by this separately confirmed operation.
-                        // File.Delete still fails closed on OS-level denial.
+                        encrypted = ReadBounded(path);
+                        var digest = SHA256.HashData(encrypted);
+                        string actualFingerprint;
+                        try { actualFingerprint = Convert.ToHexString(digest); }
+                        finally { CryptographicOperations.ZeroMemory(digest); }
+                        if (!string.Equals(expectedFingerprint, actualFingerprint,
+                            StringComparison.Ordinal))
+                            throw new IOException("PIN record changed since inventory.");
+
+                        // Check readability using this same ciphertext snapshot.
+                        // Unexpected DPAPI/OS errors fail closed; only expected
+                        // corrupt-payload errors permit confirmed cleanup.
+                        var unreadable = false;
+                        try
+                        {
+                            plain = CemPinWindowsProtection.Transform(encrypted, id, protect: false);
+                            ParseEntry(id, plain);
+                        }
+                        catch (CryptographicException) { unreadable = true; }
+                        catch (ArgumentOutOfRangeException) { unreadable = true; }
+                        if (!unreadable)
+                            throw new IOException("PIN record became readable; deletion refused.");
                     }
                     finally
                     {
                         if (plain is not null) CryptographicOperations.ZeroMemory(plain);
+                        if (encrypted is not null) CryptographicOperations.ZeroMemory(encrypted);
                     }
-                    if (nowReadable)
-                        throw new IOException("PIN record became readable; deletion refused.");
                 }
                 File.Delete(path);
             }

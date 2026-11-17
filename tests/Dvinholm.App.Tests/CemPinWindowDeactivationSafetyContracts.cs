@@ -124,7 +124,7 @@ public sealed class CemPinWindowDeactivationSafetyContracts
         var generation = saved.IndexOf("_udsResultLifetime.CanDisplay(generation)", accepted,
             StringComparison.Ordinal);
         var unavailableDelete = saved.IndexOf(
-            "await Task.Run(() => store.DeleteUnavailable(selectedId));",
+            "await Task.Run(() => store.DeleteUnavailable(selectedId, fingerprint));",
             generation, StringComparison.Ordinal);
         var delete = saved.IndexOf("await Task.Run(() => store.Delete(selectedId));",
             unavailableDelete, StringComparison.Ordinal);
@@ -154,7 +154,8 @@ public sealed class CemPinWindowDeactivationSafetyContracts
         Assert.Contains("another Windows user", saved);
         Assert.Contains("Guid unavailableId => unavailableId", saved);
         Assert.Contains("if (selectedTag is Guid)", saved);
-        Assert.Contains("store.DeleteUnavailable(selectedId)", saved);
+        Assert.Contains("inventory.UnavailableSnapshots.TryGetValue(selectedId, out var fingerprint)", saved);
+        Assert.Contains("store.DeleteUnavailable(selectedId, fingerprint)", saved);
         Assert.Contains("selectedTag is CemPinSavedEntry selected", saved);
         Assert.DoesNotContain("store.Load(selectedId)", saved);
         Assert.DoesNotContain("TryReveal(", saved);
