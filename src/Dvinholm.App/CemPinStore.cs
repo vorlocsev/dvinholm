@@ -63,6 +63,10 @@ internal sealed class CemPinStore
             // expired, correctly named Dvinholm staging files in a bounded
             // best-effort sweep; never touch fresh or unrelated .tmp files.
             CleanupStaleTemporaryStages();
+            // The inventory deliberately enumerates at most 128 protected
+            // records. Do not silently save more entries than the UI can
+            // enumerate, including malformed/undecryptable .dpapi files.
+            EnsureRecordCapacity();
             temporary = FilePath(entry.Id) + "." + Guid.NewGuid().ToString("N") + ".tmp";
             _stage(temporary, encrypted);
             // Staging may take time or invoke an injected writer in tests.
@@ -75,6 +79,9 @@ internal sealed class CemPinStore
             }
             finally { CryptographicOperations.ZeroMemory(staged); }
             if (!result.HasPin) throw new InvalidOperationException();
+            // Another writer may have published a record during staging.
+            // Recheck after staging before exposing a new final filename.
+            EnsureRecordCapacity();
             var destination = FilePath(entry.Id);
             if (File.Exists(destination))
                 throw new IOException("PIN record collision.");
@@ -171,6 +178,20 @@ internal sealed class CemPinStore
             }
         }
         catch (Exception) { throw new InvalidOperationException("The saved PIN record could not be deleted."); }
+    }
+
+    private void EnsureRecordCapacity()
+    {
+        var count = 0;
+        foreach (var _ in Directory.EnumerateFiles(
+            _directory, "*.dpapi", SearchOption.TopDirectoryOnly))
+        {
+            // Fail closed before creating an entry that would be invisible
+            // to List's bounded inventory; never delete an existing record
+            // automatically to make space.
+            if (++count >= MaxVisibleRecords)
+                throw new IOException("Encrypted PIN vault is full.");
+        }
     }
 
     private void CleanupStaleTemporaryStages()

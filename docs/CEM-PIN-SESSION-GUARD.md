@@ -210,3 +210,16 @@ The best-effort stale-stage cleanup now also ignores SecurityException from
 enumeration or per-file metadata access. ReadBounded explicitly zeroes its
 partially read buffer before propagating any short-read or I/O exception.
 These are synthetic Windows filesystem/DPAPI tests only.
+
+Capacity of the encrypted PIN inventory is enforced at Save as well as at
+List. Existing inventory scans intentionally stop after 128 .dpapi entries;
+previously Save could still commit a 129th protected record that would become
+unreachable through the bounded UI listing. Save now refuses a new record if
+128 or more final .dpapi files already exist, regardless of whether those
+files can be decrypted. The limit is checked once before staging and again
+after staging, before publication, to catch sequential external additions.
+Neither invalid nor old records are deleted automatically. A concurrent
+external writer could still race the final check; this is not a global
+cross-process transaction. Offline Windows DPAPI regression tests cover a full
+vault, preserving existing records and restoring capacity, and a vault filled
+during staging. No real CEM or native J2534 device is contacted.

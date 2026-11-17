@@ -251,6 +251,64 @@ public sealed class CemPinStoreTests
     }
 
     [Fact]
+    public void FullVaultRejectsAnotherRecordWithoutChangingExistingFiles()
+    {
+        using var folder = new Folder();
+        Directory.CreateDirectory(folder.Path);
+        var first = Guid.NewGuid();
+        for (var i = 0; i < CemPinStore.MaxVisibleRecords; i++)
+        {
+            var id = i == 0 ? first : Guid.NewGuid();
+            File.WriteAllBytes(folder.File(id), new byte[] { 1, 2, 3 });
+        }
+        var original = File.ReadAllBytes(folder.File(first));
+        using var candidate = Result();
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            folder.Store.Save(candidate, 30682981));
+        Assert.Equal("The encrypted PIN record could not be saved.", error.Message);
+        Assert.Equal(CemPinStore.MaxVisibleRecords,
+            Directory.GetFiles(folder.Path, "*.dpapi").Length);
+        Assert.Equal(original, File.ReadAllBytes(folder.File(first)));
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.tmp"));
+        Assert.True(candidate.HasPin);
+
+        // Removing one corrupt entry restores capacity without changing the
+        // remaining records. A valid save must be present in the bounded UI list.
+        File.Delete(folder.File(first));
+        var saved = folder.Store.Save(candidate, 30682981);
+        var inventory = folder.Store.List();
+        Assert.Equal(saved.Id, Assert.Single(inventory.Entries).Id);
+        Assert.Equal(CemPinStore.MaxVisibleRecords - 1, inventory.UnavailableCount);
+    }
+
+    [Fact]
+    public void VaultFilledWhileStagingRejectsUnpublishedRecord()
+    {
+        using var folder = new Folder();
+        Directory.CreateDirectory(folder.Path);
+        for (var i = 0; i < CemPinStore.MaxVisibleRecords - 1; i++)
+            File.WriteAllBytes(folder.File(Guid.NewGuid()), new byte[] { 1 });
+        var injected = Guid.NewGuid();
+        var stage = new CemPinStore(folder.Path, (path, encrypted) =>
+        {
+            File.WriteAllBytes(path, encrypted);
+            // Mimic a second writer publishing a new record while this
+            // Save still owns only a temporary encrypted staging file.
+            File.WriteAllBytes(folder.File(injected), new byte[] { 1, 2 });
+        });
+
+        using var candidate = Result();
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            stage.Save(candidate, 30682981));
+        Assert.Equal("The encrypted PIN record could not be saved.", error.Message);
+        Assert.Equal(CemPinStore.MaxVisibleRecords,
+            Directory.GetFiles(folder.Path, "*.dpapi").Length);
+        Assert.True(File.Exists(folder.File(injected)));
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.tmp"));
+        Assert.True(candidate.HasPin);
+    }
+
+    [Fact]
     public void TamperingTruncationAndRecordRenameCannotRevealMaterial()
     {
         using var folder = new Folder();
