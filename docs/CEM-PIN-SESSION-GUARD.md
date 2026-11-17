@@ -239,3 +239,16 @@ serialization guarantee for cooperating same-session Dvinholm instances,
 not a global filesystem transaction. Offline tests verify that two stores
 cannot exceed the visible 128-record cap and different vault directories
 do not unnecessarily block one another. No physical J2534/CEM access.
+
+The WinUI PIN experiment previously called CemPinStore.Save on the UI
+dispatcher after provider completion. The new cooperating-instance mutex
+may wait up to 15 seconds; blocking the dispatcher would delay Cancel,
+window close and context edits. The UI now awaits the synchronous vault
+save via Task.Run while continuing to hold its diagnostic _udsGate and own
+the candidate/guard. After the worker completes it rechecks the window
+generation, caller cancellation, CEM lease and candidate availability
+before promoting the candidate into the revealable UI result. The finally
+path still releases the diagnostic gate only after storage I/O has ended.
+A static WinUI contract test verifies offload/revalidation/cleanup order.
+The encrypted store's own revocation checks remain authoritative. No
+physical ECU validation was conducted.

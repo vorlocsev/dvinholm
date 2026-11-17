@@ -358,8 +358,34 @@ public sealed partial class MainWindow
             if (result.HasPin)
             {
                 var saved = false;
-                try { OpenCemPinStore().Save(result, identity.PartNumber); saved = true; }
-                catch (Exception) { /* Keep the temporary result; never echo storage errors. */ }
+                try
+                {
+                    // A second Dvinholm process can hold the PIN vault mutex
+                    // for up to 15 seconds. Do not block WinUI's dispatcher:
+                    // cancellation/closing and lease invalidation must remain
+                    // responsive while DPAPI and encrypted file I/O finish.
+                    var store = OpenCemPinStore();
+                    var candidate = result;
+                    var partNumber = identity.PartNumber;
+                    await Task.Run(() => store.Save(candidate, partNumber));
+                    saved = true;
+                }
+                catch (Exception) { /* Never echo private storage errors. */ }
+
+                // A cancellation, disconnect, identity edit or window close
+                // may have arrived while Save was awaiting the vault mutex.
+                // Do not promote a revoked result into a revealable UI state.
+                // Keep the diagnostic gate until the worker has terminated.
+                if (_closing || !_udsResultLifetime.CanDisplay(generation)) return;
+                if (cts.IsCancellationRequested || guard.IsCurrent != true || !result.HasPin)
+                {
+                    SetStatus(!_session.IsConnected
+                        ? CemText("Сессия CEM недоступна. Переподключите адаптер.",
+                            "CEM session unavailable. Reconnect the adapter.")
+                        : CemText("Операция PIN CEM отменена или контекст изменён.",
+                            "CEM PIN operation cancelled or context changed."));
+                    return;
+                }
                 _cemPinResult = result;
                 result = null;
                 _cemPinResultGuard = guard;

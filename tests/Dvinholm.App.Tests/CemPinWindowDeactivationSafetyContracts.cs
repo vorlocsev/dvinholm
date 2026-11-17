@@ -87,6 +87,28 @@ public sealed class CemPinWindowDeactivationSafetyContracts
     }
 
     [Fact]
+    public void EncryptedPinSaveDoesNotBlockWinUiDispatcherAndRechecksLease()
+    {
+        var pin = Source("src/Dvinholm.App/MainWindow.CemPin.cs");
+        var start = pin.IndexOf("private async void ReadCemPin_Click(", StringComparison.Ordinal);
+        var end = pin.IndexOf("#else", start, StringComparison.Ordinal);
+        Assert.True(start > 0 && end > start);
+        var method = pin[start..end];
+        var offloadedSave = method.IndexOf("await Task.Run(() => store.Save(candidate, partNumber));",
+            StringComparison.Ordinal);
+        var lateLease = method.IndexOf("cts.IsCancellationRequested || guard.IsCurrent != true || !result.HasPin",
+            StringComparison.Ordinal);
+        var publish = method.IndexOf("_cemPinResult = result;", StringComparison.Ordinal);
+        var cleanup = method.IndexOf("_udsGate.Release();", StringComparison.Ordinal);
+        Assert.True(offloadedSave > 0);
+        Assert.True(lateLease > offloadedSave);
+        Assert.True(publish > lateLease);
+        Assert.True(cleanup > publish);
+        Assert.Contains("_udsResultLifetime.CanDisplay(generation)", method[offloadedSave..publish]);
+        Assert.DoesNotContain("OpenCemPinStore().Save(result, identity.PartNumber)", method);
+    }
+
+    [Fact]
     public void RevealRemainsExplicitAndLimitedToFifteenSeconds()
     {
         var pin = Source("src/Dvinholm.App/MainWindow.CemPin.cs");
