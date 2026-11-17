@@ -10,6 +10,10 @@ internal sealed class J2534Session : IDisposable
     private CanBus? _bus;
     private bool _disposed;
     private int _transportFaulted;
+    // Receive faults belong to one CAN generation. A late callback from an
+    // older bus must never disable an already reconnected adapter.
+    // Kept monotonic so old callbacks cannot clear a newer fault.
+    private long _readFaultedEpoch = -1;
     // Incremented before every connection teardown, including replacement
     // Connect calls and failed replacement attempts. Read-only UI callbacks
     // use this token to reject delayed errors from a previous CAN session.
@@ -21,7 +25,9 @@ internal sealed class J2534Session : IDisposable
     // Reports the origin bus epoch even when the callback arrives after reconnect.
     internal event Action<long>? ReadErrorEpoch;
 
-    internal bool IsConnected => _bus is not null && Volatile.Read(ref _transportFaulted) == 0;
+    internal bool IsConnected => _bus is not null &&
+        Volatile.Read(ref _transportFaulted) == 0 &&
+        Interlocked.Read(ref _readFaultedEpoch) != ConnectionEpoch;
     internal uint? ConnectedBaudRate { get; private set; }
     internal bool? ConnectedExtended { get; private set; }
 
@@ -41,7 +47,7 @@ internal sealed class J2534Session : IDisposable
     {
         lock (_lifecycleGate)
         {
-            if (_disposed || Volatile.Read(ref _transportFaulted) != 0 ||
+            if (_disposed || !IsConnected ||
                 _bus is not { IsDisposed: false } bus)
                 return null;
             return (bus, ConnectionEpoch);
@@ -51,6 +57,23 @@ internal sealed class J2534Session : IDisposable
     // Preserve native resources for orderly disconnect, but reject further
     // diagnostic work when receive-filter state could not be restored.
     internal void InvalidateTransport() => Interlocked.Exchange(ref _transportFaulted, 1);
+
+    // Called from the native receive worker. Do not take _lifecycleGate here:
+    // Disconnect/Connect may already hold that lock while joining this worker.
+    // Retain only the greatest faulty generation; an old error cannot poison
+    // a newer connection or erase a newer error reported out of order.
+    internal void InvalidateTransportForReadError(long originatingEpoch)
+    {
+        long observed;
+        do
+        {
+            observed = Interlocked.Read(ref _readFaultedEpoch);
+            if (originatingEpoch <= observed)
+                return;
+        }
+        while (Interlocked.CompareExchange(
+            ref _readFaultedEpoch, originatingEpoch, observed) != observed);
+    }
 
     internal bool Connect(string dllPath, uint baudRate, out string error, bool extended = false)
     {

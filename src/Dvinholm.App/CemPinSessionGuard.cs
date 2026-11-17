@@ -45,20 +45,12 @@ internal sealed class CemPinSessionGuard : IDisposable
         // A late callback from a previous or later CAN bus must not poison
         // this lease or a different J2534 connection.
         if (originatingEpoch != _capturedEpoch) return;
-        var session = _session;
-        var capturedBus = _capturedBus;
         Interlocked.Exchange(ref _invalidated, 1);
-        if (session is null || capturedBus is null || !session.IsConnected)
-            return;
-        try
-        {
-            if (ReferenceEquals(session.Bus, capturedBus))
-                session.InvalidateTransport();
-        }
-        catch (InvalidOperationException)
-        {
-            // An intervening disconnect already invalidated this lease.
-        }
+        // No check-then-fault on session.Bus: reconnect could complete between
+        // the check and a global fault flag. Stamping the originating epoch is
+        // lock-free, safe on the native RX worker, and cannot poison a new bus.
+        if (_session is { } session && _capturedBus is not null)
+            session.InvalidateTransportForReadError(originatingEpoch);
     }
 
     public void Dispose()

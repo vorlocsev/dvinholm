@@ -121,3 +121,13 @@ A CEM lease now acquires its CAN bus and originating read-error epoch in one
 lifecycle lock. Capture waits for an in-progress synthetic Connect (including
 a failed Open) rather than combining an older bus with a newer epoch. This
 snapshot does not start an ECU request or verify any physical CEM.
+
+A subsequent receive-fault race hardening increment makes native RX invalidation
+**epoch-scoped and lock-free**: a CEM guard stamps the originating CAN epoch,
+not a global fault flag after a non-atomic bus comparison. If reconnect finishes
+before a delayed old callback runs, that stamp cannot disable the new bus.
+Fault stamps only advance monotonically, so a still-later old callback cannot
+undo a newer bus's fault. An affected epoch remains blocked until explicit
+Disconnect/Connect; capture refuses a faulted bus. Three extra offline tests
+cover delayed old faults, out-of-order faults and reconnect recovery, with
+zero synthetic transmitted CAN frames. No physical CEM operation is initiated.
