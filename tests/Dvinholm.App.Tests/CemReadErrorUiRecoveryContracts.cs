@@ -22,7 +22,7 @@ public sealed class CemReadErrorUiRecoveryContracts
     public void ReadFaultInvalidatesDiagnosticGenerationBeforeRearmingControls()
     {
         var source = Source();
-        var start = source.IndexOf("_session.ReadError += _ =>", StringComparison.Ordinal);
+        var start = source.IndexOf("_session.ReadErrorEpoch += errorEpoch =>", StringComparison.Ordinal);
         Assert.True(start > 0);
         var stop = source.IndexOf("        };", start, StringComparison.Ordinal);
         Assert.True(stop > start);
@@ -44,7 +44,7 @@ public sealed class CemReadErrorUiRecoveryContracts
     public void UiDoesNotTreatLogicalConnectFlagAsHealthyJ2534Transport()
     {
         var handler = Source();
-        var start = handler.IndexOf("_session.ReadError += _ =>", StringComparison.Ordinal);
+        var start = handler.IndexOf("_session.ReadErrorEpoch += errorEpoch =>", StringComparison.Ordinal);
         var stop = handler.IndexOf("        };", start, StringComparison.Ordinal);
         Assert.True(start > 0 && stop > start);
         var block = handler[start..stop];
@@ -56,15 +56,15 @@ public sealed class CemReadErrorUiRecoveryContracts
     public void QueuedReadErrorCannotClearResultsFromReplacementConnection()
     {
         var source = Source();
-        var start = source.IndexOf("_session.ReadError += _ =>", StringComparison.Ordinal);
+        var start = source.IndexOf("_session.ReadErrorEpoch += errorEpoch =>", StringComparison.Ordinal);
         var stop = source.IndexOf("        };", start, StringComparison.Ordinal);
         Assert.True(start > 0 && stop > start);
         var handler = source[start..stop];
-        var snapshot = handler.IndexOf("var errorEpoch = _session.ConnectionEpoch;", StringComparison.Ordinal);
+        var origin = handler.IndexOf("_session.ReadErrorEpoch += errorEpoch =>", StringComparison.Ordinal);
         var enqueue = handler.IndexOf("DispatcherQueue.TryEnqueue(", StringComparison.Ordinal);
         var check = handler.IndexOf("_session.ConnectionEpoch != errorEpoch", StringComparison.Ordinal);
         var clear = handler.IndexOf("ClearDiagnosticReadResult();", StringComparison.Ordinal);
-        Assert.True(snapshot > 0 && enqueue > snapshot &&
+        Assert.True(origin == 0 && enqueue > origin &&
             check > enqueue && clear > check);
         Assert.Contains("if (_closing || _session.ConnectionEpoch != errorEpoch)", handler);
         Assert.DoesNotContain("J2534ConnectionPresentation.ReadErrorActivity", handler[..check]);

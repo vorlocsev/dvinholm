@@ -15,8 +15,11 @@ internal sealed class J2534Session : IDisposable
     // use this token to reject delayed errors from a previous CAN session.
     private long _connectionEpoch;
     internal long ConnectionEpoch => Interlocked.Read(ref _connectionEpoch);
+    private Action<Exception>? _busReadErrorForwarder;
 
     internal event Action<Exception>? ReadError;
+    // Reports the origin bus epoch even when the callback arrives after reconnect.
+    internal event Action<long>? ReadErrorEpoch;
 
     internal bool IsConnected => _bus is not null && Volatile.Read(ref _transportFaulted) == 0;
     internal uint? ConnectedBaudRate { get; private set; }
@@ -96,7 +99,9 @@ internal sealed class J2534Session : IDisposable
             }
 
             _bus = new CanBus(_j2534);
-            _bus.ReadError += HandleReadError;
+            var busEpoch = ConnectionEpoch;
+            _busReadErrorForwarder = error => HandleReadError(error, busEpoch);
+            _bus.ReadError += _busReadErrorForwarder;
             _bus.Start();
             ConnectedBaudRate = baudRate;
             ConnectedExtended = extended;
@@ -110,7 +115,9 @@ internal sealed class J2534Session : IDisposable
             var cleanupErrors = new List<string>();
             if (_bus is not null)
             {
-                _bus.ReadError -= HandleReadError;
+                if (_busReadErrorForwarder is not null)
+                    _bus.ReadError -= _busReadErrorForwarder;
+                _busReadErrorForwarder = null;
                 try { _bus.Dispose(); }
                 catch (Exception)
                 {
@@ -206,7 +213,9 @@ internal sealed class J2534Session : IDisposable
         Interlocked.Increment(ref _connectionEpoch);
         if (_bus is not null)
         {
-            _bus.ReadError -= HandleReadError;
+            if (_busReadErrorForwarder is not null)
+                _bus.ReadError -= _busReadErrorForwarder;
+            _busReadErrorForwarder = null;
             _bus.Dispose();
             _bus = null;
         }
@@ -232,23 +241,25 @@ internal sealed class J2534Session : IDisposable
         }
     }
 
-    private void HandleReadError(Exception error)
+    private void HandleReadError(Exception error, long originatingEpoch)
     {
+        // Keep the original diagnostic event for non-CEM listeners.
         var handlers = ReadError;
-        if (handlers is null)
-            return;
-
-        foreach (Action<Exception> handler in handlers.GetInvocationList())
+        if (handlers is not null)
         {
-            try
+            foreach (Action<Exception> handler in handlers.GetInvocationList())
             {
-                handler(error);
+                try { handler(error); }
+                catch { /* A subscriber must not terminate native RX. */ }
             }
-            catch
-            {
-                // A UI/logging callback must not prevent other subscribers
-                // from receiving the adapter diagnostic.
-            }
+        }
+
+        var epochHandlers = ReadErrorEpoch;
+        if (epochHandlers is null) return;
+        foreach (Action<long> handler in epochHandlers.GetInvocationList())
+        {
+            try { handler(originatingEpoch); }
+            catch { /* UI/lease callbacks must not terminate native RX. */ }
         }
     }
 

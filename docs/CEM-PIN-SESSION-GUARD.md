@@ -110,3 +110,8 @@ Every disconnect/replacement connection (including failed replacement) advances
 that epoch before native teardown. If a queued error belongs to an old epoch,
 its UI callback does not clear a newly connected session's diagnostic result.
 These guards are synthetic and static checks, not interactive WinUI acceptance.
+
+For read errors, J2534Session now stamps events with the generation captured
+when each CAN receive bus is created. Both the WinUI callback and CEM lease
+use this original bus generation, so a delayed old receive callback cannot
+be confused with an error from a newly connected bus.

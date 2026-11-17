@@ -144,6 +144,40 @@ public sealed class CemPinSessionGuardTests
     }
 
     [Fact]
+    public async Task FreshGuardIgnoresStaleEpochAndOldLeaseIgnoresNewEpoch()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
+        using var session = new J2534Session(adapter);
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        object first = new();
+        using var oldGuard = CemPinSessionGuard.Capture(session, first, () => first, true);
+        var oldEpoch = session.ConnectionEpoch;
+        session.Disconnect();
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        var freshEpoch = session.ConnectionEpoch;
+        Assert.NotEqual(oldEpoch, freshEpoch);
+        object second = new();
+        using var newGuard = CemPinSessionGuard.Capture(session, second, () => second, true);
+
+        // Synthetic delayed notifications, no native or vehicle communication.
+        var epochEvent = typeof(J2534Session).GetField("ReadErrorEpoch",
+            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
+        Assert.NotNull(epochEvent);
+        var callbacks = (Action<long>?)epochEvent.GetValue(session);
+        Assert.NotNull(callbacks);
+        callbacks(oldEpoch);
+        Assert.True(session.IsConnected);
+        Assert.True(newGuard.IsCurrent);
+        Assert.False(oldGuard.IsCurrent);
+        Assert.Equal(0, adapter.TransmittedFrames);
+
+        // A current-epoch error must fault the actual connected lease.
+        callbacks(freshEpoch);
+        Assert.False(session.IsConnected);
+        Assert.False(newGuard.IsCurrent);
+    }
+
+    [Fact]
     public async Task ChangedEcuContextDiscardsEvenAnImmediateSyntheticCompletion()
     {
         using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());

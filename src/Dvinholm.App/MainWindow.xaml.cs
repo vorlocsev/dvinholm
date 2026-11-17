@@ -187,12 +187,10 @@ public sealed partial class MainWindow : Window
         // The standalone launcher owns updates and all Lite runtime management.
         if (DvinholmUserDataDirectory.IsAcceptanceLaunch)
             ConnectButton.IsEnabled = false;
-        _session.ReadError += _ =>
+        // The event carries the originating bus's epoch, not the generation
+        // observed later when the receive callback happens to execute.
+        _session.ReadErrorEpoch += errorEpoch =>
         {
-            // A queued dispatcher callback may outlive its adapter's CAN bus.
-            // Snapshot the connection epoch on the receive worker, then
-            // ignore the notification if the user disconnected/reconnected.
-            var errorEpoch = _session.ConnectionEpoch;
             DispatcherQueue.TryEnqueue(() =>
             {
                 if (_closing || _session.ConnectionEpoch != errorEpoch)

@@ -25,6 +25,23 @@ public sealed class J2534SessionReadErrorLifecycleTests
     }
 
     [Fact]
+    public async Task ReceiveErrorPublishesOriginatingBusEpoch()
+    {
+        using var signalled = new ManualResetEventSlim();
+        var adapter = new ReadErrorSessionAdapter();
+        using var session = new J2534Session(adapter);
+        long observedEpoch = -1;
+        session.ReadErrorEpoch += epoch =>
+        {
+            observedEpoch = epoch;
+            signalled.Set();
+        };
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _));
+        Assert.True(signalled.Wait(TimeSpan.FromSeconds(5)));
+        Assert.Equal(session.ConnectionEpoch, Volatile.Read(ref observedEpoch));
+    }
+
+    [Fact]
     public async Task DisconnectFromReadErrorCallbackDefersTeardownAndUnloadsAdapter()
     {
         var adapter = new ReadErrorSessionAdapter();

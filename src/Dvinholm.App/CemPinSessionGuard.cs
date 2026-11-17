@@ -10,6 +10,7 @@ internal sealed class CemPinSessionGuard : IDisposable
     private readonly Func<bool> _isCurrent;
     private J2534Session? _session;
     private CanBus? _capturedBus;
+    private long _capturedEpoch;
     private int _invalidated;
 
     // Synthetic test seam; production captures the existing J2534 session.
@@ -32,16 +33,16 @@ internal sealed class CemPinSessionGuard : IDisposable
             ReferenceEquals(currentEcuContext(), ecuContext));
         guard._session = session;
         guard._capturedBus = bus;
-        session.ReadError += guard.OnReadError;
+        guard._capturedEpoch = session.ConnectionEpoch;
+        session.ReadErrorEpoch += guard.OnReadError;
         return guard;
     }
 
-    private void OnReadError(Exception _)
+    private void OnReadError(long originatingEpoch)
     {
-        // An old lease can remain subscribed across reconnect until disposed.
-        // Only the CAN bus captured by this lease may fault its transport;
-        // a delayed event from a NEW bus cannot be attributed to the old one.
-        // This callback must not block the native receive worker.
+        // A late callback from a previous or later CAN bus must not poison
+        // this lease or a different J2534 connection.
+        if (originatingEpoch != _capturedEpoch) return;
         var session = _session;
         var capturedBus = _capturedBus;
         Interlocked.Exchange(ref _invalidated, 1);
@@ -63,7 +64,7 @@ internal sealed class CemPinSessionGuard : IDisposable
         Interlocked.Exchange(ref _invalidated, 1);
         var session = Interlocked.Exchange(ref _session, null);
         Interlocked.Exchange(ref _capturedBus, null);
-        if (session is not null) session.ReadError -= OnReadError;
+        if (session is not null) session.ReadErrorEpoch -= OnReadError;
     }
 
     internal bool IsCurrent
