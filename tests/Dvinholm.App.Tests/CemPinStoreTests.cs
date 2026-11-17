@@ -71,6 +71,76 @@ public sealed class CemPinStoreTests
     }
 
     [Fact]
+    public void RevokedCandidateDuringEncryptedStagingCannotPublishOrRetainFiles()
+    {
+        using var folder = new Folder();
+        var owned = Value();
+        var leaseCurrent = true;
+        using var result = CemPinAttemptResult.Accepted(
+            new CemPinSecret(owned, CemPinResultOrigin.AdapterUnattested),
+            () => leaseCurrent);
+        var writerInvocations = 0;
+        var store = new CemPinStore(folder.Path, (path, encrypted) =>
+        {
+            writerInvocations++;
+            Assert.Equal(-1, encrypted.AsSpan().IndexOf(Value()));
+            File.WriteAllBytes(path, encrypted);
+            leaseCurrent = false; // Synthetic disconnect while staging finishes.
+        });
+
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            store.Save(result, 30682981));
+        Assert.Equal("The encrypted PIN record could not be saved.", error.Message);
+        Assert.Equal(1, writerInvocations);
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.dpapi"));
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.tmp"));
+        Assert.False(result.HasPin);
+        Assert.All(owned, b => Assert.Equal((byte)0, b));
+    }
+
+    [Fact]
+    public void RevokedStagingPreservesPreviouslyCommittedEncryptedRecord()
+    {
+        using var folder = new Folder();
+        using var oldCandidate = Result();
+        var previous = folder.Store.Save(oldCandidate, 30682981);
+        var previousEncrypted = File.ReadAllBytes(folder.File(previous.Id));
+        var stillAuthorized = true;
+        using var next = CemPinAttemptResult.Accepted(
+            new CemPinSecret(Value(), CemPinResultOrigin.AdapterUnattested),
+            () => stillAuthorized);
+        var store = new CemPinStore(folder.Path, (path, encrypted) =>
+        {
+            File.WriteAllBytes(path, encrypted);
+            stillAuthorized = false;
+        });
+
+        Assert.Throws<InvalidOperationException>(() => store.Save(next, 30682981));
+        Assert.Equal(previousEncrypted, File.ReadAllBytes(folder.File(previous.Id)));
+        Assert.Single(folder.Store.List().Entries);
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.tmp"));
+        using var restored = folder.Store.Load(previous.Id);
+        Assert.True(restored.IsAvailable);
+    }
+
+    [Fact]
+    public void ValidLiveCandidateRemainsSavableWhileLeaseIsCurrent()
+    {
+        using var folder = new Folder();
+        var stillAuthorized = true;
+        using var candidate = CemPinAttemptResult.Accepted(
+            new CemPinSecret(Value(), CemPinResultOrigin.AdapterUnattested),
+            () => stillAuthorized);
+        var record = folder.Store.Save(candidate, 30682981);
+        Assert.Equal(record.Id, Assert.Single(folder.Store.List().Entries).Id);
+        using var restored = folder.Store.Load(record.Id);
+        Assert.True(restored.TryReveal(pin => Assert.True(pin.SequenceEqual(Value()))));
+        stillAuthorized = false;
+        Assert.False(candidate.HasPin);
+        Assert.True(restored.IsAvailable); // Saved records are separate from live leases.
+    }
+
+    [Fact]
     public void TamperingTruncationAndRecordRenameCannotRevealMaterial()
     {
         using var folder = new Folder();

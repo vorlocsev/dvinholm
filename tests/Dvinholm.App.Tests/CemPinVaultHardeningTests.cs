@@ -95,6 +95,20 @@ public sealed class CemPinVaultHardeningTests
         });
 
     [Fact]
+    public void RevokedCandidateBeforeStagingDoesNotCreateVaultDirectory()
+        => InVault((folder, store) =>
+        {
+            var bytes = new byte[] { 0x12, 0x34, 0x56, 0x78, 0x90, 0x12 };
+            using var secret = new CemPinSecret(bytes, CemPinResultOrigin.AdapterUnattested);
+            using var candidate = CemPinAttemptResult.Accepted(secret, () => false);
+            var error = Assert.Throws<InvalidOperationException>(() =>
+                store.Save(candidate, 30682981));
+            Assert.Equal("The encrypted PIN record could not be saved.", error.Message);
+            Assert.False(Directory.Exists(folder));
+            Assert.All(bytes, b => Assert.Equal((byte)0, b));
+        });
+
+    [Fact]
     public void FailedTruncatedStagingDoesNotOverwritePreviousEncryptedPin() =>
         InVault((folder, store) =>
         {

@@ -178,3 +178,14 @@ retroactively undo a reveal or completed encrypted save that occurred before
 revocation. Synthetic unit tests cover byte erasure/private callback errors;
 virtual-adapter tests cover candidate revocation after completion without
 physical ECU traffic.
+
+The encrypted PIN vault now revalidates the revocable candidate at several
+publication boundaries: before DPAPI encryption, after staging the temporary
+encrypted file, before its final atomic rename, and after that rename. A
+candidate revoked during staging therefore leaves no new .dpapi record or
+temporary file. If revocation is detected immediately after the final rename,
+Save attempts to remove only the new UUID-named record; existing records are
+never overwritten or removed. Failures remain sanitized. This is a
+best-effort check at filesystem boundaries, not a guarantee against a
+revocation that occurs after Save has successfully returned or a filesystem
+that refuses rollback deletion. No physical CEM or adapter tests are involved.

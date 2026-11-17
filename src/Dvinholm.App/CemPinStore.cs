@@ -35,11 +35,15 @@ internal sealed class CemPinStore
         byte[]? plain = null;
         byte[]? encrypted = null;
         string? temporary = null;
+        string? committedPath = null;
         try
         {
-            // Synthetic/metadata-only/expired results must never populate this store.
+            ArgumentNullException.ThrowIfNull(result);
+            // Synthetic/metadata-only/expired or revoked results must never
+            // populate this store. HasPin revalidates the live cancellation,
+            // ECU identity and J2534 lease for an accepted live candidate.
             if (partNumber == 0 || result.Status != CemPinAttemptStatus.CandidateAccepted ||
-                result.Origin != CemPinResultOrigin.AdapterUnattested)
+                result.Origin != CemPinResultOrigin.AdapterUnattested || !result.HasPin)
                 throw new InvalidOperationException();
             var entry = new CemPinSavedEntry(Guid.NewGuid(), partNumber, DateTimeOffset.UtcNow);
             plain = new byte[PayloadLength];
@@ -57,19 +61,37 @@ internal sealed class CemPinStore
             RejectLinkedAncestors();
             temporary = FilePath(entry.Id) + "." + Guid.NewGuid().ToString("N") + ".tmp";
             _stage(temporary, encrypted);
+            // Staging may take time or invoke an injected writer in tests.
+            // A revoked in-memory candidate must not reach its final filename.
+            if (!result.HasPin) throw new InvalidOperationException();
             var staged = ReadBounded(temporary);
             try
             {
                 if (!staged.AsSpan().SequenceEqual(encrypted)) throw new IOException();
             }
             finally { CryptographicOperations.ZeroMemory(staged); }
-            if (File.Exists(FilePath(entry.Id)))
+            if (!result.HasPin) throw new InvalidOperationException();
+            var destination = FilePath(entry.Id);
+            if (File.Exists(destination))
                 throw new IOException("PIN record collision.");
-            File.Move(temporary, FilePath(entry.Id));
+            // Recheck immediately before the atomic publication step, not
+            // only when the secret was copied into the encryption buffer.
+            if (!result.HasPin) throw new InvalidOperationException();
+            File.Move(temporary, destination);
+            committedPath = destination;
+            // Revoke a newly published record if authorization disappeared
+            // during the move. This never removes a pre-existing vault record.
+            if (!result.HasPin) throw new InvalidOperationException();
             return entry;
         }
         catch (Exception)
         {
+            if (committedPath is not null)
+            {
+                try { File.Delete(committedPath); }
+                catch (IOException) { /* Never expose a machine-specific path. */ }
+                catch (UnauthorizedAccessException) { }
+            }
             throw new InvalidOperationException("The encrypted PIN record could not be saved.");
         }
         finally
