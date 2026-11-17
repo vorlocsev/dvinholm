@@ -164,3 +164,17 @@ must revalidate before every native request. Three synthetic regression tests
 verify stale context, cancellation during final validation and a private
 callback exception. Each denies provider invocation and PIN publication, with
 no J2534 access or ECU transmissions.
+
+The candidate itself now carries a revocable post-completion lease. The
+coordinator binds an accepted in-memory candidate to the caller's
+CancellationToken, its operation cancellation state and the original CEM
+session/ECU/consent guard. HasPin, Origin and TryReveal recheck the lease;
+failed checks dispose and cryptographically zero the owned six-byte buffer.
+A late caller cancellation or ECU/context change therefore cannot leave an
+old result available for subsequent reads after the single-flight coordinator
+releases its gate. Saved vault records remain a distinct, explicitly
+unverified offline workflow, not a live authorized CEM lease. This does not
+retroactively undo a reveal or completed encrypted save that occurred before
+revocation. Synthetic unit tests cover byte erasure/private callback errors;
+virtual-adapter tests cover candidate revocation after completion without
+physical ECU traffic.

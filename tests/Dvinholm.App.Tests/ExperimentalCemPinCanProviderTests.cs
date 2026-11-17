@@ -54,6 +54,36 @@ public sealed class ExperimentalCemPinCanProviderTests
     }
 
     [Fact]
+    public async Task AcceptedSyntheticCandidateIsRevokedWhenEcuContextChanges()
+    {
+        using var f = new Fixture(request =>
+            new[] { request.Data[1] == 0x88 ? Identity() : Ack() });
+        using var result = await f.Run(f.Provider(first: 0, count: 1));
+
+        Assert.Equal(CemPinAttemptStatus.CandidateAccepted, result.Status);
+        Assert.True(result.HasPin);
+        f.Invalidate();
+        Assert.False(result.HasPin);
+        Assert.Null(result.Origin);
+        Assert.False(result.TryReveal(_ => Assert.Fail("Stale ECU candidate was revealed.")));
+    }
+
+    [Fact]
+    public async Task AcceptedSyntheticCandidateIsRevokedByLateCallerCancellation()
+    {
+        using var f = new Fixture(request =>
+            new[] { request.Data[1] == 0x88 ? Identity() : Ack() });
+        using var cancel = new CancellationTokenSource();
+        using var result = await f.Run(f.Provider(first: 0, count: 1), cancel.Token);
+
+        Assert.Equal(CemPinAttemptStatus.CandidateAccepted, result.Status);
+        Assert.True(result.HasPin);
+        cancel.Cancel();
+        Assert.False(result.HasPin);
+        Assert.False(result.TryReveal(_ => Assert.Fail("Cancelled candidate was revealed.")));
+    }
+
+    [Fact]
     public async Task UnknownHardwareApprovalAndChannelDenyWithoutTransmission()
     {
         foreach (var pn in new uint[] { 0, 30682982, 12345678 })

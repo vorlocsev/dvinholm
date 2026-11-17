@@ -56,6 +56,37 @@ public sealed class CemPinSecretTests
     }
 
     [Fact]
+    public void RevokedCandidateLeaseErasesOwnedBytesAndHidesOrigin()
+    {
+        var bytes = Fixture();
+        using var secret = new CemPinSecret(bytes, CemPinResultOrigin.AdapterUnattested);
+        var current = true;
+        using var result = CemPinAttemptResult.Accepted(secret, () => current);
+        Assert.True(result.HasPin);
+        current = false;
+        Assert.Null(result.Origin);
+        Assert.False(result.HasPin);
+        Assert.False(result.TryReveal(_ => Assert.Fail("Revoked PIN was revealed.")));
+        Assert.All(bytes, value => Assert.Equal((byte)0, value));
+        Assert.False(secret.IsAvailable);
+    }
+
+    [Fact]
+    public void PrivateLeaseFailureErasesSecretWithoutLeakingExceptionText()
+    {
+        const string privateData = "SYNTHETIC-PRIVATE-ECU-IDENTIFIER";
+        var bytes = Fixture();
+        using var secret = new CemPinSecret(bytes, CemPinResultOrigin.Synthetic);
+        using var result = CemPinAttemptResult.Accepted(secret,
+            () => throw new InvalidOperationException(privateData));
+
+        Assert.False(result.TryReveal(_ => Assert.Fail("Invalid PIN lease was revealed.")));
+        Assert.False(result.HasPin);
+        Assert.All(bytes, value => Assert.Equal((byte)0, value));
+        Assert.DoesNotContain(privateData, result.ToString());
+    }
+
+    [Fact]
     public void TimerErasesBytesWithoutAnyReaderPollingTheSecret()
     {
         var bytes = Fixture();
