@@ -212,8 +212,17 @@ internal sealed class CemPinStore
                     unavailable++;
                     break;
                 }
-                if (!Guid.TryParseExact(Path.GetFileNameWithoutExtension(path), "N", out var id))
-                { unavailable++; continue; }
+                var filename = Path.GetFileName(path);
+                if (!Guid.TryParseExact(Path.GetFileNameWithoutExtension(path), "N", out var id) ||
+                    !string.Equals(filename, id.ToString("N") + ".dpapi", StringComparison.Ordinal))
+                {
+                    // Only a byte-for-byte canonical lowercase filename may
+                    // be turned into a selectable GUID. On case-sensitive
+                    // Windows directories, the reconstructed FilePath(id)
+                    // could otherwise refer to a different encrypted record.
+                    unavailable++;
+                    continue;
+                }
                 byte[]? plain = null;
                 try
                 {

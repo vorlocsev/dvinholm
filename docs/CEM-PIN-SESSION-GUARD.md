@@ -436,3 +436,15 @@ a still-corrupt file, idempotent absence and preservation of unrelated
 encrypted records. A hostile non-cooperating process can still race the OS
 between validation and File.Delete; this guard serializes cooperating
 Dvinholm writers, not arbitrary external processes. No physical CEM read.
+
+Encrypted PIN record names in the bounded inventory are now accepted for
+selection only when the entire filename exactly matches Dvinholm's lowercase
+canonical GUID-N plus ".dpapi" convention (ordinal comparison). Windows may
+enable per-directory case-sensitive filenames; simply parsing a GUID from an
+uppercase or otherwise noncanonical name and reconstructing a lowercase path
+could target a different file during a later Load/Delete. Such aliases are
+still counted in UnavailableCount, but are not loadable, not returned as
+actionable unavailable IDs, and cannot be selected for deletion in the UI.
+A synthetic Windows DPAPI test covers a noncanonical uppercase GUID alongside
+a valid protected record and checks no file is changed. The format of
+existing Dvinholm-created lowercase names remains unchanged.

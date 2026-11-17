@@ -660,6 +660,30 @@ public sealed class CemPinStoreTests
     }
 
     [Fact]
+    public void NonCanonicalGuidFilenameIsCountedButNeverSelectableForDeletion()
+    {
+        using var folder = new Folder();
+        using var candidate = Result();
+        var retained = folder.Store.Save(candidate, 30682981);
+        var original = File.ReadAllBytes(folder.File(retained.Id));
+
+        // GUID parsing accepts uppercase letters, but Dvinholm saves lowercase
+        // canonical N-format names. On a case-sensitive Windows directory,
+        // reconstructing the lowercase path could target another record.
+        var alias = Guid.Parse("abcdefab-cdef-abcd-abcd-abcdefabcdef");
+        var nonCanonical = System.IO.Path.Combine(folder.Path,
+            alias.ToString("N").ToUpperInvariant() + ".dpapi");
+        File.WriteAllBytes(nonCanonical, new byte[] { 0x01, 0x02 });
+
+        var inventory = folder.Store.List();
+        Assert.Equal(retained.Id, Assert.Single(inventory.Entries).Id);
+        Assert.Equal(1, inventory.UnavailableCount);
+        Assert.Empty(inventory.UnavailableRecordIds);
+        Assert.True(File.Exists(nonCanonical));
+        Assert.Equal(original, File.ReadAllBytes(folder.File(retained.Id)));
+    }
+
+    [Fact]
     public void DamagedRecordIdsAreBoundedByVisibleVaultInventory()
     {
         using var folder = new Folder();
