@@ -17,6 +17,10 @@ internal sealed class CemPinSecret : IDisposable
     // Monitor locks are reentrant. Deny recursive disclosure from within an
     // active callback, including through CemPinAttemptResult.TryReveal.
     private bool _revealing;
+    // Only an explicitly invoked reveal callback owns this ephemeral copy.
+    // Timer expiry or external Dispose can wipe it without waiting for the
+    // callback to return. Finally wipes it again before relinquishing it.
+    private byte[]? _activeReveal;
     internal CemPinResultOrigin Origin { get; }
 
     // Ownership transfers after validation. Caller must not retain the buffer.
@@ -59,31 +63,42 @@ internal sealed class CemPinSecret : IDisposable
     internal bool TryReveal(CemPinReveal reveal)
     {
         ArgumentNullException.ThrowIfNull(reveal);
+        byte[] presentation;
         lock (_gate)
         {
             ExpireIfNeeded();
             if (_bytes is null || _revealing) return false;
+            // Calling external code while holding the ownership lock can
+            // indefinitely delay the timer or another thread's Dispose().
+            // A bounded six-byte temporary buffer isolates the callback.
+            presentation = (byte[])_bytes.Clone();
+            _activeReveal = presentation;
             _revealing = true;
-            try
+        }
+        try
+        {
+            reveal(presentation);
+            lock (_gate)
             {
-                reveal(_bytes);
-                // The callback can reenter Dispose() on this same thread,
-                // or reach the monotonic expiry deadline while presenting.
-                // Do not report successful reveal after either revocation.
+                // The callback can reenter Dispose, another thread can revoke
+                // this result, or monotonic expiry may occur during display.
                 ExpireIfNeeded();
                 return _bytes is not null;
             }
-            catch (Exception)
+        }
+        catch (Exception)
+        {
+            // Never leak private callback exception text. Revoke both the
+            // original and in-flight presentation buffer on any failure.
+            lock (_gate) Clear();
+            return false;
+        }
+        finally
+        {
+            lock (_gate)
             {
-                // A UI renderer or any other callback must not keep a PIN
-                // usable after an interrupted reveal, nor leak a callback's
-                // potentially private exception message to the caller.
-                // Clear while still holding the ownership gate.
-                Clear();
-                return false;
-            }
-            finally
-            {
+                CryptographicOperations.ZeroMemory(presentation);
+                _activeReveal = null;
                 _revealing = false;
             }
         }
@@ -98,6 +113,9 @@ internal sealed class CemPinSecret : IDisposable
     {
         if (_bytes is not null) CryptographicOperations.ZeroMemory(_bytes);
         _bytes = null;
+        // The reveal callback is not holding _gate. Expiry and revocation
+        // can zero its temporary bytes immediately even if it is stalled.
+        if (_activeReveal is not null) CryptographicOperations.ZeroMemory(_activeReveal);
         _timer?.Dispose();
         _timer = null;
     }

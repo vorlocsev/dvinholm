@@ -368,3 +368,19 @@ calling the nested callback. The gate is reset in finally, including after
 callback exceptions or revocation; valid subsequent explicit reveals remain
 possible until expiry. Synthetic tests cover direct and result-mediated
 recursive calls and expiry during the outer callback. No real CEM traffic.
+
+Reveal callbacks no longer run while holding CemPinSecret's ownership lock.
+A stalled WinUI presenter previously prevented the 30-second expiry timer
+or another thread's Dispose from entering Clear, prolonging retention of the
+owned six-byte PIN. TryReveal now creates an ephemeral six-byte presentation
+copy under the lock, sets the recursive-reveal gate, then invokes the callback
+outside the lock. Clear synchronously zeroes both the owned buffer and any
+in-flight presentation copy on expiry/disposal. The callback's finally block
+zeroes the copy again and releases the recursive-reveal gate, including when
+the callback throws; post-callback expiry and ownership checks still reject a
+revoked PIN. Synthetic concurrent tests demonstrate that explicit Dispose
+and monotonic expiry can erase both buffers while a callback is paused and
+that a resumed callback cannot report success. An in-flight callback may see
+already-zeroed bytes after concurrent revocation; this intentionally fails
+closed. The callback cannot be forcibly interrupted by the secret owner.
+No physical CEM or J2534 hardware was exercised.

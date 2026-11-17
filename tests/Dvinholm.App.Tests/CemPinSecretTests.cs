@@ -42,6 +42,72 @@ public sealed class CemPinSecretTests
     }
 
     [Fact]
+    public async Task DisposeCanWipePinWhileRevealCallbackIsPaused()
+    {
+        var owned = Fixture();
+        using var secret = new CemPinSecret(owned, CemPinResultOrigin.AdapterUnattested);
+        using var result = CemPinAttemptResult.Accepted(secret);
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var matchedBefore = false;
+        var erasedWhileCallbackPaused = false;
+        var running = Task.Run(() => result.TryReveal(bytes =>
+        {
+            matchedBefore = bytes.SequenceEqual(Fixture());
+            entered.Set();
+            if (!release.Wait(TimeSpan.FromSeconds(10)))
+                throw new IOException("Synthetic callback timeout");
+            erasedWhileCallbackPaused = bytes.ToArray().All(b => b == 0);
+        }));
+
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+            await Task.Run(secret.Dispose).WaitAsync(TimeSpan.FromSeconds(5));
+            Assert.All(owned, b => Assert.Equal((byte)0, b));
+            Assert.False(secret.IsAvailable);
+        }
+        finally { release.Set(); }
+
+        Assert.False(await running.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.True(matchedBefore);
+        Assert.True(erasedWhileCallbackPaused);
+        Assert.False(result.HasPin);
+    }
+
+    [Fact]
+    public async Task ExpiryCanWipePinWhileRevealCallbackIsPaused()
+    {
+        var clock = new Clock();
+        var owned = Fixture();
+        using var secret = new CemPinSecret(owned, CemPinResultOrigin.Synthetic, clock: clock);
+        using var result = CemPinAttemptResult.Accepted(secret);
+        using var entered = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        var erasedBeforeCallbackReturn = false;
+        var running = Task.Run(() => result.TryReveal(bytes =>
+        {
+            entered.Set();
+            if (!release.Wait(TimeSpan.FromSeconds(10)))
+                throw new IOException("Synthetic callback timeout");
+            erasedBeforeCallbackReturn = bytes.ToArray().All(b => b == 0);
+        }));
+
+        try
+        {
+            Assert.True(entered.Wait(TimeSpan.FromSeconds(5)));
+            clock.Ticks = TimeSpan.FromSeconds(31).Ticks;
+            Assert.False(secret.IsAvailable);
+            Assert.All(owned, b => Assert.Equal((byte)0, b));
+        }
+        finally { release.Set(); }
+
+        Assert.False(await running.WaitAsync(TimeSpan.FromSeconds(5)));
+        Assert.True(erasedBeforeCallbackReturn);
+        Assert.False(result.HasPin);
+    }
+
+    [Fact]
     public void NestedRevealIsDeniedWithoutInvokingSecondCallback()
     {
         var owned = Fixture();
