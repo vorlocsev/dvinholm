@@ -23,6 +23,49 @@ public sealed class CemPinVaultHardeningTests
     }
 
     [Fact]
+    public void OversizedDpapiOutputIsRejectedWithoutReturningProtectedBytes()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        // Larger than the vault's bounded encrypted record: DPAPI itself
+        // succeeds but Transform must reject the >8192-byte native output.
+        var oversized = new byte[9000];
+        Array.Fill(oversized, (byte)0xA5);
+        try
+        {
+            var error = Assert.Throws<CryptographicException>(() =>
+                CemPinWindowsProtection.Transform(oversized, Guid.NewGuid(), protect: true));
+            Assert.DoesNotContain("A5A5", error.ToString());
+        }
+        finally { CryptographicOperations.ZeroMemory(oversized); }
+    }
+
+    [Fact]
+    public void DpapiOutputCannotBeRestoredWithDifferentRecordEntropy()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var synthetic = new byte[] { 0x12, 0x34, 0x56, 0x78, 0x90, 0x12 };
+        var first = Guid.NewGuid();
+        var second = Guid.NewGuid();
+        byte[]? protectedBytes = null;
+        byte[]? restored = null;
+        try
+        {
+            protectedBytes = CemPinWindowsProtection.Transform(synthetic, first, protect: true);
+            Assert.Equal(-1, protectedBytes.AsSpan().IndexOf(synthetic));
+            Assert.Throws<CryptographicException>(() =>
+                CemPinWindowsProtection.Transform(protectedBytes, second, protect: false));
+            restored = CemPinWindowsProtection.Transform(protectedBytes, first, protect: false);
+            Assert.Equal(synthetic, restored);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(synthetic);
+            if (protectedBytes is not null) CryptographicOperations.ZeroMemory(protectedBytes);
+            if (restored is not null) CryptographicOperations.ZeroMemory(restored);
+        }
+    }
+
+    [Fact]
     public void CurrentUserDpapiRoundtripOnlyPublishesOpaqueFile() =>
         InVault((folder, store) =>
         {

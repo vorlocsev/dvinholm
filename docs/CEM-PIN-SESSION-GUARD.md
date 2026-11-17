@@ -303,3 +303,14 @@ same sanitized user-facing error. Corrupt but ordinary encrypted files remain
 explicitly deletable without modifying other vault records. Offline Windows
 regression tests cover a disguised record directory, corrupt record removal,
 and idempotence. No physical CEM or real adapter tests were performed.
+
+DPAPI sensitive memory cleanup has been hardened in CemPinWindowsProtection.
+On a failed Marshal.Copy, the destination managed buffer is now explicitly
+zeroed before the exception propagates. In the native finally block, every
+positive-length DPAPI output is wiped before LocalFree, including outputs
+rejected as larger than the 8192-byte record limit; the earlier condition
+skipped wiping rejected oversized outputs. The successful data layout,
+current-user protection, GUID-bound entropy and size limits are unchanged.
+Windows-only synthetic tests cover oversized DPAPI output rejection and
+record GUID entropy mismatch, with explicit disposal of test buffers.
+No physical CEM or external adapter was involved.
