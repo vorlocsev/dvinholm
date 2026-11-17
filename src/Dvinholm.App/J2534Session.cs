@@ -32,6 +32,22 @@ internal sealed class J2534Session : IDisposable
     internal CanBus Bus => IsConnected && _bus is { } bus
         ? bus : throw new InvalidOperationException("J2534 CAN session is not connected.");
 
+    /// <summary>
+    /// Capture the active bus and its error epoch as one lifecycle snapshot.
+    /// A CEM lease must not pair a bus from an unfinished Connect/Disconnect
+    /// with an epoch from a replacement connection. No adapter I/O occurs.
+    /// </summary>
+    internal (CanBus Bus, long Epoch)? CaptureConnectedBusSnapshot()
+    {
+        lock (_lifecycleGate)
+        {
+            if (_disposed || Volatile.Read(ref _transportFaulted) != 0 ||
+                _bus is not { IsDisposed: false } bus)
+                return null;
+            return (bus, ConnectionEpoch);
+        }
+    }
+
     // Preserve native resources for orderly disconnect, but reject further
     // diagnostic work when receive-filter state could not be restored.
     internal void InvalidateTransport() => Interlocked.Exchange(ref _transportFaulted, 1);

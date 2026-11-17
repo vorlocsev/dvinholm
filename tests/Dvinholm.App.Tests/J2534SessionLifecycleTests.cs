@@ -166,6 +166,55 @@ public sealed class J2534SessionLifecycleTests
         Assert.Equal(0, adapter.TransmittedFrames);
     }
 
+    [Theory]
+    [InlineData(FailurePoint.None)]
+    [InlineData(FailurePoint.Open)]
+    public async Task CemLeaseCaptureWaitsForAtomicConnectLifecycleSnapshot(FailurePoint failure)
+    {
+        using var openEntered = new ManualResetEventSlim();
+        using var allowOpenToFinish = new ManualResetEventSlim();
+        var adapter = new FakeSessionAdapter
+        {
+            Failure = failure,
+            OpenEntered = openEntered,
+            AllowOpenToFinish = allowOpenToFinish
+        };
+        using var session = new J2534Session(adapter);
+        var connectTask = Task.Run(() =>
+            session.Connect("synthetic.dll", 500_000, out _, extended: true));
+
+        // Connect has already detached its previous bus and owns the lifecycle
+        // gate while the fake DLL Open call remains in progress.
+        Task<CemPinSessionGuard>? captureTask = null;
+        try
+        {
+            Assert.True(openEntered.Wait(TimeSpan.FromSeconds(5)));
+            var enteredCapture = new TaskCompletionSource(
+                TaskCreationOptions.RunContinuationsAsynchronously);
+            object context = new();
+            captureTask = Task.Run(() =>
+            {
+                enteredCapture.TrySetResult();
+                return CemPinSessionGuard.Capture(session, context,
+                    () => context, ownerConsent: true);
+            });
+            await enteredCapture.Task.WaitAsync(TimeSpan.FromSeconds(5));
+            await Task.Delay(50);
+            Assert.False(captureTask.IsCompleted);
+        }
+        finally
+        {
+            allowOpenToFinish.Set();
+        }
+
+        var connected = await connectTask.WaitAsync(TimeSpan.FromSeconds(5));
+        using var guard = await captureTask!.WaitAsync(TimeSpan.FromSeconds(5));
+        Assert.Equal(failure == FailurePoint.None, connected);
+        Assert.Equal(connected, guard.IsCurrent);
+        // No CEM/ECU request was sent by capturing a lease.
+        Assert.Equal(0, adapter.ConnectCount - (connected ? 1 : 0));
+    }
+
     [Fact]
     public void ReconnectReplacesPreviousBusAndKeepsSessionUsable()
     {

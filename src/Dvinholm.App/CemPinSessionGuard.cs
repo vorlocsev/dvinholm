@@ -24,16 +24,18 @@ internal sealed class CemPinSessionGuard : IDisposable
         ArgumentNullException.ThrowIfNull(session);
         ArgumentNullException.ThrowIfNull(ecuContext);
         ArgumentNullException.ThrowIfNull(currentEcuContext);
-        // Capture once. Reconnecting must never revive an old lease.
-        CanBus? bus;
-        try { bus = session.IsConnected ? session.Bus : null; }
-        catch (InvalidOperationException) { bus = null; }
+        // Capture one coherent bus/epoch under the J2534 lifecycle gate.
+        // A concurrent reconnect cannot produce a mismatched lease.
+        var snapshot = session.CaptureConnectedBusSnapshot();
+        var bus = snapshot?.Bus;
+        var epoch = snapshot?.Epoch ?? -1L;
         var guard = new CemPinSessionGuard(() => ownerConsent && bus is { IsDisposed: false } &&
-            session.IsConnected && ReferenceEquals(session.Bus, bus) &&
+            session.IsConnected && session.ConnectionEpoch == epoch &&
+            ReferenceEquals(session.Bus, bus) &&
             ReferenceEquals(currentEcuContext(), ecuContext));
         guard._session = session;
         guard._capturedBus = bus;
-        guard._capturedEpoch = session.ConnectionEpoch;
+        guard._capturedEpoch = epoch;
         session.ReadErrorEpoch += guard.OnReadError;
         return guard;
     }

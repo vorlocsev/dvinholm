@@ -115,3 +115,9 @@ For read errors, J2534Session now stamps events with the generation captured
 when each CAN receive bus is created. Both the WinUI callback and CEM lease
 use this original bus generation, so a delayed old receive callback cannot
 be confused with an error from a newly connected bus.
+
+A CEM lease now acquires its CAN bus and originating read-error epoch in one
+`J2534Session.CaptureConnectedBusSnapshot()` operation under the connection
+lifecycle lock. Capture waits for an in-progress synthetic Connect (including
+a failed Open) rather than combining an older bus with a newer epoch. This
+snapshot does not start an ECU request or verify any physical CEM.
