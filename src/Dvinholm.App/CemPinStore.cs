@@ -241,11 +241,23 @@ internal sealed class CemPinStore
             {
                 RejectLinkedAncestors();
                 var path = FilePath(id);
-                if (File.Exists(path))
+                FileAttributes attributes;
+                try
                 {
-                    RejectLinkedRecord(path);
-                    File.Delete(path);
+                    // File.Exists returns false for both missing entries and
+                    // some access errors, falsely reporting successful deletion.
+                    // Only actual absence is an idempotent no-op.
+                    attributes = File.GetAttributes(path);
                 }
+                catch (FileNotFoundException) { return; }
+                catch (DirectoryNotFoundException) { return; }
+
+                // Never follow a junction or treat a directory named like a
+                // record as a missing file. Corrupt ordinary files remain
+                // removable so users can recover vault capacity explicitly.
+                if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0)
+                    throw new IOException("Unsafe PIN vault record target.");
+                File.Delete(path);
             }
             finally { mutex.ReleaseMutex(); }
         }

@@ -292,3 +292,14 @@ cover cancellation during a contended wait and staging without publishing
 a second record. A blocked OS file operation cannot be forcefully aborted
 by these checks, and the final UI publication race continues to use the
 separate returned-record rollback. No physical CEM was contacted.
+
+Deletion now distinguishes a genuinely absent record from an existing object
+that cannot safely be deleted. File.Exists is insufficient for that decision:
+it can return false on access errors or for a directory occupying a .dpapi
+record path. Delete instead requests file attributes, treats only
+FileNotFoundException and DirectoryNotFoundException as idempotent absence,
+rejects directories and reparse points, and surfaces other failures as the
+same sanitized user-facing error. Corrupt but ordinary encrypted files remain
+explicitly deletable without modifying other vault records. Offline Windows
+regression tests cover a disguised record directory, corrupt record removal,
+and idempotence. No physical CEM or real adapter tests were performed.

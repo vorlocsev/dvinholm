@@ -530,6 +530,45 @@ public sealed class CemPinStoreTests
     }
 
     [Fact]
+    public void DirectoryNamedLikePinRecordCannotBeSilentlyDeleted()
+    {
+        using var folder = new Folder();
+        using var candidate = Result();
+        var retained = folder.Store.Save(candidate, 30682981);
+        var original = File.ReadAllBytes(folder.File(retained.Id));
+        var directoryId = Guid.NewGuid();
+        var disguisedDirectory = folder.File(directoryId);
+        Directory.CreateDirectory(disguisedDirectory);
+
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            folder.Store.Delete(directoryId));
+        Assert.Equal("The saved PIN record could not be deleted.", error.Message);
+        Assert.True(Directory.Exists(disguisedDirectory));
+        Assert.Equal(original, File.ReadAllBytes(folder.File(retained.Id)));
+        Assert.Equal(retained.Id, Assert.Single(folder.Store.List().Entries).Id);
+    }
+
+    [Fact]
+    public void DamagedRecordCanBeExplicitlyDeletedWithoutTouchingOtherPins()
+    {
+        using var folder = new Folder();
+        using var candidate = Result();
+        var retained = folder.Store.Save(candidate, 30682981);
+        var original = File.ReadAllBytes(folder.File(retained.Id));
+        var corruptId = Guid.NewGuid();
+        File.WriteAllBytes(folder.File(corruptId), new byte[] { 0x01, 0x02 });
+        Assert.Throws<InvalidOperationException>(() => folder.Store.Load(corruptId));
+        Assert.Equal(1, folder.Store.List().UnavailableCount);
+
+        folder.Store.Delete(corruptId);
+        folder.Store.Delete(corruptId); // Confirm missing-record idempotence.
+        Assert.False(File.Exists(folder.File(corruptId)));
+        Assert.Equal(original, File.ReadAllBytes(folder.File(retained.Id)));
+        Assert.Equal(retained.Id, Assert.Single(folder.Store.List().Entries).Id);
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.tmp"));
+    }
+
+    [Fact]
     public void TamperingTruncationAndRecordRenameCannotRevealMaterial()
     {
         using var folder = new Folder();
