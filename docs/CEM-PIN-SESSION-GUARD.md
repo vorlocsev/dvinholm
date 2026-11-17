@@ -404,3 +404,19 @@ confirmation dialog before any file I/O. Static WinUI wiring tests verify
 the confirmation ordering, the default cancellation button, no secret
 reveal within the confirmation, and the retained off-dispatcher deletion.
 No physical CEM or J2534 hardware tests were performed.
+
+Saved-PIN inventory now exposes only the random GUID identifiers of unreadable
+DPAPI records whose filenames match Dvinholm's canonical record format.
+The original UnavailableCount remains comprehensive for malformed names and
+the bounded overflow marker. At most 128 candidate GUIDs are emitted; no
+PIN bytes, VIN, part number, filesystem paths or decrypted data are returned
+for unreadable records. Development's saved-record selector displays these
+as "Unavailable record N", with Load hidden disabled. The selected GUID can
+only be deleted after a second explicit confirmation. The warning explains
+that decryption failure does not prove corruption (the record might belong
+to another Windows user) and deletion is permanent. A bad filename or any
+record past the bounded scan is never offered for deletion. Both file deletion
+and valid-record loading remain off the WinUI dispatcher and require a current
+diagnostic generation after awaiting a dialog. Synthetic tests cover mixed
+readable/undecryptable/malformed records, chosen-ID-only deletion, inventory
+bounds and Development UI wiring. No real CEM hardware was accessed.

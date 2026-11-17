@@ -123,7 +123,7 @@ public sealed class CemPinWindowDeactivationSafetyContracts
         var accepted = saved.IndexOf("!= ContentDialogResult.Primary", confirm, StringComparison.Ordinal);
         var generation = saved.IndexOf("_udsResultLifetime.CanDisplay(generation)", accepted,
             StringComparison.Ordinal);
-        var delete = saved.IndexOf("await Task.Run(() => store.Delete(selected.Id));",
+        var delete = saved.IndexOf("await Task.Run(() => store.Delete(selectedId));",
             generation, StringComparison.Ordinal);
         Assert.True(branch > 0 && confirm > branch && accepted > confirm);
         Assert.True(generation > accepted && delete > generation);
@@ -138,11 +138,29 @@ public sealed class CemPinWindowDeactivationSafetyContracts
     }
 
     [Fact]
+    public void UnavailableRecordsPermitConfirmedDeletionButNeverLoad()
+    {
+        var saved = Source("src/Dvinholm.App/MainWindow.CemPinSaved.cs");
+        Assert.Contains("foreach (var recordId in inventory.UnavailableRecordIds)", saved);
+        Assert.Contains("Tag = recordId", saved);
+        Assert.Contains("dialog.IsPrimaryButtonEnabled = tag is CemPinSavedEntry;", saved);
+        Assert.Contains("dialog.IsSecondaryButtonEnabled = tag is CemPinSavedEntry or Guid;", saved);
+        Assert.Contains("selectedTag is Guid", saved);
+        Assert.Contains("другому пользователю Windows", saved);
+        Assert.Contains("another Windows user", saved);
+        Assert.Contains("Guid unavailableId => unavailableId", saved);
+        Assert.Contains("selectedTag is CemPinSavedEntry selected", saved);
+        Assert.DoesNotContain("store.Load(selectedId)", saved);
+        Assert.DoesNotContain("TryReveal(", saved);
+        Assert.DoesNotContain("Convert.ToHexString(", saved);
+    }
+
+    [Fact]
     public void SavedPinLoadAndDeleteAreOffDispatcherAndRevalidateGeneration()
     {
         var saved = Source("src/Dvinholm.App/MainWindow.CemPinSaved.cs");
         Assert.Contains("var inventory = await Task.Run(store.List);", saved);
-        var deletion = saved.IndexOf("await Task.Run(() => store.Delete(selected.Id));",
+        var deletion = saved.IndexOf("await Task.Run(() => store.Delete(selectedId));",
             StringComparison.Ordinal);
         var deleteCheck = saved.IndexOf(
             "if (_closing || !_udsResultLifetime.CanDisplay(generation)) return;",
@@ -158,7 +176,7 @@ public sealed class CemPinWindowDeactivationSafetyContracts
         Assert.True(loaded > deleteCheck && loadCheck > loaded && publish > loadCheck);
         Assert.Contains("loaded?.Dispose();", saved);
         Assert.Contains("_udsGate.Release();", saved);
-        Assert.DoesNotContain("store.Delete(selected.Id);\n                SetStatus", saved);
+        Assert.DoesNotContain("store.Delete(selectedId);\n                SetStatus", saved);
     }
 
     [Fact]

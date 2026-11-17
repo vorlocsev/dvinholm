@@ -24,6 +24,16 @@ public sealed partial class MainWindow
             foreach (var entry in inventory.Entries)
                 selection.Items.Add(new ComboBoxItem { Tag = entry,
                     Content = $"{entry.SavedAt.ToLocalTime():g} · CEM P/N {entry.PartNumber}" });
+            var unavailableIndex = 0;
+            foreach (var recordId in inventory.UnavailableRecordIds)
+            {
+                unavailableIndex++;
+                selection.Items.Add(new ComboBoxItem {
+                    Tag = recordId,
+                    Content = CemText($"Недоступная запись {unavailableIndex}",
+                        $"Unavailable record {unavailableIndex}")
+                });
+            }
             if (selection.Items.Count != 0) selection.SelectedIndex = 0;
             var content = new StackPanel { Spacing = 10, MaxWidth = 500, RequestedTheme = ElementTheme.Dark };
             content.Children.Add(new TextBlock { TextWrapping = TextWrapping.Wrap,
@@ -43,11 +53,25 @@ public sealed partial class MainWindow
                 PrimaryButtonText = CemText("Загрузить скрытым", "Load hidden"),
                 SecondaryButtonText = CemText("Удалить запись", "Delete record"),
                 CloseButtonText = CemText("Закрыть", "Close"), DefaultButton = ContentDialogButton.Close,
-                IsPrimaryButtonEnabled = selection.SelectedIndex >= 0,
+                IsPrimaryButtonEnabled = (selection.SelectedItem as ComboBoxItem)?.Tag is CemPinSavedEntry,
                 IsSecondaryButtonEnabled = selection.SelectedIndex >= 0 };
+            selection.SelectionChanged += (_, _) =>
+            {
+                // Failed-decryption records have no secret to load. Their
+                // GUID is used only for explicit, separately confirmed deletion.
+                var tag = (selection.SelectedItem as ComboBoxItem)?.Tag;
+                dialog.IsPrimaryButtonEnabled = tag is CemPinSavedEntry;
+                dialog.IsSecondaryButtonEnabled = tag is CemPinSavedEntry or Guid;
+            };
             var action = await dialog.ShowAsync();
             if (_closing || !_udsResultLifetime.CanDisplay(generation) ||
-                (selection.SelectedItem as ComboBoxItem)?.Tag is not CemPinSavedEntry selected) return;
+                (selection.SelectedItem as ComboBoxItem)?.Tag is not { } selectedTag) return;
+            var selectedId = selectedTag switch {
+                CemPinSavedEntry entry => entry.Id,
+                Guid unavailableId => unavailableId,
+                _ => Guid.Empty
+            };
+            if (selectedId == Guid.Empty) return;
             if (action == ContentDialogResult.Secondary)
             {
                 // Deletion is irreversible. Never treat the main dialog's
@@ -56,14 +80,24 @@ public sealed partial class MainWindow
                 // confirmation; the selected entry is fixed before awaiting.
                 var confirm = new ContentDialog {
                     XamlRoot = RootLayout.XamlRoot, RequestedTheme = ElementTheme.Dark,
-                    Title = CemText("Удалить сохранённый PIN?", "Delete saved PIN record?"),
+                    Title = selectedTag is Guid
+                        ? CemText("Удалить недоступную запись?", "Delete unavailable record?")
+                        : CemText("Удалить сохранённый PIN?", "Delete saved PIN record?"),
                     Content = new TextBlock {
                         TextWrapping = TextWrapping.Wrap,
-                        Text = CemText(
-                            "Зашифрованная запись будет удалена без возможности восстановления из Dvinholm. " +
-                            "Текущий автомобиль не проверяется. Продолжить?",
-                            "The encrypted record will be permanently removed from Dvinholm. " +
-                            "The current vehicle is not checked. Continue?")
+                        Text = selectedTag is Guid
+                            ? CemText(
+                                "Запись не удалось расшифровать. Это не доказывает её повреждение: " +
+                                "она может принадлежать другому пользователю Windows. " +
+                                "Удаление необратимо. Продолжить?",
+                                "The record could not be decrypted. This does not prove corruption: " +
+                                "it may belong to another Windows user. " +
+                                "Deletion is irreversible. Continue?")
+                            : CemText(
+                                "Зашифрованная запись будет удалена без возможности восстановления из Dvinholm. " +
+                                "Текущий автомобиль не проверяется. Продолжить?",
+                                "The encrypted record will be permanently removed from Dvinholm. " +
+                                "The current vehicle is not checked. Continue?")
                     },
                     PrimaryButtonText = CemText("Удалить окончательно", "Delete permanently"),
                     CloseButtonText = CemText("Отмена", "Cancel"),
@@ -74,11 +108,11 @@ public sealed partial class MainWindow
                     return;
                 // Delete waits for the cross-process vault writer gate.
                 // Keep WinUI responsive during its bounded wait and I/O.
-                await Task.Run(() => store.Delete(selected.Id));
+                await Task.Run(() => store.Delete(selectedId));
                 if (_closing || !_udsResultLifetime.CanDisplay(generation)) return;
                 SetStatus(CemText("Сохранённая запись PIN удалена.", "Saved PIN record deleted."));
             }
-            else if (action == ContentDialogResult.Primary)
+            else if (action == ContentDialogResult.Primary && selectedTag is CemPinSavedEntry selected)
             {
                 loaded = await Task.Run(() => store.Load(selected.Id));
                 // Loading DPAPI material can also outlive a context edit.

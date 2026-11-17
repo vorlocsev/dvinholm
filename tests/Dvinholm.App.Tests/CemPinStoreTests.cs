@@ -589,6 +589,51 @@ public sealed class CemPinStoreTests
     }
 
     [Fact]
+    public void UndecryptableRecordsExposeOnlyIdsForExplicitDeletion()
+    {
+        using var folder = new Folder();
+        using var candidate = Result();
+        var retained = folder.Store.Save(candidate, 30682981);
+        var original = File.ReadAllBytes(folder.File(retained.Id));
+        var unavailableId = Guid.NewGuid();
+        File.WriteAllBytes(folder.File(unavailableId), new byte[] { 1, 2, 3 });
+        File.WriteAllBytes(System.IO.Path.Combine(folder.Path, "unrelated.dpapi"), new byte[] { 4 });
+        var inventory = folder.Store.List();
+
+        Assert.Equal(retained.Id, Assert.Single(inventory.Entries).Id);
+        Assert.Equal(2, inventory.UnavailableCount);
+        Assert.Equal(unavailableId, Assert.Single(inventory.UnavailableRecordIds));
+        Assert.DoesNotContain(folder.Path, inventory.ToString());
+        Assert.True(File.Exists(folder.File(unavailableId))); // Inventory never deletes.
+        Assert.Equal(original, File.ReadAllBytes(folder.File(retained.Id)));
+
+        // Only the explicitly chosen GUID can be removed; a malformed name
+        // never becomes an actionable record ID.
+        folder.Store.Delete(inventory.UnavailableRecordIds[0]);
+        var after = folder.Store.List();
+        Assert.Empty(after.UnavailableRecordIds);
+        Assert.Equal(1, after.UnavailableCount);
+        Assert.Equal(retained.Id, Assert.Single(after.Entries).Id);
+        Assert.Equal(original, File.ReadAllBytes(folder.File(retained.Id)));
+    }
+
+    [Fact]
+    public void DamagedRecordIdsAreBoundedByVisibleVaultInventory()
+    {
+        using var folder = new Folder();
+        Directory.CreateDirectory(folder.Path);
+        for (var i = 0; i <= CemPinStore.MaxVisibleRecords; i++)
+            File.WriteAllBytes(folder.File(Guid.NewGuid()), new byte[] { 1 });
+
+        var inventory = folder.Store.List();
+        Assert.Empty(inventory.Entries);
+        Assert.Equal(CemPinStore.MaxVisibleRecords + 1, inventory.UnavailableCount);
+        Assert.Equal(CemPinStore.MaxVisibleRecords, inventory.UnavailableRecordIds.Count);
+        Assert.Equal(inventory.UnavailableRecordIds.Count,
+            inventory.UnavailableRecordIds.Distinct().Count());
+    }
+
+    [Fact]
     public void MissingAndUnavailableEntriesDoNotHideReadableRecordsOrGetDeleted()
     {
         using var folder = new Folder();

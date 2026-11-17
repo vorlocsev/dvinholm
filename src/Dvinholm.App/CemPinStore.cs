@@ -8,7 +8,12 @@ internal sealed record CemPinSavedEntry(Guid Id, uint PartNumber, DateTimeOffset
 {
     public override string ToString() => "Saved CEM PIN record (contents withheld)";
 }
-internal sealed record CemPinStoreInventory(IReadOnlyList<CemPinSavedEntry> Entries, int UnavailableCount);
+internal sealed record CemPinStoreInventory(IReadOnlyList<CemPinSavedEntry> Entries, int UnavailableCount)
+{
+    // IDs only: failed decryption must never expose PIN, part number or path.
+    // A bad filename or an entry past the bounded scan cannot be selected.
+    internal IReadOnlyList<Guid> UnavailableRecordIds { get; init; } = Array.Empty<Guid>();
+}
 
 /// <summary>Per-find encrypted records. No VIN, plaintext PIN, or vehicle-match inference.</summary>
 internal sealed class CemPinStore
@@ -195,6 +200,7 @@ internal sealed class CemPinStore
             RejectLinkedAncestors();
             if (!Directory.Exists(_directory)) return new(Array.Empty<CemPinSavedEntry>(), 0);
             var entries = new List<CemPinSavedEntry>();
+            var unavailableIds = new List<Guid>();
             var unavailable = 0;
             var inspected = 0;
             foreach (var path in Directory.EnumerateFiles(_directory, "*.dpapi"))
@@ -214,10 +220,19 @@ internal sealed class CemPinStore
                     plain = ReadPayload(id);
                     entries.Add(ParseEntry(id, plain));
                 }
-                catch (Exception) { unavailable++; }
+                catch (Exception)
+                {
+                    unavailable++;
+                    // Can be selected for deliberate deletion; no payload,
+                    // part number or filesystem path is returned.
+                    unavailableIds.Add(id);
+                }
                 finally { if (plain is not null) CryptographicOperations.ZeroMemory(plain); }
             }
-            return new(entries.OrderByDescending(e => e.SavedAt).ToArray(), unavailable);
+            return new(entries.OrderByDescending(e => e.SavedAt).ToArray(), unavailable)
+            {
+                UnavailableRecordIds = unavailableIds.ToArray()
+            };
         }
         catch (Exception) { throw new InvalidOperationException("Saved PIN records are unavailable."); }
     }
