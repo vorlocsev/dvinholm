@@ -63,7 +63,11 @@ internal sealed class CemPinSecret : IDisposable
             try
             {
                 reveal(_bytes);
-                return true;
+                // The callback can reenter Dispose() on this same thread,
+                // or reach the monotonic expiry deadline while presenting.
+                // Do not report successful reveal after either revocation.
+                ExpireIfNeeded();
+                return _bytes is not null;
             }
             catch (Exception)
             {

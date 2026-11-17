@@ -347,3 +347,14 @@ CemPinVaultHardeningTests now set an explicit invocation marker, assert that
 TryReveal returns false, and independently assert that the callback was never
 invoked. This is a test-only guard against false-positive confidential
 material disclosure checks.
+
+A further reveal-lifecycle race is now covered by CemPinSecret.TryReveal.
+A reveal callback can synchronously reenter Dispose (C# Monitor locks are
+reentrant), or can run until the monotonic expiry deadline is reached.
+Previously TryReveal returned true unconditionally after a nonthrowing
+callback even if secret ownership had already been cleared. It now repeats
+the monotonic expiry check after callback completion and reports success
+only while the owned buffer remains available. Synthetic tests cover
+reentrant disposal and an expiry clock advanced inside the callback;
+both ensure zeroed source bytes, false success and no subsequent callback.
+No live CEM or physical J2534 adapter is involved.

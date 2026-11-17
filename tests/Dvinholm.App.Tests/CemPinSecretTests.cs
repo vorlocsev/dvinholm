@@ -42,6 +42,51 @@ public sealed class CemPinSecretTests
     }
 
     [Fact]
+    public void CallbackReenteringDisposeCannotReportAnAvailablePin()
+    {
+        var owned = Fixture();
+        using var secret = new CemPinSecret(owned, CemPinResultOrigin.AdapterUnattested);
+        using var result = CemPinAttemptResult.Accepted(secret);
+        var callbackCount = 0;
+        var accepted = result.TryReveal(bytes =>
+        {
+            callbackCount++;
+            Assert.True(bytes.SequenceEqual(Fixture()));
+            secret.Dispose(); // Reentrant monitor acquisition by owner thread.
+        });
+        Assert.False(accepted);
+        Assert.Equal(1, callbackCount);
+        Assert.All(owned, b => Assert.Equal((byte)0, b));
+        Assert.False(result.HasPin);
+        Assert.False(secret.IsAvailable);
+        Assert.False(result.TryReveal(_ => callbackCount++));
+        Assert.Equal(1, callbackCount);
+    }
+
+    [Fact]
+    public void ExpiryReachedDuringRevealCallbackRevokesPayloadBeforeSuccess()
+    {
+        var clock = new Clock();
+        var owned = Fixture();
+        using var secret = new CemPinSecret(owned, CemPinResultOrigin.Synthetic,
+            clock: clock);
+        using var result = CemPinAttemptResult.Accepted(secret);
+        var callbackCount = 0;
+        var accepted = result.TryReveal(bytes =>
+        {
+            callbackCount++;
+            Assert.True(bytes.SequenceEqual(Fixture()));
+            clock.Ticks = TimeSpan.FromSeconds(31).Ticks;
+        });
+        Assert.False(accepted);
+        Assert.Equal(1, callbackCount);
+        Assert.All(owned, b => Assert.Equal((byte)0, b));
+        Assert.False(result.HasPin);
+        Assert.False(result.TryReveal(_ => callbackCount++));
+        Assert.Equal(1, callbackCount);
+    }
+
+    [Fact]
     public void FailedRevealCallbackWipesSecretAndSanitizesPrivateException()
     {
         var owned = Fixture();
