@@ -156,7 +156,7 @@ public sealed class CemConfigurationResearchCatalogProjectionTests
     }
 
     [Fact]
-    public void UserChosenBodyFileMustBeExactValidatedRawData()
+    public async Task UserChosenBodyFileMustBeExactValidatedRawData()
     {
         var path = Path.Combine(Path.GetTempPath(),
             "Dvinholm-Cem-Body-" + Guid.NewGuid().ToString("N") + ".bin");
@@ -165,31 +165,28 @@ public sealed class CemConfigurationResearchCatalogProjectionTests
             var body = Body(140);
             File.WriteAllBytes(path, body);
             var before = SHA256.HashData(File.ReadAllBytes(path));
-            var indexed = CemConfigurationOfflineBlockInspection.InspectFileAsync(path)
-                .GetAwaiter().GetResult();
+            var indexed = await CemConfigurationOfflineBlockInspection.InspectFileAsync(path);
             Assert.Equal(140, indexed.Values.Count);
             var after = SHA256.HashData(File.ReadAllBytes(path));
             Assert.True(before.SequenceEqual(after));
             Assert.False(indexed.IsRestorableBackup);
             body[1] ^= 1;
             File.WriteAllBytes(path, body);
-            Assert.Throws<FormatException>(() =>
-                CemConfigurationOfflineBlockInspection.InspectFileAsync(path)
-                    .GetAwaiter().GetResult());
+            await Assert.ThrowsAsync<FormatException>(() =>
+                CemConfigurationOfflineBlockInspection.InspectFileAsync(path));
         }
         finally { File.Delete(path); }
     }
 
     [Fact]
-    public void P3BodyFileIsParsedWithoutAutoIdentifyingAnEcu()
+    public async Task P3BodyFileIsParsedWithoutAutoIdentifyingAnEcu()
     {
         var path = Path.Combine(Path.GetTempPath(),
             "Dvinholm-Cem-P3-" + Guid.NewGuid().ToString("N") + ".bin");
         try
         {
             File.WriteAllBytes(path, Body(252));
-            var indexed = CemConfigurationOfflineBlockInspection.InspectFileAsync(path)
-                .GetAwaiter().GetResult();
+            var indexed = await CemConfigurationOfflineBlockInspection.InspectFileAsync(path);
             Assert.Equal(CemConfigurationIndexedFormat.P3F106, indexed.Format);
             Assert.False(indexed.HasVerifiedCemIdentity);
             Assert.False(indexed.MayReadOrWriteVehicle);
@@ -296,9 +293,9 @@ public sealed class CemConfigurationResearchCatalogProjectionTests
         Assert.Equal("CC", second.Values[^1].ValueHex);
         Assert.False(first.HasVerifiedCemIdentity);
         Assert.False(second.IsRestorableBackup);
-        Assert.Throws<FormatException>(() =>
+        await Assert.ThrowsAsync<FormatException>(() =>
             CemConfigurationOfflineBlockInspection.InspectFileAsync(
-                FixturePath(name + "-Corrupt-P2.bin")).GetAwaiter().GetResult());
+                FixturePath(name + "-Corrupt-P2.bin")));
     }
 
     private static string FixturePath(string relative)

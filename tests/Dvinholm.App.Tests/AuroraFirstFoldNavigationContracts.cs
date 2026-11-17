@@ -19,13 +19,13 @@ public sealed class AuroraFirstFoldNavigationContracts
         throw new FileNotFoundException(relative);
     }
 
-    private static string Main() => Source("src/Dvinholm.App/MainWindow.xaml.cs");
+    private static string MainWindowSource() => Source("src/Dvinholm.App/MainWindow.xaml.cs");
     private static string Updates() => Source("src/Dvinholm.App/MainWindow.UnifiedUpdates.cs");
 
     [Fact]
     public void FirstFoldResetUsesBothImmediateAndDeferredLayoutChecks()
     {
-        var main = Main();
+        var main = MainWindowSource();
         var start = main.IndexOf("private void ResetWorkspaceFirstFoldAfterNavigation()",
             StringComparison.Ordinal);
         var end = main.IndexOf("private void DashboardNavigate(", start,
@@ -52,7 +52,7 @@ public sealed class AuroraFirstFoldNavigationContracts
     [Fact]
     public void DeferredScrollRejectsObsoleteRoutesClosedWindowsAndHiddenHost()
     {
-        var main = Main();
+        var main = MainWindowSource();
         Assert.Contains("private int _workspaceFirstFoldGeneration;", main);
         Assert.Contains("var generation = ++_workspaceFirstFoldGeneration;", main);
         Assert.Contains("if (_closing || generation != _workspaceFirstFoldGeneration ||",
@@ -68,7 +68,7 @@ public sealed class AuroraFirstFoldNavigationContracts
     [Fact]
     public void NormalNavigationResetsFirstFoldAfterUpdatingFocusAndDestination()
     {
-        var main = Main();
+        var main = MainWindowSource();
         var start = main.IndexOf("private void DashboardNavigate(", StringComparison.Ordinal);
         var end = main.IndexOf("private void WorkspaceNavigate_Click(", start,
             StringComparison.Ordinal);
@@ -111,7 +111,7 @@ public sealed class AuroraFirstFoldNavigationContracts
     [Fact]
     public void FirstFoldResetNeverInjectsVehicleRequestsOrUserFocus()
     {
-        var main = Main();
+        var main = MainWindowSource();
         var start = main.IndexOf("private void ResetWorkspaceFirstFoldAfterNavigation()",
             StringComparison.Ordinal);
         var end = main.IndexOf("private void DashboardNavigate(", start,

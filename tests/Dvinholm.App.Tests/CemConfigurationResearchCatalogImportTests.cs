@@ -196,7 +196,7 @@ public sealed class CemConfigurationResearchCatalogImportTests
     }
 
     [Fact]
-    public void FileImportIsReadOnlyAndRedactedReportLeaksNoSourceData()
+    public async Task FileImportIsReadOnlyAndRedactedReportLeaksNoSourceData()
     {
         var path = TempPath();
         try
@@ -204,8 +204,7 @@ public sealed class CemConfigurationResearchCatalogImportTests
             var bytes = new UTF8Encoding(false).GetBytes(ValidJson());
             File.WriteAllBytes(path, bytes);
             var originalSha = SHA256.HashData(File.ReadAllBytes(path));
-            var doc = CemConfigurationResearchCatalogImport.InspectFileAsync(path)
-                .GetAwaiter().GetResult();
+            var doc = await CemConfigurationResearchCatalogImport.InspectFileAsync(path);
             var finalSha = SHA256.HashData(File.ReadAllBytes(path));
             Assert.True(originalSha.SequenceEqual(finalSha));
             var report = CemConfigurationResearchCatalogImport.BuildRedactedReport(doc);

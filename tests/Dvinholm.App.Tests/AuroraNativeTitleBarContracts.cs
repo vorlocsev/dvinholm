@@ -21,7 +21,7 @@ public sealed class AuroraNativeTitleBarContracts
     private static string TitleBar() =>
         Source("src/Dvinholm.App/MainWindow.AuroraTitleBar.cs");
 
-    private static string Main() =>
+    private static string MainWindowSource() =>
         Source("src/Dvinholm.App/MainWindow.xaml.cs");
 
     [Fact]
@@ -85,7 +85,7 @@ public sealed class AuroraNativeTitleBarContracts
             "IsMaximizable ="
         })
             Assert.DoesNotContain(forbidden, code);
-        var main = Main();
+        var main = MainWindowSource();
         Assert.Contains("presenter.IsResizable = false;", main);
         Assert.Contains("presenter.IsMaximizable = false;", main);
         Assert.Contains("presenter.IsMinimizable = true;", main);
@@ -94,7 +94,7 @@ public sealed class AuroraNativeTitleBarContracts
     [Fact]
     public void NativeColorsAreAppliedBeforeFixedDpiWindowSizing()
     {
-        var main = Main();
+        var main = MainWindowSource();
         var ctor = main.IndexOf("public MainWindow()", StringComparison.Ordinal);
         var init = main.IndexOf("InitializeComponent();", ctor, StringComparison.Ordinal);
         var colors = main.IndexOf("ConfigureAuroraNativeTitleBar();", init,
@@ -110,7 +110,7 @@ public sealed class AuroraNativeTitleBarContracts
     [Fact]
     public void TitleIconAndSixScreenAppRemainUnmodified()
     {
-        var main = Main();
+        var main = MainWindowSource();
         var title = TitleBar();
         Assert.Contains("AppWindow.SetIcon(iconPath);", main);
         Assert.Contains("Title = LatestBuildUpdater.CurrentWindowTitle;", main);
