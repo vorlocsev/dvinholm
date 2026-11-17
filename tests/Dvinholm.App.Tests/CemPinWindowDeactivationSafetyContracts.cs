@@ -98,12 +98,17 @@ public sealed class CemPinWindowDeactivationSafetyContracts
             StringComparison.Ordinal);
         var lateLease = method.IndexOf("cts.IsCancellationRequested || guard.IsCurrent != true || !result.HasPin",
             StringComparison.Ordinal);
+        var rollback = method.IndexOf("await Task.Run(() => rollbackStore.Delete(abandonedId));",
+            StringComparison.Ordinal);
         var publish = method.IndexOf("_cemPinResult = result;", StringComparison.Ordinal);
         var cleanup = method.IndexOf("_udsGate.Release();", StringComparison.Ordinal);
         Assert.True(offloadedSave > 0);
         Assert.True(lateLease > offloadedSave);
-        Assert.True(publish > lateLease);
+        Assert.True(rollback > lateLease);
+        Assert.True(publish > rollback);
         Assert.True(cleanup > publish);
+        Assert.Contains("savedEntry = await Task.Run(() => store.Save(candidate, partNumber));", method);
+        Assert.Contains("if (savedEntry is not null && store is not null)", method);
         Assert.Contains("_udsResultLifetime.CanDisplay(generation)", method[offloadedSave..publish]);
         Assert.DoesNotContain("OpenCemPinStore().Save(result, identity.PartNumber)", method);
     }

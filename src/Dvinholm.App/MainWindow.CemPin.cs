@@ -358,16 +358,18 @@ public sealed partial class MainWindow
             if (result.HasPin)
             {
                 var saved = false;
+                CemPinStore? store = null;
+                CemPinSavedEntry? savedEntry = null;
                 try
                 {
                     // A second Dvinholm process can hold the PIN vault mutex
                     // for up to 15 seconds. Do not block WinUI's dispatcher:
                     // cancellation/closing and lease invalidation must remain
                     // responsive while DPAPI and encrypted file I/O finish.
-                    var store = OpenCemPinStore();
+                    store = OpenCemPinStore();
                     var candidate = result;
                     var partNumber = identity.PartNumber;
-                    await Task.Run(() => store.Save(candidate, partNumber));
+                    savedEntry = await Task.Run(() => store.Save(candidate, partNumber));
                     saved = true;
                 }
                 catch (Exception) { /* Never echo private storage errors. */ }
@@ -376,14 +378,30 @@ public sealed partial class MainWindow
                 // may have arrived while Save was awaiting the vault mutex.
                 // Do not promote a revoked result into a revealable UI state.
                 // Keep the diagnostic gate until the worker has terminated.
-                if (_closing || !_udsResultLifetime.CanDisplay(generation)) return;
-                if (cts.IsCancellationRequested || guard.IsCurrent != true || !result.HasPin)
+                if (_closing || !_udsResultLifetime.CanDisplay(generation) ||
+                    cts.IsCancellationRequested || guard.IsCurrent != true || !result.HasPin)
                 {
-                    SetStatus(!_session.IsConnected
-                        ? CemText("Сессия CEM недоступна. Переподключите адаптер.",
-                            "CEM session unavailable. Reconnect the adapter.")
-                        : CemText("Операция PIN CEM отменена или контекст изменён.",
-                            "CEM PIN operation cancelled or context changed."));
+                    // Cancellation may land just after Save's final lease check,
+                    // but before this WinUI continuation runs. Delete only the
+                    // UUID returned by this Save; never touch older vault entries.
+                    // Keep the diagnostic gate until rollback has terminated.
+                    if (savedEntry is not null && store is not null)
+                    {
+                        try
+                        {
+                            var abandonedId = savedEntry.Id;
+                            var rollbackStore = store;
+                            await Task.Run(() => rollbackStore.Delete(abandonedId));
+                        }
+                        catch (Exception) { /* Rollback is best effort; redact private file errors. */ }
+                    }
+
+                    if (!_closing && _udsResultLifetime.CanDisplay(generation))
+                        SetStatus(!_session.IsConnected
+                            ? CemText("Сессия CEM недоступна. Переподключите адаптер.",
+                                "CEM session unavailable. Reconnect the adapter.")
+                            : CemText("Операция PIN CEM отменена или контекст изменён.",
+                                "CEM PIN operation cancelled or context changed."));
                     return;
                 }
                 _cemPinResult = result;

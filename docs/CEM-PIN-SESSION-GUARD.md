@@ -252,3 +252,16 @@ path still releases the diagnostic gate only after storage I/O has ended.
 A static WinUI contract test verifies offload/revalidation/cleanup order.
 The encrypted store's own revocation checks remain authoritative. No
 physical ECU validation was conducted.
+
+A narrow WinUI publication gap remained after moving PIN vault I/O to a
+worker: Save could commit a new encrypted .dpapi entry, then the user could
+cancel or change the ECU context before the UI resumed. The operation now
+retains the exact CemPinSavedEntry ID returned by Save. If the window closed,
+diagnostic result generation changed, cancellation occurred, the CEM lease
+became stale or the candidate expired before publication, the UI attempts
+to roll back exactly that new record on a worker thread, while still holding
+the diagnostic gate. It never deletes unrelated or pre-existing entries.
+Rollback errors are sanitized and cannot restore an invalid result; a file
+held by an external process might nevertheless survive a failed delete.
+A static WinUI ordering check and a synthetic Windows DPAPI test verify
+the rollback path and protection of an existing record. No live CEM is used.

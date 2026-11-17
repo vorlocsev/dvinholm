@@ -394,6 +394,27 @@ public sealed class CemPinStoreTests
     }
 
     [Fact]
+    public void LateCancellationRollbackDeletesOnlyNewEncryptedRecord()
+    {
+        using var folder = new Folder();
+        using var older = Result();
+        var retained = folder.Store.Save(older, 30682981);
+        var retainedBytes = File.ReadAllBytes(folder.File(retained.Id));
+
+        using var newer = Result();
+        var newlySaved = folder.Store.Save(newer, 30682981);
+        // Simulate the WinUI cancellation continuation after Save completed:
+        // it owns the new receipt and may remove only that specific file.
+        folder.Store.Delete(newlySaved.Id);
+
+        Assert.False(File.Exists(folder.File(newlySaved.Id)));
+        Assert.Equal(retainedBytes, File.ReadAllBytes(folder.File(retained.Id)));
+        Assert.Equal(retained.Id, Assert.Single(folder.Store.List().Entries).Id);
+        using var restored = folder.Store.Load(retained.Id);
+        Assert.True(restored.TryReveal(bytes => Assert.True(bytes.SequenceEqual(Value()))));
+    }
+
+    [Fact]
     public void TamperingTruncationAndRecordRenameCannotRevealMaterial()
     {
         using var folder = new Folder();
