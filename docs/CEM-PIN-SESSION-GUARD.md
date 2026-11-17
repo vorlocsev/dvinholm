@@ -358,3 +358,13 @@ only while the owned buffer remains available. Synthetic tests cover
 reentrant disposal and an expiry clock advanced inside the callback;
 both ensure zeroed source bytes, false success and no subsequent callback.
 No live CEM or physical J2534 adapter is involved.
+
+Recursive reveal is now denied. CemPinSecret holds a Monitor lock while
+executing its disclosure callback; a callback on the same thread could
+previously reenter either CemPinSecret.TryReveal or
+CemPinAttemptResult.TryReveal and receive the same sensitive buffer again.
+An ownership-locked _revealing gate now refuses nested disclosure without
+calling the nested callback. The gate is reset in finally, including after
+callback exceptions or revocation; valid subsequent explicit reveals remain
+possible until expiry. Synthetic tests cover direct and result-mediated
+recursive calls and expiry during the outer callback. No real CEM traffic.

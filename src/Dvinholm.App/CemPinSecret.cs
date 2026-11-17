@@ -14,6 +14,9 @@ internal sealed class CemPinSecret : IDisposable
     private readonly TimeSpan _lifetime;
     private byte[]? _bytes;
     private ITimer? _timer;
+    // Monitor locks are reentrant. Deny recursive disclosure from within an
+    // active callback, including through CemPinAttemptResult.TryReveal.
+    private bool _revealing;
     internal CemPinResultOrigin Origin { get; }
 
     // Ownership transfers after validation. Caller must not retain the buffer.
@@ -59,7 +62,8 @@ internal sealed class CemPinSecret : IDisposable
         lock (_gate)
         {
             ExpireIfNeeded();
-            if (_bytes is null) return false;
+            if (_bytes is null || _revealing) return false;
+            _revealing = true;
             try
             {
                 reveal(_bytes);
@@ -77,6 +81,10 @@ internal sealed class CemPinSecret : IDisposable
                 // Clear while still holding the ownership gate.
                 Clear();
                 return false;
+            }
+            finally
+            {
+                _revealing = false;
             }
         }
     }

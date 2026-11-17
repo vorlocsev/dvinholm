@@ -42,6 +42,62 @@ public sealed class CemPinSecretTests
     }
 
     [Fact]
+    public void NestedRevealIsDeniedWithoutInvokingSecondCallback()
+    {
+        var owned = Fixture();
+        using var secret = new CemPinSecret(owned, CemPinResultOrigin.AdapterUnattested);
+        using var result = CemPinAttemptResult.Accepted(secret);
+        var outerCalls = 0;
+        var innerCalls = 0;
+        var matched = false;
+
+        var accepted = result.TryReveal(bytes =>
+        {
+            outerCalls++;
+            matched = bytes.SequenceEqual(Fixture());
+            Assert.False(result.TryReveal(_ => innerCalls++));
+            Assert.False(secret.TryReveal(_ => innerCalls++));
+        });
+
+        Assert.True(accepted);
+        Assert.True(matched);
+        Assert.Equal(1, outerCalls);
+        Assert.Equal(0, innerCalls);
+        Assert.True(result.HasPin);
+        // The guard applies only while the first callback is active.
+        Assert.True(result.TryReveal(bytes =>
+        {
+            outerCalls++;
+            matched = bytes.SequenceEqual(Fixture());
+        }));
+        Assert.True(matched);
+        Assert.Equal(2, outerCalls);
+        result.Dispose();
+        Assert.All(owned, b => Assert.Equal((byte)0, b));
+    }
+
+    [Fact]
+    public void NestedRevealRefusalDoesNotPreventExpiryAndRevocation()
+    {
+        var clock = new Clock();
+        var owned = Fixture();
+        using var secret = new CemPinSecret(owned, CemPinResultOrigin.Synthetic, clock: clock);
+        using var result = CemPinAttemptResult.Accepted(secret);
+        var nestedCalled = false;
+        var accepted = result.TryReveal(_ =>
+        {
+            // The nested invocation must not call its callback even when
+            // the timer has not yet expired.
+            Assert.False(secret.TryReveal(_ => nestedCalled = true));
+            clock.Ticks = TimeSpan.FromSeconds(31).Ticks;
+        });
+        Assert.False(accepted);
+        Assert.False(nestedCalled);
+        Assert.False(result.HasPin);
+        Assert.All(owned, b => Assert.Equal((byte)0, b));
+    }
+
+    [Fact]
     public void CallbackReenteringDisposeCannotReportAnAvailablePin()
     {
         var owned = Fixture();
