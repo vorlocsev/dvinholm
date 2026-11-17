@@ -48,14 +48,16 @@ public sealed class CemPinSecretTests
         using var secret = new CemPinSecret(owned, CemPinResultOrigin.AdapterUnattested);
         using var result = CemPinAttemptResult.Accepted(secret);
         var callbackCount = 0;
+        var matched = false;
         var accepted = result.TryReveal(bytes =>
         {
             callbackCount++;
-            Assert.True(bytes.SequenceEqual(Fixture()));
+            matched = bytes.SequenceEqual(Fixture());
             secret.Dispose(); // Reentrant monitor acquisition by owner thread.
         });
         Assert.False(accepted);
         Assert.Equal(1, callbackCount);
+        Assert.True(matched);
         Assert.All(owned, b => Assert.Equal((byte)0, b));
         Assert.False(result.HasPin);
         Assert.False(secret.IsAvailable);
@@ -72,14 +74,16 @@ public sealed class CemPinSecretTests
             clock: clock);
         using var result = CemPinAttemptResult.Accepted(secret);
         var callbackCount = 0;
+        var matched = false;
         var accepted = result.TryReveal(bytes =>
         {
             callbackCount++;
-            Assert.True(bytes.SequenceEqual(Fixture()));
+            matched = bytes.SequenceEqual(Fixture());
             clock.Ticks = TimeSpan.FromSeconds(31).Ticks;
         });
         Assert.False(accepted);
         Assert.Equal(1, callbackCount);
+        Assert.True(matched);
         Assert.All(owned, b => Assert.Equal((byte)0, b));
         Assert.False(result.HasPin);
         Assert.False(result.TryReveal(_ => callbackCount++));
