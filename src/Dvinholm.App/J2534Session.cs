@@ -282,6 +282,13 @@ internal sealed class J2534Session : IDisposable
 
     private void HandleReadError(Exception error, long originatingEpoch)
     {
+        // Native Read failures invalidate the shared transport even without
+        // a subscribed CEM lease. Stamp before UI callbacks without taking
+        // the native lifecycle lock (which may join the receive worker).
+        // Decode/filter notices do not globally poison the J2534 session.
+        if (error is CanRxDispatcher.AdapterReadFailureException)
+            InvalidateTransportForReadError(originatingEpoch);
+
         // Keep the original diagnostic event for non-CEM listeners.
         var handlers = ReadError;
         if (handlers is not null)

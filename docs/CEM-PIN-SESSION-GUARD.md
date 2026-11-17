@@ -131,3 +131,16 @@ undo a newer bus's fault. An affected epoch remains blocked until explicit
 Disconnect/Connect; capture refuses a faulted bus. Three extra offline tests
 cover delayed old faults, out-of-order faults and reconnect recovery, with
 zero synthetic transmitted CAN frames. No physical CEM operation is initiated.
+
+The next offline increment distinguishes native adapter Read failures from
+non-native receive diagnostics. A native read returning an error or throwing
+now stamps its originating J2534 generation as faulted before any callback,
+even when no CEM lease is subscribed. A late old-bus fault still cannot poison
+a replacement connection. The session rejects fresh diagnostic snapshots until
+an explicit disconnect/reconnect. Malformed CAN messages and failures of an
+individual subscription filter remain nonfatal for the shared J2534 session
+when no CEM lease is active. An active CEM PIN guard still conservatively
+invalidates its own operation on any read-error notification. Added isolated
+tests cover failure without a lease and nonfatal decode notification; existing
+callback isolation and deferred teardown fixtures assert immediate fail-closed
+status. No physical adapter was exercised.

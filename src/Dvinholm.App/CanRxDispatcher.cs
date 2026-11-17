@@ -4,6 +4,11 @@ namespace Dvinholm.App;
 
 internal sealed class CanRxDispatcher : IDisposable
 {
+    // Distinguish native adapter Read failures from malformed frames or
+    // individual subscription-predicate failures.
+    internal sealed class AdapterReadFailureException(string message)
+        : InvalidOperationException(message);
+
     internal sealed class Subscription : IDisposable
     {
         private const int DefaultQueueCapacity = 4096;
@@ -306,7 +311,7 @@ internal sealed class CanRxDispatcher : IDisposable
                 {
                     if (!string.IsNullOrWhiteSpace(error))
                     {
-                        ReportReadError(new InvalidOperationException(error));
+                        ReportReadError(new AdapterReadFailureException(error));
 
                         // Some adapters return an error immediately instead of
                         // respecting the read timeout. Back off to avoid a hot
@@ -357,7 +362,7 @@ internal sealed class CanRxDispatcher : IDisposable
             {
                 // Vendor interop exceptions may include machine-specific paths.
                 // Keep the read failure visible without exposing raw driver details.
-                ReportReadError(new InvalidOperationException(
+                ReportReadError(new AdapterReadFailureException(
                     "J2534 read failed due to an unexpected adapter error."));
 
                 // Avoid a hot loop if the adapter keeps throwing immediately.

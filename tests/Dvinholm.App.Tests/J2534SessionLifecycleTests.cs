@@ -313,8 +313,10 @@ public sealed class J2534SessionLifecycleTests
 
             // Disconnect is deferred off the native read worker and must not
             // unload the adapter while the callback still owns that worker.
+            // Logical transport faults immediately, while native unload
+            // remains deferred until the callback exits.
             Assert.Equal(1, adapter.UnloadCount);
-            Assert.True(session.IsConnected);
+            Assert.False(session.IsConnected);
         }
         finally
         {
@@ -350,8 +352,10 @@ public sealed class J2534SessionLifecycleTests
 
             // Dispose must be deferred while the native Read callback owns the
             // worker; unloading the driver here could tear down an active call.
+            // Logical transport faults immediately, while native unload
+            // remains deferred until the callback exits.
             Assert.Equal(1, adapter.UnloadCount);
-            Assert.True(session.IsConnected);
+            Assert.False(session.IsConnected);
         }
         finally
         {

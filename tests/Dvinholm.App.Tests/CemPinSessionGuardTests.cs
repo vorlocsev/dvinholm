@@ -127,7 +127,9 @@ public sealed class CemPinSessionGuardTests
             await reported.Task.WaitAsync(TimeSpan.FromSeconds(5));
             adapter.FailReads = false;
             Assert.False(firstGuard.IsCurrent);
-            Assert.True(session.IsConnected);
+            // A native fault on the NEW bus closes that transport even though
+            // the only CEM guard belongs to the prior connection epoch.
+            Assert.False(session.IsConnected);
             Assert.Equal(0, adapter.TransmittedFrames);
         }
         finally
@@ -136,6 +138,8 @@ public sealed class CemPinSessionGuardTests
             session.ReadError -= Observe;
         }
 
+        session.Disconnect();
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
         object secondContext = new();
         using var secondGuard = CemPinSessionGuard.Capture(
             session, secondContext, () => secondContext, ownerConsent: true);
