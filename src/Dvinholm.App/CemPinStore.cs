@@ -203,10 +203,12 @@ internal sealed class CemPinStore
                 }
                 catch (IOException) { /* An active or locked file is left alone. */ }
                 catch (UnauthorizedAccessException) { }
+                catch (System.Security.SecurityException) { }
             }
         }
         catch (IOException) { /* Cleanup is best effort, not a save prerequisite. */ }
         catch (UnauthorizedAccessException) { }
+        catch (System.Security.SecurityException) { }
     }
 
     private string FilePath(Guid id) => Path.Combine(_directory, id.ToString("N") + ".dpapi");
@@ -244,8 +246,18 @@ internal sealed class CemPinStore
         using var file = new FileStream(path, FileMode.Open, FileAccess.Read, FileShare.Read);
         if (file.Length is <= 0 or > MaxProtectedBytes) throw new IOException();
         var bytes = new byte[(int)file.Length];
-        file.ReadExactly(bytes);
-        return bytes;
+        try
+        {
+            file.ReadExactly(bytes);
+            return bytes;
+        }
+        catch
+        {
+            // An I/O failure after a partial read must not retain a
+            // truncated protected record in a discarded managed buffer.
+            CryptographicOperations.ZeroMemory(bytes);
+            throw;
+        }
     }
 
     private static CemPinSavedEntry ParseEntry(Guid id, byte[] plain)

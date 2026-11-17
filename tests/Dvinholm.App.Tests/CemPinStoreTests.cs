@@ -191,6 +191,66 @@ public sealed class CemPinStoreTests
     }
 
     [Fact]
+    public void LockedAbandonedStageDoesNotPreventSavingAnotherRecord()
+    {
+        using var folder = new Folder();
+        Directory.CreateDirectory(folder.Path);
+        var lockedStage = System.IO.Path.Combine(folder.Path,
+            $"{Guid.NewGuid():N}.{Guid.NewGuid():N}.tmp");
+        File.WriteAllBytes(lockedStage, new byte[] { 1, 2, 3, 4 });
+        File.SetLastWriteTimeUtc(lockedStage, DateTime.UtcNow.AddDays(-3));
+
+        using (new FileStream(lockedStage, FileMode.Open, FileAccess.ReadWrite, FileShare.None))
+        {
+            using var candidate = Result();
+            var saved = folder.Store.Save(candidate, 30682981);
+            Assert.True(File.Exists(lockedStage));
+            Assert.Equal(saved.Id, Assert.Single(folder.Store.List().Entries).Id);
+        }
+        Assert.Equal(new byte[] { 1, 2, 3, 4 }, File.ReadAllBytes(lockedStage));
+    }
+
+    [Fact]
+    public void OldMalformedTemporaryNameIsNeverDeleted()
+    {
+        using var folder = new Folder();
+        Directory.CreateDirectory(folder.Path);
+        var otherFile = System.IO.Path.Combine(folder.Path,
+            $"{Guid.NewGuid():N}.not-a-guid.tmp");
+        File.WriteAllBytes(otherFile, new byte[] { 9, 8, 7 });
+        File.SetLastWriteTimeUtc(otherFile, DateTime.UtcNow.AddDays(-3));
+
+        using var candidate = Result();
+        var saved = folder.Store.Save(candidate, 30682981);
+        Assert.True(File.Exists(otherFile));
+        Assert.Equal(new byte[] { 9, 8, 7 }, File.ReadAllBytes(otherFile));
+        Assert.Equal(saved.Id, Assert.Single(folder.Store.List().Entries).Id);
+    }
+
+    [Fact]
+    public void DeniedStageWriteDoesNotExposeFailureOrDamagePreviousPin()
+    {
+        using var folder = new Folder();
+        using var original = Result();
+        var saved = folder.Store.Save(original, 30682981);
+        var before = File.ReadAllBytes(folder.File(saved.Id));
+        var denied = new CemPinStore(folder.Path, (path, encrypted) =>
+        {
+            File.WriteAllBytes(path, encrypted[..Math.Min(8, encrypted.Length)]);
+            throw new UnauthorizedAccessException("PRIVATE-SYNTHETIC-PIN-PATH");
+        });
+
+        using var candidate = Result();
+        var failure = Assert.Throws<InvalidOperationException>(() =>
+            denied.Save(candidate, 30682981));
+        Assert.Equal("The encrypted PIN record could not be saved.", failure.Message);
+        Assert.DoesNotContain("PRIVATE-SYNTHETIC-PIN-PATH", failure.ToString());
+        Assert.Equal(before, File.ReadAllBytes(folder.File(saved.Id)));
+        Assert.Single(folder.Store.List().Entries);
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.tmp"));
+    }
+
+    [Fact]
     public void TamperingTruncationAndRecordRenameCannotRevealMaterial()
     {
         using var folder = new Folder();

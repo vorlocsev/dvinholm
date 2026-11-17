@@ -200,3 +200,13 @@ do not prevent the new Save. The cleanup never decrypts or logs abandoned
 stage contents. Offline DPAPI tests cover a stale stage, a fresh stage,
 unrelated .tmp, and a failed write after maintenance. A crash during Save
 can still leave an encrypted temporary file until a later Save.
+
+Vault failure-containment checks now cover file locks, obsolete malformed
+staging names, and interrupted staging that throws UnauthorizedAccessException.
+A locked old temporary file must be preserved without stopping a valid Save;
+an unrelated/malformed temporary filename is never deleted; an access-denied
+writer must not leave a partial stage or damage an existing encrypted record.
+The best-effort stale-stage cleanup now also ignores SecurityException from
+enumeration or per-file metadata access. ReadBounded explicitly zeroes its
+partially read buffer before propagating any short-read or I/O exception.
+These are synthetic Windows filesystem/DPAPI tests only.
