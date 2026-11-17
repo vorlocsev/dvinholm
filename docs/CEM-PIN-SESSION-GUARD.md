@@ -104,3 +104,9 @@ Future physical acceptance, only after the documented route is approved:
 8. Verify CAN Monitor/UDS and GUI recovery, then record exact build SHA and verdict.
 
 Until these checks pass, claim only partial implementation, not CEM PIN support.
+
+Queued WinUI receive-error callbacks also capture `J2534Session.ConnectionEpoch`.
+Every disconnect/replacement connection (including failed replacement) advances
+that epoch before native teardown. If a queued error belongs to an old epoch,
+its UI callback does not clear a newly connected session's diagnostic result.
+These guards are synthetic and static checks, not interactive WinUI acceptance.

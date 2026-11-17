@@ -187,24 +187,29 @@ public sealed partial class MainWindow : Window
         // The standalone launcher owns updates and all Lite runtime management.
         if (DvinholmUserDataDirectory.IsAcceptanceLaunch)
             ConnectButton.IsEnabled = false;
-        _session.ReadError += _ => DispatcherQueue.TryEnqueue(() =>
+        _session.ReadError += _ =>
         {
-            // A receive failure invalidates displayed diagnostic evidence and
-            // any pending result generation. A faulted CEM lease also marks the
-            // shared transport unavailable until explicit reconnect.
-            ClearDiagnosticReadResult();
+            // A queued dispatcher callback may outlive its adapter's CAN bus.
+            // Snapshot the connection epoch on the receive worker, then
+            // ignore the notification if the user disconnected/reconnected.
+            var errorEpoch = _session.ConnectionEpoch;
+            DispatcherQueue.TryEnqueue(() =>
+            {
+                if (_closing || _session.ConnectionEpoch != errorEpoch)
+                    return;
+                // A receive failure invalidates displayed diagnostic evidence
+                // and any pending result generation for THIS connection only.
+                ClearDiagnosticReadResult();
 #if DVINHOLM_DEVELOPMENT_FEATURES
-            ClearCemIdentity();
-            ClearCemPinMaterial();
+                ClearCemIdentity();
+                ClearCemPinMaterial();
 #endif
-            // Immediately re-evaluate controls against the actual transport,
-            // not the stale UI-only _connected flag.
-            SetUdsEnabled(_connected && _session.IsConnected && !_closing);
-            // The worker may report a late error after disconnect/close.
-            // Neither vendor exception data nor stale errors belong on Aurora.
-            if (!_closing && _connected)
-                SetStatus(J2534ConnectionPresentation.ReadErrorActivity);
-        });
+                SetUdsEnabled(_connected && _session.IsConnected && !_closing);
+                // Never forward private vendor exception data into Aurora.
+                if (_connected)
+                    SetStatus(J2534ConnectionPresentation.ReadErrorActivity);
+            });
+        };
 #if DVINHOLM_DEVELOPMENT_FEATURES
         // A temporary PIN reveal must not remain in a backgrounded window,
         // including Alt+Tab, workstation locking and window deactivation.

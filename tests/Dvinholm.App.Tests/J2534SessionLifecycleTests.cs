@@ -137,6 +137,35 @@ public sealed class J2534SessionLifecycleTests
         Assert.Null(session.AdapterCapabilities);
     }
 
+
+    [Fact]
+    public void ConnectionEpochInvalidatesQueuedErrorsOnDisconnectAndReconnect()
+    {
+        using var adapter = new VirtualJ2534Adapter(_ => Array.Empty<CanFrame>());
+        using var session = new J2534Session(adapter);
+        var before = session.ConnectionEpoch;
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        var first = session.ConnectionEpoch;
+        Assert.True(first > before);
+        Assert.True(session.IsConnected);
+
+        session.Disconnect();
+        var disconnected = session.ConnectionEpoch;
+        Assert.True(disconnected > first);
+        Assert.False(session.IsConnected);
+
+        Assert.True(session.Connect("synthetic.dll", 500_000, out _, extended: true));
+        var reconnected = session.ConnectionEpoch;
+        Assert.True(reconnected > disconnected);
+        Assert.True(session.IsConnected);
+
+        // Failed replacement Connect must also retire the old callback token.
+        Assert.False(session.Connect("", 500_000, out _));
+        Assert.True(session.ConnectionEpoch > reconnected);
+        Assert.False(session.IsConnected);
+        Assert.Equal(0, adapter.TransmittedFrames);
+    }
+
     [Fact]
     public void ReconnectReplacesPreviousBusAndKeepsSessionUsable()
     {

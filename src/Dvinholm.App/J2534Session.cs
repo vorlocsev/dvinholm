@@ -10,6 +10,11 @@ internal sealed class J2534Session : IDisposable
     private CanBus? _bus;
     private bool _disposed;
     private int _transportFaulted;
+    // Incremented before every connection teardown, including replacement
+    // Connect calls and failed replacement attempts. Read-only UI callbacks
+    // use this token to reject delayed errors from a previous CAN session.
+    private long _connectionEpoch;
+    internal long ConnectionEpoch => Interlocked.Read(ref _connectionEpoch);
 
     internal event Action<Exception>? ReadError;
 
@@ -196,6 +201,9 @@ internal sealed class J2534Session : IDisposable
 
     private void DisconnectLocked()
     {
+        // Invalidate queued UI observations before disposing the CAN worker
+        // or unloading the vendor library. Never wait on the UI dispatcher.
+        Interlocked.Increment(ref _connectionEpoch);
         if (_bus is not null)
         {
             _bus.ReadError -= HandleReadError;
