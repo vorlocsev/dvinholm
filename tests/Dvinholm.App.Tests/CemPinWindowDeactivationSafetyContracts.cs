@@ -114,6 +114,30 @@ public sealed class CemPinWindowDeactivationSafetyContracts
     }
 
     [Fact]
+    public void SavedPinLoadAndDeleteAreOffDispatcherAndRevalidateGeneration()
+    {
+        var saved = Source("src/Dvinholm.App/MainWindow.CemPinSaved.cs");
+        Assert.Contains("var inventory = await Task.Run(store.List);", saved);
+        var deletion = saved.IndexOf("await Task.Run(() => store.Delete(selected.Id));",
+            StringComparison.Ordinal);
+        var deleteCheck = saved.IndexOf(
+            "if (_closing || !_udsResultLifetime.CanDisplay(generation)) return;",
+            deletion, StringComparison.Ordinal);
+        var loaded = saved.IndexOf("loaded = await Task.Run(() => store.Load(selected.Id));",
+            StringComparison.Ordinal);
+        var loadCheck = saved.IndexOf(
+            "if (_closing || !_udsResultLifetime.CanDisplay(generation)) return;",
+            loaded, StringComparison.Ordinal);
+        var publish = saved.IndexOf("_cemPinResult = CemPinAttemptResult.Restored(loaded);",
+            StringComparison.Ordinal);
+        Assert.True(deletion > 0 && deleteCheck > deletion);
+        Assert.True(loaded > deleteCheck && loadCheck > loaded && publish > loadCheck);
+        Assert.Contains("loaded?.Dispose();", saved);
+        Assert.Contains("_udsGate.Release();", saved);
+        Assert.DoesNotContain("store.Delete(selected.Id);\n                SetStatus", saved);
+    }
+
+    [Fact]
     public void RevealRemainsExplicitAndLimitedToFifteenSeconds()
     {
         var pin = Source("src/Dvinholm.App/MainWindow.CemPin.cs");

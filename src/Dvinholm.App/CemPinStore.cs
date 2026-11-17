@@ -30,35 +30,41 @@ internal sealed class CemPinStore
         });
     }
 
-    internal CemPinSavedEntry Save(CemPinAttemptResult result, uint partNumber)
+    private Mutex AcquireWriteGate()
     {
-        // The capacity check and the final rename must share a cross-process
-        // gate. Two independent instances otherwise can both see 127 records
-        // and commit a 129th record invisible to the bounded inventory.
-        // A named kernel mutex adds no file to the encrypted vault.
-        Mutex? mutex = null;
-        var ownsMutex = false;
+        // Shared by Save and Delete so an in-flight save cannot race another
+        // Dvinholm instance deleting an entry. The kernel mutex is keyed only
+        // by the canonical vault path; no PIN or vehicle data enters its name.
+        var normalized = Path.TrimEndingDirectorySeparator(_directory).ToUpperInvariant();
+        var digest = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(normalized));
+        var mutex = new Mutex(false, @"Local\Dvinholm.CemPinVault." + Convert.ToHexString(digest));
         try
         {
-            var normalized = Path.TrimEndingDirectorySeparator(_directory).ToUpperInvariant();
-            var digest = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(normalized));
-            mutex = new Mutex(false, @"Local\Dvinholm.CemPinVault." + Convert.ToHexString(digest));
-            try { ownsMutex = mutex.WaitOne(TimeSpan.FromSeconds(15)); }
-            catch (AbandonedMutexException) { ownsMutex = true; }
+            var acquired = false;
+            try { acquired = mutex.WaitOne(TimeSpan.FromSeconds(15)); }
+            catch (AbandonedMutexException) { acquired = true; }
+            // A timed-out lock must fail closed instead of touching the vault.
+            if (!acquired) throw new IOException();
+            return mutex;
+        }
+        catch
+        {
+            mutex.Dispose();
+            throw;
+        }
+    }
 
-            // A blocked/failed acquisition denies the write; never bypass
-            // the capacity check under contention.
-            if (!ownsMutex) throw new IOException();
-            return SaveWithWriteGate(result, partNumber);
+    internal CemPinSavedEntry Save(CemPinAttemptResult result, uint partNumber)
+    {
+        try
+        {
+            using var mutex = AcquireWriteGate();
+            try { return SaveWithWriteGate(result, partNumber); }
+            finally { mutex.ReleaseMutex(); }
         }
         catch (Exception)
         {
             throw new InvalidOperationException("The encrypted PIN record could not be saved.");
-        }
-        finally
-        {
-            if (ownsMutex) mutex!.ReleaseMutex();
-            mutex?.Dispose();
         }
     }
 
@@ -201,13 +207,18 @@ internal sealed class CemPinStore
     {
         try
         {
-            RejectLinkedAncestors();
-            var path = FilePath(id);
-            if (File.Exists(path))
+            using var mutex = AcquireWriteGate();
+            try
             {
-                RejectLinkedRecord(path);
-                File.Delete(path);
+                RejectLinkedAncestors();
+                var path = FilePath(id);
+                if (File.Exists(path))
+                {
+                    RejectLinkedRecord(path);
+                    File.Delete(path);
+                }
             }
+            finally { mutex.ReleaseMutex(); }
         }
         catch (Exception) { throw new InvalidOperationException("The saved PIN record could not be deleted."); }
     }

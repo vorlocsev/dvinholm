@@ -415,6 +415,49 @@ public sealed class CemPinStoreTests
     }
 
     [Fact]
+    public async Task DeleteWaitsForConcurrentSaveInSameVault()
+    {
+        using var folder = new Folder();
+        using var oldCandidate = Result();
+        var oldEntry = folder.Store.Save(oldCandidate, 30682981);
+        using var newCandidate = Result();
+        using var staging = new ManualResetEventSlim();
+        using var release = new ManualResetEventSlim();
+        using var deleting = new ManualResetEventSlim();
+
+        var slowStore = new CemPinStore(folder.Path, (path, data) =>
+        {
+            staging.Set();
+            if (!release.Wait(TimeSpan.FromSeconds(10)))
+                throw new IOException("Synthetic blocked stage");
+            File.WriteAllBytes(path, data);
+        });
+        var save = Task.Run(() => slowStore.Save(newCandidate, 30682981));
+        Task? delete = null;
+        try
+        {
+            Assert.True(staging.Wait(TimeSpan.FromSeconds(5)));
+            delete = Task.Run(() =>
+            {
+                deleting.Set();
+                folder.Store.Delete(oldEntry.Id);
+            });
+            Assert.True(deleting.Wait(TimeSpan.FromSeconds(5)));
+            await Task.Delay(100);
+            Assert.False(delete.IsCompleted);
+            Assert.True(File.Exists(folder.File(oldEntry.Id)));
+        }
+        finally { release.Set(); }
+
+        var newEntry = await save.WaitAsync(TimeSpan.FromSeconds(10));
+        await delete!.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.False(File.Exists(folder.File(oldEntry.Id)));
+        Assert.True(File.Exists(folder.File(newEntry.Id)));
+        Assert.Equal(newEntry.Id, Assert.Single(folder.Store.List().Entries).Id);
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.tmp"));
+    }
+
+    [Fact]
     public void TamperingTruncationAndRecordRenameCannotRevealMaterial()
     {
         using var folder = new Folder();

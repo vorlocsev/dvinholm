@@ -265,3 +265,15 @@ Rollback errors are sanitized and cannot restore an invalid result; a file
 held by an external process might nevertheless survive a failed delete.
 A static WinUI ordering check and a synthetic Windows DPAPI test verify
 the rollback path and protection of an existing record. No live CEM is used.
+
+The vault's path-scoped named mutex is now shared by Delete as well as Save.
+Deleting a record from another cooperating Dvinholm instance waits for the
+in-flight save's completion, and only then validates the target's path and
+removes the selected UUID record. The mutex acquisition is centralized so
+both operations have the same bounded 15-second fail-closed behavior, including
+abandoned-mutex recovery. The saved-PIN WinUI dialog now performs DPAPI Load
+and mutex-serialized Delete with Task.Run, without blocking the dispatcher;
+after each awaited action it rechecks window closing and diagnostic generation.
+A stale loaded secret is disposed by the existing finally block, never promoted
+to the revealable UI state. Synthetic tests verify cross-instance save/delete
+serialization and WinUI off-dispatcher ordering; no real CEM is contacted.

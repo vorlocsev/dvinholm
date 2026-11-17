@@ -50,12 +50,18 @@ public sealed partial class MainWindow
                 (selection.SelectedItem as ComboBoxItem)?.Tag is not CemPinSavedEntry selected) return;
             if (action == ContentDialogResult.Secondary)
             {
-                store.Delete(selected.Id);
+                // Delete now waits for the cross-process vault writer gate.
+                // Keep WinUI responsive while that bounded wait and I/O run.
+                await Task.Run(() => store.Delete(selected.Id));
+                if (_closing || !_udsResultLifetime.CanDisplay(generation)) return;
                 SetStatus(CemText("Сохранённая запись PIN удалена.", "Saved PIN record deleted."));
             }
             else if (action == ContentDialogResult.Primary)
             {
-                loaded = store.Load(selected.Id);
+                loaded = await Task.Run(() => store.Load(selected.Id));
+                // Loading DPAPI material can also outlive a context edit.
+                // Dispose the newly loaded secret rather than show stale PIN.
+                if (_closing || !_udsResultLifetime.CanDisplay(generation)) return;
                 // A previous PIN may still be backed by a live expiry timer.
                 // Dispose and zero it before replacing the confidential view.
                 ClearCemPinMaterial();
