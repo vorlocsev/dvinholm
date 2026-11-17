@@ -141,6 +141,56 @@ public sealed class CemPinStoreTests
     }
 
     [Fact]
+    public void NextSaveReapsOnlyOldOwnedTemporaryFiles()
+    {
+        using var folder = new Folder();
+        Directory.CreateDirectory(folder.Path);
+        static string StageName(string root) =>
+            System.IO.Path.Combine(root, $"{Guid.NewGuid():N}.{Guid.NewGuid():N}.tmp");
+
+        var oldDvinholmStage = StageName(folder.Path);
+        var freshDvinholmStage = StageName(folder.Path);
+        var unrelated = System.IO.Path.Combine(folder.Path, "other-program.tmp");
+        File.WriteAllBytes(oldDvinholmStage, new byte[] { 1, 2, 3 });
+        File.WriteAllBytes(freshDvinholmStage, new byte[] { 4, 5, 6 });
+        File.WriteAllBytes(unrelated, new byte[] { 7, 8, 9 });
+        File.SetLastWriteTimeUtc(oldDvinholmStage, DateTime.UtcNow.AddDays(-3));
+        File.SetLastWriteTimeUtc(unrelated, DateTime.UtcNow.AddDays(-3));
+
+        using var candidate = Result();
+        var record = folder.Store.Save(candidate, 30682981);
+
+        Assert.False(File.Exists(oldDvinholmStage));
+        Assert.True(File.Exists(freshDvinholmStage));
+        Assert.True(File.Exists(unrelated));
+        Assert.Equal(new byte[] { 4, 5, 6 }, File.ReadAllBytes(freshDvinholmStage));
+        Assert.Equal(record.Id, Assert.Single(folder.Store.List().Entries).Id);
+    }
+
+    [Fact]
+    public void FailedStageStillCleansCurrentTemporaryFileAfterStaleRecovery()
+    {
+        using var folder = new Folder();
+        Directory.CreateDirectory(folder.Path);
+        var stale = System.IO.Path.Combine(folder.Path,
+            $"{Guid.NewGuid():N}.{Guid.NewGuid():N}.tmp");
+        File.WriteAllBytes(stale, new byte[] { 1 });
+        File.SetLastWriteTimeUtc(stale, DateTime.UtcNow.AddDays(-3));
+        using var candidate = Result();
+        var store = new CemPinStore(folder.Path, (path, encrypted) =>
+        {
+            File.WriteAllBytes(path, encrypted[..8]);
+            throw new IOException("PRIVATE-SYNTHETIC-STAGE-FAILURE");
+        });
+
+        var failure = Assert.Throws<InvalidOperationException>(() =>
+            store.Save(candidate, 30682981));
+        Assert.Equal("The encrypted PIN record could not be saved.", failure.Message);
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.tmp"));
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.dpapi"));
+    }
+
+    [Fact]
     public void TamperingTruncationAndRecordRenameCannotRevealMaterial()
     {
         using var folder = new Folder();

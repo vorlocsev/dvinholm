@@ -59,6 +59,10 @@ internal sealed class CemPinStore
             RejectLinkedAncestors();
             Directory.CreateDirectory(_directory);
             RejectLinkedAncestors();
+            // A process crash bypasses Save's finally cleanup. Recover only
+            // expired, correctly named Dvinholm staging files in a bounded
+            // best-effort sweep; never touch fresh or unrelated .tmp files.
+            CleanupStaleTemporaryStages();
             temporary = FilePath(entry.Id) + "." + Guid.NewGuid().ToString("N") + ".tmp";
             _stage(temporary, encrypted);
             // Staging may take time or invoke an injected writer in tests.
@@ -167,6 +171,42 @@ internal sealed class CemPinStore
             }
         }
         catch (Exception) { throw new InvalidOperationException("The saved PIN record could not be deleted."); }
+    }
+
+    private void CleanupStaleTemporaryStages()
+    {
+        // Every Save uses <record GUID N>.<stage GUID N>.tmp, and files are
+        // expected to live only for the duration of that single Save. Do not
+        // delete fresh stages from another process, arbitrary names, links or
+        // final .dpapi records. This maintenance must not block a new save.
+        try
+        {
+            var olderThan = DateTime.UtcNow - TimeSpan.FromDays(1);
+            var inspected = 0;
+            foreach (var path in Directory.EnumerateFiles(
+                _directory, "*.tmp", SearchOption.TopDirectoryOnly))
+            {
+                if (++inspected > 256) break; // Bound disk work in a hostile vault.
+                var name = Path.GetFileName(path);
+                if (name.Length != 69 || name[32] != '.' ||
+                    !name.EndsWith(".tmp", StringComparison.OrdinalIgnoreCase) ||
+                    !Guid.TryParseExact(name.AsSpan(0, 32), "N", out _) ||
+                    !Guid.TryParseExact(name.AsSpan(33, 32), "N", out _))
+                    continue;
+
+                try
+                {
+                    if ((File.GetAttributes(path) & FileAttributes.ReparsePoint) != 0 ||
+                        File.GetLastWriteTimeUtc(path) > olderThan)
+                        continue;
+                    File.Delete(path);
+                }
+                catch (IOException) { /* An active or locked file is left alone. */ }
+                catch (UnauthorizedAccessException) { }
+            }
+        }
+        catch (IOException) { /* Cleanup is best effort, not a save prerequisite. */ }
+        catch (UnauthorizedAccessException) { }
     }
 
     private string FilePath(Guid id) => Path.Combine(_directory, id.ToString("N") + ".dpapi");

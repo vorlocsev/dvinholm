@@ -189,3 +189,14 @@ never overwritten or removed. Failures remain sanitized. This is a
 best-effort check at filesystem boundaries, not a guarantee against a
 revocation that occurs after Save has successfully returned or a filesystem
 that refuses rollback deletion. No physical CEM or adapter tests are involved.
+
+After a crash or process termination, Save's finally block cannot remove
+its encrypted staging file. A subsequent authorized Save now performs a
+bounded, best-effort cleanup of stages older than 24 hours, limited to 256
+top-level .tmp entries and the exact <32-char GUID>.<32-char GUID>.tmp
+naming scheme. Fresh stages, unrelated files, reparse points and all final
+.dpapi records are preserved. File locks, permissions and enumeration errors
+do not prevent the new Save. The cleanup never decrypts or logs abandoned
+stage contents. Offline DPAPI tests cover a stale stage, a fresh stage,
+unrelated .tmp, and a failed write after maintenance. A crash during Save
+can still leave an encrypted temporary file until a later Save.
