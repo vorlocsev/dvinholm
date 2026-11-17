@@ -167,9 +167,11 @@ public sealed class J2534SessionLifecycleTests
     }
 
     [Theory]
-    [InlineData(FailurePoint.None)]
-    [InlineData(FailurePoint.Open)]
-    public async Task CemLeaseCaptureWaitsForAtomicConnectLifecycleSnapshot(FailurePoint failure)
+    [InlineData(FailurePoint.None, false, true)]
+    [InlineData(FailurePoint.Open, false, false)]
+    [InlineData(FailurePoint.None, true, false)]
+    public async Task CemLeaseCaptureWaitsForAtomicConnectLifecycleSnapshot(
+        FailurePoint failure, bool extended, bool expectedConnected)
     {
         using var openEntered = new ManualResetEventSlim();
         using var allowOpenToFinish = new ManualResetEventSlim();
@@ -181,7 +183,7 @@ public sealed class J2534SessionLifecycleTests
         };
         using var session = new J2534Session(adapter);
         var connectTask = Task.Run(() =>
-            session.Connect("synthetic.dll", 500_000, out _, extended: true));
+            session.Connect("synthetic.dll", 500_000, out _, extended: extended));
 
         // Connect has already detached its previous bus and owns the lifecycle
         // gate while the fake DLL Open call remains in progress.
@@ -209,10 +211,12 @@ public sealed class J2534SessionLifecycleTests
 
         var connected = await connectTask.WaitAsync(TimeSpan.FromSeconds(5));
         using var guard = await captureTask!.WaitAsync(TimeSpan.FromSeconds(5));
-        Assert.Equal(failure == FailurePoint.None, connected);
-        Assert.Equal(connected, guard.IsCurrent);
-        // No CEM/ECU request was sent by capturing a lease.
-        Assert.Equal(0, adapter.ConnectCount - (connected ? 1 : 0));
+        Assert.Equal(expectedConnected, connected);
+        Assert.Equal(expectedConnected, guard.IsCurrent);
+        Assert.Equal(expectedConnected, session.IsConnected);
+        Assert.Equal(expectedConnected ? 1 : 0, adapter.ConnectCount);
+        // Lease capture must not send any CEM/ECU request.
+        Assert.Equal(0, adapter.WriteCount);
     }
 
     [Fact]
@@ -513,6 +517,8 @@ public sealed class J2534SessionLifecycleTests
         internal int ConnectCount { get; private set; }
         internal int UnloadCount => Volatile.Read(ref _unloadCount);
         internal int ReadCount => Volatile.Read(ref _readCount);
+        private int _writeCount;
+        internal int WriteCount => Volatile.Read(ref _writeCount);
         public Dvinholm.App.J2534Native.AdapterCapabilities Capabilities { get; } =
             new(false, false, false);
 
@@ -562,6 +568,7 @@ public sealed class J2534SessionLifecycleTests
         }
         public bool Write(in Dvinholm.App.J2534Native.PassthruMsg msg, uint timeout, out string error)
         {
+            Interlocked.Increment(ref _writeCount);
             error = string.Empty;
             return true;
         }
