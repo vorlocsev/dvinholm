@@ -25,9 +25,23 @@ internal sealed class J2534Session : IDisposable
     // Reports the origin bus epoch even when the callback arrives after reconnect.
     internal event Action<long>? ReadErrorEpoch;
 
-    internal bool IsConnected => _bus is not null &&
-        Volatile.Read(ref _transportFaulted) == 0 &&
-        Interlocked.Read(ref _readFaultedEpoch) != ConnectionEpoch;
+    internal bool IsConnected
+    {
+        get
+        {
+            // A deferred Disconnect faults transport and then advances
+            // ConnectionEpoch. Reading the fault flag before the epoch can
+            // mix old/new generations and briefly report true: old fault=0,
+            // old read-fault epoch != new connection epoch.
+            // Capture the epoch first and reject a generation transition.
+            var epoch = ConnectionEpoch;
+            return Volatile.Read(ref _bus) is not null &&
+                Volatile.Read(ref _transportFaulted) == 0 &&
+                Interlocked.Read(ref _readFaultedEpoch) != epoch &&
+                ConnectionEpoch == epoch &&
+                Volatile.Read(ref _transportFaulted) == 0;
+        }
+    }
     internal uint? ConnectedBaudRate { get; private set; }
     internal bool? ConnectedExtended { get; private set; }
 

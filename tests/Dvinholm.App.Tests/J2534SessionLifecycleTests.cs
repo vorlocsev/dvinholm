@@ -316,7 +316,11 @@ public sealed class J2534SessionLifecycleTests
             // Logical transport faults immediately, while native unload
             // remains deferred until the callback exits.
             Assert.Equal(1, adapter.UnloadCount);
-            Assert.False(session.IsConnected);
+            // The deferred worker may advance ConnectionEpoch at any
+            // instant. Mixed-generation reads must never look connected
+            // after the read failure was reported.
+            for (var i = 0; i < 256; i++)
+                Assert.False(session.IsConnected);
         }
         finally
         {
