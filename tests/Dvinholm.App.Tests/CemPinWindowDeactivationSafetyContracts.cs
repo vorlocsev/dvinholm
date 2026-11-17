@@ -123,10 +123,14 @@ public sealed class CemPinWindowDeactivationSafetyContracts
         var accepted = saved.IndexOf("!= ContentDialogResult.Primary", confirm, StringComparison.Ordinal);
         var generation = saved.IndexOf("_udsResultLifetime.CanDisplay(generation)", accepted,
             StringComparison.Ordinal);
-        var delete = saved.IndexOf("await Task.Run(() => store.Delete(selectedId));",
+        var unavailableDelete = saved.IndexOf(
+            "await Task.Run(() => store.DeleteUnavailable(selectedId));",
             generation, StringComparison.Ordinal);
+        var delete = saved.IndexOf("await Task.Run(() => store.Delete(selectedId));",
+            unavailableDelete, StringComparison.Ordinal);
         Assert.True(branch > 0 && confirm > branch && accepted > confirm);
-        Assert.True(generation > accepted && delete > generation);
+        Assert.True(generation > accepted && unavailableDelete > generation);
+        Assert.True(delete > unavailableDelete);
         Assert.Contains("Delete permanently", saved);
         Assert.Contains("Удалить окончательно", saved);
         Assert.Contains("DefaultButton = ContentDialogButton.Close", saved);
@@ -149,6 +153,8 @@ public sealed class CemPinWindowDeactivationSafetyContracts
         Assert.Contains("другому пользователю Windows", saved);
         Assert.Contains("another Windows user", saved);
         Assert.Contains("Guid unavailableId => unavailableId", saved);
+        Assert.Contains("if (selectedTag is Guid)", saved);
+        Assert.Contains("store.DeleteUnavailable(selectedId)", saved);
         Assert.Contains("selectedTag is CemPinSavedEntry selected", saved);
         Assert.DoesNotContain("store.Load(selectedId)", saved);
         Assert.DoesNotContain("TryReveal(", saved);

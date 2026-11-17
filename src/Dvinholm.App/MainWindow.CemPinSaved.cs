@@ -108,7 +108,10 @@ public sealed partial class MainWindow
                     return;
                 // Delete waits for the cross-process vault writer gate.
                 // Keep WinUI responsive during its bounded wait and I/O.
-                await Task.Run(() => store.Delete(selectedId));
+                if (selectedTag is Guid)
+                    await Task.Run(() => store.DeleteUnavailable(selectedId));
+                else
+                    await Task.Run(() => store.Delete(selectedId));
                 if (_closing || !_udsResultLifetime.CanDisplay(generation)) return;
                 SetStatus(CemText("Сохранённая запись PIN удалена.", "Saved PIN record deleted."));
             }

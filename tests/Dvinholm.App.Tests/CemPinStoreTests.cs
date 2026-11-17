@@ -618,6 +618,48 @@ public sealed class CemPinStoreTests
     }
 
     [Fact]
+    public void UnavailableSelectionCannotDeleteRecordThatBecomesReadable()
+    {
+        using var folder = new Folder();
+        using var candidate = Result();
+        var retained = folder.Store.Save(candidate, 30682981);
+        var original = File.ReadAllBytes(folder.File(retained.Id));
+        File.WriteAllBytes(folder.File(retained.Id), new byte[] { 0x01, 0x02 });
+
+        var inventory = folder.Store.List();
+        Assert.Equal(retained.Id, Assert.Single(inventory.UnavailableRecordIds));
+        Assert.Empty(inventory.Entries);
+
+        // Simulate the encrypted file being repaired after inventory was
+        // opened but before the user confirms its removal.
+        File.WriteAllBytes(folder.File(retained.Id), original);
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            folder.Store.DeleteUnavailable(retained.Id));
+        Assert.Equal("The saved PIN record could not be deleted.", error.Message);
+        Assert.Equal(original, File.ReadAllBytes(folder.File(retained.Id)));
+        Assert.Equal(retained.Id, Assert.Single(folder.Store.List().Entries).Id);
+    }
+
+    [Fact]
+    public void ConfirmedUnavailableDeletionOnlyRemovesStillUnreadableRecord()
+    {
+        using var folder = new Folder();
+        using var candidate = Result();
+        var retained = folder.Store.Save(candidate, 30682981);
+        var original = File.ReadAllBytes(folder.File(retained.Id));
+        var corruptId = Guid.NewGuid();
+        File.WriteAllBytes(folder.File(corruptId), new byte[] { 0x01, 0x02 });
+        var inventory = folder.Store.List();
+        Assert.Equal(corruptId, Assert.Single(inventory.UnavailableRecordIds));
+
+        folder.Store.DeleteUnavailable(corruptId);
+        folder.Store.DeleteUnavailable(corruptId); // Missing is idempotent.
+        Assert.False(File.Exists(folder.File(corruptId)));
+        Assert.Equal(original, File.ReadAllBytes(folder.File(retained.Id)));
+        Assert.Equal(retained.Id, Assert.Single(folder.Store.List().Entries).Id);
+    }
+
+    [Fact]
     public void DamagedRecordIdsAreBoundedByVisibleVaultInventory()
     {
         using var folder = new Folder();

@@ -420,3 +420,19 @@ and valid-record loading remain off the WinUI dispatcher and require a current
 diagnostic generation after awaiting a dialog. Synthetic tests cover mixed
 readable/undecryptable/malformed records, chosen-ID-only deletion, inventory
 bounds and Development UI wiring. No real CEM hardware was accessed.
+
+A stale unavailable-record selection can no longer delete a record that
+becomes readable before the user confirms deletion. Development's UI now
+uses a separate DeleteUnavailable method for entries represented by an
+unreadable UUID, preserving ordinary Delete for user-selected readable
+records. Under the existing path-scoped writer mutex, DeleteUnavailable
+rechecks the canonical record path, rejects directories and reparse points,
+then attempts bounded DPAPI decoding and payload validation. If the record
+now parses correctly, deletion is refused with the usual sanitized error.
+Only a record that remains unreadable after this check can be removed,
+subject to the prior explicit confirmation. All decrypted temporary bytes
+are zeroed. Offline tests cover a repaired file between List and deletion,
+a still-corrupt file, idempotent absence and preservation of unrelated
+encrypted records. A hostile non-cooperating process can still race the OS
+between validation and File.Delete; this guard serializes cooperating
+Dvinholm writers, not arbitrary external processes. No physical CEM read.

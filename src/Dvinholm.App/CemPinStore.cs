@@ -250,7 +250,14 @@ internal sealed class CemPinStore
         finally { if (plain is not null) CryptographicOperations.ZeroMemory(plain); }
     }
 
-    internal void Delete(Guid id)
+    internal void Delete(Guid id) => DeleteCore(id, requireStillUnavailable: false);
+
+    // Called only after a separate, explicit UI confirmation for an entry
+    // which could not be decrypted at inventory time. A record becoming
+    // readable must never be destroyed based on that stale observation.
+    internal void DeleteUnavailable(Guid id) => DeleteCore(id, requireStillUnavailable: true);
+
+    private void DeleteCore(Guid id, bool requireStillUnavailable)
     {
         try
         {
@@ -275,6 +282,33 @@ internal sealed class CemPinStore
                 // removable so users can recover vault capacity explicitly.
                 if ((attributes & (FileAttributes.Directory | FileAttributes.ReparsePoint)) != 0)
                     throw new IOException("Unsafe PIN vault record target.");
+
+                if (requireStillUnavailable)
+                {
+                    // A second instance could repair/replace the encrypted
+                    // record after List() but before the confirmation. Check
+                    // the current payload while holding the vault write gate.
+                    byte[]? plain = null;
+                    var nowReadable = false;
+                    try
+                    {
+                        plain = ReadPayload(id);
+                        ParseEntry(id, plain);
+                        nowReadable = true;
+                    }
+                    catch (Exception)
+                    {
+                        // Invalid ciphertext or an inaccessible record may be
+                        // removed only by this separately confirmed operation.
+                        // File.Delete still fails closed on OS-level denial.
+                    }
+                    finally
+                    {
+                        if (plain is not null) CryptographicOperations.ZeroMemory(plain);
+                    }
+                    if (nowReadable)
+                        throw new IOException("PIN record became readable; deletion refused.");
+                }
                 File.Delete(path);
             }
             finally { mutex.ReleaseMutex(); }
