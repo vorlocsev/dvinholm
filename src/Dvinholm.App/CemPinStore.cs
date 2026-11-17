@@ -1,4 +1,5 @@
 using System.Buffers.Binary;
+using System.Diagnostics;
 using System.Security.Cryptography;
 
 namespace Dvinholm.App;
@@ -30,22 +31,38 @@ internal sealed class CemPinStore
         });
     }
 
-    private Mutex AcquireWriteGate()
+    private Mutex AcquireWriteGate(
+        CancellationToken cancellationToken = default, Func<bool>? leaseCurrent = null)
     {
-        // Shared by Save and Delete so an in-flight save cannot race another
-        // Dvinholm instance deleting an entry. The kernel mutex is keyed only
-        // by the canonical vault path; no PIN or vehicle data enters its name.
+        // Shared by Save and Delete so cooperating Dvinholm processes cannot
+        // race record creation and deletion. Only the vault path, never a
+        // vehicle identifier or PIN, contributes to the kernel mutex name.
         var normalized = Path.TrimEndingDirectorySeparator(_directory).ToUpperInvariant();
         var digest = SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(normalized));
         var mutex = new Mutex(false, @"Local\Dvinholm.CemPinVault." + Convert.ToHexString(digest));
         try
         {
-            var acquired = false;
-            try { acquired = mutex.WaitOne(TimeSpan.FromSeconds(15)); }
-            catch (AbandonedMutexException) { acquired = true; }
-            // A timed-out lock must fail closed instead of touching the vault.
-            if (!acquired) throw new IOException();
-            return mutex;
+            // A single 15-second WaitOne cannot observe a user's cancellation
+            // or an invalidated ECU lease until the entire wait completes.
+            // Poll at most every 50 ms, preserving the absolute deadline.
+            var clock = Stopwatch.StartNew();
+            var deadline = TimeSpan.FromSeconds(15);
+            var interval = TimeSpan.FromMilliseconds(50);
+            while (true)
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (leaseCurrent is not null && !leaseCurrent())
+                    throw new InvalidOperationException();
+
+                var remaining = deadline - clock.Elapsed;
+                if (remaining <= TimeSpan.Zero) throw new IOException();
+                try
+                {
+                    if (mutex.WaitOne(remaining < interval ? remaining : interval))
+                        return mutex;
+                }
+                catch (AbandonedMutexException) { return mutex; }
+            }
         }
         catch
         {
@@ -54,12 +71,13 @@ internal sealed class CemPinStore
         }
     }
 
-    internal CemPinSavedEntry Save(CemPinAttemptResult result, uint partNumber)
+    internal CemPinSavedEntry Save(
+        CemPinAttemptResult result, uint partNumber, CancellationToken cancellationToken = default)
     {
         try
         {
-            using var mutex = AcquireWriteGate();
-            try { return SaveWithWriteGate(result, partNumber); }
+            using var mutex = AcquireWriteGate(cancellationToken, () => result?.HasPin == true);
+            try { return SaveWithWriteGate(result, partNumber, cancellationToken); }
             finally { mutex.ReleaseMutex(); }
         }
         catch (Exception)
@@ -68,7 +86,8 @@ internal sealed class CemPinStore
         }
     }
 
-    private CemPinSavedEntry SaveWithWriteGate(CemPinAttemptResult result, uint partNumber)
+    private CemPinSavedEntry SaveWithWriteGate(
+        CemPinAttemptResult result, uint partNumber, CancellationToken cancellationToken)
     {
         byte[]? plain = null;
         byte[]? encrypted = null;
@@ -77,6 +96,13 @@ internal sealed class CemPinStore
         try
         {
             ArgumentNullException.ThrowIfNull(result);
+            void RequireCurrent()
+            {
+                cancellationToken.ThrowIfCancellationRequested();
+                if (!result.HasPin) throw new InvalidOperationException();
+            }
+
+            RequireCurrent();
             // Synthetic/metadata-only/expired or revoked results must never
             // populate this store. HasPin revalidates the live cancellation,
             // ECU identity and J2534 lease for an accepted live candidate.
@@ -92,6 +118,7 @@ internal sealed class CemPinStore
             if (!result.TryReveal(bytes => bytes.CopyTo(plain.AsSpan(17))))
                 throw new InvalidOperationException();
             encrypted = CemPinWindowsProtection.Transform(plain, entry.Id, protect: true);
+            RequireCurrent();
             if (encrypted.Length is <= 0 or > MaxProtectedBytes)
                 throw new IOException("Protected record size rejected.");
             RejectLinkedAncestors();
@@ -101,6 +128,7 @@ internal sealed class CemPinStore
             // expired, correctly named Dvinholm staging files in a bounded
             // best-effort sweep; never touch fresh or unrelated .tmp files.
             CleanupStaleTemporaryStages();
+            RequireCurrent();
             // The inventory deliberately enumerates at most 128 protected
             // records. Do not silently save more entries than the UI can
             // enumerate, including malformed/undecryptable .dpapi files.
@@ -108,15 +136,16 @@ internal sealed class CemPinStore
             temporary = FilePath(entry.Id) + "." + Guid.NewGuid().ToString("N") + ".tmp";
             _stage(temporary, encrypted);
             // Staging may take time or invoke an injected writer in tests.
-            // A revoked in-memory candidate must not reach its final filename.
-            if (!result.HasPin) throw new InvalidOperationException();
+            // A revoked in-memory candidate or cancelled caller must not
+            // reach a final filename after the staging writer completes.
+            RequireCurrent();
             var staged = ReadBounded(temporary);
             try
             {
                 if (!staged.AsSpan().SequenceEqual(encrypted)) throw new IOException();
             }
             finally { CryptographicOperations.ZeroMemory(staged); }
-            if (!result.HasPin) throw new InvalidOperationException();
+            RequireCurrent();
             // Recheck external additions after staging. Cooperating Dvinholm
             // writers are serialized until rollback/cleanup finishes.
             EnsureRecordCapacity();
@@ -125,12 +154,12 @@ internal sealed class CemPinStore
                 throw new IOException("PIN record collision.");
             // Recheck immediately before the atomic publication step, not
             // only when the secret was copied into the encryption buffer.
-            if (!result.HasPin) throw new InvalidOperationException();
+            RequireCurrent();
             File.Move(temporary, destination);
             committedPath = destination;
             // Revoke a newly published record if authorization disappeared
             // during the move. This never removes a pre-existing vault record.
-            if (!result.HasPin) throw new InvalidOperationException();
+            RequireCurrent();
             return entry;
         }
         catch (Exception)

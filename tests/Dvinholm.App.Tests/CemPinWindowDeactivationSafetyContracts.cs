@@ -94,7 +94,7 @@ public sealed class CemPinWindowDeactivationSafetyContracts
         var end = pin.IndexOf("#else", start, StringComparison.Ordinal);
         Assert.True(start > 0 && end > start);
         var method = pin[start..end];
-        var offloadedSave = method.IndexOf("await Task.Run(() => store.Save(candidate, partNumber));",
+        var offloadedSave = method.IndexOf("await Task.Run(() => store.Save(candidate, partNumber, cts.Token));",
             StringComparison.Ordinal);
         var lateLease = method.IndexOf("cts.IsCancellationRequested || guard.IsCurrent != true || !result.HasPin",
             StringComparison.Ordinal);
@@ -107,7 +107,7 @@ public sealed class CemPinWindowDeactivationSafetyContracts
         Assert.True(rollback > lateLease);
         Assert.True(publish > rollback);
         Assert.True(cleanup > publish);
-        Assert.Contains("savedEntry = await Task.Run(() => store.Save(candidate, partNumber));", method);
+        Assert.Contains("savedEntry = await Task.Run(() => store.Save(candidate, partNumber, cts.Token));", method);
         Assert.Contains("if (savedEntry is not null && store is not null)", method);
         Assert.Contains("_udsResultLifetime.CanDisplay(generation)", method[offloadedSave..publish]);
         Assert.DoesNotContain("OpenCemPinStore().Save(result, identity.PartNumber)", method);

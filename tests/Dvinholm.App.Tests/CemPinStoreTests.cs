@@ -394,6 +394,78 @@ public sealed class CemPinStoreTests
     }
 
     [Fact]
+    public async Task CancellingContendedVaultSaveReturnsBeforeMutexDeadline()
+    {
+        using var folder = new Folder();
+        using var firstStaging = new ManualResetEventSlim();
+        using var releaseFirst = new ManualResetEventSlim();
+        using var secondStarted = new ManualResetEventSlim();
+        using var original = Result();
+        using var pending = Result();
+        using var cancellation = new CancellationTokenSource();
+
+        var firstStore = new CemPinStore(folder.Path, (path, encrypted) =>
+        {
+            firstStaging.Set();
+            if (!releaseFirst.Wait(TimeSpan.FromSeconds(10)))
+                throw new IOException("SYNTHETIC-FIRST-WRITER-TIMEOUT");
+            File.WriteAllBytes(path, encrypted);
+        });
+        var first = Task.Run(() => firstStore.Save(original, 30682981));
+        Task<Exception?>? blocked = null;
+        try
+        {
+            Assert.True(firstStaging.Wait(TimeSpan.FromSeconds(5)));
+            blocked = Task.Run(() =>
+            {
+                secondStarted.Set();
+                return Record.Exception(() =>
+                    folder.Store.Save(pending, 30682981, cancellation.Token));
+            });
+            Assert.True(secondStarted.Wait(TimeSpan.FromSeconds(5)));
+            await Task.Delay(100);
+            Assert.False(blocked.IsCompleted);
+
+            cancellation.Cancel();
+            var failure = await blocked.WaitAsync(TimeSpan.FromSeconds(5));
+            var error = Assert.IsType<InvalidOperationException>(failure);
+            Assert.Equal("The encrypted PIN record could not be saved.", error.Message);
+            Assert.False(first.IsCompleted); // No need to wait for the other writer.
+        }
+        finally { releaseFirst.Set(); }
+
+        var committed = await first.WaitAsync(TimeSpan.FromSeconds(10));
+        Assert.Equal(committed.Id, Assert.Single(folder.Store.List().Entries).Id);
+        Assert.Single(Directory.GetFiles(folder.Path, "*.dpapi"));
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.tmp"));
+    }
+
+    [Fact]
+    public void CancellationDuringEncryptedStagingNeverPublishesNewRecord()
+    {
+        using var folder = new Folder();
+        using var previous = Result();
+        var existing = folder.Store.Save(previous, 30682981);
+        var original = File.ReadAllBytes(folder.File(existing.Id));
+        using var candidate = Result();
+        using var cancellation = new CancellationTokenSource();
+
+        var store = new CemPinStore(folder.Path, (path, encrypted) =>
+        {
+            File.WriteAllBytes(path, encrypted);
+            cancellation.Cancel();
+        });
+        var error = Assert.Throws<InvalidOperationException>(() =>
+            store.Save(candidate, 30682981, cancellation.Token));
+
+        Assert.Equal("The encrypted PIN record could not be saved.", error.Message);
+        Assert.Equal(original, File.ReadAllBytes(folder.File(existing.Id)));
+        Assert.Equal(existing.Id, Assert.Single(folder.Store.List().Entries).Id);
+        Assert.Empty(Directory.GetFiles(folder.Path, "*.tmp"));
+        Assert.True(candidate.HasPin); // Caller cancellation is not PIN disposal.
+    }
+
+    [Fact]
     public void LateCancellationRollbackDeletesOnlyNewEncryptedRecord()
     {
         using var folder = new Folder();

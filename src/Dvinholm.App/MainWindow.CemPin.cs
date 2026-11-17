@@ -369,7 +369,7 @@ public sealed partial class MainWindow
                     store = OpenCemPinStore();
                     var candidate = result;
                     var partNumber = identity.PartNumber;
-                    savedEntry = await Task.Run(() => store.Save(candidate, partNumber));
+                    savedEntry = await Task.Run(() => store.Save(candidate, partNumber, cts.Token));
                     saved = true;
                 }
                 catch (Exception) { /* Never echo private storage errors. */ }

@@ -277,3 +277,18 @@ after each awaited action it rechecks window closing and diagnostic generation.
 A stale loaded secret is disposed by the existing finally block, never promoted
 to the revealable UI state. Synthetic tests verify cross-instance save/delete
 serialization and WinUI off-dispatcher ordering; no real CEM is contacted.
+
+The PIN vault's cross-process writer lock now responds to cancellation or
+revocation while contended. Save accepts an optional CancellationToken, and
+the mutex waits in <=50 ms slices within the existing absolute 15-second
+deadline, checking both the caller token and the candidate's live CEM lease.
+The WinUI CEM PIN handler passes its cancellation token into the worker
+rather than merely checking it after the save completes. Save also checks
+the token after encryption, maintenance, staging, validation and final
+publication; a cancellation detected after the rename still attempts to
+remove only that new record. Delete retains the same gate and timeout
+without an unrelated CEM cancellation dependency. Synthetic DPAPI tests
+cover cancellation during a contended wait and staging without publishing
+a second record. A blocked OS file operation cannot be forcefully aborted
+by these checks, and the final UI publication race continues to use the
+separate returned-record rollback. No physical CEM was contacted.
