@@ -154,7 +154,7 @@ public sealed partial class MainWindow
 
             filter.SelectionChanged += (_, _) =>
             {
-                selectedFormat = (filter.SelectedItem as ComboBoxItem)?.Tag as string switch
+                selectedFormat = ((filter.SelectedItem as ComboBoxItem)?.Tag as string) switch
                 {
                     "P2" => CemConfigurationIndexedFormat.P2B9Fc,
                     "P3" => CemConfigurationIndexedFormat.P3F106,

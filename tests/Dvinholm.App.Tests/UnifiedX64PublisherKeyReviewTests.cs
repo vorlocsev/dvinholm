@@ -42,7 +42,7 @@ public sealed class UnifiedX64PublisherKeyReviewTests
     public void InvalidOrMissingApprovedFingerprintFailsClosed()
     {
         var (pem, approved) = CreateP256();
-        foreach (var digest in new[] { "", "abc", approved.ToUpperInvariant(),
+        foreach (string? digest in new string?[] { null, "", "abc", approved.ToUpperInvariant(),
             approved + "00", " " + approved, new string('g', 64) })
             Assert.Throws<InvalidDataException>(() =>
                 UnifiedX64PublisherKeyReview.Inspect(pem, digest));

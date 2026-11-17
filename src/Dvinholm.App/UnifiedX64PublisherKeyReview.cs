@@ -14,10 +14,13 @@ internal static class UnifiedX64PublisherKeyReview
     internal sealed record Result(
         string SpkiSha256, bool MatchesExpected, bool TrustedForProduction);
 
-    internal static Result Inspect(string publicKeyPem, string independentlyApprovedSpkiSha256)
+    internal static Result Inspect(string publicKeyPem, string? independentlyApprovedSpkiSha256)
     {
+        // A missing approval must be denied rather than passed to a crypto
+        // conversion call. Keep one validated non-null value for both steps.
+        var approvedHash = independentlyApprovedSpkiSha256 ?? string.Empty;
         if (string.IsNullOrWhiteSpace(publicKeyPem) ||
-            !Regex.IsMatch(independentlyApprovedSpkiSha256 ?? "",
+            !Regex.IsMatch(approvedHash,
                 @"^[0-9a-f]{64}$", RegexOptions.CultureInvariant))
             throw new InvalidDataException("An independently approved lowercase SPKI SHA-256 is required.");
 
@@ -47,7 +50,7 @@ internal static class UnifiedX64PublisherKeyReview
             throw new InvalidDataException("Invalid ECDSA public key.", ex);
         }
 
-        var expected = Convert.FromHexString(independentlyApprovedSpkiSha256);
+        var expected = Convert.FromHexString(approvedHash);
         var match = CryptographicOperations.FixedTimeEquals(fingerprint, expected);
         return new Result(Convert.ToHexString(fingerprint).ToLowerInvariant(),
             match, TrustedForProduction: false);
