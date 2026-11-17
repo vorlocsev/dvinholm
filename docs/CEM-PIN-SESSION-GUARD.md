@@ -393,3 +393,14 @@ prevent future idempotent revocation. The timer error is sanitized. Two
 synthetic tests cover explicit secret disposal and monotonic expiry with a
 fault-injecting ITimer that throws during Dispose. Production System timers
 remain unchanged, and no CEM/driver access was performed.
+
+Saved-record deletion now requires a second explicit confirmation in the
+Development UI. The original vault dialog's secondary action merely opens
+an RU/EN deletion confirmation with Cancel as the default; no PIN material,
+VIN or ECU identity is displayed or queried. Only a confirmed primary
+action can reach the existing Task.Run-backed, cross-process-serialized
+Delete. The window and diagnostic generation are rechecked after the
+confirmation dialog before any file I/O. Static WinUI wiring tests verify
+the confirmation ordering, the default cancellation button, no secret
+reveal within the confirmation, and the retained off-dispatcher deletion.
+No physical CEM or J2534 hardware tests were performed.

@@ -114,6 +114,30 @@ public sealed class CemPinWindowDeactivationSafetyContracts
     }
 
     [Fact]
+    public void SavedPinDeletionRequiresSeparateConfirmationAndCurrentGeneration()
+    {
+        var saved = Source("src/Dvinholm.App/MainWindow.CemPinSaved.cs");
+        var branch = saved.IndexOf("if (action == ContentDialogResult.Secondary)",
+            StringComparison.Ordinal);
+        var confirm = saved.IndexOf("await confirm.ShowAsync()", branch, StringComparison.Ordinal);
+        var accepted = saved.IndexOf("!= ContentDialogResult.Primary", confirm, StringComparison.Ordinal);
+        var generation = saved.IndexOf("_udsResultLifetime.CanDisplay(generation)", accepted,
+            StringComparison.Ordinal);
+        var delete = saved.IndexOf("await Task.Run(() => store.Delete(selected.Id));",
+            generation, StringComparison.Ordinal);
+        Assert.True(branch > 0 && confirm > branch && accepted > confirm);
+        Assert.True(generation > accepted && delete > generation);
+        Assert.Contains("Delete permanently", saved);
+        Assert.Contains("Удалить окончательно", saved);
+        Assert.Contains("DefaultButton = ContentDialogButton.Close", saved);
+        // The deletion confirmation must never load or reveal PIN material.
+        var confirmation = saved[branch..delete];
+        Assert.DoesNotContain("store.Load(", confirmation);
+        Assert.DoesNotContain("TryReveal(", confirmation);
+        Assert.DoesNotContain("Convert.ToHexString(", confirmation);
+    }
+
+    [Fact]
     public void SavedPinLoadAndDeleteAreOffDispatcherAndRevalidateGeneration()
     {
         var saved = Source("src/Dvinholm.App/MainWindow.CemPinSaved.cs");

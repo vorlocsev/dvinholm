@@ -50,8 +50,30 @@ public sealed partial class MainWindow
                 (selection.SelectedItem as ComboBoxItem)?.Tag is not CemPinSavedEntry selected) return;
             if (action == ContentDialogResult.Secondary)
             {
-                // Delete now waits for the cross-process vault writer gate.
-                // Keep WinUI responsive while that bounded wait and I/O run.
+                // Deletion is irreversible. Never treat the main dialog's
+                // secondary action as consent to destroy an encrypted record.
+                // Do not include the secret or any vehicle identity in the
+                // confirmation; the selected entry is fixed before awaiting.
+                var confirm = new ContentDialog {
+                    XamlRoot = RootLayout.XamlRoot, RequestedTheme = ElementTheme.Dark,
+                    Title = CemText("Удалить сохранённый PIN?", "Delete saved PIN record?"),
+                    Content = new TextBlock {
+                        TextWrapping = TextWrapping.Wrap,
+                        Text = CemText(
+                            "Зашифрованная запись будет удалена без возможности восстановления из Dvinholm. " +
+                            "Текущий автомобиль не проверяется. Продолжить?",
+                            "The encrypted record will be permanently removed from Dvinholm. " +
+                            "The current vehicle is not checked. Continue?")
+                    },
+                    PrimaryButtonText = CemText("Удалить окончательно", "Delete permanently"),
+                    CloseButtonText = CemText("Отмена", "Cancel"),
+                    DefaultButton = ContentDialogButton.Close
+                };
+                if (await confirm.ShowAsync() != ContentDialogResult.Primary ||
+                    _closing || !_udsResultLifetime.CanDisplay(generation))
+                    return;
+                // Delete waits for the cross-process vault writer gate.
+                // Keep WinUI responsive during its bounded wait and I/O.
                 await Task.Run(() => store.Delete(selected.Id));
                 if (_closing || !_udsResultLifetime.CanDisplay(generation)) return;
                 SetStatus(CemText("Сохранённая запись PIN удалена.", "Saved PIN record deleted."));
