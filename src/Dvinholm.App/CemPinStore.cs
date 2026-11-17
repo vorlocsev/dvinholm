@@ -117,7 +117,10 @@ internal sealed class CemPinStore
             BinaryPrimitives.WriteInt64LittleEndian(plain.AsSpan(9), entry.SavedAt.UtcTicks);
             if (!result.TryReveal(bytes => bytes.CopyTo(plain.AsSpan(17))))
                 throw new InvalidOperationException();
-            encrypted = CemPinWindowsProtection.Transform(plain, entry.Id, protect: true);
+            // The plaintext payload is no longer needed after DPAPI returns.
+            // Wipe it now, rather than retaining it throughout staging,
+            // filesystem contention and possible rollback.
+            encrypted = CemPinWindowsProtection.ProtectAndWipe(plain, entry.Id);
             RequireCurrent();
             if (encrypted.Length is <= 0 or > MaxProtectedBytes)
                 throw new IOException("Protected record size rejected.");

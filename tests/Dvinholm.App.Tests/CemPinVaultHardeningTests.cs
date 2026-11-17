@@ -23,6 +23,47 @@ public sealed class CemPinVaultHardeningTests
     }
 
     [Fact]
+    public void ProtectAndWipeErasesPlaintextBeforeReturningEncryptedPayload()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var recordId = Guid.NewGuid();
+        var original = new byte[] { 0x12, 0x34, 0x56, 0x78, 0x90, 0x12 };
+        var plaintext = (byte[])original.Clone();
+        byte[]? encrypted = null;
+        byte[]? restored = null;
+        try
+        {
+            encrypted = CemPinWindowsProtection.ProtectAndWipe(plaintext, recordId);
+            Assert.All(plaintext, b => Assert.Equal((byte)0, b));
+            Assert.Equal(-1, encrypted.AsSpan().IndexOf(original));
+            restored = CemPinWindowsProtection.Transform(encrypted, recordId, protect: false);
+            Assert.Equal(original, restored);
+        }
+        finally
+        {
+            CryptographicOperations.ZeroMemory(original);
+            CryptographicOperations.ZeroMemory(plaintext);
+            if (encrypted is not null) CryptographicOperations.ZeroMemory(encrypted);
+            if (restored is not null) CryptographicOperations.ZeroMemory(restored);
+        }
+    }
+
+    [Fact]
+    public void ProtectAndWipeErasesPlaintextOnDpapiSizeRejection()
+    {
+        if (!OperatingSystem.IsWindows()) return;
+        var plaintext = new byte[9000];
+        Array.Fill(plaintext, (byte)0xA5);
+        try
+        {
+            Assert.Throws<CryptographicException>(() =>
+                CemPinWindowsProtection.ProtectAndWipe(plaintext, Guid.NewGuid()));
+            Assert.All(plaintext, b => Assert.Equal((byte)0, b));
+        }
+        finally { CryptographicOperations.ZeroMemory(plaintext); }
+    }
+
+    [Fact]
     public void OversizedDpapiOutputIsRejectedWithoutReturningProtectedBytes()
     {
         if (!OperatingSystem.IsWindows()) return;

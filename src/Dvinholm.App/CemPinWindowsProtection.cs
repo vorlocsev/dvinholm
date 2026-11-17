@@ -22,6 +22,18 @@ internal static class CemPinWindowsProtection
     [DllImport("kernel32.dll")]
     private static extern IntPtr LocalFree(IntPtr memory);
 
+    /// <summary>
+    /// Protect the sole writable plaintext payload, then erase that buffer
+    /// immediately. No caller may retain a usable copy after this returns.
+    /// The erasure runs even if native DPAPI reports an error.
+    /// </summary>
+    internal static byte[] ProtectAndWipe(byte[] plaintext, Guid recordId)
+    {
+        ArgumentNullException.ThrowIfNull(plaintext);
+        try { return Transform(plaintext, recordId, protect: true); }
+        finally { CryptographicOperations.ZeroMemory(plaintext); }
+    }
+
     internal static unsafe byte[] Transform(byte[] input, Guid recordId, bool protect)
     {
         var entropy = new byte[48];

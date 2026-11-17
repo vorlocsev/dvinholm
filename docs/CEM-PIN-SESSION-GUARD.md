@@ -314,3 +314,14 @@ current-user protection, GUID-bound entropy and size limits are unchanged.
 Windows-only synthetic tests cover oversized DPAPI output rejection and
 record GUID entropy mismatch, with explicit disposal of test buffers.
 No physical CEM or external adapter was involved.
+
+CemPinWindowsProtection.ProtectAndWipe now encapsulates protection of the
+writable plaintext payload and guaranteed immediate zeroing of that same
+managed buffer, whether encryption succeeds or DPAPI rejects the result.
+CemPinStore.Save uses this helper, reducing plaintext residency across the
+encrypted staging-file write, vault capacity scans, and publication.
+Save's existing finally erasure remains as an additional defense. This
+does not change the current-user DPAPI blob, GUID entropy, file naming or
+on-disk format. Windows-only synthetic tests verify plaintext erasure on
+successful encryption and an oversized protected-output failure, including
+a valid same-GUID decrypt round trip. No vehicle or hardware tests.
